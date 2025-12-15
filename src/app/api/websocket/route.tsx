@@ -1,6 +1,28 @@
 // nextjs-llama-async-proxy/src/app/api/websocket/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
+interface LogMessage {
+  level: string;
+  message: string;
+  timestamp: number;
+}
+
+interface LogMessages {
+  info: string[];
+  debug: string[];
+  warn: string[];
+  error: string[];
+}
+
+interface MetricsData {
+  activeModels: number;
+  totalRequests: number;
+  avgResponseTime: number;
+  memoryUsage: number;
+  cpuUsage: number;
+  lastUpdated: string;
+}
+
 // Mock WebSocket endpoint for demonstration
 // In a real implementation, this would upgrade to WebSocket protocol
 export async function GET(request: NextRequest) {
@@ -17,26 +39,74 @@ export async function GET(request: NextRequest) {
       });
 
     case 'metrics':
+      // Simulate dynamic metrics with realistic values
+      const generateDynamicMetrics = () => {
+        return {
+          activeModels: Math.floor(Math.random() * 5) + 1, // 1-5 models
+          totalRequests: Math.floor(Math.random() * 500) + 100, // 100-600 requests
+          avgResponseTime: Math.floor(Math.random() * 300) + 100, // 100-400ms
+          memoryUsage: Math.floor(Math.random() * 30) + 50, // 50-80%
+          cpuUsage: Math.floor(Math.random() * 50) + 20, // 20-70%
+          lastUpdated: new Date().toISOString()
+        };
+      };
+      
       return NextResponse.json({
         type: 'metrics',
-        data: {
-          activeModels: 2,
-          totalRequests: 150,
-          avgResponseTime: 245,
-          memoryUsage: 78,
-          cpuUsage: 45
-        },
+        data: generateDynamicMetrics(),
         timestamp: Date.now()
       });
 
     case 'logs':
+      // Simulate dynamic logs with realistic entries
+      const generateDynamicLogs = () => {
+        const logLevels = ['info', 'debug', 'warn', 'error'];
+        const logMessages = {
+          info: [
+            'Model loaded successfully',
+            'WebSocket connection established',
+            'Request processed',
+            'New session started'
+          ],
+          debug: [
+            'Processing request batch',
+            'Model parameters updated',
+            'Memory optimized',
+            'CPU usage monitored'
+          ],
+          warn: [
+            'High memory usage detected',
+            'Slow response time',
+            'Model near capacity'
+          ],
+          error: [
+            'Failed to load model',
+            'Connection timeout',
+            'Invalid request format'
+          ]
+        };
+        
+        const logs = [];
+        const now = Date.now();
+        
+        // Generate 5-10 realistic log entries
+        const logCount = Math.floor(Math.random() * 6) + 5;
+        for (let i = 0; i < logCount; i++) {
+          const level = logLevels[Math.floor(Math.random() * logLevels.length)];
+          const message = logMessages[level][Math.floor(Math.random() * logMessages[level].length)];
+          logs.push({
+            level,
+            message,
+            timestamp: now - Math.floor(Math.random() * 300000) // Random timestamp in last 5 minutes
+          });
+        }
+        
+        return logs;
+      };
+      
       return NextResponse.json({
         type: 'logs',
-        data: [
-          { level: 'info', message: 'Model llama-7b loaded successfully', timestamp: Date.now() - 1000 },
-          { level: 'info', message: 'WebSocket connection established', timestamp: Date.now() - 500 },
-          { level: 'debug', message: 'Processing request batch', timestamp: Date.now() }
-        ],
+        data: generateDynamicLogs(),
         timestamp: Date.now()
       });
 

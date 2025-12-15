@@ -35,9 +35,9 @@ const DashboardPage = () => {
       ]);
 
       // Update real-time charts with simulated data
-      const cpuUsage = data.cpuUsage || (Math.random() * 100);
-      const memoryUsage = data.memoryUsage || (Math.random() * 100);
-      const requests = data.totalRequests || Math.floor(Math.random() * 100);
+      const cpuUsage = data.cpuUsage || 0;
+      const memoryUsage = data.memoryUsage || 0;
+      const requests = data.totalRequests || 0;
 
       const timestamp = new Date().toLocaleTimeString();
       setCpuHistory(prev => [...prev.slice(-19), { name: timestamp, value: cpuUsage }]);
@@ -56,7 +56,7 @@ const DashboardPage = () => {
        
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {metrics.map((metric, index) => (
-          <div key={index} className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-300">
+           <div key={index} className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-6 hover:shadow-2xl transition-all duration-500 animate-fade-in-up shadow-xl hover:-translate-y-1">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold text-foreground">{metric.title}</h3>
               <span className="text-2xl">{metric.icon}</span>
@@ -79,35 +79,35 @@ const DashboardPage = () => {
       <div className="mt-12">
         <h2 className="text-2xl font-bold mb-6 text-foreground">Real-time Performance</h2>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-           <div className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-300">
+            <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-6 hover:shadow-2xl transition-all duration-500 animate-fade-in-up shadow-xl hover:-translate-y-1">
              <h3 className="text-lg font-semibold mb-4 text-foreground">CPU Usage (%)</h3>
              <TimeSeriesChart data={cpuHistory} color="hsl(var(--primary))" height={200} />
-             <div className="mt-4 text-sm text-muted-foreground">
-               Current: {cpuHistory[cpuHistory.length - 1]?.value.toFixed(1) || '0.0'}%
-             </div>
+              <div className="mt-4 text-sm text-muted-foreground" suppressHydrationWarning>
+                Current: {cpuHistory[cpuHistory.length - 1]?.value.toFixed(1) || '0.0'}%
+              </div>
            </div>
 
-           <div className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-300">
+            <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-6 hover:shadow-2xl transition-all duration-500 animate-fade-in-up shadow-xl hover:-translate-y-1">
              <h3 className="text-lg font-semibold mb-4 text-foreground">Memory Usage (%)</h3>
              <TimeSeriesChart data={memoryHistory} color="hsl(var(--success))" height={200} />
-             <div className="mt-4 text-sm text-muted-foreground">
-               Current: {memoryHistory[memoryHistory.length - 1]?.value.toFixed(1) || '0.0'}%
-             </div>
+              <div className="mt-4 text-sm text-muted-foreground" suppressHydrationWarning>
+                Current: {memoryHistory[memoryHistory.length - 1]?.value.toFixed(1) || '0.0'}%
+              </div>
            </div>
 
-           <div className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-300">
+            <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-6 hover:shadow-2xl transition-all duration-500 animate-fade-in-up shadow-xl hover:-translate-y-1">
              <h3 className="text-lg font-semibold mb-4 text-foreground">Requests/min</h3>
              <TimeSeriesChart data={requestsHistory} color="hsl(var(--warning))" height={200} />
-             <div className="mt-4 text-sm text-muted-foreground">
-               Current: {requestsHistory[requestsHistory.length - 1]?.value || 0}
-             </div>
+              <div className="mt-4 text-sm text-muted-foreground" suppressHydrationWarning>
+                Current: {requestsHistory[requestsHistory.length - 1]?.value || 0}
+              </div>
            </div>
         </div>
       </div>
 
       <div className="mt-12">
         <h2 className="text-2xl font-bold mb-6 text-foreground">Recent Activity</h2>
-        <div className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-300">
+         <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-6 hover:shadow-2xl transition-all duration-500 animate-fade-in-up shadow-xl hover:-translate-y-1">
           <div className="flex items-center justify-between">
             <span className="text-foreground font-medium">Real-time Activity Feed</span>
              <div className="flex items-center gap-2">
@@ -117,9 +117,9 @@ const DashboardPage = () => {
                </span>
              </div>
           </div>
-          <div className="mt-4 text-sm text-muted-foreground">
-            {lastMessage ? `Last update: ${new Date(lastMessage.timestamp).toLocaleTimeString()}` : 'Waiting for data...'}
-          </div>
+           <div className="mt-4 text-sm text-muted-foreground" suppressHydrationWarning>
+             {lastMessage ? `Last update: ${new Date(lastMessage.timestamp).toLocaleTimeString()}` : 'Waiting for data...'}
+           </div>
         </div>
       </div>
     </div>

@@ -8,7 +8,7 @@ const Header = () => {
   const { toggleSidebar } = useSidebar();
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-lg z-20 flex items-center justify-between px-6">
+    <header className="fixed top-0 left-0 right-0 h-16 bg-gradient-to-r from-background/90 via-background/95 to-background/90 dark:from-background/90 dark:via-background/95 dark:to-background/90 backdrop-blur-md border-b border-border dark:border-border shadow-lg z-20 flex items-center justify-between px-6">
       <div className="flex items-center">
         <button
           onClick={toggleSidebar}

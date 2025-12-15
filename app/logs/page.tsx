@@ -1,7 +1,1 @@
-import LogsPage from '../../src/components/pages/LogsPage';
-
-export default function Logs() {
-  return <LogsPage />;
-}
-
-export const dynamic = 'force-dynamic';
+export { default } from '../../src/app/logs/page';

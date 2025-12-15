@@ -59,21 +59,21 @@ const LogsPage = () => {
 
   const getLogLevelColor = (level: string) => {
     switch (level) {
-      case 'error': return 'bg-danger/10 border-danger/20';
-      case 'warn': return 'bg-warning/10 border-warning/20';
-      case 'info': return 'bg-info/10 border-info/20';
-      case 'debug': return 'bg-muted border-border';
-      default: return 'bg-muted border-border';
+      case 'error': return 'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800';
+      case 'warn': return 'bg-yellow-50 border-yellow-200 dark:bg-yellow-950 dark:border-yellow-800';
+      case 'info': return 'bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800';
+      case 'debug': return 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700';
+      default: return 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700';
     }
   };
 
   const getLogLevelTextColor = (level: string) => {
     switch (level) {
-      case 'error': return 'text-danger';
-      case 'warn': return 'text-warning';
-      case 'info': return 'text-info';
-      case 'debug': return 'text-muted-foreground';
-      default: return 'text-muted-foreground';
+      case 'error': return 'text-red-700 dark:text-red-300';
+      case 'warn': return 'text-yellow-700 dark:text-yellow-300';
+      case 'info': return 'text-blue-700 dark:text-blue-300';
+      case 'debug': return 'text-gray-600 dark:text-gray-400';
+      default: return 'text-gray-600 dark:text-gray-400';
     }
   };
 

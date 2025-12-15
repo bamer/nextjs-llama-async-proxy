@@ -1,7 +1,1 @@
-import MonitoringPage from '../../src/components/pages/MonitoringPage';
-
-export default function Monitoring() {
-  return <MonitoringPage />;
-}
-
-export const dynamic = 'force-dynamic';
+export { default } from '../../src/app/monitoring/page';
