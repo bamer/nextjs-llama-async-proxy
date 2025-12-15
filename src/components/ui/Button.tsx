@@ -19,14 +19,14 @@ export const Button = ({
 }: ButtonProps) => {
   // Define variants with proper styling
   const variants = {
-    default: "bg-blue-500 text-white hover:bg-blue-600",
-    outline: "border border-gray-300 hover:bg-gray-700",
-    ghost: "hover:bg-gray-700",
-    primary: "bg-blue-500 text-white hover:bg-blue-600",
-    secondary: "bg-gray-500 text-white hover:bg-gray-600"
+    default: "bg-primary text-foreground hover:bg-primary-dark",
+    outline: "border border-border hover:bg-accent",
+    ghost: "hover:bg-accent",
+    primary: "bg-primary text-foreground hover:bg-primary-dark",
+    secondary: "bg-secondary text-foreground hover:bg-accent"
   };
 
-  const baseClasses = "px-4 py-2 rounded-md transition-colors";
+  const baseClasses = "px-4 md:px-6 lg:px-8 py-2 rounded-md shadow-sm hover:shadow-md transition-shadow transition-colors";
   
   return (
     <button 
@@ -40,11 +40,11 @@ export const Button = ({
   );
 };
 
-export const MetricCard = ({ 
-  title, 
-  value, 
-  unit = "", 
-  icon = "", 
+export const MetricCard = ({
+  title,
+  value,
+  unit = "",
+  icon = "",
   trend,
   className = ""
 }: {
@@ -56,8 +56,8 @@ export const MetricCard = ({
   className?: string;
 }) => {
   return (
-    <div 
-      className={`bg-gray-100 border border-gray-300 rounded-lg p-5 text-gray-900 ${className}`}
+    <div
+      className={`bg-card border border-border rounded-lg p-5 md:p-6 lg:p-8 shadow-sm text-foreground ${className}`}
     >
       <div className="flex items-center gap-3 mb-4">
         <span className="text-xl">{icon}</span>
@@ -67,7 +67,7 @@ export const MetricCard = ({
         <span className="text-2xl font-bold">{value}</span>
         {unit && <span className="opacity-75">{unit}</span>}
         {trend !== undefined && (
-          <div className={`mt-2 ${trend > 0 ? 'text-green-500' : 'text-red-500'}`}>
+          <div className={`mt-2 ${trend > 0 ? 'text-success' : 'text-danger'}`}>
             {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}%
           </div>
         )}
@@ -76,11 +76,11 @@ export const MetricCard = ({
   );
 };
 
-export const ActivityMetricCard = ({ 
-  title, 
-  value, 
-  unit = "", 
-  icon = "", 
+export const ActivityMetricCard = ({
+  title,
+  value,
+  unit = "",
+  icon = "",
   trend,
   isActive = true
 }: {
@@ -92,8 +92,8 @@ export const ActivityMetricCard = ({
   isActive?: boolean;
 }) => {
   return (
-    <div 
-      className={`bg-tertiary border border-border rounded-lg p-5 text-white ${
+    <div
+      className={`bg-card border border-border rounded-lg p-5 md:p-6 lg:p-8 shadow-sm text-foreground ${
         isActive ? "" : "opacity-50"
       }`}
     >
@@ -105,7 +105,7 @@ export const ActivityMetricCard = ({
         <span className="text-2xl font-bold">{value}</span>
         {unit && <span className="opacity-75">{unit}</span>}
         {trend !== undefined && (
-          <div className={`mt-2 ${trend > 0 ? 'text-green-500' : 'text-red-500'}`}>
+          <div className={`mt-2 ${trend > 0 ? 'text-success' : 'text-danger'}`}>
             {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}%
           </div>
         )}

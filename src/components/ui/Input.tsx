@@ -7,7 +7,7 @@ interface InputProps {
 
 export const Input = ({ className = "", ...props }: InputProps) => {
   return (
-    <input className={`bg-white border border-gray-300 rounded-md p-2 ${className}`} {...props} />
+    <input className={`bg-input border border-border rounded-md p-2 md:p-3 focus:ring-2 focus:ring-primary ${className}`} {...props} />
   );
 };
 
@@ -18,7 +18,7 @@ interface TextAreaProps {
 
 export const TextArea = ({ className = "", ...props }: TextAreaProps) => {
   return (
-    <textarea className={`bg-white border border-gray-300 rounded-md p-2 ${className}`} {...props} />
+    <textarea className={`bg-input border border-border rounded-md p-2 md:p-3 focus:ring-2 focus:ring-primary ${className}`} {...props} />
   );
 };
 
@@ -30,7 +30,7 @@ interface SelectProps {
 
 export const Select = ({ children, className = "", ...props }: SelectProps) => {
   return (
-    <select className={`bg-white border border-gray-300 rounded-md p-2 ${className}`} {...props}>
+    <select className={`bg-input border border-border rounded-md p-2 md:p-3 focus:ring-2 focus:ring-primary ${className}`} {...props}>
       {children}
     </select>
   );
@@ -44,7 +44,7 @@ interface LabelProps {
 
 export const Label = ({ children, className = "", ...props }: LabelProps) => {
   return (
-    <label className={`text-white ${className}`} {...props}>
+    <label className={`text-foreground ${className}`} {...props}>
       {children}
     </label>
   );

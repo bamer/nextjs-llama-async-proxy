@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { WebSocketProvider } from "../src/components/websocket/WebSocketManager";
+import { ThemeProvider } from 'next-themes'
 import Layout from "../src/components/layout/Layout";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,9 +32,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         <WebSocketProvider>
+          <ThemeProvider>
             <Layout>
               {children}
             </Layout>
+          </ThemeProvider>
         </WebSocketProvider>
       </body>
     </html>

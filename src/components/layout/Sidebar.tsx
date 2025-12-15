@@ -28,7 +28,7 @@ const Sidebar = () => {
   const isActive = (path: string) => pathname === path;
 
   return (
-    <aside className={`fixed top-16 left-0 h-[calc(100vh-64px)] w-64 bg-card border-r border-border shadow-lg z-10 transition-all duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+    <aside className={`fixed top-16 left-0 h-[calc(100vh-64px)] w-64 bg-card border-r border-border shadow-lg z-10 transition-all duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
       <nav className="p-4 flex flex-col gap-1">
         {menuItems.map((item) => {
           const IconComponent = item.icon;

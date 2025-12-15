@@ -2,6 +2,7 @@
 
 import { useSidebar } from './SidebarProvider';
 import { Menu } from 'lucide-react';
+import ThemeToggle from '../ui/ThemeToggle';
 
 const Header = () => {
   const { toggleSidebar } = useSidebar();
@@ -11,16 +12,16 @@ const Header = () => {
       <div className="flex items-center">
         <button
           onClick={toggleSidebar}
-          className="mr-4 p-2 rounded-full hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+          className="mr-4 p-2 rounded-full hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
           aria-label="Toggle sidebar"
         >
           <Menu className="h-5 w-5" />
         </button>
         <h1 className="text-xl font-bold">Llama Runner Async Proxy</h1>
       </div>
-      <div className="flex items-center gap-4">
-        {/* Theme toggle removed - using system preference */}
-      </div>
+       <div className="flex items-center gap-4">
+         <ThemeToggle />
+       </div>
     </header>
   );
 };

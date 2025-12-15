@@ -26,7 +26,7 @@ interface ChartData {
 export const TimeSeriesChart = ({
   data,
   dataKey = 'value',
-  color = '#3182ce',
+  color = 'hsl(var(--primary))',
   height = 300,
   showGrid = true,
   showTooltip = true
@@ -54,9 +54,9 @@ export const TimeSeriesChart = ({
       />
       {showTooltip && (
          <Tooltip
-          contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '6px', color: '#f9fafb' }}
-        />
-      )}
+           contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '6px', color: 'hsl(var(--foreground))' }}
+         />
+       )}
       <Line
         type="monotone"
         dataKey={dataKey}
@@ -73,7 +73,7 @@ export const TimeSeriesChart = ({
 export const AreaChartComponent = ({
   data,
   dataKey = 'value',
-  color = '#3182ce',
+  color = 'hsl(var(--primary))',
   height = 300
 }: {
   data: ChartData[];
@@ -97,10 +97,10 @@ export const AreaChartComponent = ({
       />
       <Tooltip
         contentStyle={{
-           backgroundColor: '#1f2937',
-          border: '1px solid #374151',
+           backgroundColor: 'hsl(var(--background))',
+          border: '1px solid hsl(var(--border))',
           borderRadius: '6px',
-           color: '#f9fafb'
+           color: 'hsl(var(--foreground))'
         }}
       />
       <Area
@@ -119,7 +119,7 @@ export const AreaChartComponent = ({
 export const BarChartComponent = ({
   data,
   dataKey = 'value',
-  color = '#3182ce',
+  color = 'hsl(var(--primary))',
   height = 300
 }: {
   data: ChartData[];
@@ -143,10 +143,10 @@ export const BarChartComponent = ({
       />
       <Tooltip
         contentStyle={{
-           backgroundColor: '#1f2937',
-          border: '1px solid #374151',
+           backgroundColor: 'hsl(var(--background))',
+          border: '1px solid hsl(var(--border))',
           borderRadius: '6px',
-           color: '#f9fafb'
+           color: 'hsl(var(--foreground))'
         }}
       />
       <Bar dataKey={dataKey} fill={color} radius={[4, 4, 0, 0]} />
@@ -159,7 +159,7 @@ export const PieChartComponent = ({
   data,
   dataKey = 'value',
   nameKey = 'name',
-  colors = ['#3182ce', '#38a169', '#d69e2e', '#e53e3e', '#805ad5'],
+  colors = ['hsl(var(--primary))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--danger))', 'hsl(var(--secondary))'],
   height = 300
 }: {
   data: ChartData[];
@@ -177,7 +177,7 @@ export const PieChartComponent = ({
         labelLine={false}
         label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
         outerRadius={80}
-        fill="#8884d8"
+        fill="hsl(var(--primary))"
         dataKey={dataKey}
         nameKey={nameKey}
       >
@@ -187,10 +187,10 @@ export const PieChartComponent = ({
       </Pie>
       <Tooltip
         contentStyle={{
-           backgroundColor: '#1f2937',
-          border: '1px solid #374151',
+           backgroundColor: 'hsl(var(--background))',
+          border: '1px solid hsl(var(--border))',
           borderRadius: '6px',
-           color: '#f9fafb'
+           color: 'hsl(var(--foreground))'
         }}
       />
     </PieChart>
@@ -205,7 +205,7 @@ export const MetricCard = ({
   icon,
   trend,
   chartData,
-  color = '#3182ce'
+  color = 'hsl(var(--primary))'
 }: {
   title: string;
   value: string | number;
@@ -215,21 +215,21 @@ export const MetricCard = ({
   chartData?: ChartData[];
   color?: string;
 }) => (
-  <div className="bg-gray-800 border border-gray-600 rounded-lg p-6 hover:shadow-md transition-shadow">
+  <div className="bg-card border border-border rounded-lg p-6 hover:shadow-md transition-shadow">
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-2">
-        <div className="p-2 bg-blue-500/10 rounded-lg">
+        <div className="p-2 bg-card/10 rounded-lg">
           {icon}
         </div>
         <div>
-          <h3 className="font-semibold text-gray-100">{title}</h3>
+          <h3 className="font-semibold text-foreground">{title}</h3>
           <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-bold text-gray-100">{value}</span>
-            <span className="text-sm text-gray-400">{unit}</span>
+            <span className="text-2xl font-bold text-foreground">{value}</span>
+            <span className="text-sm text-muted-foreground">{unit}</span>
             {trend !== undefined && (
               <span className={`text-xs px-1 py-0.5 rounded ${
-                trend > 0 ? 'bg-green-500 text-green-800' :
-                trend < 0 ? 'bg-red-500 text-red-800' : trend > 0 ? 'bg-green-500 text-green-800' : 'bg-gray-500 text-gray-800'
+                trend > 0 ? 'bg-success text-foreground' :
+                trend < 0 ? 'bg-danger text-foreground' : trend > 0 ? 'bg-success text-foreground' : 'bg-secondary text-foreground'
               }`}>
                 {trend > 0 ? '+' : ''}{trend}%
               </span>

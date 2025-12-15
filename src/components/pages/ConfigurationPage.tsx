@@ -222,7 +222,7 @@ const ConfigurationPage = () => {
           </button>
 
           {saveMessage && (
-            <div className={`mt-4 p-3 rounded-md ${saveMessage.includes('successfully') ? 'bg-green-100 text-green-800 border border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-700' : 'bg-yellow-100 text-yellow-800 border border-yellow-200 dark:bg-yellow-900 dark:text-yellow-200 dark:border-yellow-700'}`}>
+            <div className={`mt-4 p-3 rounded-md ${saveMessage.includes('successfully') ? 'bg-success text-white border border-success' : 'bg-warning text-white border border-warning'}`}>
               {saveMessage}
             </div>
           )}

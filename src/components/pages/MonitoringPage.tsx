@@ -77,7 +77,7 @@ const MonitoringPage = () => {
       <h1 className="text-3xl font-bold mb-8 text-foreground">Real-time Monitoring</h1>
        
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="card p-6 hover:shadow-lg transition-all duration-300">
+        <div className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-300">
           <h2 className="text-xl font-bold mb-6 text-foreground">System Metrics</h2>
           <div className="flex flex-col gap-4">
             {metrics.systemMetrics.map((metric, index) => (
@@ -89,7 +89,7 @@ const MonitoringPage = () => {
           </div>
         </div>
 
-        <div className="card p-6 hover:shadow-lg transition-all duration-300">
+        <div className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-300">
           <h2 className="text-xl font-bold mb-6 text-foreground">Model Performance</h2>
           <div className="flex flex-col gap-4">
             {metrics.modelMetrics.map((metric, index) => (
@@ -101,7 +101,7 @@ const MonitoringPage = () => {
           </div>
         </div>
 
-        <div className="card p-6 hover:shadow-lg transition-all duration-300">
+        <div className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-300">
           <h2 className="text-xl font-bold mb-6 text-foreground">Connection Status</h2>
           <div className="flex items-center gap-3 mb-4">
             <div className={`w-4 h-4 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
@@ -113,7 +113,7 @@ const MonitoringPage = () => {
         </div>
       </div>
 
-      <div className="card p-6 hover:shadow-lg transition-all duration-300">
+      <div className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-300">
         <h2 className="text-2xl font-bold mb-6 text-foreground">Live Logs</h2>
         <div className="bg-muted rounded-lg p-4 max-h-96 overflow-y-auto font-mono text-sm">
           {logs.length === 0 ? (

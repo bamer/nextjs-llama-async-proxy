@@ -1,6 +1,7 @@
 ---
 description: "Test authoring and TDD agent"
 mode: subagent
+model: llama.cpp/qwen3-coder
 temperature: 0.1
 tools:
   read: true
