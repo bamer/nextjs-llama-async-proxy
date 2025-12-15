@@ -11,75 +11,109 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          light: '#a5b4fc', // indigo-300 for softer look
-          DEFAULT: '#6366f1', // indigo-500
-          dark: '#4338ca', // indigo-700
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
+          950: '#172554',
         },
         secondary: {
-          light: '#67e8f9', // cyan-300
-          DEFAULT: '#06b6d4', // cyan-500
-          dark: '#0891b2', // cyan-700
+          50: '#ecfdf5',
+          100: '#d1fae5',
+          200: '#a7f3d0',
+          300: '#6ee7b7',
+          400: '#34d399',
+          500: '#10b981',
+          600: '#059669',
+          700: '#047857',
+          800: '#065f46',
+          900: '#064e3b',
+          950: '#022c22',
         },
         accent: {
-          light: '#f0abfc', // fuchsia-300
-          DEFAULT: '#d946ef', // fuchsia-500
-          dark: '#a21caf', // fuchsia-700
+          50: '#fef3c7',
+          100: '#fde68a',
+          200: '#fcd34d',
+          300: '#fbbf24',
+          400: '#f59e0b',
+          500: '#d97706',
+          600: '#b45309',
+          700: '#92400e',
+          800: '#78350f',
+          900: '#451a03',
+          950: '#271000',
+        },
+        slate: {
+          50: '#f8fafc',
+          100: '#f1f5f9',
+          200: '#e2e8f0',
+          300: '#cbd5e1',
+          400: '#94a3b8',
+          500: '#64748b',
+          600: '#475569',
+          700: '#334155',
+          800: '#1e293b',
+          900: '#0f172a',
+          950: '#020617',
         },
         gray: {
-          '50': '#f9fafb',
-          '100': '#f3f4f6',
-          '200': '#e5e7eb',
-          '300': '#d1d5db',
-          '400': '#9ca3af',
-          '500': '#6b7280',
-          '600': '#4b5563',
-          '700': '#374151',
-          '800': '#1f2937',
-          '900': '#111827',
-          '950': '#030712',
+          50: '#fafafa',
+          100: '#f5f5f5',
+          200: '#e5e5e5',
+          300: '#d4d4d4',
+          400: '#a3a3a3',
+          500: '#737373',
+          600: '#525252',
+          700: '#404040',
+          800: '#262626',
+          900: '#171717',
+          950: '#0a0a0a',
         },
         success: {
-          DEFAULT: '#10b981', // green-500
+          DEFAULT: '#10b981',
         },
         warning: {
-          DEFAULT: '#f59e0b', // amber-500
+          DEFAULT: '#f59e0b',
         },
         danger: {
-          DEFAULT: '#dc2626', // red-600 (more distinct from accent)
-        },
-        primary_foreground: {
-          DEFAULT: '#ffffff', // white for primary background
+          DEFAULT: '#ef4444',
         },
         card: {
-          DEFAULT: '#ffffff', // white for card background in light mode
-          dark: '#111827', // gray-900 for dark mode
+          DEFAULT: '#ffffff',
+          dark: '#1f2937',
         },
         layout: {
-          DEFAULT: '#f9fafb', // gray-50 for layout background in light mode
-          dark: '#111827', // gray-900 for dark mode
+          DEFAULT: '#fafafa',
+          dark: '#0a0a0a',
         },
         border: {
-          DEFAULT: '#e5e7eb', // gray-200 for border in light mode
-          dark: '#374151', // gray-700 for dark mode
+          DEFAULT: '#e5e5e5',
+          dark: '#404040',
         },
         input: {
-          DEFAULT: '#ffffff', // white for input background in light mode
-          dark: '#1f2937', // gray-800 for dark mode
+          DEFAULT: '#ffffff',
+          dark: '#262626',
         },
         ring: {
-          DEFAULT: '#3b82f6', // primary color for ring focus
+          DEFAULT: '#3b82f6',
         },
         foreground: {
-          DEFAULT: '#111827', // dark gray for foreground text in light mode
-          dark: '#f9fafb', // gray-50 for dark mode
+          DEFAULT: '#171717',
+          dark: '#fafafa',
         },
         'muted-foreground': {
-          DEFAULT: '#6b7280', // gray-500 for muted text in light mode
-          dark: '#9ca3af', // gray-400 for dark mode
+          DEFAULT: '#737373',
+          dark: '#a3a3a3',
         },
         background: {
-          DEFAULT: '#ffffff', // white for background in light mode
-          dark: '#111827', // gray-900 for dark mode
+          DEFAULT: '#ffffff',
+          dark: '#0a0a0a',
         },
       },
       fontFamily: {

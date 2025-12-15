@@ -136,10 +136,10 @@ const ModelsPage = () => {
           <div key={model.name} className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-300">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold text-foreground">{model.name}</h3>
-              <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${
-                 model.status === 'running' ? 'bg-green-500' :
-                 model.status === 'loading' ? 'bg-yellow-500' : 'bg-red-500'
-               }`}>
+               <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${
+                  model.status === 'running' ? 'bg-success' :
+                  model.status === 'loading' ? 'bg-warning' : 'bg-danger'
+                }`}>
                 {loadingStates[model.name] ? 'loading' : model.status}
               </span>
             </div>

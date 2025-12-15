@@ -13,9 +13,12 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
+    "experimentalDecorators": true,
+    "forceConsistentCasingInFileNames": true,
     "plugins": [
       {
-        "name": "next"
+        "name": "next",
+
       }
     ],
     "paths": {

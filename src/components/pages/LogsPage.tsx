@@ -3,6 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { useWebSocket } from '../websocket/WebSocketManager';
 
+// Hook to check if we're on the client side
+const useIsClient = () => {
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+  return isClient;
+};
+
 interface LogEntry {
   level: 'info' | 'warn' | 'error' | 'debug';
   message: string;
@@ -12,6 +21,7 @@ interface LogEntry {
 
 const LogsPage = () => {
   const { lastMessage } = useWebSocket();
+  const isClient = useIsClient();
   const [logs, setLogs] = useState<LogEntry[]>([
     { level: 'info', message: 'Model loading started for llama-2-7b-chat', timestamp: '2025-01-01T10:00:00Z', source: 'model-manager' },
     { level: 'debug', message: 'GPU memory allocation completed', timestamp: '2025-01-01T10:00:00Z', source: 'gpu-manager' },
@@ -49,20 +59,20 @@ const LogsPage = () => {
 
   const getLogLevelColor = (level: string) => {
     switch (level) {
-      case 'error': return 'bg-red-500/10 border-red-500/20';
-      case 'warn': return 'bg-yellow-500/10 border-yellow-500/20';
-      case 'info': return 'bg-blue-500/10 border-blue-500/20';
-      case 'debug': return 'bg-gray-500/10 border-gray-500/20';
+      case 'error': return 'bg-danger/10 border-danger/20';
+      case 'warn': return 'bg-warning/10 border-warning/20';
+      case 'info': return 'bg-info/10 border-info/20';
+      case 'debug': return 'bg-muted border-border';
       default: return 'bg-muted border-border';
     }
   };
 
   const getLogLevelTextColor = (level: string) => {
     switch (level) {
-      case 'error': return 'text-red-400';
-      case 'warn': return 'text-yellow-400';
-      case 'info': return 'text-blue-400';
-      case 'debug': return 'text-gray-400';
+      case 'error': return 'text-danger';
+      case 'warn': return 'text-warning';
+      case 'info': return 'text-info';
+      case 'debug': return 'text-muted-foreground';
       default: return 'text-muted-foreground';
     }
   };
@@ -128,9 +138,9 @@ const LogsPage = () => {
           {filteredLogs.map((log, index) => (
             <div key={index} className={`p-3 border rounded-md ${getLogLevelColor(log.level)} transition-all hover:shadow-sm`}>
               <div className="flex justify-between items-start">
-                <span className={`font-mono ${getLogLevelTextColor(log.level)} font-medium`}>
-                  {log.level.toUpperCase()} - {new Date(log.timestamp).toLocaleTimeString()}
-                </span>
+                 <span className={`font-mono ${getLogLevelTextColor(log.level)} font-medium`}>
+                   {log.level.toUpperCase()} - {isClient ? new Date(log.timestamp).toLocaleTimeString() : new Date(log.timestamp).toISOString().split('T')[1].split('.')[0]}
+                 </span>
                 <span className="text-xs opacity-60 ml-2 flex-shrink-0">{log.source}</span>
               </div>
               <p className="mt-2 font-mono text-sm leading-relaxed">{log.message}</p>

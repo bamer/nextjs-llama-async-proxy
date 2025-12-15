@@ -104,7 +104,7 @@ const MonitoringPage = () => {
         <div className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-300">
           <h2 className="text-xl font-bold mb-6 text-foreground">Connection Status</h2>
           <div className="flex items-center gap-3 mb-4">
-            <div className={`w-4 h-4 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            <div className={`w-4 h-4 rounded-full ${isConnected ? 'bg-success' : 'bg-danger'}`}></div>
             <span className="text-foreground font-medium">{isConnected ? 'Connected' : 'Disconnected'}</span>
           </div>
           <div className="text-sm text-muted-foreground">

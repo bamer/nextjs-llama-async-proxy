@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { WebSocketProvider } from "../src/components/websocket/WebSocketManager";
-import { ThemeProvider } from 'next-themes'
+import { ThemeProvider } from "next-themes";
 import Layout from "../src/components/layout/Layout";
 
 
