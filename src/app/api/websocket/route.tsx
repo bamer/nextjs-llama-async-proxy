@@ -60,8 +60,11 @@ export async function GET(request: NextRequest) {
     case 'logs':
       // Simulate dynamic logs with realistic entries
       const generateDynamicLogs = () => {
-        const logLevels = ['info', 'debug', 'warn', 'error'];
-        const logMessages = {
+        const logLevels = ['info', 'debug', 'warn', 'error'] as const;
+        type LogLevel = typeof logLevels[number];
+        
+        // Define log messages with TypeScript support
+        const logMessages: Record<LogLevel, string[]> = {
           info: [
             'Model loaded successfully',
             'WebSocket connection established',
@@ -86,14 +89,15 @@ export async function GET(request: NextRequest) {
           ]
         };
         
-        const logs = [];
+        const logs: LogMessage[] = [];
         const now = Date.now();
         
         // Generate 5-10 realistic log entries
         const logCount = Math.floor(Math.random() * 6) + 5;
         for (let i = 0; i < logCount; i++) {
-          const level = logLevels[Math.floor(Math.random() * logLevels.length)];
-          const message = logMessages[level][Math.floor(Math.random() * logMessages[level].length)];
+          const level = logLevels[Math.floor(Math.random() * logLevels.length)] as LogLevel;
+          const messages = logMessages[level];
+          const message = messages[Math.floor(Math.random() * messages.length)];
           logs.push({
             level,
             message,

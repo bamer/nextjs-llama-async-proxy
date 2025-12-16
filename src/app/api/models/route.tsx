@@ -2,26 +2,53 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
+const execAsync = promisify(exec);
+
+interface Model {
+  name: string;
+  description: string;
+  status: 'running' | 'stopped' | 'loading';
+  version: string;
+  path?: string;
+}
+
+// Configuration file path
 const MODELS_CONFIG_FILE = path.join(process.cwd(), 'src/config/models_config.json');
 
-// Mock models data
-const mockModels = [
-  { name: 'llama-2-7b-chat', description: 'Chat model for Llama 2', status: 'running', version: '2.0' },
-  { name: 'llama-3-8b', description: 'Base language model', status: 'stopped', version: '3.0' },
-  { name: 'gpt-3.5-turbo', description: 'OpenAI GPT-3.5 model', status: 'running', version: '1.0' },
-  { name: 'mistral-7b', description: 'Mistral model', status: 'stopped', version: '2.1' }
-];
-
-export async function GET() {
+// Fetch models from a real Ollama backend
+const fetchModelsFromBackend = async (): Promise<Model[]> => {
   try {
-    // Try to read from config file
-    let models = mockModels;
+    // Execute a command to fetch models from Ollama
+    // Example: ollama list
+    const { stdout, stderr } = await execAsync('ollama list --json');
+    
+    if (stderr && stderr.includes('error')) {
+      throw new Error(stderr || 'Failed to fetch models from backend');
+    }
+    
+    // Parse the JSON output from Ollama
+    const modelsData = JSON.parse(stdout);
+    
+    // Convert Ollama's model format to our Model interface
+    return modelsData.models.map((model: any) => ({
+      name: model.name,
+      description: model.description || 'No description provided',
+      status: model.state === 'running' ? 'running' : 'stopped',
+      version: model.version || '1.0',
+      path: model.path
+    }));
+  } catch (error) {
+    console.error('Failed to fetch models from backend:', error);
+    // Fallback: Try to read from local config file
     try {
       const configData = fs.readFileSync(MODELS_CONFIG_FILE, 'utf8');
       const config = JSON.parse(configData);
+      
       if (config.models && Object.keys(config.models).length > 0) {
-        models = Object.entries(config.models).map(([name, modelConfig]: [string, any]) => ({
+        return Object.entries(config.models).map(([name, modelConfig]: [string, any]) => ({
           name,
           description: modelConfig.description || 'No description',
           status: modelConfig.status || 'stopped',
@@ -29,29 +56,48 @@ export async function GET() {
           path: modelConfig.path
         }));
       }
-    } catch (error) {
-      // Use mock data if config file doesn't exist or is invalid
-      console.log('Using mock models data');
+    } catch (configError) {
+      console.error('Failed to read local config:', configError);
+      return [];
     }
+    return [];
+  }
+};
 
+// GET /api/models
+// Returns a list of available models from the backend
+export async function GET() {
+  try {
+    const models = await fetchModelsFromBackend();
     return NextResponse.json({
       count: models.length,
       models
     });
   } catch (error) {
     console.error('Error fetching models:', error);
-    return NextResponse.json({ error: 'Failed to fetch models' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch models from backend' },
+      { status: 500 }
+    );
   }
 }
 
+// POST /api/models/discover
+// Simulate discovering models in a local directory
+// In a real implementation, this would scan the filesystem for model files
 export async function POST(request: NextRequest) {
   try {
-    const { models: newModels } = await request.json();
-
-    if (!Array.isArray(newModels)) {
-      return NextResponse.json({ error: 'Models must be an array' }, { status: 400 });
+    const body = await request.json();
+    const { paths } = body;
+    
+    // Validate paths
+    if (!paths || !Array.isArray(paths) || paths.length === 0) {
+      return NextResponse.json(
+        { error: 'Invalid paths provided' },
+        { status: 400 }
+      );
     }
-
+    
     // Read current config
     let config: { models: Record<string, any> } = { models: {} };
     try {
@@ -60,25 +106,54 @@ export async function POST(request: NextRequest) {
     } catch {
       // Config doesn't exist, use default
     }
-
-    // Add new models
-    for (const model of newModels) {
-      config.models[model.name] = {
-        ...model,
-        status: 'stopped',
-        registered: new Date().toISOString()
-      };
+    
+    // For each path, simulate discovering models
+    // In a real implementation, this would scan the filesystem for model files
+    for (const path of paths) {
+      try {
+        // Check if path exists
+        const pathExists = fs.existsSync(path);
+        
+        if (pathExists) {
+          // Simulate discovering models in this path
+          // In a real implementation, this serait une logique de découverte réelle
+          const simulatedModels = [
+            { name: 'llama3-8b', description: 'Llama 3 8B model', status: 'stopped', version: '3.0', path },
+            { name: 'mistral-7b', description: 'Mistral 7B model', status: 'stopped', version: '1.0', path },
+          ];
+          
+          // Add discovered models to config
+          for (const model of simulatedModels) {
+            config.models[model.name] = model;
+          }
+        }
+      } catch (error) {
+        console.error(`Failed to process path ${path}:`, error);
+      }
     }
-
+    
     // Write back to file
     fs.writeFileSync(MODELS_CONFIG_FILE, JSON.stringify(config, null, 2));
-
+    
+    // Return discovered models
+    const discovered = Object.entries(config.models).map(([name, modelConfig]: [string, any]) => ({
+      name,
+      description: modelConfig.description || 'No description',
+      status: modelConfig.status || 'stopped',
+      version: modelConfig.version || '1.0',
+      path: modelConfig.path
+    }));
+    
     return NextResponse.json({
-      message: 'Models registered successfully',
-      registered: newModels.length
+      discovered,
+      paths,
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Error registering models:', error);
-    return NextResponse.json({ error: 'Failed to register models' }, { status: 500 });
+    console.error('Error discovering models:', error);
+    return NextResponse.json(
+      { error: 'Failed to discover models' },
+      { status: 500 }
+    );
   }
 }

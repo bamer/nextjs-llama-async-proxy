@@ -1,4 +1,4 @@
-// app/api/monitoring/history/route.ts
+// nextjs-llama-async-proxy/src/app/api/monitoring/history/route.ts
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
@@ -27,7 +27,9 @@ const generateMetricsHistory = (limit: number) => {
   return history;
 };
 
-export async function GET(request: { nextUrl: { searchParams: URLSearchParams } }): Promise<Response> {
+// GET /api/monitoring/history
+// Returns a list of monitoring metrics history
+export async function GET(request: { nextUrl: { searchParams: URLSearchParams } }) {
   try {
     const limit = parseInt(request.nextUrl.searchParams.get('limit') || '60') || 60;
     

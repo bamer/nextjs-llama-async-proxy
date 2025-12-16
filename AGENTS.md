@@ -11,10 +11,14 @@ Ce document définit les instructions et contraintes pour les agents IA travaill
 - **Types** : Strict TypeScript avec interfaces définies
 
 ### Technologies
+- pnpm (package manager)
 - Next.js 16 (App Router)
 - React 19
 - TypeScript strict
 - Tailwind CSS v4
+- HeroUI
+- mui/material-ui (componements & themes)
+- next-themes
 - Turbopack
 - WebSocket pour temps réel
 
@@ -199,6 +203,7 @@ pnpm lint:fix     # Correction automatique
 - React 19 best practices
 - TypeScript strict mode
 - Tailwind CSS utility-first
+- mui/material-ui
 - Testing with Jest/React Testing Library
 
 ---
