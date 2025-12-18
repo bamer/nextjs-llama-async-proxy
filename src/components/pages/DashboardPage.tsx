@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useWebSocket } from '../websocket/WebSocketManager';
 import { RealTimeStatusBadge } from '@/components/ui/RealTimeStatusBadge';
-
-import { TimeSeriesChart, MetricCard } from '../ui/Charts';
+import { TimeSeriesChart } from '@/components/ui/Charts';
+import { MetricCard, NotificationCard, UserCard, ChartContainer } from '@/components/ui';
 
 interface User {
   id: string;
@@ -114,22 +114,15 @@ const DashboardPage = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {metrics.map((metric, index) => (
-          <div key={index} className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-6 hover:shadow-2xl transition-all duration-500 animate-fade-in-up shadow-xl hover:-translate-y-1">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold text-foreground">{metric.title}</h3>
-              <span className="text-2xl">{metric.icon}</span>
-            </div>
-            <div className="mb-4">
-              <p className="text-3xl font-bold text-foreground">{metric.value}</p>
-              <p className="text-sm text-muted-foreground">{metric.unit}</p>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className={`text-sm ${metric.trend > 0 ? 'text-success' : metric.trend < 0 ? 'text-danger' : 'text-muted-foreground'}`}>
-                {metric.trend > 0 ? '+' : ''}{metric.trend}
-              </span>
-              <span className="text-xs text-muted-foreground">Trend</span>
-            </div>
-          </div>
+          <MetricCard
+            key={index}
+            title={metric.title}
+            value={metric.value}
+            unit={metric.unit}
+            icon={<span className="text-2xl">{metric.icon}</span>}
+            trend={metric.trend}
+            color={index === 0 ? 'primary' : index === 1 ? 'info' : index === 2 ? 'warning' : 'success'}
+          />
         ))}
       </div>
 
@@ -137,29 +130,29 @@ const DashboardPage = () => {
       <div className="mt-12">
         <h2 className="text-2xl font-bold mb-6 text-foreground">Real-time Performance</h2>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-6 hover:shadow-2xl transition-all duration-500 animate-fade-in-up shadow-xl hover:-translate-y-1">
-            <h3 className="text-lg font-semibold mb-4 text-foreground">System Uptime (%)</h3>
+          <ChartContainer
+            title="System Uptime (%)"
+            subtitle={`Current: ${cpuHistory[cpuHistory.length - 1]?.value.toFixed(1) || '0.0'}%`}
+            height={280}
+          >
             <TimeSeriesChart data={cpuHistory} color="hsl(var(--primary))" height={200} />
-            <div className="mt-4 text-sm text-muted-foreground" suppressHydrationWarning>
-              Current: {cpuHistory[cpuHistory.length - 1]?.value.toFixed(1) || '0.0'}%
-            </div>
-          </div>
+          </ChartContainer>
 
-          <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-6 hover:shadow-2xl transition-all duration-500 animate-fade-in-up shadow-xl hover:-translate-y-1">
-            <h3 className="text-lg font-semibold mb-4 text-foreground">Storage Used (%)</h3>
+          <ChartContainer
+            title="Storage Used (%)"
+            subtitle={`Current: ${memoryHistory[memoryHistory.length - 1]?.value.toFixed(1) || '0.0'}%`}
+            height={280}
+          >
             <TimeSeriesChart data={memoryHistory} color="hsl(var(--success))" height={200} />
-            <div className="mt-4 text-sm text-muted-foreground" suppressHydrationWarning>
-              Current: {memoryHistory[memoryHistory.length - 1]?.value.toFixed(1) || '0.0'}%
-            </div>
-          </div>
+          </ChartContainer>
 
-          <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-6 hover:shadow-2xl transition-all duration-500 animate-fade-in-up shadow-xl hover:-translate-y-1">
-            <h3 className="text-lg font-semibold mb-4 text-foreground">Requests/min</h3>
+          <ChartContainer
+            title="Requests/min"
+            subtitle={`Current: ${requestsHistory[requestsHistory.length - 1]?.value || 0}`}
+            height={280}
+          >
             <TimeSeriesChart data={requestsHistory} color="hsl(var(--warning))" height={200} />
-            <div className="mt-4 text-sm text-muted-foreground" suppressHydrationWarning>
-              Current: {requestsHistory[requestsHistory.length - 1]?.value || 0}
-            </div>
-          </div>
+          </ChartContainer>
         </div>
       </div>
 
@@ -168,16 +161,14 @@ const DashboardPage = () => {
         <h2 className="text-2xl font-bold mb-6 text-foreground">Active Users</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {users.slice(0, 6).map((user) => (
-            <div key={user.id} className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-6 hover:shadow-2xl transition-all duration-500 animate-fade-in-up shadow-xl hover:-translate-y-1">
-              <div className="flex items-center gap-4">
-                <RealTimeStatusBadge status={user.status} label={user.name} />
-                <div>
-                  <h3 className="font-semibold text-foreground">{user.name}</h3>
-                  <p className="text-sm text-muted-foreground">{user.activity}</p>
-                  <p className="text-xs text-muted-foreground">{user.status}</p>
-                </div>
-              </div>
-            </div>
+            <UserCard
+              key={user.id}
+              id={user.id}
+              name={user.name}
+              status={user.status}
+              lastSeen={user.lastSeen}
+              activity={user.activity}
+            />
           ))}
         </div>
       </div>
@@ -187,22 +178,15 @@ const DashboardPage = () => {
         <h2 className="text-2xl font-bold mb-6 text-foreground">Notifications</h2>
         <div className="space-y-4">
           {notifications.slice(0, 5).map((notification) => (
-            <div key={notification.id} className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-6 hover:shadow-2xl transition-all duration-500 animate-fade-in-up shadow-xl hover:-translate-y-1 {!notification.read && 'border-l-4 border-l-primary'}">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${notification.type === 'error' ? 'bg-danger/20 text-danger' : notification.type === 'warning' ? 'bg-warning/20 text-warning' : notification.type === 'success' ? 'bg-success/20 text-success' : 'bg-info/20 text-info'}`}>
-                      {notification.type}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {new Date(notification.timestamp).toLocaleString()}
-                    </span>
-                  </div>
-                  <h3 className="font-semibold text-foreground mb-1">{notification.title}</h3>
-                  <p className="text-sm text-muted-foreground">{notification.message}</p>
-                </div>
-              </div>
-            </div>
+            <NotificationCard
+              key={notification.id}
+              id={notification.id}
+              type={notification.type}
+              title={notification.title}
+              message={notification.message}
+              timestamp={notification.timestamp}
+              read={notification.read}
+            />
           ))}
         </div>
       </div>
