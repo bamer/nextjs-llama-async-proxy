@@ -1,19 +1,15 @@
 import { NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
+import { spawn } from 'child_process';
+import { ModelState, ExtendedState } from '@/lib/types';
+import { MODEL_NAME_REGEX } from '@/lib/constants';
+import { STATE_FILE, persistState } from '@/lib/state-file';
 
-// ---------- CONFIG ----------
-const STATE_FILE = path.join(process.cwd(), 'data', 'models-state.json');
-const MODEL_NAME_REGEX = /^[a-zA-Z0-9_-]+$/;
-
-// ---------- TYPE DEFINITIONS ----------
-type ModelState = 'idle' | 'starting' | 'started' | 'error';
-type StateCache = Record<string, ModelState>;
-
-// In‑memory cache that persists across requests
-let STATE_CACHE: StateCache = {};
-
-// Load the cache once when the module is first imported
+/* ---------------------------------------------------------------------
+ * Load the extended state once (module initialization)
+ * --------------------------------------------------------------------- */
+let STATE_CACHE: ExtendedState = {};
 (async () => {
   try {
     const raw = await fs.promises.readFile(STATE_FILE, 'utf8');
@@ -23,104 +19,165 @@ let STATE_CACHE: StateCache = {};
   }
 })();
 
-// ---------- HELPERS ----------
-function readState(): StateCache {
-  return STATE_CACHE;
+/* ---------------------------------------------------------------------
+ * Process tracking – model name => { pid, launchedAt }
+ * --------------------------------------------------------------------- */
+const runningProcesses = new Map<string, { pid: number; launchedAt: number }>();
+
+/* ---------------------------------------------------------------------
+ * Validation helper
+ * --------------------------------------------------------------------- */
+function validateModelName(raw: string): string {
+  if (!raw || !MODEL_NAME_REGEX.test(raw)) {
+    throw new Error('Invalid model name');
+  }
+  return raw.trim();
 }
 
-async function writeState(state: StateCache): Promise<void> {
-  // Simple atomic write – overwrite the file with the new state
-  await fs.promises.writeFile(STATE_FILE, JSON.stringify(state), 'utf8');
+/* ---------------------------------------------------------------------
+ * Core process control
+ * --------------------------------------------------------------------- */
+async function startProcess(model: string): Promise<{ pid: number; launchedAt: number }> {
+  if (runningProcesses.has(model)) return runningProcesses.get(model)!;
+
+  const llamaBin = path.join(process.cwd(), 'data', 'models', model, 'model.bin');
+  const cmd = '/usr/local/bin/llama.cpp';
+  const args = [
+    '-m',
+    llamaBin,
+    '-c',
+    '2048',
+    '-ngl',
+    '0',
+    '-p',
+    '"prompt=Hello from Next.js API"',
+  ];
+
+  const child = spawn(cmd, args, { detached: true, stdio: 'ignore' });
+  child.unref();
+
+  const launchedAt = Date.now();
+  const pid = child.pid!;
+  runningProcesses.set(model, { pid, launchedAt });
+  return { pid, launchedAt };
 }
 
-// ---------- POST /api/models/[name]/start ----------
-export async function POST(request: { nextUrl: { pathname: string } }) {
+function stopProcess(model: string): boolean {
+  if (!runningProcesses.has(model)) return false;
+  const { pid } = runningProcesses.get(model)!;
   try {
-    // ------- Input Validation -------
+    process.kill(pid, 'SIGTERM');
+  } catch {
+    // ignore – process may have already exited
+  }
+  runningProcesses.delete(model);
+  return true;
+}
+
+/* ---------------------------------------------------------------------
+ * GET handler – returns current status of a model
+ * --------------------------------------------------------------------- */
+export async function GET(request: { nextUrl: { pathname: string } }) {
+  try {
     const pathname = request.nextUrl.pathname;
     const segments = pathname.split('/');
     const rawModelName = segments[segments.length - 2];
+    const model = validateModelName(rawModelName);
 
-    // Strict whitelist validation
-    if (!rawModelName || !MODEL_NAME_REGEX.test(rawModelName)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid model name' },
-        { status: 400 }
-      );
-    }
-    const modelName = rawModelName.trim();
+    const current = STATE_CACHE as Record<string, any>;
+    const status = (current[model] as ModelState)?.status ?? 'idle';
 
-    // ------- State Manipulation -------
-    const state = readState();
-    const previousStatus = state[modelName] ?? 'idle';
-    if (previousStatus !== 'idle' && previousStatus !== 'error') {
+    return NextResponse.json({ modelName: model, status });
+  } catch {
+    return NextResponse.json({ error: 'Invalid model name' }, { status: 400 });
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * POST handler – start or mark as starting a model
+ * --------------------------------------------------------------------- */
+export async function POST(request: { nextUrl: { pathname: string } }) {
+  try {
+    const pathname = request.nextUrl.pathname;
+    const segments = pathname.split('/');
+    const rawModelName = segments[segments.length - 2];
+    const model = validateModelName(rawModelName);
+
+    const current = STATE_CACHE as Record<string, any>;
+
+    // Enforce transition rules: only from idle or error
+    const previous = (current[model] as ModelState)?.status ?? 'idle';
+    if (previous !== 'idle' && previous !== 'error') {
       return NextResponse.json(
         {
           success: false,
-          modelName,
+          modelName: model,
           error: 'Model is already in progress or started',
-          previousStatus,
+          previousStatus: previous,
         },
         { status: 409 }
       );
     }
 
-    // Transition to starting, then to started
-    state[modelName] = 'starting';
-    await writeState(state);
+    // Start the underlying llama.cpp process
+    const { pid, launchedAt } = await startProcess(model);
 
-    state[modelName] = 'started';
-    await writeState(state);
+    // Transition state to "starting" then "started"
+    current[model] = { ...(current[model] as ModelState), pid, launchedAt, status: 'starting' };
+    await persistState(current);
+
+    current[model] = { ...(current[model] as ModelState), status: 'started' };
+    await persistState(current);
 
     return NextResponse.json({
       success: true,
-      modelName,
+      modelName: model,
       message: 'Model started successfully',
-      previousStatus,
+      previousStatus: previous,
+      pid,
+      launchedAt,
     });
   } catch (error: any) {
-    console.error('Unexpected error in POST /api/models/[name]/start:', error);
+    console.error('Error starting model:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString(),
-      },
+      { success: false, error: 'Failed to start model', details: error.message },
       { status: 500 }
     );
   }
 }
 
-// ---------- GET /api/models/[name]/start ----------
-export async function GET(request: { nextUrl: { pathname: string } }) {
+/* ---------------------------------------------------------------------
+ * POST_STOP handler – stop a running model
+ * --------------------------------------------------------------------- */
+export async function POST_STOP(request: { nextUrl: { pathname: string } }) {
   try {
-    // ------- Input Validation -------
     const pathname = request.nextUrl.pathname;
     const segments = pathname.split('/');
     const rawModelName = segments[segments.length - 2];
+    const model = validateModelName(rawModelName);
 
-    if (!rawModelName || !MODEL_NAME_REGEX.test(rawModelName)) {
-      return NextResponse.json(
-        { error: 'Invalid model name' },
-        { status: 400 }
-      );
-    }
-    const modelName = rawModelName.trim();
+    const stopped = stopProcess(model);
 
-    // ------- Return current status -------
-    const state = readState();
-    const status = state[modelName] ?? 'idle';
+    const current = STATE_CACHE as Record<string, any>;
+    const state = current[model] as ModelState;
+    current[model] = {
+      ...state,
+      status: 'error',
+      error: stopped ? 'stopped_by_user' : 'was_not_running',
+    };
+    await persistState(current);
 
-    return NextResponse.json({ modelName, status });
-  } catch (error) {
-    console.error('Unexpected error in GET /api/models/[name]/start:', error);
+    return NextResponse.json({
+      success: stopped,
+      modelName: model,
+      message: stopped
+        ? 'Model stopped successfully'
+        : 'Model was not running',
+    });
+  } catch (error: any) {
+    console.error('Error stopping model:', error);
     return NextResponse.json(
-      {
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString(),
-      },
+      { success: false, error: 'Failed to stop model', details: error.message },
       { status: 500 }
     );
   }

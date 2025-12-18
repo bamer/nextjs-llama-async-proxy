@@ -1,5 +1,5 @@
-// nextjs-llama-async-proxy/src/app/api/models/[name]/stop/route.ts
 import { NextResponse } from 'next/server';
+import { stopModel } from '@/lib/ollama';
 
 interface ModelStopResponse {
   success: boolean;
@@ -9,39 +9,40 @@ interface ModelStopResponse {
 }
 
 export async function POST(request: { nextUrl: { pathname: string } }) {
-  const modelName = request.nextUrl.pathname.split('/').pop() || '';
-  
-  if (!modelName) {
-    return NextResponse.json(
-      { success: false, error: 'Model name is required' },
-      { status: 400 }
-    );
-  }
-  
   try {
-    // Simulate stopping the model via backend
-    // In a real implementation, this would call:
-    // `ollama stop ${modelName}` or interact with the backend API
+    const pathname = request.nextUrl.pathname;
+    const segments = pathname.split('/');
+    const rawModelName = segments[segments.length - 2];
+
+    if (!rawModelName) {
+      return NextResponse.json(
+        { success: false, error: 'Model name is required' },
+        { status: 400 }
+      );
+    }
+
+    // Use the real Ollama client to stop the model
+    const result = await stopModel(rawModelName);
     return NextResponse.json({
       success: true,
-      modelName,
-      message: 'Model stop request processed successfully',
+      modelName: rawModelName,
+      ...result,
     } as ModelStopResponse);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error stopping model:', error);
     return NextResponse.json(
       {
         success: false,
-        modelName: modelName || 'unknown',
-        error: 'Failed to execute command: ' + (error instanceof Error ? error.message : 'Unknown error'),
+        modelName: rawModelName || 'unknown',
+        error: 'Failed to execute stop command',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
   }
 }
 
-// GET /api/models/[name]/stop
-// Returns the status of the model stop request
+// GET is not supported for stopping models
 export async function GET() {
   return NextResponse.json(
     { error: 'Only POST method is supported for stopping models' },

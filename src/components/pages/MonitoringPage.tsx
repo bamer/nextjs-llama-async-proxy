@@ -1,62 +1,45 @@
-'use client';
-
 import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Typography,
+  Chip,
+  CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+} from '@mui/material';
 import { useWebSocket } from '../websocket/WebSocketManager';
-
-interface LogEntry {
-  level: 'info' | 'warn' | 'error' | 'debug';
-  message: string;
-  timestamp: number;
-}
+import type { MonitoringEntry } from '@/types/monitoring';
 
 const MonitoringPage = () => {
   const { isConnected, lastMessage } = useWebSocket();
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [metrics, setMetrics] = useState({
-    systemMetrics: [
-      { name: 'CPU Usage', value: '45%' },
-      { name: 'Memory Used', value: '1.2 GB' },
-      { name: 'Disk Usage', value: '8.5 GB' },
-      { name: 'Network In', value: '2.4 Mbps' },
-      { name: 'Network Out', value: '1.7 Mbps' }
-    ],
-    modelMetrics: [
-      { name: 'Active Models', value: '3' },
-      { name: 'Model Load Time', value: '2.1s' },
-      { name: 'GPU Usage', value: '65%' },
-      { name: 'Memory Allocation', value: '7.8 GB' }
-    ]
-  });
+  const [logs, setLogs] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Update metrics when WebSocket data arrives or fetch real monitoring data
   const fetchMonitoringData = async () => {
     try {
-      const response = await fetch('/api/monitoring');
-      if (response.ok) {
-        const data = await response.json();
-        setMetrics({
-          systemMetrics: [
-            { name: 'CPU Usage', value: `${data.system.cpu.usage.toFixed(1)}%` },
-            { name: 'Memory Used', value: `${data.system.memory.used} GB` },
-            { name: 'Disk Usage', value: `${data.system.disk.used} GB` },
-            { name: 'Network RX', value: `${(data.system.network.rx / 1000000).toFixed(2)} MB` },
-            { name: 'Network TX', value: `${(data.system.network.tx / 1000000).toFixed(2)} MB` }
-          ],
-          modelMetrics: [
-            { name: 'Active Models', value: data.models.filter((m: any) => m.status === 'running').length.toString() },
-            { name: 'Total Memory', value: `${data.models.reduce((sum: number, m: any) => sum + m.memory, 0).toFixed(1)} GB` },
-            { name: 'Total Requests', value: data.models.reduce((sum: number, m: any) => sum + m.requests, 0).toString() },
-            { name: 'Uptime', value: `${Math.floor(data.system.uptime / 3600)}h ${Math.floor((data.system.uptime % 3600) / 60)}m` }
-          ]
-        });
+      const response = await fetch('/api/monitoring/latest');
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-    } catch (error) {
-      console.error('Failed to fetch monitoring data:', error);
+      const data: MonitoringEntry = await response.json();
+
+      setMetrics(data);
+    } catch (err: any) {
+      console.error('Failed to fetch monitoring data:', err);
+      setError(err.message || 'Unknown error');
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Fetch data immediately and then every 30 seconds
     fetchMonitoringData();
     const interval = setInterval(fetchMonitoringData, 30000);
     return () => clearInterval(interval);
@@ -72,65 +55,157 @@ const MonitoringPage = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ color: 'error.main', display: 'flex', justifyContent: 'center', py: 4 }}>
+        {error}
+      </Box>
+    );
+  }
+
+  if (!metrics) {
+    return (
+      <Box sx={{ color: 'error.main', display: 'flex', justifyContent: 'center', py: 4 }}>
+        No monitoring data available
+      </Box>
+    );
+  }
+
   return (
-    <div className="monitoring-page">
-      <h1 className="text-3xl font-bold mb-8 text-foreground">Real-time Monitoring</h1>
-       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-300">
-          <h2 className="text-xl font-bold mb-6 text-foreground">System Metrics</h2>
-          <div className="flex flex-col gap-4">
-            {metrics.systemMetrics.map((metric, index) => (
-              <div key={index} className="flex justify-between items-center py-2 border-b border-border last:border-b-0">
-                <span className="text-muted-foreground font-medium">{metric.name}</span>
-                <span className="font-mono text-foreground font-bold">{metric.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+    <Box sx={{ p: 4 }}>
+      <Typography variant="h4" gutterBottom>
+        Real‑time Monitoring
+      </Typography>
 
-        <div className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-300">
-          <h2 className="text-xl font-bold mb-6 text-foreground">Model Performance</h2>
-          <div className="flex flex-col gap-4">
-            {metrics.modelMetrics.map((metric, index) => (
-              <div key={index} className="flex justify-between items-center py-2 border-b border-border last:border-b-0">
-                <span className="text-muted-foreground font-medium">{metric.name}</span>
-                <span className="font-mono text-foreground font-bold">{metric.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        <div className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-300">
-          <h2 className="text-xl font-bold mb-6 text-foreground">Connection Status</h2>
-          <div className="flex items-center gap-3 mb-4">
-            <div className={`w-4 h-4 rounded-full ${isConnected ? 'bg-success' : 'bg-danger'}`}></div>
-            <span className="text-foreground font-medium">{isConnected ? 'Connected' : 'Disconnected'}</span>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Last update: {lastMessage ? new Date(lastMessage.timestamp).toLocaleTimeString() : 'Never'}
-          </div>
-        </div>
-      </div>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1 fr 1 fr 1 fr', gap: 6, mb: 6 }}>
+        {/* System Metrics */}
+        <Paper sx={{ p: 3, borderRadius: 2, boxShadow: 2 }} 
+          >
+            <Typography variant="h6" gutterBottom>
+              System Metrics
+            </Typography>
+            <Table sx={{ minWidth: 0 }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Metric</TableCell>
+                  <TableCell>Value</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                <TableRow>
+                  <TableCell>CPU Usage</TableCell>
+                  <TableCell>{`${(metrics.system.cpu.usage as number).toFixed(1)}%`}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Memory Used</TableCell>
+                  <TableCell>{`${metrics.system.memory.used as number} GB`}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Disk Usage</TableCell>
+                  <TableCell>{`${metrics.system.disk.used as number} GB`}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Network RX</TableCell>
+                  <TableCell>{`${(metrics.system.network.rx as number / 1000000).toFixed(2)} MB`}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Network TX</TableCell>
+                  <TableCell>{`${(metrics.system.network.tx as number / 1000000).toFixed(2)} MB`}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Uptime</TableCell>
+                  <TableCell>{`${Math.floor(metrics.system.uptime / 3600)}h ${Math.floor((metrics.system.uptime % 3600) / 60)}m`}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </Paper>
 
-      <div className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-300">
-        <h2 className="text-2xl font-bold mb-6 text-foreground">Live Logs</h2>
-        <div className="bg-muted rounded-lg p-4 max-h-96 overflow-y-auto font-mono text-sm">
-          {logs.length === 0 ? (
-            <div className="text-muted-foreground py-8 text-center">No logs available...</div>
-          ) : (
-            logs.map((log, index) => (
-              <div key={index} className={`mb-2 ${getLogLevelColor(log.level)}`}>
-                <span className="text-muted-foreground">
-                  [{new Date(log.timestamp).toLocaleTimeString()}]
-                </span>
-                <span className="ml-3">{log.message}</span>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
+        {/* Model Performance */}
+        <Paper sx={{ p: 3, borderRadius: 2, boxShadow: 2 }} 
+          >
+            <Typography variant="h6" gutterBottom>
+              Model Performance
+            </Typography>
+            <Table sx={{ minWidth: 0 }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Metric</TableCell>
+                  <TableCell>Value</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                <TableRow>
+                  <TableCell>Active Models</TableCell>
+                  <TableCell>{metrics.models.filter((m: any) => m.status === 'running').length}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Total Memory</TableCell>
+                  <TableCell>{`${metrics.models.reduce((sum: number, m: any) => sum + (m.memory as number), 0).toFixed(1)} GB`}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Total Requests</TableCell>
+                  <TableCell>{metrics.models.reduce((sum: number, m: any) => sum + (m.requests as number), 0).toString()}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Uptime</TableCell>
+                  <TableCell>{`${Math.floor(metrics.system.uptime / 3600)}h ${Math.floor((metrics.system.uptime % 3600) / 60)}m`}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </Paper>
+
+        {/* Connection Status */}
+        <Paper sx={{ p: 3, borderRadius: 2, boxShadow: 2 }} 
+          >
+            <Typography variant="h6" gutterBottom>
+              Connection Status
+            </Typography>
+            <Box component="section" sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 2 }}>
+              <CircularProgress
+                size={20}
+                variant="determinate"
+                sx={{ color: isConnected ? 'success.main' : 'error.main' }}
+              />
+              <Chip label={isConnected ? 'Connected' : 'Disconnected'} color={isConnected ? 'success' : 'error'} size="small" />
+              <Typography component="span" color="textSecondary">
+                Last update: {lastMessage ? new Date(lastMessage.timestamp).toLocaleTimeString() : 'Never'}
+              </Typography>
+            </Box>
+          </Paper>
+
+        {/* Live Logs */}
+        <Paper sx={{ p: 3, borderRadius: 2, boxShadow: 2 }} 
+          >
+            <Typography variant="h6" gutterBottom>
+              Live Logs
+            </Typography>
+            <Box sx={{ maxHeight: 300, overflowY: 'auto', p: 2, borderRadius: 2, backgroundColor: 'background.paper' }}>
+              {logs.length === 0 ? (
+                <Typography>No logs available...</Typography>
+              ) : (
+                logs.map((log: any, index: number) => (
+                  <Box key={index} sx={{ mb: 1, display: 'flex', gap: 1 }}>
+                    <Typography component="span" color={getLogLevelColor(log.level)}>
+                      [{new Date(log.timestamp).toLocaleTimeString()}]
+                    </Typography>
+                    <Typography>{log.message}</Typography>
+                  </Box>
+                ))
+              )}
+            </Box>
+          </Paper>
+        </Box>
+
+    </Box>
   );
 };
 
