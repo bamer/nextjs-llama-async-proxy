@@ -4,13 +4,20 @@
   "maxConcurrentModels": 5,
   "autoUpdate": true,
   "notificationsEnabled": true,
-  "modelDefaults": {
+  "modelDefaultsParams": {
     "ctx_size": 128000,
     "batch_size": 2048,
     "temperature": 0.8,
     "top_p": 0.9,
     "top_k": 40,
     "gpu_layers": -1,
-    "threads": -1
+    "threads": -1,
+    "supports_tools": true
+  },
+  "runtimes": {
+    "llama-server": {
+      "runtime_windows": "F:/llm/llama/llama-server.exe",
+      "runtime_linux": "/home/bamer/llama.cpp/build/bin"
+    }
   }
 }
