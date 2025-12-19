@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { WebSocketProvider } from "../components/websocket/WebSocketManager";
 import { ThemeProvider } from "next-themes";
-import { MuiThemeProviderWrapper } from "../components/ui/MuiThemeProvider";
 import Layout from "../components/layout/Layout";
 
 const geistSans = Geist({
@@ -33,11 +32,9 @@ export default function RootLayout({
       >
         <WebSocketProvider>
           <ThemeProvider>
-            <MuiThemeProviderWrapper>
-              <Layout>
-                {children}
-              </Layout>
-            </MuiThemeProviderWrapper>
+            <Layout>
+              {children}
+            </Layout>
           </ThemeProvider>
         </WebSocketProvider>
       </body>

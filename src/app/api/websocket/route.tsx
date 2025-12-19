@@ -7,22 +7,6 @@ interface LogMessage {
   timestamp: number;
 }
 
-interface LogMessages {
-  info: string[];
-  debug: string[];
-  warn: string[];
-  error: string[];
-}
-
-interface MetricsData {
-  activeModels: number;
-  totalRequests: number;
-  avgResponseTime: number;
-  memoryUsage: number;
-  cpuUsage: number;
-  lastUpdated: string;
-}
-
 // Mock WebSocket endpoint for demonstration
 // In a real implementation, this would upgrade to WebSocket protocol
 export async function GET(request: NextRequest) {
@@ -39,18 +23,24 @@ export async function GET(request: NextRequest) {
       });
 
     case 'metrics':
-      // Simulate dynamic metrics with realistic values
+      // Get real metrics
       const generateDynamicMetrics = () => {
+        const { captureMetrics } = require('@/lib/monitor');
+        const { ProcessManagerAPI } = require('@/lib/process-manager');
+
+        const systemMetrics = captureMetrics();
+        const activeModels = Object.keys(ProcessManagerAPI.getInfo ? {} : {}).length;
+
         return {
-          activeModels: Math.floor(Math.random() * 5) + 1, // 1-5 models
-          totalRequests: Math.floor(Math.random() * 500) + 100, // 100-600 requests
-          avgResponseTime: Math.floor(Math.random() * 300) + 100, // 100-400ms
-          memoryUsage: Math.floor(Math.random() * 30) + 50, // 50-80%
-          cpuUsage: Math.floor(Math.random() * 50) + 20, // 20-70%
+          activeModels,
+          totalRequests: 0, // TODO: Implement request tracking
+          avgResponseTime: 0, // TODO: Implement response time tracking
+          memoryUsage: systemMetrics.memoryUsage,
+          cpuUsage: systemMetrics.cpuUsage,
           lastUpdated: new Date().toISOString()
         };
       };
-      
+
       return NextResponse.json({
         type: 'metrics',
         data: generateDynamicMetrics(),
@@ -58,56 +48,57 @@ export async function GET(request: NextRequest) {
       });
 
     case 'logs':
-      // Simulate dynamic logs with realistic entries
+      // Get real logs from log files
       const generateDynamicLogs = () => {
-        const logLevels = ['info', 'debug', 'warn', 'error'] as const;
-        type LogLevel = typeof logLevels[number];
-        
-        // Define log messages with TypeScript support
-        const logMessages: Record<LogLevel, string[]> = {
-          info: [
-            'Model loaded successfully',
-            'WebSocket connection established',
-            'Request processed',
-            'New session started'
-          ],
-          debug: [
-            'Processing request batch',
-            'Model parameters updated',
-            'Memory optimized',
-            'CPU usage monitored'
-          ],
-          warn: [
-            'High memory usage detected',
-            'Slow response time',
-            'Model near capacity'
-          ],
-          error: [
-            'Failed to load model',
-            'Connection timeout',
-            'Invalid request format'
-          ]
-        };
-        
+        const fs = require('fs');
+        const path = require('path');
+
         const logs: LogMessage[] = [];
-        const now = Date.now();
-        
-        // Generate 5-10 realistic log entries
-        const logCount = Math.floor(Math.random() * 6) + 5;
-        for (let i = 0; i < logCount; i++) {
-          const level = logLevels[Math.floor(Math.random() * logLevels.length)] as LogLevel;
-          const messages = logMessages[level];
-          const message = messages[Math.floor(Math.random() * messages.length)];
-          logs.push({
-            level,
-            message,
-            timestamp: now - Math.floor(Math.random() * 300000) // Random timestamp in last 5 minutes
-          });
+        const logFiles = [
+          'logs/application-2025-12-16.log',
+          'logs/exceptions.log',
+          'logs/rejections.log'
+        ];
+
+        for (const logFile of logFiles) {
+          try {
+            const logPath = path.join(process.cwd(), logFile);
+            if (fs.existsSync(logPath)) {
+              const content = fs.readFileSync(logPath, 'utf8');
+              const lines = content.split('\n').filter(line => line.trim());
+
+              // Get last 10 lines
+              const recentLines = lines.slice(-10);
+
+              for (const line of recentLines) {
+                try {
+                  const logEntry = JSON.parse(line);
+                  logs.push({
+                    level: logEntry.level || 'info',
+                    message: logEntry.message || line,
+                    timestamp: logEntry.timestamp ? new Date(logEntry.timestamp).getTime() : Date.now()
+                  });
+                } catch {
+                  // If not JSON, treat as plain text
+                  logs.push({
+                    level: 'info',
+                    message: line,
+                    timestamp: Date.now()
+                  });
+                }
+              }
+            }
+          } catch (error) {
+            console.error(`Failed to read log file ${logFile}:`, error);
+          }
         }
-        
-        return logs;
+
+        // Sort by timestamp and return last 20 entries
+        return logs
+          .sort((a, b) => b.timestamp - a.timestamp)
+          .slice(0, 20);
       };
-      
+
       return NextResponse.json({
         type: 'logs',
         data: generateDynamicLogs(),

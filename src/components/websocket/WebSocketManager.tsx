@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState, createContext, useContext, ReactNode } from 'react';
+import { useEffect, useState, createContext, useContext, ReactNode } from 'react';
+import { useWebSocket as useSocketHook } from '@/hooks/useWebSocket';
 
 interface WebSocketMessage {
   type: string;
@@ -11,96 +12,50 @@ interface WebSocketMessage {
 interface WebSocketContextType {
   isConnected: boolean;
   lastMessage: WebSocketMessage | null;
-  sendMessage: (message: any) => void;
+  sendMessage: (event: string, data?: any) => void;
   connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
+  getMetrics: () => void;
+  getLogs: () => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
-  const [isConnected, setIsConnected] = useState(false);
-  const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
+  const { isConnected, lastMessage, sendMessage, connect, disconnect } = useSocketHook();
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttempts = useRef(0);
-  const maxReconnectAttempts = 5;
-
-  const pollServer = async () => {
-    try {
-      const response = await fetch('/api/websocket?action=status');
-      if (response.ok) {
-        const data = await response.json();
-        setIsConnected(true);
-        setConnectionStatus('connected');
-        setLastMessage({
-          type: 'status',
-          data,
-          timestamp: Date.now()
-        });
-        reconnectAttempts.current = 0;
-      } else {
-        // Don't treat 404 as critical error, just mark as disconnected
-        setIsConnected(false);
-        setConnectionStatus('disconnected');
-      }
-    } catch (error) {
-      // Network errors are expected in development
-      setIsConnected(false);
-      setConnectionStatus('disconnected');
-    }
-  };
-
-  const startPolling = () => {
-    setConnectionStatus('connecting');
-    pollServer(); // Initial poll
-
-    pollIntervalRef.current = setInterval(pollServer, 30000); // Poll every 30 seconds
-  };
-
-  const sendMessage = async (message: any) => {
-    try {
-      const response = await fetch('/api/websocket', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(message),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setLastMessage({
-          type: 'response',
-          data: result,
-          timestamp: Date.now()
-        });
-      } else {
-        console.error('Failed to send message:', response.statusText);
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-    }
-  };
 
   useEffect(() => {
-    startPolling();
+    connect();
+    setConnectionStatus('connecting');
 
     return () => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-      }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
+      disconnect();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [connect, disconnect]);
+
+  useEffect(() => {
+    if (isConnected) {
+      setConnectionStatus('connected');
+    } else {
+      setConnectionStatus('disconnected');
+    }
+  }, [isConnected]);
+
+  const getMetrics = () => {
+    sendMessage('getMetrics');
+  };
+
+  const getLogs = () => {
+    sendMessage('getLogs');
+  };
 
   const value: WebSocketContextType = {
     isConnected,
     lastMessage,
     sendMessage,
     connectionStatus,
+    getMetrics,
+    getLogs,
   };
 
   return (

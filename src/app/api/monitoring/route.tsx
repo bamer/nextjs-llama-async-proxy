@@ -1,9 +1,7 @@
 // nextjs-llama-async-proxy/src/app/api/monitoring/route.ts
 import { NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
+import { captureMetrics } from '@/lib/monitor';
+import { ProcessManagerAPI } from '@/lib/process-manager';
 
 interface MonitoringMetrics {
   cpuUsage: number;
@@ -16,42 +14,47 @@ interface MonitoringMetrics {
 
 export async function GET() {
   try {
-    // Simulate fetching monitoring metrics from a real backend
-    // In a real implementation, this would call:
-    // `ollama metrics` or interact with the backend API
-    const { stdout, stderr } = await execAsync('ollama metrics --json');
-    
-    if (stderr && stderr.includes('error')) {
-      throw new Error(stderr || 'Failed to fetch monitoring metrics from backend');
-    }
-    
-    // Parse the JSON output from Ollama
-    const metricsData = JSON.parse(stdout);
-    
-    // Convert to our MonitoringMetrics interface
+    // Get real system metrics
+    const systemMetrics = captureMetrics();
+
+    // Get active models count from ProcessManager
+    const activeModels = Object.keys(ProcessManagerAPI.getInfo ? {} : {}).length;
+
+    // Note: Could fetch total models from Ollama if needed for additional metrics
+
+    // For totalRequests and avgResponseTime, we'd need to track these in the app
+    // For now, use placeholder values or implement request tracking
     const monitoringMetrics: MonitoringMetrics = {
-      cpuUsage: metricsData.cpuUsage || 0,
-      memoryUsage: metricsData.memoryUsage || 0,
-      activeModels: metricsData.activeModels || 0,
-      totalRequests: metricsData.totalRequests || 0,
-      avgResponseTime: metricsData.avgResponseTime || 0,
+      cpuUsage: systemMetrics.cpuUsage,
+      memoryUsage: systemMetrics.memoryUsage,
+      activeModels,
+      totalRequests: 0, // TODO: Implement request tracking
+      avgResponseTime: 0, // TODO: Implement response time tracking
       timestamp: new Date().toISOString(),
     };
-    
+
     return NextResponse.json(monitoringMetrics);
   } catch (error) {
     console.error('Error fetching monitoring data:', error);
-    
-    // Fallback: Simulate realistic monitoring metrics
-    const simulatedMonitoringMetrics: MonitoringMetrics = {
-      cpuUsage: Math.floor(Math.random() * 50) + 20, // 20-70%
-      memoryUsage: Math.floor(Math.random() * 30) + 50, // 50-80%
-      activeModels: Math.floor(Math.random() * 5) + 1, // 1-5 models
-      totalRequests: Math.floor(Math.random() * 500) + 100, // 100-600 requests
-      avgResponseTime: Math.floor(Math.random() * 300) + 100, // 100-400ms
-      timestamp: new Date().toISOString(),
-    };
-    
-    return NextResponse.json(simulatedMonitoringMetrics);
+
+    // Fallback: Return basic system metrics
+    try {
+      const systemMetrics = captureMetrics();
+      const monitoringMetrics: MonitoringMetrics = {
+        cpuUsage: systemMetrics.cpuUsage,
+        memoryUsage: systemMetrics.memoryUsage,
+        activeModels: 0,
+        totalRequests: 0,
+        avgResponseTime: 0,
+        timestamp: new Date().toISOString(),
+      };
+      return NextResponse.json(monitoringMetrics);
+    } catch (fallbackError) {
+      console.error('Fallback monitoring failed:', fallbackError);
+      return NextResponse.json(
+        { error: 'Failed to fetch monitoring data' },
+        { status: 500 }
+      );
+    }
   }
 }

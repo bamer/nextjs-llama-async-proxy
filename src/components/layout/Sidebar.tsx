@@ -48,7 +48,7 @@ const Sidebar = () => {
             <Link
               key={item.id}
               href={item.path}
-                className={`flex justify-start items-center p-4 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 shadow-sm hover:shadow-md ${isActive(item.path) ? getActiveClasses() : 'text-foreground dark:text-foreground'}`}
+                className={`flex justify-start items-center p-4 rounded-xl hover:bg-primary-100 hover:text-primary-900 dark:hover:bg-primary-900 dark:hover:text-primary-100 transition-all duration-200 shadow-sm hover:shadow-md ${isActive(item.path) ? getActiveClasses() : 'text-foreground dark:text-foreground'}`}
             >
               <IconComponent className="mr-4 h-5 w-5 transition-all duration-200" />
               <span className="font-semibold">{item.label}</span>

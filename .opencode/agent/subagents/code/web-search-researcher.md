@@ -1,7 +1,7 @@
 ---
 description: Analyzes web content from URLs provided by the user. Use this agent when you need to fetch and analyze documentation, blog posts, or other web resources.
 mode: subagent
-model: llama.cpp/qwen3-coder
+model: llama.cpp/memotron
 temperature: 0.1
 tools:
   read: true

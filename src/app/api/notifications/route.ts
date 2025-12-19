@@ -1,4 +1,7 @@
 import { NextRequest } from 'next/server';
+import fs from 'fs';
+import path from 'path';
+import { captureMetrics } from '@/lib/monitor';
 
 interface Notification {
   id: string;
@@ -9,58 +12,103 @@ interface Notification {
   read: boolean;
 }
 
+// Log files to monitor
+const LOG_FILES = [
+  'logs/application-2025-12-16.log', // Today's log
+  'logs/exceptions.log',
+  'logs/rejections.log'
+];
+
 export async function GET(request: NextRequest) {
   const encoder = new TextEncoder();
 
   const generateNotifications = (): Notification[] => {
-    const notifications: Notification[] = [
-      {
-        id: '1',
-        type: 'info',
-        title: 'System Update',
-        message: 'The system has been updated successfully.',
-        timestamp: new Date().toISOString(),
-        read: false
-      },
-      {
-        id: '2',
-        type: 'warning',
-        title: 'High CPU Usage',
-        message: 'CPU usage is above 80%. Consider optimizing processes.',
-        timestamp: new Date(Date.now() - 300000).toISOString(),
-        read: false
-      },
-      {
-        id: '3',
-        type: 'error',
-        title: 'Connection Failed',
-        message: 'Failed to connect to external service.',
-        timestamp: new Date(Date.now() - 600000).toISOString(),
-        read: true
-      },
-      {
-        id: '4',
-        type: 'success',
-        title: 'Backup Completed',
-        message: 'Daily backup has been completed successfully.',
-        timestamp: new Date(Date.now() - 900000).toISOString(),
-        read: true
-      }
-    ];
+    const notifications: Notification[] = [];
 
-    // Simulate new notifications occasionally
-    if (Math.random() > 0.8) {
-      notifications.unshift({
-        id: Date.now().toString(),
-        type: 'info',
-        title: 'New User Connected',
-        message: 'A new user has joined the system.',
-        timestamp: new Date().toISOString(),
-        read: false
-      });
+    // Check system metrics for alerts
+    try {
+      const metrics = captureMetrics();
+      if (metrics.cpuUsage > 80) {
+        notifications.push({
+          id: `cpu-${Date.now()}`,
+          type: 'warning',
+          title: 'High CPU Usage',
+          message: `CPU usage is at ${metrics.cpuUsage}%. Consider optimizing processes.`,
+          timestamp: new Date().toISOString(),
+          read: false
+        });
+      }
+      if (metrics.memoryUsage > 85) {
+        notifications.push({
+          id: `mem-${Date.now()}`,
+          type: 'warning',
+          title: 'High Memory Usage',
+          message: `Memory usage is at ${metrics.memoryUsage}%. Consider freeing up resources.`,
+          timestamp: new Date().toISOString(),
+          read: false
+        });
+      }
+    } catch (error) {
+      console.error('Failed to capture metrics for notifications:', error);
     }
 
-    return notifications.slice(0, 10); // Keep only latest 10
+    // Check log files for recent errors/warnings
+    for (const logFile of LOG_FILES) {
+      try {
+        const logPath = path.join(process.cwd(), logFile);
+        if (fs.existsSync(logPath)) {
+          const content = fs.readFileSync(logPath, 'utf8');
+          const lines = content.split('\n').filter(line => line.trim());
+
+          // Get last 10 lines
+          const recentLines = lines.slice(-10);
+
+          for (const line of recentLines) {
+            try {
+              const logEntry = JSON.parse(line);
+              if (logEntry.level === 'error') {
+                notifications.push({
+                  id: `error-${Date.now()}-${Math.random()}`,
+                  type: 'error',
+                  title: 'Application Error',
+                  message: logEntry.message || 'An error occurred in the application.',
+                  timestamp: logEntry.timestamp || new Date().toISOString(),
+                  read: false
+                });
+              } else if (logEntry.level === 'warn') {
+                notifications.push({
+                  id: `warn-${Date.now()}-${Math.random()}`,
+                  type: 'warning',
+                  title: 'Application Warning',
+                  message: logEntry.message || 'A warning occurred in the application.',
+                  timestamp: logEntry.timestamp || new Date().toISOString(),
+                  read: false
+                });
+              }
+            } catch (parseError) {
+              // Skip malformed log entries
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Failed to read log file ${logFile}:`, error);
+      }
+    }
+
+    // Add some system status notifications
+    notifications.push({
+      id: `status-${Date.now()}`,
+      type: 'info',
+      title: 'System Status',
+      message: 'All systems operational.',
+      timestamp: new Date().toISOString(),
+      read: true
+    });
+
+    // Sort by timestamp (newest first) and keep only latest 10
+    return notifications
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 10);
   };
 
   const stream = new ReadableStream({
