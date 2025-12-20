@@ -1,8 +1,6 @@
 import { Server as NetServer } from 'http';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { Server as ServerIO } from 'socket.io';
-import { verifyToken, hasPermission } from '../../src/lib/auth';
-import { User, Permission } from '../../src/lib/types';
 
 export type NextApiResponseServerIo = NextApiResponse & {
   socket: any & {
@@ -21,69 +19,19 @@ const ioHandler = (_req: NextApiRequest, res: NextApiResponseServerIo) => {
       addTrailingSlash: false,
     });
 
-    // Authentication middleware for Socket.IO
-    io.use((socket, next) => {
-      try {
-        const token = socket.handshake.auth.token || socket.handshake.query.token;
-
-        if (!token) {
-          console.log('WebSocket connection rejected: No token provided');
-          return next(new Error('Authentication token required'));
-        }
-
-        const decoded = verifyToken(token);
-        if (!decoded) {
-          console.log('WebSocket connection rejected: Invalid token');
-          return next(new Error('Invalid or expired token'));
-        }
-
-        // Check if user has WebSocket connection permission
-        if (!hasPermission(decoded.permissions, Permission.WEBSOCKET_CONNECT)) {
-          console.log('WebSocket connection rejected: Insufficient permissions');
-          return next(new Error('Insufficient permissions for WebSocket connection'));
-        }
-
-        // Attach user info to socket
-        socket.data.user = {
-          id: decoded.userId,
-          username: decoded.username,
-          email: decoded.email,
-          role: decoded.role,
-          permissions: decoded.permissions
-        } as User;
-
-        console.log(`Authenticated WebSocket connection: ${decoded.username} (${socket.id})`);
-        next();
-      } catch (error) {
-        console.error('WebSocket authentication error:', error);
-        next(new Error('Authentication failed'));
-      }
-    });
-
     io.on('connection', (socket) => {
-      const user = socket.data.user as User;
-      console.log(`Client connected: ${user.username} (${socket.id})`);
+      console.log(`Client connected: ${socket.id}`);
 
       // Send initial data
       socket.emit('status', {
         connected: true,
         clients: io.engine.clientsCount,
         uptime: process.uptime(),
-        timestamp: Date.now(),
-        user: {
-          username: user.username,
-          role: user.role
-        }
+        timestamp: Date.now()
       });
 
       // Handle metrics request
       socket.on('getMetrics', () => {
-        // Check if user has permission to read monitoring data
-        if (!hasPermission(user.permissions, Permission.MONITORING_READ)) {
-          socket.emit('error', { message: 'Insufficient permissions to access metrics' });
-          return;
-        }
-
         const metrics = {
           activeModels: Math.floor(Math.random() * 5) + 1,
           totalRequests: Math.floor(Math.random() * 500) + 100,
@@ -97,11 +45,6 @@ const ioHandler = (_req: NextApiRequest, res: NextApiResponseServerIo) => {
 
       // Handle logs request
       socket.on('getLogs', () => {
-        // Check if user has permission to read logs
-        if (!hasPermission(user.permissions, Permission.MONITORING_READ)) {
-          socket.emit('error', { message: 'Insufficient permissions to access logs' });
-          return;
-        }
         const logLevels = ['info', 'debug', 'warn', 'error'] as const;
         const logMessages: Record<string, string[]> = {
           info: ['Model loaded successfully', 'WebSocket connection established', 'Request processed', 'New session started'],

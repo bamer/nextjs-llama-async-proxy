@@ -1,0 +1,1 @@
+# Remove auth-related files and directories

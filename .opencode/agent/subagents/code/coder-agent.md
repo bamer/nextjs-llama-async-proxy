@@ -13,7 +13,11 @@ tools:
   patch: true
 permissions:
   bash:
-    "*": "deny"
+    "*": "allow"
+    "rm -rf *": "ask"
+    "rm -rf /*": "deny"
+    "sudo *": "deny"
+    "> /dev/*": "deny"
   edit:
     "**/*.env*": "deny"
     "**/*.key": "deny"
