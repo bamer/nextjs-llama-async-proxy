@@ -6,11 +6,20 @@ import path from 'path';
 // Configuration file path for storing metrics history
 const METRICS_HISTORY_FILE = path.join(process.cwd(), 'src/config/metrics_history.json');
 
+interface MetricsPoint {
+  cpuUsage: number;
+  memoryUsage: number;
+  activeModels: number;
+  totalRequests: number;
+  avgResponseTime: number;
+  timestamp: string;
+}
+
 // Simulate realistic metrics history
-const generateMetricsHistory = (limit: number) => {
-  const history = [];
+const generateMetricsHistory = (limit: number): MetricsPoint[] => {
+  const history: MetricsPoint[] = [];
   const now = Date.now();
-  
+
   // Generate realistic metrics data for the last 'limit' minutes
   for (let i = 0; i < limit; i++) {
     const timestamp = new Date(now - (i * 60000)).toISOString();
@@ -23,16 +32,16 @@ const generateMetricsHistory = (limit: number) => {
       timestamp,
     });
   }
-  
+
   return history;
 };
 
 export async function GET(request: { nextUrl: { searchParams: URLSearchParams } }): Promise<Response> {
   try {
     const limit = parseInt(request.nextUrl.searchParams.get('limit') || '60') || 60;
-    
+
     // Try to read from local history file
-    let history = [];
+    let history: MetricsPoint[] = [];
     try {
       const historyData = fs.readFileSync(METRICS_HISTORY_FILE, 'utf8');
       history = JSON.parse(historyData);
@@ -41,7 +50,7 @@ export async function GET(request: { nextUrl: { searchParams: URLSearchParams } 
       // Fallback: Generate realistic metrics history
       history = generateMetricsHistory(limit);
     }
-    
+
     return NextResponse.json(history);
   } catch (error) {
     console.error('Error fetching monitoring history:', error);

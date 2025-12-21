@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useWebSocket } from '../websocket/WebSocketManager';
 import { RealTimeStatusBadge } from '@/components/ui/RealTimeStatusBadge';
+import { TimeSeriesChart } from '@/components/ui/TimeSeriesChart';
 
 interface User {
   id: string;

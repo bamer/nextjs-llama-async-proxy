@@ -1,9 +1,6 @@
-import { defaultTheme } from 'tailwindcss/defaultTheme';
-import { defineConfig } from 'tailwindcss';
-
-export default defineConfig({
+export default {
   darkMode: 'class',
-  content: ['./src/**/*.{js,jsx,ts,tsx}'],
+  content: ['./src/**/*.{js,jsx,ts,tsx}', './app/**/*.{js,jsx,ts,tsx}', './pages/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -118,10 +115,10 @@ export default defineConfig({
         },
       },
       fontFamily: {
-        sans: ['var(--font-geist-sans)', ...defaultTheme.sans],
-        mono: ['var(--font-geist-mono)', ...defaultTheme.mono],
+        sans: ['var(--font-geist-sans)', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['var(--font-geist-mono)', 'monospace'],
       },
     },
   },
   plugins: [],
-});
+};

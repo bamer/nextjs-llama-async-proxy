@@ -99,7 +99,8 @@ export class ParameterService {
    * Get all parameters for a specific category
    */
   getCategory(category: string): ParameterCategory {
-    return { ...this.parameters[category] } || {};
+    const categoryData = this.parameters[category];
+    return categoryData ? { ...categoryData } : {};
   }
 
   /**

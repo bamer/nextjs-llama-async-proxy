@@ -13,12 +13,8 @@ global.Request = class Request {
 } as any;
  
 global.Response = class Response {
+  body?: any;
   constructor(body?: any, init?: ResponseInit) {
     this.body = body;
   }
 } as any;
-
-// Extend the Response interface to include body for TypeScript safety
-interface Response {
-  body?: any;
-}

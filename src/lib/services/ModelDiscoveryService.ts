@@ -147,5 +147,3 @@ export class ModelDiscoveryService {
     return { valid: true };
   }
 }
-
-export { ModelDiscoveryService, type DiscoveredModel, type ModelMetadata };
