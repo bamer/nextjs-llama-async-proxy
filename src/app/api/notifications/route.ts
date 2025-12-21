@@ -1,7 +1,4 @@
 import { NextRequest } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-import { captureMetrics } from '@/lib/monitor';
 
 interface Notification {
   id: string;
@@ -12,136 +9,130 @@ interface Notification {
   read: boolean;
 }
 
-// Log files to monitor
-const LOG_FILES = [
-  'logs/application-2025-12-16.log', // Today's log
-  'logs/exceptions.log',
-  'logs/rejections.log'
-];
+/** Simulated metrics */
+function captureMetrics() {
+  return {
+    cpuUsage: Math.floor(Math.random() * 100),
+    memoryUsage: Math.floor(Math.random() * 100),
+  };
+}
 
+/** Generate notification objects */
+function generateNotifications(): Notification[] {
+  const notifications: Notification[] = [];
+
+  const metrics = captureMetrics();
+  if (metrics.cpuUsage > 80) {
+    notifications.push({
+      id: `cpu-${Date.now()}`,
+      type: 'warning',
+      title: 'High CPU Usage',
+      message: `CPU usage is at ${metrics.cpuUsage}%. Consider optimizing processes.`,
+      timestamp: new Date().toISOString(),
+      read: false,
+    });
+  }
+  if (metrics.memoryUsage > 85) {
+    notifications.push({
+      id: `mem-${Date.now()}`,
+      type: 'warning',
+      title: 'High Memory Usage',
+      message: `Memory usage is at ${metrics.memoryUsage}%. Consider freeing up resources.`,
+      timestamp: new Date().toISOString(),
+      read: false,
+    });
+  }
+
+  // Generic status
+  notifications.push({
+    id: `status-${Date.now()}`,
+    type: 'info',
+    title: 'System Status',
+    message: 'All systems operational.',
+    timestamp: new Date().toISOString(),
+    read: true,
+  });
+
+  // Sort newest first and limit
+  return notifications
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .slice(0, 10);
+}
+
+/**
+ * SSE endpoint for notifications
+ */
 export async function GET(request: NextRequest) {
   const encoder = new TextEncoder();
 
-  const generateNotifications = (): Notification[] => {
-    const notifications: Notification[] = [];
+  let timeoutId: any; // Use any to avoid TypeScript conflict with NodeJS.Timeout
 
-    // Check system metrics for alerts
-    try {
-      const metrics = captureMetrics();
-      if (metrics.cpuUsage > 80) {
-        notifications.push({
-          id: `cpu-${Date.now()}`,
-          type: 'warning',
-          title: 'High CPU Usage',
-          message: `CPU usage is at ${metrics.cpuUsage}%. Consider optimizing processes.`,
-          timestamp: new Date().toISOString(),
-          read: false
-        });
-      }
-      if (metrics.memoryUsage > 85) {
-        notifications.push({
-          id: `mem-${Date.now()}`,
-          type: 'warning',
-          title: 'High Memory Usage',
-          message: `Memory usage is at ${metrics.memoryUsage}%. Consider freeing up resources.`,
-          timestamp: new Date().toISOString(),
-          read: false
-        });
-      }
-    } catch (error) {
-      console.error('Failed to capture metrics for notifications:', error);
-    }
+  return new Response(new ReadableStream({
+    async start(controller) {
+      let aborted = false;
 
-    // Check log files for recent errors/warnings
-    for (const logFile of LOG_FILES) {
-      try {
-        const logPath = path.join(process.cwd(), logFile);
-        if (fs.existsSync(logPath)) {
-          const content = fs.readFileSync(logPath, 'utf8');
-          const lines = content.split('\n').filter(line => line.trim());
-
-          // Get last 10 lines
-          const recentLines = lines.slice(-10);
-
-          for (const line of recentLines) {
-            try {
-              const logEntry = JSON.parse(line);
-              if (logEntry.level === 'error') {
-                notifications.push({
-                  id: `error-${Date.now()}-${Math.random()}`,
-                  type: 'error',
-                  title: 'Application Error',
-                  message: logEntry.message || 'An error occurred in the application.',
-                  timestamp: logEntry.timestamp || new Date().toISOString(),
-                  read: false
-                });
-              } else if (logEntry.level === 'warn') {
-                notifications.push({
-                  id: `warn-${Date.now()}-${Math.random()}`,
-                  type: 'warning',
-                  title: 'Application Warning',
-                  message: logEntry.message || 'A warning occurred in the application.',
-                  timestamp: logEntry.timestamp || new Date().toISOString(),
-                  read: false
-                });
-              }
-            } catch (parseError) {
-              // Skip malformed log entries
-            }
-          }
+      /** Send a single update */
+      const sendUpdate = async () => {
+        if (aborted) return;
+        try {
+          const payload = {
+            type: 'notifications',
+            data: generateNotifications(),
+            timestamp: new Date().toISOString(),
+          };
+          const chunk = `data: ${JSON.stringify(payload)}\n\n`;
+          controller.enqueue(encoder.encode(chunk));
+        } catch (err) {
+          console.error('Error generating SSE payload:', err);
         }
-      } catch (error) {
-        console.error(`Failed to read log file ${logFile}:`, error);
-      }
-    }
-
-    // Add some system status notifications
-    notifications.push({
-      id: `status-${Date.now()}`,
-      type: 'info',
-      title: 'System Status',
-      message: 'All systems operational.',
-      timestamp: new Date().toISOString(),
-      read: true
-    });
-
-    // Sort by timestamp (newest first) and keep only latest 10
-    return notifications
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, 10);
-  };
-
-  const stream = new ReadableStream({
-    start(controller) {
-      const sendUpdate = () => {
-        const data = {
-          type: 'notifications',
-          data: generateNotifications(),
-          timestamp: Date.now()
-        };
-
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
       };
 
-      // Send initial data
+      /** Cleanup resources */
+      const cleanup = () => {
+        if (timeoutId !== undefined) {
+          clearTimeout(timeoutId);
+          timeoutId = undefined;
+        }
+        controller.close();
+      };
+
+      /** Schedule next payload with jitter (± up to 2 seconds) */
+      const scheduleNext = () => {
+        if (aborted) return;
+        const jitter = (Math.random() * 4 - 2) * 1000; // -2000 to +2000 ms
+        timeoutId = setTimeout(() => {
+          sendUpdate().catch((e) => console.error('Error in scheduled update:', e));
+          scheduleNext(); // schedule subsequent update
+        }, 15000 + jitter);
+      };
+
+      // Initial payload
       sendUpdate();
 
-      // Send updates every 15 seconds
-      const interval = setInterval(sendUpdate, 15000);
+      // Schedule periodic updates with jitter
+      scheduleNext();
 
-      // Cleanup on close
-      request.signal.addEventListener('abort', () => {
-        clearInterval(interval);
-        controller.close();
-      });
-    }
-  });
+      // Handle client disconnect
+      const abortHandler = () => {
+        aborted = true;
+        cleanup();
+      };
+      request.signal.addEventListener('abort', abortHandler, { once: true });
 
-  return new Response(stream, {
+      // Global error handling for the stream
+      try {
+        // Stream runs via scheduled sendUpdate calls
+      } catch (err) {
+        console.error('Unexpected error in SSE stream:', err);
+      } finally {
+        cleanup();
+      }
+    },
+  }), {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
     },
   });
 }
