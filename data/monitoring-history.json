@@ -110,5 +110,75 @@
     "uptimeSeconds": 358980,
     "timestamp": "2025-12-21T23:20:10.902Z",
     "id": 1766359210902
+  },
+  {
+    "cpuUsage": 70,
+    "memoryUsage": 28,
+    "uptimeSeconds": 359010,
+    "timestamp": "2025-12-21T23:20:40.974Z",
+    "id": 1766359240974
+  },
+  {
+    "cpuUsage": 70,
+    "memoryUsage": 28,
+    "uptimeSeconds": 359040,
+    "timestamp": "2025-12-21T23:21:10.984Z",
+    "id": 1766359270984
+  },
+  {
+    "cpuUsage": 70,
+    "memoryUsage": 28,
+    "uptimeSeconds": 359070,
+    "timestamp": "2025-12-21T23:21:41.014Z",
+    "id": 1766359301014
+  },
+  {
+    "cpuUsage": 70,
+    "memoryUsage": 28,
+    "uptimeSeconds": 359100,
+    "timestamp": "2025-12-21T23:22:11.039Z",
+    "id": 1766359331039
+  },
+  {
+    "cpuUsage": 70,
+    "memoryUsage": 28,
+    "uptimeSeconds": 359130,
+    "timestamp": "2025-12-21T23:22:41.382Z",
+    "id": 1766359361382
+  },
+  {
+    "cpuUsage": 70,
+    "memoryUsage": 30,
+    "uptimeSeconds": 359160,
+    "timestamp": "2025-12-21T23:23:11.381Z",
+    "id": 1766359391381
+  },
+  {
+    "cpuUsage": 70,
+    "memoryUsage": 32,
+    "uptimeSeconds": 359191,
+    "timestamp": "2025-12-21T23:23:41.397Z",
+    "id": 1766359421397
+  },
+  {
+    "cpuUsage": 70,
+    "memoryUsage": 32,
+    "uptimeSeconds": 359221,
+    "timestamp": "2025-12-21T23:24:11.400Z",
+    "id": 1766359451400
+  },
+  {
+    "cpuUsage": 70,
+    "memoryUsage": 36,
+    "uptimeSeconds": 359251,
+    "timestamp": "2025-12-21T23:24:41.402Z",
+    "id": 1766359481403
+  },
+  {
+    "cpuUsage": 70,
+    "memoryUsage": 25,
+    "uptimeSeconds": 359281,
+    "timestamp": "2025-12-21T23:25:11.401Z",
+    "id": 1766359511401
   }
 ]
