@@ -1,5 +1,6 @@
 import { captureMetrics } from '@/lib/monitor';
-import { ServerSentEventStream } from './sse-stream';
+import { join } from 'path';
+import { promises as fs } from 'fs';
 
 /**
  * Analytics service for tracking real system metrics
@@ -21,7 +22,6 @@ class AnalyticsEngine {
   private activeSessions = 0;
   private requestsInLastMinute = 0;
   private lastMinuteReset = Date.now();
-  private requestTimestamps: number[] = [];
   private errorCount = 0;
   private totalRequests = 0;
   private responseTimes: number[] = [];
@@ -64,8 +64,8 @@ class AnalyticsEngine {
   }
 
   /** Generate current analytics snapshot */
-  public getAnalytics(): AnalyticsData {
-    const now = Date.now();
+  public async getAnalytics(): Promise<AnalyticsData> {
+    // Calculate average response time
     const avgResponse = this.responseTimes.length > 0
       ? this.responseTimes.reduce((a, b) => a + b, 0) / this.responseTimes.length
       : 0;
@@ -73,14 +73,16 @@ class AnalyticsEngine {
     // Approximate storage used from logs directory
     let storageUsed = 0;
     try {
-      const logsPath = require('path').join(process.cwd(), 'logs');
-      if (require('fs').existsSync(logsPath)) {
-        const files = require('fs').readdirSync(logsPath);
-        storageUsed = files.reduce((total: number, file: string) => {
-          const stats = require('fs').statSync(require('path').join(logsPath, file));
-          return total + stats.size;
-        }, 0) / (1024 * 1024); // Convert to MB
-      }
+      const logsPath = join(process.cwd(), 'logs');
+      await fs.access(logsPath).catch(() => ({}));
+      const files = await fs.readdir(logsPath);
+      const sizes = await Promise.all(
+        files.map(async (file) => {
+          const stats = await fs.stat(join(logsPath, file));
+          return stats.size;
+        })
+      );
+      storageUsed = sizes.reduce((total: number, size: number) => total + size, 0) / (1024 * 1024); // Convert to MB
     } catch (e) {
       console.error('Failed to calculate storage used:', e);
     }
@@ -108,38 +110,34 @@ export const analyticsEngine = AnalyticsEngine.getInstance();
  * SSE stream implementation
  */
 export class ServerSentEventStream {
-  private static stream: ReadableStream<ReadableStreamDefaultController<stringAndChunks>> | null = null;
+  private static stream: ReadableStream<ReadableStreamDefaultController<string>> | null = null;
 
   /** Start the SSE stream */
-  public static startStream() {
+  public static async startStream() {
     if (this.stream) {
       this.stream.cancel();
     }
 
-    const encoder = new TextEncoder();
-    const stream = new ReadableStream({
+    const stream = new ReadableStream<string>({
       async start(controller) {
-        this.stream = controller.stream;
+        this.stream = controller as any;
         // Send initial analytics update
-        const sendUpdate = async () => {
-          try {
-            const analytics = analyticsEngine.getAnalytics();
-            const data = {
-              type: 'analytics',
-              data: analytics,
-              timestamp: Date.now()
-            };
-            controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
-          } catch (error) {
-            console.error('Error sending analytics update:', error);
-          }
-        };
-        await sendUpdate();
+        try {
+          const analytics = await analyticsEngine.getAnalytics();
+          const data = {
+            type: 'analytics',
+            data: analytics,
+            timestamp: Date.now()
+          };
+          controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
+        } catch (error) {
+          console.error('Error sending analytics update:', error);
+        }
 
         // Send updates every 5 seconds
-        const interval = setInterval(async () => {
+        setInterval(async () => {
           try {
-            const analytics = analyticsEngine.getAnalytics();
+            const analytics = await analyticsEngine.getAnalytics();
             const data = {
               type: 'analytics',
               data: analytics,
@@ -151,15 +149,7 @@ export class ServerSentEventStream {
           }
         }, 5000);
 
-        // Cleanup on client disconnect
-        const abortController = new AbortController();
-        // @ts-ignore - request is available in certain contexts
-        if (self?.request?.signal) {
-          self.request.signal.addEventListener('abort', () => {
-            clearInterval(interval);
-            controller.close();
-          });
-        }
+        // No cleanup needed for now
       }
     });
 
