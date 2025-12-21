@@ -1,3 +1,1 @@
-import SimpleSettings from '@/components/pages/SimpleSettings';
-
-export default SimpleSettings;
+export { default } from '@/app/settings/page';

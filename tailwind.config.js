@@ -4,6 +4,10 @@ export default {
   theme: {
     extend: {
       colors: {
+        layout: {
+          DEFAULT: '#fefefe',
+          dark: '#0f0f0f',
+        },
         primary: {
           50: '#fefefe',
           100: '#fafaf9',
@@ -77,10 +81,6 @@ export default {
         },
         danger: {
           DEFAULT: '#ef4444',
-        },
-        layout: {
-          DEFAULT: '#fefefe',
-          dark: '#0f0f0f',
         },
         border: {
           DEFAULT: '#e7e5e4',

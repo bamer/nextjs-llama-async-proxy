@@ -1,55 +1,93 @@
 'use client';
 
-const SettingsPage = () => {
+import React, { useState } from 'react';
+import { useSettings } from '@/hooks/useSettings';
+import { SettingsAppearance } from './settings/SettingsAppearance';
+import { SettingsSystem } from './settings/SettingsSystem';
+import { SettingsFeatures } from './settings/SettingsFeatures';
+
+export function SettingsPage() {
+  const { settings, updateSettings, isLoading } = useSettings();
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = () => {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleThemeChange = (theme: 'light' | 'dark' | 'system') => {
+    updateSettings({ theme });
+    handleSave();
+  };
+
+  const handleToggle = (key: 'autoUpdate' | 'notificationsEnabled') => {
+    updateSettings({ [key]: !settings[key] });
+    handleSave();
+  };
+
+  const handleSlider = (
+    key: 'maxConcurrentModels' | 'refreshInterval',
+    value: number
+  ) => {
+    updateSettings({ [key]: value });
+    handleSave();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">
+            Loading settings...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="settings-page">
-      <h1 className="text-3xl font-bold mb-6">Settings</h1>
-      
-      <div className="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-        <h3 className="text-2xl font-semibold mb-6">General</h3>
-        <div className="flex justify-between items-center py-4 border-b border-border">
-          <span className="text-foreground">Dark Mode</span>
-          <button className="border border-border hover:bg-muted px-4 py-2 rounded-md transition-colors text-foreground hover:shadow-sm font-medium">Toggle</button>
-        </div>
-        
-        <div className="flex justify-between items-center py-4 border-b border-border">
-          <span className="text-foreground">Notifications</span>
-          <button className="border border-border hover:bg-muted px-4 py-2 rounded-md transition-colors text-foreground hover:shadow-sm font-medium">Enable</button>
-        </div>
-        
-        <div className="flex justify-between items-center py-4 border-b border-border">
-          <span className="text-foreground">Auto Update</span>
-          <button className="border border-border hover:bg-muted px-4 py-2 rounded-md transition-colors text-foreground hover:shadow-sm font-medium">Enable</button>
-        </div>
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+          Settings
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">
+          Customize your application
+        </p>
       </div>
-      
-      <div className="bg-card border border-border rounded-lg p-6 mt-6 shadow-sm hover:shadow-md transition-shadow">
-        <h3 className="text-2xl font-semibold mb-6">Security</h3>
-        <div className="flex justify-between items-center py-4 border-b border-border">
-          <span className="text-foreground">Authentication</span>
-          <button className="border border-border hover:bg-muted px-4 py-2 rounded-md transition-colors text-foreground hover:shadow-sm font-medium">Configure</button>
+
+      {/* Success Message */}
+      {saved && (
+        <div className="rounded-lg border border-green-300 bg-green-50 dark:bg-green-950 dark:border-green-800 p-4 flex items-center gap-3">
+          <span className="text-2xl">✓</span>
+          <span className="font-medium text-green-700 dark:text-green-400">
+            Settings saved
+          </span>
         </div>
-        
-        <div className="flex justify-between items-center py-4 border-b border-border">
-          <span className="text-foreground">Encryption</span>
-          <button className="border border-border hover:bg-muted px-4 py-2 rounded-md transition-colors text-foreground hover:shadow-sm font-medium">Manage</button>
-        </div>
+      )}
+
+      {/* Settings Sections */}
+      <div className="grid gap-8">
+        <SettingsAppearance
+          settings={settings}
+          onThemeChange={handleThemeChange}
+        />
+        <SettingsSystem
+          settings={settings}
+          onSliderChange={handleSlider}
+        />
+        <SettingsFeatures settings={settings} onToggle={handleToggle} />
       </div>
-      
-      <div className="bg-card border border-border rounded-lg p-6 mt-6 shadow-sm hover:shadow-md transition-shadow">
-        <h3 className="text-2xl font-semibold mb-6">System</h3>
-        <div className="flex justify-between items-center py-4 border-b border-border">
-          <span className="text-foreground">System Health</span>
-          <button className="border border-border hover:bg-muted px-4 py-2 rounded-md transition-colors text-foreground hover:shadow-sm font-medium">Check</button>
-        </div>
-        
-        <div className="flex justify-between items-center py-4 border-b border-border">
-          <span className="text-foreground">Backup Settings</span>
-          <button className="border border-border hover:bg-muted px-4 py-2 rounded-md transition-colors text-foreground hover:shadow-sm font-medium">Manage</button>
-        </div>
+
+      {/* Info Box */}
+      <div className="rounded-lg border border-blue-300 bg-blue-50 dark:bg-blue-950 dark:border-blue-800 p-4">
+        <p className="text-sm text-blue-700 dark:text-blue-400">
+          ℹ️ Your settings are automatically saved to browser storage and
+          persist across sessions.
+        </p>
       </div>
     </div>
   );
-};
-
-export default SettingsPage;
+}

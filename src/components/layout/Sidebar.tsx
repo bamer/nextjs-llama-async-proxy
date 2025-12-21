@@ -3,9 +3,15 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useTheme } from 'next-themes';
 import { useSidebar } from './SidebarProvider';
-import { BarChart3, Monitor, Bot, FileText, Settings } from 'lucide-react';
+import {
+  BarChart3,
+  Monitor,
+  Bot,
+  FileText,
+  Settings,
+  X,
+} from 'lucide-react';
 
 interface MenuItem {
   id: string;
@@ -14,50 +20,68 @@ interface MenuItem {
   path: string;
 }
 
-const Sidebar = () => {
-  const { isOpen } = useSidebar();
-  const pathname = usePathname();
-  const { theme } = useTheme();
+const menuItems: MenuItem[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: BarChart3, path: '/dashboard' },
+  { id: 'monitoring', label: 'Monitoring', icon: Monitor, path: '/monitoring' },
+  { id: 'models', label: 'Models', icon: Bot, path: '/models' },
+  { id: 'logs', label: 'Logs', icon: FileText, path: '/logs' },
+  { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
+];
 
-  const menuItems: MenuItem[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, path: '/dashboard' },
-    { id: 'monitoring', label: 'Monitoring', icon: Monitor, path: '/monitoring' },
-    { id: 'models', label: 'Models', icon: Bot, path: '/models' },
-    { id: 'logs', label: 'Logs', icon: FileText, path: '/logs' },
-    { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' }
-  ];
+export function Sidebar() {
+  const { isOpen, closeSidebar } = useSidebar();
+  const pathname = usePathname();
 
   const isActive = (path: string) => pathname === path;
 
-  const getActiveClasses = () => {
-    if (theme === 'dark') {
-      return 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg';
-    }
-    return 'bg-primary-800 text-primary-50 shadow-lg';
-  };
-
   return (
-    <aside
-      className={`fixed top-16 left-0 h-[calc(100vh-64px)] w-64 bg-background/90 dark:bg-background/90 backdrop-blur-md border-r border-border dark:border-border shadow-xl z-10 transition-all duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
-      suppressHydrationWarning
-    >
-      <nav className="p-6 flex flex-col gap-2">
-        {menuItems.map((item) => {
-          const IconComponent = item.icon;
-          return (
-            <Link
-              key={item.id}
-              href={item.path}
-                className={`flex justify-start items-center p-4 rounded-xl hover:bg-primary-100 hover:text-primary-900 dark:hover:bg-primary-900 dark:hover:text-primary-100 transition-all duration-200 shadow-sm hover:shadow-md ${isActive(item.path) ? getActiveClasses() : 'text-foreground dark:text-foreground'}`}
-            >
-              <IconComponent className="mr-4 h-5 w-5 transition-all duration-200" />
-              <span className="font-semibold">{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-    </aside>
-  );
-};
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          onClick={closeSidebar}
+        />
+      )}
 
-export default Sidebar;
+      {/* Sidebar */}
+      <aside
+        className={`fixed top-16 left-0 h-[calc(100vh-64px)] w-64 bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 z-40 transition-transform duration-300 lg:translate-x-0 lg:relative lg:h-auto ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <nav className="p-4 flex flex-col gap-2 h-full overflow-auto">
+          {/* Close button for mobile */}
+          <button
+            onClick={closeSidebar}
+            className="self-end p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 lg:hidden mb-2"
+          >
+            <X className="h-5 w-5" />
+          </button>
+
+          {/* Menu items */}
+          {menuItems.map((item) => {
+            const IconComponent = item.icon;
+            const active = isActive(item.path);
+
+            return (
+              <Link
+                key={item.id}
+                href={item.path}
+                onClick={closeSidebar}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  active
+                    ? 'bg-blue-500 text-white'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                <IconComponent className="h-5 w-5 flex-shrink-0" />
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      </aside>
+    </>
+  );
+}
