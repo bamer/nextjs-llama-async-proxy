@@ -1,10 +1,9 @@
- const { fontFamily } = require('tailwindcss/defaultTheme');
+import { defaultTheme } from 'tailwindcss/defaultTheme';
+import { defineConfig } from 'tailwindcss';
 
-module.exports = {
+export default defineConfig({
   darkMode: 'class',
-  content: [
-    './src/**/*.{js,jsx,ts,tsx}',
-  ],
+  content: ['./src/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -119,10 +118,10 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['var(--font-geist-sans)', ...fontFamily.sans],
-        mono: ['var(--font-geist-mono)', ...fontFamily.mono],
+        sans: ['var(--font-geist-sans)', ...defaultTheme.sans],
+        mono: ['var(--font-geist-mono)', ...defaultTheme.mono],
       },
     },
   },
   plugins: [],
-};
+});

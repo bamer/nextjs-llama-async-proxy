@@ -1,20 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { spawn } from 'child_process';
 import logger from '@/lib/logger';
 
-// Platform-specific process listing commands
+ // Platform-specific process listing commands
 const PLATFORM_CMDS: Record<string, string[]> = {
   win32: ['powershell', '-NoProfile', '-Command', 'Get-Process | Select-Object -First 10'],
   linux: ['ps', '-eo', 'pid,user,comm,%cpu,%mem', '--no-headers', 'head', '-n', '10'],
   darwin: ['ps', '-eo', 'pid,user,comm,%cpu,%mem', '--no-headers', 'head', '-n', '10'],
 };
-
 const platform = process.platform;
 if (!PLATFORM_CMDS[platform]) {
   throw new Error(`Unsupported platform: ${platform}`);
 }
 
-// Raw process representation
+ // Raw process representation
 type RawProcess = {
   pid: number;
   name: string;
@@ -25,7 +23,7 @@ type RawProcess = {
   command: string;
 };
 
-// User representation for SSE stream
+ // User representation for SSE stream
 type User = {
   id: string;
   name: string;
@@ -34,18 +32,7 @@ type User = {
   activity: string;
 };
 
-// Minimal fallback (should never be used with continuous retry loop)
-const MINIMAL_FALLBACK_USERS: User[] = [
-  {
-    id: 'fallback',
-    name: 'System Data Unavailable',
-    status: 'offline',
-    lastSeen: new Date().toISOString(),
-    activity: 'Unable to fetch real process data',
-  },
-];
-
-// Execute command and capture output
+ // Execute command and capture output
 async function execCommand(args: string[]): Promise<{ stdout: string; stderr: string }> {
   return new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
     const child = spawn(args[0], args.slice(1), { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -70,7 +57,7 @@ async function execCommand(args: string[]): Promise<{ stdout: string; stderr: st
   });
 }
 
-// Parse Windows process output (plain text)
+ // Parse Windows process output (plain text)
 function parseWindows(output: string): RawProcess[] {
   try {
     const lines = output.trim().split('\n').filter(l => l.trim().length > 0);
@@ -104,7 +91,7 @@ function parseWindows(output: string): RawProcess[] {
   }
 }
 
-// Parse Unix-like process output
+ // Parse Unix-like process output
 function parseUnix(output: string): RawProcess[] {
   const lines = output.trim().split('\n').filter(l => l.trim().length > 0);
   const processes: RawProcess[] = [];
@@ -133,7 +120,7 @@ function parseUnix(output: string): RawProcess[] {
   return processes;
 }
 
-// Fetch raw processes using platform-specific command
+ // Fetch raw processes using platform-specific command
 async function fetchRawProcesses(): Promise<RawProcess[]> {
   const args = PLATFORM_CMDS[platform];
   try {
@@ -153,7 +140,7 @@ async function fetchRawProcesses(): Promise<RawProcess[]> {
   }
 }
 
-// Convert raw processes to User objects
+ // Convert raw processes to User objects
 function mapToUsers(raw: RawProcess[]): User[] {
   return raw.map(p => {
     const status: User['status'] = p.cpu < 0.1 ? 'away' : p.cpu === 0 ? 'offline' : 'online';
@@ -168,10 +155,8 @@ function mapToUsers(raw: RawProcess[]): User[] {
   });
 }
 
-/**
- * Continuously fetch system users until real data is obtained.
- * This ensures >95% real process data availability.
- */
+// Continuously fetch system users until real data is obtained.
+// This ensures >95% real process data availability.
 async function getSystemUsers(): Promise<User[]> {
   let attempt = 0;
   while (true) {
@@ -201,22 +186,56 @@ function createSSEChunk(type: string, data: User[], timestamp: number): Buffer {
 }
 
 // SSE stream handler
-export async function GET() {
+export async function GET(request: Request) {
   const stream = new ReadableStream({
     async start(controller) {
+      // Function to handle client abort
+      const handleAbort = () => {
+        logger.info('SSE stream aborted by client');
+        controller.close();
+      };
+
+      // Attach abort listener once
+      request.signal?.addEventListener('abort', handleAbort, { once: true });
+
       try {
         while (true) {
+          // Gracefully exit if the client aborts the request
+          if (request.signal?.aborted) {
+            handleAbort();
+            break;
+          }
+
           const users = await getSystemUsers();
           const chunk = createSSEChunk('users', users, Date.now());
           controller.enqueue(chunk);
           const interval = 5000 + Math.random() * 5000;
-          await new Promise(resolve => setTimeout(resolve, interval));
+
+          // Wait for the next tick, but allow early exit on abort
+          try {
+            await new Promise((resolve, reject) => {
+              const timeout = setTimeout(resolve, interval);
+              if (request.signal) {
+                request.signal.addEventListener('abort', () => {
+                  clearTimeout(timeout);
+                  reject(new Error('stream aborted'));
+                }, { once: true });
+              }
+            });
+          } catch (e) {
+            if (e.message === 'stream aborted') {
+              logger.info('SSE stream aborted while waiting');
+              break;
+            }
+            throw e;
+          }
         }
       } catch (error) {
         logger.error('SSE stream error:', error);
-        controller.close();
       } finally {
         controller.close();
+        // Remove listener to avoid memory leaks
+        request.signal?.removeEventListener('abort', handleAbort);
       }
     },
   });
