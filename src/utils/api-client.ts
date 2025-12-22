@@ -105,7 +105,7 @@ class ApiClient {
       const response = await this.instance.get<T>(url, config);
       return {
         success: true,
-        data: response,
+        data: response.data,
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
@@ -122,7 +122,7 @@ class ApiClient {
       const response = await this.instance.post<T>(url, data, config);
       return {
         success: true,
-        data: response,
+        data: response.data,
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
@@ -139,7 +139,7 @@ class ApiClient {
       const response = await this.instance.put<T>(url, data, config);
       return {
         success: true,
-        data: response,
+        data: response.data,
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
@@ -152,7 +152,7 @@ class ApiClient {
       const response = await this.instance.delete<T>(url, config);
       return {
         success: true,
-        data: response,
+        data: response.data,
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
@@ -169,7 +169,7 @@ class ApiClient {
       const response = await this.instance.patch<T>(url, data, config);
       return {
         success: true,
-        data: response,
+        data: response.data,
         timestamp: new Date().toISOString(),
       };
     } catch (error) {

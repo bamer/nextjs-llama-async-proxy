@@ -1,6 +1,6 @@
 import { apiClient } from "@/utils/api-client";
 import { useStore } from "@/lib/store";
-import { ModelConfig, SystemMetrics, LogEntry, ApiResponse } from "@/types/global";
+import { ModelConfig, SystemMetrics, LogEntry, ApiResponse } from "@/types";
 
 class ApiService {
   private readonly baseUrl: string;

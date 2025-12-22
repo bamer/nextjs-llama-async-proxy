@@ -1,0 +1,15 @@
+> Ready on http://0.0.0.0:3000
+ GET / 200 in 1126ms (compile: 861ms, render: 266ms)
+ GET / 200 in 62ms (compile: 13ms, render: 50ms)
+ GET / 200 in 50ms (compile: 5ms, render: 45ms)
+ GET / 200 in 50ms (compile: 8ms, render: 42ms)
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+✓ Compiled in 1957ms
+ GET / 200 in 724ms (compile: 102ms, render: 622ms)
+ GET / 200 in 72ms (compile: 20ms, render: 52ms)
+✓ Compiled in 107ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET / 200 in 252ms (compile: 51ms, render: 201ms)
+ GET / 200 in 97ms (compile: 6ms, render: 91ms)

@@ -1,51 +1,87 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
+import { useMediaQuery } from "@mui/material";
+import { CssBaseline } from "@mui/material";
+import { lightTheme, darkTheme } from "@/styles/theme";
+import { useTheme as useNextTheme } from "next-themes";
 
-type Theme = 'system' | 'light' | 'dark';
-type ThemeContextProps = {
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
-  actualTheme: Theme;
-  setActualTheme: (theme: Theme) => void;
-};
+export type ThemeMode = "light" | "dark" | "system";
 
-export const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
+interface ThemeContextType {
+  mode: ThemeMode;
+  setMode: (mode: ThemeMode) => void;
+  toggleTheme: () => void;
+  isDark: boolean;
+  currentTheme: any;
+}
+
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [actualTheme, setActualTheme] = useState<Theme>('system');
-  const [theme, setTheme] = useState<Theme>(actualTheme);
+  const { setTheme: setNextTheme } = useNextTheme();
+  const [mode, setModeState] = useState<ThemeMode>("system");
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  const [mounted, setMounted] = useState(false);
 
-  // Sync with localStorage and system preference
   useEffect(() => {
-    const lsTheme = localStorage.getItem('theme') as Theme | null;
-    if (lsTheme) {
-      setTheme(lsTheme);
-    } else {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setTheme(prefersDark ? 'dark' : 'light');
-    }
+    setMounted(true);
   }, []);
 
-  const setThemeHandler = (theme: Theme) => {
-    setTheme(theme);
-    if (theme !== 'system') {
-      localStorage.setItem('theme', theme);
+  useEffect(() => {
+    // Load saved theme from localStorage
+    const savedTheme = localStorage.getItem("theme") as ThemeMode | null;
+    if (savedTheme) {
+      setModeState(savedTheme);
+      setNextTheme(savedTheme);
     }
+  }, [setNextTheme]);
+
+  useEffect(() => {
+    // Save theme to localStorage
+    if (mode) {
+      localStorage.setItem("theme", mode);
+      setNextTheme(mode);
+    }
+  }, [mode, setNextTheme]);
+
+  const setMode = (newMode: ThemeMode) => {
+    setModeState(newMode);
   };
 
+  const toggleTheme = () => {
+    setModeState((prev) => {
+      if (prev === "system") {
+        return prefersDarkMode ? "light" : "dark";
+      }
+      return prev === "light" ? "dark" : "light";
+    });
+  };
+
+  const isDark = mode === "dark" || (mode === "system" && prefersDarkMode);
+  const currentTheme = isDark ? darkTheme : lightTheme;
+
+  if (!mounted) {
+    return null; // Avoid SSR mismatch
+  }
+
   return (
-    <ThemeContext.Provider value={{ theme, setTheme: setThemeHandler, actualTheme, setActualTheme }}>
-      {children}
+    <ThemeContext.Provider value={{ mode, setMode, toggleTheme, isDark, currentTheme }}>
+      <MuiThemeProvider theme={currentTheme}>
+        <CssBaseline />
+        {children}
+      </MuiThemeProvider>
     </ThemeContext.Provider>
   );
 }
 
-// Hook for consuming the context
 export function useTheme() {
   const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+  if (context === undefined) {
+    throw new Error("useTheme must be used within a ThemeProvider");
   }
   return context;
 }
+
+export { lightTheme, darkTheme } from "@/styles/theme";

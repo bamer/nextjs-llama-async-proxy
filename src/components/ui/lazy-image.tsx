@@ -49,8 +49,8 @@ export function LazyImage({ src, alt, width, height, placeholder, className, sty
     return (
       <Skeleton
         variant="rectangular"
-        width={width}
-        height={height}
+        width={width || '100%'}
+        height={height || '100%'}
         animation="wave"
         sx={{ borderRadius: "8px" }}
       />

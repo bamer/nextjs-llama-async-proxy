@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardHeader, Grid, Typography, LinearProgress } from "@mui/material";
+import { Card, CardContent, CardHeader, GridLegacy, Typography, LinearProgress } from "@mui/material";
 import { useStore } from "@/lib/store";
 import { motion } from "framer-motion";
 import MemoryIcon from '@mui/icons-material/Memory';
@@ -63,9 +63,9 @@ export function MetricsCard() {
     <Card sx={{ height: "100%" }}>
       <CardHeader title="System Metrics" subheader="Real-time system performance" />
       <CardContent>
-        <Grid container spacing={3}>
+        <GridLegacy container spacing={3}>
           {metricsData.map((metric, index) => (
-            <Grid item xs={12} sm={6} md={4} key={index}>
+            <GridLegacy item key={index} xs={12} sm={6} md={4}>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -89,9 +89,9 @@ export function MetricsCard() {
                   sx={{ mt: 1, height: "6px", borderRadius: "3px" }}
                 />
               </motion.div>
-            </Grid>
+            </GridLegacy>
           ))}
-        </Grid>
+        </GridLegacy>
       </CardContent>
     </Card>
   );

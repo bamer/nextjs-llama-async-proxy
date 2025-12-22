@@ -1,5 +1,12 @@
-import { SettingsPage } from '@/components/pages/SettingsPage';
+"use client";
 
-export default function Settings() {
-  return <SettingsPage />;
+import { MainLayout } from "@/components/layout/main-layout";
+import ModernConfiguration from "@/components/pages/ModernConfiguration";
+
+export default function SettingsPage() {
+  return (
+    <MainLayout>
+      <ModernConfiguration />
+    </MainLayout>
+  );
 }

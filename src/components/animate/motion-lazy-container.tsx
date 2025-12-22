@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, LazyMotion, domAnimation } from "framer-motion";
+import { LazyMotion, domAnimation, m } from "framer-motion";
 import { ReactNode } from "react";
 
 interface MotionLazyContainerProps {
@@ -10,14 +10,14 @@ interface MotionLazyContainerProps {
 export function MotionLazyContainer({ children }: MotionLazyContainerProps) {
   return (
     <LazyMotion features={domAnimation} strict>
-      <motion.div
+      <m.div
         initial="initial"
         animate="animate"
         exit="exit"
         style={{ height: "100%" }}
       >
         {children}
-      </motion.div>
+      </m.div>
     </LazyMotion>
   );
 }

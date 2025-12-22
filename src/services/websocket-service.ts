@@ -1,7 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { APP_CONFIG } from "@/config/app.config";
 import { useStore } from "@/lib/store";
-import { WebSocketMessage, SystemMetrics, LogEntry, ModelConfig } from "@/types/global";
+import { WebSocketMessage, SystemMetrics, LogEntry, ModelConfig } from "@/types";
 
 class WebSocketService {
   private socket: Socket | null = null;
@@ -9,6 +9,8 @@ class WebSocketService {
   private reconnectAttempts: number = 0;
   private readonly maxReconnectAttempts: number = 5;
   private reconnectTimeout: NodeJS.Timeout | null = null;
+  private connectionState: "disconnected" | "connecting" | "connected" | "error" = "disconnected";
+  private eventListeners: Map<string, ((data: any) => void)[]> = new Map();
 
   constructor() {
     this.url = APP_CONFIG.api.websocketUrl;
@@ -20,6 +22,12 @@ class WebSocketService {
       return;
     }
 
+    if (this.connectionState === "connecting") {
+      console.log("Already connecting...");
+      return;
+    }
+
+    this.setConnectionState("connecting");
     console.log(`Connecting to WebSocket: ${this.url}`);
     
     this.socket = io(this.url, {
@@ -43,78 +51,102 @@ class WebSocketService {
 
     this.socket.on("connect", () => {
       this.reconnectAttempts = 0;
+      this.setConnectionState("connected");
       console.log("WebSocket connected:", this.socket?.id);
       useStore.getState().setLoading(false);
       useStore.getState().clearError();
+      this.triggerEvent("connect");
     });
 
     this.socket.on("connect_error", (error) => {
       console.error("WebSocket connection error:", error);
       useStore.getState().setError("WebSocket connection failed");
+      this.setConnectionState("error");
       this.handleReconnect();
+      this.triggerEvent("connect_error", error);
     });
 
     this.socket.on("disconnect", (reason) => {
       console.log("WebSocket disconnected:", reason);
+      this.setConnectionState("disconnected");
       if (reason !== "io client disconnect") {
         this.handleReconnect();
       }
+      this.triggerEvent("disconnect", reason);
     });
 
     this.socket.on("reconnect", (attempt) => {
       console.log("WebSocket reconnected, attempt:", attempt);
+      this.setConnectionState("connected");
       useStore.getState().setLoading(false);
+      this.triggerEvent("reconnect", attempt);
     });
 
     this.socket.on("reconnect_attempt", (attempt) => {
       console.log("WebSocket reconnect attempt:", attempt);
       useStore.getState().setLoading(true);
+      this.triggerEvent("reconnect_attempt", attempt);
     });
 
     this.socket.on("reconnect_error", (error) => {
       console.error("WebSocket reconnect error:", error);
       useStore.getState().setError("WebSocket reconnection failed");
+      this.setConnectionState("error");
+      this.triggerEvent("reconnect_error", error);
     });
 
     this.socket.on("reconnect_failed", () => {
       console.error("WebSocket reconnection failed");
       useStore.getState().setError("Could not reconnect to WebSocket");
+      this.setConnectionState("error");
+      this.triggerEvent("reconnect_failed");
     });
 
     // Custom message handlers
     this.socket.on("status", (message: WebSocketMessage) => {
       console.log("Status update:", message);
+      this.triggerEvent("status", message);
     });
 
     this.socket.on("metrics", (message: WebSocketMessage<SystemMetrics>) => {
       console.log("Metrics update:", message.data);
       useStore.getState().setMetrics(message.data);
+      this.triggerEvent("metrics", message);
     });
 
     this.socket.on("logs", (message: WebSocketMessage<LogEntry>) => {
       console.log("Log update:", message.data);
       useStore.getState().addLog(message.data);
+      this.triggerEvent("logs", message);
     });
 
     this.socket.on("models", (message: WebSocketMessage<ModelConfig[]>) => {
       console.log("Models update:", message.data);
       useStore.getState().setModels(message.data);
+      this.triggerEvent("models", message);
     });
 
     this.socket.on("model_status", (message: WebSocketMessage<ModelConfig>) => {
       console.log("Model status update:", message.data);
       useStore.getState().updateModel(message.data.id, message.data);
+      this.triggerEvent("model_status", message);
     });
 
     this.socket.on("error", (message: WebSocketMessage<{ error: string }>) => {
       console.error("WebSocket error:", message.data.error);
       useStore.getState().setError(message.data.error);
+      this.triggerEvent("error", message);
     });
+  }
+
+  private setConnectionState(state: "disconnected" | "connecting" | "connected" | "error") {
+    this.connectionState = state;
   }
 
   private handleReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error("Max reconnect attempts reached");
+      this.setConnectionState("error");
       return;
     }
 
@@ -144,11 +176,16 @@ class WebSocketService {
     }
 
     this.reconnectAttempts = 0;
+    this.setConnectionState("disconnected");
     console.log("WebSocket disconnected manually");
   }
 
   public isConnected(): boolean {
     return this.socket?.connected || false;
+  }
+
+  public getConnectionState(): string {
+    return this.connectionState;
   }
 
   public sendMessage(event: string, data?: any): void {
@@ -201,9 +238,29 @@ class WebSocketService {
     return this.socket?.id;
   }
 
-  public getConnectionState(): string {
-    if (!this.socket) return "disconnected";
-    return this.socket.connected ? "connected" : "connecting";
+  // Event listener management
+  public on(event: string, callback: (data: any) => void): void {
+    if (!this.eventListeners.has(event)) {
+      this.eventListeners.set(event, []);
+    }
+    this.eventListeners.get(event)?.push(callback);
+  }
+
+  public off(event: string, callback: (data: any) => void): void {
+    const listeners = this.eventListeners.get(event);
+    if (listeners) {
+      this.eventListeners.set(
+        event,
+        listeners.filter((cb) => cb !== callback)
+      );
+    }
+  }
+
+  private triggerEvent(event: string, data?: any): void {
+    const listeners = this.eventListeners.get(event);
+    if (listeners) {
+      listeners.forEach((callback) => callback(data));
+    }
   }
 }
 

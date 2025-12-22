@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/providers/app-provider";
@@ -20,10 +20,6 @@ export const metadata: Metadata = {
   keywords: ["Llama", "AI", "Model Management", "Ollama", "LMStudio"],
   authors: [{ name: "Llama Runner Team" }],
   creator: "Llama Runner Team",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#3B82F6" },
-    { media: "(prefers-color-scheme: dark)", color: "#1E293B" },
-  ],
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
@@ -43,6 +39,13 @@ export const metadata: Metadata = {
     description: APP_CONFIG.description,
     creator: "@llamarunner",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#3B82F6" },
+    { media: "(prefers-color-scheme: dark)", color: "#1E293B" },
+  ],
 };
 
 export default function RootLayout({

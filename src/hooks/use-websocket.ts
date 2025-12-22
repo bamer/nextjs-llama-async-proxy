@@ -14,15 +14,31 @@ export function useWebSocket() {
     websocketService.connect();
 
     // Set up event listeners
-    const handleConnect = () => setIsConnected(true);
-    const handleDisconnect = () => setIsConnected(false);
-    const handleConnectionState = () => 
+    const handleConnect = () => {
+      setIsConnected(true);
+      setConnectionState("connected");
+    };
+
+    const handleDisconnect = () => {
+      setIsConnected(false);
+      setConnectionState("disconnected");
+    };
+
+    const handleConnectionState = () => {
       setConnectionState(websocketService.getConnectionState());
+    };
 
     // Initial state
     setConnectionState(websocketService.getConnectionState());
 
-    // Add error handling
+    // Add event listeners
+    websocketService.on("connect", handleConnect);
+    websocketService.on("disconnect", handleDisconnect);
+    websocketService.on("connect_error", handleConnectionState);
+    websocketService.on("reconnect", handleConnect);
+    websocketService.on("reconnect_failed", handleConnectionState);
+
+    // Error handling
     if (status.error) {
       enqueueSnackbar(status.error, { variant: "error" });
       useStore.getState().clearError();
@@ -30,6 +46,11 @@ export function useWebSocket() {
 
     // Cleanup
     return () => {
+      websocketService.off("connect", handleConnect);
+      websocketService.off("disconnect", handleDisconnect);
+      websocketService.off("connect_error", handleConnectionState);
+      websocketService.off("reconnect", handleConnect);
+      websocketService.off("reconnect_failed", handleConnectionState);
       websocketService.disconnect();
     };
   }, [status.error, enqueueSnackbar]);

@@ -110,17 +110,17 @@ export const analyticsEngine = AnalyticsEngine.getInstance();
  * SSE stream implementation
  */
 export class ServerSentEventStream {
-  private static stream: ReadableStream<ReadableStreamDefaultController<string>> | null = null;
+  private static streamController: any = null;
 
   /** Start the SSE stream */
   public static async startStream() {
-    if (this.stream) {
-      this.stream.cancel();
+    if (ServerSentEventStream.streamController) {
+      ServerSentEventStream.streamController.cancel();
     }
 
     const stream = new ReadableStream<string>({
       async start(controller) {
-        this.stream = controller as any;
+        ServerSentEventStream.streamController = controller as any;
         // Send initial analytics update
         try {
           const analytics = await analyticsEngine.getAnalytics();
@@ -158,6 +158,6 @@ export class ServerSentEventStream {
 
   /** Get the current stream */
   public static getStream() {
-    return this.stream;
+    return ServerSentEventStream.streamController;
   }
 }

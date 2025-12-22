@@ -70,7 +70,7 @@ function idleCpu(cpu: any) {
   // The `times` object contains user, sys, idle, etc. We sum user+sys to get
   // non‑idle time, then compare with total elapsed time to derive usage.
   const idle = cpu.times.idle;
-  const total = cpu.times.user + cpu.times.sys + idle;
+  // const total = cpu.times.user + cpu.times.sys + idle;
   // This simple approach works for a single snapshot; the caller will compute
   // the delta over time if needed.
   return idle;

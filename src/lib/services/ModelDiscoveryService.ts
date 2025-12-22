@@ -22,10 +22,10 @@ export interface DiscoveredModel extends ModelMetadata {
 }
 
 export class ModelDiscoveryService {
-  private basePath: string;
+  // private basePath: string;
 
-  constructor(basePath: string) {
-    this.basePath = path.resolve(basePath);
+  constructor(_basePath: string) {
+    // this.basePath = path.resolve(basePath);
   }
 
   /**

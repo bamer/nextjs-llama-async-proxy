@@ -1,4 +1,4 @@
-import path from 'path';
+// import path from 'path';
 import { spawn } from 'child_process';
 import { resolveBinary, binaryExists } from '@/lib/binary-lookup';
 

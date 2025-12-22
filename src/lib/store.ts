@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { APP_CONFIG } from "@/config/app.config";
+import { ThemeMode } from "@/contexts/ThemeContext";
 
 // Define store types
 interface AppState {
@@ -27,6 +28,7 @@ interface AppActions {
   setActiveModel: (id: string | null) => void;
   setMetrics: (metrics: SystemMetrics) => void;
   addLog: (log: LogEntry) => void;
+  setLogs: (logs: LogEntry[]) => void;
   clearLogs: () => void;
   updateSettings: (updates: Partial<AppState["settings"]>) => void;
   setLoading: (isLoading: boolean) => void;
@@ -76,6 +78,7 @@ const useAppStore = create<AppStore>()(
       setActiveModel: (id) => set({ activeModelId: id }),
       setMetrics: (metrics) => set({ metrics }),
       addLog: (log) => set((state) => ({ logs: [log, ...state.logs].slice(0, 100) })),
+      setLogs: (logs) => set({ logs }),
       clearLogs: () => set({ logs: [] }),
       updateSettings: (updates) =>
         set((state) => ({ settings: { ...state.settings, ...updates } })),
@@ -84,7 +87,7 @@ const useAppStore = create<AppStore>()(
       clearError: () => set({ status: { ...initialState.status, error: null } }),
     }),
     {
-      name: "llama-app-storage",
+      name: "llama-app-storage-v2",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         models: state.models,

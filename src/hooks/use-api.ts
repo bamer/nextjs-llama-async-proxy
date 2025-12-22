@@ -1,25 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiService } from "@/services/api-service";
 import { useSnackbar } from "notistack";
-import { useStore } from "@/lib/store";
+// import { useStore } from "@/lib/store";
 
 export function useApi() {
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
-  const status = useStore((state) => state.status);
+  // const status = useStore((state) => state.status);
 
   // Models queries
   const useModelsQuery = () => {
     return useQuery({
       queryKey: ["models"],
       queryFn: () => apiService.getModels(),
-      onSuccess: () => {
-        enqueueSnackbar("Models loaded successfully", { variant: "success" });
-      },
-      onError: (error: Error) => {
-        enqueueSnackbar(error.message, { variant: "error" });
-        useStore.getState().setError(error.message);
-      },
     });
   };
 
@@ -28,9 +21,6 @@ export function useApi() {
       queryKey: ["models", id],
       queryFn: () => apiService.getModel(id),
       enabled: !!id,
-      onError: (error: Error) => {
-        enqueueSnackbar(error.message, { variant: "error" });
-      },
     });
   };
 
@@ -41,9 +31,6 @@ export function useApi() {
       onSuccess: () => {
         enqueueSnackbar("Model created successfully", { variant: "success" });
         queryClient.invalidateQueries({ queryKey: ["models"] });
-      },
-      onError: (error: Error) => {
-        enqueueSnackbar(error.message, { variant: "error" });
       },
     });
   };
@@ -56,9 +43,6 @@ export function useApi() {
         enqueueSnackbar("Model updated successfully", { variant: "success" });
         queryClient.invalidateQueries({ queryKey: ["models"] });
       },
-      onError: (error: Error) => {
-        enqueueSnackbar(error.message, { variant: "error" });
-      },
     });
   };
 
@@ -68,9 +52,6 @@ export function useApi() {
       onSuccess: () => {
         enqueueSnackbar("Model deleted successfully", { variant: "success" });
         queryClient.invalidateQueries({ queryKey: ["models"] });
-      },
-      onError: (error: Error) => {
-        enqueueSnackbar(error.message, { variant: "error" });
       },
     });
   };
@@ -82,9 +63,6 @@ export function useApi() {
         enqueueSnackbar("Model started successfully", { variant: "success" });
         queryClient.invalidateQueries({ queryKey: ["models"] });
       },
-      onError: (error: Error) => {
-        enqueueSnackbar(error.message, { variant: "error" });
-      },
     });
   };
 
@@ -95,9 +73,6 @@ export function useApi() {
         enqueueSnackbar("Model stopped successfully", { variant: "success" });
         queryClient.invalidateQueries({ queryKey: ["models"] });
       },
-      onError: (error: Error) => {
-        enqueueSnackbar(error.message, { variant: "error" });
-      },
     });
   };
 
@@ -107,9 +82,6 @@ export function useApi() {
       queryKey: ["metrics"],
       queryFn: () => apiService.getMetrics(),
       refetchInterval: 10000, // 10 seconds
-      onError: (error: Error) => {
-        enqueueSnackbar(error.message, { variant: "error" });
-      },
     });
   };
 
@@ -117,9 +89,6 @@ export function useApi() {
     return useQuery({
       queryKey: ["metrics", "history", params],
       queryFn: () => apiService.getMetricsHistory(params),
-      onError: (error: Error) => {
-        enqueueSnackbar(error.message, { variant: "error" });
-      },
     });
   };
 
@@ -128,9 +97,6 @@ export function useApi() {
     return useQuery({
       queryKey: ["logs", params],
       queryFn: () => apiService.getLogs(params),
-      onError: (error: Error) => {
-        enqueueSnackbar(error.message, { variant: "error" });
-      },
     });
   };
 
@@ -141,9 +107,6 @@ export function useApi() {
         enqueueSnackbar("Logs cleared successfully", { variant: "success" });
         queryClient.invalidateQueries({ queryKey: ["logs"] });
       },
-      onError: (error: Error) => {
-        enqueueSnackbar(error.message, { variant: "error" });
-      },
     });
   };
 
@@ -152,9 +115,6 @@ export function useApi() {
     return useQuery({
       queryKey: ["settings"],
       queryFn: () => apiService.getSettings(),
-      onError: (error: Error) => {
-        enqueueSnackbar(error.message, { variant: "error" });
-      },
     });
   };
 
@@ -165,9 +125,6 @@ export function useApi() {
         enqueueSnackbar("Settings updated successfully", { variant: "success" });
         queryClient.invalidateQueries({ queryKey: ["settings"] });
       },
-      onError: (error: Error) => {
-        enqueueSnackbar(error.message, { variant: "error" });
-      },
     });
   };
 
@@ -176,9 +133,6 @@ export function useApi() {
     return useQuery({
       queryKey: ["system", "info"],
       queryFn: () => apiService.getSystemInfo(),
-      onError: (error: Error) => {
-        enqueueSnackbar(error.message, { variant: "error" });
-      },
     });
   };
 
@@ -187,9 +141,6 @@ export function useApi() {
       mutationFn: () => apiService.restartSystem(),
       onSuccess: () => {
         enqueueSnackbar("System restart initiated", { variant: "info" });
-      },
-      onError: (error: Error) => {
-        enqueueSnackbar(error.message, { variant: "error" });
       },
     });
   };
@@ -200,9 +151,6 @@ export function useApi() {
       onSuccess: () => {
         enqueueSnackbar("System shutdown initiated", { variant: "info" });
       },
-      onError: (error: Error) => {
-        enqueueSnackbar(error.message, { variant: "error" });
-      },
     });
   };
 
@@ -212,9 +160,6 @@ export function useApi() {
       queryKey: ["health"],
       queryFn: () => apiService.healthCheck(),
       refetchInterval: 30000, // 30 seconds
-      onError: (error: Error) => {
-        enqueueSnackbar(error.message, { variant: "error" });
-      },
     });
   };
 
