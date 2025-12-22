@@ -1,42 +1,179 @@
-// src/lib/logger.ts
-
-import winston from 'winston';
+import { createLogger, format, transports, Logger } from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 
-// Configuration du logger avec Winston
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    // Logs en console (pour le développement)
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      ),
-    }),
-    // Logs rotatifs pour la production (un fichier par jour)
-    new DailyRotateFile({
-      filename: 'logs/application-%DATE%.log',
-      datePattern: 'YYYY-MM-DD',
-      maxSize: '20m',
-      maxFiles: '14d',
-      format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.json()
-      ),
-    }),
-  ],
-  exceptionHandlers: [
-    new winston.transports.File({ filename: 'logs/exceptions.log' }),
-  ],
-  rejectionHandlers: [
-    new winston.transports.File({ filename: 'logs/rejections.log' }),
-  ],
-});
+// Define log levels
+const logLevels = {
+  error: 0,
+  warn: 1,
+  info: 2,
+  debug: 3,
+  verbose: 4,
+};
 
-// Export du logger pour une utilisation globale
-export default logger;
+// Log format
+const logFormat = format.combine(
+  format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+  format.errors({ stack: true }),
+  format.splat(),
+  format.json()
+);
+
+// Create logger instance
+let logger: Logger;
+
+// Logger configuration interface
+interface LoggerConfig {
+  consoleLevel: string;
+  fileLevel: string;
+  errorLevel: string;
+  maxFileSize: string;
+  maxFiles: string;
+  enableFileLogging: boolean;
+  enableConsoleLogging: boolean;
+}
+
+// Default configuration
+const defaultConfig: LoggerConfig = {
+  consoleLevel: 'debug',
+  fileLevel: 'info',
+  errorLevel: 'error',
+  maxFileSize: '20m',
+  maxFiles: '30d',
+  enableFileLogging: true,
+  enableConsoleLogging: true,
+};
+
+// Current configuration
+let currentConfig: LoggerConfig = { ...defaultConfig };
+
+/**
+ * Initialize the logger with configuration
+ */
+export function initLogger(config: Partial<LoggerConfig> = {}): Logger {
+  // Merge configuration
+  currentConfig = { ...defaultConfig, ...config };
+
+  // Create transports array
+  const loggerTransports = [];
+
+  // Add console transport if enabled
+  if (currentConfig.enableConsoleLogging) {
+    loggerTransports.push(
+      new transports.Console({
+        level: currentConfig.consoleLevel,
+        format: format.combine(
+          format.colorize(),
+          format.printf((info) => {
+            return `${info.timestamp} [${info.level}]: ${info.message}`;
+          })
+        ),
+      })
+    );
+  }
+
+  // Add file transports if enabled
+  if (currentConfig.enableFileLogging) {
+    loggerTransports.push(
+      new DailyRotateFile({
+        level: currentConfig.fileLevel,
+        filename: 'logs/application-%DATE%.log',
+        datePattern: 'YYYY-MM-DD',
+        zippedArchive: true,
+        maxSize: currentConfig.maxFileSize,
+        maxFiles: currentConfig.maxFiles,
+        format: logFormat,
+      })
+    );
+
+    loggerTransports.push(
+      new DailyRotateFile({
+        level: currentConfig.errorLevel,
+        filename: 'logs/errors-%DATE%.log',
+        datePattern: 'YYYY-MM-DD',
+        zippedArchive: true,
+        maxSize: currentConfig.maxFileSize,
+        maxFiles: currentConfig.maxFiles,
+        format: logFormat,
+      })
+    );
+  }
+
+  // Create logger instance
+  logger = createLogger({
+    levels: logLevels,
+    level: 'verbose',
+    transports: loggerTransports,
+    exitOnError: false,
+  });
+
+  // Add exception handling
+  if (logger.exceptions) {
+    logger.exceptions.handle(
+      ...loggerTransports
+    );
+  }
+
+  // Add rejection handling
+  if (logger.rejections) {
+    logger.rejections.handle(
+      ...loggerTransports
+    );
+  }
+
+  logger.info('Logger initialized with configuration:', {
+    consoleLevel: currentConfig.consoleLevel,
+    fileLevel: currentConfig.fileLevel,
+    errorLevel: currentConfig.errorLevel,
+    enableFileLogging: currentConfig.enableFileLogging,
+    enableConsoleLogging: currentConfig.enableConsoleLogging,
+  });
+
+  return logger;
+}
+
+/**
+ * Update logger configuration dynamically
+ */
+export function updateLoggerConfig(config: Partial<LoggerConfig>): void {
+  const newConfig = { ...currentConfig, ...config };
+
+  if (JSON.stringify(newConfig) !== JSON.stringify(currentConfig)) {
+    currentConfig = newConfig;
+    logger?.info('Updating logger configuration:', config);
+    
+    // Reinitialize logger with new configuration
+    initLogger(newConfig);
+  }
+}
+
+/**
+ * Get current logger configuration
+ */
+export function getLoggerConfig(): LoggerConfig {
+  return { ...currentConfig };
+}
+
+/**
+ * Get logger instance (create if not exists)
+ */
+export function getLogger(): Logger {
+  if (!logger) {
+    logger = initLogger();
+  }
+  return logger;
+}
+
+// Initialize logger on import
+const loggerInstance = initLogger();
+
+// Export logger methods for convenience
+export const log = {
+  error: (message: string, meta?: any) => loggerInstance.error(message, meta),
+  warn: (message: string, meta?: any) => loggerInstance.warn(message, meta),
+  info: (message: string, meta?: any) => loggerInstance.info(message, meta),
+  debug: (message: string, meta?: any) => loggerInstance.debug(message, meta),
+  verbose: (message: string, meta?: any) => loggerInstance.verbose(message, meta),
+};
+
+// Export types
+export type { LoggerConfig, Logger };

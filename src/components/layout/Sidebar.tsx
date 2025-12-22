@@ -24,7 +24,6 @@ import {
   Typography
 } from '@mui/material';
 import { useTheme } from '@/contexts/ThemeContext';
-import { motion as m } from 'framer-motion';
 import { APP_CONFIG } from '@/config/app.config';
 
 interface MenuItem {

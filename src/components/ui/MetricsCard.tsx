@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, GridLegacy, Typography, LinearProgress, Box } from "@mui/material";
 import { useStore } from "@/lib/store";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import MemoryIcon from '@mui/icons-material/Memory';
 import TimerIcon from '@mui/icons-material/Timer';
 import StorageIcon from '@mui/icons-material/Storage';

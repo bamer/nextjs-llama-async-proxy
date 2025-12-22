@@ -13,7 +13,7 @@ import {
   TableRow,
   Paper,
 } from '@mui/material';
-import { useWebSocket } from '../websocket/WebSocketManager';
+import { useWebSocket } from "@/hooks/use-websocket";
 import type { MonitoringEntry } from '@/types/monitoring';
 
 const MonitoringPage = () => {

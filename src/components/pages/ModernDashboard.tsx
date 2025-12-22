@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useStore } from '@/lib/store';
 import { MetricsCard } from '@/components/ui/MetricsCard';
-import { WebSocketStatus } from '@/components/ui/WebSocketStatus';
+import { WebSocketStatus } from '@/components/ui/webSocketStatus';
 import { Card, CardContent, Typography, Box, GridLegacy, Divider, Chip, LinearProgress } from '@mui/material';
 import { m } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -27,25 +27,40 @@ export default function ModernDashboard() {
       requestModels();
       requestLogs();
     }
-    
-    const timer = setTimeout(() => setLoading(false), 2000);
-    return () => clearTimeout(timer);
   }, [isConnected, requestMetrics, requestModels, requestLogs]);
 
+  // Update loading state based on actual data availability
   useEffect(() => {
-    if (metrics) {
-      setChartData(prev => {
-        const timestamp = new Date().toLocaleTimeString();
-        const newData = [...prev, {
-          timestamp,
-          cpu: metrics.cpuUsage,
-          memory: metrics.memoryUsage,
-          requests: metrics.totalRequests
-        }];
-        return newData.slice(-20); // Keep last 20 data points
-      });
+    if (metrics && models.length > 0 && logs.length > 0) {
+      setLoading(false);
     }
-  }, [metrics]);
+  }, [metrics, models, logs]);
+
+  // Temporarily disable automatic chart updates to prevent infinite loop
+  // useEffect(() => {
+  //   if (metrics && metrics.cpuUsage !== undefined) {
+  //     setChartData(prev => {
+  //       // Only add new data point if metrics have actually changed
+  //       const hasChanged = prev.length === 0 || 
+  //                         prev[prev.length - 1].cpu !== metrics.cpuUsage ||
+  //                         prev[prev.length - 1].memory !== metrics.memoryUsage ||
+  //                         prev[prev.length - 1].requests !== metrics.totalRequests;
+  //                         
+  //       if (!hasChanged) {
+  //         return prev; // Return same data if no change to prevent infinite loop
+  //       }
+  //       
+  //       const timestamp = new Date().toLocaleTimeString();
+  //       const newData = [...prev, {
+  //         timestamp,
+  //         cpu: metrics.cpuUsage,
+  //         memory: metrics.memoryUsage,
+  //         requests: metrics.totalRequests
+  //       }];
+  //       return newData.slice(-20); // Keep last 20 data points
+  //     });
+  //   }
+  // }, [metrics]);
 
   const formatUptime = (seconds: number) => {
     const days = Math.floor(seconds / 86400);

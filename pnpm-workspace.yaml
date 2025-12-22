@@ -1,3 +1,5 @@
 onlyBuiltDependencies:
+  - '@sentry/cli'
+  - puppeteer
   - sharp
   - unrs-resolver

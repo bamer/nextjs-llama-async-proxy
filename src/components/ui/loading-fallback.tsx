@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, CircularProgress, Typography } from "@mui/material";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 
 export function LoadingFallback() {
   return (

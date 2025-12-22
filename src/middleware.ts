@@ -1,7 +1,9 @@
 // src/middleware.ts
 
 import { NextResponse, NextRequest } from 'next/server';
-import logger from './lib/logger';
+import { getLogger } from './lib/logger';
+
+const logger = getLogger();
 
 /**
  * Middleware pour logger les requêtes dans un système PUBLIC sans authentification

@@ -11,6 +11,7 @@ export function useWebSocket() {
 
   useEffect(() => {
     // Connect on mount
+    console.log('WebSocket hook: connecting...');
     websocketService.connect();
 
     // Set up event listeners
@@ -41,12 +42,36 @@ export function useWebSocket() {
       setConnectionState(initialState);
     }
 
+    // Handle incoming messages and update store
+    const handleMessage = (message: any) => {
+      console.log('WebSocket hook received message:', message);
+      
+      // Update store based on message type
+      switch (message.type) {
+        case 'metrics':
+          useStore.getState().setMetrics(message.data);
+          break;
+        case 'models':
+          useStore.getState().setModels(message.data);
+          break;
+        case 'logs':
+          useStore.getState().setLogs(message.data);
+          break;
+        case 'model_status':
+          useStore.getState().updateModel(message.data.modelId, { status: message.data.status });
+          break;
+        default:
+          console.log('Unknown message type:', message.type);
+      }
+    };
+
     // Add event listeners
     websocketService.on("connect", handleConnect);
     websocketService.on("disconnect", handleDisconnect);
     websocketService.on("connect_error", handleConnectionState);
     websocketService.on("reconnect", handleConnect);
     websocketService.on("reconnect_failed", handleConnectionState);
+    websocketService.on("message", handleMessage);
 
     // Cleanup
     return () => {
@@ -55,6 +80,7 @@ export function useWebSocket() {
       websocketService.off("connect_error", handleConnectionState);
       websocketService.off("reconnect", handleConnect);
       websocketService.off("reconnect_failed", handleConnectionState);
+      websocketService.off("message", handleMessage);
       websocketService.disconnect();
     };
   }, []);

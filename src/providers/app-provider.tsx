@@ -8,7 +8,6 @@ import { SnackbarProvider } from "notistack";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { MotionLazyContainer } from "@/components/animate/motion-lazy-container";
-import { WebSocketProvider } from "@/providers/websocket-provider";
 
 // Create query client with optimized defaults
 const queryClient = new QueryClient({
@@ -32,17 +31,15 @@ export function AppProvider({ children }: AppProviderProps) {
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <WebSocketProvider>
-            <SnackbarProvider
-              maxSnack={5}
-              autoHideDuration={5000}
-              anchorOrigin={{ vertical: "top", horizontal: "right" }}
-              preventDuplicate
-              dense
-            >
-              <MotionLazyContainer>{children}</MotionLazyContainer>
-            </SnackbarProvider>
-          </WebSocketProvider>
+          <SnackbarProvider
+            maxSnack={5}
+            autoHideDuration={5000}
+            anchorOrigin={{ vertical: "top", horizontal: "right" }}
+            preventDuplicate
+            dense
+          >
+            <MotionLazyContainer>{children}</MotionLazyContainer>
+          </SnackbarProvider>
         </ThemeProvider>
         <ReactQueryDevtools initialIsOpen={false} position="bottom" />
       </QueryClientProvider>

@@ -5,7 +5,6 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { SidebarProvider } from "@/components/layout/SidebarProvider";
 import { Box } from "@mui/material";
 import { useTheme } from "@/contexts/ThemeContext";
-import { MotionLazyContainer } from "@/components/animate/motion-lazy-container";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -16,7 +15,6 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <SidebarProvider>
-      <MotionLazyContainer>
         <Box sx={{ 
           minHeight: '100vh',
           display: 'flex',
@@ -36,7 +34,6 @@ export function MainLayout({ children }: MainLayoutProps) {
             </Box>
           </Box>
         </Box>
-      </MotionLazyContainer>
     </SidebarProvider>
   );
 }

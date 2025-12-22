@@ -14,14 +14,25 @@ async function startServer() {
 
   const httpServer = createServer((req, res) => {
     const parsedUrl = parse(req.url, true);
+    
+    // Let Next.js handle HMR and static files directly
+    if (req.url && (req.url.startsWith('/_next/') || 
+                   req.url === '/favicon.ico' ||
+                   req.url === '/site.webmanifest')) {
+      return app.getRequestHandler()(req, res, parsedUrl);
+    }
+    
     // 🚨 PUBLIC ACCESS: No authentication, all connections allowed
     console.log(`[PUBLIC_SERVER] ${req.method} ${req.url}`);
     handle(req, res, parsedUrl);
   });
 
   const io = new Server(httpServer, {
-    path: '/api/websocket',
-    addTrailingSlash: false,
+    cors: {
+      origin: '*',
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization']
+    },
     // 🚨 PUBLIC WEBSOCKET: No authentication required
     allowRequest: (req, callback) => {
       console.log(`[PUBLIC_WS_CONNECTION] ${req.headers.origin || 'unknown'}`);

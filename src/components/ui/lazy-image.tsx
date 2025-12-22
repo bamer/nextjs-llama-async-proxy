@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Box, Skeleton } from "@mui/material";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 
 interface LazyImageProps {
   src: string;

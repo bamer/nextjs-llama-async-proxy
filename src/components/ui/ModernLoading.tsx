@@ -1,7 +1,7 @@
 "use client";
 
 import { CircularProgress, Box, Typography, LinearProgress } from "@mui/material";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface ModernLoadingProps {

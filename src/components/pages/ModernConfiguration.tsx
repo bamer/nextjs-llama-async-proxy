@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useConfig } from '@/hooks/use-config';
 import { Card, CardContent, Typography, Box, GridLegacy, TextField, Button, Divider, LinearProgress, Tabs, Tab, Switch, FormControlLabel, Slider } from '@mui/material';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Save, Restore, Sync, CheckCircle, ErrorOutline } from '@mui/icons-material';
 

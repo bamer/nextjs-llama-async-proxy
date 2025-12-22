@@ -14,7 +14,7 @@ interface MonitoringMetrics {
 }
 
 /**
- * Fetches monitoring metrics from the backend or simulates them.
+ * Fetches monitoring metrics from the llama-server backend.
  */
 async function fetchMetrics(): Promise<MonitoringMetrics> {
   try {

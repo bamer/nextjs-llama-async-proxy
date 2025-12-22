@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSystemMetrics } from '@/hooks/useSystemMetrics';
-import { useWebSocket } from '../websocket/WebSocketManager';
+import { useWebSocket } from "@/hooks/use-websocket";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface MetricPoint {

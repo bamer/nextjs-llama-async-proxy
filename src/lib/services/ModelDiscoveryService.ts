@@ -1,6 +1,8 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import logger from '../logger';
+import { getLogger } from '../logger';
+
+const logger = getLogger();
 
 export interface ModelMetadata {
   /** Human readable model name */
