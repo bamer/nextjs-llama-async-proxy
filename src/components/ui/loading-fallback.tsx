@@ -20,7 +20,7 @@ export function LoadingFallback() {
         backgroundColor: "background.default",
       }}
     >
-      <motion.div
+      <m.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, ease: "easeInOut" }}
@@ -41,7 +41,7 @@ export function LoadingFallback() {
         >
           Please wait while we prepare your dashboard
         </Typography>
-      </motion.div>
+      </m.div>
     </Box>
   );
 }

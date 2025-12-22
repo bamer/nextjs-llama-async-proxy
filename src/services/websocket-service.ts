@@ -165,6 +165,9 @@ class WebSocketService {
   }
 
   public disconnect(): void {
+    // Set flag to indicate intentional disconnect
+    this.reconnectAttempts = this.maxReconnectAttempts;
+    
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
@@ -175,7 +178,6 @@ class WebSocketService {
       this.reconnectTimeout = null;
     }
 
-    this.reconnectAttempts = 0;
     this.setConnectionState("disconnected");
     console.log("WebSocket disconnected manually");
   }

@@ -57,7 +57,7 @@ export function useWebSocket() {
       websocketService.off("reconnect_failed", handleConnectionState);
       websocketService.disconnect();
     };
-  }, [connectionState]);
+  }, []);
 
   // Handle errors separately to avoid infinite loops
   useEffect(() => {

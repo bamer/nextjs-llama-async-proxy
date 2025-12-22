@@ -58,7 +58,7 @@ export function LazyImage({ src, alt, width, height, placeholder, className, sty
   }
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
@@ -79,6 +79,6 @@ export function LazyImage({ src, alt, width, height, placeholder, className, sty
           borderRadius: "8px",
         }}
       />
-    </motion.div>
+    </m.div>
   );
 }

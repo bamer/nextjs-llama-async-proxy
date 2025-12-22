@@ -34,7 +34,7 @@ export function ModernLoading({
           backgroundColor: isDark ? "#0f172a" : "#f8fafc",
         }}
       >
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -71,7 +71,7 @@ export function ModernLoading({
           >
             Please wait while we prepare your dashboard
           </Typography>
-        </motion.div>
+        </m.div>
       </Box>
     );
   }

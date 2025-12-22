@@ -26,7 +26,7 @@ export function Loading({ fullScreen = false, message = "Loading..." }: LoadingP
           backgroundColor: "background.default",
         }}
       >
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -40,7 +40,7 @@ export function Loading({ fullScreen = false, message = "Loading..." }: LoadingP
           >
             {message}
           </Typography>
-        </motion.div>
+        </m.div>
       </Box>
     );
   }

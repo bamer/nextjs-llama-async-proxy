@@ -21,14 +21,16 @@ export default function ModernDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Initial data load
-    requestMetrics();
-    requestModels();
-    requestLogs();
+    // Only request data when WebSocket is connected
+    if (isConnected) {
+      requestMetrics();
+      requestModels();
+      requestLogs();
+    }
     
     const timer = setTimeout(() => setLoading(false), 2000);
     return () => clearTimeout(timer);
-  }, [requestMetrics, requestModels, requestLogs]);
+  }, [isConnected, requestMetrics, requestModels, requestLogs]);
 
   useEffect(() => {
     if (metrics) {

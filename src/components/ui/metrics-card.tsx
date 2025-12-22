@@ -66,7 +66,7 @@ export function MetricsCard() {
         <GridLegacy container spacing={3}>
           {metricsData.map((metric, index) => (
             <GridLegacy item key={index} xs={12} sm={6} md={4}>
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
@@ -88,7 +88,7 @@ export function MetricsCard() {
                   }
                   sx={{ mt: 1, height: "6px", borderRadius: "3px" }}
                 />
-              </motion.div>
+              </m.div>
             </GridLegacy>
           ))}
         </GridLegacy>

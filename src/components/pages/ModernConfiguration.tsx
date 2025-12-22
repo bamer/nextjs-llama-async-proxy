@@ -86,7 +86,7 @@ export default function ModernConfiguration() {
     <Box sx={{ p: 4 }}>
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -97,7 +97,7 @@ export default function ModernConfiguration() {
           <Typography variant="subtitle1" color="text.secondary">
             Manage your application settings and preferences
           </Typography>
-        </motion.div>
+        </m.div>
       </Box>
 
       <Divider sx={{ my: 4, borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' }} />
@@ -119,7 +119,7 @@ export default function ModernConfiguration() {
 
       {/* Success Message */}
       {saveSuccess && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
@@ -134,12 +134,12 @@ export default function ModernConfiguration() {
               </Box>
             </CardContent>
           </Card>
-        </motion.div>
+        </m.div>
       )}
 
       {/* Validation Errors */}
       {validationErrors.length > 0 && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
@@ -161,12 +161,12 @@ export default function ModernConfiguration() {
               </Box>
             </CardContent>
           </Card>
-        </motion.div>
+        </m.div>
       )}
 
       {/* Tab Content */}
       {activeTab === 0 && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
@@ -275,11 +275,11 @@ export default function ModernConfiguration() {
               </GridLegacy>
             </CardContent>
           </Card>
-        </motion.div>
+        </m.div>
       )}
 
       {activeTab === 1 && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
@@ -435,11 +435,11 @@ export default function ModernConfiguration() {
               </GridLegacy>
             </CardContent>
           </Card>
-        </motion.div>
+        </m.div>
       )}
 
       {activeTab === 2 && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
@@ -484,7 +484,7 @@ export default function ModernConfiguration() {
               </Typography>
             </CardContent>
           </Card>
-        </motion.div>
+        </m.div>
       )}
 
       {/* Action Buttons */}
