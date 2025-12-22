@@ -1,7 +1,7 @@
 "use client";
 
 import { Component, ErrorInfo, ReactNode } from "react";
-import { Button, Typography, Box, Alert, AlertTitle } from "@mui/material";
+import { Button, Typography, Box } from "@mui/material";
 import { Refresh as RefreshIcon } from "@mui/icons-material";
 
 interface ErrorBoundaryProps {
@@ -55,14 +55,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             textAlign: "center",
           }}
         >
-          <Alert
-            severity="error"
-            sx={{ mb: 4, maxWidth: "600px", width: "100%" }}
-          >
-            <AlertTitle>Something went wrong</AlertTitle>
-            {this.state.error?.message || "An unexpected error occurred"}
-          </Alert>
-
           <Typography variant="body1" color="text.secondary" mb={3} maxWidth="600px">
             We apologize for the inconvenience. Please try refreshing the page or contact
             support if the problem persists.

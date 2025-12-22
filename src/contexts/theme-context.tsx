@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { useMediaQuery } from "@mui/material";
 import { ThemeProvider as MuiThemeProvider, createTheme } from "@mui/material/styles";
 import { deepmerge } from "@mui/utils";
-import { APP_CONFIG } from "@config/app.config";
+import { APP_CONFIG } from "@/config/app.config";
 
 // Define theme types
 type ThemeMode = "light" | "dark" | "system";

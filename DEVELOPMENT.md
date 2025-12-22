@@ -4,33 +4,38 @@ Ce guide détaille les bonnes pratiques, la structure recommandée et les conven
 
 ## 🏗️ Structure recommandée
 
-### Organisation des dossiers
+### Organisation des dossiers (Standard Next.js)
 
 ```
-src/
-├── app/                          # Routes Next.js (pages API + pages UI)
-│   ├── api/                      # API routes
-│   ├── [page]/                   # Pages UI
-│   ├── layout.tsx                # Layout racine
-│   ├── page.tsx                  # Page d'accueil
-│   └── globals.css               # Styles globaux
-├── components/                   # Composants React
-│   ├── layout/                   # Header, Sidebar, Layout
-│   ├── pages/                    # Composants spécifiques aux pages
-│   ├── ui/                       # Composants UI réutilisables
-│   └── websocket/                # Gestionnaire WebSocket
-└── config/                       # Configurations métier
-    ├── app_config.json           # Config application
-    ├── models_config.json        # Config modèles
-    └── llama_options_reference.json
+app/                             # Routes Next.js (App Router - standard)
+├── api/                         # Routes API
+├── [page]/                     # Pages UI
+├── layout.tsx                  # Layout racine
+├── page.tsx                    # Page d'accueil
+└── globals.css                 # Styles globaux
+
+src/                            # Code source organisé
+├── components/                 # Composants React
+│   ├── layout/                 # Header, Sidebar, Layout
+│   ├── pages/                  # Composants spécifiques aux pages
+│   ├── ui/                     # Composants UI réutilisables
+│   └── websocket/              # Gestionnaire WebSocket
+├── hooks/                      # Hooks personnalisés
+├── services/                   # Services et logique métier
+├── config/                     # Configurations
+│   ├── app_config.json         # Config application
+│   ├── models_config.json      # Config modèles
+│   └── llama_options_reference.json
+└── lib/                        # Utilitaires et helpers
 ```
 
-### Proxy App Router
+### Structure Standard Next.js
 
-Next.js nécessite que le dossier `app/` soit à la racine. Nous utilisons un système de proxy :
+Cette structure suit les meilleures pratiques officielles :
 
-- **Code réel** : `src/app/` (structure propre, organisée)
-- **Proxy Next.js** : `app/` (fichiers qui importent depuis `src/app/`)
+- **`app/` à la racine** : Pour le routage (pages et API) - requis par Next.js
+- **`src/`** : Pour organiser le code source (composants, hooks, services)
+- **`pages/`** : Ancienne structure (peut être supprimée si migration complète)
 
 ## 📝 Conventions de code
 

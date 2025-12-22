@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSystemMetrics } from '@/hooks/useSystemMetrics';
 import { useWebSocket } from '../websocket/WebSocketManager';
 

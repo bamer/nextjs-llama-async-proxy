@@ -27,7 +27,7 @@ interface EnhancedMetricCardProps {
   className?: string;
 }
 
-export const EnhancedMetricCard = ({ title, value, unit = '', icon = '', trend = 0, className = '' }: EnhancedMetricCardProps) => {
+export const EnhancedMetricCard = ({ title, value, unit = '', icon = '', trend = 0 }: EnhancedMetricCardProps) => {
   const trendClass = trend > 0 ? 'text-success' : trend < 0 ? 'text-danger' : 'text-muted-foreground';
 
   return (

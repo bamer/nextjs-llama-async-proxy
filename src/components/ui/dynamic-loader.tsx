@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { Loading } from "@components/ui/loading";
+import { Loading } from "@/components/ui/loading";
 
 interface DynamicLoaderProps {
   children: React.ReactNode;

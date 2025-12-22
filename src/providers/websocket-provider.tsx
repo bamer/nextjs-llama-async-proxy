@@ -1,8 +1,8 @@
 "use client";
 
 import React, { ReactNode, useEffect } from "react";
-import { websocketService } from "@services/websocket-service";
-import { useStore } from "@lib/store";
+import { websocketService } from "@/services/websocket-service";
+import { useStore } from "@/lib/store";
 import { useSnackbar } from "notistack";
 
 interface WebSocketProviderProps {

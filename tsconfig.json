@@ -27,9 +27,6 @@
       "@/types/*": [
         "src/types/*"
       ],        
-      "@/app/*": [
-        "src/app/*"
-      ],
       "@/config/*": [
         "src/config/*"
       ]

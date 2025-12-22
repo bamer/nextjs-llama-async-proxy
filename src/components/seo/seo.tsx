@@ -1,5 +1,6 @@
-import { NextSeo } from "next-seo";
-import { APP_CONFIG } from "@config/app.config";
+
+import { APP_CONFIG } from "@/config/app.config";
+import { generateNextSeo } from "next-seo/pages";
 
 interface SEOProps {
   title?: string;
@@ -27,37 +28,36 @@ export function SEO({ title, description, canonical, openGraph, twitter }: SEOPr
   const seoTitle = title ? `${title} | ${APP_CONFIG.name}` : APP_CONFIG.name;
   const seoDescription = description || APP_CONFIG.description;
 
-  return (
-    <NextSeo
-      title={seoTitle}
-      description={seoDescription}
-      canonical={canonical || "https://llama-runner.example.com"}
-      openGraph={{
-        type: "website",
-        locale: "en_US",
-        url: openGraph?.url || "https://llama-runner.example.com",
-        title: openGraph?.title || seoTitle,
-        description: openGraph?.description || seoDescription,
-        images: openGraph?.images || [
-          {
-            url: "https://llama-runner.example.com/og-image.jpg",
-            width: 1200,
-            height: 630,
+  const seoConfig = {
+    title: seoTitle,
+    description: seoDescription,
+    canonical: canonical || "https://llama-runner.example.com",
+    openGraph: {
+      type: "website",
+      locale: "en_US",
+      url: openGraph?.url || "https://llama-runner.example.com",
+      title: openGraph?.title || seoTitle,
+      description: openGraph?.description || seoDescription,
+      images: openGraph?.images || [
+        {
+          url: "https://llama-runner.example.com/og-image.jpg",
+          width: 1200,
+          height: 630,
             alt: APP_CONFIG.name,
           },
         ],
         site_name: APP_CONFIG.name,
-      }}
-      twitter={{
+      },
+      twitter: {
         handle: twitter?.handle || "@llamarunner",
         site: twitter?.site || "@llamarunner",
         cardType: twitter?.cardType || "summary_large_image",
-      }}
-      additionalMetaTags={[
-        {
+      },
+      additionalMetaTags: [{
           name: "keywords",
           content: "Llama, AI, Model Management, Ollama, LMStudio, Machine Learning",
         },
+     
         {
           name: "author",
           content: "Llama Runner Team",
@@ -66,8 +66,8 @@ export function SEO({ title, description, canonical, openGraph, twitter }: SEOPr
           name: "theme-color",
           content: "#3B82F6",
         },
-      ]}
-      additionalLinkTags={[
+      ],
+      additionalLinkTags: [
         {
           rel: "icon",
           href: "/favicon.ico",
@@ -81,7 +81,8 @@ export function SEO({ title, description, canonical, openGraph, twitter }: SEOPr
           rel: "manifest",
           href: "/site.webmanifest",
         },
-      ]}
-    />
-  );
+      ],
+    };
+
+  return generateNextSeo(seoConfig);
 }

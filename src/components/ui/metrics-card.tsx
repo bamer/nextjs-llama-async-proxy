@@ -3,11 +3,11 @@
 import { Card, CardContent, CardHeader, Grid, Typography, LinearProgress } from "@mui/material";
 import { useStore } from "@/lib/store";
 import { motion } from "framer-motion";
-import CpuIcon from '@mui/icons-material/Cpu';
 import MemoryIcon from '@mui/icons-material/Memory';
-import DatabaseIcon from '@mui/icons-material/Database';
 import TimerIcon from '@mui/icons-material/Timer';
-import NetworkIcon from '@mui/icons-material/Network';
+import StorageIcon from '@mui/icons-material/Storage';
+import DnsIcon from '@mui/icons-material/Dns';
+import DeviceHubIcon from '@mui/icons-material/DeviceHub';
 
 export function MetricsCard() {
   const metrics = useStore((state) => state.metrics);
@@ -28,7 +28,7 @@ export function MetricsCard() {
 
   const metricsData = [
     {
-      icon: <CpuIcon color="primary" />,
+      icon: <StorageIcon color="primary" />,
       label: "CPU Usage",
       value: `${metrics.cpuUsage.toFixed(1)}%`,
       progress: metrics.cpuUsage,
@@ -40,7 +40,7 @@ export function MetricsCard() {
       progress: metrics.memoryUsage,
     },
     {
-      icon: <DatabaseIcon color="success" />,
+      icon: <DnsIcon color="success" />,
       label: "Active Models",
       value: metrics.activeModels.toString(),
       progress: (metrics.activeModels / 10) * 100, // Assuming max 10 models
@@ -52,7 +52,7 @@ export function MetricsCard() {
       progress: Math.min(metrics.avgResponseTime / 1000, 100), // Cap at 1000ms
     },
     {
-      icon: <NetworkIcon color="info" />,
+      icon: <DeviceHubIcon color="info" />,
       label: "Total Requests",
       value: metrics.totalRequests.toString(),
       progress: Math.min(metrics.totalRequests / 1000, 100), // Cap at 1000 requests

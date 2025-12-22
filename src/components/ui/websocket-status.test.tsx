@@ -3,7 +3,7 @@ import { WebSocketStatus } from "@/components/ui/websocket-status";
 import { useWebSocket } from "@/hooks/use-websocket";
 
 // Mock the hook
-jest.mock("@hooks/use-websocket");
+jest.mock("@/hooks/use-websocket");
 
 describe("WebSocketStatus Component", () => {
   beforeEach(() => {

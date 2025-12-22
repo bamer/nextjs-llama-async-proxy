@@ -1,7 +1,7 @@
 "use client";
 
 import { MainLayout } from "@/components/layout/main-layout";
-import { Typography, Box, Button, Grid, Card, CardContent } from "@mui/material";
+import { Typography, Box, Button, Card, CardContent } from "@mui/material";
 import { motion } from "framer-motion";
 import { Rocket, Dashboard, ModelTraining, Monitor, Settings } from "@mui/icons-material";
 import Link from "next/link";
@@ -72,14 +72,14 @@ export default function HomePage() {
         </motion.div>
 
         {/* Features grid */}
-        <Grid container spacing={4} mb={6}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 4, mb: 6 }}>
           {features.map((feature, index) => (
-            <Grid item xs={12} sm={6} md={3} key={index}>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
                 <Link href={feature.path} style={{ textDecoration: "none" }}>
                   <Card
                     sx={{ height: "100%", transition: "transform 0.3s", "&:hover": { transform: "translateY(-5px)" } }}
@@ -98,9 +98,8 @@ export default function HomePage() {
                   </Card>
                 </Link>
               </motion.div>
-            </Grid>
-          ))}
-        </Grid>
+            ))}
+        </Box>
 
         {/* Quick stats */}
         <motion.div
@@ -113,48 +112,40 @@ export default function HomePage() {
               <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
                 Quick Stats
               </Typography>
-              <Grid container spacing={3}>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Box textAlign="center">
-                    <Typography variant="h4" fontWeight="bold" color="primary">
-                      4+
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Active Models
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Box textAlign="center">
-                    <Typography variant="h4" fontWeight="bold" color="secondary">
-                      99.9%
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Uptime
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Box textAlign="center">
-                    <Typography variant="h4" fontWeight="bold" color="success">
-                      150ms
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Avg Response
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Box textAlign="center">
-                    <Typography variant="h4" fontWeight="bold" color="warning">
-                      1000+
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Requests
-                    </Typography>
-                  </Box>
-                </Grid>
-              </Grid>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 3 }}>
+                <Box textAlign="center">
+                  <Typography variant="h4" fontWeight="bold" color="primary">
+                    4+
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Active Models
+                  </Typography>
+                </Box>
+                <Box textAlign="center">
+                  <Typography variant="h4" fontWeight="bold" color="secondary">
+                    99.9%
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Uptime
+                  </Typography>
+                </Box>
+                <Box textAlign="center">
+                  <Typography variant="h4" fontWeight="bold" color="success">
+                    150ms
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Avg Response
+                  </Typography>
+                </Box>
+                <Box textAlign="center">
+                  <Typography variant="h4" fontWeight="bold" color="warning">
+                    1000+
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Requests
+                  </Typography>
+                </Box>
+              </Box>
             </CardContent>
           </Card>
         </motion.div>

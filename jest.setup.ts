@@ -14,7 +14,7 @@ global.Request = class Request {
  
 global.Response = class Response {
   body?: any;
-  constructor(body?: any, init?: ResponseInit) {
+  constructor(body?: any) {
     this.body = body;
   }
 } as any;

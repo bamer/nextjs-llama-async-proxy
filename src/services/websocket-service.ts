@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { APP_CONFIG } from "@config/app.config";
+import { APP_CONFIG } from "@/config/app.config";
 import { useStore } from "@/lib/store";
 import { WebSocketMessage, SystemMetrics, LogEntry, ModelConfig } from "@/types/global";
 

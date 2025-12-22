@@ -3,7 +3,7 @@ feature: authentication-security
 objective: Add authentication and security measures to WebSocket server and real API endpoints, including JWT validation, role-based access control, and connection authorization
 
 context_applied:
-- Analyzed current WebSocket implementation (pages/api/websocket.ts and src/app/api/websocket/route.tsx)
+- Analyzed current WebSocket implementation (pages/api/websocket.ts)
 - Reviewed API routes structure (app/api/*)
 - Checked existing middleware and types
 - Identified need for JWT library, auth utilities, and RBAC implementation

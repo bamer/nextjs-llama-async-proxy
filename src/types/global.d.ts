@@ -1,4 +1,4 @@
-import { APP_CONFIG } from "@config/app.config";
+import { APP_CONFIG } from "@/config/app.config";
 
 declare global {
   interface Window {

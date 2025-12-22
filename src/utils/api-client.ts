@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from "axios";
-import { APP_CONFIG } from "@config/app.config";
+import { APP_CONFIG } from "@/config/app.config";
 
 class ApiClient {
   private instance: AxiosInstance;
