@@ -191,7 +191,8 @@ class WebSocketService {
   public sendMessage(event: string, data?: any): void {
     if (!this.socket || !this.socket.connected) {
       console.warn("WebSocket not connected, cannot send message");
-      useStore.getState().setError("WebSocket not connected");
+      // Don't set error here to avoid infinite loops
+      // The connection state will be handled by the connection listeners
       return;
     }
 

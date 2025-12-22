@@ -52,6 +52,10 @@ async function fetchMetrics(): Promise<MonitoringMetrics> {
   }
 }
 
+/**
+ * 🚨 PUBLIC SSE ENDPOINT - NO AUTHENTICATION
+ * This endpoint is intentionally open to all clients
+ */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Only allow GET requests
   if (req.method !== 'GET') {
@@ -60,14 +64,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
-  // Set SSE headers
+  // 🚨 PUBLIC ACCESS: Set headers for open access
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
     'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': '*', // Intentional: public access
     'Access-Control-Allow-Headers': 'Cache-Control',
+    'X-Public-Access': 'true',
+    'X-Authentication': 'forbidden',
   });
+
+  console.log(`[PUBLIC_SSE_CONNECTION] ${req.socket.remoteAddress}`);
 
   // Function to send metrics as SSE event
   const sendMetrics = async () => {

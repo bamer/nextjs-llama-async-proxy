@@ -2,6 +2,14 @@
 
 Une interface web moderne et élégante pour gérer les modèles Llama avec support Ollama et LMStudio. Construit avec Next.js 16, Tailwind CSS, et React 19.
 
+## ⚠️ AVERTISSEMENT DE SÉCURITÉ IMPORTANT
+
+**🔓 CE PROJET EST INTENTIONNELLEMENT SANS AUTHENTIFICATION**
+
+Ce système est conçu pour un **accès public** sans mécanismes d'authentification. Tous les endpoints (WebSocket, SSE, API) sont ouverts et accessibles sans identifiants. Cela fait partie intégrante de la conception architecturale.
+
+📄 [Lire le document complet de sécurité](SECURITY_NOTICE.md)
+
 ## 🚀 Fonctionnalités
 
 - **Dashboard temps réel** : Métriques, graphiques de performance, activité en direct

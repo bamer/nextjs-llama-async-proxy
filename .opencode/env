@@ -1,23 +1,29 @@
+OPENCODE_ENABLE_EXA=true
+OPENCODE_ENABLE_EXPERIMENTAL_MODELS=true
+OPENCODE_EXPERIMENTAL=true
+OPENCODE_EXPERIMENTAL_ICON_DISCOVERY=true
+OPENCODE_EXPERIMENTAL_OXFMT=true
+OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX=
 # Telegram Bot Configuration
 # Copy this file to .env and fill in your actual values
 
 # Your Telegram bot token (get from @BotFather)
-TELEGRAM_BOT_TOKEN=your_bot_token_here
+# TELEGRAM_BOT_TOKEN=your_bot_token_here
 
 # Your chat ID (get by messaging your bot and checking the API)
-TELEGRAM_CHAT_ID=your_chat_id_here
+# TELEGRAM_CHAT_ID=your_chat_id_here
 
 # Your bot username (optional, defaults to @OpenCode)
-TELEGRAM_BOT_USERNAME=@YourBotUsername
+# TELEGRAM_BOT_USERNAME=@YourBotUsername
 
 # Idle timeout in milliseconds (default: 5 minutes = 300000ms)
-TELEGRAM_IDLE_TIMEOUT=300000
+# TELEGRAM_IDLE_TIMEOUT=300000
 
 # Check interval in milliseconds (default: 30 seconds = 30000ms)
-TELEGRAM_CHECK_INTERVAL=30000
+# TELEGRAM_CHECK_INTERVAL=30000
 
 # Enable/disable the plugin (true/false)
-TELEGRAM_ENABLED=true
+# TELEGRAM_ENABLED=true
 
 # Gemini API Configuration
 # Get your API key from https://makersuite.google.com/app/apikey

@@ -3,7 +3,7 @@
 import { useWebSocket } from "@/hooks/use-websocket";
 import { Chip, Tooltip, Box } from "@mui/material";
 import { Wifi, WifiOff, CloudSync, ErrorOutline } from "@mui/icons-material";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 
 export function WebSocketStatus() {
   const { connectionState } = useWebSocket();
@@ -46,7 +46,7 @@ export function WebSocketStatus() {
   return (
     <Tooltip title={statusInfo.tooltip} arrow>
       <Box>
-        <motion.div
+        <m.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
@@ -59,7 +59,7 @@ export function WebSocketStatus() {
             variant="filled"
             sx={{ borderRadius: "8px" }}
           />
-        </motion.div>
+        </m.div>
       </Box>
     </Tooltip>
   );

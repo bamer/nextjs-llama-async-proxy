@@ -1,0 +1,18 @@
+{
+  "jest.pathToJest": "node_modules/.bin/jest",
+  "jest.autoEnable": true,
+  "jest.autoRun": "watch",
+  "jest.coverageFormatter": "default",
+  "jest.debugCodeLens.showWhenTestStateIn": ["fail", "unknown"],
+  "jest.showCoverageOnLoad": true,
+  "jest.testExplorer.enabled": true,
+  "jest.testSideBar.enabled": true,
+  "jest.useSeparateOutputChannel": true,
+  "jest.enableInlineErrorMessages": true,
+  "jest.enableSnapshotPreview": true,
+  "editor.codeLens": true,
+  "testing.showTestOutput": "always",
+  "testing.showTestResults": "always",
+  "testing.showTestCoverage": true,
+  "testing.autoRun": "watch"
+}

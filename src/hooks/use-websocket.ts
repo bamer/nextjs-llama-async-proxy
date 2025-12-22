@@ -25,11 +25,21 @@ export function useWebSocket() {
     };
 
     const handleConnectionState = () => {
-      setConnectionState(websocketService.getConnectionState());
+      const currentState = websocketService.getConnectionState();
+      // Only update state if it has actually changed
+      setConnectionState(prevState => {
+        if (prevState !== currentState) {
+          return currentState;
+        }
+        return prevState;
+      });
     };
 
-    // Initial state
-    setConnectionState(websocketService.getConnectionState());
+    // Initial state - only set if different from current state
+    const initialState = websocketService.getConnectionState();
+    if (connectionState !== initialState) {
+      setConnectionState(initialState);
+    }
 
     // Add event listeners
     websocketService.on("connect", handleConnect);
@@ -37,12 +47,6 @@ export function useWebSocket() {
     websocketService.on("connect_error", handleConnectionState);
     websocketService.on("reconnect", handleConnect);
     websocketService.on("reconnect_failed", handleConnectionState);
-
-    // Error handling
-    if (status.error) {
-      enqueueSnackbar(status.error, { variant: "error" });
-      useStore.getState().clearError();
-    }
 
     // Cleanup
     return () => {
@@ -53,6 +57,14 @@ export function useWebSocket() {
       websocketService.off("reconnect_failed", handleConnectionState);
       websocketService.disconnect();
     };
+  }, [connectionState]);
+
+  // Handle errors separately to avoid infinite loops
+  useEffect(() => {
+    if (status.error) {
+      enqueueSnackbar(status.error, { variant: "error" });
+      useStore.getState().clearError();
+    }
   }, [status.error, enqueueSnackbar]);
 
   useEffect(() => {

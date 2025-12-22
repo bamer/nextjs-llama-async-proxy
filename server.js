@@ -14,12 +14,19 @@ async function startServer() {
 
   const httpServer = createServer((req, res) => {
     const parsedUrl = parse(req.url, true);
+    // 🚨 PUBLIC ACCESS: No authentication, all connections allowed
+    console.log(`[PUBLIC_SERVER] ${req.method} ${req.url}`);
     handle(req, res, parsedUrl);
   });
 
   const io = new Server(httpServer, {
     path: '/api/websocket',
     addTrailingSlash: false,
+    // 🚨 PUBLIC WEBSOCKET: No authentication required
+    allowRequest: (req, callback) => {
+      console.log(`[PUBLIC_WS_CONNECTION] ${req.headers.origin || 'unknown'}`);
+      callback(null, true); // Always allow connection
+    }
   });
 
   io.on('connection', (socket) => {

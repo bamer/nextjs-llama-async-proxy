@@ -53,8 +53,8 @@ describe('AnalyticsEngine', () => {
     expect(instance.errorCount).toBe(1);
   });
 
-  it('should generate analytics snapshot with correct structure', () => {
-    const analytics = instance.getAnalytics();
+  it('should generate analytics snapshot with correct structure', async () => {
+    const analytics = await instance.getAnalytics();
     // Basic field checks
     expect(analytics).toHaveProperty('totalUsers');
     expect(analytics).toHaveProperty('activeSessions');

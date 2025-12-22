@@ -6,7 +6,7 @@ import { useStore } from '@/lib/store';
 import { MetricsCard } from '@/components/ui/MetricsCard';
 import { WebSocketStatus } from '@/components/ui/WebSocketStatus';
 import { Card, CardContent, Typography, Box, GridLegacy, Divider, Chip, LinearProgress } from '@mui/material';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -74,7 +74,7 @@ export default function ModernDashboard() {
     <Box sx={{ p: 4 }}>
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -85,20 +85,20 @@ export default function ModernDashboard() {
           <Typography variant="subtitle1" color="text.secondary">
             Real-time AI Model Management & Monitoring
           </Typography>
-        </motion.div>
+        </m.div>
         <WebSocketStatus />
       </Box>
 
       <Divider sx={{ my: 4, borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' }} />
 
       {/* Key Metrics */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.5 }}
       >
         <MetricsCard />
-      </motion.div>
+      </m.div>
 
       <Box sx={{ mt: 6 }} />
 
@@ -106,7 +106,7 @@ export default function ModernDashboard() {
       <GridLegacy container spacing={4}>
         {/* CPU & Memory Chart */}
         <GridLegacy item key="cpu-chart" xs={12} md={8}>
-          <motion.div
+          <m.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
@@ -161,12 +161,12 @@ export default function ModernDashboard() {
                 )}
               </CardContent>
             </Card>
-          </motion.div>
+          </m.div>
         </GridLegacy>
 
         {/* System Info */}
         <GridLegacy item key="system-info" xs={12} md={4}>
-          <motion.div
+          <m.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4, duration: 0.5 }}
@@ -216,14 +216,14 @@ export default function ModernDashboard() {
                 </Box>
               </CardContent>
             </Card>
-          </motion.div>
+          </m.div>
         </GridLegacy>
       </GridLegacy>
 
       <Box sx={{ mt: 6 }} />
 
       {/* Models Section */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5, duration: 0.5 }}
@@ -278,12 +278,12 @@ export default function ModernDashboard() {
             </GridLegacy>
           ))}
         </GridLegacy>
-      </motion.div>
+      </m.div>
 
       <Box sx={{ mt: 6 }} />
 
       {/* Recent Logs */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6, duration: 0.5 }}
@@ -331,7 +331,7 @@ export default function ModernDashboard() {
             )}
           </CardContent>
         </Card>
-      </motion.div>
+      </m.div>
     </Box>
   );
 }

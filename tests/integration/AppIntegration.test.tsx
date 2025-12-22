@@ -1,9 +1,9 @@
 import '@testing-library/jest-dom';
 import { render, screen, waitFor } from '@testing-library/react';
-import App from '@/app/page';
-import DashboardPage from '@/components/pages/DashboardPage';
-import ModernConfiguration from '@/components/pages/ModernConfiguration';
-import { configService } from '@/lib/config-service';
+import App from '../../app/page';
+import DashboardPage from '../../src/components/pages/DashboardPage';
+import ModernConfiguration from '../../src/components/pages/ModernConfiguration';
+import { configService } from '../../src/lib/config-service';
 
 describe('App Integration Tests', () => {
   beforeAll(() => {
