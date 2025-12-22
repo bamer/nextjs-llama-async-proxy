@@ -1,24 +1,48 @@
-import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
-import './globals.css';
-import { WebSocketProvider } from '@/components/websocket/WebSocketManager';
-import { ThemeProvider } from 'next-themes';
-import { RootLayoutContent } from '@/components/layout/RootLayoutContent';
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { AppProvider } from "@/providers/app-provider";
+import { APP_CONFIG } from "@config/app.config";
+import { SEO } from "@components/seo/seo";
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: 'Llama Runner Async Proxy',
-  description:
-    'Web UI for managing Llama model runners with Ollama and LMStudio support',
+  title: {
+    default: APP_CONFIG.name,
+    template: `%s | ${APP_CONFIG.name}`,
+  },
+  description: APP_CONFIG.description,
+  keywords: ["Llama", "AI", "Model Management", "Ollama", "LMStudio"],
+  authors: [{ name: "Llama Runner Team" }],
+  creator: "Llama Runner Team",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#3B82F6" },
+    { media: "(prefers-color-scheme: dark)", color: "#1E293B" },
+  ],
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/site.webmanifest",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://llama-runner.example.com",
+    title: APP_CONFIG.name,
+    description: APP_CONFIG.description,
+    siteName: APP_CONFIG.name,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: APP_CONFIG.name,
+    description: APP_CONFIG.description,
+    creator: "@llamarunner",
+  },
 };
 
 export default function RootLayout({
@@ -28,14 +52,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
-      >
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <WebSocketProvider>
-            <RootLayoutContent>{children}</RootLayoutContent>
-          </WebSocketProvider>
-        </ThemeProvider>
+      <head>
+        <SEO />
+      </head>
+      <body className={`${inter.className} antialiased`}>
+        <AppProvider>{children}</AppProvider>
       </body>
     </html>
   );

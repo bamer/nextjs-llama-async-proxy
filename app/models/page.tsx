@@ -1,1 +1,1 @@
-export { default } from '../../src/app/models/page';
+export { default } from '@/app/models/page';

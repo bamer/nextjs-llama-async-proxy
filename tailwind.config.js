@@ -109,10 +109,9 @@ export default {
           DEFAULT: '#78716c',
           dark: '#a8a29e',
         },
-        background: {
-          DEFAULT: '#fefefe',
-          dark: '#0f0f0f',
-        },
+        background: 'hsl(var(--background) / <alpha-value>)',
+        foreground: 'hsl(var(--foreground) / <alpha-value>)',
+        border: 'hsl(var(--border) / <alpha-value>)',
       },
       fontFamily: {
         sans: ['var(--font-geist-sans)', 'system-ui', '-apple-system', 'sans-serif'],

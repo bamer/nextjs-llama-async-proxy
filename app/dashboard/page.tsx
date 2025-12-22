@@ -1,3 +1,1 @@
-import SimpleDashboard from '@/components/pages/SimpleDashboard';
-
-export default SimpleDashboard;
+export { default } from '@/app/dashboard/page';
