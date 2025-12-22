@@ -2,7 +2,8 @@
 
 import { MainLayout } from "@/components/layout/main-layout";
 import { Typography, Box, Button, Card, CardContent, GridLegacy } from "@mui/material";
-import { motion } from "framer-motion";
+
+
 import { Rocket, Dashboard, ModelTraining, Monitor, Settings, BarChart, Code, Cloud, Terminal } from "@mui/icons-material";
 import Link from "next/link";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -45,20 +46,11 @@ export default function HomePage() {
   ];
 
   return (
+    
     <MainLayout>
       <Box sx={{ flexGrow: 1, py: 4 }}>
         {/* Hero section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
           <Box textAlign="center" mb={6}>
-            <motion.div
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-            >
               <Box sx={{ 
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -72,7 +64,7 @@ export default function HomePage() {
               }}>
                 <Rocket sx={{ color: 'white', fontSize: 40 }} />
               </Box>
-            </motion.div>
+
             <Typography variant="h2" component="h1" fontWeight="bold" gutterBottom>
               Welcome to Llama Runner Pro
             </Typography>
@@ -101,8 +93,6 @@ export default function HomePage() {
               Get Started
             </Button>
           </Box>
-        </motion.div>
-
         {/* Features grid */}
         <Box sx={{ mb: 6 }}>
           <Typography variant="h4" fontWeight="bold" textAlign="center" mb={4}>
@@ -111,12 +101,7 @@ export default function HomePage() {
           <GridLegacy container spacing={4}>
             {features.map((feature, index) => (
               <GridLegacy item key={index} xs={12} sm={6} lg={3}>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 + 0.3, duration: 0.5 }}
-                  whileHover={{ y: -5, transition: { duration: 0.3 } }}
-                >
+                 
                   <Link href={feature.path} style={{ textDecoration: "none" }}>
                     <Card
                       sx={{ 
@@ -144,18 +129,14 @@ export default function HomePage() {
                       </CardContent>
                     </Card>
                   </Link>
-                </motion.div>
+            
               </GridLegacy>
             ))}
           </GridLegacy>
         </Box>
 
         {/* Quick stats */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-        >
+
           <Card sx={{ mb: 4, background: isDark ? 'rgba(30, 41, 59, 0.3)' : 'rgba(248, 250, 252, 0.5)', backdropFilter: 'blur(10px)' }}>
             <CardContent>
               <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, textAlign: 'center' }}>
@@ -175,14 +156,8 @@ export default function HomePage() {
               </GridLegacy>
             </CardContent>
           </Card>
-        </motion.div>
-
         {/* Technology Stack */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.5 }}
-        >
+
           <Card sx={{ background: isDark ? 'rgba(30, 41, 59, 0.3)' : 'rgba(248, 250, 252, 0.5)', backdropFilter: 'blur(10px)' }}>
             <CardContent>
               <Typography variant="h6" fontWeight="bold" mb={2} textAlign="center">
@@ -219,15 +194,9 @@ export default function HomePage() {
               </Typography>
             </CardContent>
           </Card>
-        </motion.div>
-
+       
         {/* Getting started */}
         <Box sx={{ mt: 6 }}>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7, duration: 0.5 }}
-          >
             <Card sx={{ background: isDark ? 'rgba(30, 41, 59, 0.3)' : 'rgba(248, 250, 252, 0.5)', backdropFilter: 'blur(10px)' }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" mb={2}>
@@ -255,7 +224,6 @@ export default function HomePage() {
                 </Box>
               </CardContent>
             </Card>
-          </motion.div>
         </Box>
       </Box>
     </MainLayout>

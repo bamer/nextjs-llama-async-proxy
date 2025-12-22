@@ -4,23 +4,23 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSidebar } from './SidebarProvider';
-import { 
-  Monitor, 
-  Bot, 
-  FileText, 
-  Settings, 
-  X, 
+import {
+  Monitor,
+  Bot,
+  FileText,
+  Settings,
+  X,
   Home
 } from 'lucide-react';
-import { 
-  Drawer, 
-  List, 
-  ListItem, 
-  ListItemButton, 
-  ListItemIcon, 
-  ListItemText, 
-  Box, 
-  IconButton, 
+import {
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Box,
+  IconButton,
   Typography
 } from '@mui/material';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -105,14 +105,10 @@ export function Sidebar() {
                 const active = isActive(item.path);
 
                 return (
-                  <ListItem key={item.id} disablePadding sx={{ px: 2 }}>
-                    <Link href={item.path} style={{ textDecoration: 'none', width: '100%' }} onClick={closeSidebar}>
-                      <m.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.1 * menuItems.indexOf(item), duration: 0.3 }}
-                        whileHover={{ x: 5, transition: { duration: 0.2 } }}
-                      >
+       
+                    <ListItem key={item.id} disablePadding sx={{ px: 2 }}>
+                      <Link href={item.path} style={{ textDecoration: 'none', width: '100%' }} onClick={closeSidebar}>
+
                         <ListItemButton
                           selected={active}
                           sx={{
@@ -128,7 +124,7 @@ export function Sidebar() {
                           <ListItemIcon sx={{ minWidth: '40px', color: active ? (isDark ? '#3b82f6' : '#0d9ef8') : (isDark ? '#94a3b8' : '#64748b') }}>
                             <IconComponent className="h-5 w-5" />
                           </ListItemIcon>
-                          <ListItemText 
+                          <ListItemText
                             primary={item.label}
                             primaryTypographyProps={{
                               fontWeight: active ? 'medium' : 'normal',
@@ -137,9 +133,11 @@ export function Sidebar() {
                             }}
                           />
                         </ListItemButton>
-                      </m.div>
-                    </Link>
-                  </ListItem>
+
+                      </Link>
+
+                    </ListItem>
+         
                 );
               })}
             </List>

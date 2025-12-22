@@ -34,9 +34,9 @@ import { motion, LazyMotion, domAnimation } from "framer-motion";
 import { LazyMotion, domAnimation, m } from "framer-motion";
 // ...
 <LazyMotion features={domAnimation} strict>
-  <m.div initial="initial" animate="animate" exit="exit">
+  <m  initial="initial" animate="animate" exit="exit">
     {children}
-  </m.div>
+  </m >
 </LazyMotion>
 ```
 
