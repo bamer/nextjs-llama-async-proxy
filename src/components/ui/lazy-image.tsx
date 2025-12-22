@@ -72,13 +72,12 @@ export function LazyImage({ src, alt, width, height, placeholder, className, sty
         height={height}
         className={className}
         style={style}
-        sx={
+        sx={{
           maxWidth: "100%",
           height: "auto",
           display: "block",
           borderRadius: "8px",
-        }
-        }
+        }}
       />
     </motion.div>
   );

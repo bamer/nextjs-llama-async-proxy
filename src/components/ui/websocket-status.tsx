@@ -1,6 +1,6 @@
 "use client";
 
-import { useWebSocket } from "@hooks/use-websocket";
+import { useWebSocket } from "@/hooks/use-websocket";
 import { Chip, Tooltip, Box } from "@mui/material";
 import { Wifi, WifiOff, CloudSync, ErrorOutline } from "@mui/icons-material";
 

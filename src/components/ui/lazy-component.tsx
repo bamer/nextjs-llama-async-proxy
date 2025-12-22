@@ -1,7 +1,7 @@
 "use client";
 
 import { lazy, Suspense, ComponentType } from "react";
-import { Loading } from "@components/ui/loading";
+import { Loading } from "@/components/ui/loading";
 
 interface LazyComponentProps {
   importFn: () => Promise<{ default: ComponentType<any> }>;

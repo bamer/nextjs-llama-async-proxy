@@ -1,10 +1,10 @@
 "use client";
 
 import { AppBar, Toolbar, Typography, Box, IconButton, Tooltip, useTheme, useMediaQuery } from "@mui/material";
-import { Menu, Wifi, DarkMode, LightMode, Settings, Notifications } from "@mui/icons-material";
-import { useTheme as useAppTheme } from "@contexts/theme-context";
+import { Menu, DarkMode, LightMode, Settings, Notifications } from "@mui/icons-material";
+import { useTheme as useAppTheme } from "@/contexts/theme-context";
 import { WebSocketStatus } from "@/components/ui/websocket-status";
-import { APP_CONFIG } from "@config/app.config";
+import { APP_CONFIG } from "@/config/app.config";
 import { motion } from "framer-motion";
 
 interface HeaderProps {

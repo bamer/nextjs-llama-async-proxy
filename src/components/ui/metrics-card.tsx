@@ -1,9 +1,13 @@
 "use client";
 
 import { Card, CardContent, CardHeader, Grid, Typography, LinearProgress } from "@mui/material";
-import { useStore } from "@lib/store";
+import { useStore } from "@/lib/store";
 import { motion } from "framer-motion";
-import { Cpu, Memory, Database, Timer, Network } from "@mui/icons-material";
+import CpuIcon from '@mui/icons-material/Cpu';
+import MemoryIcon from '@mui/icons-material/Memory';
+import DatabaseIcon from '@mui/icons-material/Database';
+import TimerIcon from '@mui/icons-material/Timer';
+import NetworkIcon from '@mui/icons-material/Network';
 
 export function MetricsCard() {
   const metrics = useStore((state) => state.metrics);
@@ -24,31 +28,31 @@ export function MetricsCard() {
 
   const metricsData = [
     {
-      icon: <Cpu color="primary" />,
+      icon: <CpuIcon color="primary" />,
       label: "CPU Usage",
       value: `${metrics.cpuUsage.toFixed(1)}%`,
       progress: metrics.cpuUsage,
     },
     {
-      icon: <Memory color="secondary" />,
+      icon: <MemoryIcon color="secondary" />,
       label: "Memory Usage",
       value: `${metrics.memoryUsage.toFixed(1)}%`,
       progress: metrics.memoryUsage,
     },
     {
-      icon: <Database color="success" />,
+      icon: <DatabaseIcon color="success" />,
       label: "Active Models",
       value: metrics.activeModels.toString(),
       progress: (metrics.activeModels / 10) * 100, // Assuming max 10 models
     },
     {
-      icon: <Timer color="warning" />,
+      icon: <TimerIcon color="warning" />,
       label: "Avg Response",
       value: `${metrics.avgResponseTime}ms`,
       progress: Math.min(metrics.avgResponseTime / 1000, 100), // Cap at 1000ms
     },
     {
-      icon: <Network color="info" />,
+      icon: <NetworkIcon color="info" />,
       label: "Total Requests",
       value: metrics.totalRequests.toString(),
       progress: Math.min(metrics.totalRequests / 1000, 100), // Cap at 1000 requests

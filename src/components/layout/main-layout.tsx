@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
-import { Header } from "../layout/header";
-import { Sidebar } from "../layout/sidebar";
-import { useTheme as useAppTheme } from "../contexts/theme-context";
+import { Header } from "@/components/layout/header";
+import { Sidebar } from "@/components/layout/sidebar";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -12,7 +11,6 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   const theme = useTheme();
-  const { isDark } = useAppTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
 

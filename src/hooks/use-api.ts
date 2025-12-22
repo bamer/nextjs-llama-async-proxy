@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiService } from "../services/api-service";
+import { apiService } from "@/services/api-service";
 import { useSnackbar } from "notistack";
-import { useStore } from "../lib/store";
+import { useStore } from "@/lib/store";
 
 export function useApi() {
   const { enqueueSnackbar } = useSnackbar();

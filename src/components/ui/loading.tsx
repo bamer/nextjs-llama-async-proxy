@@ -12,7 +12,7 @@ export function Loading({ fullScreen = false, message = "Loading..." }: LoadingP
   if (fullScreen) {
     return (
       <Box
-        sx={
+        sx={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -24,8 +24,7 @@ export function Loading({ fullScreen = false, message = "Loading..." }: LoadingP
           left: 0,
           zIndex: 9999,
           backgroundColor: "background.default",
-        }
-        }
+        }}
       >
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -48,12 +47,12 @@ export function Loading({ fullScreen = false, message = "Loading..." }: LoadingP
 
   return (
     <Box
-      sx={
+      sx={{
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         py: 4,
-      }
+      }}
     >
       <CircularProgress size={40} thickness={4} color="primary" />
       {message && (

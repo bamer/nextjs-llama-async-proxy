@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useWebSocket } from '../websocket/WebSocketManager';
 
 // Hook to check if we're on the client side

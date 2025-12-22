@@ -10,7 +10,6 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { MotionLazyContainer } from "@/components/animate/motion-lazy-container";
 import { WebSocketProvider } from "@/providers/websocket-provider";
-import { PerformanceMonitor } from "@/components/performance/performance-monitor";
 
 // Create query client
 const queryClient = new QueryClient({
@@ -41,7 +40,6 @@ export function AppProvider({ children }: AppProviderProps) {
               preventDuplicate
             >
               <CssBaseline />
-              <PerformanceMonitor />
               <MotionLazyContainer>{children}</MotionLazyContainer>
             </SnackbarProvider>
           </WebSocketProvider>

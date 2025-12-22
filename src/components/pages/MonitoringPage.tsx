@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -9,7 +9,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Paper,
@@ -19,7 +18,7 @@ import type { MonitoringEntry } from '@/types/monitoring';
 
 const MonitoringPage = () => {
   const { isConnected, lastMessage } = useWebSocket();
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs] = useState<any[]>([]);
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, LazyMotion, domAnimation } from "framer-motion";
-import React, { ReactNode } from "react";
+import { ReactNode } from "react";
 
 interface MotionLazyContainerProps {
   children: ReactNode;

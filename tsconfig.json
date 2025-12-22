@@ -1,6 +1,39 @@
 {
   "compilerOptions": {
     "target": "ES2020",
+    "baseUrl": ".",
+    "paths": {
+      "@/styles/*": [
+        "src/styles/*"
+      ],
+      "@/components/*": [
+        "src/components/*"
+      ],
+      "@/*": [
+        "src/*"
+      ], 
+      "@/lib/*": [
+        "src/lib/*"
+      ],
+      "@/hooks/*": [
+        "src/hooks/*"
+      ],
+      "@/contexts/*": [
+        "src/contexts/*"
+      ],
+      "@/services/*": [
+        "src/services/*"
+      ],
+      "@/types/*": [
+        "src/types/*"
+      ],        
+      "@/app/*": [
+        "src/app/*"
+      ],
+      "@/config/*": [
+        "src/config/*"
+      ]
+    },
     "lib": [
       "dom",
       "dom.iterable",
@@ -29,32 +62,6 @@
         "name": "next"
       }
     ],
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@components/*": [
-        "./src/components/*"
-      ],
-      "@lib/*": [
-        "./src/lib/*"
-      ],
-      "@hooks/*": [
-        "./src/hooks/*"
-      ],
-      "@contexts/*": [
-        "./src/contexts/*"
-      ],
-      "@services/*": [
-        "./src/services/*"
-      ],
-      "@types/*": [
-        "./src/types/*"
-      ],
-      "@config/*": [
-        "./src/config/*"
-      ]
-    },
     "strictNullChecks": true,
     "exactOptionalPropertyTypes": true
   },

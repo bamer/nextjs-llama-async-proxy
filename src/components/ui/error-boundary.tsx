@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Component, ErrorInfo, ReactNode } from "react";
+import { Component, ErrorInfo, ReactNode } from "react";
 import { Button, Typography, Box, Alert, AlertTitle } from "@mui/material";
 import { Refresh as RefreshIcon } from "@mui/icons-material";
 
@@ -44,7 +44,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
       return (
         <Box
-          sx={
+          sx={{
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -53,8 +53,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             width: "100vw",
             p: 4,
             textAlign: "center",
-          }
-          }
+          }}
         >
           <Alert
             severity="error"

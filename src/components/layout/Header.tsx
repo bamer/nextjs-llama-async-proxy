@@ -1,12 +1,12 @@
 'use client';
 
-import React from 'react';
+
 import { Menu } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useSidebar } from './SidebarProvider';
 
 export function Header() {
-  const { toggleSidebar, isOpen } = useSidebar();
+  const { toggleSidebar } = useSidebar();
 
   return (
     <header className="fixed top-0 left-0 right-0 h-16 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-sm z-40">

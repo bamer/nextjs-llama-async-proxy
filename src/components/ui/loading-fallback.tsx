@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 export function LoadingFallback() {
   return (
     <Box
-      sx={
+      sx={{
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -18,8 +18,7 @@ export function LoadingFallback() {
         left: 0,
         zIndex: 9999,
         backgroundColor: "background.default",
-      }
-      }
+      }}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}

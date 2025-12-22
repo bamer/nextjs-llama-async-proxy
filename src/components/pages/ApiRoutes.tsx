@@ -5,7 +5,7 @@ import monitor from '@/lib/monitor';
  * GET /api/monitoring
  * Returns real-time system metrics (CPU, memory, uptime)
  */
-export async function GET_monitoring(req: NextRequest) {
+export async function GET_monitoring() {
   try {
     const metrics = monitor.captureMetrics();
     return NextResponse.json(metrics);

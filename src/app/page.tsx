@@ -1,6 +1,6 @@
 "use client";
 
-import { MainLayout } from "@components/layout/main-layout";
+import { MainLayout } from "@/components/layout/main-layout";
 import { Typography, Box, Button, Grid, Card, CardContent } from "@mui/material";
 import { motion } from "framer-motion";
 import { Rocket, Dashboard, ModelTraining, Monitor, Settings } from "@mui/icons-material";
@@ -80,12 +80,10 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card
-                  sx={{ height: "100%", transition: "transform 0.3s", "&:hover": { transform: "translateY(-5px)" } }}
-                  component={Link}
-                  href={feature.path}
-                  style={{ textDecoration: "none" }}
-                >
+                <Link href={feature.path} style={{ textDecoration: "none" }}>
+                  <Card
+                    sx={{ height: "100%", transition: "transform 0.3s", "&:hover": { transform: "translateY(-5px)" } }}
+                  >
                   <CardContent sx={{ textAlign: "center", p: 4 }}>
                     <Box mb={2} fontSize="3rem">
                       {feature.icon}
@@ -97,7 +95,8 @@ export default function HomePage() {
                       {feature.description}
                     </Typography>
                   </CardContent>
-                </Card>
+                  </Card>
+                </Link>
               </motion.div>
             </Grid>
           ))}
@@ -111,7 +110,7 @@ export default function HomePage() {
         >
           <Card sx={{ mb: 4 }}>
             <CardContent>
-              <Typography variant="h6" fontWeight="bold" mb={2}>
+              <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
                 Quick Stats
               </Typography>
               <Grid container spacing={3}>

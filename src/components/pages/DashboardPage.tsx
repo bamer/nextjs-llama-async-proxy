@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useWebSocket } from '../websocket/WebSocketManager';
 import { RealTimeStatusBadge } from '@/components/ui/RealTimeStatusBadge';
 import { TimeSeriesChart } from '@/components/ui/TimeSeriesChart';
@@ -35,7 +35,7 @@ interface AnalyticsData {
 }
 
 const DashboardPage = () => {
-  const { isConnected, lastMessage, connectionStatus } = useWebSocket();
+  const { isConnected, connectionStatus } = useWebSocket();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);

@@ -1,12 +1,10 @@
 "use client";
 
-import { MainLayout } from "@components/layout/main-layout";
+import { MainLayout } from "@/components/layout/main-layout";
 import { Typography, Box, Grid } from "@mui/material";
-import { MetricsCard } from "@components/ui/metrics-card";
-import { ModelsGrid } from "@components/ui/models-grid";
-import { LogsViewer } from "@components/ui/logs-viewer";
-import { WebSocketStatus } from "@components/ui/websocket-status";
-import { useWebSocket } from "@hooks/use-websocket";
+import { MetricsCard } from "@/components/ui/metrics-card";
+import { WebSocketStatus } from "@/components/ui/websocket-status";
+import { useWebSocket } from "@/hooks/use-websocket";
 import { useEffect } from "react";
 
 export default function DashboardPage() {
@@ -31,19 +29,16 @@ export default function DashboardPage() {
         </Box>
 
         {/* Metrics section */}
-        <Grid container spacing={3} mb={4}>
-          <Grid item xs={12}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} mb={4}>
             <MetricsCard />
           </Grid>
         </Grid>
 
-        {/* Models and logs grid */}
+        {/* Metrics section only for now */}
         <Grid container spacing={3}>
-          <Grid item xs={12} lg={8}>
-            <ModelsGrid />
-          </Grid>
-          <Grid item xs={12} lg={4}>
-            <LogsViewer />
+          <Grid item xs={12}>
+            <MetricsCard />
           </Grid>
         </Grid>
       </Box>

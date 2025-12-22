@@ -1,7 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { APP_CONFIG } from "@config/app.config";
-import { useStore } from "../lib/store";
-import { WebSocketMessage, SystemMetrics, LogEntry, ModelConfig } from "../types/global";
+import { useStore } from "@/lib/store";
+import { WebSocketMessage, SystemMetrics, LogEntry, ModelConfig } from "@/types/global";
 
 class WebSocketService {
   private socket: Socket | null = null;

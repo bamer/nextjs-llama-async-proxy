@@ -1,11 +1,11 @@
 "use client";
 
-import { Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Divider, Box, Typography, useTheme, useMediaQuery } from "@mui/material";
+import { Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Box, Typography, useTheme, useMediaQuery } from "@mui/material";
 import { Dashboard, Analytics, ModelTraining, Monitor, Settings as SettingsIcon, Logout, MenuBook, Info } from "@mui/icons-material";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { APP_CONFIG } from "@config/app.config";
+import { APP_CONFIG } from "@/config/app.config";
 
 const drawerWidth = 240;
 
@@ -24,7 +24,7 @@ const navItems = [
   { text: "Analytics", icon: <Analytics />, path: "/analytics" },
 ];
 
-export function Sidebar({ open, onClose, mobileOpen }: SidebarProps) {
+export function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -66,13 +66,12 @@ export function Sidebar({ open, onClose, mobileOpen }: SidebarProps) {
                 transition={{ delay: index * 0.1 }}
               >
                 <ListItem disablePadding>
-                  <ListItemButton
-                    component={Link}
-                    href={item.path}
-                    selected={isActive}
-                    sx={{
-                      pl: 3,
-                      borderLeft: isActive ? `3px solid ${theme.palette.primary.main}` : "none",
+                  <Link href={item.path} style={{ textDecoration: "none", color: "inherit" }}>
+                    <ListItemButton
+                      selected={isActive}
+                      sx={{
+                        pl: 3,
+                        borderLeft: isActive ? `3px solid ${theme.palette.primary.main}` : "none",
                       "&.Mui-selected": {
                         backgroundColor: theme.palette.action.selected,
                       },
@@ -96,7 +95,8 @@ export function Sidebar({ open, onClose, mobileOpen }: SidebarProps) {
                         fontWeight: isActive ? "medium" : "regular",
                       }}
                     />
-                  </ListItemButton>
+                    </ListItemButton>
+                  </Link>
                 </ListItem>
               </motion.div>
             );

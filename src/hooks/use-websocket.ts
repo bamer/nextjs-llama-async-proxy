@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { websocketService } from "../services/websocket-service";
-import { useStore } from "../lib/store";
+import { websocketService } from "@/services/websocket-service";
+import { useStore } from "@/lib/store";
 import { useSnackbar } from "notistack";
 
 export function useWebSocket() {

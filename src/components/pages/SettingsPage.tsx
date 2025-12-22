@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useSettings } from '@/hooks/useSettings';
 import { SettingsAppearance } from './settings/SettingsAppearance';
 import { SettingsSystem } from './settings/SettingsSystem';
