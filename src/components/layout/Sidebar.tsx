@@ -4,14 +4,28 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSidebar } from './SidebarProvider';
-import {
-  BarChart3,
-  Monitor,
-  Bot,
-  FileText,
-  Settings,
-  X,
+import { 
+  Monitor, 
+  Bot, 
+  FileText, 
+  Settings, 
+  X, 
+  Home
 } from 'lucide-react';
+import { 
+  Drawer, 
+  List, 
+  ListItem, 
+  ListItemButton, 
+  ListItemIcon, 
+  ListItemText, 
+  Box, 
+  IconButton, 
+  Typography
+} from '@mui/material';
+import { useTheme } from '@/contexts/ThemeContext';
+import { motion as m } from 'framer-motion';
+import { APP_CONFIG } from '@/config/app.config';
 
 interface MenuItem {
   id: string;
@@ -21,7 +35,7 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: BarChart3, path: '/dashboard' },
+  { id: 'dashboard', label: 'Dashboard', icon: Home, path: '/dashboard' },
   { id: 'monitoring', label: 'Monitoring', icon: Monitor, path: '/monitoring' },
   { id: 'models', label: 'Models', icon: Bot, path: '/models' },
   { id: 'logs', label: 'Logs', icon: FileText, path: '/logs' },
@@ -31,6 +45,7 @@ const menuItems: MenuItem[] = [
 export function Sidebar() {
   const { isOpen, closeSidebar } = useSidebar();
   const pathname = usePathname();
+  const { isDark } = useTheme();
 
   const isActive = (path: string) => pathname === path;
 
@@ -38,50 +53,109 @@ export function Sidebar() {
     <>
       {/* Mobile overlay */}
       {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+        <Box
+          sx={{
+            position: 'fixed',
+            inset: 0,
+            bg: 'rgba(0, 0, 0, 0.5)',
+            zIndex: (theme) => theme.zIndex.drawer - 1,
+            lg: { display: 'none' }
+          }}
           onClick={closeSidebar}
         />
       )}
 
       {/* Sidebar */}
-      <aside
-        className={`fixed top-16 left-0 h-[calc(100vh-64px)] w-64 bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 z-40 transition-transform duration-300 lg:translate-x-0 lg:relative lg:h-auto ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+      <Drawer
+        variant="persistent"
+        open={isOpen}
+        onClose={closeSidebar}
+        sx={{
+          width: 256,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: 256,
+            boxSizing: 'border-box',
+            background: isDark ? 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)' : 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
+            borderRight: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`,
+            boxShadow: isDark ? '2px 0 10px rgba(0, 0, 0, 0.3)' : '2px 0 10px rgba(0, 0, 0, 0.05)',
+            transition: 'transform 0.3s ease',
+          },
+        }}
+        ModalProps={{ keepMounted: true }}
       >
-        <nav className="p-4 flex flex-col gap-2 h-full overflow-auto">
-          {/* Close button for mobile */}
-          <button
-            onClick={closeSidebar}
-            className="self-end p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 lg:hidden mb-2"
-          >
-            <X className="h-5 w-5" />
-          </button>
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          {/* Header */}
+          <Box sx={{ p: 3, borderBottom: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}` }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="h6" fontWeight="bold" sx={{ color: isDark ? '#f1f5f9' : '#1e293b' }}>
+                Llama Runner
+              </Typography>
+              <IconButton onClick={closeSidebar} className="lg:hidden" sx={{ color: isDark ? '#cbd5e1' : '#64748b' }}>
+                <X className="h-5 w-5" />
+              </IconButton>
+            </Box>
+          </Box>
 
           {/* Menu items */}
-          {menuItems.map((item) => {
-            const IconComponent = item.icon;
-            const active = isActive(item.path);
+          <Box sx={{ flex: 1, overflowY: 'auto', py: 2 }}>
+            <List>
+              {menuItems.map((item) => {
+                const IconComponent = item.icon;
+                const active = isActive(item.path);
 
-            return (
-              <Link
-                key={item.id}
-                href={item.path}
-                onClick={closeSidebar}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                  active
-                    ? 'bg-blue-500 text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                }`}
-              >
-                <IconComponent className="h-5 w-5 flex-shrink-0" />
-                <span className="font-medium">{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-      </aside>
+                return (
+                  <ListItem key={item.id} disablePadding sx={{ px: 2 }}>
+                    <Link href={item.path} style={{ textDecoration: 'none', width: '100%' }} onClick={closeSidebar}>
+                      <m.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 * menuItems.indexOf(item), duration: 0.3 }}
+                        whileHover={{ x: 5, transition: { duration: 0.2 } }}
+                      >
+                        <ListItemButton
+                          selected={active}
+                          sx={{
+                            borderRadius: '8px',
+                            mb: 1,
+                            background: active ? (isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(13, 158, 248, 0.1)') : 'transparent',
+                            '&:hover': {
+                              background: isDark ? 'rgba(59, 130, 246, 0.05)' : 'rgba(13, 158, 248, 0.05)',
+                            },
+                            transition: 'all 0.2s ease',
+                          }}
+                        >
+                          <ListItemIcon sx={{ minWidth: '40px', color: active ? (isDark ? '#3b82f6' : '#0d9ef8') : (isDark ? '#94a3b8' : '#64748b') }}>
+                            <IconComponent className="h-5 w-5" />
+                          </ListItemIcon>
+                          <ListItemText 
+                            primary={item.label}
+                            primaryTypographyProps={{
+                              fontWeight: active ? 'medium' : 'normal',
+                              color: active ? (isDark ? '#f1f5f9' : '#1e293b') : (isDark ? '#cbd5e1' : '#64748b'),
+                              fontSize: '0.95rem'
+                            }}
+                          />
+                        </ListItemButton>
+                      </m.div>
+                    </Link>
+                  </ListItem>
+                );
+              })}
+            </List>
+          </Box>
+
+          {/* Footer */}
+          <Box sx={{ p: 3, borderTop: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}` }}>
+            <Typography variant="caption" color="text.secondary" display="block" textAlign="center">
+              © {new Date().getFullYear()} Llama Runner Pro
+            </Typography>
+            <Typography variant="caption" color="text.secondary" display="block" textAlign="center">
+              v{APP_CONFIG.version}
+            </Typography>
+          </Box>
+        </Box>
+      </Drawer>
     </>
   );
 }
