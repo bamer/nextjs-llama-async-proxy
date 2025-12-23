@@ -60,6 +60,12 @@ export function useWebSocket() {
         case 'model_status':
           useStore.getState().updateModel(message.data.modelId, { status: message.data.status });
           break;
+        case 'connection':
+          console.log('WebSocket connected with ID:', message.clientId);
+          break;
+        case 'user_disconnected':
+          console.log('User disconnected:', message.senderId);
+          break;
         default:
           console.log('Unknown message type:', message.type);
       }

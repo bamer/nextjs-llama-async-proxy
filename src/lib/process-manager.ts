@@ -38,7 +38,7 @@ class ProcessManager {
     const binaryPath = resolveBinary(model);
 
     // Build the command – adjust `cmd` if your binary lives elsewhere
-    const cmd = '/usr/local/bin/llama.cpp';
+    const cmd = '/home/bamer/llama.cpp/build/bin/llama.cpp';
     const args = [
       '-m',
       binaryPath,

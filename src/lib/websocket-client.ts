@@ -12,7 +12,7 @@ class WebSocketClient extends EventEmitter {
     super();
     // Determine the WebSocket URL based on the current origin
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    this.url = `${protocol}//${window.location.host}/api/websocket`;
+    this.url = `${protocol}//${window.location.host}/ws`;
   }
 
   connect() {

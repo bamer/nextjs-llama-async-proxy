@@ -17,8 +17,9 @@ import { useWebSocket } from "@/hooks/use-websocket";
 import type { MonitoringEntry } from '@/types/monitoring';
 
 const MonitoringPage = () => {
-  const { isConnected, lastMessage } = useWebSocket();
+  const { isConnected } = useWebSocket();
   const [logs] = useState<any[]>([]);
+  const [lastUpdateTime, setLastUpdateTime] = useState<string>('Never');
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -178,7 +179,7 @@ const MonitoringPage = () => {
               />
               <Chip label={isConnected ? 'Connected' : 'Disconnected'} color={isConnected ? 'success' : 'error'} size="small" />
               <Typography component="span" color="textSecondary">
-                Last update: {lastMessage ? new Date(lastMessage.timestamp).toLocaleTimeString() : 'Never'}
+                Last update: {lastUpdateTime}
               </Typography>
             </Box>
           </Paper>

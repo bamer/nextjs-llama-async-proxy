@@ -69,7 +69,7 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "server.js"  ],
   "exclude": [
     "node_modules",
     ".next",

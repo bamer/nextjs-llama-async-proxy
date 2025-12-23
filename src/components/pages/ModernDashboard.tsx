@@ -27,63 +27,66 @@ export default function ModernDashboard() {
       requestMetrics();
       requestModels();
       requestLogs();
-    } else {
-      // If WebSocket is not connected after a delay, use mock data
-      const timeoutId = setTimeout(() => {
-        if (!isConnected && loading) {
-          console.log('WebSocket not connected, using fallback mock data');
-          // Generate mock data if WebSocket fails
-          useStore.getState().setMetrics({
-            activeModels: Math.floor(Math.random() * 5) + 1,
-            totalRequests: Math.floor(Math.random() * 1000) + 500,
-            avgResponseTime: Math.floor(Math.random() * 500) + 100,
-            memoryUsage: Math.floor(Math.random() * 30) + 50,
-            cpuUsage: Math.floor(Math.random() * 20) + 5,
-            diskUsage: Math.floor(Math.random() * 40) + 30,
-            uptime: Math.floor(Math.random() * 100) + 80,
-            timestamp: new Date().toISOString()
-          });
-          
-          useStore.getState().setModels([
-            {
-              id: 'llama-7b',
-              name: 'Llama 7B',
-              type: 'llama',
-              status: 'running',
-              parameters: { temperature: 0.7, maxTokens: 2048, topP: 0.9 },
-              createdAt: new Date(Date.now() - 86400000).toISOString(),
-              updatedAt: new Date(Date.now() - 3600000).toISOString()
-            }
-          ]);
-          
-          useStore.getState().setLogs([
-            {
-              level: 'info',
-              message: 'Dashboard initialized with fallback data',
-              timestamp: Date.now(),
-              source: 'dashboard'
-            },
-            {
-              level: 'warn',
-              message: 'WebSocket connection failed, using fallback data',
-              timestamp: Date.now(),
-              source: 'websocket'
-            }
-          ]);
-        }
-      }, 2000); // 2 second delay before using fallback
-      
-      return () => clearTimeout(timeoutId);
+      return;
     }
+
+    // If WebSocket is not connected after a delay, use mock data
+    const timeoutId = setTimeout(() => {
+      if (!isConnected && loading) {
+        console.log('WebSocket not connected, using fallback mock data');
+        // Generate mock data if WebSocket fails
+        useStore.getState().setMetrics({
+          activeModels: Math.floor(Math.random() * 5) + 1,
+          totalRequests: Math.floor(Math.random() * 1000) + 500,
+          avgResponseTime: Math.floor(Math.random() * 500) + 100,
+          memoryUsage: Math.floor(Math.random() * 30) + 50,
+          cpuUsage: Math.floor(Math.random() * 20) + 5,
+          diskUsage: Math.floor(Math.random() * 40) + 30,
+          uptime: Math.floor(Math.random() * 100) + 80,
+          timestamp: new Date().toISOString()
+        });
+        
+        useStore.getState().setModels([
+          {
+            id: 'llama-7b',
+            name: 'Llama 7B',
+            type: 'llama' as const,
+            status: 'running' as const,
+            parameters: { temperature: 0.7, maxTokens: 2048, topP: 0.9 },
+            createdAt: new Date(Date.now() - 86400000).toISOString(),
+            updatedAt: new Date(Date.now() - 3600000).toISOString()
+          }
+        ]);
+        
+        useStore.getState().setLogs([
+          {
+            id: '1',
+            level: 'info' as const,
+            message: 'Dashboard initialized with fallback data',
+            timestamp: new Date().toISOString(),
+            context: { source: 'dashboard' }
+          },
+          {
+            id: '2',
+            level: 'warn' as const,
+            message: 'WebSocket connection failed, using fallback data',
+            timestamp: new Date().toISOString(),
+            context: { source: 'websocket' }
+          }
+        ]);
+      }
+    }, 2000); // 2 second delay before using fallback
+    
+    return () => clearTimeout(timeoutId);
   }, [isConnected, requestMetrics, requestModels, requestLogs, loading]);
 
   // Handle connection timeout based on configuration
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (loading && (!metrics || models.length === 0 || logs.length === 0)) {
-        if (MONITORING_CONFIG.MOCK_DATA.ENABLE_FALLBACK) {
-          console.log('WebSocket connection timeout, using mock data (development mode)');
-          // Generate mock data only in development with fallback enabled
+        if (MONITORING_CONFIG.MOCK_DATA.ENABLE_FALLBACK && !isConnected) {
+          console.log('WebSocket not connected, using fallback mock data');
+          // Generate mock data only if WebSocket is not connected
           useStore.getState().setMetrics({
             activeModels: Math.floor(Math.random() * 5) + 1,
             totalRequests: Math.floor(Math.random() * 1000) + 500,
@@ -108,8 +111,8 @@ export default function ModernDashboard() {
             {
               id: 'llama-7b',
               name: 'Llama 7B',
-              type: 'llama',
-              status: 'running',
+              type: 'llama' as const,
+              status: 'running' as const,
               parameters: { temperature: 0.7, maxTokens: 2048, topP: 0.9 },
               createdAt: new Date(Date.now() - 86400000).toISOString(),
               updatedAt: new Date(Date.now() - 3600000).toISOString()
@@ -118,16 +121,18 @@ export default function ModernDashboard() {
           
           useStore.getState().setLogs([
             {
-              level: 'info',
+              id: '1',
+              level: 'info' as const,
               message: 'Model loading completed successfully',
-              timestamp: Date.now(),
-              source: 'model-manager'
+              timestamp: new Date().toISOString(),
+              context: { source: 'model-manager' }
             },
             {
-              level: 'warn',
+              id: '2',
+              level: 'warn' as const,
               message: 'Using mock data - WebSocket connection failed',
-              timestamp: Date.now(),
-              source: 'dashboard'
+              timestamp: new Date().toISOString(),
+              context: { source: 'dashboard' }
             }
           ]);
         } else {
@@ -138,7 +143,7 @@ export default function ModernDashboard() {
     }, MONITORING_CONFIG.WEBSOCKET.CONNECTION_TIMEOUT);
     
     return () => clearTimeout(timeoutId);
-  }, [loading, metrics, models, logs]);
+  }, [loading, metrics, models, logs, isConnected]);
 
   // Generate chart data with GPU metrics
   useEffect(() => {
@@ -307,7 +312,7 @@ export default function ModernDashboard() {
           </Typography>
           <Grid container spacing={3} mb={4}>
             {/* GPU Usage Card */}
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card
                 sx={{
                   background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
@@ -326,7 +331,7 @@ export default function ModernDashboard() {
                   <LinearProgress
                     variant="determinate"
                     value={metrics.gpuUsage}
-                    color={metrics.gpuUsage > 80 ? 'error' : metrics.gpuUsage > 60 ? 'warning' : 'success'}
+                    color={(metrics.gpuUsage || 0) > 80 ? 'error' : (metrics.gpuUsage || 0) > 60 ? 'warning' : 'success'}
                     sx={{ height: '6px', borderRadius: '3px', mt: 1 }}
                   />
                   <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
@@ -337,7 +342,7 @@ export default function ModernDashboard() {
             </Grid>
 
             {/* GPU Memory Card */}
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card
                 sx={{
                   background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
@@ -356,7 +361,7 @@ export default function ModernDashboard() {
                   <LinearProgress
                     variant="determinate"
                     value={metrics.gpuMemoryUsage || 0}
-                    color={metrics.gpuMemoryUsage > 90 ? 'error' : metrics.gpuMemoryUsage > 70 ? 'warning' : 'success'}
+                    color={(metrics.gpuMemoryUsage || 0) > 90 ? 'error' : (metrics.gpuMemoryUsage || 0) > 70 ? 'warning' : 'success'}
                     sx={{ height: '6px', borderRadius: '3px', mt: 1 }}
                   />
                   <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
@@ -367,7 +372,7 @@ export default function ModernDashboard() {
             </Grid>
 
             {/* GPU Power Card */}
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card
                 sx={{
                   background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
@@ -385,19 +390,19 @@ export default function ModernDashboard() {
                   </Typography>
                   <LinearProgress
                     variant="determinate"
-                    value={(metrics.gpuPowerUsage / metrics.gpuPowerLimit) * 100 || 0}
-                    color={metrics.gpuPowerUsage > metrics.gpuPowerLimit * 0.9 ? 'error' : metrics.gpuPowerUsage > metrics.gpuPowerLimit * 0.7 ? 'warning' : 'success'}
+                    value={((metrics.gpuPowerUsage ?? 0) / (metrics.gpuPowerLimit ?? 1)) * 100}
+                    color={((metrics.gpuPowerUsage ?? 0) / (metrics.gpuPowerLimit ?? 1)) > 0.9 ? 'error' : ((metrics.gpuPowerUsage ?? 0) / (metrics.gpuPowerLimit ?? 1)) > 0.7 ? 'warning' : 'success'}
                     sx={{ height: '6px', borderRadius: '3px', mt: 1 }}
                   />
                   <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                    {((metrics.gpuPowerUsage / metrics.gpuPowerLimit) * 100).toFixed(1)}% of limit
+                    {(((metrics.gpuPowerUsage ?? 0) / (metrics.gpuPowerLimit ?? 1)) * 100).toFixed(1)}% of limit
                   </Typography>
                 </CardContent>
               </Card>
             </Grid>
 
             {/* GPU Temperature Card */}
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Card
                 sx={{
                   background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
@@ -416,11 +421,11 @@ export default function ModernDashboard() {
                   <LinearProgress
                     variant="determinate"
                     value={metrics.gpuTemperature || 0}
-                    color={metrics.gpuTemperature > 85 ? 'error' : metrics.gpuTemperature > 70 ? 'warning' : 'success'}
+                    color={(metrics.gpuTemperature || 0) > 85 ? 'error' : (metrics.gpuTemperature || 0) > 70 ? 'warning' : 'success'}
                     sx={{ height: '6px', borderRadius: '3px', mt: 1 }}
                   />
                   <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                    {metrics.gpuTemperature < 60 ? 'Normal' : metrics.gpuTemperature < 80 ? 'Warm' : 'Hot'}
+                    {(metrics.gpuTemperature || 0) < 60 ? 'Normal' : (metrics.gpuTemperature || 0) < 80 ? 'Warm' : 'Hot'}
                   </Typography>
                 </CardContent>
               </Card>
@@ -434,7 +439,7 @@ export default function ModernDashboard() {
       {/* Charts Section */}
       <Grid container spacing={4}>
         {/* CPU & Memory Chart */}
-        <Grid item key="cpu-chart" xs={12} md={8}>
+        <Grid key="cpu-chart" size={{ xs: 12, md: 8 }}>
           <m.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -494,7 +499,7 @@ export default function ModernDashboard() {
         </Grid>
 
         {/* System Info */}
-        <Grid item key="system-info" xs={12} md={4}>
+        <Grid key="system-info" size={{ xs: 12, md: 4 }}>
           <m.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -553,7 +558,7 @@ export default function ModernDashboard() {
       {metrics?.gpuUsage !== undefined && (
         <Box sx={{ mt: 4 }}>
           <Grid container spacing={4}>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <m.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -658,7 +663,7 @@ export default function ModernDashboard() {
         </Typography>
         <Grid container spacing={3}>
           {models.slice(0, 4).map((model) => (
-            <Grid item key={model.id} xs={12} sm={6} md={4} lg={3}>
+            <Grid key={model.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
               <Card
                 sx={{ 
                   height: '100%',
