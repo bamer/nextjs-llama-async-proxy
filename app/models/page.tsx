@@ -16,12 +16,12 @@ export default function ModelsPage() {
     if (models.length === 0) {
       // This would typically come from an API or WebSocket
       // For now, we'll use mock data
-      const mockModels = [
+      const mockModels: ModelConfig[] = [
         {
           id: 'llama-7b',
           name: 'Llama 7B',
-          type: 'llama',
-          status: 'running',
+          type: 'llama' as const,
+          status: 'idle' as const,
           parameters: { temperature: 0.7, maxTokens: 2048, topP: 0.9 },
           createdAt: new Date(Date.now() - 86400000).toISOString(),
           updatedAt: new Date(Date.now() - 3600000).toISOString()
@@ -29,8 +29,8 @@ export default function ModelsPage() {
         {
           id: 'llama-13b',
           name: 'Llama 13B',
-          type: 'llama',
-          status: 'stopped',
+          type: 'llama' as const,
+          status: 'idle' as const,
           parameters: { temperature: 0.6, maxTokens: 4096, topP: 0.8 },
           createdAt: new Date(Date.now() - 172800000).toISOString(),
           updatedAt: new Date(Date.now() - 7200000).toISOString()
@@ -65,7 +65,7 @@ export default function ModelsPage() {
   const handleStopModel = (modelId: string) => {
     // This would typically send a WebSocket message
     console.log('Stopping model:', modelId);
-    useStore.getState().updateModel(modelId, { status: 'stopped' });
+    useStore.getState().updateModel(modelId, { status: 'idle' as const });
   };
 
   const handleRefresh = () => {
@@ -114,7 +114,7 @@ export default function ModelsPage() {
         {/* Models Grid */}
         <Grid container spacing={3}>
           {models.map((model) => (
-            <Grid item key={model.id} xs={12} sm={6} md={4} lg={3}>
+            <Grid key={model.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
               <Card
                 sx={{
                   height: '100%',

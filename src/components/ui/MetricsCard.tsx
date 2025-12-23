@@ -82,7 +82,7 @@ export function MetricsCard() {
       <CardContent>
         <Grid container spacing={3}>
           {metricsData.map((metric, index) => (
-            <Grid item key={index} xs={12} sm={6} md={4}>
+            <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
               <m.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

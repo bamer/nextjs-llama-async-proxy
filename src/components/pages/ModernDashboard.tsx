@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useStore } from '@/lib/store';
 import { MetricsCard } from '@/components/ui/MetricsCard';
-import { WebSocketStatus } from '@/components/ui/webSocketStatus';
 import { Card, CardContent, Typography, Box, Grid, Divider, Chip, LinearProgress, Button } from '@mui/material';
 import { m } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';

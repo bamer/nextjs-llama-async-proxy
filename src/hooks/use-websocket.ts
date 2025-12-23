@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { websocketServer } from "@/lib/websocket-server";
+import { websocketServer } from "@/lib/websocket-client";
 import { useStore } from "@/lib/store";
 import { useSnackbar } from "notistack";
 

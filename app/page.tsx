@@ -100,7 +100,7 @@ export default function HomePage() {
           </Typography>
           <Grid container spacing={4}>
             {features.map((feature, index) => (
-              <Grid item key={index} xs={12} sm={6} lg={3}>
+              <Grid key={index} size={{ xs: 12, sm: 6, lg: 3 }}>
                  
                   <Link href={feature.path} style={{ textDecoration: "none" }}>
                     <Card
@@ -144,7 +144,7 @@ export default function HomePage() {
               </Typography>
               <Grid container spacing={3} justifyContent="center">
                 {stats.map((stat, index) => (
-                  <Grid item key={index} xs={6} sm={3}>
+                  <Grid key={index} size={{ xs: 6, sm: 3 }}>
                     <Typography variant="h4" fontWeight="bold" color={stat.color}>
                       {stat.value}
                     </Typography>

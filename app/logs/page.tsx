@@ -5,7 +5,7 @@ import { useStore } from "@/lib/store";
 import { useEffect, useState } from "react";
 import { Card, CardContent, Typography, Box, Chip, TextField, InputAdornment, IconButton, Pagination } from "@mui/material";
 import { useTheme } from "@/contexts/ThemeContext";
-import { Search, FilterList, Refresh, Delete, Download } from "@mui/icons-material";
+import { Search, Refresh, Delete, Download } from "@mui/icons-material";
 
 export default function LogsPage() {
   const logs = useStore((state) => state.logs);
@@ -20,40 +20,46 @@ export default function LogsPage() {
     if (logs.length === 0) {
       const mockLogs = [
         {
-          level: 'info',
+          id: '1',
+          level: 'info' as const,
           message: 'System initialized successfully',
-          timestamp: Date.now(),
-          source: 'system'
+          timestamp: new Date().toISOString(),
+          context: { source: 'system' }
         },
         {
-          level: 'debug',
+          id: '2',
+          level: 'debug' as const,
           message: 'WebSocket connection established',
-          timestamp: Date.now() - 60000,
-          source: 'websocket'
+          timestamp: new Date(Date.now() - 60000).toISOString(),
+          context: { source: 'websocket' }
         },
         {
-          level: 'warn',
+          id: '3',
+          level: 'warn' as const,
           message: 'High memory usage detected',
-          timestamp: Date.now() - 120000,
-          source: 'monitoring'
+          timestamp: new Date(Date.now() - 120000).toISOString(),
+          context: { source: 'monitoring' }
         },
         {
-          level: 'error',
+          id: '4',
+          level: 'error' as const,
           message: 'Failed to load model: llama-13b',
-          timestamp: Date.now() - 300000,
-          source: 'model-manager'
+          timestamp: new Date(Date.now() - 300000).toISOString(),
+          context: { source: 'model-manager' }
         },
         {
-          level: 'info',
+          id: '5',
+          level: 'info' as const,
           message: 'Dashboard loaded',
-          timestamp: Date.now() - 60000,
-          source: 'ui'
+          timestamp: new Date(Date.now() - 60000).toISOString(),
+          context: { source: 'ui' }
         },
         {
-          level: 'debug',
+          id: '6',
+          level: 'debug' as const,
           message: 'API request completed',
-          timestamp: Date.now() - 90000,
-          source: 'api'
+          timestamp: new Date(Date.now() - 90000).toISOString(),
+          context: { source: 'api' }
         }
       ];
       
@@ -73,9 +79,10 @@ export default function LogsPage() {
 
   const filteredLogs = logs.filter(log => {
     // Filter by search term
+    const source = log.context?.source || '';
     const matchesSearch = searchTerm === '' || 
                          log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         log.source.toLowerCase().includes(searchTerm.toLowerCase());
+                         source.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Filter by level
     const matchesLevel = filterLevel === 'all' || log.level === filterLevel;
@@ -99,7 +106,7 @@ export default function LogsPage() {
     // In a real app, this would download logs as a file
   };
 
-  const getLogTime = (timestamp: number) => {
+  const getLogTime = (timestamp: string) => {
     return new Date(timestamp).toLocaleTimeString();
   };
 
@@ -202,7 +209,7 @@ export default function LogsPage() {
                             {getLogTime(log.timestamp)}
                           </Typography>
                           <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                            {log.source}
+                            {log.context?.source || 'system'}
                           </Typography>
                         </Box>
                       </Box>
@@ -217,12 +224,12 @@ export default function LogsPage() {
                 {filteredLogs.length > logsPerPage && (
                   <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
                     <Pagination
-                      count={Math.ceil(filteredLogs.length / logsPerPage)}
-                      page={page}
-                      onChange={(e, value) => setPage(value)}
-                      color="primary"
-                      shape="rounded"
-                    />
+                       count={Math.ceil(filteredLogs.length / logsPerPage)}
+                       page={page}
+                       onChange={(_, value) => setPage(value)}
+                       color="primary"
+                       shape="rounded"
+                     />
                   </Box>
                 )}
               </Box>

@@ -184,7 +184,7 @@ export default function ModernConfiguration() {
               </Typography>
               
               <Grid container spacing={4}>
-                <Grid item key="basePath" xs={12} md={6}>
+                <Grid key="basePath" size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="Base Path"
@@ -197,7 +197,7 @@ export default function ModernConfiguration() {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="Log Level"
@@ -218,7 +218,7 @@ export default function ModernConfiguration() {
                   </TextField>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="Max Concurrent Models"
@@ -233,7 +233,7 @@ export default function ModernConfiguration() {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -253,7 +253,7 @@ export default function ModernConfiguration() {
                   </Typography>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -297,7 +297,7 @@ export default function ModernConfiguration() {
               </Typography>
               
               <Grid container spacing={4}>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Typography variant="subtitle1" fontWeight="medium" mb={2}>
                     Context Size
                   </Typography>
@@ -319,7 +319,7 @@ export default function ModernConfiguration() {
                   </Typography>
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Typography variant="subtitle1" fontWeight="medium" mb={2}>
                     Batch Size
                   </Typography>
@@ -336,7 +336,7 @@ export default function ModernConfiguration() {
                   </Typography>
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Typography variant="subtitle1" fontWeight="medium" mb={2}>
                     Temperature
                   </Typography>
@@ -353,7 +353,7 @@ export default function ModernConfiguration() {
                   </Typography>
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Typography variant="subtitle1" fontWeight="medium" mb={2}>
                     Top P (Nucleus Sampling)
                   </Typography>
@@ -370,7 +370,7 @@ export default function ModernConfiguration() {
                   </Typography>
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Typography variant="subtitle1" fontWeight="medium" mb={2}>
                     Top K
                   </Typography>
@@ -387,7 +387,7 @@ export default function ModernConfiguration() {
                   </Typography>
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Typography variant="subtitle1" fontWeight="medium" mb={2}>
                     GPU Layers
                   </Typography>
@@ -410,7 +410,7 @@ export default function ModernConfiguration() {
                   </Typography>
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Typography variant="subtitle1" fontWeight="medium" mb={2}>
                     CPU Threads
                   </Typography>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useWebSocket } from '@/hooks/use-websocket';
 
 // Hook to check if we're on the client side
 const useIsClient = () => {
@@ -20,7 +19,6 @@ interface LogEntry {
 }
 
 const LogsPage = () => {
-  const { lastMessage } = useWebSocket();
   const isClient = useIsClient();
   const [logs, setLogs] = useState<LogEntry[]>([
     { level: 'info', message: 'Model loading started for llama-2-7b-chat', timestamp: '2025-01-01T10:00:00Z', source: 'model-manager' },
@@ -33,18 +31,7 @@ const LogsPage = () => {
   const [selectedLevel, setSelectedLevel] = useState<string>('all');
   const [maxLines, setMaxLines] = useState(50);
 
-  // Update logs when WebSocket data arrives
-  useEffect(() => {
-    if (lastMessage && lastMessage.type === 'logs' && lastMessage.data) {
-      const newLogs = lastMessage.data.map((log: { level: string; message: string; timestamp: number }) => ({
-        level: log.level,
-        message: log.message,
-        timestamp: new Date(log.timestamp).toISOString(),
-        source: 'websocket'
-      }));
-      setLogs(prev => [...prev, ...newLogs].slice(-maxLines));
-    }
-  }, [lastMessage, maxLines]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   const filteredLogs = logs.filter(log => {
     const matchesText = log.message.toLowerCase().includes(filterText.toLowerCase()) ||

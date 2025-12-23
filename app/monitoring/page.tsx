@@ -110,7 +110,7 @@ export default function MonitoringPage() {
 
         {/* Key Metrics Cards */}
         <Grid container spacing={3} mb={4}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card sx={{ 
               background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
               backdropFilter: 'blur(10px)',
@@ -139,7 +139,7 @@ export default function MonitoringPage() {
             </Card>
           </Grid>
           
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card sx={{ 
               background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
               backdropFilter: 'blur(10px)',
@@ -168,7 +168,7 @@ export default function MonitoringPage() {
             </Card>
           </Grid>
           
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card sx={{ 
               background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
               backdropFilter: 'blur(10px)',
@@ -197,7 +197,7 @@ export default function MonitoringPage() {
             </Card>
           </Grid>
           
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card sx={{ 
               background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
               backdropFilter: 'blur(10px)',
@@ -278,7 +278,7 @@ export default function MonitoringPage() {
             </Typography>
             
             <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <Timer color="success" sx={{ mr: 1, fontSize: '1.5rem' }} />
                   <Typography variant="subtitle1" fontWeight="medium">System Uptime</Typography>
@@ -294,7 +294,7 @@ export default function MonitoringPage() {
                 </Box>
               </Grid>
               
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <NetworkCheck color="info" sx={{ mr: 1, fontSize: '1.5rem' }} />
                   <Typography variant="subtitle1" fontWeight="medium">Performance Status</Typography>
@@ -318,25 +318,25 @@ export default function MonitoringPage() {
               Health Indicators
             </Typography>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {metrics.memoryUsage > 85 ? <Warning color="error" /> : <CheckCircle color="success" />}
                   <Typography variant="body2">Memory: {metrics.memoryUsage}%</Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {metrics.cpuUsage > 90 ? <Warning color="error" /> : <CheckCircle color="success" />}
                   <Typography variant="body2">CPU: {metrics.cpuUsage}%</Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {metrics.diskUsage > 95 ? <Warning color="error" /> : <CheckCircle color="success" />}
                   <Typography variant="body2">Disk: {metrics.diskUsage}%</Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <CheckCircle color="success" />
                   <Typography variant="body2">Models: {metrics.activeModels} active</Typography>

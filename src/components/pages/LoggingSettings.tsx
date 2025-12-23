@@ -103,7 +103,7 @@ export default function LoggingSettings() {
       {/* Logging Configuration Cards */}
       <Grid container spacing={4}>
         {/* Console Logging */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <m.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -163,7 +163,7 @@ export default function LoggingSettings() {
         </Grid>
 
         {/* File Logging */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <m.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
