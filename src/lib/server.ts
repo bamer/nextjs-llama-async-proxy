@@ -1,61 +1,110 @@
-/**
- * Server Integration
- * 
- * This module handles the server setup and integration for the Next.js application.
- * It initializes the WebSocket server when the application starts.
- */
-
 import { createServer } from 'http';
-import { parse } from 'url';
 import next from 'next';
-import { WebSocketServer } from 'ws';
-
+import { Server as IOServer } from 'socket.io';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
-const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
-// Initialize Next.js app
+// Whitelist origins from environment variable
+const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
+// Whitelist allowed model IDs for control messages
+const allowedModelIds = (process.env.ALLOWED_MODEL_IDS ?? '')
+  .split(',')
+  .map(id => id.trim())
+  .filter(Boolean);
+
 const app = next({ dev });
-const handle = app.getRequestHandler();
+const handler = app.getRequestHandler();
 
-app.prepare().then(() => {
-  // Create HTTP server
-  const server = createServer((req, res) => {
-    const parsedUrl = parse(req.url!, true);
-    handle(req, res, parsedUrl);
+const httpServer = createServer((req, res) => {
+  handler(req, res);
+});
+
+const io = new IOServer(httpServer, {
+  cors: {
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('CORS not allowed'));
+      }
+    },
+  },
+});
+
+io.on('connection', (socket) => {
+  if (dev) {
+    console.log(`> WebSocket client connected: ${socket.id}`);
+  }
+
+  // Handle startModel with validation
+  socket.on('startModel', (data: { modelId: string }) => {
+    if (!data?.modelId) return;
+    if (!allowedModelIds.includes(data.modelId)) {
+      if (dev) {
+        console.log(`[dev] Blocked startModel for disallowed model ID: ${data.modelId}`);
+      }
+      socket.emit('error', 'Model ID not allowed');
+      socket.disconnect();
+      return;
+    }
+    if (dev) {
+      console.log(`> Starting model: ${data.modelId}`);
+    }
   });
 
-  // Start WebSocket server
-  const wsServer = new WebSocketServer({ server });
-
-  // Start HTTP server
-  server.listen(port, () => {
-    console.log(`> Server listening at http://${hostname}:${port} as ${dev ? 'development' : process.env.NODE_ENV}`);
-    console.log(`> WebSocket server running on ws://${hostname}:${port}/api/websocket`);
+  // Handle stopModel with validation
+  socket.on('stopModel', (data: { modelId: string }) => {
+    if (!data?.modelId) return;
+    if (!allowedModelIds.includes(data.modelId)) {
+      if (dev) {
+        console.log(`[dev] Blocked stopModel for disallowed model ID: ${data.modelId}`);
+      }
+      socket.emit('error', 'Model ID not allowed');
+      socket.disconnect();
+      return;
+    }
+    if (dev) {
+      console.log(`> Stopping model: ${data.modelId}`);
+    }
   });
 
-  // Handle server errors
-  server.on('error', (error) => {
-    console.error('Server error:', error);
-    process.exit(1);
-  });
-
-  // Handle process termination
-  process.on('SIGTERM', () => {
-    console.log('SIGTERM received. Shutting down gracefully...');
-    
-    // Stop WebSocket server
-    wsServer.on( 'close ', error) => {
-      console.error('Server error:', error);
-      wsServer.close();
-    });
-    
-    server.close(() => {
-      console.log('Server closed');
-      process.exit(0);
-    });
+  socket.on('disconnect', (reason) => {
+    if (dev) {
+      console.log(`> WebSocket client disconnected: ${socket.id} (${reason})`);
+    }
   });
 });
 
-export {}; // Ensure this is treated as a module
+// Add error handling for HTTP server
+httpServer.on('error', (error: Error) => {
+  if (dev) {
+    console.error('Server error:', error);
+  }
+  process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  if (dev) {
+    console.log('SIGTERM received. Shutting down gracefully...');
+  }
+  io.close();
+  httpServer.close(() => {
+    process.exit(0);
+  });
+});
+
+httpServer.listen(port, () => {
+  if (dev) {
+    console.log(`> Server listening at http://${hostname}:${port} as ${process.env.NODE_ENV}`);
+    console.log(`> WebSocket server running on ws://${hostname}:${port}/api/websocket`);
+  }
+});
+
+export {};
