@@ -4,6 +4,7 @@ import "./globals.css";
 import { AppProvider } from "@/providers/app-provider";
 import { APP_CONFIG } from "@/config/app.config";
 import { SEO } from "@/components/seo/seo";
+import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 
 const inter = Inter({
   subsets: ["latin"],
@@ -57,10 +58,12 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <SEO />
-      </head>
+      </head>    
       <body className={`${inter.className} antialiased`}>
+         <AppRouterCacheProvider>
         <AppProvider>{children}</AppProvider>
-      </body>
+        </AppRouterCacheProvider>
+      </body>     
     </html>
   );
 }

@@ -12,11 +12,10 @@
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "type:check": "tsc --noEmit",
-    "test:coverage": "jest --coverage",
-    "dev:full": "concurrently \"pnpm run dev\" \"pnpm run ws:dev\"",
-    "ws:dev": "nodemon --watch src/lib/server.ts --exec 'ts-node src/lib/server.ts'"
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@fontsource/roboto": "^5.2.9",
@@ -24,6 +23,7 @@
     "@jest/globals": "^30.2.0",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
+    "@mui/material-nextjs": "^7.3.6",
     "@mui/utils": "^7.3.6",
     "@mui/x-charts": "^8.22.1",
     "@mui/x-date-pickers": "^8.22.1",
@@ -35,7 +35,6 @@
     "@tanstack/react-query-devtools": "^5.91.1",
     "axios": "^1.13.2",
     "cors": "^2.8.5",
-    "critters": "^0.0.25",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.26",
     "helmet": "^8.1.0",
