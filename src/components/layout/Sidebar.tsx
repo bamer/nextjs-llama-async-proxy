@@ -50,7 +50,7 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile overlay */}
+      {/* Overlay when sidebar is open */}
       {isOpen && (
         <Box
           sx={{
@@ -58,20 +58,17 @@ export function Sidebar() {
             inset: 0,
             bg: 'rgba(0, 0, 0, 0.5)',
             zIndex: (theme) => theme.zIndex.drawer - 1,
-            lg: { display: 'none' }
           }}
           onClick={closeSidebar}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Temporary behavior */}
       <Drawer
-        variant="persistent"
+        variant="temporary"
         open={isOpen}
         onClose={closeSidebar}
         sx={{
-          width: 256,
-          flexShrink: 0,
           '& .MuiDrawer-paper': {
             width: 256,
             boxSizing: 'border-box',
@@ -90,7 +87,7 @@ export function Sidebar() {
               <Typography variant="h6" fontWeight="bold" sx={{ color: isDark ? '#f1f5f9' : '#1e293b' }}>
                 Llama Runner
               </Typography>
-              <IconButton onClick={closeSidebar} className="lg:hidden" sx={{ color: isDark ? '#cbd5e1' : '#64748b' }}>
+              <IconButton onClick={closeSidebar} sx={{ color: isDark ? '#cbd5e1' : '#64748b' }}>
                 <X className="h-5 w-5" />
               </IconButton>
             </Box>

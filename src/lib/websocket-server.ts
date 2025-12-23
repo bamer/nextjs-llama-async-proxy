@@ -1,5 +1,3 @@
-import { any } from "zod";
-
 const { createServer } = require('http');
 const { parse } = require('url');
 const next = require('next');
@@ -8,6 +6,8 @@ const { WebSocketServer } = require('ws');
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
+const hostname = 'localhost';
+const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.prepare().then(() => {
   const server = createServer((req: any, res: any) => {
@@ -18,7 +18,7 @@ app.prepare().then(() => {
   // Create WebSocket server
   const wss = new WebSocketServer({
     server,
-    path: '/api/ws' // WebSocket endpoint
+    path: '/api/websocket' // WebSocket endpoint
   });
 
   // Store connected clients
@@ -55,7 +55,6 @@ app.prepare().then(() => {
     ws.on('close', () => {
       console.log('Client disconnected:', clientId);
       clients.delete(clientId);
-
       // Notify others
       broadcast({
         type: 'user_disconnected',
@@ -67,7 +66,26 @@ app.prepare().then(() => {
     ws.on('error', (error: any) => {
       console.error('WebSocket error:', error);
     });
+
+    ws.on('disconnect', (reason: any) => {
+      if (dev) {
+        console.log(`> WebSocket client disconnected: ${ws.id} (${reason})`);
+      }
+    });
+
+    ws.on('startModel', (data: { modelId: string }) => {
+      if (!data?.modelId) return;
+      console.log(`> Starting model: ${data.modelId}`);
+      ws.emit('startModel', data);
+    });
+
+    ws.on('stopModel', (data: { modelId: string }) => {
+      if (!data?.modelId) return;
+      console.log(`> Stopping model: ${data.modelId}`);
+      ws.emit('stopModel', data);
+    });
   });
+
 
   // Broadcast message to all clients except sender
   function broadcast(message: any, senderId: any) {
@@ -80,10 +98,31 @@ app.prepare().then(() => {
     });
   }
 
+
+
   const PORT = process.env.PORT || 3000;
-  server.listen(PORT, (err:any) => {
+  server.listen(PORT, (err: any) => {
     if (err) throw err;
-    console.log(`> Ready on http://localhost:${PORT}`);
-    console.log(`> WebSocket server on ws://localhost:${PORT}/api/ws`);
+    console.log(`> Server listening at http://${hostname}:${port} as ${process.env.NODE_ENV}`);
+    console.log(`> WebSocket server running on ws://${hostname}:${port}/api/websocket`);
+  });
+
+
+server.on('error', (error: Error) => {
+  if (dev) {
+    console.error('Server error:', error);
+  }
+  process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  if (dev) {
+    console.log('SIGTERM received. Shutting down gracefully...');
+  }
+  server.close(() => {
+    process.exit(0);
   });
 });
+
+}) 

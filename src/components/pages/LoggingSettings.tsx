@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { getLoggerConfig, updateLoggerConfig, LoggerConfig } from '@/lib/logger';
-import { Card, CardContent, Typography, Box, GridLegacy, Divider, 
+import { Card, CardContent, Typography, Box, Grid, Divider, 
          TextField, Switch, FormControlLabel, Button, Chip, Slider } from '@mui/material';
 import { m } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -101,9 +101,9 @@ export default function LoggingSettings() {
       <Divider sx={{ my: 4, borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' }} />
 
       {/* Logging Configuration Cards */}
-      <GridLegacy container spacing={4}>
+      <Grid container spacing={4}>
         {/* Console Logging */}
-        <GridLegacy item xs={12} md={6}>
+        <Grid item xs={12} md={6}>
           <m.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -160,10 +160,10 @@ export default function LoggingSettings() {
               </CardContent>
             </Card>
           </m.div>
-        </GridLegacy>
+        </Grid>
 
         {/* File Logging */}
-        <GridLegacy item xs={12} md={6}>
+        <Grid item xs={12} md={6}>
           <m.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -253,8 +253,8 @@ export default function LoggingSettings() {
               </CardContent>
             </Card>
           </m.div>
-        </GridLegacy>
-      </GridLegacy>
+        </Grid>
+      </Grid>
 
       <Box sx={{ mt: 6 }} />
 

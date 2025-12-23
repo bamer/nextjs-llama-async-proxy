@@ -1,7 +1,7 @@
 "use client";
 
 import { MainLayout } from "@/components/layout/main-layout";
-import { Typography, Box, Button, Card, CardContent, GridLegacy } from "@mui/material";
+import { Typography, Box, Button, Card, CardContent, Grid } from "@mui/material";
 
 
 import { Rocket, Dashboard, ModelTraining, Monitor, Settings, BarChart, Code, Cloud, Terminal } from "@mui/icons-material";
@@ -98,9 +98,9 @@ export default function HomePage() {
           <Typography variant="h4" fontWeight="bold" textAlign="center" mb={4}>
             Key Features
           </Typography>
-          <GridLegacy container spacing={4}>
+          <Grid container spacing={4}>
             {features.map((feature, index) => (
-              <GridLegacy item key={index} xs={12} sm={6} lg={3}>
+              <Grid item key={index} xs={12} sm={6} lg={3}>
                  
                   <Link href={feature.path} style={{ textDecoration: "none" }}>
                     <Card
@@ -130,9 +130,9 @@ export default function HomePage() {
                     </Card>
                   </Link>
             
-              </GridLegacy>
+              </Grid>
             ))}
-          </GridLegacy>
+          </Grid>
         </Box>
 
         {/* Quick stats */}
@@ -142,18 +142,18 @@ export default function HomePage() {
               <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, textAlign: 'center' }}>
                 Quick Stats
               </Typography>
-              <GridLegacy container spacing={3} justifyContent="center">
+              <Grid container spacing={3} justifyContent="center">
                 {stats.map((stat, index) => (
-                  <GridLegacy item key={index} xs={6} sm={3}>
+                  <Grid item key={index} xs={6} sm={3}>
                     <Typography variant="h4" fontWeight="bold" color={stat.color}>
                       {stat.value}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {stat.label}
                     </Typography>
-                  </GridLegacy>
+                  </Grid>
                 ))}
-              </GridLegacy>
+              </Grid>
             </CardContent>
           </Card>
         {/* Technology Stack */}

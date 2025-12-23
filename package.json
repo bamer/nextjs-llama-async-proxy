@@ -12,7 +12,9 @@
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "type:check": "tsc --noEmit",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "dev:full": "concurrently \"pnpm run dev\" \"pnpm run ws:dev\"",
+    "ws:dev": "nodemon --watch src/lib/server.ts --exec 'ts-node src/lib/server.ts'"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -67,6 +69,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/ws": "^8.18.1",
     "autoprefixer": "^10.4.23",
+    "concurrently": "^9.2.1",
     "eslint": "^9.39.2",
     "eslint-config-next": "16.1.0",
     "jest": "^30.2.0",
@@ -79,6 +82,7 @@
     "tailwindcss": "^4.1.18",
     "tailwindcss-animate": "^1.0.7",
     "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }
 }

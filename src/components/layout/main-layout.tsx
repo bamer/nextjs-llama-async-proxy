@@ -15,25 +15,24 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <SidebarProvider>
-        <Box sx={{ 
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          background: isDark ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' : 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)'
-        }}>
-          <Header />
-          <Box sx={{ display: 'flex', flex: 1, pt: '64px' }}>
-            <Sidebar />
-            <Box sx={{ 
-              flex: 1,
-              ml: { xs: 0, lg: '256px' },
-              transition: 'all 0.3s ease',
-              p: { xs: 2, sm: 3, md: 4 }
-            }}>
-              {children}
-            </Box>
+      <Box sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        background: isDark ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' : 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)'
+      }}>
+        <Header />
+        <Box sx={{ display: 'flex', flex: 1, pt: '64px' }}>
+          <Sidebar />
+          <Box sx={{
+            flex: 1,
+            width: '100%',
+            p: { xs: 2, sm: 3, md: 4 }
+          }}>
+            {children}
           </Box>
         </Box>
+      </Box>
     </SidebarProvider>
   );
 }

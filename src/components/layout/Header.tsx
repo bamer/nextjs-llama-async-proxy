@@ -27,7 +27,6 @@ export function Header() {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
           <IconButton
             onClick={toggleSidebar}
-            className="lg:hidden"
             aria-label="Toggle sidebar"
             sx={{ color: isDark ? '#cbd5e1' : '#64748b' }}
           >

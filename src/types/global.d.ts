@@ -68,6 +68,15 @@ declare global {
     avgResponseTime: number;
     uptime: number;
     timestamp: string;
+    // GPU Metrics
+    gpuUsage?: number; // GPU utilization percentage
+    gpuMemoryUsage?: number; // GPU memory usage percentage
+    gpuMemoryTotal?: number; // Total GPU memory in MB
+    gpuMemoryUsed?: number; // Used GPU memory in MB
+    gpuPowerUsage?: number; // GPU power usage in watts
+    gpuPowerLimit?: number; // GPU power limit in watts
+    gpuTemperature?: number; // GPU temperature in Celsius
+    gpuName?: string; // GPU model name
   }
 
   interface LogEntry {

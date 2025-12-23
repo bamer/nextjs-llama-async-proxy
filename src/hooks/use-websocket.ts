@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { websocketService } from "@/services/websocket-service";
+import { websocketServer } from "@/lib/websocket-server";
 import { useStore } from "@/lib/store";
 import { useSnackbar } from "notistack";
 
@@ -12,7 +12,7 @@ export function useWebSocket() {
   useEffect(() => {
     // Connect on mount
     console.log('WebSocket hook: connecting...');
-    websocketService.connect();
+    websocketServer.connect();
 
     // Set up event listeners
     const handleConnect = () => {
@@ -26,7 +26,7 @@ export function useWebSocket() {
     };
 
     const handleConnectionState = () => {
-      const currentState = websocketService.getConnectionState();
+      const currentState = websocketServer.getConnectionState();
       // Only update state if it has actually changed
       setConnectionState(prevState => {
         if (prevState !== currentState) {
@@ -37,7 +37,7 @@ export function useWebSocket() {
     };
 
     // Initial state - only set if different from current state
-    const initialState = websocketService.getConnectionState();
+    const initialState = websocketServer.getConnectionState();
     if (connectionState !== initialState) {
       setConnectionState(initialState);
     }
@@ -66,22 +66,22 @@ export function useWebSocket() {
     };
 
     // Add event listeners
-    websocketService.on("connect", handleConnect);
-    websocketService.on("disconnect", handleDisconnect);
-    websocketService.on("connect_error", handleConnectionState);
-    websocketService.on("reconnect", handleConnect);
-    websocketService.on("reconnect_failed", handleConnectionState);
-    websocketService.on("message", handleMessage);
+    websocketServer.on("connect", handleConnect);
+    websocketServer.on("disconnect", handleDisconnect);
+    websocketServer.on("connect_error", handleConnectionState);
+    websocketServer.on("reconnect", handleConnect);
+    websocketServer.on("reconnect_failed", handleConnectionState);
+    websocketServer.on("message", handleMessage);
 
     // Cleanup
     return () => {
-      websocketService.off("connect", handleConnect);
-      websocketService.off("disconnect", handleDisconnect);
-      websocketService.off("connect_error", handleConnectionState);
-      websocketService.off("reconnect", handleConnect);
-      websocketService.off("reconnect_failed", handleConnectionState);
-      websocketService.off("message", handleMessage);
-      websocketService.disconnect();
+      websocketServer.off("connect", handleConnect);
+      websocketServer.off("disconnect", handleDisconnect);
+      websocketServer.off("connect_error", handleConnectionState);
+      websocketServer.off("reconnect", handleConnect);
+      websocketServer.off("reconnect_failed", handleConnectionState);
+      websocketServer.off("message", handleMessage);
+      websocketServer.disconnect();
     };
   }, []);
 
@@ -96,8 +96,8 @@ export function useWebSocket() {
   useEffect(() => {
     const interval = setInterval(() => {
       if (isConnected) {
-        websocketService.requestMetrics();
-        websocketService.requestModels();
+        websocketServer.requestMetrics();
+        websocketServer.requestModels();
       }
     }, 5000); // Request data every 5 seconds
 
@@ -109,27 +109,27 @@ export function useWebSocket() {
       enqueueSnackbar("WebSocket not connected", { variant: "warning" });
       return;
     }
-    websocketService.sendMessage(event, data);
+    websocketServer.sendMessage(event, data);
   };
 
   const requestMetrics = () => {
-    websocketService.requestMetrics();
+    websocketServer.requestMetrics();
   };
 
   const requestLogs = () => {
-    websocketService.requestLogs();
+    websocketServer.requestLogs();
   };
 
   const requestModels = () => {
-    websocketService.requestModels();
+    websocketServer.requestModels();
   };
 
   const startModel = (modelId: string) => {
-    websocketService.startModel(modelId);
+    websocketServer.startModel(modelId);
   };
 
   const stopModel = (modelId: string) => {
-    websocketService.stopModel(modelId);
+    websocketServer.stopModel(modelId);
   };
 
   return {
@@ -141,6 +141,6 @@ export function useWebSocket() {
     requestModels,
     startModel,
     stopModel,
-    socketId: websocketService.getSocketId(),
+    socketId: websocketServer.getSocketId(),
   };
 }

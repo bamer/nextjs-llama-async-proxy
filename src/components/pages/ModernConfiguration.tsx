@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useConfig } from '@/hooks/use-config';
-import { Card, CardContent, Typography, Box, GridLegacy, TextField, Button, Divider, LinearProgress, Tabs, Tab, Switch, FormControlLabel, Slider } from '@mui/material';
+import { Card, CardContent, Typography, Box, Grid, TextField, Button, Divider, LinearProgress, Tabs, Tab, Switch, FormControlLabel, Slider } from '@mui/material';
 import { m } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Save, Restore, Sync, CheckCircle, ErrorOutline } from '@mui/icons-material';
@@ -183,8 +183,8 @@ export default function ModernConfiguration() {
                 General Settings
               </Typography>
               
-              <GridLegacy container spacing={4}>
-                <GridLegacy item key="basePath" xs={12} md={6}>
+              <Grid container spacing={4}>
+                <Grid item key="basePath" xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="Base Path"
@@ -195,9 +195,9 @@ export default function ModernConfiguration() {
                     helperText="Path to your models directory"
                     sx={{ mb: 3 }}
                   />
-                </GridLegacy>
+                </Grid>
 
-                <GridLegacy item xs={12} md={6}>
+                <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="Log Level"
@@ -216,9 +216,9 @@ export default function ModernConfiguration() {
                       </option>
                     ))}
                   </TextField>
-                </GridLegacy>
+                </Grid>
 
-                <GridLegacy item xs={12} md={6}>
+                <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="Max Concurrent Models"
@@ -231,9 +231,9 @@ export default function ModernConfiguration() {
                     InputProps={{ inputProps: { min: 1, max: 20 } }}
                     sx={{ mb: 3 }}
                   />
-                </GridLegacy>
+                </Grid>
 
-                <GridLegacy item xs={12} md={6}>
+                <Grid item xs={12} md={6}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -251,9 +251,9 @@ export default function ModernConfiguration() {
                   <Typography variant="body2" color="text.secondary" sx={{ ml: 0, mb: 3 }}>
                     Automatically update models and dependencies
                   </Typography>
-                </GridLegacy>
+                </Grid>
 
-                <GridLegacy item xs={12} md={6}>
+                <Grid item xs={12} md={6}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -271,8 +271,8 @@ export default function ModernConfiguration() {
                   <Typography variant="body2" color="text.secondary" sx={{ ml: 0, mb: 3 }}>
                     Receive system alerts and notifications
                   </Typography>
-                </GridLegacy>
-              </GridLegacy>
+                </Grid>
+              </Grid>
             </CardContent>
           </Card>
         </m.div>
@@ -296,8 +296,8 @@ export default function ModernConfiguration() {
                 Model Default Parameters
               </Typography>
               
-              <GridLegacy container spacing={4}>
-                <GridLegacy item xs={12}>
+              <Grid container spacing={4}>
+                <Grid item xs={12}>
                   <Typography variant="subtitle1" fontWeight="medium" mb={2}>
                     Context Size
                   </Typography>
@@ -317,9 +317,9 @@ export default function ModernConfiguration() {
                   <Typography variant="body2" color="text.secondary" mt={1}>
                     Maximum tokens in context (default: 4096)
                   </Typography>
-                </GridLegacy>
+                </Grid>
 
-                <GridLegacy item xs={12}>
+                <Grid item xs={12}>
                   <Typography variant="subtitle1" fontWeight="medium" mb={2}>
                     Batch Size
                   </Typography>
@@ -334,9 +334,9 @@ export default function ModernConfiguration() {
                   <Typography variant="body2" color="text.secondary" mt={1}>
                     Logical maximum batch size
                   </Typography>
-                </GridLegacy>
+                </Grid>
 
-                <GridLegacy item xs={12}>
+                <Grid item xs={12}>
                   <Typography variant="subtitle1" fontWeight="medium" mb={2}>
                     Temperature
                   </Typography>
@@ -351,9 +351,9 @@ export default function ModernConfiguration() {
                   <Typography variant="body2" color="text.secondary" mt={1}>
                     Sampling temperature (0 = deterministic, 2 = very random)
                   </Typography>
-                </GridLegacy>
+                </Grid>
 
-                <GridLegacy item xs={12}>
+                <Grid item xs={12}>
                   <Typography variant="subtitle1" fontWeight="medium" mb={2}>
                     Top P (Nucleus Sampling)
                   </Typography>
@@ -368,9 +368,9 @@ export default function ModernConfiguration() {
                   <Typography variant="body2" color="text.secondary" mt={1}>
                     Keep tokens with cumulative probability less than or equal to P
                   </Typography>
-                </GridLegacy>
+                </Grid>
 
-                <GridLegacy item xs={12}>
+                <Grid item xs={12}>
                   <Typography variant="subtitle1" fontWeight="medium" mb={2}>
                     Top K
                   </Typography>
@@ -385,9 +385,9 @@ export default function ModernConfiguration() {
                   <Typography variant="body2" color="text.secondary" mt={1}>
                     Top-K sampling (0 = disabled)
                   </Typography>
-                </GridLegacy>
+                </Grid>
 
-                <GridLegacy item xs={12}>
+                <Grid item xs={12}>
                   <Typography variant="subtitle1" fontWeight="medium" mb={2}>
                     GPU Layers
                   </Typography>
@@ -408,9 +408,9 @@ export default function ModernConfiguration() {
                   <Typography variant="body2" color="text.secondary" mt={1}>
                     Number of layers to offload to GPU (-1 = all layers)
                   </Typography>
-                </GridLegacy>
+                </Grid>
 
-                <GridLegacy item xs={12}>
+                <Grid item xs={12}>
                   <Typography variant="subtitle1" fontWeight="medium" mb={2}>
                     CPU Threads
                   </Typography>
@@ -431,8 +431,8 @@ export default function ModernConfiguration() {
                   <Typography variant="body2" color="text.secondary" mt={1}>
                     Number of CPU threads to use (-1 = auto)
                   </Typography>
-                </GridLegacy>
-              </GridLegacy>
+                </Grid>
+              </Grid>
             </CardContent>
           </Card>
         </m.div>
