@@ -9,6 +9,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Refresh } from '@mui/icons-material';
 import { MONITORING_CONFIG } from '@/config/monitoring.config';
+import { useWebSocket } from '@/hooks/use-websocket';
 
 
 
@@ -20,71 +21,41 @@ export default function ModernDashboard() {
   const { isDark } = useTheme();
   const [chartData, setChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const isConnected = true;
+  const { isConnected, requestMetrics, requestModels, requestLogs } = useWebSocket();
 
   useEffect(() => {
-           
-        useStore.getState().setModels([
-          {
-            id: 'llama-7b',
-            name: 'Llama 7B',
-            type: 'llama' as const,
-            status: 'running' as const,
-            parameters: { temperature: 0.7, maxTokens: 2048, topP: 0.9 },
-            createdAt: new Date(Date.now() - 86400000).toISOString(),
-            updatedAt: new Date(Date.now() - 3600000).toISOString()
-          }
-        ]);
-        
-        useStore.getState().setLogs([
-          {
-            id: '1',
-            level: 'info' as const,
-            message: 'Dashboard initialized with fallback data',
-            timestamp: new Date().toISOString(),
-            context: { source: 'dashboard' }
-          },
-          {
-            id: '2',
-            level: 'warn' as const,
-            message: 'WebSocket connection failed, using fallback data',
-            timestamp: new Date().toISOString(),
-            context: { source: 'websocket' }
-          }
-        ]);
-     }, [loading, metrics, models, logs]); 
+    if (!isConnected) {
+      return;
+    }
+    
+    requestMetrics();
+    requestModels();
+    requestLogs();
+    
+    const interval = setInterval(() => {
+      requestMetrics();
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [isConnected, requestMetrics, requestModels, requestLogs]); 
       
 
-  // Handle connection timeout based on configuration
+  useEffect(() => {
+    if (metrics && metrics.cpuUsage !== undefined) {
+      setLoading(false);
+    }
+  }, [metrics]);
+
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (loading && (!metrics || models.length === 0 || logs.length === 0)) {
-        // Check if Socket.IO is connected and we're in production mode
-        const socketConnected = 'connected';
-        
-        if (MONITORING_CONFIG.MOCK_DATA.ENABLE_FALLBACK  && !socketConnected) {
-          console.log('WebSocket/Socket.IO not connected, using fallback mock data');
-          // Generate mock data only if WebSocket is not connected
-        } else if (socketConnected) {
-          // Socket.IO is connected but data hasn't arrived yet, wait a bit longer
-          console.log('Socket.IO connected but data still loading, extending timeout...');
-          // Extend the timeout by another 10 seconds
-          const extendedTimeoutId = setTimeout(() => {
-            if (loading && (!metrics || models.length === 0 || logs.length === 0)) {
-              console.log('WebSocket connection timeout - no mock data in production mode');
-              setLoading(false);
-            }
-          }, 10000);
-          // Don't return here, let the execution continue
-        } else {
-          console.log('WebSocket connection timeout - no mock data in production mode');
-        }
+      if (loading) {
+        console.log('Connection timeout - setting loading to false');
         setLoading(false);
       }
     }, MONITORING_CONFIG.WEBSOCKET.CONNECTION_TIMEOUT);
     
     return () => clearTimeout(timeoutId);
-  }, [loading, metrics, models, logs]);
+  }, [loading]);
 
   // Generate chart data with GPU metrics
   useEffect(() => {
