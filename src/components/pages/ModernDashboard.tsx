@@ -24,20 +24,10 @@ export default function ModernDashboard() {
   const { isConnected, requestMetrics, requestModels, requestLogs } = useWebSocket();
 
   useEffect(() => {
-    if (!isConnected) {
-      return;
+    if (isConnected) {
+      setLoading(false);
     }
-    
-    requestMetrics();
-    requestModels();
-    requestLogs();
-    
-    const interval = setInterval(() => {
-      requestMetrics();
-    }, 5000);
-    
-    return () => clearInterval(interval);
-  }, [isConnected, requestMetrics, requestModels, requestLogs]); 
+  }, [isConnected]); 
       
 
   useEffect(() => {
@@ -108,12 +98,15 @@ export default function ModernDashboard() {
       <Box sx={{ p: 4 }}>
         <Typography variant="h4" gutterBottom>Loading Dashboard...</Typography>
         <LinearProgress />
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+          {isConnected ? 'Connected, waiting for data...' : 'Connecting to server...'}
+        </Typography>
       </Box>
     );
   }
 
-  // Show clear error state if no data is available
-  if (!metrics || models.length === 0 || logs.length === 0) {
+  // Show error only if not connected AND no data after timeout
+  if (!isConnected && !metrics) {
     return (
       <Box sx={{ p: 4 }}>
         <Card sx={{ 
@@ -122,39 +115,22 @@ export default function ModernDashboard() {
         }}>
           <CardContent sx={{ textAlign: 'center', py: 6 }}>
             <Typography variant="h5" color="error" gutterBottom sx={{ fontWeight: 'bold' }}>
-              {MONITORING_CONFIG.REQUIRE_REAL_DATA ? 'No Real Data Available' : 'Connection Failed'}
+              Connection Failed
             </Typography>
             <Typography variant="body1" color="text.secondary" paragraph>
-              {MONITORING_CONFIG.REQUIRE_REAL_DATA ? 
-                'This dashboard requires a real WebSocket connection.' : 
-                'WebSocket connection failed.'}
+              Unable to connect to the WebSocket server.
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-              {MONITORING_CONFIG.REQUIRE_REAL_DATA ? 
-                'Please start the WebSocket server to monitor real data.' : 
-                'Mock data is disabled in this configuration.'}
+              Make sure the server is running with: node server.js
             </Typography>
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => window.location.reload()}
-                startIcon={<Refresh />}
-              >
-                Retry Connection
-              </Button>
-              {MONITORING_CONFIG.REQUIRE_REAL_DATA && (
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  onClick={() => alert(`To enable mock data for development:
-1. Set REQUIRE_REAL_DATA: false in monitoring.config.ts
-2. Restart the application`)}
-                >
-                  Development Mode
-                </Button>
-              )}
-            </Box>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => window.location.reload()}
+              startIcon={<Refresh />}
+            >
+              Retry Connection
+            </Button>
           </CardContent>
         </Card>
       </Box>

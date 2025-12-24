@@ -19,6 +19,13 @@ const nextHandler = app.getRequestHandler()
 const hostname = 'localhost';
 const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
+// Configuration des intervalles de mise à jour (en ms)
+const UPDATE_CONFIG = {
+  METRICS_INTERVAL: 10000,  // 10 secondes entre chaque mise à jour des métriques
+  MODELS_INTERVAL: 30000,   // 30 secondes pour les modèles (change rarement)
+  LOGS_INTERVAL: 15000,     // 15 secondes pour les logs
+};
+
 logger.info('🚀 [SOCKET.IO] Initializing Socket.IO server...');
 
 app.prepare().then(() => {
@@ -30,36 +37,106 @@ const server = createServer();
   // Create Socket.IO server with CORS configuration
   const io = new Server({
     cors: {
-      origin: '*', // Allow all origins for development
+      origin: '*',
       methods: ['GET', 'POST'],
       allowedHeaders: ['Content-Type', 'Authorization']
     },
     connectionStateRecovery: {
-      maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
+      maxDisconnectionDuration: 2 * 60 * 1000,
       skipMiddlewares: true,
     },
-    // Socket.IO specific options
     path: '/llamaproxws',
-    pingTimeout: 60000, // 60 seconds
-    pingInterval: 25000, // 25 seconds
-    maxHttpBufferSize: 1e8, // 100MB
-    transports: ['websocket'], // Fallback to polling if WebSocket fails
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    maxHttpBufferSize: 1e8,
+    transports: ['websocket'],
   });
   io.attach(server);
   logger.info('🔧 [SOCKET.IO] Socket.IO server configured with path: /llamaproxws');
 
   // Store connected clients
   const clients = new Map();
+  
+  // Store last sent data to detect changes
+  let lastMetrics = null;
+  let lastModels = null;
+  let lastLogs = null;
+
+  // Generate metrics data (in real app, this would come from actual system)
+  const generateMetrics = () => ({
+    activeModels: Math.floor(Math.random() * 5) + 1,
+    totalRequests: Math.floor(Math.random() * 500) + 100,
+    avgResponseTime: Math.floor(Math.random() * 300) + 100,
+    memoryUsage: Math.floor(Math.random() * 30) + 50,
+    cpuUsage: Math.floor(Math.random() * 50) + 20,
+    uptime: Math.floor(Date.now() / 1000),
+    lastUpdated: new Date().toISOString()
+  });
+
+  // Generate models data
+  const generateModels = () => [
+    { id: 'llama-2-7b', name: 'Llama 2 7B', type: 'llama', status: 'running', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'llama-2-13b', name: 'Llama 2 13B', type: 'llama', status: 'stopped', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'mistral-7b', name: 'Mistral 7B', type: 'mistral', status: 'running', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  ];
+
+  // Generate logs data
+  const generateLogs = () => {
+    const logLevels = ['info', 'debug', 'warn', 'error'];
+    const logs = [];
+    const now = Date.now();
+    
+    for (let i = 0; i < 10; i++) {
+      const level = logLevels[Math.floor(Math.random() * logLevels.length)];
+      logs.push({
+        id: `log-${now}-${i}`,
+        level,
+        message: `Log message ${i + 1} from ${level}`,
+        timestamp: new Date(now - Math.floor(Math.random() * 300000)).toISOString(),
+        context: { source: 'server' }
+      });
+    }
+    return logs;
+  };
+
+  // Broadcast to all connected clients
+  const broadcastMetrics = () => {
+    if (clients.size === 0) return;
+    
+    const metrics = generateMetrics();
+    io.emit('metrics', { type: 'metrics', data: metrics, timestamp: Date.now() });
+    logger.debug(`📊 [BROADCAST] Metrics sent to ${clients.size} client(s)`);
+  };
+
+  const broadcastModels = () => {
+    if (clients.size === 0) return;
+    
+    const models = generateModels();
+    io.emit('models', { type: 'models', data: models, timestamp: Date.now() });
+    logger.debug(`🤖 [BROADCAST] Models sent to ${clients.size} client(s)`);
+  };
+
+  const broadcastLogs = () => {
+    if (clients.size === 0) return;
+    
+    const logs = generateLogs();
+    io.emit('logs', { type: 'logs', data: logs, timestamp: Date.now() });
+    logger.debug(`📜 [BROADCAST] Logs sent to ${clients.size} client(s)`);
+  };
+
+  // Start broadcast intervals
+  const metricsInterval = setInterval(broadcastMetrics, UPDATE_CONFIG.METRICS_INTERVAL);
+  const modelsInterval = setInterval(broadcastModels, UPDATE_CONFIG.MODELS_INTERVAL);
+  const logsInterval = setInterval(broadcastLogs, UPDATE_CONFIG.LOGS_INTERVAL);
+
+  logger.info(`⏱️ [CONFIG] Update intervals: Metrics=${UPDATE_CONFIG.METRICS_INTERVAL/1000}s, Models=${UPDATE_CONFIG.MODELS_INTERVAL/1000}s, Logs=${UPDATE_CONFIG.LOGS_INTERVAL/1000}s`);
 
   // Handle Socket.IO connections
   io.on('connection', (socket) => {
     const clientId = socket.id;
     clients.set(clientId, socket);
     
-    logger.info(`🔌 [SOCKET.IO] New client connected (ID: ${clientId})`);
-    logger.debug(`📡 [SOCKET.IO] Connection from: ${socket.handshake.address}`);
-    logger.debug(`📊 [SOCKET.IO] Transport: ${socket.conn.transport.name}`);
-    logger.debug(`🔗 [SOCKET.IO] Headers:`, socket.handshake.headers);
+    logger.info(`🔌 [SOCKET.IO] New client connected (ID: ${clientId}) - Total clients: ${clients.size}`);
 
     // Send welcome message
     socket.emit('message', {
@@ -69,118 +146,61 @@ const server = createServer();
       timestamp: new Date().toISOString()
     });
 
+    // Send initial data immediately to new client
+    socket.emit('metrics', { type: 'metrics', data: generateMetrics(), timestamp: Date.now() });
+    socket.emit('models', { type: 'models', data: generateModels(), timestamp: Date.now() });
+    socket.emit('logs', { type: 'logs', data: generateLogs(), timestamp: Date.now() });
+
     // Handle incoming messages
     socket.on('message', (data) => {
       try {
         logger.info(`💬 [SOCKET.IO] Message received: ${data.type || 'unknown'}`);
-        logger.debug(`📝 [SOCKET.IO] Full message:`, data);
-        
-        // Broadcast to all connected clients except sender
         socket.broadcast.emit('message', data);
       } catch (error) {
         logger.error(`❌ [SOCKET.IO] Error processing message: ${error.message}`);
       }
     });
 
-    // Handle specific events
+    // Handle on-demand requests (for manual refresh)
     socket.on('requestMetrics', () => {
-      logger.info(`📊 [SOCKET.IO] Metrics requested by client ${clientId}`);
-      
-      // Generate mock metrics data
-      const metrics = {
-        activeModels: Math.floor(Math.random() * 5) + 1,
-        totalRequests: Math.floor(Math.random() * 500) + 100,
-        avgResponseTime: Math.floor(Math.random() * 300) + 100,
-        memoryUsage: Math.floor(Math.random() * 30) + 50,
-        cpuUsage: Math.floor(Math.random() * 50) + 20,
-        lastUpdated: new Date().toISOString()
-      };
-      
-      socket.emit('metrics', {
-        type: 'metrics',
-        data: metrics,
-        timestamp: Date.now()
-      });
+      logger.debug(`📊 [SOCKET.IO] Metrics requested by client ${clientId}`);
+      socket.emit('metrics', { type: 'metrics', data: generateMetrics(), timestamp: Date.now() });
     });
 
     socket.on('requestModels', () => {
-      logger.info(`🤖 [SOCKET.IO] Models requested by client ${clientId}`);
-      
-      // Generate mock models data
-      const models = [
-        { id: 'llama-2-7b', name: 'Llama 2 7B', status: 'running', load: Math.random() },
-        { id: 'llama-2-13b', name: 'Llama 2 13B', status: 'stopped', load: 0 },
-        { id: 'mistral-7b', name: 'Mistral 7B', status: 'running', load: Math.random() },
-      ];
-      
-      socket.emit('models', {
-        type: 'models',
-        data: models,
-        timestamp: Date.now()
-      });
+      logger.debug(`🤖 [SOCKET.IO] Models requested by client ${clientId}`);
+      socket.emit('models', { type: 'models', data: generateModels(), timestamp: Date.now() });
     });
 
     socket.on('requestLogs', () => {
-      logger.info(`📜 [SOCKET.IO] Logs requested by client ${clientId}`);
-      
-      // Generate mock logs data
-      const logLevels = ['info', 'debug', 'warn', 'error'];
-      const logs = [];
-      const now = Date.now();
-      
-      for (let i = 0; i < 10; i++) {
-        const level = logLevels[Math.floor(Math.random() * logLevels.length)];
-        logs.push({
-          level,
-          message: `Log message ${i + 1} from ${level}`,
-          timestamp: now - Math.floor(Math.random() * 300000)
-        });
-      }
-      
-      socket.emit('logs', {
-        type: 'logs',
-        data: logs,
-        timestamp: Date.now()
-      });
+      logger.debug(`📜 [SOCKET.IO] Logs requested by client ${clientId}`);
+      socket.emit('logs', { type: 'logs', data: generateLogs(), timestamp: Date.now() });
     });
 
     // Handle client disconnect
     socket.on('disconnect', (reason) => {
-      logger.info(`🔴 [SOCKET.IO] Client disconnected (ID: ${clientId}) | Reason: ${reason}`);
+      logger.info(`🔴 [SOCKET.IO] Client disconnected (ID: ${clientId}) | Reason: ${reason} - Remaining clients: ${clients.size - 1}`);
       clients.delete(clientId);
-      
-      // Notify others
-      socket.broadcast.emit('user_disconnected', {
-        type: 'user_disconnected',
-        senderId: clientId,
-        timestamp: new Date().toISOString()
-      });
     });
 
-    // Handle errors
     socket.on('connect_error', (error) => {
       logger.error(`❌ [SOCKET.IO] Connection error for client ${clientId}: ${error.message}`);
     });
   });
 
-
   server.on('request', expressApp)
-  // Handle all requests with Next.js
  
   expressApp.use((req, res) => {
     return nextHandler(req, res)
   })
 
-  // Start the server!
   server.listen(port, (err) => {
     if (err) throw err
     console.log(`> Ready on http://${hostname}:${port}`)
     logger.info(`🚀 [SOCKET.IO] Server listening at http://${hostname}:${port}`);
-    logger.info(`🔌 [SOCKET.IO] Socket.IO server running on ws://${hostname}:${port}/socket.io`);
-    logger.info('🚀 [SOCKET.IO] Socket.IO server is ready and waiting for connections...');
+    logger.info('🚀 [SOCKET.IO] Socket.IO server is ready - updates will be pushed automatically');
   })
 
-  // Server error handling
   server.on('error', (error) => {
     logger.error(`❌ [SOCKET.IO] HTTP Server error: ${error.message}`);
     if (error.code === 'EADDRINUSE') {
@@ -188,36 +208,25 @@ const server = createServer();
     }
   });
 
-  // Handle Socket.IO errors
   io.engine.on('connection_error', (err) => {
     logger.error(`❌ [SOCKET.IO] Connection error: ${err.message}`);
-    logger.debug('Connection error details:', err);
   });
 
-  // Handle process termination
-  process.on('SIGTERM', () => {
-    logger.info('🛑 [SOCKET.IO] SIGTERM received. Shutting down gracefully...');
-    
-    // Disconnect all clients
+  // Cleanup on shutdown
+  const cleanup = () => {
+    clearInterval(metricsInterval);
+    clearInterval(modelsInterval);
+    clearInterval(logsInterval);
     io.disconnectSockets();
-    
     server.close(() => {
       logger.info('👋 [SOCKET.IO] Server shutdown complete');
       process.exit(0);
     });
-  });
+  };
 
-  process.on('SIGINT', () => {
-    logger.info('🛑 [SOCKET.IO] SIGINT received. Shutting down gracefully...');
-    
-    // Disconnect all clients
-    io.disconnectSockets();
-    
-    server.close(() => {
-      logger.info('👋 [SOCKET.IO] Server shutdown complete');
-      process.exit(0);
-    });
-  });
+  process.on('SIGTERM', cleanup);
+  process.on('SIGINT', cleanup);
+
 }).catch((error) => {
   logger.error(`❌ [SOCKET.IO] Failed to prepare Next.js app: ${error.message}`);
   process.exit(1);
