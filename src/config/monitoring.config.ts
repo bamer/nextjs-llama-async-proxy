@@ -13,7 +13,8 @@ export const MONITORING_CONFIG = {
   // WebSocket connection settings
   WEBSOCKET: {
     // Timeout before considering connection failed (in ms)
-    CONNECTION_TIMEOUT: 5000,
+    // Increased to 15 seconds to allow Socket.IO to connect and receive initial data
+    CONNECTION_TIMEOUT: 15000,
     
     // Automatic reconnection settings
     AUTO_RECONNECT: true,

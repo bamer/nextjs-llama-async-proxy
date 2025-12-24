@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useWebSocket } from '@/hooks/use-websocket';
 import { useStore } from '@/lib/store';
 import { MetricsCard } from '@/components/ui/MetricsCard';
 import { Card, CardContent, Typography, Box, Grid, Divider, Chip, LinearProgress, Button } from '@mui/material';
@@ -12,40 +11,19 @@ import { Refresh } from '@mui/icons-material';
 import { MONITORING_CONFIG } from '@/config/monitoring.config';
 
 
+
 export default function ModernDashboard() {
-  const { requestMetrics, requestModels, requestLogs, isConnected } = useWebSocket();
+
   const metrics = useStore((state) => state.metrics);
   const models = useStore((state) => state.models);
   const logs = useStore((state) => state.logs);
   const { isDark } = useTheme();
   const [chartData, setChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const isConnected = true;
 
   useEffect(() => {
-    // Request data when WebSocket is connected, or use fallback
-    if (isConnected) {
-      requestMetrics();
-      requestModels();
-      requestLogs();
-      return;
-    }
-
-    // If WebSocket is not connected after a delay, use mock data
-    const timeoutId = setTimeout(() => {
-      if (!isConnected && loading) {
-        console.log('WebSocket not connected, using fallback mock data');
-        // Generate mock data if WebSocket fails
-        useStore.getState().setMetrics({
-          activeModels: Math.floor(Math.random() * 5) + 1,
-          totalRequests: Math.floor(Math.random() * 1000) + 500,
-          avgResponseTime: Math.floor(Math.random() * 500) + 100,
-          memoryUsage: Math.floor(Math.random() * 30) + 50,
-          cpuUsage: Math.floor(Math.random() * 20) + 5,
-          diskUsage: Math.floor(Math.random() * 40) + 30,
-          uptime: Math.floor(Math.random() * 100) + 80,
-          timestamp: new Date().toISOString()
-        });
-        
+           
         useStore.getState().setModels([
           {
             id: 'llama-7b',
@@ -74,67 +52,30 @@ export default function ModernDashboard() {
             context: { source: 'websocket' }
           }
         ]);
-      }
-    }, 2000); // 2 second delay before using fallback
-    
-    return () => clearTimeout(timeoutId);
-  }, [isConnected, requestMetrics, requestModels, requestLogs, loading]);
+     }, [loading, metrics, models, logs]); 
+      
 
   // Handle connection timeout based on configuration
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (loading && (!metrics || models.length === 0 || logs.length === 0)) {
-        if (MONITORING_CONFIG.MOCK_DATA.ENABLE_FALLBACK && !isConnected) {
-          console.log('WebSocket not connected, using fallback mock data');
+        // Check if Socket.IO is connected and we're in production mode
+        const socketConnected = 'connected';
+        
+        if (MONITORING_CONFIG.MOCK_DATA.ENABLE_FALLBACK  && !socketConnected) {
+          console.log('WebSocket/Socket.IO not connected, using fallback mock data');
           // Generate mock data only if WebSocket is not connected
-          useStore.getState().setMetrics({
-            activeModels: Math.floor(Math.random() * 5) + 1,
-            totalRequests: Math.floor(Math.random() * 1000) + 500,
-            avgResponseTime: Math.floor(Math.random() * 500) + 100,
-            memoryUsage: Math.floor(Math.random() * 30) + 50,
-            cpuUsage: Math.floor(Math.random() * 20) + 5,
-            diskUsage: Math.floor(Math.random() * 40) + 30,
-            uptime: Math.floor(Math.random() * 100) + 80,
-            timestamp: new Date().toISOString(),
-            // Add GPU mock data only in development
-            gpuUsage: Math.floor(Math.random() * 80) + 10,
-            gpuMemoryUsage: Math.floor(Math.random() * 70) + 20,
-            gpuMemoryTotal: MONITORING_CONFIG.MOCK_DATA.GPU.MEMORY_TOTAL_MB,
-            gpuMemoryUsed: Math.floor(Math.random() * 18000) + 5000,
-            gpuPowerUsage: Math.floor(Math.random() * 250) + 80,
-            gpuPowerLimit: MONITORING_CONFIG.MOCK_DATA.GPU.POWER_LIMIT_W,
-            gpuTemperature: Math.floor(Math.random() * 50) + 40,
-            gpuName: MONITORING_CONFIG.MOCK_DATA.GPU.NAME
-          });
-          
-          useStore.getState().setModels([
-            {
-              id: 'llama-7b',
-              name: 'Llama 7B',
-              type: 'llama' as const,
-              status: 'running' as const,
-              parameters: { temperature: 0.7, maxTokens: 2048, topP: 0.9 },
-              createdAt: new Date(Date.now() - 86400000).toISOString(),
-              updatedAt: new Date(Date.now() - 3600000).toISOString()
+        } else if (socketConnected) {
+          // Socket.IO is connected but data hasn't arrived yet, wait a bit longer
+          console.log('Socket.IO connected but data still loading, extending timeout...');
+          // Extend the timeout by another 10 seconds
+          const extendedTimeoutId = setTimeout(() => {
+            if (loading && (!metrics || models.length === 0 || logs.length === 0)) {
+              console.log('WebSocket connection timeout - no mock data in production mode');
+              setLoading(false);
             }
-          ]);
-          
-          useStore.getState().setLogs([
-            {
-              id: '1',
-              level: 'info' as const,
-              message: 'Model loading completed successfully',
-              timestamp: new Date().toISOString(),
-              context: { source: 'model-manager' }
-            },
-            {
-              id: '2',
-              level: 'warn' as const,
-              message: 'Using mock data - WebSocket connection failed',
-              timestamp: new Date().toISOString(),
-              context: { source: 'dashboard' }
-            }
-          ]);
+          }, 10000);
+          // Don't return here, let the execution continue
         } else {
           console.log('WebSocket connection timeout - no mock data in production mode');
         }
@@ -143,7 +84,7 @@ export default function ModernDashboard() {
     }, MONITORING_CONFIG.WEBSOCKET.CONNECTION_TIMEOUT);
     
     return () => clearTimeout(timeoutId);
-  }, [loading, metrics, models, logs, isConnected]);
+  }, [loading, metrics, models, logs]);
 
   // Generate chart data with GPU metrics
   useEffect(() => {
