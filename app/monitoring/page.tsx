@@ -3,7 +3,7 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { useStore } from "@/lib/store";
 import { useChartHistory } from '@/hooks/useChartHistory';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, Typography, Box, Grid, LinearProgress, Chip, IconButton, Tooltip, Divider } from "@mui/material";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Refresh, Warning, CheckCircle, Info, Memory, Storage, Timer, NetworkCheck, Computer } from "@mui/icons-material";
@@ -16,6 +16,12 @@ export default function MonitoringPage() {
   const chartHistory = useChartHistory();
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    if (metrics) {
+      setLoading(false);
+    }
+  }, [metrics]);
+
   const getStatusColor = (value: number, threshold: number = 80) => {
     if (value > threshold) return 'error';
     if (value > threshold * 0.7) return 'warning';
@@ -26,7 +32,7 @@ export default function MonitoringPage() {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
-    return `{days}d {hours}h {mins}m`;
+    return `${days}d ${hours}h ${mins}m`;
   };
 
   const handleRefresh = () => {
@@ -80,7 +86,7 @@ export default function MonitoringPage() {
             <Card sx={{
               background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
               backdropFilter: 'blur(10px)',
-              border: `1px solid {isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`
             }}>
               <CardContent>
                 <Box display="flex" alignItems="center" mb={2}>
@@ -109,7 +115,7 @@ export default function MonitoringPage() {
             <Card sx={{
               background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
               backdropFilter: 'blur(10px)',
-              border: `1px solid {isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`
             }}>
               <CardContent>
                 <Box display="flex" alignItems="center" mb={2}>
@@ -138,7 +144,7 @@ export default function MonitoringPage() {
             <Card sx={{
               background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
               backdropFilter: 'blur(10px)',
-              border: `1px solid {isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`
             }}>
               <CardContent>
                 <Box display="flex" alignItems="center" mb={2}>
@@ -167,7 +173,7 @@ export default function MonitoringPage() {
             <Card sx={{
               background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
               backdropFilter: 'blur(10px)',
-              border: `1px solid {isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`
             }}>
               <CardContent>
                 <Box display="flex" alignItems="center" mb={2}>
@@ -184,7 +190,7 @@ export default function MonitoringPage() {
                   sx={{ height: '8px', borderRadius: '4px', mb: 1 }}
                 />
                 <Chip
-                  label={`{metrics.activeModels}/10 models active`}
+                  label={`${metrics.activeModels}/10 models active`}
                   color="info"
                   size="small"
                 />
@@ -203,7 +209,7 @@ export default function MonitoringPage() {
               label: 'CPU %',
               colorDark: '#60a5fa',
               colorLight: '#2563eb',
-              valueFormatter: (value) => value !== null ? `{value.toFixed(1)}%` : 'N/A',
+              valueFormatter: (value) => value !== null ? `${value.toFixed(1)}%` : 'N/A',
               yAxisLabel: '%',
               data: chartHistory.cpu,
             },
@@ -212,7 +218,7 @@ export default function MonitoringPage() {
               label: 'Memory %',
               colorDark: '#4ade80',
               colorLight: '#16a34a',
-              valueFormatter: (value) => value !== null ? `{value.toFixed(1)}%` : 'N/A',
+              valueFormatter: (value) => value !== null ? `${value.toFixed(1)}%` : 'N/A',
               yAxisLabel: '%',
               data: chartHistory.memory,
             },
@@ -247,7 +253,7 @@ export default function MonitoringPage() {
                 label: 'GPU Utilization %',
                 colorDark: '#f472b6',
                 colorLight: '#dc2626',
-                valueFormatter: (value) => value !== null ? `{value.toFixed(1)}%` : 'N/A',
+                valueFormatter: (value) => value !== null ? `${value.toFixed(1)}%` : 'N/A',
                 yAxisLabel: '%',
                 data: chartHistory.gpuUtil,
               },
@@ -256,7 +262,7 @@ export default function MonitoringPage() {
                 label: 'Power (W)',
                 colorDark: '#fb923c',
                 colorLight: '#f97316',
-                valueFormatter: (value) => value !== null ? `{value.toFixed(1)}W` : 'N/A',
+                valueFormatter: (value) => value !== null ? `${value.toFixed(1)}W` : 'N/A',
                 yAxisLabel: 'W',
                 data: chartHistory.power,
               },
