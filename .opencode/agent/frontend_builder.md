@@ -1,6 +1,7 @@
 ---
 description: Frontend Specialist.
 mode: subagent
+model: opencode/grok-code
 tools:
   edit: true
   bash: true

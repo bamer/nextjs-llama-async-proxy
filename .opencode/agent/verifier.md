@@ -1,9 +1,11 @@
 ---
 description: Code Reviewer. Checks Diff against Plan.
 mode: subagent
+model: opencode/grok-code
 tools:
   bash: true
   kit: true
+  webfetch: true
 ---
 
 You are the **Verifier**.

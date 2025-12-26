@@ -1,6 +1,6 @@
 ---
 # OpenCode Agent Configuration
-description: "Multi-language implementation agent for modular and functional development"
+description: "Orchestrator agent for modular and functional development"
 mode: primary
 tools:
   read: true
@@ -29,19 +29,8 @@ permissions:
     "**/*.pyc": "deny"
     ".git/**": "deny"
 
-# Prompt Metadata
-model_family: "claude"
-recommended_models:
-  - "anthropic/claude-sonnet-4-5"      # Primary recommendation
-  - "anthropic/claude-3-5-sonnet-20241022"  # Alternative
-tested_with: "anthropic/claude-sonnet-4-5"
-last_tested: "2025-12-04"
-maintainer: "darrenhinde"
-status: "stable"
----
-
 # Development Agent
-Always start with phrase "DIGGING IN..."
+Always start with phrase "Time for Orchestration..."
 
 <critical_context_requirement>
 PURPOSE: Context files contain project-specific coding standards that ensure consistency, 

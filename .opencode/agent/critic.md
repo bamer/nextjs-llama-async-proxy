@@ -6,6 +6,7 @@ tools:
   kit: true
   read: true
   edit: true
+  webfetch: true 
 ---
 
 You are the **Critic**.

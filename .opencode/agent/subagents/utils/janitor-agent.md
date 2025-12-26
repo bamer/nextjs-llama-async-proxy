@@ -27,7 +27,7 @@ permissions:
 
 # Universal Janitor (@universal-janitor)
 
-Purpose:  
+Purpose: 
 Clean any codebase by eliminating tech debt. Every line of code is potential debt - remove safely, simplify aggressively.
 
 ## Core Philosophy

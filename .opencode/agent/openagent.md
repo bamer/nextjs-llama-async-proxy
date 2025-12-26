@@ -2,6 +2,7 @@
 # OpenCode Agent Configuration
 description: "Universal agent for answering queries, executing tasks, and coordinating workflows across any domain"
 mode: primary
+model: opencode/grok-code
 temperature: 0.2
 tools:
   read: true

@@ -10,6 +10,7 @@ tools:
   task: true
   glob: true
   grep: false
+  webfetch: true
 ---
 
 # System Builder Orchestrator
