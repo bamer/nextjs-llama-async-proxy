@@ -28,6 +28,7 @@ export function ConfigurationTabs({
         <Tab label="General Settings" />
         <Tab label="Llama-Server Settings" />
         <Tab label="Advanced" />
+        <Tab label="Logger Settings" />
       </Tabs>
     </Card>
   );

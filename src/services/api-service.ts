@@ -112,11 +112,11 @@ class ApiService {
   }
 
   // Settings API
-  public async getSettings(): Promise<ApiResponse> {
+  public async getSettings(): Promise<ApiResponse<any>> {
     return await apiClient.get(`${this.baseUrl}/settings`);
   }
 
-  public async updateSettings(settings: any): Promise<ApiResponse> {
+  public async updateSettings(settings: any): Promise<ApiResponse<any>> {
     const response = await apiClient.put(`${this.baseUrl}/settings`, settings);
     if (response.success && response.data) {
       useStore.getState().updateSettings(response.data);
@@ -126,47 +126,47 @@ class ApiService {
   }
 
   // System API
-  public async getSystemInfo(): Promise<ApiResponse> {
+  public async getSystemInfo(): Promise<ApiResponse<any>> {
     return await apiClient.get(`${this.baseUrl}/system/info`);
   }
 
-  public async restartSystem(): Promise<ApiResponse> {
+  public async restartSystem(): Promise<ApiResponse<void>> {
     return await apiClient.post(`${this.baseUrl}/system/restart`);
   }
 
-  public async shutdownSystem(): Promise<ApiResponse> {
+  public async shutdownSystem(): Promise<ApiResponse<void>> {
     return await apiClient.post(`${this.baseUrl}/system/shutdown`);
   }
 
   // Health check
-  public async healthCheck(): Promise<ApiResponse> {
+  public async healthCheck(): Promise<ApiResponse<any>> {
     return await apiClient.get(`${this.baseUrl}/health`);
   }
 
   // AI Generation methods
-  public async generateText(data: { prompt: string; model?: string; max_tokens?: number }): Promise<ApiResponse> {
+  public async generateText(data: { prompt: string; model?: string; max_tokens?: number }): Promise<ApiResponse<any>> {
     return await apiClient.post(`${this.baseUrl}/generate`, data);
   }
 
-  public async chat(data: { messages: any[]; model?: string; max_tokens?: number }): Promise<ApiResponse> {
+  public async chat(data: { messages: any[]; model?: string; max_tokens?: number }): Promise<ApiResponse<any>> {
     return await apiClient.post(`${this.baseUrl}/chat`, data);
   }
 
   // Model management
-  public async loadModel(id: string, config?: any): Promise<ApiResponse> {
+  public async loadModel(id: string, config?: any): Promise<ApiResponse<any>> {
     return await apiClient.post(`${this.baseUrl}/models/${id}/load`, { config });
   }
 
-  public async unloadModel(id: string): Promise<ApiResponse> {
+  public async unloadModel(id: string): Promise<ApiResponse<any>> {
     return await apiClient.post(`${this.baseUrl}/models/${id}/unload`);
   }
 
   // Configuration
-  public async getConfig(): Promise<ApiResponse> {
+  public async getConfig(): Promise<ApiResponse<any>> {
     return await apiClient.get(`${this.baseUrl}/config`);
   }
 
-  public async updateConfig(config: any): Promise<ApiResponse> {
+  public async updateConfig(config: any): Promise<ApiResponse<any>> {
     return await apiClient.put(`${this.baseUrl}/config`, config);
   }
 }

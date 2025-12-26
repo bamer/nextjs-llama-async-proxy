@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useConfig } from "@/hooks/use-config";
+import { useLoggerConfig } from "@/hooks/use-logger-config";
 import { DEFAULT_LLAMA_SERVER_CONFIG } from "@/config/llama-defaults";
 
 export function useConfigurationForm() {
   const { config, loading, updateConfig, resetConfig, syncWithBackend, validateConfig } =
     useConfig();
+  const { applyToLogger } = useLoggerConfig();
   const [activeTab, setActiveTab] = useState(0);
   const [formConfig, setFormConfig] = useState<any>(() => {
     const initialConfig = { ...config };
@@ -64,6 +66,10 @@ export function useConfigurationForm() {
       }
 
       await updateConfig(formConfig);
+
+      // Also apply logger configuration to backend
+      await applyToLogger();
+
       setSaveSuccess(true);
 
       setTimeout(() => setSaveSuccess(false), 3000);

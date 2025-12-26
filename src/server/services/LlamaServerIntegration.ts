@@ -298,3 +298,5 @@ export class LlamaServerIntegration {
     return this.llamaService;
   }
 }
+
+export default LlamaServerIntegration;

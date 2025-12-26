@@ -2,7 +2,8 @@ import { createServer } from 'http';
 import next from 'next';
 import { Server } from 'socket.io';
 import express from 'express';
-import LlamaServerIntegration from './src/server/services/LlamaServerIntegration.js';
+import LlamaServerIntegration from './src/server/services/LlamaServerIntegration';
+import { registry } from './src/server/ServiceRegistry';
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
@@ -105,8 +106,8 @@ app.prepare().then(() => {
     try {
       logger.info('🦙 Initializing LlamaServer integration...');
       await llamaIntegration.initialize(llamaConfig);
-      
-      global.llamaService = llamaIntegration.getLlamaService();
+
+      registry.register('llamaService', llamaIntegration.getLlamaService());
       logger.info('✅ LlamaServer integration initialized successfully');
     } catch (error) {
       logger.error(`❌ Failed to initialize LlamaServer integration: ${error.message}`);

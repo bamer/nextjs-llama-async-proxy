@@ -6,31 +6,13 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, Typography, Box, Grid, LinearProgress, Chip, IconButton, Tooltip, Divider } from "@mui/material";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Refresh, Warning, CheckCircle, Info, Memory, Storage, Timer, NetworkCheck, Computer } from "@mui/icons-material";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, ChartsXAxis, ChartsYAxis, ChartsGrid, ChartsTooltip } from '@mui/x-charts';
 
 export default function MonitoringPage() {
   const metrics = useStore((state) => state.metrics);
   const { isDark } = useTheme();
   const [chartData, setChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Mock data if no metrics available
-  useEffect(() => {
-    if (!metrics) {
-      const mockMetrics = {
-        activeModels: Math.floor(Math.random() * 5) + 1,
-        totalRequests: Math.floor(Math.random() * 1000) + 500,
-        avgResponseTime: Math.floor(Math.random() * 500) + 100,
-        memoryUsage: Math.floor(Math.random() * 30) + 50,
-        cpuUsage: Math.floor(Math.random() * 20) + 5,
-        diskUsage: Math.floor(Math.random() * 40) + 30,
-        uptime: Math.floor(Math.random() * 100) + 80,
-        timestamp: new Date().toISOString()
-      };
-      
-      useStore.getState().setMetrics(mockMetrics);
-    }
-  }, [metrics]);
 
   // Generate chart data
   useEffect(() => {
@@ -228,47 +210,30 @@ export default function MonitoringPage() {
         </Grid>
 
         {/* Performance Charts */}
-        <Card sx={{ mb: 4, background: isDark ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' : 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)', boxShadow: isDark ? '0 8px 30px rgba(0, 0, 0, 0.3)' : '0 8px 30px rgba(0, 0, 0, 0.1)' }}>
-          <CardContent>
-            <Typography variant="h5" fontWeight="bold" mb={3}>
-              Performance Metrics Over Time
-            </Typography>
-            <ResponsiveContainer width="100%" height={400}>
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="colorCpu" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorMemory" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#a855f7" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorRequests" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)"} />
-                <XAxis dataKey="time" stroke={isDark ? "#cbd5e1" : "#64748b"} />
-                <YAxis stroke={isDark ? "#cbd5e1" : "#64748b"} />
-                <RechartsTooltip 
-                  contentStyle={{
-                    backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                    border: `1px solid ${isDark ? '#334155' : '#e2e8f0'}`,
-                    borderRadius: '8px',
-                    color: isDark ? '#f1f5f9' : '#1e293b'
-                  }}
-                  labelStyle={{ color: isDark ? '#cbd5e1' : '#64748b' }}
-                />
-                <Legend verticalAlign="top" height={36} />
-                <Area type="monotone" dataKey="cpu" stroke="#3b82f6" fillOpacity={1} fill="url(#colorCpu)" name="CPU Usage %" />
-                <Area type="monotone" dataKey="memory" stroke="#a855f7" fillOpacity={1} fill="url(#colorMemory)" name="Memory Usage %" />
-                <Area type="monotone" dataKey="requests" stroke="#22c55e" fillOpacity={1} fill="url(#colorRequests)" name="Total Requests" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+         <Card sx={{ mb: 4, background: isDark ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' : 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)', boxShadow: isDark ? '0 8px 30px rgba(0, 0, 0, 0.3)' : '0 8px 30px rgba(0, 0, 0, 0.1)' }}>
+           <CardContent>
+             <Typography variant="h5" fontWeight="bold" mb={3}>
+               Performance Metrics Over Time
+             </Typography>
+             <Box sx={{ height: 400 }}>
+               <LineChart
+                 dataset={chartData}
+                 xAxis={[{ scaleType: 'point', dataKey: 'time' }]}
+                 series={[
+                   { dataKey: 'cpu', label: 'CPU %', area: true, stack: 'total', showMark: false, color: '#3b82f6' },
+                   { dataKey: 'memory', label: 'Memory %', area: true, stack: 'total', showMark: false, color: '#a855f7' },
+                   { dataKey: 'requests', label: 'Requests', area: true, stack: 'total', showMark: false, color: '#22c55e' },
+                 ]}
+                 margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+               >
+                  <ChartsGrid />
+                  <ChartsXAxis tickLabelStyle={{ fill: isDark ? '#cbd5e1' : '#64748b', fontSize: 12 }} />
+                  <ChartsYAxis tickLabelStyle={{ fill: isDark ? '#cbd5e1' : '#64748b', fontSize: 12 }} />
+                 <ChartsTooltip />
+               </LineChart>
+             </Box>
+           </CardContent>
+         </Card>
 
         {/* System Health Summary */}
         <Card sx={{ background: isDark ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' : 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)', boxShadow: isDark ? '0 8px 30px rgba(0, 0, 0, 0.3)' : '0 8px 30px rgba(0, 0, 0, 0.1)' }}>

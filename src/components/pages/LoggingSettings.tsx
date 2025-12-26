@@ -47,7 +47,7 @@ export default function LoggingSettings() {
   };
 
   const handleResetConfig = () => {
-    const defaultConfig = {
+    const defaultConfig: LoggerConfig = {
       consoleLevel: 'debug',
       fileLevel: 'info',
       errorLevel: 'error',
@@ -56,7 +56,7 @@ export default function LoggingSettings() {
       enableFileLogging: true,
       enableConsoleLogging: true,
     };
-    
+
     setConfig(defaultConfig);
     updateLoggerConfig(defaultConfig);
     sendMessage('updateLoggerConfig', defaultConfig);

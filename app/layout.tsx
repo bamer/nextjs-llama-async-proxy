@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/providers/app-provider";
 import { APP_CONFIG } from "@/config/app.config";
-import { SEO } from "@/components/seo/seo";
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 
 const inter = Inter({
@@ -56,14 +55,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <SEO />
-      </head>    
       <body className={`${inter.className} antialiased`}>
          <AppRouterCacheProvider>
-        <AppProvider>{children}</AppProvider>
-        </AppRouterCacheProvider>
-      </body>     
+           <AppProvider>{children}</AppProvider>
+         </AppRouterCacheProvider>
+       </body>     
     </html>
   );
 }

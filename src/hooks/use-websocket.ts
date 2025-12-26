@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
 import { websocketServer } from '@/lib/websocket-client';
 import { useStore } from '@/lib/store';
-import { useSnackbar } from 'notistack';
 
 export function useWebSocket() {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [connectionState, setConnectionState] = useState<string>('disconnected');
-  const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
     // Connect on mount
@@ -17,30 +15,30 @@ export function useWebSocket() {
     const handleConnect = () => {
       setIsConnected(true);
       setConnectionState('connected');
-      enqueueSnackbar('WebSocket connected', { variant: 'success' });
     };
 
     const handleDisconnect = () => {
       setIsConnected(false);
       setConnectionState('disconnected');
-      enqueueSnackbar('WebSocket disconnected', { variant: 'warning' });
     };
 
-    const handleError = (error: any) => {
+    const handleError = (error: unknown) => {
       console.error('WebSocket error:', error);
-      enqueueSnackbar('WebSocket error', { variant: 'error' });
     };
 
-    const handleMessage = (message: any) => {
+    const handleMessage = (message: unknown) => {
       console.log('WebSocket hook received message:', message);
 
       // Update store based on message type
-      if (message.type === 'metrics' && message.data) {
-        useStore.getState().setMetrics(message.data);
-      } else if (message.type === 'models' && message.data) {
-        useStore.getState().setModels(message.data);
-      } else if (message.type === 'logs' && message.data) {
-        useStore.getState().setLogs(message.data);
+      if (message && typeof message === 'object' && 'type' in message) {
+        const msg = message as { type: string; data?: unknown };
+        if (msg.type === 'metrics' && msg.data) {
+          useStore.getState().setMetrics(msg.data as any);
+        } else if (msg.type === 'models' && msg.data) {
+          useStore.getState().setModels(msg.data as any);
+        } else if (msg.type === 'logs' && msg.data) {
+          useStore.getState().setLogs(msg.data as any);
+        }
       }
     };
 
@@ -58,11 +56,11 @@ export function useWebSocket() {
       websocketServer.off('message', handleMessage);
       websocketServer.disconnect();
     };
-  }, [enqueueSnackbar]);
+  }, []);
 
-  const sendMessage = (event: string, data?: any) => {
+  const sendMessage = (event: string, data?: unknown) => {
     if (!isConnected) {
-      enqueueSnackbar('WebSocket not connected', { variant: 'warning' });
+      console.warn('WebSocket not connected');
       return;
     }
     websocketServer.sendMessage(event, data);

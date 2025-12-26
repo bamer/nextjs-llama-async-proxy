@@ -3,7 +3,7 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { useStore } from "@/lib/store";
 import { useEffect, useState } from "react";
-import { Card, CardContent, Typography, Box, Chip, TextField, InputAdornment, IconButton, Pagination } from "@mui/material";
+import { Card, CardContent, Typography, Box, Chip, TextField, InputAdornment, IconButton, Pagination, Grid } from "@mui/material";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Search, Refresh, Delete, Download } from "@mui/icons-material";
 
@@ -14,58 +14,6 @@ export default function LogsPage() {
   const [filterLevel, setFilterLevel] = useState('all');
   const [page, setPage] = useState(1);
   const logsPerPage = 20;
-
-  // Mock data if no logs available
-  useEffect(() => {
-    if (logs.length === 0) {
-      const mockLogs = [
-        {
-          id: '1',
-          level: 'info' as const,
-          message: 'System initialized successfully',
-          timestamp: new Date().toISOString(),
-          context: { source: 'system' }
-        },
-        {
-          id: '2',
-          level: 'debug' as const,
-          message: 'WebSocket connection established',
-          timestamp: new Date(Date.now() - 60000).toISOString(),
-          context: { source: 'websocket' }
-        },
-        {
-          id: '3',
-          level: 'warn' as const,
-          message: 'High memory usage detected',
-          timestamp: new Date(Date.now() - 120000).toISOString(),
-          context: { source: 'monitoring' }
-        },
-        {
-          id: '4',
-          level: 'error' as const,
-          message: 'Failed to load model: llama-13b',
-          timestamp: new Date(Date.now() - 300000).toISOString(),
-          context: { source: 'model-manager' }
-        },
-        {
-          id: '5',
-          level: 'info' as const,
-          message: 'Dashboard loaded',
-          timestamp: new Date(Date.now() - 60000).toISOString(),
-          context: { source: 'ui' }
-        },
-        {
-          id: '6',
-          level: 'debug' as const,
-          message: 'API request completed',
-          timestamp: new Date(Date.now() - 90000).toISOString(),
-          context: { source: 'api' }
-        }
-      ];
-      
-      useStore.getState().setLogs(mockLogs);
-    }
-  }, [logs.length]);
 
   const getLevelColor = (level: string) => {
     switch (level) {
@@ -78,13 +26,31 @@ export default function LogsPage() {
   };
 
   const filteredLogs = logs.filter(log => {
-    // Filter by search term
-    const source = log.context?.source || '';
-    const matchesSearch = searchTerm === '' || 
-                         log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         source.toLowerCase().includes(searchTerm.toLowerCase());
+    const source = typeof log.context?.source === 'string' ? log.context.source : '';
+
+    // Extract message string - handle both string and Record<string, unknown>
+    let messageStr: string;
+    if (typeof log.message === 'string') {
+      messageStr = log.message;
+    } else if (typeof log.message === 'object' && log.message !== null) {
+      const msg = log.message as Record<string, unknown>;
+      if (msg.message && typeof msg.message === 'string') {
+        messageStr = msg.message;
+      } else if (msg.error && typeof msg.error === 'string') {
+        messageStr = msg.error;
+      } else if (msg.text && typeof msg.text === 'string') {
+        messageStr = msg.text;
+      } else {
+        messageStr = String(log.message);
+      }
+    } else {
+      messageStr = String(log.message || '');
+    }
+
+    const matchesSearch = searchTerm === '' ||
+                          messageStr.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          source.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Filter by level
     const matchesLevel = filterLevel === 'all' || log.level === filterLevel;
     
     return matchesSearch && matchesLevel;
@@ -98,12 +64,10 @@ export default function LogsPage() {
 
   const handleRefresh = () => {
     console.log('Refreshing logs');
-    // In a real app, this would fetch fresh logs from the server
   };
 
   const handleDownload = () => {
     console.log('Downloading logs');
-    // In a real app, this would download logs as a file
   };
 
   const getLogTime = (timestamp: string) => {
@@ -112,165 +76,166 @@ export default function LogsPage() {
 
   return (
     <MainLayout>
-      <Box sx={{ p: 4 }}>
-        {/* Header */}
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-          <div>
-            <Typography variant="h3" component="h1" fontWeight="bold">
-              System Logs
-            </Typography>
-            <Typography variant="subtitle1" color="text.secondary">
-              Real-time activity monitoring and diagnostics
-            </Typography>
-          </div>
-          <Box display="flex" gap={1}>
-            <IconButton onClick={handleRefresh} color="primary">
-              <Refresh />
-            </IconButton>
-            <IconButton onClick={handleDownload} color="primary">
-              <Download />
-            </IconButton>
-            <IconButton onClick={handleClearLogs} color="error">
-              <Delete />
-            </IconButton>
-          </Box>
+      <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+          <Typography variant="h4" fontWeight="bold">
+            Logs
+          </Typography>
         </Box>
 
-        {/* Controls */}
-        <Card sx={{ mb: 3, background: isDark ? 'rgba(30, 41, 59, 0.3)' : 'rgba(248, 250, 252, 0.5)', backdropFilter: 'blur(10px)' }}>
-          <CardContent>
-            <Box display="flex" gap={2} alignItems="center">
+        {filteredLogs.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <Typography variant="body2" color="text.secondary">
+              No logs available
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            <Box sx={{ mb: 4, display: 'flex', gap: 2 }}>
               <TextField
                 fullWidth
-                variant="outlined"
                 size="small"
                 placeholder="Search logs..."
                 value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setPage(1); // Reset to first page when searching
-                }}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Search color="action" />
+                      <Search />
                     </InputAdornment>
-                  )
+                  ),
                 }}
+                sx={{ background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)' }}
               />
+
               <TextField
                 select
-                SelectProps={{ native: true }}
-                variant="outlined"
                 size="small"
                 value={filterLevel}
-                onChange={(e) => {
-                  setFilterLevel(e.target.value);
-                  setPage(1); // Reset to first page when filtering
-                }}
-                sx={{ minWidth: 120 }}
+                onChange={(e) => setFilterLevel(e.target.value as any)}
+                sx={{ minWidth: 120, background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)' }}
               >
                 <option value="all">All Levels</option>
-                <option value="error">Error</option>
-                <option value="warn">Warning</option>
-                <option value="info">Info</option>
-                <option value="debug">Debug</option>
+                <option value="error">Error Only</option>
+                <option value="info">Error & Info</option>
+                <option value="debug">Debug Only</option>
               </TextField>
             </Box>
-          </CardContent>
-        </Card>
 
-        {/* Logs Display */}
-        <Card sx={{ background: isDark ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' : 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)', boxShadow: isDark ? '0 8px 30px rgba(0, 0, 0, 0.3)' : '0 8px 30px rgba(0, 0, 0, 0.1)' }}>
-          <CardContent>
-            {filteredLogs.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 8 }}>
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No logs found
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {searchTerm || filterLevel !== 'all' ? 'Try adjusting your filters' : 'System logs will appear here'}
-                </Typography>
-              </Box>
-            ) : (
-              <Box>
-                <Box sx={{ maxHeight: '60vh', overflowY: 'auto', pr: 2 }}>
-                  {paginatedLogs.map((log, index) => (
-                    <Box key={index} sx={{ mb: 2, pb: 2, borderBottom: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}` }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                        <Chip 
-                          label={log.level}
-                          color={getLevelColor(log.level) as any}
-                          size="small"
-                          variant="filled"
-                        />
-                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                          <Typography variant="caption" color="text.secondary">
-                            {getLogTime(log.timestamp)}
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <IconButton
+                onClick={handleRefresh}
+                color="primary"
+                size="small"
+                title="Refresh logs"
+              >
+                <Refresh fontSize="small" />
+              </IconButton>
+              <IconButton
+                onClick={handleClearLogs}
+                color="error"
+                size="small"
+                title="Clear logs"
+              >
+                <Delete fontSize="small" />
+              </IconButton>
+              <IconButton
+                onClick={handleDownload}
+                color="info"
+                size="small"
+                title="Download logs"
+              >
+                <Download fontSize="small" />
+              </IconButton>
+            </Box>
+
+            <Box
+              sx={{
+                mt: 4,
+                background: isDark ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' : 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)',
+                borderRadius: 2,
+                boxShadow: isDark ? '0 8px 30px rgba(0,0,0,0.3)' : '0 8px 30px rgba(0,0,0,0.1)',
+                p: 4,
+              }}
+            >
+              <Grid container spacing={2}>
+                {filteredLogs.map((log) => {
+                  const levelColor = getLevelColor(log.level);
+                  return (
+                    <Grid size={{ xs: 12 }} key={log.id} sx={{ fontSize: '0.75rem' }}>
+                      <Card
+                        sx={{
+                          mb: 2,
+                          background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
+                          border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
+                          borderRadius: 1,
+                          overflow: 'hidden',
+                          transition: 'all 0.2s ease-in-out',
+                          '&:hover': {
+                            transform: 'translateY(-4px)',
+                            boxShadow: isDark
+                              ? '0 12px 40px rgba(0,0,0,0.4)'
+                              : '0 4px 12px rgba(0,0,0,0.1)',
+                          },
+                        }}
+                      >
+                        <CardContent sx={{ p: 2 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'flex', gap: 1, mb: 1.5 }}>
+                            <Chip
+                              label={log.level.toUpperCase()}
+                              color={levelColor}
+                              size="small"
+                              sx={{ fontSize: '0.7rem', fontWeight: 600 }}
+                            />
+                            <Typography variant="caption" color="text.secondary" sx={{ ml: 1, fontSize: '0.7rem' }}>
+                              {getLogTime(log.timestamp)}
+                            </Typography>
+                          </Box>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              wordBreak: 'break-word',
+                              whiteSpace: 'pre-wrap',
+                              mb: 1.5,
+                            }}
+                          >
+                            {typeof log.message === 'string'
+                              ? log.message
+                              : typeof log.message === 'object' && log.message !== null
+                                ? (() => {
+                                    const msg = log.message as Record<string, unknown>;
+                                    if (msg.message && typeof msg.message === 'string') {
+                                      return msg.message;
+                                    } else if (msg.error && typeof msg.error === 'string') {
+                                      return msg.error;
+                                    } else if (msg.text && typeof msg.text === 'string') {
+                                      return msg.text;
+                                    } else {
+                                      return String(log.message || '');
+                                    }
+                                  })()
+                                : String(log.message || '')
+                            }
                           </Typography>
-                          <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                            {log.context?.source || 'system'}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <Typography variant="body2" color="text.primary">
-                        {log.message}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-                
-                {/* Pagination */}
-                {filteredLogs.length > logsPerPage && (
-                  <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
-                    <Pagination
-                       count={Math.ceil(filteredLogs.length / logsPerPage)}
-                       page={page}
-                       onChange={(_, value) => setPage(value)}
-                       color="primary"
-                       shape="rounded"
-                     />
-                  </Box>
-                )}
-              </Box>
-            )}
-          </CardContent>
-        </Card>
-        
-        {/* Summary */}
-        <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          <Card sx={{ flex: 1, minWidth: 200, background: isDark ? 'rgba(30, 41, 59, 0.3)' : 'rgba(248, 250, 252, 0.5)', backdropFilter: 'blur(10px)' }}>
-            <CardContent>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Total Logs
-              </Typography>
-              <Typography variant="h4" fontWeight="bold" color="primary">
-                {filteredLogs.length}
-              </Typography>
-            </CardContent>
-          </Card>
-          
-          <Card sx={{ flex: 1, minWidth: 200, background: isDark ? 'rgba(30, 41, 59, 0.3)' : 'rgba(248, 250, 252, 0.5)', backdropFilter: 'blur(10px)' }}>
-            <CardContent>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Errors
-              </Typography>
-              <Typography variant="h4" fontWeight="bold" color="error">
-                {logs.filter(l => l.level === 'error').length}
-              </Typography>
-            </CardContent>
-          </Card>
-          
-          <Card sx={{ flex: 1, minWidth: 200, background: isDark ? 'rgba(30, 41, 59, 0.3)' : 'rgba(248, 250, 252, 0.5)', backdropFilter: 'blur(10px)' }}>
-            <CardContent>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Warnings
-              </Typography>
-              <Typography variant="h4" fontWeight="bold" color="warning">
-                {logs.filter(l => l.level === 'warn').length}
-              </Typography>
-            </CardContent>
-          </Card>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </Box>
+          </>
+        )}
+
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <Pagination
+            count={Math.ceil(filteredLogs.length / logsPerPage)}
+            page={page}
+            onChange={(_e, value) => setPage(value)}
+            sx={{ '& .MuiPagination-ul': { justifyContent: 'center' } }}
+            color="primary"
+            size="small"
+          />
         </Box>
       </Box>
     </MainLayout>

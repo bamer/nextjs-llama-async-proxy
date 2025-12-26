@@ -8,6 +8,7 @@ import { ConfigurationStatusMessages } from "./ConfigurationStatusMessages";
 import { GeneralSettingsTab } from "./GeneralSettingsTab";
 import { LlamaServerSettingsTab } from "./LlamaServerSettingsTab";
 import { AdvancedSettingsTab } from "./AdvancedSettingsTab";
+import { LoggerSettingsTab } from "./LoggerSettingsTab";
 import { ConfigurationActions } from "./ConfigurationActions";
 
 export default function ModernConfiguration() {
@@ -71,6 +72,8 @@ export default function ModernConfiguration() {
           onSync={handleSync}
         />
       )}
+
+      {activeTab === 3 && <LoggerSettingsTab />}
 
       <ConfigurationActions isSaving={isSaving} onSave={handleSave} />
     </Box>

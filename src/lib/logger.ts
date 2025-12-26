@@ -1,5 +1,6 @@
 import { createLogger, format, transports, Logger } from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
+import { configService } from './config-service';
 
 // Define log levels
 const logLevels = {
@@ -18,23 +19,23 @@ const logFormat = format.combine(
   format.json()
 );
 
-// Create logger instance
-let logger: Logger;
-
-// Logger configuration interface
-interface LoggerConfig {
-  consoleLevel: string;
-  fileLevel: string;
-  errorLevel: string;
+// Logger configuration interface (now synchronized with config-service)
+export interface LoggerConfig {
+  consoleLevel: 'error' | 'info' | 'warn' | 'debug';
+  fileLevel: 'error' | 'info' | 'warn' | 'debug';
+  errorLevel: 'error' | 'warn';
   maxFileSize: string;
   maxFiles: string;
   enableFileLogging: boolean;
   enableConsoleLogging: boolean;
 }
 
-// Default configuration
-const defaultConfig: LoggerConfig = {
-  consoleLevel: 'debug',
+// Create logger instance
+let logger: Logger;
+
+// Default configuration (used until config-service is loaded)
+let currentConfig: LoggerConfig = {
+  consoleLevel: 'info',
   fileLevel: 'info',
   errorLevel: 'error',
   maxFileSize: '20m',
@@ -43,19 +44,25 @@ const defaultConfig: LoggerConfig = {
   enableConsoleLogging: true,
 };
 
-// Current configuration
-let currentConfig: LoggerConfig = { ...defaultConfig };
+// Synchronize logger config with config-service
+function syncLoggerConfig() {
+  const appConfig = configService.getConfig();
+  if (appConfig.logger) {
+    currentConfig = appConfig.logger;
+  }
+}
 
 /**
- * Initialize the logger with configuration
+ * Initialize logger with configuration (now uses config-service)
  */
 export function initLogger(config: Partial<LoggerConfig> = {}): Logger {
-  // Merge configuration
-  currentConfig = { ...defaultConfig, ...config };
-
+  syncLoggerConfig();
+  const mergedConfig = { ...currentConfig, ...config };
+  currentConfig = mergedConfig;
+  
   // Create transports array
   const loggerTransports = [];
-
+  
   // Add console transport if enabled
   if (currentConfig.enableConsoleLogging) {
     loggerTransports.push(
@@ -67,6 +74,33 @@ export function initLogger(config: Partial<LoggerConfig> = {}): Logger {
             return `${info.timestamp} [${info.level}]: ${info.message}`;
           })
         ),
+      })
+    );
+  }
+  
+  // Add file transports if enabled
+  if (currentConfig.enableFileLogging) {
+    loggerTransports.push(
+      new DailyRotateFile({
+        level: currentConfig.fileLevel,
+        filename: 'logs/application-%DATE%.log',
+        datePattern: 'YYYY-MM-DD',
+        zippedArchive: true,
+        maxSize: currentConfig.maxFileSize,
+        maxFiles: currentConfig.maxFiles,
+        format: logFormat,
+      })
+    );
+  
+    loggerTransports.push(
+      new DailyRotateFile({
+        level: currentConfig.errorLevel,
+        filename: 'logs/errors-%DATE%.log',
+        datePattern: 'YYYY-MM-DD',
+        zippedArchive: true,
+        maxSize: currentConfig.maxFileSize,
+        maxFiles: currentConfig.maxFiles,
+        format: logFormat,
       })
     );
   }
@@ -136,10 +170,13 @@ export function initLogger(config: Partial<LoggerConfig> = {}): Logger {
  */
 export function updateLoggerConfig(config: Partial<LoggerConfig>): void {
   const newConfig = { ...currentConfig, ...config };
-
+  
   if (JSON.stringify(newConfig) !== JSON.stringify(currentConfig)) {
     currentConfig = newConfig;
     logger?.info('Updating logger configuration:', config);
+    
+    // Also update in config-service
+    configService.updateConfig({ logger: newConfig });
     
     // Reinitialize logger with new configuration
     initLogger(newConfig);
@@ -176,4 +213,20 @@ export const log = {
 };
 
 // Export types
-export type { LoggerConfig, Logger };
+export type { Logger };
+
+// Apply logger config to server API
+export async function applyToServer() {
+  try {
+    const config = configService.getConfig();
+    if (config.logger) {
+      await fetch('/api/logger/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config.logger),
+      });
+    }
+  } catch (error) {
+    console.error('Failed to apply logger config to server:', error);
+  }
+}

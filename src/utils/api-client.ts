@@ -66,7 +66,7 @@ class ApiClient {
     );
   }
 
-  private formatError(error: AxiosError): ApiResponse {
+  private formatError(error: AxiosError): ApiResponse<any> {
     if (error.response) {
       return {
         success: false,

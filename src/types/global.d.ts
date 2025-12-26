@@ -17,24 +17,25 @@ declare global {
 
   type Nullable<T> = T | null;
   type Optional<T> = T | undefined;
-  type AsyncReturnType<T extends (...args: any) => Promise<any>> = T extends (
-    ...args: any
+
+  type AsyncReturnType<T extends (...args: unknown[]) => unknown> = T extends (
+    ...args: unknown[]
   ) => Promise<infer R>
     ? R
-    : any;
+    : never;
 
-  interface ApiResponse<T = any> {
+  interface ApiResponse<T> {
     success: boolean;
     data?: T;
     error?: {
       code: string;
       message: string;
-      details?: any;
+      details?: unknown;
     };
     timestamp: string;
   }
 
-  interface PaginatedResponse<T = any> {
+  interface PaginatedResponse<T> {
     data: T[];
     page: number;
     limit: number;
@@ -42,7 +43,7 @@ declare global {
     totalPages: number;
   }
 
-  interface WebSocketMessage<T = any> {
+  interface WebSocketMessage<T = unknown> {
     type: string;
     data: T;
     timestamp: number;
@@ -53,7 +54,7 @@ declare global {
     id: string;
     name: string;
     type: "llama" | "mistral" | "other";
-    parameters: Record<string, any>;
+    parameters: Record<string, unknown>;
     status: "idle" | "loading" | "running" | "error";
     createdAt: string;
     updatedAt: string;
@@ -68,24 +69,23 @@ declare global {
     avgResponseTime: number;
     uptime: number;
     timestamp: string;
-    // GPU Metrics
-    gpuUsage?: number; // GPU utilization percentage
-    gpuMemoryUsage?: number; // GPU memory usage percentage
-    gpuMemoryTotal?: number; // Total GPU memory in MB
-    gpuMemoryUsed?: number; // Used GPU memory in MB
-    gpuPowerUsage?: number; // GPU power usage in watts
-    gpuPowerLimit?: number; // GPU power limit in watts
-    gpuTemperature?: number; // GPU temperature in Celsius
-    gpuName?: string; // GPU model name
+    gpuUsage?: number;
+    gpuMemoryUsage?: number;
+    gpuMemoryTotal?: number;
+    gpuMemoryUsed?: number;
+    gpuPowerUsage?: number;
+    gpuPowerLimit?: number;
+    gpuTemperature?: number;
+    gpuName?: string;
   }
 
   interface LogEntry {
     id: string;
     level: "info" | "warn" | "error" | "debug";
-    message: string;
+    message: string | Record<string, unknown>;
     timestamp: string;
-    context?: Record<string, any>;
+    context?: Record<string, unknown>;
   }
 }
 
-export type { ModelConfig, SystemMetrics, LogEntry, ApiResponse, WebSocketMessage };
+export type { ModelConfig, SystemMetrics, LogEntry, ApiResponse, WebSocketMessage, AsyncReturnType, Nullable, Optional, PaginatedResponse };

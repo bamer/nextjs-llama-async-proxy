@@ -27,11 +27,19 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    return []; // Désactive les réécritures qui causent des problèmes
+    return [];
   },
   experimental: {
     optimizeCss: false,
     scrollRestoration: true,
+    optimizePackageImports: [
+      "@mui/material",
+      "@mui/icons-material",
+      "@mui/x-charts",
+      "lucide-react",
+      "framer-motion",
+      "@tanstack/react-query",
+    ],
   },
   productionBrowserSourceMaps: false,
   poweredByHeader: false,
