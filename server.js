@@ -125,6 +125,21 @@ app.prepare().then(async () => {
       timestamp: Date.now()
     });
     logger.debug(`📡 [BROADCAST] Llama status update sent: ${state.status}`);
+    
+    // Also broadcast models immediately when state changes (e.g., when models are discovered)
+    if (state.models && state.models.length > 0) {
+      const modelsData = state.models.map((model) => ({
+        id: model.id || model.name,
+        name: model.name,
+        type: model.type || 'unknown',
+        status: 'available',
+        size: model.size,
+        createdAt: new Date(model.modified_at * 1000).toISOString(),
+        updatedAt: new Date(model.modified_at * 1000).toISOString(),
+      }));
+      io.emit('models', { type: 'models', data: modelsData, timestamp: Date.now() });
+      logger.debug(`📡 [BROADCAST] Models updated via state change: ${modelsData.length} model(s)`);
+    }
   });
 
   // Start Llama service

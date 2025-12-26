@@ -1,6 +1,8 @@
 import { spawn, ChildProcess } from "child_process";
 import axios from "axios";
 import type { AxiosInstance } from "axios";
+import fs from "fs";
+import path from "path";
 
 export interface LlamaServerConfig {
   host: string;
@@ -274,43 +276,132 @@ export class LlamaService {
   }
 
   /**
-   * Load available models from server
-   * Queries /api/models endpoint which auto-discovers models in basePath
-   */
+    * Load available models from llama-server
+    * Uses the /models endpoint (not /api/models)
+    */
   private async loadModels(): Promise<void> {
     try {
       this.logger("info", "🔍 Querying llama-server for available models...");
-      const response = await this.client.get("/api/models");
+      
+      // Try the correct endpoint: /models (OpenAI-compatible)
+      const response = await this.client.get("/models");
 
-      if (response.status === 200 && response.data.data) {
-        this.state.models = response.data.data;
-        this.logger(
-          "info",
-          `✅ Loaded ${this.state.models.length} model(s) from llama-server`
-        );
-        if (this.state.models.length > 0) {
+      if (response.status === 200 && response.data) {
+        // Handle both array and object with data property
+        const modelsData = Array.isArray(response.data) 
+          ? response.data 
+          : response.data.data || response.data;
+
+        if (Array.isArray(modelsData) && modelsData.length > 0) {
+          this.state.models = modelsData.map((model) => ({
+            id: model.id || model.name,
+            name: model.id || model.name,
+            size: model.size || 0,
+            type: model.type || "unknown",
+            modified_at: Math.floor(Date.now() / 1000),
+          }));
+
+          this.logger(
+            "info",
+            `✅ Loaded ${this.state.models.length} model(s) from llama-server`
+          );
+
           this.state.models.forEach((model) => {
-            this.logger(
-              "info",
-              `  - ${model.name} (${(model.size / 1024 / 1024 / 1024).toFixed(2)} GB)`
-            );
+            const sizeGb = model.size > 0 
+              ? (model.size / 1024 / 1024 / 1024).toFixed(2) 
+              : "unknown";
+            this.logger("info", `  - ${model.name} (${sizeGb} GB)`);
           });
+        } else {
+          this.logger(
+            "warn",
+            "⚠️ No models found on server. Check --models-dir configuration."
+          );
+          this.state.models = [];
         }
-        this.emitStateChange();
       } else {
         this.logger(
           "warn",
-          "⚠️ No models found on server. Check --models-dir configuration."
+          `⚠️ Failed to fetch models: HTTP ${response.status}`
         );
         this.state.models = [];
       }
+
+      this.emitStateChange();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : String(error);
+      this.logger("warn", `Failed to load models from server: ${message}`);
+      // Fallback: scan filesystem
+      this.loadModelsFromFilesystem();
+    }
+  }
+
+  /**
+   * Fallback: Load models by scanning the filesystem
+   */
+  private loadModelsFromFilesystem(): void {
+    try {
+      if (!this.config.basePath) {
+        this.logger(
+          "warn",
+          "⚠️ No basePath configured. Cannot discover models."
+        );
+        this.state.models = [];
+        return;
+      }
+
       this.logger(
-        "warn",
-        `Failed to load models from server: ${message}`
+        "info",
+        `📂 Fallback: Scanning filesystem for models in: ${this.config.basePath}`
       );
+
+      // Check if directory exists
+      if (!fs.existsSync(this.config.basePath)) {
+        this.logger(
+          "warn",
+          `⚠️ Models directory not found: ${this.config.basePath}`
+        );
+        this.state.models = [];
+        return;
+      }
+
+      // Scan directory for model files
+      const files = fs.readdirSync(this.config.basePath);
+      const modelFiles = files.filter(
+        (file) => file.endsWith(".gguf") || file.endsWith(".bin")
+      );
+
+      // Convert files to model objects
+      this.state.models = modelFiles.map((file) => {
+        const fullPath = path.join(this.config.basePath || "", file);
+        const stats = fs.statSync(fullPath);
+        return {
+          id: file,
+          name: file.replace(/\.(gguf|bin)$/i, ""),
+          size: stats.size,
+          type: file.endsWith(".gguf") ? "gguf" : "bin",
+          modified_at: Math.floor(stats.mtimeMs / 1000),
+        };
+      });
+
+      this.logger(
+        "info",
+        `✅ Loaded ${this.state.models.length} model(s) from filesystem`
+      );
+
+      this.state.models.forEach((model) => {
+        this.logger(
+          "info",
+          `  - ${model.name} (${(model.size / 1024 / 1024 / 1024).toFixed(2)} GB)`
+        );
+      });
+
+      this.emitStateChange();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : String(error);
+      this.logger("warn", `Failed to load models from filesystem: ${message}`);
       this.state.models = [];
     }
   }

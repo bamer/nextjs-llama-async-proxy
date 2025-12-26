@@ -1,7 +1,10 @@
-> Ready on http://localhost:3000
-📡 Server components loaded:
-  - Runtime config: true
-  - Models scanner: true
-  - Metrics generator: true
-  - Logs system: true
-  - Proxy system: true
+
+> nextjs-llama-async-proxy@0.1.0 dev /home/bamer/nextjs-llama-async-proxy
+> node server.js
+
+[INFO] ✅ [CONFIG] Llama config loaded from .llama-proxy-config.json
+[INFO] ✅ [CONFIG] Using llama-server at: /home/bamer/llama.cpp/build/bin/llama-server
+[INFO] 🚀 [SOCKET.IO] Initializing Socket.IO server...
+⨯ Unable to acquire lock at /home/bamer/nextjs-llama-async-proxy/.next/dev/lock, is another instance of next dev running?
+  Suggestion: If you intended to restart next dev, terminate the other process, and then try again.
+ ELIFECYCLE  Command failed with exit code 1.

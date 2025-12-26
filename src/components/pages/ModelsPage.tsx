@@ -1,13 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { websocketServer } from '@/lib/websocket-client';
 
 interface Model {
+  id?: string;
   name: string;
-  description: string;
-  status: 'running' | 'stopped' | 'loading';
-  version: string;
+  description?: string;
+  status: 'running' | 'stopped' | 'loading' | 'available';
+  version?: string;
   path?: string;
+  type?: string;
+  size?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 const ModelsPage = () => {
@@ -16,9 +22,44 @@ const ModelsPage = () => {
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
 
-  // Load models on mount
+  // Load models on mount and subscribe to real-time updates
   useEffect(() => {
+    // Initial load
     loadModels();
+    
+    // Connect to WebSocket
+    websocketServer.connect();
+    
+    // Subscribe to model updates from Socket.IO
+    const handleModelsUpdate = (message: unknown) => {
+      if (
+        message &&
+        typeof message === "object" &&
+        "type" in message &&
+        "data" in message &&
+        message.type === "models" &&
+        Array.isArray(message.data)
+      ) {
+        console.log("📡 Models updated from WebSocket:", message.data);
+        setModels(message.data as Model[]);
+      }
+    };
+    
+    websocketServer.on('message', handleModelsUpdate);
+    
+    // Request models on connect
+    const handleConnect = () => {
+      console.log('📡 WebSocket connected, requesting models...');
+      websocketServer.requestModels();
+    };
+    
+    websocketServer.on('connect', handleConnect);
+    
+    // Cleanup
+    return () => {
+      websocketServer.off('message', handleModelsUpdate);
+      websocketServer.off('connect', handleConnect);
+    };
   }, []);
 
   const loadModels = async () => {
