@@ -1,0 +1,132 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                   LLAMA SERVER STARTUP FIX - QUICK REFERENCE               ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+┌─ THE FIX ────────────────────────────────────────────────────────────────┐
+│                                                                          │
+│  WRONG:   llama-server ... --model-dir ./models      ❌ CRASHES         │
+│  RIGHT:   llama-server ... --models-dir ./models     ✅ WORKS           │
+│                                                                          │
+│  One letter difference = Critical fix!                                   │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+┌─ CONFIGURATION ──────────────────────────────────────────────────────────┐
+│                                                                          │
+│  File: .llama-proxy-config.json                                          │
+│                                                                          │
+│  {                                                                       │
+│    "llama_server_host": "localhost",                                     │
+│    "llama_server_port": 8134,                                            │
+│    "llama_server_path": "/path/to/llama-server",                         │
+│    "basePath": "./models"                                                │
+│  }                                                                       │
+│                                                                          │
+│  ✅ Keep: basePath (auto-discovery)                                      │
+│  ❌ Remove: llama_model_path (caused crashes)                            │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+┌─ STARTUP SEQUENCE ───────────────────────────────────────────────────────┐
+│                                                                          │
+│  1. pnpm dev                                                             │
+│  2. Load configuration                                                   │
+│  3. Start llama-server (if not running)                                  │
+│     └─ Command: llama-server --host localhost --port 8134               │
+│                              --models-dir ./models     ← CORRECT!       │
+│  4. Query /api/models for available models                              │
+│  5. Display in UI                                                        │
+│  6. User selects model & loads on-demand                                │
+│                                                                          │
+│  Expected success log:                                                  │
+│  ✅ Loaded X model(s) from llama-server                                  │
+│     - model1.gguf (7.25 GB)                                              │
+│     - model2.gguf (4.50 GB)                                              │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+┌─ QUICK SETUP ────────────────────────────────────────────────────────────┐
+│                                                                          │
+│  mkdir -p ./models                                                       │
+│  cp /path/to/model.gguf ./models/                                        │
+│  echo '{"llama_server_path":"/path/to/llama-server","basePath":"./models"}'  \
+│    > .llama-proxy-config.json                                            │
+│  pnpm dev                                                                │
+│                                                                          │
+│  Done! Models should appear in UI.                                       │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+┌─ TESTS ──────────────────────────────────────────────────────────────────┐
+│                                                                          │
+│  # Health check                                                          │
+│  curl http://localhost:8134/health                                       │
+│                                                                          │
+│  # List models                                                           │
+│  curl http://localhost:8134/api/models                                   │
+│                                                                          │
+│  # Open browser                                                          │
+│  open http://localhost:3000                                              │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+┌─ WHAT CHANGED ───────────────────────────────────────────────────────────┐
+│                                                                          │
+│  Files Modified:                                                         │
+│  ├─ src/server/services/LlamaService.ts (fixed argument)                │
+│  └─ server.js (removed problematic modelPath)                            │
+│                                                                          │
+│  Documentation Added:                                                    │
+│  ├─ QUICK_LLAMA_SETUP.md (5-minute guide)                               │
+│  ├─ STARTUP_CHECKLIST.md (verification list)                            │
+│  ├─ LLAMA_STARTUP_GUIDE.md (complete guide)                             │
+│  ├─ STARTUP_FLOW.md (architecture & flows)                              │
+│  ├─ LLAMA_COMMAND_REFERENCE.md (commands)                               │
+│  ├─ CHANGES_SUMMARY.md (before/after)                                   │
+│  └─ + More...                                                            │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+┌─ TROUBLESHOOTING ────────────────────────────────────────────────────────┐
+│                                                                          │
+│  Error: "invalid argument: --model-dir"                                  │
+│  → Already fixed! Make sure you have latest code.                        │
+│                                                                          │
+│  Error: "No models found"                                                │
+│  → Check: ls -lh ./models/*.gguf                                         │
+│  → Check: basePath in config points to correct directory                │
+│                                                                          │
+│  Error: "Connection refused on port 8134"                                │
+│  → Check: lsof -i :8134                                                  │
+│  → Change port in config if needed                                       │
+│                                                                          │
+│  Error: "llama-server not found"                                         │
+│  → Check: which llama-server                                             │
+│  → Update llama_server_path in config with full path                    │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+┌─ DOCUMENTATION ──────────────────────────────────────────────────────────┐
+│                                                                          │
+│  Start Here:                                                             │
+│  → QUICK_LLAMA_SETUP.md (5 minutes)                                     │
+│  → STARTUP_CHECKLIST.md (verification)                                   │
+│                                                                          │
+│  Need Help:                                                              │
+│  → LLAMA_STARTUP_GUIDE.md (complete guide)                              │
+│  → LLAMA_COMMAND_REFERENCE.md (commands & API)                          │
+│  → STARTUP_FLOW.md (architecture)                                        │
+│                                                                          │
+│  Want Details:                                                           │
+│  → CHANGES_SUMMARY.md (what changed)                                     │
+│  → LLAMA_STARTUP_FIX_SUMMARY.md (fix details)                            │
+│  → LLAMA_DOCS_INDEX.md (full index)                                      │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║  Status: ✅ FIXED AND TESTED                                              ║
+║  Ready: YES - Application starts without crashes                           ║
+║  Models: Auto-discovered from ./models directory                           ║
+║  Date: 2025-12-26                                                          ║
+╚════════════════════════════════════════════════════════════════════════════╝
