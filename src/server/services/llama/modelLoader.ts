@@ -5,7 +5,7 @@ import { LlamaModel } from "./types";
 
 export class ModelLoader {
   private client: AxiosInstance;
-  private basePath?: string;
+  private basePath: string | undefined;
 
   constructor(host: string, port: number, basePath?: string) {
     this.basePath = basePath;
@@ -29,6 +29,7 @@ export class ModelLoader {
           return modelsData.map((model) => ({
             id: model.id || model.name,
             name: model.id || model.name,
+            path: (model as any).path,
             size: model.size || 0,
             type: model.type || "unknown",
             modified_at: Math.floor(Date.now() / 1000),

@@ -32,6 +32,7 @@ export interface LlamaModel {
   size: number;
   type: string;
   modified_at: number;
+  path?: string;
 }
 
 export type LlamaServiceStatus =

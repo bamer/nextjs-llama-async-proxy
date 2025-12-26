@@ -7,9 +7,9 @@ interface ChartDataPoint {
   cpu: number;
   memory: number;
   requests: number;
-  gpu?: number;
-  gpuMemory?: number;
-  gpuPower?: number;
+  gpu: number;
+  gpuMemory: number;
+  gpuPower: number;
 }
 
 export function useDashboardMetrics() {
@@ -66,9 +66,9 @@ export function useDashboardMetrics() {
           cpu: metrics.cpuUsage,
           memory: metrics.memoryUsage,
           requests: metrics.totalRequests,
-          gpu: metrics.gpuUsage,
-          gpuMemory: metrics.gpuMemoryUsage,
-          gpuPower: metrics.gpuPowerUsage,
+          gpu: metrics.gpuUsage ?? 0,
+          gpuMemory: metrics.gpuMemoryUsage ?? 0,
+          gpuPower: metrics.gpuPowerUsage ?? 0,
         };
 
         return [...prev, newData].slice(-20);

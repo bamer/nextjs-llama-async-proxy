@@ -824,11 +824,51 @@ export default function ModernConfiguration() {
                   />
                 </Grid>
 
-                {/* Memory & Cache */}
-                <Grid size={{ xs: 12 }}>
-                  <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 2, mt: 2, color: 'primary.main' }}>
-                    Memory & Cache
-                  </Typography>
+                 {/* Advanced Options */}
+                 <Grid size={{ xs: 12 }}>
+                   <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 2, mt: 2, color: 'primary.main' }}>
+                     Advanced Options
+                   </Typography>
+                 </Grid>
+                 <Grid size={{ xs: 12, md: 6 }}>
+                   <TextField
+                     fullWidth
+                     label="Group Attention N"
+                     name="llamaServer.grp_attn_n"
+                     type="number"
+                     value={formConfig.llamaServer?.grp_attn_n || 1}
+                     onChange={handleLlamaServerChange}
+                     variant="outlined"
+                     helperText="Group query attention size"
+                     size="small"
+                   />
+                 </Grid>
+                 <Grid size={{ xs: 12, md: 6 }}>
+                   <TextField
+                     fullWidth
+                     label="Group Attention W"
+                     name="llamaServer.grp_attn_w"
+                     type="number"
+                     value={formConfig.llamaServer?.grp_attn_w || 512}
+                     onChange={handleLlamaServerChange}
+                     variant="outlined"
+                     helperText="Group query attention width"
+                     size="small"
+                   />
+                 </Grid>
+                 <Grid size={{ xs: 12, md: 6 }}>
+                   <TextField
+                     fullWidth
+                     label="Cache Reuse N"
+                     name="llamaServer.cache_reuse"
+                     type="number"
+                     value={formConfig.llamaServer?.cache_reuse || 0}
+                     onChange={handleLlamaServerChange}
+                     variant="outlined"
+                     helperText="Min chunk size for KV cache reuse"
+                     size="small"
+                   />
+                 </Grid>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
@@ -865,12 +905,30 @@ export default function ModernConfiguration() {
                   </TextField>
                 </Grid>
 
-                {/* RoPE Scaling */}
-                <Grid size={{ xs: 12 }}>
-                  <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 2, mt: 2, color: 'primary.main' }}>
-                    RoPE Scaling
-                  </Typography>
-                </Grid>
+                 {/* RoPE Scaling */}
+                 <Grid size={{ xs: 12 }}>
+                   <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 2, mt: 2, color: 'primary.main' }}>
+                     RoPE Scaling
+                   </Typography>
+                 </Grid>
+                 <Grid size={{ xs: 12, md: 6 }}>
+                   <TextField
+                     fullWidth
+                     label="RoPE Scaling"
+                     name="llamaServer.rope_scaling"
+                     select
+                     SelectProps={{ native: true }}
+                     value={formConfig.llamaServer?.rope_scaling || 'linear'}
+                     onChange={handleLlamaServerChange}
+                     variant="outlined"
+                     helperText="RoPE scaling method"
+                     size="small"
+                   >
+                     <option value="none">None</option>
+                     <option value="linear">Linear</option>
+                     <option value="yarn">Yarn</option>
+                   </TextField>
+                 </Grid>          
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
@@ -880,9 +938,10 @@ export default function ModernConfiguration() {
                     value={formConfig.llamaServer?.rope_freq_base || 0.0}
                     onChange={handleLlamaServerChange}
                     variant="outlined"
-                    helperText="RoPE frequency base"
+                    helperText="RoPE frequency base" 
                     size="small"
-                  />
+                    />           
+                  
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
@@ -897,7 +956,7 @@ export default function ModernConfiguration() {
                     size="small"
                   />
                 </Grid>
-              </Grid>
+             
             </CardContent>
           </Card>
         </m.div>

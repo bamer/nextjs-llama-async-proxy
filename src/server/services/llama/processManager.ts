@@ -25,6 +25,11 @@ export class ProcessManager {
     }
 
     return new Promise((resolve) => {
+      if (!this.process) {
+        resolve();
+        return;
+      }
+
       const timeoutId = setTimeout(() => {
         this.process?.kill("SIGKILL");
         this.process = null;
@@ -37,7 +42,7 @@ export class ProcessManager {
         resolve();
       });
 
-      this.process.kill(signal);
+      this.process.kill(signal as any);
     });
   }
 
