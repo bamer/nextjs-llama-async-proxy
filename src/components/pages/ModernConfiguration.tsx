@@ -7,11 +7,83 @@ import { m } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Save, Restore, Sync, CheckCircle, ErrorOutline } from '@mui/icons-material';
 
+// Default llama-server configuration
+const defaultLlamaServerConfig = {
+  host: '127.0.0.1',
+  port: 8080,
+  timeout: 30000,
+  ctx_size: 4096,
+  batch_size: 2048,
+  ubatch_size: 512,
+  threads: -1,
+  threads_batch: -1,
+  n_predict: -1,
+  seed: -1,
+  gpu_layers: -1,
+  n_cpu_moe: 0,
+  cpu_moe: false,
+  main_gpu: 0,
+  tensor_split: '',
+  split_mode: 'layer',
+  no_mmap: false,
+  temperature: 0.7,
+  top_k: 40,
+  top_p: 0.9,
+  min_p: 0.0,
+  xtc_probability: 0.0,
+  xtc_threshold: 0.1,
+  typical_p: 1.0,
+  repeat_last_n: 64,
+  repeat_penalty: 1.0,
+  presence_penalty: 0.0,
+  frequency_penalty: 0.0,
+  dry_multiplier: 0.0,
+  dry_base: 1.75,
+  dry_allowed_length: 2,
+  dry_penalty_last_n: 20,
+  dry_sequence_breaker: '["\\n", ":", "\"", "*"]',
+  max_tokens: 100,
+  max_seq_len: 0,
+  embedding: false,
+  memory_f16: false,
+  memory_f32: false,
+  memory_auto: true,
+  vocab_only: false,
+  rope_freq_base: 0.0,
+  rope_freq_scale: 0.0,
+  yarn_ext_factor: 0.0,
+  yarn_attn_factor: 0.0,
+  yarn_beta_fast: 0.0,
+  yarn_beta_slow: 0.0,
+  api_keys: '',
+  ssl_cert_file: '',
+  ssl_key_file: '',
+  cors_allow_origins: '',
+  system_prompt: '',
+  chat_template: '',
+  log_format: 'text',
+  log_level: 'info',
+  log_colors: true,
+  log_verbose: false,
+  cache_reuse: 0,
+  cache_type_k: 'f16',
+  cache_type_v: 'f16',
+  ml_lock: false,
+  no_kv_offload: false,
+};
+
 export default function ModernConfiguration() {
   const { config, loading, updateConfig, resetConfig, syncWithBackend, validateConfig } = useConfig();
   const { isDark } = useTheme();
   const [activeTab, setActiveTab] = useState(0);
-  const [formConfig, setFormConfig] = useState({ ...config });
+  const [formConfig, setFormConfig] = useState<any>(() => {
+    const initialConfig = { ...config };
+    // Ensure llamaServer has default values if not present
+    if (!initialConfig.llamaServer) {
+      initialConfig.llamaServer = {} as any; // Will be populated by the form
+    }
+    return initialConfig;
+  });
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -22,14 +94,26 @@ export default function ModernConfiguration() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setFormConfig(prev => ({
+    setFormConfig((prev: any) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
   };
 
+  const handleLlamaServerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type } = e.target;
+    const fieldName = name.split('.')[1];
+    setFormConfig((prev: any) => ({
+      ...prev,
+      llamaServer: {
+        ...prev.llamaServer,
+        [fieldName]: type === 'number' ? parseFloat(value) : value
+      }
+    }));
+  };
+
   const handleModelDefaultsChange = (field: string, value: number) => {
-    setFormConfig(prev => ({
+    setFormConfig((prev: any) => ({
       ...prev,
       modelDefaults: {
         ...prev.modelDefaults,
@@ -111,10 +195,10 @@ export default function ModernConfiguration() {
         }}
       >
         <Tabs value={activeTab} onChange={handleTabChange} centered>
-          <Tab label="General Settings" />
-          <Tab label="Model Defaults" />
-          <Tab label="Advanced" />
-        </Tabs>
+           <Tab label="General Settings" />
+           <Tab label="Llama-Server Settings" />
+           <Tab label="Advanced" />
+         </Tabs>
       </Card>
 
       {/* Success Message */}
@@ -253,25 +337,38 @@ export default function ModernConfiguration() {
                   </Typography>
                 </Grid>
 
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formConfig.notificationsEnabled}
-                        onChange={(e) => handleInputChange({ 
-                          target: { name: 'notificationsEnabled', checked: e.target.checked, type: 'checkbox' }
-                        } as any)}
-                        name="notificationsEnabled"
-                        color="primary"
-                      />
-                    }
-                    label="Notifications Enabled"
-                    sx={{ mb: 3 }}
-                  />
-                  <Typography variant="body2" color="text.secondary" sx={{ ml: 0, mb: 3 }}>
-                    Receive system alerts and notifications
-                  </Typography>
-                </Grid>
+                 <Grid size={{ xs: 12, md: 6 }}>
+                   <FormControlLabel
+                     control={
+                       <Switch
+                         checked={formConfig.notificationsEnabled}
+                         onChange={(e) => handleInputChange({
+                           target: { name: 'notificationsEnabled', checked: e.target.checked, type: 'checkbox' }
+                         } as any)}
+                         name="notificationsEnabled"
+                         color="primary"
+                       />
+                     }
+                     label="Notifications Enabled"
+                     sx={{ mb: 3 }}
+                   />
+                   <Typography variant="body2" color="text.secondary" sx={{ ml: 0, mb: 3 }}>
+                     Receive system alerts and notifications
+                   </Typography>
+                 </Grid>
+
+                 <Grid size={{ xs: 12 }}>
+                   <TextField
+                     fullWidth
+                     label="Llama-Server Path"
+                     name="llamaServerPath"
+                     value={formConfig.llamaServerPath || ''}
+                     onChange={handleInputChange}
+                     variant="outlined"
+                     helperText="Path to llama-server executable"
+                     sx={{ mb: 3 }}
+                   />
+                 </Grid>
               </Grid>
             </CardContent>
           </Card>
@@ -293,144 +390,113 @@ export default function ModernConfiguration() {
           >
             <CardContent>
               <Typography variant="h5" fontWeight="bold" mb={4}>
-                Model Default Parameters
+                Llama-Server Settings
               </Typography>
               
               <Grid container spacing={4}>
-                <Grid size={{ xs: 12 }}>
-                  <Typography variant="subtitle1" fontWeight="medium" mb={2}>
-                    Context Size
-                  </Typography>
-                  <Slider
-                    value={formConfig.modelDefaults.ctx_size}
-                    onChange={(_e, value) => handleModelDefaultsChange('ctx_size', value as number)}
-                    min={128}
-                    max={2000000}
-                    step={128}
-                    valueLabelDisplay="auto"
-                    marks={[
-                      { value: 128, label: '128' },
-                      { value: 1000000, label: '1M' },
-                      { value: 2000000, label: '2M' }
-                    ]}
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Host"
+                    name="llamaServer.host"
+                    value={formConfig.llamaServer?.host || '127.0.0.1'}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    helperText="Server hostname or IP address"
                   />
-                  <Typography variant="body2" color="text.secondary" mt={1}>
-                    Maximum tokens in context (default: 4096)
-                  </Typography>
                 </Grid>
 
-                <Grid size={{ xs: 12 }}>
-                  <Typography variant="subtitle1" fontWeight="medium" mb={2}>
-                    Batch Size
-                  </Typography>
-                  <Slider
-                    value={formConfig.modelDefaults.batch_size}
-                    onChange={(_e, value) => handleModelDefaultsChange('batch_size', value as number)}
-                    min={1}
-                    max={4096}
-                    step={128}
-                    valueLabelDisplay="auto"
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Port"
+                    name="llamaServer.port"
+                    type="number"
+                    value={formConfig.llamaServer?.port || 8080}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    helperText="Server port number"
                   />
-                  <Typography variant="body2" color="text.secondary" mt={1}>
-                    Logical maximum batch size
-                  </Typography>
                 </Grid>
 
-                <Grid size={{ xs: 12 }}>
-                  <Typography variant="subtitle1" fontWeight="medium" mb={2}>
-                    Temperature
-                  </Typography>
-                  <Slider
-                    value={formConfig.modelDefaults.temperature}
-                    onChange={(_e, value) => handleModelDefaultsChange('temperature', value as number)}
-                    min={0}
-                    max={2}
-                    step={0.1}
-                    valueLabelDisplay="auto"
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Context Size"
+                    name="llamaServer.ctx_size"
+                    type="number"
+                    value={formConfig.llamaServer?.ctx_size || 4096}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    helperText="Maximum context window size"
                   />
-                  <Typography variant="body2" color="text.secondary" mt={1}>
-                    Sampling temperature (0 = deterministic, 2 = very random)
-                  </Typography>
                 </Grid>
 
-                <Grid size={{ xs: 12 }}>
-                  <Typography variant="subtitle1" fontWeight="medium" mb={2}>
-                    Top P (Nucleus Sampling)
-                  </Typography>
-                  <Slider
-                    value={formConfig.modelDefaults.top_p}
-                    onChange={(_e, value) => handleModelDefaultsChange('top_p', value as number)}
-                    min={0}
-                    max={1}
-                    step={0.05}
-                    valueLabelDisplay="auto"
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Batch Size"
+                    name="llamaServer.batch_size"
+                    type="number"
+                    value={formConfig.llamaServer?.batch_size || 2048}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    helperText="Batch size for processing"
                   />
-                  <Typography variant="body2" color="text.secondary" mt={1}>
-                    Keep tokens with cumulative probability less than or equal to P
-                  </Typography>
                 </Grid>
 
-                <Grid size={{ xs: 12 }}>
-                  <Typography variant="subtitle1" fontWeight="medium" mb={2}>
-                    Top K
-                  </Typography>
-                  <Slider
-                    value={formConfig.modelDefaults.top_k}
-                    onChange={(_e, value) => handleModelDefaultsChange('top_k', value as number)}
-                    min={0}
-                    max={100}
-                    step={1}
-                    valueLabelDisplay="auto"
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Temperature"
+                    name="llamaServer.temperature"
+                    type="number"
+                    value={formConfig.llamaServer?.temperature || 0.8}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    inputProps={{ step: 0.1, min: 0, max: 2 }}
+                    helperText="Sampling temperature (0-2)"
                   />
-                  <Typography variant="body2" color="text.secondary" mt={1}>
-                    Top-K sampling (0 = disabled)
-                  </Typography>
                 </Grid>
 
-                <Grid size={{ xs: 12 }}>
-                  <Typography variant="subtitle1" fontWeight="medium" mb={2}>
-                    GPU Layers
-                  </Typography>
-                  <Slider
-                    value={formConfig.modelDefaults.gpu_layers}
-                    onChange={(_e, value) => handleModelDefaultsChange('gpu_layers', value as number)}
-                    min={-1}
-                    max={100}
-                    step={1}
-                    valueLabelDisplay="auto"
-                    marks={[
-                      { value: -1, label: 'All' },
-                      { value: 0, label: '0' },
-                      { value: 50, label: '50' },
-                      { value: 100, label: '100' }
-                    ]}
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Top-P"
+                    name="llamaServer.top_p"
+                    type="number"
+                    value={formConfig.llamaServer?.top_p || 0.9}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    inputProps={{ step: 0.1, min: 0, max: 1 }}
+                    helperText="Nucleus sampling parameter"
                   />
-                  <Typography variant="body2" color="text.secondary" mt={1}>
-                    Number of layers to offload to GPU (-1 = all layers)
-                  </Typography>
                 </Grid>
 
-                <Grid size={{ xs: 12 }}>
-                  <Typography variant="subtitle1" fontWeight="medium" mb={2}>
-                    CPU Threads
-                  </Typography>
-                  <Slider
-                    value={formConfig.modelDefaults.threads}
-                    onChange={(_e, value) => handleModelDefaultsChange('threads', value as number)}
-                    min={-1}
-                    max={32}
-                    step={1}
-                    valueLabelDisplay="auto"
-                    marks={[
-                      { value: -1, label: 'Auto' },
-                      { value: 4, label: '4' },
-                      { value: 16, label: '16' },
-                      { value: 32, label: '32' }
-                    ]}
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="GPU Layers"
+                    name="llamaServer.gpu_layers"
+                    type="number"
+                    value={formConfig.llamaServer?.gpu_layers || -1}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    helperText="Number of layers to offload to GPU (-1 = auto)"
                   />
-                  <Typography variant="body2" color="text.secondary" mt={1}>
-                    Number of CPU threads to use (-1 = auto)
-                  </Typography>
+                </Grid>
+
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Threads"
+                    name="llamaServer.threads"
+                    type="number"
+                    value={formConfig.llamaServer?.threads || -1}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    helperText="Number of CPU threads (-1 = auto)"
+                  />
                 </Grid>
               </Grid>
             </CardContent>
@@ -438,7 +504,7 @@ export default function ModernConfiguration() {
         </m.div>
       )}
 
-      {activeTab === 2 && (
+        {activeTab === 2 && (
         <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

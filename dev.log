@@ -1,0 +1,41 @@
+
+> nextjs-llama-async-proxy@0.1.0 dev
+> node server.js
+
+> Ready on http://localhost:3000
+📡 Server components loaded:
+  - Runtime config: true
+  - Models scanner: true
+  - Metrics generator: true
+  - Logs system: true
+  - Proxy system: true
+ GET / 200 in 824ms (compile: 554ms, render: 270ms)
+ GET / 200 in 106ms (compile: 5ms, render: 102ms)
+ GET /settings 200 in 91ms (compile: 14ms, render: 77ms)
+ GET /dashboard 200 in 2.6s (compile: 2.6s, render: 19ms)
+ GET /monitoring 200 in 1602ms (compile: 1578ms, render: 24ms)
+ GET /logs 200 in 1091ms (compile: 1072ms, render: 19ms)
+ GET /settings 200 in 44ms (compile: 5ms, render: 39ms)
+ GET /dashboard 200 in 56ms (compile: 13ms, render: 43ms)
+✓ Compiled in 381ms
+✓ Compiled in 122ms
+✓ Compiled in 45ms
+✓ Compiled in 135ms
+✓ Compiled in 92ms
+✓ Compiled in 57ms
+✓ Compiled in 55ms
+✓ Compiled in 42ms
+✓ Compiled in 70ms
+✓ Compiled in 43ms
+✓ Compiled in 28ms
+ GET /dashboard 200 in 53ms (compile: 6ms, render: 48ms)
+✓ Compiled in 52ms
+✓ Compiled in 43ms
+ GET /dashboard 200 in 239ms (compile: 12ms, render: 227ms)
+ GET /settings 200 in 104ms (compile: 64ms, render: 40ms)
+ GET /dashboard 200 in 51ms (compile: 10ms, render: 40ms)
+ GET /settings 200 in 45ms (compile: 5ms, render: 40ms)
+✓ Compiled in 49ms
+✓ Compiled in 47ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /settings 200 in 334ms (compile: 40ms, render: 293ms)

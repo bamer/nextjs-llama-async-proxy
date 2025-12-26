@@ -1,0 +1,4 @@
+{
+  "llama_server_port": 8134,
+  "llama_server_host": "localhost"
+}

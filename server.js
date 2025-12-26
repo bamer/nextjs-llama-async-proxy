@@ -32,10 +32,10 @@ app.prepare().then(() => {
   logger.info('✅ [SOCKET.IO] Next.js app prepared, starting HTTP server...');
   
 const expressApp = express();
-const server = createServer();
+const server = createServer(expressApp);
 
   // Create Socket.IO server with CORS configuration
-  const io = new Server({
+  const io = new Server(server, {
     cors: {
       origin: '*',
       methods: ['GET', 'POST'],
@@ -51,7 +51,6 @@ const server = createServer();
     maxHttpBufferSize: 1e8,
     transports: ['websocket'],
   });
-  io.attach(server);
   logger.info('🔧 [SOCKET.IO] Socket.IO server configured with path: /llamaproxws');
 
   // Store connected clients
@@ -188,8 +187,6 @@ const server = createServer();
     });
   });
 
-  server.on('request', expressApp)
- 
   expressApp.use((req, res) => {
     return nextHandler(req, res)
   })

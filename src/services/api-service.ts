@@ -142,6 +142,33 @@ class ApiService {
   public async healthCheck(): Promise<ApiResponse> {
     return await apiClient.get(`${this.baseUrl}/health`);
   }
+
+  // AI Generation methods
+  public async generateText(data: { prompt: string; model?: string; max_tokens?: number }): Promise<ApiResponse> {
+    return await apiClient.post(`${this.baseUrl}/generate`, data);
+  }
+
+  public async chat(data: { messages: any[]; model?: string; max_tokens?: number }): Promise<ApiResponse> {
+    return await apiClient.post(`${this.baseUrl}/chat`, data);
+  }
+
+  // Model management
+  public async loadModel(id: string, config?: any): Promise<ApiResponse> {
+    return await apiClient.post(`${this.baseUrl}/models/${id}/load`, { config });
+  }
+
+  public async unloadModel(id: string): Promise<ApiResponse> {
+    return await apiClient.post(`${this.baseUrl}/models/${id}/unload`);
+  }
+
+  // Configuration
+  public async getConfig(): Promise<ApiResponse> {
+    return await apiClient.get(`${this.baseUrl}/config`);
+  }
+
+  public async updateConfig(config: any): Promise<ApiResponse> {
+    return await apiClient.put(`${this.baseUrl}/config`, config);
+  }
 }
 
 export const apiService = new ApiService();

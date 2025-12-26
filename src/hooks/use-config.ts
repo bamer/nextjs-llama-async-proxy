@@ -50,6 +50,7 @@ export function useConfig() {
     } catch (err) {
       setError("Failed to sync configuration with backend");
       enqueueSnackbar("Failed to sync configuration with backend", { variant: "error" });
+      throw err;
     } finally {
       setLoading(false);
     }
