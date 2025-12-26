@@ -87,7 +87,7 @@ app.prepare().then(async () => {
     // Instead use basePath for auto-discovery
     basePath: llamaConfig.basePath || './models',  // Path for auto-discovery of models
     serverPath: llamaConfig.llama_server_path,
-    // Pass all other configuration options
+    // Pass all configuration options
     ctx_size: llamaConfig.ctx_size,
     batch_size: llamaConfig.batch_size,
     ubatch_size: llamaConfig.ubatch_size,
@@ -106,9 +106,54 @@ app.prepare().then(async () => {
     embedding: llamaConfig.embedding,
     cache_type_k: llamaConfig.cache_type_k,
     cache_type_v: llamaConfig.cache_type_v,
+    // Additional sampling options
+    min_p: llamaConfig.min_p,
+    xtc_probability: llamaConfig.xtc_probability,
+    xtc_threshold: llamaConfig.xtc_threshold,
+    typical_p: llamaConfig.typical_p,
+    repeat_last_n: llamaConfig.repeat_last_n,
+    presence_penalty: llamaConfig.presence_penalty,
+    frequency_penalty: llamaConfig.frequency_penalty,
+    dry_multiplier: llamaConfig.dry_multiplier,
+    dry_base: llamaConfig.dry_base,
+    dry_allowed_length: llamaConfig.dry_allowed_length,
+    dry_penalty_last_n: llamaConfig.dry_penalty_last_n,
+    // Memory & architecture options
+    n_cpu_moe: llamaConfig.n_cpu_moe,
+    cpu_moe: llamaConfig.cpu_moe,
+    tensor_split: llamaConfig.tensor_split,
+    split_mode: llamaConfig.split_mode,
+    no_mmap: llamaConfig.no_mmap,
+    vocab_only: llamaConfig.vocab_only,
+    memory_f16: llamaConfig.memory_f16,
+    memory_f32: llamaConfig.memory_f32,
+    memory_auto: llamaConfig.memory_auto,
+    // RoPE scaling
+    rope_freq_base: llamaConfig.rope_freq_base,
+    rope_freq_scale: llamaConfig.rope_freq_scale,
+    yarn_ext_factor: llamaConfig.yarn_ext_factor,
+    yarn_attn_factor: llamaConfig.yarn_attn_factor,
+    yarn_beta_fast: llamaConfig.yarn_beta_fast,
+    yarn_beta_slow: llamaConfig.yarn_beta_slow,
+    // Additional advanced options
+    penalize_nl: llamaConfig.penalize_nl,
+    ignore_eos: llamaConfig.ignore_eos,
+    mlock: llamaConfig.mlock,
+    numa: llamaConfig.numa,
+    memory_mapped: llamaConfig.memory_mapped,
+    use_mmap: llamaConfig.use_mmap,
+    grp_attn_n: llamaConfig.grp_attn_n,
+    grp_attn_w: llamaConfig.grp_attn_w,
+    neg_prompt_multiplier: llamaConfig.neg_prompt_multiplier,
+    no_kv_offload: llamaConfig.no_kv_offload,
+    ml_lock: llamaConfig.ml_lock,
   };
 
   const llamaService = new LlamaService(llamaServiceConfig);
+
+  // Expose llamaService to global scope for API routes to use
+  global.llamaService = llamaService;
+  logger.info('✅ [GLOBAL] LlamaService exposed globally for API routes');
 
   // Listen to Llama state changes and broadcast to clients
   llamaService.onStateChange((state) => {

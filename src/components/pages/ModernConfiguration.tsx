@@ -9,9 +9,12 @@ import { Save, Restore, Sync, CheckCircle, ErrorOutline } from '@mui/icons-mater
 
 // Default llama-server configuration
 const defaultLlamaServerConfig = {
+  // Server binding
   host: '127.0.0.1',
   port: 8080,
   timeout: 30000,
+  
+  // Basic options
   ctx_size: 4096,
   batch_size: 2048,
   ubatch_size: 512,
@@ -19,6 +22,8 @@ const defaultLlamaServerConfig = {
   threads_batch: -1,
   n_predict: -1,
   seed: -1,
+  
+  // GPU options
   gpu_layers: -1,
   n_cpu_moe: 0,
   cpu_moe: false,
@@ -26,6 +31,9 @@ const defaultLlamaServerConfig = {
   tensor_split: '',
   split_mode: 'layer',
   no_mmap: false,
+  flash_attn: 'auto',
+  
+  // Sampling parameters
   temperature: 0.7,
   top_k: 40,
   top_p: 0.9,
@@ -42,34 +50,69 @@ const defaultLlamaServerConfig = {
   dry_allowed_length: 2,
   dry_penalty_last_n: 20,
   dry_sequence_breaker: '["\\n", ":", "\"", "*"]',
+  
+  // Token limits
   max_tokens: 100,
   max_seq_len: 0,
+  
+  // Memory options
   embedding: false,
   memory_f16: false,
   memory_f32: false,
   memory_auto: true,
   vocab_only: false,
+  
+  // RoPE scaling
   rope_freq_base: 0.0,
   rope_freq_scale: 0.0,
   yarn_ext_factor: 0.0,
   yarn_attn_factor: 0.0,
   yarn_beta_fast: 0.0,
   yarn_beta_slow: 0.0,
+  
+  // Security & API
   api_keys: '',
   ssl_cert_file: '',
   ssl_key_file: '',
   cors_allow_origins: '',
+  
+  // Prompts & format
   system_prompt: '',
   chat_template: '',
+  
+  // Logging
   log_format: 'text',
   log_level: 'info',
   log_colors: true,
   log_verbose: false,
+  
+  // Cache options
   cache_reuse: 0,
   cache_type_k: 'f16',
   cache_type_v: 'f16',
   ml_lock: false,
   no_kv_offload: false,
+  
+  // Additional options from llama-server help
+  n_ctx_train: 0,
+  n_embd_head: 0,
+  n_embd_head_key: 0,
+  n_warp: 0,
+  n_expert: 0,
+  n_expert_used: 0,
+  neg_prompt_multiplier: 1.0,
+  penalize_nl: false,
+  ignore_eos: false,
+  disable_log_all: false,
+  enable_log_all: false,
+  slot_save_path: '',
+  memory_mapped: false,
+  use_mmap: true,
+  mlock: false,
+  numa: false,
+  numa_poll_split: false,
+  grp_attn_n: 1,
+  grp_attn_w: 512,
 };
 
 export default function ModernConfiguration() {
@@ -393,7 +436,13 @@ export default function ModernConfiguration() {
                 Llama-Server Settings
               </Typography>
               
-              <Grid container spacing={4}>
+              <Grid container spacing={3}>
+                {/* Server Binding */}
+                <Grid size={{ xs: 12 }}>
+                  <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 2, color: 'primary.main' }}>
+                    Server Binding
+                  </Typography>
+                </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
@@ -403,9 +452,9 @@ export default function ModernConfiguration() {
                     onChange={handleLlamaServerChange}
                     variant="outlined"
                     helperText="Server hostname or IP address"
+                    size="small"
                   />
                 </Grid>
-
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
@@ -416,9 +465,16 @@ export default function ModernConfiguration() {
                     onChange={handleLlamaServerChange}
                     variant="outlined"
                     helperText="Server port number"
+                    size="small"
                   />
                 </Grid>
 
+                {/* Basic Options */}
+                <Grid size={{ xs: 12 }}>
+                  <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 2, mt: 2, color: 'primary.main' }}>
+                    Basic Options
+                  </Typography>
+                </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
@@ -429,9 +485,9 @@ export default function ModernConfiguration() {
                     onChange={handleLlamaServerChange}
                     variant="outlined"
                     helperText="Maximum context window size"
+                    size="small"
                   />
                 </Grid>
-
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
@@ -441,10 +497,145 @@ export default function ModernConfiguration() {
                     value={formConfig.llamaServer?.batch_size || 2048}
                     onChange={handleLlamaServerChange}
                     variant="outlined"
-                    helperText="Batch size for processing"
+                    helperText="Logical maximum batch size"
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Micro Batch Size"
+                    name="llamaServer.ubatch_size"
+                    type="number"
+                    value={formConfig.llamaServer?.ubatch_size || 512}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    helperText="Physical maximum batch size"
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Threads"
+                    name="llamaServer.threads"
+                    type="number"
+                    value={formConfig.llamaServer?.threads || -1}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    helperText="CPU threads (-1 = auto)"
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Batch Threads"
+                    name="llamaServer.threads_batch"
+                    type="number"
+                    value={formConfig.llamaServer?.threads_batch || -1}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    helperText="Batch processing threads"
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Predictions"
+                    name="llamaServer.n_predict"
+                    type="number"
+                    value={formConfig.llamaServer?.n_predict || -1}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    helperText="Tokens to predict (-1 = unlimited)"
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Seed"
+                    name="llamaServer.seed"
+                    type="number"
+                    value={formConfig.llamaServer?.seed || -1}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    helperText="RNG seed (-1 = random)"
+                    size="small"
                   />
                 </Grid>
 
+                {/* GPU Options */}
+                <Grid size={{ xs: 12 }}>
+                  <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 2, mt: 2, color: 'primary.main' }}>
+                    GPU Options
+                  </Typography>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="GPU Layers"
+                    name="llamaServer.gpu_layers"
+                    type="number"
+                    value={formConfig.llamaServer?.gpu_layers || -1}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    helperText="Layers to offload to GPU (-1 = all)"
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Main GPU"
+                    name="llamaServer.main_gpu"
+                    type="number"
+                    value={formConfig.llamaServer?.main_gpu || 0}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    helperText="Main GPU device ID"
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Flash Attention"
+                    name="llamaServer.flash_attn"
+                    select
+                    SelectProps={{ native: true }}
+                    value={formConfig.llamaServer?.flash_attn || 'auto'}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    size="small"
+                  >
+                    <option value="auto">Auto</option>
+                    <option value="on">On</option>
+                    <option value="off">Off</option>
+                  </TextField>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="CPU MoE Layers"
+                    name="llamaServer.n_cpu_moe"
+                    type="number"
+                    value={formConfig.llamaServer?.n_cpu_moe || 0}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    helperText="MoE layers on CPU"
+                    size="small"
+                  />
+                </Grid>
+
+                {/* Sampling Parameters */}
+                <Grid size={{ xs: 12 }}>
+                  <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 2, mt: 2, color: 'primary.main' }}>
+                    Sampling Parameters
+                  </Typography>
+                </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
@@ -456,9 +647,22 @@ export default function ModernConfiguration() {
                     variant="outlined"
                     inputProps={{ step: 0.1, min: 0, max: 2 }}
                     helperText="Sampling temperature (0-2)"
+                    size="small"
                   />
                 </Grid>
-
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Top-K"
+                    name="llamaServer.top_k"
+                    type="number"
+                    value={formConfig.llamaServer?.top_k || 40}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    helperText="Top-K sampling"
+                    size="small"
+                  />
+                </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
@@ -468,34 +672,229 @@ export default function ModernConfiguration() {
                     value={formConfig.llamaServer?.top_p || 0.9}
                     onChange={handleLlamaServerChange}
                     variant="outlined"
-                    inputProps={{ step: 0.1, min: 0, max: 1 }}
-                    helperText="Nucleus sampling parameter"
+                    inputProps={{ step: 0.05, min: 0, max: 1 }}
+                    helperText="Nucleus sampling"
+                    size="small"
                   />
                 </Grid>
-
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
-                    label="GPU Layers"
-                    name="llamaServer.gpu_layers"
+                    label="Min-P"
+                    name="llamaServer.min_p"
                     type="number"
-                    value={formConfig.llamaServer?.gpu_layers || -1}
+                    value={formConfig.llamaServer?.min_p || 0.0}
                     onChange={handleLlamaServerChange}
                     variant="outlined"
-                    helperText="Number of layers to offload to GPU (-1 = auto)"
+                    inputProps={{ step: 0.05, min: 0 }}
+                    helperText="Minimum probability"
+                    size="small"
                   />
                 </Grid>
-
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
-                    label="Threads"
-                    name="llamaServer.threads"
+                    label="Repeat Penalty"
+                    name="llamaServer.repeat_penalty"
                     type="number"
-                    value={formConfig.llamaServer?.threads || -1}
+                    value={formConfig.llamaServer?.repeat_penalty || 1.0}
                     onChange={handleLlamaServerChange}
                     variant="outlined"
-                    helperText="Number of CPU threads (-1 = auto)"
+                    inputProps={{ step: 0.1, min: 0 }}
+                    helperText="Repeat penalty"
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Repeat Last N"
+                    name="llamaServer.repeat_last_n"
+                    type="number"
+                    value={formConfig.llamaServer?.repeat_last_n || 64}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    helperText="Tokens for repeat penalty"
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Presence Penalty"
+                    name="llamaServer.presence_penalty"
+                    type="number"
+                    value={formConfig.llamaServer?.presence_penalty || 0.0}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    inputProps={{ step: 0.1 }}
+                    helperText="Presence penalty"
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Frequency Penalty"
+                    name="llamaServer.frequency_penalty"
+                    type="number"
+                    value={formConfig.llamaServer?.frequency_penalty || 0.0}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    inputProps={{ step: 0.1 }}
+                    helperText="Frequency penalty"
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Typical-P"
+                    name="llamaServer.typical_p"
+                    type="number"
+                    value={formConfig.llamaServer?.typical_p || 1.0}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    inputProps={{ step: 0.05 }}
+                    helperText="Typical probability"
+                    size="small"
+                  />
+                </Grid>
+
+                {/* XTC & DRY Sampling */}
+                <Grid size={{ xs: 12 }}>
+                  <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 2, mt: 2, color: 'primary.main' }}>
+                    Advanced Sampling
+                  </Typography>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="XTC Probability"
+                    name="llamaServer.xtc_probability"
+                    type="number"
+                    value={formConfig.llamaServer?.xtc_probability || 0.0}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    inputProps={{ step: 0.05 }}
+                    helperText="XTC sampling probability"
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="XTC Threshold"
+                    name="llamaServer.xtc_threshold"
+                    type="number"
+                    value={formConfig.llamaServer?.xtc_threshold || 0.1}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    inputProps={{ step: 0.01 }}
+                    helperText="XTC threshold"
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="DRY Multiplier"
+                    name="llamaServer.dry_multiplier"
+                    type="number"
+                    value={formConfig.llamaServer?.dry_multiplier || 0.0}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    inputProps={{ step: 0.1 }}
+                    helperText="DRY sampling multiplier"
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="DRY Base"
+                    name="llamaServer.dry_base"
+                    type="number"
+                    value={formConfig.llamaServer?.dry_base || 1.75}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    inputProps={{ step: 0.1 }}
+                    helperText="DRY base value"
+                    size="small"
+                  />
+                </Grid>
+
+                {/* Memory & Cache */}
+                <Grid size={{ xs: 12 }}>
+                  <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 2, mt: 2, color: 'primary.main' }}>
+                    Memory & Cache
+                  </Typography>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Cache Type K"
+                    name="llamaServer.cache_type_k"
+                    select
+                    SelectProps={{ native: true }}
+                    value={formConfig.llamaServer?.cache_type_k || 'f16'}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    size="small"
+                  >
+                    <option value="f16">f16</option>
+                    <option value="f32">f32</option>
+                    <option value="q8">q8</option>
+                  </TextField>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Cache Type V"
+                    name="llamaServer.cache_type_v"
+                    select
+                    SelectProps={{ native: true }}
+                    value={formConfig.llamaServer?.cache_type_v || 'f16'}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    size="small"
+                  >
+                    <option value="f16">f16</option>
+                    <option value="f32">f32</option>
+                    <option value="q8">q8</option>
+                  </TextField>
+                </Grid>
+
+                {/* RoPE Scaling */}
+                <Grid size={{ xs: 12 }}>
+                  <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 2, mt: 2, color: 'primary.main' }}>
+                    RoPE Scaling
+                  </Typography>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Rope Freq Base"
+                    name="llamaServer.rope_freq_base"
+                    type="number"
+                    value={formConfig.llamaServer?.rope_freq_base || 0.0}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    helperText="RoPE frequency base"
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Rope Freq Scale"
+                    name="llamaServer.rope_freq_scale"
+                    type="number"
+                    value={formConfig.llamaServer?.rope_freq_scale || 0.0}
+                    onChange={handleLlamaServerChange}
+                    variant="outlined"
+                    helperText="RoPE frequency scale"
+                    size="small"
                   />
                 </Grid>
               </Grid>

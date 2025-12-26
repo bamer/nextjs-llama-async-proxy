@@ -540,6 +540,92 @@ export class LlamaService {
       args.push("--verbose");
     }
 
+    // Additional options
+    if (this.config.penalize_nl) {
+      args.push("--penalize-nl");
+    }
+    if (this.config.ignore_eos) {
+      args.push("--ignore-eos");
+    }
+    if (this.config.mlock) {
+      args.push("--mlock");
+    }
+    if (this.config.numa) {
+      args.push("--numa");
+    }
+    if (this.config.memory_mapped) {
+      args.push("--memory-mapped");
+    }
+    if (this.config.use_mmap === false) {
+      args.push("--no-mmap");
+    }
+    if (this.config.grp_attn_n && this.config.grp_attn_n !== 1) {
+      args.push("--grp-attn-n", String(this.config.grp_attn_n));
+    }
+    if (this.config.grp_attn_w && this.config.grp_attn_w !== 512) {
+      args.push("--grp-attn-w", String(this.config.grp_attn_w));
+    }
+    if (this.config.neg_prompt_multiplier && this.config.neg_prompt_multiplier !== 1.0) {
+      args.push("--neg-prompt-multiplier", String(this.config.neg_prompt_multiplier));
+    }
+    if (this.config.min_p && this.config.min_p > 0) {
+      args.push("--min-p", String(this.config.min_p));
+    }
+    if (this.config.xtc_probability && this.config.xtc_probability > 0) {
+      args.push("--xtc-probability", String(this.config.xtc_probability));
+    }
+    if (this.config.xtc_threshold && this.config.xtc_threshold !== 0.1) {
+      args.push("--xtc-threshold", String(this.config.xtc_threshold));
+    }
+    if (this.config.typical_p && this.config.typical_p !== 1.0) {
+      args.push("--typical-p", String(this.config.typical_p));
+    }
+    if (this.config.presence_penalty && this.config.presence_penalty !== 0) {
+      args.push("--presence-penalty", String(this.config.presence_penalty));
+    }
+    if (this.config.frequency_penalty && this.config.frequency_penalty !== 0) {
+      args.push("--frequency-penalty", String(this.config.frequency_penalty));
+    }
+    if (this.config.dry_multiplier && this.config.dry_multiplier > 0) {
+      args.push("--dry-multiplier", String(this.config.dry_multiplier));
+    }
+    if (this.config.dry_base && this.config.dry_base !== 1.75) {
+      args.push("--dry-base", String(this.config.dry_base));
+    }
+    if (this.config.dry_allowed_length && this.config.dry_allowed_length !== 2) {
+      args.push("--dry-allowed-length", String(this.config.dry_allowed_length));
+    }
+    if (this.config.dry_penalty_last_n && this.config.dry_penalty_last_n !== 20) {
+      args.push("--dry-penalty-last-n", String(this.config.dry_penalty_last_n));
+    }
+    if (this.config.repeat_last_n && this.config.repeat_last_n !== 64) {
+      args.push("--repeat-last-n", String(this.config.repeat_last_n));
+    }
+    if (this.config.rope_freq_base && this.config.rope_freq_base > 0) {
+      args.push("--rope-freq-base", String(this.config.rope_freq_base));
+    }
+    if (this.config.rope_freq_scale && this.config.rope_freq_scale > 0) {
+      args.push("--rope-freq-scale", String(this.config.rope_freq_scale));
+    }
+    if (this.config.yarn_ext_factor && this.config.yarn_ext_factor > 0) {
+      args.push("--yarn-ext-factor", String(this.config.yarn_ext_factor));
+    }
+    if (this.config.yarn_attn_factor && this.config.yarn_attn_factor > 0) {
+      args.push("--yarn-attn-factor", String(this.config.yarn_attn_factor));
+    }
+    if (this.config.yarn_beta_fast && this.config.yarn_beta_fast > 0) {
+      args.push("--yarn-beta-fast", String(this.config.yarn_beta_fast));
+    }
+    if (this.config.yarn_beta_slow && this.config.yarn_beta_slow > 0) {
+      args.push("--yarn-beta-slow", String(this.config.yarn_beta_slow));
+    }
+    if (this.config.no_kv_offload) {
+      args.push("--no-kv-offload");
+    }
+    if (this.config.ml_lock) {
+      args.push("--ml-lock");
+    }
+
     // Custom server arguments (can override above)
     if (this.config.serverArgs) {
       args.push(...this.config.serverArgs);

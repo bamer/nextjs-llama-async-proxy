@@ -1,6 +1,32 @@
 # AGENTS.md - Development Guidelines
 
-Coding standards and project conventions for this Next.js + Socket.IO application.
+Coding standards and project conventions for the Next.js Llama Async Proxy application.
+
+## Project Overview
+
+This codebase implements a sophisticated web-based management interface and async proxy for Llama AI models. It provides real-time monitoring, model lifecycle management, and seamless integration with the llama-server binary through a modern Next.js application architecture. The system serves as a complete dashboard for AI model operations, featuring live metrics, WebSocket-based updates, and comprehensive error recovery mechanisms.
+
+### Core Purpose
+The application serves as a **real-time web interface for managing Llama AI model deployments** through an async proxy architecture. It acts as an intermediary between users and the llama-server binary, providing:
+
+- **Model Discovery and Management**: Automatic scanning of model directories and API-based loading/unloading
+- **Real-time Monitoring**: Live dashboards showing system performance, GPU metrics, and model status
+- **Operational Control**: Start/stop model operations through RESTful APIs
+- **Health Monitoring**: Continuous health checks and automatic recovery from failures
+- **Log Aggregation**: Real-time streaming of system and application logs
+
+### Key User Workflows
+1. **Model Operations**: Users can browse available models, start/stop them, and monitor loading status
+2. **System Monitoring**: Real-time charts display CPU/memory usage, GPU metrics, and request throughput
+3. **Configuration Management**: Settings page allows theme customization and notification preferences
+4. **Log Review**: Color-coded activity feed with filtering for troubleshooting
+
+### Technical Highlights
+- **Async Proxy Architecture**: Manages llama-server process lifecycle with spawn/kill operations
+- **Real-time Communication**: Socket.IO integration for live updates (metrics every 10s, models every 30s, logs every 15s)
+- **Error Recovery**: Exponential backoff retry logic with automatic process restart
+- **Health Checks**: HTTP-based monitoring with configurable timeouts and retry policies
+- **Model Discovery**: Dual approach combining API calls and filesystem scanning for .gguf/.bin files
 
 ## Build/Test/Lint Commands
 
@@ -58,6 +84,9 @@ Coding standards and project conventions for this Next.js + Socket.IO applicatio
 - **Path aliases**: `@/` → `src/`
 - **Server**: Integrated Express server in server.js
 - **Real-time**: Socket.IO for metrics/models/logs streaming
+- **Llama Integration**: Acts as proxy for llama-server binary with automatic model discovery
+- **Error Recovery**: Exponential backoff for process failures (max 5 retries)
+- **Health Monitoring**: Continuous HTTP health checks with 5s timeout
 
 ## Code Style & Conventions
 

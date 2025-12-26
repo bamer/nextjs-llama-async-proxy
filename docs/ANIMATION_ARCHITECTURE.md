@@ -1,25 +1,25 @@
-# 🎬 Architecture d'Animation - Framer Motion
+# 🎬 Animation Architecture - Framer Motion
 
-## 📋 Vue d'Ensemble
+## 📋 Overview
 
-Ce projet utilise **Framer Motion** avec **LazyMotion** pour des animations optimisées. Cette architecture est conçue pour supporter une croissance exponentielle du projet.
+This project uses **Framer Motion** with **LazyMotion** for optimized animations. This architecture is designed to support exponential project growth.
 
-## 🎯 Architecture Actuelle
+## 🎯 Current Architecture
 
 ```
 AppProvider
 └── MotionLazyContainer (LazyMotion)
-    └── Toute l'application
+    └── Entire application
         ├── Sidebar (m.div)
         ├── Dashboard (m.div)
         ├── Models (m.div)
         ├── etc...
 ```
 
-### Composants Clés
+### Key Components
 
 #### 1. `MotionLazyContainer`
-**Fichier** : `src/components/animate/motion-lazy-container.tsx`
+**File** : `src/components/animate/motion-lazy-container.tsx`
 
 ```tsx
 import { LazyMotion, domAnimation, m } from "framer-motion";
@@ -35,13 +35,13 @@ export function MotionLazyContainer({ children }) {
 }
 ```
 
-**Fonction** :
-- Charge les animations de manière différée
-- Optimise le bundle initial
-- Active le tree-shaking
+**Function** :
+- Loads animations lazily
+- Optimizes initial bundle
+- Enables tree-shaking
 
-#### 2. Composants d'Animation
-Tous les composants utilisent `m` au lieu de `motion` :
+#### 2. Animation Components
+All components use `m` instead of `motion` :
 
 ```tsx
 import { m } from "framer-motion";
@@ -53,13 +53,13 @@ function MyComponent() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      Contenu animé
+      Animated content
     </m.div>
   );
 }
 ```
 
-## ✅ Bonnes Pratiques
+## ✅ Best Practices
 
 ### 1. Imports
 **✅ Correct** :
@@ -69,10 +69,10 @@ import { m } from "framer-motion";
 
 **❌ Incorrect** :
 ```tsx
-import { motion } from "framer-motion";  // Ne pas utiliser!
+import { motion } from "framer-motion";  // Do not use!
 ```
 
-### 2. Composants
+### 2. Components
 **✅ Correct** :
 ```tsx
 <m.div initial={{ x: 0 }} animate={{ x: 100 }}>
@@ -83,8 +83,8 @@ import { motion } from "framer-motion";  // Ne pas utiliser!
 <motion.div initial={{ x: 0 }} animate={{ x: 100 }}>
 ```
 
-### 3. Animations Complexes
-Pour les animations complexes, utilisez des variants :
+### 3. Complex Animations
+For complex animations, use variants :
 
 ```tsx
 const variants = {
@@ -100,9 +100,9 @@ const variants = {
 >
 ```
 
-## 🚀 Ajouter de Nouvelles Animations
+## 🚀 Adding New Animations
 
-### 1. Dans un Composant Existant
+### 1. In an Existing Component
 ```tsx
 import { m } from "framer-motion";
 
@@ -113,13 +113,13 @@ function NewFeature() {
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: "spring", damping: 10 }}
     >
-      Nouvelle fonctionnalité animée
+      New animated feature
     </m.div>
   );
 }
 ```
 
-### 2. Dans un Nouveau Composant
+### 2. In a New Component
 ```tsx
 import { m } from "framer-motion";
 
@@ -140,23 +140,23 @@ export function AnimatedCard({ children }: AnimatedCardProps) {
 }
 ```
 
-## 📊 Optimisation des Performances
+## 📊 Performance Optimization
 
-### 1. Features de LazyMotion
-Nous utilisons `domAnimation` qui inclut :
-- Animations DOM de base
-- Gestion des gestures
-- Support des variants
+### 1. LazyMotion Features
+We use `domAnimation` which includes :
+- Basic DOM animations
+- Gesture handling
+- Variant support
 
-### 2. Ajouter Plus de Features (si nécessaire)
+### 2. Adding More Features (if necessary)
 ```tsx
 import { LazyMotion, domAnimation, domMax } from "framer-motion";
 
-// Pour plus de fonctionnalités
+// For more functionality
 <LazyMotion features={domMax}>
 ```
 
-### 3. Animation Conditionnelle
+### 3. Conditional Animation
 ```tsx
 <m.div
   animate={isVisible ? "visible" : "hidden"}
@@ -164,32 +164,32 @@ import { LazyMotion, domAnimation, domMax } from "framer-motion";
 >
 ```
 
-## ⚠️ Problèmes Courants et Solutions
+## ⚠️ Common Issues and Solutions
 
-### 1. Animation ne fonctionne pas
-**Problème** : L'animation ne se déclenche pas
+### 1. Animation not working
+**Problem** : Animation doesn't trigger
 
 **Solutions** :
-- Vérifier que le composant est bien `m.div` et non `motion.div`
-- S'assurer que le composant est dans le `MotionLazyContainer`
-- Vérifier les props d'animation (initial, animate, etc.)
+- Verify component is `m.div` not `motion.div`
+- Ensure component is inside `MotionLazyContainer`
+- Check animation props (initial, animate, etc.)
 
-### 2. Erreur de Tree-Shaking
-**Problème** : Erreur "motion component within LazyMotion"
+### 2. Tree-Shaking Error
+**Problem** : Error "motion component within LazyMotion"
 
 **Solution** :
-- Remplacer tous les `motion.xxx` par `m.xxx`
-- Vérifier les imports
+- Replace all `motion.xxx` with `m.xxx`
+- Check imports
 
-### 3. Performance Médiocre
-**Problème** : Animations saccadées
+### 3. Poor Performance
+**Problem** : Jerky animations
 
 **Solutions** :
-- Utiliser `will-change: transform` dans le style
-- Réduire le nombre d'animations simultanées
-- Utiliser des transitions plus simples
+- Use `will-change: transform` in style
+- Reduce number of simultaneous animations
+- Use simpler transitions
 
-## 🛠️ Outils de Développement
+## 🛠️ Development Tools
 
 ### 1. Framer Motion DevTools
 ```bash
@@ -197,19 +197,19 @@ npm install @motionone/devtools
 ```
 
 ### 2. React DevTools
-Pour inspecter les composants animés
+To inspect animated components
 
 ### 3. Performance Tab (Chrome)
-Pour analyser les performances des animations
+To analyze animation performance
 
-## 📈 Évolutivité
+## 📈 Scalability
 
-### Ajouter de Nouveaux Types d'Animations
+### Adding New Animation Types
 ```tsx
-// Pour les SVG
+// For SVGs
 <m.path d="..." initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} />
 
-// Pour les listes
+// For lists
 <m.ul>
   {items.map(item => (
     <m.li key={item.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -219,30 +219,30 @@ Pour analyser les performances des animations
 </m.ul>
 ```
 
-### Animation Basée sur le Scroll
+### Scroll-Based Animation
 ```tsx
 import { useScroll, useTransform } from "framer-motion";
 
 function ScrollAnimation() {
   const { scrollYProgress } = useScroll();
   const scale = useTransform(scrollYProgress, [0, 1], [0.8, 1]);
-  
+
   return <m.div style={{ scale }} />;
 }
 ```
 
-## 🎓 Ressources
+## 🎓 Resources
 
-- [Documentation Framer Motion](https://www.framer.com/motion/)
+- [Framer Motion Documentation](https://www.framer.com/motion/)
 - [LazyMotion Guide](https://motion.dev/troubleshooting/lazy-strict-mode)
 - [Animation Performance](https://web.dev/animations-guide/)
 
 ## 🎯 Conclusion
 
-Cette architecture permet :
-- ✅ **Optimisation des performances** grâce à LazyMotion
-- ✅ **Évolutivité** pour supporter 800+ composants
-- ✅ **Maintenabilité** avec des règles claires
-- ✅ **Consistance** dans tout le projet
+This architecture enables :
+- ✅ **Performance optimization** through LazyMotion
+- ✅ **Scalability** to support 800+ components
+- ✅ **Maintainability** with clear rules
+- ✅ **Consistency** throughout the project
 
-**Règle d'or** : Toujours utiliser `m` au lieu de `motion` dans cette architecture !
+**Golden rule** : Always use `m` instead of `motion` in this architecture !

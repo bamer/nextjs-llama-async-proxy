@@ -22,51 +22,7 @@ This system is designed for **public access** without authentication mechanisms.
 
 ## 🏗️ Architecture
 
-### Directory Structure
-
-```
-├── app/                        # Next.js App Router (new pages)
-│   ├── api/                   # API routes (legacy, for SSE)
-│   ├── layout.tsx             # Root layout
-│   ├── page.tsx               # Home page
-│   ├── dashboard/             # Dashboard page
-│   ├── logs/                  # Logs page
-│   ├── models/                # Models management page
-│   ├── monitoring/            # Monitoring page
-│   ├── settings/              # Settings page
-│   └── not-found.tsx          # 404 page
-├── pages/
-│   └── api/                   # SSE endpoint
-├── src/
-│   ├── components/            # React components
-│   │   ├── layout/           # Header, Sidebar, Layout
-│   │   ├── pages/            # Page-specific components
-│   │   ├── ui/               # Reusable UI components
-│   │   ├── seo/              # SEO components
-│   │   ├── animate/          # Animation components
-│   │   └── websocket/        # WebSocket manager
-│   ├── hooks/                # Custom React hooks
-│   ├── services/             # API services & utilities
-│   ├── contexts/             # React contexts (theme, etc.)
-│   ├── types/                # TypeScript type definitions
-│   ├── config/               # Configuration
-│   ├── lib/                  # Utility libraries
-│   ├── styles/               # Global styles
-│   ├── providers/            # Context providers
-│   └── utils/                # Helper functions
-├── src/server/               # Backend logic
-│   ├── config.js             # Configuration management
-│   ├── config-schema.js      # Config validation schema
-│   ├── models.js             # Model management
-│   ├── metrics.js            # Metrics collection
-│   ├── logs.js               # Log management
-│   ├── llama-server.js       # Llama server integration
-│   ├── proxy.js              # Proxy utilities
-│   └── runtime-config.js     # Runtime configuration
-├── public/                   # Static assets
-├── server.js                 # Express + Socket.IO server
-└── [config files]           # tsconfig.json, tailwind.config.ts, etc.
-```
+See **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** for complete system architecture documentation.
 
 ### Technology Stack
 
@@ -83,6 +39,8 @@ This system is designed for **public access** without authentication mechanisms.
 - **Logging**: Winston
 
 ## 🛠️ Installation & Development
+
+See **[DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md)** for complete development environment setup.
 
 ### Prerequisites
 
@@ -152,7 +110,11 @@ pnpm type:check      # Type check with TypeScript
 pnpm format          # Format code (if available)
 ```
 
-## 📊 API Routes
+## 📊 API Overview
+
+See **[API_REFERENCE.md](docs/API_REFERENCE.md)** for complete API documentation including REST endpoints, WebSocket events, and examples.
+
+### Quick API Reference
 
 ### Models Management
 - `GET /api/models` - List registered models
@@ -168,39 +130,35 @@ pnpm format          # Format code (if available)
 - `GET /api/monitoring` - Performance metrics
 - `GET /api/monitoring/history` - Metrics history
 
-### Parameters
-- `GET /api/parameters` - List parameter categories
-- `GET /api/parameters/[category]` - Category parameters
-- `GET /api/parameters/category/[paramName]` - Specific parameter value
-
 ### Real-time Communication
 - **WebSocket** (`/socket.io`): Socket.IO for metrics, models, logs
 - **SSE** (`/api/sse`): Server-Sent Events endpoint
 
-## 🎨 Theme & Design
+## 🎨 User Interface
 
-### Color Palette
-- **Primary**: Modern warm grays
-- **Secondary**: Red accents
-- **Success/Error**: Standard green/red
-- **Background**: White/cream (light), dark gray (dark)
+See **[USER_GUIDE.md](docs/USER_GUIDE.md)** for complete user manual including workflows, interface guide, and advanced usage.
 
-### UI Features
-- **Dark/Light Mode**: Automatic toggle
-- **Smooth Animations**: CSS transitions with cubic-bezier easing
-- **3D Effects**: Layered shadows, hover transforms
+### Interface Overview
+
+- **Dashboard** - Real-time metrics and system overview
+- **Models** - Model discovery, loading, and management
+- **Monitoring** - Performance charts and analytics
+- **Logs** - Real-time log streaming with filtering
+- **Settings** - Configuration and preferences
+
+### Key Features
+
+- **Dark/Light Mode**: Automatic theme switching
+- **Real-time Updates**: Live metrics and status updates
 - **Responsive Design**: Mobile-first approach
+- **Smooth Animations**: Framer Motion with LazyMotion optimization
 - **Accessibility**: High contrast, keyboard navigation
-
-### Key Components
-- **Sidebar**: Navigation with active states and hover effects
-- **Cards**: Glass effect with depth
-- **Charts**: Real-time updating graphs
-- **Logs**: Color-coded by severity level
 
 ## 🚀 Deployment
 
-### Production Build
+See **[DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)** for comprehensive deployment instructions including Docker, cloud platforms, and production setup.
+
+### Quick Production Setup
 
 ```bash
 # Build the application
@@ -224,29 +182,13 @@ NODE_ENV=production
 PORT=3000
 ```
 
-### Deployment Platforms
+### Supported Platforms
 
-**Vercel** (recommended for Next.js):
-1. Connect GitHub repository
-2. Configure environment variables in Vercel dashboard
-3. Push to deploy automatically
-
-**Docker**:
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
-COPY . .
-RUN pnpm build
-EXPOSE 3000
-CMD ["pnpm", "start"]
-```
-
-**Self-hosted**:
-1. Build with `pnpm build`
-2. Deploy with `pnpm start`
-3. Use a reverse proxy (nginx/caddy) for SSL/TLS
+- **Docker** - Containerized deployment
+- **Vercel** - Serverless deployment
+- **Railway** - Cloud platform
+- **AWS/GCP/Azure** - Cloud infrastructure
+- **Self-hosted** - Traditional server deployment
 
 ## 🤝 Contributing
 
@@ -268,8 +210,22 @@ See [AGENTS.md](AGENTS.md) for detailed coding guidelines, including:
 
 ## 📝 Documentation
 
+### 📚 Complete Documentation Suite
+
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture and design
+- **[API_REFERENCE.md](docs/API_REFERENCE.md)** - Complete API documentation
+- **[USER_GUIDE.md](docs/USER_GUIDE.md)** - User manual and workflows
+- **[DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)** - Deployment and production setup
+- **[DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md)** - Development environment setup
+
+### 🛠️ Development & Configuration
+
 - [AGENTS.md](AGENTS.md) - Coding guidelines & project standards
 - [CONFIGURATION.md](CONFIGURATION.md) - Configuration options
+- [docs/ANIMATION_ARCHITECTURE.md](docs/ANIMATION_ARCHITECTURE.md) - Animation system design
+
+### 🔒 Security & Operations
+
 - [SECURITY_NOTICE.md](SECURITY_NOTICE.md) - Security considerations
 - [PRODUCTION_SETUP.md](PRODUCTION_SETUP.md) - Production deployment guide
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues & solutions
