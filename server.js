@@ -27,7 +27,6 @@ const UPDATE_CONFIG = {
   METRICS_INTERVAL: 10000,  // 10 secondes entre chaque mise à jour des métriques
   MODELS_INTERVAL: 30000,   // 30 secondes pour les modèles (change rarement)
   LOGS_INTERVAL: 15000,     // 15 secondes pour les logs
-  LLAMA_STATUS_INTERVAL: 5000, // 5 secondes pour le statut Llama
 };
 
 // Charger la configuration Llama
@@ -155,23 +154,50 @@ app.prepare().then(async () => {
   global.llamaService = llamaService;
   logger.info('✅ [GLOBAL] LlamaService exposed globally for API routes');
 
-  // Listen to Llama state changes and broadcast to clients
+  // Store last broadcasted Llama state to avoid duplicate broadcasts
+  let lastLlamaState = null;
+  let lastBroadcastedModels = null;
+
+  // Helper function to check if data has changed (defined before use)
+  const hasDataChanged = (current, last) => {
+    if (!last) return true;
+    return JSON.stringify(current) !== JSON.stringify(last);
+  };
+
+  // Listen to Llama state changes - but only broadcast if state actually changed
   llamaService.onStateChange((state) => {
-    io.emit('llamaStatus', {
-      type: 'llama_status',
-      data: {
-        status: state.status,
-        models: state.models,
-        lastError: state.lastError,
-        retries: state.retries,
-        uptime: state.uptime,
-        startedAt: state.startedAt,
-      },
-      timestamp: Date.now()
-    });
-    logger.debug(`📡 [BROADCAST] Llama status update sent: ${state.status}`);
+    // Only check meaningful fields for change detection (not uptime/timestamps)
+    const currentStateForComparison = {
+      status: state.status,
+      modelsCount: state.models ? state.models.length : 0,
+      lastError: state.lastError,
+      retries: state.retries,
+    };
+
+    // Full state to send to clients
+    const currentState = {
+      status: state.status,
+      models: state.models,
+      lastError: state.lastError,
+      retries: state.retries,
+      uptime: state.uptime,
+      startedAt: state.startedAt,
+    };
+
+    // Only broadcast llama status if meaningful data actually changed
+    if (hasDataChanged(currentStateForComparison, lastLlamaState)) {
+      lastLlamaState = currentStateForComparison;
+      io.emit('llamaStatus', {
+        type: 'llama_status',
+        data: currentState,
+        timestamp: Date.now()
+      });
+      logger.debug(`📡 [BROADCAST] Llama status update sent (changed): ${state.status}`);
+    } else {
+      logger.debug(`📡 [BROADCAST] Llama status skipped (no changes)`);
+    }
     
-    // Also broadcast models immediately when state changes (e.g., when models are discovered)
+    // Also broadcast models immediately when state changes (only if models actually changed)
     if (state.models && state.models.length > 0) {
       const modelsData = state.models.map((model) => ({
         id: model.id || model.name,
@@ -182,8 +208,14 @@ app.prepare().then(async () => {
         createdAt: new Date(model.modified_at * 1000).toISOString(),
         updatedAt: new Date(model.modified_at * 1000).toISOString(),
       }));
-      io.emit('models', { type: 'models', data: modelsData, timestamp: Date.now() });
-      logger.debug(`📡 [BROADCAST] Models updated via state change: ${modelsData.length} model(s)`);
+
+      if (hasDataChanged(modelsData, lastBroadcastedModels)) {
+        lastBroadcastedModels = modelsData;
+        io.emit('models', { type: 'models', data: modelsData, timestamp: Date.now() });
+        logger.debug(`📡 [BROADCAST] Models updated via state change (changed): ${modelsData.length} model(s)`);
+      } else {
+        logger.debug(`📡 [BROADCAST] Models skipped (no changes): ${modelsData.length} model(s)`);
+      }
     }
   });
 
@@ -199,27 +231,33 @@ app.prepare().then(async () => {
 
   // Store connected clients
   const clients = new Map();
-  
+
   // Store last sent data to detect changes
   let lastMetrics = null;
   let lastModels = null;
   let lastLogs = null;
 
-  // Generate metrics data (in real app, this would come from actual system)
-  const generateMetrics = () => ({
-    activeModels: Math.floor(Math.random() * 5) + 1,
-    totalRequests: Math.floor(Math.random() * 500) + 100,
-    avgResponseTime: Math.floor(Math.random() * 300) + 100,
-    memoryUsage: Math.floor(Math.random() * 30) + 50,
-    cpuUsage: Math.floor(Math.random() * 50) + 20,
-    uptime: Math.floor(Date.now() / 1000),
-    lastUpdated: new Date().toISOString()
-  });
+  // Generate metrics data - get real counts from Llama service
+  const generateMetrics = () => {
+    const state = llamaService.getState();
+    // Count loaded models from the service state
+    const loadedModelsCount = state.models ? state.models.length : 0;
+    
+    return {
+      activeModels: loadedModelsCount,
+      totalRequests: 0, // Will need real tracking
+      avgResponseTime: 0, // Will need real tracking
+      memoryUsage: 0, // Will need real system metrics
+      cpuUsage: 0, // Will need real system metrics
+      uptime: Math.floor((Date.now() - (state.startedAt ? new Date(state.startedAt).getTime() : Date.now())) / 1000),
+      lastUpdated: new Date().toISOString()
+    };
+  };
 
-  // Generate models data - now from Llama service
+  // Generate models data - from Llama service only (no mock data)
   const generateModels = () => {
     const state = llamaService.getState();
-    if (state.models.length > 0) {
+    if (state.models && state.models.length > 0) {
       return state.models.map((model) => ({
         id: model.id || model.name,
         name: model.name,
@@ -230,57 +268,58 @@ app.prepare().then(async () => {
         updatedAt: new Date(model.modified_at * 1000).toISOString(),
       }));
     }
-    // Fallback if no models loaded yet
-    return [
-      { id: 'loading', name: 'Loading models...', type: 'loading', status: 'loading', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    ];
+    // Return empty array if no models - no fake data
+    return [];
   };
 
-  // Generate logs data
+  // Generate logs data - from actual system logs
   const generateLogs = () => {
-    const logLevels = ['info', 'debug', 'warn', 'error'];
-    const logs = [];
-    const now = Date.now();
-    
-    for (let i = 0; i < 10; i++) {
-      const level = logLevels[Math.floor(Math.random() * logLevels.length)];
-      logs.push({
-        id: `log-${now}-${i}`,
-        level,
-        message: `Log message ${i + 1} from ${level}`,
-        timestamp: new Date(now - Math.floor(Math.random() * 300000)).toISOString(),
-        context: { source: 'server' }
-      });
-    }
-    return logs;
+    // TODO: Integrate with actual log system
+    // For now, return empty array instead of fake logs
+    return [];
   };
 
-  // Broadcast to all connected clients
+  // Broadcast to all connected clients - only if data changed
   const broadcastMetrics = () => {
     if (clients.size === 0) return;
     
     const metrics = generateMetrics();
-    io.emit('metrics', { type: 'metrics', data: metrics, timestamp: Date.now() });
-    logger.debug(`📊 [BROADCAST] Metrics sent to ${clients.size} client(s)`);
+    if (hasDataChanged(metrics, lastMetrics)) {
+      lastMetrics = metrics;
+      io.emit('metrics', { type: 'metrics', data: metrics, timestamp: Date.now() });
+      logger.debug(`📊 [BROADCAST] Metrics sent (changed) to ${clients.size} client(s)`);
+    } else {
+      logger.debug(`📊 [BROADCAST] Metrics skipped (no changes)`);
+    }
   };
 
   const broadcastModels = () => {
     if (clients.size === 0) return;
     
     const models = generateModels();
-    io.emit('models', { type: 'models', data: models, timestamp: Date.now() });
-    logger.debug(`🤖 [BROADCAST] Models sent to ${clients.size} client(s)`);
+    if (hasDataChanged(models, lastModels)) {
+      lastModels = models;
+      io.emit('models', { type: 'models', data: models, timestamp: Date.now() });
+      logger.debug(`🤖 [BROADCAST] Models sent (changed) to ${clients.size} client(s)`);
+    } else {
+      logger.debug(`🤖 [BROADCAST] Models skipped (no changes)`);
+    }
   };
 
   const broadcastLogs = () => {
     if (clients.size === 0) return;
     
     const logs = generateLogs();
-    io.emit('logs', { type: 'logs', data: logs, timestamp: Date.now() });
-    logger.debug(`📜 [BROADCAST] Logs sent to ${clients.size} client(s)`);
+    if (hasDataChanged(logs, lastLogs)) {
+      lastLogs = logs;
+      io.emit('logs', { type: 'logs', data: logs, timestamp: Date.now() });
+      logger.debug(`📜 [BROADCAST] Logs sent (changed) to ${clients.size} client(s)`);
+    } else {
+      logger.debug(`📜 [BROADCAST] Logs skipped (no changes)`);
+    }
   };
 
-  // Start broadcast intervals
+  // Start broadcast intervals - still check on intervals but only broadcast if data changed
   const metricsInterval = setInterval(broadcastMetrics, UPDATE_CONFIG.METRICS_INTERVAL);
   const modelsInterval = setInterval(broadcastModels, UPDATE_CONFIG.MODELS_INTERVAL);
   const logsInterval = setInterval(broadcastLogs, UPDATE_CONFIG.LOGS_INTERVAL);
@@ -304,10 +343,14 @@ app.prepare().then(async () => {
       timestamp: new Date().toISOString()
     });
 
-    // Send initial data immediately to new client
-    socket.emit('metrics', { type: 'metrics', data: generateMetrics(), timestamp: Date.now() });
-    socket.emit('models', { type: 'models', data: generateModels(), timestamp: Date.now() });
-    socket.emit('logs', { type: 'logs', data: generateLogs(), timestamp: Date.now() });
+    // Send initial real data immediately to new client
+    const initialMetrics = generateMetrics();
+    const initialModels = generateModels();
+    const initialLogs = generateLogs();
+    
+    socket.emit('metrics', { type: 'metrics', data: initialMetrics, timestamp: Date.now() });
+    socket.emit('models', { type: 'models', data: initialModels, timestamp: Date.now() });
+    socket.emit('logs', { type: 'logs', data: initialLogs, timestamp: Date.now() });
     socket.emit('llamaStatus', {
       type: 'llama_status',
       data: {

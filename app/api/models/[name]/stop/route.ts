@@ -16,51 +16,18 @@ export async function POST(
 
     console.log(`[API] Stopping model: ${name}`);
 
-    // Forward to llama-server to unload the model
-    const llamaServerHost = process.env.LLAMA_SERVER_HOST || "localhost";
-    const llamaServerPort = process.env.LLAMA_SERVER_PORT || "8134";
-
-    // Send request to llama-server to unload the model
-    const response = await fetch(
-      `http://${llamaServerHost}:${llamaServerPort}/api/models/${name}`,
-      {
-        method: "DELETE",
-      }
-    ).catch((error) => {
-      console.error(`Failed to connect to llama-server: ${error.message}`);
-      return null;
-    });
-
-    if (!response) {
-      return NextResponse.json(
-        {
-          error: "Failed to connect to llama-server. Make sure it's running.",
-          model: name,
-          status: "error",
-        },
-        { status: 503 }
-      );
-    }
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      return NextResponse.json(
-        {
-          error: data.error || "Failed to unload model",
-          model: name,
-          status: "error",
-        },
-        { status: response.status }
-      );
-    }
+    // llama.cpp does not support dynamic model unloading
+    // Models are automatically unloaded when switching to a different one
+    // Return a message explaining this behavior
+    console.log(`[API] Note: llama.cpp does not support explicit model unloading`);
+    console.log(`[API] Model will be unloaded automatically when loading a different model`);
 
     return NextResponse.json(
       {
         model: name,
-        status: "unloaded",
-        message: `Model ${name} unloaded successfully`,
-        data,
+        status: "note",
+        message: `llama.cpp auto-manages model memory. The model will be unloaded when you load a different one.`,
+        info: "To completely free memory, restart the llama-server process.",
       },
       { status: 200 }
     );

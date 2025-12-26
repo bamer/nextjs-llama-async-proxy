@@ -2,45 +2,41 @@
 
 import { MainLayout } from "@/components/layout/main-layout";
 import { useStore } from "@/lib/store";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, Typography, Box, Grid, Chip, LinearProgress, Button, IconButton } from "@mui/material";
 import { useTheme } from "@/contexts/ThemeContext";
 import { PlayArrow, Stop, Refresh, Add } from "@mui/icons-material";
+import { websocketServer } from "@/lib/websocket-client";
 
 export default function ModelsPage() {
   const models = useStore((state) => state.models);
   const { isDark } = useTheme();
-  
-  // Mock data if no models available
+  const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    if (models.length === 0) {
-      // This would typically come from an API or WebSocket
-      // For now, we'll use mock data
-      const mockModels: ModelConfig[] = [
-        {
-          id: 'llama-7b',
-          name: 'Llama 7B',
-          type: 'llama' as const,
-          status: 'idle' as const,
-          parameters: { temperature: 0.7, maxTokens: 2048, topP: 0.9 },
-          createdAt: new Date(Date.now() - 86400000).toISOString(),
-          updatedAt: new Date(Date.now() - 3600000).toISOString()
-        },
-        {
-          id: 'llama-13b',
-          name: 'Llama 13B',
-          type: 'llama' as const,
-          status: 'idle' as const,
-          parameters: { temperature: 0.6, maxTokens: 4096, topP: 0.8 },
-          createdAt: new Date(Date.now() - 172800000).toISOString(),
-          updatedAt: new Date(Date.now() - 7200000).toISOString()
-        }
-      ];
-      
-      // Update store with mock models
-      useStore.getState().setModels(mockModels);
-    }
-  }, [models.length]);
+    // Connect to WebSocket to receive model updates
+    websocketServer.connect();
+
+    const handleModels = (message: { type: string; data: any[] }) => {
+      if (message.type === 'models' && message.data) {
+        useStore.getState().setModels(message.data);
+      }
+    };
+
+    const handleConnect = () => {
+      // Request initial models when connected
+      websocketServer.requestModels();
+    };
+
+    websocketServer.on('message', handleModels);
+    websocketServer.on('connect', handleConnect);
+
+    return () => {
+      websocketServer.off('message', handleModels);
+      websocketServer.off('connect', handleConnect);
+    };
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -51,21 +47,79 @@ export default function ModelsPage() {
     }
   };
 
-  const handleStartModel = (modelId: string) => {
-    // This would typically send a WebSocket message
-    console.log('Starting model:', modelId);
-    useStore.getState().updateModel(modelId, { status: 'loading' });
+  const handleStartModel = async (modelId: string) => {
+    // Find the model to get its name
+    const model = models.find((m) => m.id === modelId);
+    if (!model) {
+      setError(`Model ${modelId} not found`);
+      return;
+    }
+
+    setLoading(modelId);
+    setError(null);
     
-    // Simulate loading and then running state
-    setTimeout(() => {
+    try {
+      useStore.getState().updateModel(modelId, { status: 'loading' });
+      
+      // Make real API call to load the model in llama-server
+      const response = await fetch(`/api/models/${encodeURIComponent(model.name)}/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `Failed to load model (HTTP ${response.status})`);
+      }
+
+      // Only update to running after actual confirmation from llama-server
       useStore.getState().updateModel(modelId, { status: 'running' });
-    }, 2000);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      useStore.getState().updateModel(modelId, { status: 'idle' });
+    } finally {
+      setLoading(null);
+    }
   };
 
-  const handleStopModel = (modelId: string) => {
-    // This would typically send a WebSocket message
-    console.log('Stopping model:', modelId);
-    useStore.getState().updateModel(modelId, { status: 'idle' as const });
+  const handleStopModel = async (modelId: string) => {
+    // Find the model to get its name
+    const model = models.find((m) => m.id === modelId);
+    if (!model) {
+      setError(`Model ${modelId} not found`);
+      return;
+    }
+
+    setLoading(modelId);
+    setError(null);
+    
+    try {
+      useStore.getState().updateModel(modelId, { status: 'loading' });
+      
+      // Make real API call to unload the model from llama-server
+      const response = await fetch(`/api/models/${encodeURIComponent(model.name)}/stop`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `Failed to unload model (HTTP ${response.status})`);
+      }
+
+      // Only update to idle after actual confirmation from llama-server
+      useStore.getState().updateModel(modelId, { status: 'idle' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      useStore.getState().updateModel(modelId, { status: 'running' });
+    } finally {
+      setLoading(null);
+    }
   };
 
   const handleRefresh = () => {
@@ -76,6 +130,23 @@ export default function ModelsPage() {
   return (
     <MainLayout>
       <Box sx={{ p: 4 }}>
+        {/* Error message */}
+        {error && (
+          <Box
+            sx={{
+              p: 2,
+              mb: 3,
+              bgcolor: isDark ? 'rgba(239, 68, 68, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid #ef4444',
+              borderRadius: 1,
+            }}
+          >
+            <Typography variant="body2" color="error">
+              {error}
+            </Typography>
+          </Box>
+        )}
+
         {/* Header */}
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
           <div>
@@ -135,7 +206,7 @@ export default function ModelsPage() {
                     </Typography>
                     <Chip 
                       label={model.status}
-                      color={getStatusColor(model.status) as any}
+                      color={getStatusColor(model.status) as 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'}
                       size="small"
                       variant="filled"
                     />
@@ -151,7 +222,7 @@ export default function ModelsPage() {
                   <LinearProgress 
                     variant="determinate"
                     value={model.status === 'running' ? 100 : model.status === 'loading' ? 50 : 0}
-                    color={getStatusColor(model.status) as any}
+                    color={getStatusColor(model.status) as 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' | 'inherit'}
                     sx={{ height: '4px', borderRadius: '2px', mb: 2 }}
                   />
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
@@ -161,9 +232,10 @@ export default function ModelsPage() {
                         color="error"
                         startIcon={<Stop />}
                         size="small"
+                        disabled={loading === model.id}
                         onClick={() => handleStopModel(model.id)}
                       >
-                        Stop
+                        {loading === model.id ? 'Stopping...' : 'Stop'}
                       </Button>
                     ) : (
                       <Button 
@@ -171,9 +243,10 @@ export default function ModelsPage() {
                         color="primary"
                         startIcon={<PlayArrow />}
                         size="small"
+                        disabled={loading === model.id}
                         onClick={() => handleStartModel(model.id)}
                       >
-                        Start
+                        {loading === model.id ? 'Starting...' : 'Start'}
                       </Button>
                     )}
                   </Box>

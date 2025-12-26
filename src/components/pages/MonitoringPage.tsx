@@ -146,9 +146,9 @@ const MonitoringPage = () => {
               </TableHead>
               <TableBody>
                 <TableRow>
-                  <TableCell>Active Models</TableCell>
-                  <TableCell>{metrics.models.filter((m: any) => m.status === 'running').length}</TableCell>
-                </TableRow>
+                   <TableCell>Available Models</TableCell>
+                   <TableCell>{metrics.models.filter((m: any) => m.status === 'running').length}</TableCell>
+                 </TableRow>
                 <TableRow>
                   <TableCell>Total Memory</TableCell>
                   <TableCell>{`${metrics.models.reduce((sum: number, m: any) => sum + (m.memory as number), 0).toFixed(1)} GB`}</TableCell>

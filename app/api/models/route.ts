@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { LlamaService } from "@/server/services/LlamaService";
 
-let llamaService: LlamaService | null = null;
+let llamaService: LlamaService | null | undefined = null;
 
 // Get models list
 export async function GET(): Promise<NextResponse> {
   try {
     // Get the service instance from global scope
-    const globalAny = global as any;
+    const globalAny = global as unknown as { llamaService: LlamaService | undefined };
     llamaService = globalAny.llamaService;
 
     if (!llamaService) {
@@ -18,7 +18,14 @@ export async function GET(): Promise<NextResponse> {
     }
 
     const state = llamaService.getState();
-    const models = state.models.map((model: any) => ({
+    interface ModelData {
+      id?: string;
+      name: string;
+      type?: string;
+      size?: number;
+      modified_at?: number;
+    }
+    const models = state.models.map((model: ModelData) => ({
       id: model.id || model.name,
       name: model.name,
       type: model.type || "unknown",

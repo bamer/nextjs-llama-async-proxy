@@ -296,6 +296,7 @@ export class LlamaService {
           this.state.models = modelsData.map((model) => ({
             id: model.id || model.name,
             name: model.id || model.name,
+            path: model.path, // Path from llama-server if available
             size: model.size || 0,
             type: model.type || "unknown",
             modified_at: Math.floor(Date.now() / 1000),
@@ -379,6 +380,7 @@ export class LlamaService {
         return {
           id: file,
           name: file.replace(/\.(gguf|bin)$/i, ""),
+          path: fullPath, // Include the full path so API endpoints can use it
           size: stats.size,
           type: file.endsWith(".gguf") ? "gguf" : "bin",
           modified_at: Math.floor(stats.mtimeMs / 1000),
@@ -665,8 +667,8 @@ export class LlamaService {
   }
 
   /**
-   * Start tracking uptime
-   */
+    * Start tracking uptime (without emitting state changes)
+    */
   private startUptimeTracking(): void {
     if (this.uptimeInterval) {
       clearInterval(this.uptimeInterval as NodeJS.Timeout);
@@ -678,7 +680,6 @@ export class LlamaService {
         this.state.uptime = Math.floor(
           (Date.now() - this.state.startedAt.getTime()) / 1000
         );
-        this.emitStateChange();
       }
     }, 1000);
   }

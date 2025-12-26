@@ -424,7 +424,7 @@ export default function ModernDashboard() {
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">Active Models</Typography>
+                    <Typography variant="body2" color="text.secondary">Available Models</Typography>
                     <Typography variant="body2" fontWeight="medium">
                       {metrics ? metrics.activeModels : '0'}
                     </Typography>
@@ -547,7 +547,7 @@ export default function ModernDashboard() {
         transition={{ delay: 0.5, duration: 0.5 }}
       >
         <Typography variant="h5" fontWeight="bold" mb={3}>
-          Active Models
+          Available Models
         </Typography>
         <Grid container spacing={3}>
           {models.slice(0, 4).map((model) => (

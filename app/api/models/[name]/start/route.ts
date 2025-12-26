@@ -20,8 +20,11 @@ export async function POST(
     console.log(`[API] Loading model: ${name}`, body);
 
     // Get the Llama service from global scope
-    const globalAny = global as any;
-    const llamaService = globalAny.llamaService;
+    const globalAny = global as unknown as { llamaService: unknown };
+    const llamaService = globalAny.llamaService as {
+      getState: () => { status: string; models?: Array<{ id?: string; name?: string; path?: string }> };
+      config?: { basePath?: string };
+    };
 
     if (!llamaService) {
       console.error("[API] LlamaService not available");
@@ -59,17 +62,30 @@ export async function POST(
         `[API] Forwarding model load to llama-server at ${llamaServerHost}:${llamaServerPort}`
       );
 
-      // Send request to llama-server to load the model
-      const response = await fetch(
-        `http://${llamaServerHost}:${llamaServerPort}/api/models`,
+      // Find the model in the discovered models to get its full path
+      const models = state.models || [];
+      const modelData = models.find(
+        (m: { id?: string; name?: string }) => m.id === name || m.name === name
+      );
+
+      // Use model name/alias (not path) - llama.cpp uses the alias from models-dir
+      const modelName = modelData?.name || name;
+
+      console.log(`[API] Loading model: ${modelName}`);
+
+      // llama.cpp auto-loads models on first request
+      // Make a minimal completion request to trigger model loading
+      const loadResponse = await fetch(
+        `http://${llamaServerHost}:${llamaServerPort}/v1/chat/completions`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: name,
-            ...body,
+            model: modelName,
+            messages: [{ role: "user", content: "Hi" }],
+            max_tokens: 1,
           }),
         }
       ).catch((error) => {
@@ -79,7 +95,7 @@ export async function POST(
         return null;
       });
 
-      if (!response) {
+      if (!loadResponse) {
         return NextResponse.json(
           {
             error:
@@ -95,21 +111,21 @@ export async function POST(
         );
       }
 
-      const data = await response.json().catch(() => ({}));
+      const loadData = await loadResponse.json().catch(() => ({}));
 
-      if (!response.ok) {
+      if (!loadResponse.ok) {
         console.error(
-          `[API] llama-server returned error: ${response.status}`,
-          data
+          `[API] llama-server returned error: ${loadResponse.status}`,
+          loadData
         );
         return NextResponse.json(
           {
-            error: data.error || `Failed to load model (HTTP ${response.status})`,
+            error: loadData.error || `Failed to load model (HTTP ${loadResponse.status})`,
             model: name,
             status: "error",
-            detail: data,
+            detail: loadData,
           },
-          { status: response.status }
+          { status: loadResponse.status }
         );
       }
 
@@ -119,7 +135,7 @@ export async function POST(
           model: name,
           status: "loaded",
           message: `Model ${name} loaded successfully`,
-          data,
+          data: loadData,
         },
         { status: 200 }
       );

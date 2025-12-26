@@ -45,7 +45,7 @@ export function MetricsCard() {
     },
     {
       icon: <DnsIcon color="success" />,
-      label: "Active Models",
+      label: "Available Models",
       value: metrics.activeModels.toString(),
       progress: (metrics.activeModels / 10) * 100,
       color: "success",

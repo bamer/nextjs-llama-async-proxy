@@ -205,9 +205,9 @@ export default function MonitoringPage() {
             }}>
               <CardContent>
                 <Box display="flex" alignItems="center" mb={2}>
-                  <NetworkCheck color="info" sx={{ mr: 1, fontSize: '2rem' }} />
-                  <Typography variant="h6" fontWeight="bold">Active Models</Typography>
-                </Box>
+                   <NetworkCheck color="info" sx={{ mr: 1, fontSize: '2rem' }} />
+                   <Typography variant="h6" fontWeight="bold">Available Models</Typography>
+                 </Box>
                 <Typography variant="h3" fontWeight="bold" mb={1}>
                   {metrics.activeModels}
                 </Typography>
