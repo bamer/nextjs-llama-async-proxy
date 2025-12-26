@@ -454,6 +454,27 @@ describe('Button', () => {
     
     expect(onClick).toHaveBeenCalled();
   });
+
+  it('renders disabled state', () => {
+    render(<Button disabled>Click me</Button>);
+    
+    expect(screen.getByRole('button')).toBeDisabled();
+  });
+
+  it('does not call onClick when disabled', async () => {
+    const onClick = jest.fn();
+    render(<Button onClick={onClick} disabled>Click me</Button>);
+    
+    await userEvent.click(screen.getByRole('button'));
+    
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it('renders with custom className', () => {
+    render(<Button className="custom-class">Click me</Button>);
+    
+    expect(screen.getByRole('button')).toHaveClass('custom-class');
+  });
 });
 ```
 

@@ -100,6 +100,10 @@ class WebSocketClient extends EventEmitter {
     this.sendMessage('requestModels');
   }
 
+  requestLlamaStatus() {
+    this.sendMessage('requestLlamaStatus');
+  }
+
   startModel(modelId: string) {
     this.sendMessage('startModel', { modelId });
   }
@@ -115,6 +119,10 @@ class WebSocketClient extends EventEmitter {
 
   getSocketId(): string | null {
     return this.socketId;
+  }
+
+  getSocket(): Socket | null {
+    return this.socket;
   }
 }
 

@@ -105,6 +105,28 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+### 📋 Configuration (Important)
+
+Before starting the application, create `.llama-proxy-config.json`:
+
+```json
+{
+  "llama_server_host": "localhost",
+  "llama_server_port": 8134,
+  "llama_server_path": "/path/to/llama-server",
+  "basePath": "./models"
+}
+```
+
+**Key Points:**
+- `llama_server_path`: Full path to llama-server binary
+- `basePath`: Directory containing your GGUF model files
+- **DO NOT** specify `llama_model_path` (removed to fix startup crashes)
+
+The application now starts llama-server **without** loading a model, then auto-discovers available models from the `basePath` directory.
+
+👉 **See [LLAMA_STARTUP_GUIDE.md](LLAMA_STARTUP_GUIDE.md) for complete setup instructions.**
+
 ### Available Scripts
 
 ```bash
