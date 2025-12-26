@@ -1,15 +1,15 @@
 # Deployment Guide - Next.js Llama Async Proxy
 
-Comprehensive guide for deploying the Next.js Llama Async Proxy in various environments, from development to production.
+Comprehensive guide for deploying Next.js Llama Async Proxy in various environments, from development to production.
 
 ## Overview
 
-This guide covers deployment strategies for the Next.js Llama Async Proxy, including containerization, cloud deployment, and traditional server setups.
+This guide covers deployment strategies for Next.js Llama Async Proxy, including containerization, cloud deployment, and traditional server setups.
 
 ## Prerequisites
 
 ### System Requirements
-- **Node.js**: 18.0 or higher
+- **Node.js**: 18.0 or higher (24.11.1 recommended)
 - **Memory**: Minimum 4GB RAM, recommended 16GB+
 - **Storage**: 50GB+ for models and logs
 - **Network**: Stable internet connection
@@ -19,6 +19,7 @@ This guide covers deployment strategies for the Next.js Llama Async Proxy, inclu
 - **llama-server binary**: Compatible with your system architecture
 - **GGUF model files**: Pre-downloaded AI models
 - **Package manager**: pnpm (recommended) or npm/yarn
+- **tsx**: TypeScript runtime for server execution
 
 ## Development Deployment
 
@@ -35,14 +36,18 @@ This guide covers deployment strategies for the Next.js Llama Async Proxy, inclu
    pnpm install
    ```
 
-3. **Configure Environment**
-   Create `.llama-proxy-config.json`:
+3. **Configure llama-server**
+   Create `llama-server-config.json`:
    ```json
    {
-     "llama_server_host": "localhost",
-     "llama_server_port": 8134,
-     "llama_server_path": "/usr/local/bin/llama-server",
-     "basePath": "./models"
+     "host": "localhost",
+     "port": 8134,
+     "basePath": "./models",
+     "serverPath": "/path/to/llama-server",
+     "ctx_size": 8192,
+     "batch_size": 512,
+     "threads": -1,
+     "gpu_layers": -1
    }
    ```
 
@@ -57,20 +62,12 @@ This guide covers deployment strategies for the Next.js Llama Async Proxy, inclu
 ### Development Environment Variables
 
 Create `.env.local` for development:
+
 ```env
 # Application
 NODE_ENV=development
 PORT=3000
-
-# Llama Server
-LLAMA_SERVER_HOST=localhost
-LLAMA_SERVER_PORT=8134
-LLAMA_SERVER_PATH=/usr/local/bin/llama-server
-LLAMA_SERVER_TIMEOUT=30000
-
-# Models
-LLAMA_MODELS_DIR=./models
-LLAMA_DEFAULT_MODEL=
+WEBSOCKET_PATH=/llamaproxws
 
 # Performance
 METRICS_INTERVAL=10000
@@ -80,6 +77,7 @@ LOGS_INTERVAL=15000
 # Logging
 LOG_LEVEL=debug
 LOG_COLORS=true
+LOG_VERBOSE=true
 ```
 
 ## Production Deployment
@@ -91,26 +89,16 @@ LOG_COLORS=true
    pnpm build
    ```
 
+   Note: Next.js 16 uses Turbopack for building (not webpack).
+
 2. **Production Environment Variables**
-   Create `.env.local`:
+
+   Create `.env.production`:
    ```env
    # Application
    NODE_ENV=production
    PORT=3000
-
-   # Security (when implemented)
-   # API_SECRET_KEY=your-secret-key
-   # JWT_SECRET=your-jwt-secret
-
-   # Llama Server
-   LLAMA_SERVER_HOST=localhost
-   LLAMA_SERVER_PORT=8134
-   LLAMA_SERVER_PATH=/opt/llama-server/bin/llama-server
-   LLAMA_SERVER_TIMEOUT=60000
-
-   # Models
-   LLAMA_MODELS_DIR=/opt/models
-   LLAMA_DEFAULT_MODEL=llama-2-7b-chat
+   WEBSOCKET_PATH=/llamaproxws
 
    # Performance (optimized for production)
    METRICS_INTERVAL=15000
@@ -120,12 +108,15 @@ LOG_COLORS=true
    # Logging
    LOG_LEVEL=info
    LOG_COLORS=false
+   LOG_VERBOSE=false
    ```
 
 3. **Start Production Server**
    ```bash
    pnpm start
    ```
+
+   Note: Production server also uses `tsx` for TypeScript execution.
 
 ### Process Management
 
@@ -143,18 +134,22 @@ LOG_COLORS=true
      apps: [{
        name: 'llama-proxy',
        script: 'server.js',
+       interpreter: 'node',
+       interpreter_args: '--require tsx/cjs',
        instances: 1,
        autorestart: true,
        watch: false,
-       max_memory_restart: '1G',
+       max_memory_restart: '2G',
        env: {
          NODE_ENV: 'production',
-         PORT: 3000
+         PORT: 3000,
+         WEBSOCKET_PATH: '/llamaproxws'
        },
        error_file: './logs/err.log',
        out_file: './logs/out.log',
        log_file: './logs/combined.log',
-       time: true
+       time: true,
+       merge_logs: true
      }]
    };
    ```
@@ -164,6 +159,12 @@ LOG_COLORS=true
    pm2 start ecosystem.config.js
    pm2 save
    pm2 startup
+   ```
+
+4. **Monitor with PM2**
+   ```bash
+   pm2 logs llama-proxy
+   pm2 monit
    ```
 
 #### Using systemd
@@ -178,12 +179,27 @@ LOG_COLORS=true
    [Service]
    Type=simple
    User=llama-user
+   Group=llama-user
    WorkingDirectory=/opt/llama-proxy
-   ExecStart=/usr/bin/node server.js
+   ExecStart=/usr/bin/tsx server.js
    Restart=always
    RestartSec=10
    Environment=NODE_ENV=production
    Environment=PORT=3000
+   Environment=WEBSOCKET_PATH=/llamaproxws
+
+   # Logging
+   StandardOutput=journal
+   StandardError=journal
+   SyslogIdentifier=llama-proxy
+
+   # Security
+   NoNewPrivileges=yes
+   PrivateTmp=yes
+   ProtectSystem=strict
+   ProtectHome=yes
+   ReadWritePaths=/opt/llama-proxy/logs
+   ReadWritePaths=/opt/llama-proxy/models
 
    [Install]
    WantedBy=multi-user.target
@@ -194,6 +210,12 @@ LOG_COLORS=true
    sudo systemctl daemon-reload
    sudo systemctl enable llama-proxy
    sudo systemctl start llama-proxy
+   sudo systemctl status llama-proxy
+   ```
+
+3. **View Logs**
+   ```bash
+   sudo journalctl -u llama-proxy -f
    ```
 
 ## Container Deployment
@@ -201,26 +223,35 @@ LOG_COLORS=true
 ### Docker Setup
 
 #### Dockerfile (Multi-stage build)
+
 ```dockerfile
 # Build stage
 FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# Install pnpm
+RUN npm install -g pnpm
+
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
 
-# Build application
+# Build application (Turbopack)
 RUN pnpm build
 
 # Production stage
 FROM node:18-alpine AS runner
 
 WORKDIR /app
+
+# Install dependencies
+RUN npm install -g pnpm tsx
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs
@@ -233,6 +264,9 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/server.js ./server.js
 
+# Copy tsx configuration if needed
+COPY --from=builder /app/package.json ./package.json
+
 # Create necessary directories
 RUN mkdir -p logs models
 RUN chown -R llama-proxy:nodejs /app
@@ -243,41 +277,56 @@ EXPOSE 3000
 
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV WEBSOCKET_PATH=/llamaproxws
 
-CMD ["node", "server.js"]
+CMD ["node", "--require", "tsx/cjs", "server.js"]
 ```
 
 #### Docker Compose (Full Stack)
+
 ```yaml
 version: '3.8'
 
 services:
   llama-proxy:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - LLAMA_SERVER_HOST=llama-server
-      - LLAMA_SERVER_PORT=8080
-      - LLAMA_MODELS_DIR=/app/models
+      - PORT=3000
+      - WEBSOCKET_PATH=/llamaproxws
+      - LOG_LEVEL=info
     volumes:
       - ./models:/app/models:ro
       - ./logs:/app/logs
+      - ./llama-server-config.json:/app/llama-server-config.json:ro
     depends_on:
       - llama-server
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   llama-server:
     image: llama-server:latest
+    build:
+      context: ./llama.cpp
+      dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "8134:8134"
     volumes:
       - ./models:/models:ro
     environment:
       - LLAMA_MODEL=/models/your-model.gguf
-      - LLAMA_CTX_SIZE=4096
-      - LLAMA_N_GPU_LAYERS=35
+      - LLAMA_CTX_SIZE=8192
+      - LLAMA_N_GPU_LAYERS=-1
+      - LLAMA_PORT=8134
     restart: unless-stopped
     deploy:
       resources:
@@ -286,21 +335,38 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+
+volumes:
+  models:
+  logs:
 ```
 
 #### Build and Run
+
 ```bash
 # Build image
-docker build -t llama-proxy .
+docker build -t llama-proxy:latest .
 
 # Run container
 docker run -d \
   --name llama-proxy \
   -p 3000:3000 \
-  -v $(pwd)/models:/app/models \
+  -v $(pwd)/models:/app/models:ro \
   -v $(pwd)/logs:/app/logs \
-  -e LLAMA_SERVER_HOST=host.docker.internal \
-  llama-proxy
+  -v $(pwd)/llama-server-config.json:/app/llama-server-config.json:ro \
+  -e NODE_ENV=production \
+  -e PORT=3000 \
+  -e WEBSOCKET_PATH=/llamaproxws \
+  llama-proxy:latest
+
+# View logs
+docker logs -f llama-proxy
+
+# Stop container
+docker stop llama-proxy
+
+# Remove container
+docker rm llama-proxy
 ```
 
 ### Podman (Alternative to Docker)
@@ -314,6 +380,9 @@ podman run -d \
   --name llama-proxy \
   --device nvidia.com/gpu=all \
   -p 3000:3000 \
+  -v $(pwd)/models:/app/models:ro \
+  -v $(pwd)/logs:/app/logs \
+  -e NODE_ENV=production \
   llama-proxy
 ```
 
@@ -347,7 +416,8 @@ podman run -d \
        }
      ],
      "env": {
-       "NODE_ENV": "production"
+       "NODE_ENV": "production",
+       "PORT": "3000"
      }
    }
    ```
@@ -355,12 +425,11 @@ podman run -d \
 3. **Environment Variables**
    Set in Vercel dashboard:
    ```
-   LLAMA_SERVER_HOST=your-server-host
-   LLAMA_SERVER_PORT=8134
-   LLAMA_MODELS_DIR=/opt/models
+   WEBSOCKET_PATH=/llamaproxws
+   LOG_LEVEL=info
    ```
 
-**Note**: Vercel deployment is limited for the full-stack application due to server-side requirements. Use for frontend-only or combine with separate backend deployment.
+**Note**: Vercel deployment is limited for full-stack application due to server-side requirements. Use for frontend-only or combine with separate backend deployment.
 
 ### Railway
 
@@ -378,12 +447,14 @@ podman run -d \
    - Set environment variables in Railway dashboard
    - Configure build and start commands
    - Set up persistent volumes for models and logs
+   - Build command: `pnpm build`
+   - Start command: `pnpm start`
 
 ### Render
 
 1. **Create Web Service**
    - Connect GitHub repository
-   - Choose Node.js runtime
+   - Choose Node.js runtime (18+)
 
 2. **Render Configuration**
    ```yaml
@@ -396,8 +467,14 @@ podman run -d \
        envVars:
          - key: NODE_ENV
            value: production
-         - key: LLAMA_SERVER_HOST
-           value: your-server-host
+         - key: PORT
+           value: 3000
+         - key: WEBSOCKET_PATH
+           value: /llamaproxws
+       disk:
+         name: models
+         mountPath: /app/models
+         sizeGB: 100
    ```
 
 ### AWS EC2
@@ -434,7 +511,7 @@ podman run -d \
    # Update system
    sudo apt update && sudo apt upgrade -y
 
-   # Install Node.js
+   # Install Node.js 18
    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
    sudo apt-get install -y nodejs
 
@@ -452,12 +529,7 @@ podman run -d \
    ```
 
 4. **Systemd Service**
-   ```bash
-   sudo nano /etc/systemd/system/llama-proxy.service
-   # Add service configuration from earlier example
-   sudo systemctl enable llama-proxy
-   sudo systemctl start llama-proxy
-   ```
+   Use the systemd configuration from earlier section.
 
 ### Google Cloud Platform
 
@@ -470,7 +542,7 @@ podman run -d \
      --machine-type=n1-standard-4 \
      --network-tier=PREMIUM \
      --maintenance-policy=MIGRATE \
-     --image=ubuntu-2204-jammy-v20231201 \
+     --image=ubuntu-2204-jammy-v20241201 \
      --image-project=ubuntu-os-cloud \
      --boot-disk-size=100GB \
      --boot-disk-type=pd-standard \
@@ -543,11 +615,14 @@ podman run -d \
 ### Kubernetes Manifests
 
 #### Deployment
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: llama-proxy
+  labels:
+    app: llama-proxy
 spec:
   replicas: 2
   selector:
@@ -563,18 +638,31 @@ spec:
         image: llama-proxy:latest
         ports:
         - containerPort: 3000
+          name: http
+        - containerPort: 8134
+          name: llama-server
         env:
         - name: NODE_ENV
           value: "production"
-        - name: LLAMA_SERVER_HOST
-          value: "llama-server"
+        - name: PORT
+          value: "3000"
+        - name: WEBSOCKET_PATH
+          value: "/llamaproxws"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/llama-server-config.json
+          subPath: llama-server-config.json
+        - name: models-volume
+          mountPath: /app/models
+        - name: logs-volume
+          mountPath: /app/logs
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "250m"
+            memory: "1Gi"
+            cpu: "500m"
           limits:
-            memory: "2Gi"
-            cpu: "1000m"
+            memory: "4Gi"
+            cpu: "2000m"
         livenessProbe:
           httpGet:
             path: /api/health
@@ -587,9 +675,20 @@ spec:
             port: 3000
           initialDelaySeconds: 5
           periodSeconds: 5
+      volumes:
+      - name: config-volume
+        configMap:
+          name: llama-proxy-config
+      - name: models-volume
+        persistentVolumeClaim:
+          claimName: models-pvc
+      - name: logs-volume
+        persistentVolumeClaim:
+          claimName: logs-pvc
 ```
 
 #### Service
+
 ```yaml
 apiVersion: v1
 kind: Service
@@ -599,24 +698,38 @@ spec:
   selector:
     app: llama-proxy
   ports:
-  - port: 3000
+  - name: http
+    port: 3000
     targetPort: 3000
+  - name: llama-server
+    port: 8134
+    targetPort: 8134
   type: LoadBalancer
 ```
 
 #### ConfigMap
+
 ```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: llama-proxy-config
 data:
-  LLAMA_SERVER_PORT: "8134"
-  LLAMA_MODELS_DIR: "/models"
-  LOG_LEVEL: "info"
+  llama-server-config.json: |
+    {
+      "host": "localhost",
+      "port": 8134,
+      "basePath": "/models",
+      "serverPath": "/usr/local/bin/llama-server",
+      "ctx_size": 8192,
+      "batch_size": 512,
+      "threads": -1,
+      "gpu_layers": -1
+    }
 ```
 
-#### Persistent Volume
+#### Persistent Volume Claims
+
 ```yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -628,48 +741,18 @@ spec:
   resources:
     requests:
       storage: 100Gi
-```
 
-### Helm Chart
-
-#### Chart Structure
-```
-llama-proxy/
-├── Chart.yaml
-├── values.yaml
-├── templates/
-│   ├── deployment.yaml
-│   ├── service.yaml
-│   ├── configmap.yaml
-│   └── ingress.yaml
-└── charts/
-```
-
-#### values.yaml
-```yaml
-replicaCount: 2
-
-image:
-  repository: llama-proxy
-  tag: latest
-  pullPolicy: IfNotPresent
-
-service:
-  type: ClusterIP
-  port: 3000
-
-config:
-  llamaServerHost: llama-server
-  llamaServerPort: 8134
-  modelsDir: /models
-
-resources:
-  limits:
-    cpu: 1000m
-    memory: 2Gi
-  requests:
-    cpu: 250m
-    memory: 512Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: logs-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
 ```
 
 ## Load Balancing and Scaling
@@ -677,11 +760,13 @@ resources:
 ### Nginx Reverse Proxy
 
 #### Configuration
+
 ```nginx
 upstream llama_proxy_backend {
     server 127.0.0.1:3000;
     server 127.0.0.1:3001;
     server 127.0.0.1:3002;
+    keepalive 32;
 }
 
 server {
@@ -698,21 +783,34 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
+
+        # WebSocket support
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Upgrade $http_upgrade;
+
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
     }
 
     # SSL configuration (recommended)
     listen 443 ssl http2;
     ssl_certificate /path/to/cert.pem;
     ssl_certificate_key /path/to/key.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
 }
 ```
 
 ### HAProxy Load Balancer
 
 #### Configuration
+
 ```haproxy
 frontend llama_proxy_front
     bind *:80
+    bind *:443 ssl crt /path/to/cert.pem
     default_backend llama_proxy_back
 
 backend llama_proxy_back
@@ -720,6 +818,10 @@ backend llama_proxy_back
     server server1 127.0.0.1:3000 check
     server server2 127.0.0.1:3001 check
     server server3 127.0.0.1:3002 check
+
+    # WebSocket support
+    option http-use-htx
+    http-check expect status 200
 ```
 
 ## Monitoring and Observability
@@ -732,17 +834,19 @@ backend llama_proxy_back
 - **Liveness Probe**: Process monitoring
 
 #### Metrics Collection
+
 ```bash
 # Prometheus metrics (if implemented)
-curl http://localhost:3000/api/metrics
+curl http://localhost:3000/api/monitoring
 
 # Application metrics
-curl http://localhost:3000/api/monitoring
+curl http://localhost:3000/api/health
 ```
 
 ### Log Aggregation
 
 #### Centralized Logging
+
 ```bash
 # Using rsyslog
 sudo apt install rsyslog
@@ -764,10 +868,12 @@ sudo systemctl restart rsyslog
 ### Network Security
 
 #### Firewall Configuration
+
 ```bash
 # UFW (Ubuntu)
 sudo ufw allow ssh
 sudo ufw allow 3000
+sudo ufw allow 8134
 sudo ufw --force enable
 
 # iptables
@@ -779,6 +885,7 @@ sudo iptables -P INPUT DROP
 ### SSL/TLS Configuration
 
 #### Let's Encrypt (Certbot)
+
 ```bash
 # Install certbot
 sudo apt install certbot
@@ -794,6 +901,7 @@ sudo crontab -e
 ### Security Headers
 
 #### Nginx Security Headers
+
 ```nginx
 add_header X-Frame-Options "SAMEORIGIN" always;
 add_header X-XSS-Protection "1; mode=block" always;
@@ -805,6 +913,7 @@ add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 
 ## Backup and Recovery
 
 ### Configuration Backup
+
 ```bash
 #!/bin/bash
 # backup.sh
@@ -815,22 +924,24 @@ DATE=$(date +%Y%m%d_%H%M%S)
 mkdir -p $BACKUP_DIR
 
 # Backup configuration
-cp .env.local $BACKUP_DIR/config_$DATE.env
-cp .llama-proxy-config.json $BACKUP_DIR/config_$DATE.json
+cp llama-server-config.json $BACKUP_DIR/config_$DATE.json
+
+# Backup environment files
+cp .env.production $BACKUP_DIR/env_$DATE.env 2>/dev/null
 
 # Backup logs
 tar -czf $BACKUP_DIR/logs_$DATE.tar.gz logs/
-
-# Backup models (optional, can be large)
-# tar -czf $BACKUP_DIR/models_$DATE.tar.gz models/
 
 # Clean old backups (keep last 7 days)
 find $BACKUP_DIR -name "*.tar.gz" -mtime +7 -delete
 find $BACKUP_DIR -name "*.env" -mtime +7 -delete
 find $BACKUP_DIR -name "*.json" -mtime +7 -delete
+
+echo "Backup completed: $BACKUP_DIR/config_$DATE.json"
 ```
 
 ### Automated Backups
+
 ```bash
 # Add to crontab
 crontab -e
@@ -842,6 +953,7 @@ crontab -e
 ### Common Issues
 
 #### Port Conflicts
+
 ```bash
 # Check what's using port 3000
 sudo lsof -i :3000
@@ -852,6 +964,7 @@ sudo kill -9 <PID>
 ```
 
 #### Memory Issues
+
 ```bash
 # Check memory usage
 free -h
@@ -862,14 +975,16 @@ pm2 monit
 ```
 
 #### Permission Issues
+
 ```bash
 # Fix permissions
 sudo chown -R llama-user:llama-user /opt/llama-proxy
 sudo chmod -R 755 /opt/llama-proxy
-sudo chmod 644 /opt/llama-proxy/.env.local
+sudo chmod 644 /opt/llama-proxy/llama-server-config.json
 ```
 
 #### Startup Failures
+
 ```bash
 # Check systemd status
 sudo systemctl status llama-proxy
@@ -884,6 +999,7 @@ pm2 logs llama-proxy
 ### Performance Tuning
 
 #### Node.js Optimization
+
 ```bash
 # Environment variables for performance
 export NODE_ENV=production
@@ -892,6 +1008,7 @@ export NODE_OPTIONS="--max-old-space-size=4096"
 ```
 
 #### System Tuning
+
 ```bash
 # Increase file descriptors
 echo "fs.file-max = 65536" >> /etc/sysctl.conf
@@ -911,10 +1028,10 @@ sudo sysctl -p
    - Update configuration paths
    - Set up proper logging
 
-2. **Database Migration** (if applicable)
-   - Backup existing data
-   - Run migration scripts
-   - Update connection strings
+2. **Configuration Migration**
+   - Backup development `llama-server-config.json`
+   - Update paths for production
+   - Adjust resource limits
 
 3. **Zero-downtime Deployment**
    ```bash
@@ -926,5 +1043,5 @@ sudo sysctl -p
 
 ---
 
-*Deployment Guide - Next.js Llama Async Proxy*
-*Version 0.1.0 - December 26, 2025*
+**Deployment Guide - Next.js Llama Async Proxy**
+**Version 0.1.0 - December 27, 2025**

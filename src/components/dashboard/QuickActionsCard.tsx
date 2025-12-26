@@ -1,67 +1,101 @@
 "use client";
 
-import { Card, CardContent, CardHeader, Typography, Box, Button, Grid } from "@mui/material";
-import { Refresh, RestartAlt, Speed } from "@mui/icons-material";
+import { Card, CardContent, Typography, Box, Grid, Button, Divider } from "@mui/material";
+import { Download, PowerSettingsNew } from "@mui/icons-material";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface QuickActionsCardProps {
-  onRefresh: () => void;
-  onRestart: () => void;
-  onOptimize: () => void;
-  loading?: boolean;
+  isDark: boolean;
+  onDownloadLogs: () => void;
+  onRestartServer: () => void;
+  onStartServer: () => void;
 }
 
-export function QuickActionsCard({ onRefresh, onRestart, onOptimize, loading = false }: QuickActionsCardProps) {
-  const { isDark } = useTheme();
+export function QuickActionsCard({
+  isDark,
+  onDownloadLogs,
+  onRestartServer,
+  onStartServer
+}: QuickActionsCardProps) {
+  const actions = [
+    {
+      icon: <Download />,
+      label: 'Download Logs',
+      description: 'Export system logs',
+      color: 'info',
+      onClick: onDownloadLogs,
+    },
+    {
+      icon: <PowerSettingsNew />,
+      label: 'Restart Server',
+      description: 'Restart llama-server',
+      color: 'warning',
+      onClick: onRestartServer,
+    },
+    {
+      icon: <PowerSettingsNew />,
+      label: 'Start Server',
+      description: 'Start llama-server',
+      color: 'success',
+      onClick: onStartServer,
+    },
+  ];
 
   return (
-    <Card sx={{ 
+    <Card sx={{
       background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
       backdropFilter: 'blur(10px)',
       border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
-      height: '100%'
+      height: '100%',
     }}>
-      <CardHeader 
-        title="Quick Actions"
-        subheader="Common management tasks"
-      />
       <CardContent>
+        <Typography variant="h6" fontWeight="bold" mb={2}>
+          Server Actions
+        </Typography>
+
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <Button
-              fullWidth
-              variant="contained"
-              startIcon={<Refresh />}
-              onClick={onRefresh}
-              disabled={loading}
-              color="primary"
-            >
-              Refresh
-            </Button>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<RestartAlt />}
-              onClick={onRestart}
-              disabled={loading}
-            >
-              Restart Server
-            </Button>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<Speed />}
-              onClick={onOptimize}
-              disabled={loading}
-            >
-              Optimize
-            </Button>
-          </Grid>
+          {actions.map((action, index) => (
+            <Grid size={{ xs: 12 }} key={index}>
+              <Button
+                fullWidth
+                variant={index === 0 ? 'contained' : 'outlined'}
+                color={action.color as any}
+                startIcon={action.icon}
+                onClick={action.onClick}
+                sx={{
+                  justifyContent: 'flex-start',
+                  p: 1.5,
+                  textAlign: 'left',
+                  borderRadius: 2,
+                  background: index === 0 ? 'rgba(59, 130, 246, 0.2)' : undefined,
+                  '&:hover': {
+                    background: index === 0 ? 'rgba(59, 130, 246, 0.3)' : 'rgba(13, 110, 253, 0.1)',
+                  },
+                }}
+              >
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="body1" fontWeight="medium" sx={{ display: 'block', mb: 0.5 }}>
+                    {action.label}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {action.description}
+                  </Typography>
+                </Box>
+              </Button>
+            </Grid>
+          ))}
         </Grid>
+
+        <Divider sx={{ my: 2, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }} />
+
+        <Box sx={{ p: 2, borderRadius: 2, background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(13, 110, 253, 0.1)' }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+            Last Update
+          </Typography>
+          <Typography variant="body2" fontWeight="medium">
+            {new Date().toLocaleString()}
+          </Typography>
+        </Box>
       </CardContent>
     </Card>
   );

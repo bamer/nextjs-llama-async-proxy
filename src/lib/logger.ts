@@ -1,6 +1,5 @@
 import { createLogger, format, transports, Logger } from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
-import { configService } from './config-service';
 
 // Define log levels
 const logLevels = {
@@ -19,7 +18,7 @@ const logFormat = format.combine(
   format.json()
 );
 
-// Logger configuration interface (now synchronized with config-service)
+// Logger configuration interface
 export interface LoggerConfig {
   consoleLevel: 'error' | 'info' | 'warn' | 'debug';
   fileLevel: 'error' | 'info' | 'warn' | 'debug';
@@ -33,7 +32,7 @@ export interface LoggerConfig {
 // Create logger instance
 let logger: Logger;
 
-// Default configuration (used until config-service is loaded)
+// Default configuration
 let currentConfig: LoggerConfig = {
   consoleLevel: 'info',
   fileLevel: 'info',
@@ -44,19 +43,10 @@ let currentConfig: LoggerConfig = {
   enableConsoleLogging: true,
 };
 
-// Synchronize logger config with config-service
-function syncLoggerConfig() {
-  const appConfig = configService.getConfig();
-  if (appConfig.logger) {
-    currentConfig = appConfig.logger;
-  }
-}
-
 /**
- * Initialize logger with configuration (now uses config-service)
+ * Initialize logger with configuration
  */
 export function initLogger(config: Partial<LoggerConfig> = {}): Logger {
-  syncLoggerConfig();
   const mergedConfig = { ...currentConfig, ...config };
   currentConfig = mergedConfig;
   
@@ -170,14 +160,11 @@ export function initLogger(config: Partial<LoggerConfig> = {}): Logger {
  */
 export function updateLoggerConfig(config: Partial<LoggerConfig>): void {
   const newConfig = { ...currentConfig, ...config };
-  
+
   if (JSON.stringify(newConfig) !== JSON.stringify(currentConfig)) {
     currentConfig = newConfig;
     logger?.info('Updating logger configuration:', config);
-    
-    // Also update in config-service
-    configService.updateConfig({ logger: newConfig });
-    
+
     // Reinitialize logger with new configuration
     initLogger(newConfig);
   }
@@ -214,19 +201,3 @@ export const log = {
 
 // Export types
 export type { Logger };
-
-// Apply logger config to server API
-export async function applyToServer() {
-  try {
-    const config = configService.getConfig();
-    if (config.logger) {
-      await fetch('/api/logger/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config.logger),
-      });
-    }
-  } catch (error) {
-    console.error('Failed to apply logger config to server:', error);
-  }
-}

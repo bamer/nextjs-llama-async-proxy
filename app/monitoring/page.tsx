@@ -2,33 +2,19 @@
 
 import { MainLayout } from "@/components/layout/main-layout";
 import { useStore } from "@/lib/store";
-import { useEffect, useState } from "react";
+import { useChartHistory } from '@/hooks/useChartHistory';
+import { useState } from "react";
 import { Card, CardContent, Typography, Box, Grid, LinearProgress, Chip, IconButton, Tooltip, Divider } from "@mui/material";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Refresh, Warning, CheckCircle, Info, Memory, Storage, Timer, NetworkCheck, Computer } from "@mui/icons-material";
-import { LineChart, ChartsXAxis, ChartsYAxis, ChartsGrid, ChartsTooltip } from '@mui/x-charts';
+import { PerformanceChart } from '@/components/charts/PerformanceChart';
+import { GPUUMetricsCard } from '@/components/charts/GPUUMetricsCard';
 
 export default function MonitoringPage() {
   const metrics = useStore((state) => state.metrics);
   const { isDark } = useTheme();
-  const [chartData, setChartData] = useState<any[]>([]);
+  const chartHistory = useChartHistory();
   const [loading, setLoading] = useState(true);
-
-  // Generate chart data
-  useEffect(() => {
-    if (metrics) {
-      const now = Date.now();
-      const newChartData = Array.from({ length: 10 }, (_, i) => ({
-        time: new Date(now - (10 - i) * 60000).toLocaleTimeString(),
-        cpu: Math.max(5, Math.min(95, metrics.cpuUsage + Math.floor(Math.random() * 20) - 10)),
-        memory: Math.max(30, Math.min(90, metrics.memoryUsage + Math.floor(Math.random() * 30) - 15)),
-        requests: Math.max(100, metrics.totalRequests - Math.floor(Math.random() * 200))
-      }));
-      
-      setChartData(newChartData);
-      setLoading(false);
-    }
-  }, [metrics]);
 
   const getStatusColor = (value: number, threshold: number = 80) => {
     if (value > threshold) return 'error';
@@ -40,14 +26,12 @@ export default function MonitoringPage() {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
-    return `${days}d ${hours}h ${mins}m`;
+    return `{days}d {hours}h {mins}m`;
   };
 
   const handleRefresh = () => {
     console.log('Refreshing monitoring data');
-    // In a real app, this would fetch fresh metrics from the server
     if (metrics) {
-      // Simulate data refresh
       const updatedMetrics = {
         ...metrics,
         cpuUsage: Math.max(5, Math.min(95, metrics.cpuUsage + Math.floor(Math.random() * 10) - 5)),
@@ -93,10 +77,10 @@ export default function MonitoringPage() {
         {/* Key Metrics Cards */}
         <Grid container spacing={3} mb={4}>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card sx={{ 
+            <Card sx={{
               background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
               backdropFilter: 'blur(10px)',
-              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`
+              border: `1px solid {isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`
             }}>
               <CardContent>
                 <Box display="flex" alignItems="center" mb={2}>
@@ -106,13 +90,13 @@ export default function MonitoringPage() {
                 <Typography variant="h3" fontWeight="bold" mb={1}>
                   {metrics.memoryUsage}%
                 </Typography>
-                <LinearProgress 
+                <LinearProgress
                   variant="determinate"
                   value={metrics.memoryUsage}
                   color={getStatusColor(metrics.memoryUsage, 85)}
                   sx={{ height: '8px', borderRadius: '4px', mb: 1 }}
                 />
-                <Chip 
+                <Chip
                   label={metrics.memoryUsage > 85 ? 'High' : metrics.memoryUsage > 70 ? 'Medium' : 'Normal'}
                   color={getStatusColor(metrics.memoryUsage, 85) as any}
                   size="small"
@@ -120,12 +104,12 @@ export default function MonitoringPage() {
               </CardContent>
             </Card>
           </Grid>
-          
+
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card sx={{ 
+            <Card sx={{
               background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
               backdropFilter: 'blur(10px)',
-              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`
+              border: `1px solid {isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`
             }}>
               <CardContent>
                 <Box display="flex" alignItems="center" mb={2}>
@@ -135,13 +119,13 @@ export default function MonitoringPage() {
                 <Typography variant="h3" fontWeight="bold" mb={1}>
                   {metrics.cpuUsage}%
                 </Typography>
-                <LinearProgress 
+                <LinearProgress
                   variant="determinate"
                   value={metrics.cpuUsage}
                   color={getStatusColor(metrics.cpuUsage, 90)}
                   sx={{ height: '8px', borderRadius: '4px', mb: 1 }}
                 />
-                <Chip 
+                <Chip
                   label={metrics.cpuUsage > 90 ? 'High' : metrics.cpuUsage > 60 ? 'Medium' : 'Normal'}
                   color={getStatusColor(metrics.cpuUsage, 90) as any}
                   size="small"
@@ -149,12 +133,12 @@ export default function MonitoringPage() {
               </CardContent>
             </Card>
           </Grid>
-          
+
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card sx={{ 
+            <Card sx={{
               background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
               backdropFilter: 'blur(10px)',
-              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`
+              border: `1px solid {isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`
             }}>
               <CardContent>
                 <Box display="flex" alignItems="center" mb={2}>
@@ -164,13 +148,13 @@ export default function MonitoringPage() {
                 <Typography variant="h3" fontWeight="bold" mb={1}>
                   {metrics.diskUsage}%
                 </Typography>
-                <LinearProgress 
+                <LinearProgress
                   variant="determinate"
                   value={metrics.diskUsage}
                   color={getStatusColor(metrics.diskUsage, 95)}
                   sx={{ height: '8px', borderRadius: '4px', mb: 1 }}
                 />
-                <Chip 
+                <Chip
                   label={metrics.diskUsage > 95 ? 'Critical' : metrics.diskUsage > 80 ? 'High' : 'Normal'}
                   color={getStatusColor(metrics.diskUsage, 95) as any}
                   size="small"
@@ -178,29 +162,29 @@ export default function MonitoringPage() {
               </CardContent>
             </Card>
           </Grid>
-          
+
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card sx={{ 
+            <Card sx={{
               background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
               backdropFilter: 'blur(10px)',
-              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`
+              border: `1px solid {isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`
             }}>
               <CardContent>
                 <Box display="flex" alignItems="center" mb={2}>
-                   <NetworkCheck color="info" sx={{ mr: 1, fontSize: '2rem' }} />
-                   <Typography variant="h6" fontWeight="bold">Available Models</Typography>
-                 </Box>
+                  <NetworkCheck color="info" sx={{ mr: 1, fontSize: '2rem' }} />
+                  <Typography variant="h6" fontWeight="bold">Available Models</Typography>
+                </Box>
                 <Typography variant="h3" fontWeight="bold" mb={1}>
                   {metrics.activeModels}
                 </Typography>
-                <LinearProgress 
+                <LinearProgress
                   variant="determinate"
                   value={(metrics.activeModels / 10) * 100}
                   color="info"
                   sx={{ height: '8px', borderRadius: '4px', mb: 1 }}
                 />
-                <Chip 
-                  label={`${metrics.activeModels}/10 models active`}
+                <Chip
+                  label={`{metrics.activeModels}/10 models active`}
                   color="info"
                   size="small"
                 />
@@ -209,39 +193,91 @@ export default function MonitoringPage() {
           </Grid>
         </Grid>
 
-        {/* Performance Charts */}
-         <Card sx={{ mb: 4, background: isDark ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' : 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)', boxShadow: isDark ? '0 8px 30px rgba(0, 0, 0, 0.3)' : '0 8px 30px rgba(0, 0, 0, 0.1)' }}>
-           <CardContent>
-             <Typography variant="h5" fontWeight="bold" mb={3}>
-               Performance Metrics Over Time
-             </Typography>
-             <Box sx={{ height: 400 }}>
-               <LineChart
-                 dataset={chartData}
-                 xAxis={[{ scaleType: 'point', dataKey: 'time' }]}
-                 series={[
-                   { dataKey: 'cpu', label: 'CPU %', area: true, stack: 'total', showMark: false, color: '#3b82f6' },
-                   { dataKey: 'memory', label: 'Memory %', area: true, stack: 'total', showMark: false, color: '#a855f7' },
-                   { dataKey: 'requests', label: 'Requests', area: true, stack: 'total', showMark: false, color: '#22c55e' },
-                 ]}
-                 margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-               >
-                  <ChartsGrid />
-                  <ChartsXAxis tickLabelStyle={{ fill: isDark ? '#cbd5e1' : '#64748b', fontSize: 12 }} />
-                  <ChartsYAxis tickLabelStyle={{ fill: isDark ? '#cbd5e1' : '#64748b', fontSize: 12 }} />
-                 <ChartsTooltip />
-               </LineChart>
-             </Box>
-           </CardContent>
-         </Card>
+        {/* System Performance Chart */}
+        <PerformanceChart
+          title="System Performance"
+          description="CPU, Memory & Requests over time"
+          datasets={[
+            {
+              dataKey: 'cpu',
+              label: 'CPU %',
+              colorDark: '#60a5fa',
+              colorLight: '#2563eb',
+              valueFormatter: (value) => value !== null ? `{value.toFixed(1)}%` : 'N/A',
+              yAxisLabel: '%',
+              data: chartHistory.cpu,
+            },
+            {
+              dataKey: 'memory',
+              label: 'Memory %',
+              colorDark: '#4ade80',
+              colorLight: '#16a34a',
+              valueFormatter: (value) => value !== null ? `{value.toFixed(1)}%` : 'N/A',
+              yAxisLabel: '%',
+              data: chartHistory.memory,
+            },
+            {
+              dataKey: 'requests',
+              label: 'Requests/min',
+              colorDark: '#facc15',
+              colorLight: '#f59e0b',
+              valueFormatter: (value) => value !== null ? String(Math.round(value)) : '0',
+              data: chartHistory.requests,
+            },
+          ]}
+          isDark={isDark}
+          height={400}
+          showAnimation={false}
+          xAxisType="band"
+        />
+
+        {/* GPU Metrics */}
+        {metrics.gpuUsage !== undefined && (
+          <GPUUMetricsCard metrics={metrics} isDark={isDark} />
+        )}
+
+        {/* GPU Power Chart */}
+        {metrics.gpuPowerUsage !== undefined && (
+          <PerformanceChart
+            title="GPU Power & Utilization"
+            description="GPU percentage and power consumption over time"
+            datasets={[
+              {
+                dataKey: 'gpuUtil',
+                label: 'GPU Utilization %',
+                colorDark: '#f472b6',
+                colorLight: '#dc2626',
+                valueFormatter: (value) => value !== null ? `{value.toFixed(1)}%` : 'N/A',
+                yAxisLabel: '%',
+                data: chartHistory.gpuUtil,
+              },
+              {
+                dataKey: 'power',
+                label: 'Power (W)',
+                colorDark: '#fb923c',
+                colorLight: '#f97316',
+                valueFormatter: (value) => value !== null ? `{value.toFixed(1)}W` : 'N/A',
+                yAxisLabel: 'W',
+                data: chartHistory.power,
+              },
+            ]}
+            isDark={isDark}
+            height={250}
+            showAnimation={false}
+            xAxisType="band"
+          />
+        )}
 
         {/* System Health Summary */}
-        <Card sx={{ background: isDark ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' : 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)', boxShadow: isDark ? '0 8px 30px rgba(0, 0, 0, 0.3)' : '0 8px 30px rgba(0, 0, 0, 0.1)' }}>
+        <Card sx={{
+          background: isDark ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' : 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)',
+          boxShadow: isDark ? '0 8px 30px rgba(0, 0, 0, 0.3)' : '0 8px 30px rgba(0, 0, 0, 0.1)'
+        }}>
           <CardContent>
             <Typography variant="h5" fontWeight="bold" mb={3}>
               System Health Summary
             </Typography>
-            
+
             <Grid container spacing={3}>
               <Grid size={{ xs: 12, md: 6 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -258,7 +294,7 @@ export default function MonitoringPage() {
                   </Typography>
                 </Box>
               </Grid>
-              
+
               <Grid size={{ xs: 12, md: 6 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <NetworkCheck color="info" sx={{ mr: 1, fontSize: '1.5rem' }} />
@@ -275,9 +311,9 @@ export default function MonitoringPage() {
                 </Box>
               </Grid>
             </Grid>
-            
-            <Divider sx={{ my: 3, borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' }} />
-            
+
+            <Divider sx={{ my: 3, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }} />
+
             {/* Health Indicators */}
             <Typography variant="h6" fontWeight="bold" mb={2}>
               Health Indicators

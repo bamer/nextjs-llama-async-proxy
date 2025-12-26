@@ -19,12 +19,19 @@ export async function POST(
 
     console.log(`[API] Loading model: ${name}`, body);
 
-    // Get the Llama service from global scope
-    const globalAny = global as unknown as { llamaService: unknown };
-    const llamaService = globalAny.llamaService as {
-      getState: () => { status: string; models?: Array<{ id?: string; name?: string; path?: string }> };
-      config?: { basePath?: string };
+    // Get Llama service from ServiceRegistry
+    const globalAny = global as unknown as { registry: any };
+    const registry = globalAny.registry as {
+      get: (name: string) => {
+        getState: () => {
+          status: string;
+          models?: Array<{ id?: string; name?: string; path?: string; available?: boolean }>;
+        };
+        config?: { basePath?: string };
+      } | null;
     };
+
+    const llamaService = registry?.get("llamaService");
 
     if (!llamaService) {
       console.error("[API] LlamaService not available");
@@ -65,11 +72,27 @@ export async function POST(
       // Find the model in the discovered models to get its full path
       const models = state.models || [];
       const modelData = models.find(
-        (m: { id?: string; name?: string }) => m.id === name || m.name === name
+        (m: { id?: string; name?: string; available?: boolean }) =>
+          m.id === name || m.name === name
       );
 
       // Use model name/alias (not path) - llama.cpp uses the alias from models-dir
       const modelName = modelData?.name || name;
+
+      // Check if model is available before trying to load it
+      if (!modelData?.available) {
+        console.warn(`[API] Model ${name} is not available for loading`);
+        return NextResponse.json(
+          {
+            error: "Model is not available for loading",
+            model: name,
+            status: "unavailable",
+            message:
+              "This model is discovered from filesystem but not known to llama-server. Ensure llama-server is started with correct --models-dir path or restart the application.",
+          },
+          { status: 400 }
+        );
+      }
 
       console.log(`[API] Loading model: ${modelName}`);
 

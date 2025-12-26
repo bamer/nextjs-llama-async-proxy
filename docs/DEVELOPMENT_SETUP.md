@@ -7,11 +7,12 @@ Complete guide for setting up a development environment for the Next.js Llama As
 ### System Requirements
 
 - **Operating System**: Linux, macOS, or Windows (WSL recommended)
-- **Node.js**: Version 18.0 or higher
+- **Node.js**: Version 18.0 or higher (24.11.1 recommended)
 - **Package Manager**: pnpm (recommended), npm, or yarn
 - **Git**: Version control system
 - **RAM**: Minimum 8GB, recommended 16GB+
 - **Storage**: 20GB+ free space for dependencies and models
+- **llama-server binary**: From llama.cpp build
 
 ### Hardware Recommendations
 
@@ -45,7 +46,7 @@ nvm use 18
 nvm alias default 18
 
 # Verify installation
-node --version  # Should show v18.x.x
+node --version  # Should show v18.x.x or higher
 npm --version   # Should show 9.x.x or higher
 ```
 
@@ -75,7 +76,7 @@ choco install nodejs-lts
 npm install -g pnpm
 
 # Verify installation
-pnpm --version  # Should show 8.x.x or higher
+pnpm --version  # Should show 9.x.x or higher
 ```
 
 ### 4. Install Dependencies
@@ -90,7 +91,34 @@ pnpm list
 
 ## Configuration
 
-### 1. Environment Configuration
+### 1. llama-server Configuration
+
+Create `llama-server-config.json` in the project root:
+
+```json
+{
+  "host": "localhost",
+  "port": 8134,
+  "basePath": "/path/to/your/models",
+  "serverPath": "/home/bamer/llama.cpp/build/bin/llama-server",
+  "ctx_size": 8192,
+  "batch_size": 512,
+  "threads": -1,
+  "gpu_layers": -1
+}
+```
+
+**Configuration Fields:**
+- `host`: Llama server host address (default: "localhost")
+- `port`: Llama server port (default: 8134)
+- `basePath`: Directory containing GGUF model files
+- `serverPath`: Full path to llama-server binary
+- `ctx_size`: Context window size (default: 8192)
+- `batch_size`: Processing batch size (default: 512)
+- `threads`: Number of CPU threads (-1 for auto)
+- `gpu_layers`: GPU layers to offload (-1 for all)
+
+### 2. Environment Configuration
 
 Create `.env.local` in the project root:
 
@@ -99,15 +127,8 @@ Create `.env.local` in the project root:
 NODE_ENV=development
 PORT=3000
 
-# Llama Server Configuration
-LLAMA_SERVER_HOST=localhost
-LLAMA_SERVER_PORT=8134
-LLAMA_SERVER_PATH=/usr/local/bin/llama-server
-LLAMA_SERVER_TIMEOUT=30000
-
-# Model Configuration
-LLAMA_MODELS_DIR=./models
-LLAMA_DEFAULT_MODEL=
+# WebSocket Settings
+WEBSOCKET_PATH=/llamaproxws
 
 # Development Settings
 METRICS_INTERVAL=10000
@@ -120,16 +141,16 @@ LOG_COLORS=true
 LOG_VERBOSE=true
 ```
 
-### 2. Llama Server Setup
+### 3. Llama Server Setup
 
-#### Download llama.cpp
+#### Build llama.cpp
 
 ```bash
 # Clone llama.cpp repository
 git clone https://github.com/ggerganov/llama.cpp.git
 cd llama.cpp
 
-# Build llama-server
+# Build llama-server with tsx compatibility
 make server
 
 # Copy binary to system path (optional)
@@ -142,17 +163,17 @@ For easier setup, you can download pre-built binaries:
 
 ```bash
 # Linux
-wget https://github.com/ggerganov/llama.cpp/releases/download/master-abc123/llama-server-linux-x64.zip
+wget https://github.com/ggerganov/llama.cpp/releases/download/master/llama-server-linux-x64.zip
 unzip llama-server-linux-x64.zip
 sudo mv llama-server /usr/local/bin/
 
 # macOS
-wget https://github.com/ggerganov/llama.cpp/releases/download/master-abc123/llama-server-macos-x64.zip
+wget https://github.com/ggerganov/llama.cpp/releases/download/master/llama-server-macos-x64.zip
 unzip llama-server-macos-x64.zip
 sudo mv llama-server /usr/local/bin/
 ```
 
-### 3. Model Setup
+### 4. Model Setup
 
 #### Download Sample Models
 
@@ -176,33 +197,20 @@ models/
 └── ...
 ```
 
-### 4. Application Configuration
-
-Create `.llama-proxy-config.json`:
-
-```json
-{
-  "llama_server_host": "localhost",
-  "llama_server_port": 8134,
-  "llama_server_path": "/usr/local/bin/llama-server",
-  "basePath": "./models",
-  "timeout": 30000,
-  "maxConcurrentModels": 3,
-  "autoDiscovery": true
-}
-```
-
 ## Development Workflow
 
 ### 1. Start Development Server
 
 ```bash
-# Start the development server
+# Start the development server with tsx
 pnpm dev
 
 # Server will start on http://localhost:3000
 # API available at http://localhost:3000/api
+# WebSocket available at ws://localhost:3000/llamaproxws
 ```
+
+**Important**: The development server uses `tsx` for TypeScript runtime execution, not `node server.js`.
 
 ### 2. Development Commands
 
@@ -222,6 +230,9 @@ pnpm test
 # Run tests in watch mode
 pnpm test:watch
 
+# Run tests with coverage
+pnpm test:coverage
+
 # Run linting
 pnpm lint
 
@@ -230,9 +241,6 @@ pnpm lint:fix
 
 # Type checking
 pnpm type:check
-
-# Format code
-pnpm format
 ```
 
 ### 3. Development Tools
@@ -279,6 +287,10 @@ Add to `.vscode/settings.json`:
 
 ## Testing
 
+### Test Coverage
+
+This project has comprehensive test coverage achieving **70%+** threshold.
+
 ### 1. Unit Tests
 
 ```bash
@@ -292,39 +304,32 @@ pnpm test:watch
 pnpm test:coverage
 
 # Run specific test file
-pnpm test -- path/to/test.test.ts
+pnpm test __tests__/lib/server-config.test.ts
 
 # Run tests matching pattern
-pnpm test -- --testNamePattern="should load model"
+pnpm test -- --testNamePattern="should load config"
 ```
 
-### 2. Integration Tests
+### Test Structure
 
-```bash
-# Run integration tests
-pnpm test:integration
-
-# Test API endpoints
-pnpm test -- --testPathPattern=api
+```
+__tests__/
+├── lib/
+│   ├── server-config.test.ts      # Config loading/saving
+│   └── logger.test.ts              # Winston logger
+├── app/api/
+│   └── config/
+│       └── route.test.ts           # Config API
+├── hooks/
+│   └── use-logger-config.test.ts    # Logger config hook
+├── components/configuration/
+│   └── hooks/
+│       └── useConfigurationForm.test.ts  # Settings form
+└── server/
+    └── ServiceRegistry.test.ts     # Service registry
 ```
 
-### 3. E2E Tests
-
-```bash
-# Install Playwright browsers
-npx playwright install
-
-# Run E2E tests
-npx playwright test
-
-# Run tests in UI mode
-npx playwright test --ui
-
-# Generate test
-npx playwright codegen http://localhost:3000
-```
-
-### 4. Manual Testing
+### 2. Manual Testing
 
 #### API Testing
 
@@ -334,16 +339,27 @@ Use tools like Postman, Insomnia, or curl:
 # Test health endpoint
 curl http://localhost:3000/api/health
 
+# Test config endpoint
+curl http://localhost:3000/api/config
+
 # Test models endpoint
 curl http://localhost:3000/api/models
-
-# Test configuration
-curl http://localhost:3000/api/config
 ```
 
 #### WebSocket Testing
 
-Test real-time features using browser developer tools or WebSocket clients.
+Test real-time features using browser developer tools or WebSocket clients:
+
+```javascript
+const io = require('socket.io-client');
+const socket = io('http://localhost:3000', {
+  path: '/llamaproxws'
+});
+
+socket.on('connect', () => console.log('Connected'));
+socket.on('metrics_update', (data) => console.log('Metrics:', data));
+socket.on('disconnect', () => console.log('Disconnected'));
+```
 
 ## Debugging
 
@@ -375,6 +391,7 @@ node --inspect=0.0.0.0:9229 server.js
 - Check Console tab for client-side errors
 - Check Network tab for API requests
 - Use React DevTools for component debugging
+- Check WebSocket connections in Network tab
 
 ### 3. Common Issues
 
@@ -471,48 +488,18 @@ LLAMA_MAIN_GPU=0
 LLAMA_TENSOR_SPLIT=7,7,7,7
 ```
 
-### 2. Multi-Environment Setup
+### 2. Configuration Management
 
-#### Development Environment
+#### Settings Page (Uses API, Not localStorage)
 
-```bash
-# Create development-specific config
-cp .env.local .env.development
-```
+The Settings page now uses the API for configuration management:
 
-#### Testing Environment
+- **GET /api/config**: Read configuration from JSON file
+- **POST /api/config**: Save configuration to JSON file
 
-```bash
-# Create testing environment
-cp .env.local .env.test
-# Modify settings for testing
-```
+Configuration is stored in `llama-server-config.json`, not localStorage.
 
-#### Production Environment
-
-```bash
-# Create production config
-cp .env.local .env.production
-# Modify for production settings
-```
-
-### 3. Database Setup (Future)
-
-If the application adds database support:
-
-```bash
-# Install database
-# PostgreSQL example
-sudo apt install postgresql
-
-# Create database
-createdb llama_proxy_dev
-
-# Run migrations (when implemented)
-pnpm db:migrate
-```
-
-### 4. Docker Development
+### 3. Docker Development
 
 #### Development Dockerfile
 
@@ -550,6 +537,8 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
+      - PORT=3000
+      - WEBSOCKET_PATH=/llamaproxws
     command: pnpm dev
 
   llama-server:
@@ -605,55 +594,12 @@ git commit -m "refactor: simplify config management"
 
 ### 4. Code Review Checklist
 
-- [ ] Tests pass
+- [ ] Tests pass (70%+ coverage)
 - [ ] Code is linted
 - [ ] TypeScript types are correct
 - [ ] Documentation is updated
 - [ ] Breaking changes are documented
 - [ ] Performance impact is considered
-
-## Performance Optimization
-
-### 1. Development Performance
-
-#### Fast Refresh
-
-Next.js Fast Refresh is enabled by default for instant updates.
-
-#### Build Optimization
-
-```javascript
-// next.config.ts
-module.exports = {
-  swcMinify: true,
-  experimental: {
-    optimizeCss: true,
-    scrollRestoration: true,
-  },
-};
-```
-
-### 2. Bundle Analysis
-
-```bash
-# Analyze bundle size
-pnpm build
-npx @next/bundle-analyzer
-
-# Or use webpack-bundle-analyzer
-pnpm add -D webpack-bundle-analyzer
-```
-
-### 3. Memory Optimization
-
-```bash
-# Monitor memory usage
-node --max-old-space-size=4096 server.js
-
-# Use clinic.js for profiling
-npm install -g clinic
-clinic doctor -- pnpm dev
-```
 
 ## Troubleshooting
 
@@ -699,18 +645,15 @@ kill -9 <PID>
 PORT=3001 pnpm dev
 ```
 
-#### 4. Memory Issues
+#### 4. Configuration Issues
 
-**Issue**: Out of memory during build
+**Issue**: Configuration not loading or saving
 
 **Solutions**:
-```bash
-# Increase Node.js memory limit
-NODE_OPTIONS="--max-old-space-size=4096" pnpm build
-
-# Or add to package.json scripts
-"build": "NODE_OPTIONS='--max-old-space-size=4096' next build"
-```
+- Verify `llama-server-config.json` exists in project root
+- Check JSON syntax is valid
+- Ensure file permissions allow reading/writing
+- Check server logs for error messages
 
 #### 5. TypeScript Errors
 
@@ -721,8 +664,8 @@ NODE_OPTIONS="--max-old-space-size=4096" pnpm build
 # Check specific file
 pnpm type:check -- --noEmit src/components/Example.tsx
 
-# Generate types (if applicable)
-pnpm type:gen
+# Check all types
+pnpm type:check
 ```
 
 ### Getting Help
@@ -745,5 +688,5 @@ pnpm type:gen
 
 ---
 
-*Development Setup Guide - Next.js Llama Async Proxy*
-*Version 0.1.0 - December 26, 2025*
+**Development Setup Guide - Next.js Llama Async Proxy**
+**Version 0.1.0 - December 27, 2025**

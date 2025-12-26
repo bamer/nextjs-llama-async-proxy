@@ -1,24 +1,19 @@
-# Llama Runner Async Proxy
+# Next.js Llama Async Proxy
 
-A modern, elegant web interface for managing Llama models with Ollama and LMStudio support. Built with Next.js 16, React 19, TypeScript, and Tailwind CSS.
-
-## ⚠️ SECURITY WARNING
-
-**🔓 THIS PROJECT IS INTENTIONALLY WITHOUT AUTHENTICATION**
-
-This system is designed for **public access** without authentication mechanisms. All endpoints (WebSocket, SSE, API) are open and accessible without credentials. This is integral to the architectural design.
-
-📄 [Read the complete security document](SECURITY_NOTICE.md)
+A modern web interface for managing Llama AI models through llama-server integration. Built with Next.js 16, React 19.2, TypeScript, and Socket.IO.
 
 ## 🚀 Features
 
-- **Real-time Dashboard**: Metrics, performance graphs, live activity
-- **Model Management**: Automatic discovery, management, and monitoring
-- **Colored Logs**: Log system with distinct color levels
-- **Modern Theme**: Dark/light design with smooth animations and 3D effects
+- **Real-time Dashboard**: Live metrics, performance graphs, and activity monitoring
+- **Model Management**: Automatic model discovery, loading, and lifecycle management
+- **Colored Logs**: Comprehensive log system with distinct color levels
+- **Modern Theme**: Dark/light mode with smooth animations and 3D effects
 - **REST API**: Complete endpoints for model management and configuration
-- **WebSocket**: Real-time communication for metrics and logs
-- **Socket.IO Integration**: Robust real-time data streaming
+- **WebSocket**: Real-time communication for metrics, logs, and status updates
+- **Socket.IO Integration**: Robust bidirectional real-time data streaming
+- **Configuration Management**: JSON-based configuration with API persistence
+- **Type-Safe**: Full TypeScript implementation with strict mode
+- **Comprehensive Tests**: Jest test suite with 70%+ coverage
 
 ## 🏗️ Architecture
 
@@ -26,17 +21,33 @@ See **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** for complete system architecture
 
 ### Technology Stack
 
-- **Frontend**: Next.js 16 (App Router), React 19, TypeScript
-- **Styling**: Tailwind CSS v4, Emotion, Material-UI v7
-- **Real-time**: Socket.IO + WebSocket, Server-Sent Events (SSE)
-- **Forms & Validation**: React Hook Form, Zod
-- **Charts**: Recharts, MUI X-Charts
-- **State Management**: Zustand, React Query
-- **Server**: Express.js, Node.js
-- **Package Manager**: pnpm (required)
-- **Build**: Turbopack (Next.js built-in)
-- **Testing**: Jest, React Testing Library
-- **Logging**: Winston
+#### Frontend
+- **Next.js 16.1.0** - App Router with Server Components
+- **React 19.2.3** - Latest React features
+- **TypeScript 5.9.3** - Strict mode enabled
+- **MUI v7.3.6** - UI components (@mui/material-nextjs)
+- **@mui/x-charts v8.23.0** - Charts and data visualization
+- **Tailwind CSS v4** - Utility-first styling
+- **Framer Motion** - Animation library with LazyMotion optimization
+- **Zustand v5.0.9** - Client state management
+- **@tanstack/react-query v5** - Server state management
+- **Socket.IO Client v4.8.1** - Real-time communication
+- **React Hook Form v7.69.0** - Form handling
+- **Zod v4.2.1** - Runtime validation
+
+#### Backend/Server
+- **Express 5.2.1** - HTTP server wrapper
+- **Socket.IO Server v4.8.1** - WebSocket server
+- **tsx 4.21.0** - TypeScript runtime for server
+- **Node.js 24.11.1** - Runtime environment
+- **Winston 3.19.0** - Logging with winston-daily-rotate-file
+- **Axios 1.13.2** - HTTP client
+
+#### Development
+- **Jest 30.2.0** - Testing framework
+- **ts-jest 29.4.6** - TypeScript Jest preset
+- **ESLint 9.39.2** - Linting
+- **pnpm** - Package manager
 
 ## 🛠️ Installation & Development
 
@@ -46,16 +57,32 @@ See **[DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md)** for complete developme
 
 - **Node.js 18+** (required)
 - **pnpm 9+** (required - not npm or yarn)
+- **llama-server binary** - Available on your system
 
 ### Quick Start
 
 ```bash
-# Clone the repository
+# Clone repository
 git clone <repository-url>
 cd nextjs-llama-async-proxy
 
 # Install dependencies with pnpm
 pnpm install
+
+# Configure llama-server
+# Create llama-server-config.json in project root:
+cat > llama-server-config.json << EOF
+{
+  "host": "localhost",
+  "port": 8134,
+  "basePath": "/path/to/your/models",
+  "serverPath": "/path/to/llama-server",
+  "ctx_size": 8192,
+  "batch_size": 512,
+  "threads": -1,
+  "gpu_layers": -1
+}
+EOF
 
 # Start development server
 pnpm dev
@@ -63,105 +90,149 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 📋 Configuration (Important)
+### Configuration
 
-Before starting the application, create `.llama-proxy-config.json`:
+The application uses **`llama-server-config.json`** for configuration (not localStorage):
 
 ```json
 {
-  "llama_server_host": "localhost",
-  "llama_server_port": 8134,
-  "llama_server_path": "/path/to/llama-server",
-  "basePath": "./models"
+  "host": "localhost",
+  "port": 8134,
+  "basePath": "/media/bamer/crucial MX300/llm/llama/models",
+  "serverPath": "/home/bamer/llama.cpp/build/bin/llama-server",
+  "ctx_size": 8192,
+  "batch_size": 512,
+  "threads": -1,
+  "gpu_layers": -1
 }
 ```
 
-**Key Points:**
-- `llama_server_path`: Full path to llama-server binary
-- `basePath`: Directory containing your GGUF model files
-- **DO NOT** specify `llama_model_path` (removed to fix startup crashes)
-
-The application now starts llama-server **without** loading a model, then auto-discovers available models from the `basePath` directory.
-
-👉 **See [LLAMA_STARTUP_GUIDE.md](LLAMA_STARTUP_GUIDE.md) for complete setup instructions.**
+**Key Configuration Fields:**
+- `host`: Llama server host address
+- `port`: Llama server port
+- `basePath`: Directory containing GGUF model files
+- `serverPath`: Full path to llama-server binary
+- `ctx_size`: Context window size (default: 8192)
+- `batch_size`: Processing batch size (default: 512)
+- `threads`: Number of CPU threads (-1 for auto)
+- `gpu_layers`: GPU layers to offload (-1 for all)
 
 ### Available Scripts
 
 ```bash
 # Development
-pnpm dev              # Start dev server (Next.js + Express + Socket.IO)
+pnpm dev              # Start dev server with tsx
 pnpm dev:debug       # Development with debug logging
 
 # Build & Production
-pnpm build           # Build for production
-pnpm start           # Start production server
+pnpm build           # Production build (Turbopack)
+pnpm start           # Start production server with tsx
 
 # Testing
-pnpm test            # Run Jest tests
+pnpm test            # Run all Jest tests
 pnpm test:watch      # Run tests in watch mode
-pnpm test:coverage   # Run tests with coverage report
+pnpm test:coverage   # Generate coverage report (70% threshold)
 
 # Linting & Type Checking
 pnpm lint            # Run ESLint
 pnpm lint:fix        # Auto-fix linting issues
-pnpm type:check      # Type check with TypeScript
-
-# Other
-pnpm format          # Format code (if available)
+pnpm type:check      # TypeScript type check (tsc --noEmit)
 ```
 
 ## 📊 API Overview
 
-See **[API_REFERENCE.md](docs/API_REFERENCE.md)** for complete API documentation including REST endpoints, WebSocket events, and examples.
+See **[API_REFERENCE.md](docs/API_REFERENCE.md)** for complete API documentation.
 
 ### Quick API Reference
 
-### Models Management
+#### Configuration
+- `GET /api/config` - Get current configuration
+- `POST /api/config` - Save/update configuration
+
+#### Models
 - `GET /api/models` - List registered models
 - `POST /api/models` - Register new models
 - `POST /api/models/discover` - Automatic model discovery
-- `DELETE /api/models/:id` - Remove a model
 
-### Configuration
-- `GET /api/config` - Get application configuration
-- `POST /api/config` - Update configuration
+#### Health
+- `GET /api/health` - Health check
 
-### Monitoring
-- `GET /api/monitoring` - Performance metrics
-- `GET /api/monitoring/history` - Metrics history
+#### Llama Server Control
+- Various endpoints for controlling llama-server process
 
 ### Real-time Communication
-- **WebSocket** (`/socket.io`): Socket.IO for metrics, models, logs
-- **SSE** (`/api/sse`): Server-Sent Events endpoint
+
+- **WebSocket**: `ws://localhost:3000/llamaproxws`
+- **Socket.IO**: `/socket.io` namespace
+- **Path**: `/llamaproxws`
+- **Host**: `localhost:3000` (default, configurable via PORT env var)
 
 ## 🎨 User Interface
 
-See **[USER_GUIDE.md](docs/USER_GUIDE.md)** for complete user manual including workflows, interface guide, and advanced usage.
+See **[USER_GUIDE.md](docs/USER_GUIDE.md)** for complete user manual.
 
-### Interface Overview
+### Pages
 
 - **Dashboard** - Real-time metrics and system overview
 - **Models** - Model discovery, loading, and management
 - **Monitoring** - Performance charts and analytics
 - **Logs** - Real-time log streaming with filtering
-- **Settings** - Configuration and preferences
+- **Settings** - Configuration management (uses API, not localStorage)
 
 ### Key Features
 
-- **Dark/Light Mode**: Automatic theme switching
-- **Real-time Updates**: Live metrics and status updates
+- **Dark/Light Mode**: Automatic theme switching with MUI v7
+- **Real-time Updates**: Live metrics via WebSocket
 - **Responsive Design**: Mobile-first approach
-- **Smooth Animations**: Framer Motion with LazyMotion optimization
+- **Smooth Animations**: Framer Motion with LazyMotion
 - **Accessibility**: High contrast, keyboard navigation
+
+## 🧪 Testing
+
+Comprehensive test suite achieving 70%+ coverage:
+
+### Test Structure
+```
+__tests__/
+├── lib/
+│   ├── server-config.test.ts      # Config loading/saving
+│   └── logger.test.ts              # Winston logger
+├── app/api/
+│   └── config/
+│       └── route.test.ts           # Config API
+├── hooks/
+│   └── use-logger-config.test.ts    # Logger config hook
+├── components/configuration/
+│   └── hooks/
+│       └── useConfigurationForm.test.ts  # Settings form
+└── server/
+    └── ServiceRegistry.test.ts     # Service registry
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+pnpm test
+
+# Watch mode
+pnpm test:watch
+
+# Coverage report
+pnpm test:coverage
+
+# Run specific test file
+pnpm test __tests__/lib/server-config.test.ts
+```
 
 ## 🚀 Deployment
 
-See **[DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)** for comprehensive deployment instructions including Docker, cloud platforms, and production setup.
+See **[DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)** for comprehensive deployment instructions.
 
 ### Quick Production Setup
 
 ```bash
-# Build the application
+# Build application
 pnpm build
 
 # Start production server
@@ -170,76 +241,136 @@ pnpm start
 
 ### Environment Variables
 
-Create a `.env.local` file in the project root:
-
 ```env
-# Frontend
-NEXT_PUBLIC_WS_URL=ws://localhost:3000
-NEXT_PUBLIC_API_BASE_URL=http://localhost:3000/api
-
-# Backend (optional)
+# Application
 NODE_ENV=production
 PORT=3000
+
+# Development
+pnpm dev              # Uses tsx for TypeScript execution
 ```
 
 ### Supported Platforms
 
 - **Docker** - Containerized deployment
-- **Vercel** - Serverless deployment
+- **Vercel** - Serverless deployment (frontend only)
 - **Railway** - Cloud platform
 - **AWS/GCP/Azure** - Cloud infrastructure
 - **Self-hosted** - Traditional server deployment
+
+## 📁 Project Structure
+
+```
+nextjs-llama-async-proxy/
+├── app/                          # Next.js App Router
+│   ├── api/                     # API routes
+│   │   ├── config/             # Configuration API (GET/POST)
+│   │   ├── llama-server/        # Llama server control
+│   │   ├── models/             # Model management
+│   │   ├── logger/             # Logger config
+│   │   └── health/            # Health checks
+│   ├── dashboard/              # Dashboard page
+│   ├── settings/               # Settings page
+│   ├── models/                # Models page
+│   ├── monitoring/             # Monitoring page
+│   ├── logs/                 # Logs page
+│   └── layout.tsx            # Root layout
+├── src/
+│   ├── components/            # React components
+│   │   ├── dashboard/        # Dashboard-specific
+│   │   ├── configuration/    # Settings components
+│   │   ├── layout/           # Layout components
+│   │   └── ui/              # Reusable UI
+│   ├── hooks/                # Custom React hooks
+│   │   ├── use-api.ts       # React Query integration
+│   │   ├── use-websocket.ts  # WebSocket hook
+│   │   └── use-logger-config.ts
+│   ├── lib/                  # Utilities and services
+│   │   ├── server-config.ts # Config service (TypeScript ESM)
+│   │   ├── logger.ts        # Winston logger
+│   │   └── analytics.ts     # Analytics
+│   ├── services/             # Client-side services
+│   │   └── api-service.ts  # API service layer
+│   ├── server/              # Server-side code
+│   │   ├── services/        # Llama integration
+│   │   │   ├── LlamaService.ts
+│   │   │   ├── LlamaServerIntegration.ts
+│   │   │   └── ServiceRegistry.ts
+│   ├── contexts/            # React contexts
+│   │   └── ThemeContext.tsx
+│   ├── types/              # TypeScript definitions
+│   └── utils/              # Utility functions
+│       └── api-client.ts    # Axios wrapper
+├── __tests__/              # Test files (Jest)
+│   ├── lib/
+│   ├── app/api/
+│   ├── hooks/
+│   ├── components/
+│   └── server/
+├── docs/                  # Documentation
+├── public/                # Static assets
+├── server.js              # Express + Socket.IO server entry point
+├── llama-server-config.json # Configuration file
+└── [config files]        # Build and development configuration
+```
 
 ## 🤝 Contributing
 
 ### Development Guidelines
 
-See [AGENTS.md](AGENTS.md) for detailed coding guidelines, including:
-- Code style conventions
-- TypeScript requirements
-- Import ordering
-- Testing expectations
+See [AGENTS.md](AGENTS.md) for detailed coding guidelines.
 
 ### Project Standards
 
-- **TypeScript**: Strict mode enabled
+- **TypeScript**: Strict mode enabled, interfaces over type aliases
 - **Formatting**: 2 spaces, double quotes, 100-char line width
 - **Linting**: ESLint with auto-fix support
 - **React**: Functional components with hooks only
-- **Testing**: Jest + React Testing Library
+- **Testing**: Jest + React Testing Library, 70%+ coverage
+- **MUI v7**: Use `size` prop instead of `item` on Grid
+
+### Import Order
+
+```typescript
+// 1. Builtin
+import { useState, useEffect } from "react";
+
+// 2. External
+import { Box, Button } from "@mui/material";
+
+// 3. Internal (@/ imports)
+import { useApi } from "@/hooks/use-api";
+import { logger } from "@/lib/logger";
+```
 
 ## 📝 Documentation
 
-### 📚 Complete Documentation Suite
+### Complete Documentation Suite
 
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture and design
 - **[API_REFERENCE.md](docs/API_REFERENCE.md)** - Complete API documentation
 - **[USER_GUIDE.md](docs/USER_GUIDE.md)** - User manual and workflows
 - **[DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)** - Deployment and production setup
 - **[DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md)** - Development environment setup
+- **[ANIMATION_ARCHITECTURE.md](docs/ANIMATION_ARCHITECTURE.md)** - Animation system design
 
-### 🛠️ Development & Configuration
+### Development & Configuration
 
 - [AGENTS.md](AGENTS.md) - Coding guidelines & project standards
-- [CONFIGURATION.md](CONFIGURATION.md) - Configuration options
-- [docs/ANIMATION_ARCHITECTURE.md](docs/ANIMATION_ARCHITECTURE.md) - Animation system design
-
-### 🔒 Security & Operations
-
-- [SECURITY_NOTICE.md](SECURITY_NOTICE.md) - Security considerations
-- [PRODUCTION_SETUP.md](PRODUCTION_SETUP.md) - Production deployment guide
-- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues & solutions
+- [README.md](README.md) - Project overview and quick start
 
 ## 🔗 Resources
 
-- [Next.js Documentation](https://nextjs.org/docs)
-- [React Documentation](https://react.dev)
+- [Next.js 16 Documentation](https://nextjs.org/docs)
+- [React 19 Documentation](https://react.dev)
 - [TypeScript Handbook](https://www.typescriptlang.org/docs)
-- [Tailwind CSS](https://tailwindcss.com)
+- [Tailwind CSS v4](https://tailwindcss.com)
 - [Socket.IO Documentation](https://socket.io/docs)
+- [MUI v7 Documentation](https://mui.com/)
 - [Zod Validation](https://zod.dev)
 - [Zustand State Management](https://github.com/pmndrs/zustand)
 - [pnpm Package Manager](https://pnpm.io)
+- [llama.cpp](https://github.com/ggerganov/llama.cpp)
 
 ## 📄 License
 
@@ -248,7 +379,12 @@ MIT - See LICENSE file for details
 ## 🆘 Support
 
 For issues, questions, or contributions:
-1. Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
-2. Review existing GitHub issues
+1. Check existing documentation
+2. Review test files for implementation examples
 3. Create a new issue with detailed information
-4. Check the security notice before reporting security issues
+4. Follow coding guidelines in AGENTS.md
+
+---
+
+**Next.js Llama Async Proxy** - Version 0.1.0
+**Last Updated**: December 27, 2025

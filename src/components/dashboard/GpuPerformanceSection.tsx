@@ -1,110 +1,82 @@
-'use client';
+"use client";
 
-import { Box, Typography, Grid } from "@mui/material";
-import { m } from "framer-motion";
-import { GpuMetricsCard } from "./GpuMetricsCard";
+import { Box, Typography } from "@mui/material";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface GpuPerformanceSectionProps {
-  gpuUsage: number;
-  gpuName?: string;
-  gpuMemoryUsed?: number;
-  gpuMemoryTotal?: number;
-  gpuMemoryUsage: number;
-  gpuPowerUsage: number;
-  gpuPowerLimit: number;
-  gpuTemperature: number;
+  gpuAvailable?: boolean;
+  metrics?: {
+    gpuUsage?: number;
+    gpuName?: string;
+    gpuMemoryUsed?: number;
+    gpuMemoryTotal?: number;
+    gpuMemoryUsage?: number;
+    gpuPowerUsage?: number;
+    gpuPowerLimit?: number;
+    gpuTemperature?: number;
+  };
+  isDark: boolean;
 }
 
-export function GpuPerformanceSection(
-  props: GpuPerformanceSectionProps
-): React.ReactNode {
-  const { isDark } = useTheme();
+export function GpuPerformanceSection({
+  gpuAvailable = false,
+  metrics,
+  isDark
+}: GpuPerformanceSectionProps) {
+  if (!gpuAvailable) {
+    return (
+      <Box
+        sx={{
+          p: 3,
+          background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
+          backdropFilter: 'blur(10px)',
+          border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
+          borderRadius: 2,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <Typography variant="h6" fontWeight="bold" mb={3}>
+          GPU Performance
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          GPU monitoring requires NVIDIA or AMD GPU with monitoring support.
+        </Typography>
+      </Box>
+    );
+  }
 
-  const getTemperatureColor = (temp: number) => {
-    if (temp > 85) return "error";
-    if (temp > 70) return "warning";
-    return "success";
-  };
-
-  const getTemperatureStatus = (temp: number) => {
-    if (temp < 60) return "Normal";
-    if (temp < 80) return "Warm";
-    return "Hot";
-  };
+  const gpuUsage = metrics?.gpuUsage || 0;
+  const gpuName = metrics?.gpuName || 'NVIDIA GPU';
+  const gpuMemoryUsed = metrics?.gpuMemoryUsed || 0;
+  const gpuMemoryTotal = metrics?.gpuMemoryTotal || 8;
+  const gpuMemoryUsage = metrics?.gpuMemoryUsage || 0;
+  const gpuPowerUsage = metrics?.gpuPowerUsage || 0;
+  const gpuPowerLimit = metrics?.gpuPowerLimit || 0;
+  const gpuTemperature = metrics?.gpuTemperature || 0;
 
   return (
-    <m.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.3, duration: 0.5 }}
+    <Box
+      sx={{
+        p: 3,
+        background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
+        backdropFilter: 'blur(10px)',
+        border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
+        borderRadius: 2,
+      }}
     >
-      <Typography variant="h5" fontWeight="bold" mb={3}>
+      <Typography variant="h6" fontWeight="bold" mb={3}>
         GPU Performance
       </Typography>
-      <Grid container spacing={3} mb={4}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <GpuMetricsCard
-            label="GPU Usage"
-            value={props.gpuUsage.toString()}
-            unit="%"
-            percentage={props.gpuUsage}
-            color={
-              props.gpuUsage > 80
-                ? "error"
-                : props.gpuUsage > 60
-                  ? "warning"
-                  : "success"
-            }
-            subtext={props.gpuName || "GPU"}
-          />
-        </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <GpuMetricsCard
-            label="GPU Memory"
-            value={`${props.gpuMemoryUsed ? (props.gpuMemoryUsed / 1024).toFixed(1) : "0"} / ${props.gpuMemoryTotal ? (props.gpuMemoryTotal / 1024).toFixed(1) : "0"}`}
-            unit="GB"
-            percentage={props.gpuMemoryUsage || 0}
-            color={
-              (props.gpuMemoryUsage || 0) > 90
-                ? "error"
-                : (props.gpuMemoryUsage || 0) > 70
-                  ? "warning"
-                  : "success"
-            }
-            subtext={`${props.gpuMemoryUsage}% used`}
-          />
-        </Grid>
-
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <GpuMetricsCard
-            label="GPU Power"
-            value={`${props.gpuPowerUsage} / ${props.gpuPowerLimit}`}
-            unit="W"
-            percentage={((props.gpuPowerUsage ?? 0) / (props.gpuPowerLimit ?? 1)) * 100}
-            color={
-              (props.gpuPowerUsage ?? 0) / (props.gpuPowerLimit ?? 1) > 0.9
-                ? "error"
-                : (props.gpuPowerUsage ?? 0) / (props.gpuPowerLimit ?? 1) > 0.7
-                  ? "warning"
-                  : "success"
-            }
-            subtext={`${(((props.gpuPowerUsage ?? 0) / (props.gpuPowerLimit ?? 1)) * 100).toFixed(1)}% of limit`}
-          />
-        </Grid>
-
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <GpuMetricsCard
-            label="GPU Temperature"
-            value={props.gpuTemperature.toString()}
-            unit="°C"
-            percentage={props.gpuTemperature || 0}
-            color={getTemperatureColor(props.gpuTemperature)}
-            subtext={getTemperatureStatus(props.gpuTemperature || 0)}
-          />
-        </Grid>
-      </Grid>
-    </m.div>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'center' }}>
+        <Typography variant="body2" color="text.secondary">
+          {gpuName}
+        </Typography>
+      </Box>
+    </Box>
   );
 }

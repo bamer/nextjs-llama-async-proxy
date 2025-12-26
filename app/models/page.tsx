@@ -38,8 +38,19 @@ export default function ModelsPage() {
     };
   }, []);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
+  const normalizeStatus = (status: string | { value?: string; args?: unknown; preset?: unknown } | unknown): string => {
+    if (typeof status === 'string') {
+      return status;
+    }
+    if (status && typeof status === 'object' && 'value' in status && typeof status.value === 'string') {
+      return status.value;
+    }
+    return 'idle';
+  };
+
+  const getStatusColor = (status: string | { value?: string; args?: unknown; preset?: unknown } | unknown) => {
+    const normalized = normalizeStatus(status);
+    switch (normalized) {
       case 'running': return 'success';
       case 'loading': return 'warning';
       case 'error': return 'error';
@@ -204,8 +215,8 @@ export default function ModelsPage() {
                     <Typography variant="subtitle1" fontWeight="medium">
                       {model.name}
                     </Typography>
-                    <Chip 
-                      label={model.status}
+                    <Chip
+                      label={normalizeStatus(model.status)}
                       color={getStatusColor(model.status) as 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'}
                       size="small"
                       variant="filled"
@@ -219,14 +230,14 @@ export default function ModelsPage() {
                       Created: {new Date(model.createdAt).toLocaleDateString()}
                     </Typography>
                   </Box>
-                  <LinearProgress 
+                  <LinearProgress
                     variant="determinate"
-                    value={model.status === 'running' ? 100 : model.status === 'loading' ? 50 : 0}
+                    value={normalizeStatus(model.status) === 'running' ? 100 : normalizeStatus(model.status) === 'loading' ? 50 : 0}
                     color={getStatusColor(model.status) as 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' | 'inherit'}
                     sx={{ height: '4px', borderRadius: '2px', mb: 2 }}
                   />
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-                    {model.status === 'running' ? (
+                    {normalizeStatus(model.status) === 'running' ? (
                       <Button 
                         variant="outlined"
                         color="error"

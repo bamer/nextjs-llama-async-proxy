@@ -30,6 +30,7 @@ export class LlamaServerIntegration {
   private metricsInterval: NodeJS.Timeout | null = null;
   private totalRequests: number = 0;
   private responseTimes: number[] = [];
+  private currentConfig: LlamaServerConfig | null = null;
 
   constructor(io: Server) {
     this.io = io;
@@ -37,6 +38,7 @@ export class LlamaServerIntegration {
 
   async initialize(config: LlamaServerConfig): Promise<void> {
     try {
+      this.currentConfig = config;
       this.llamaService = new LlamaService(config);
 
       this.llamaService.onStateChange((state) => {
@@ -65,7 +67,11 @@ export class LlamaServerIntegration {
           id: m.id || m.name,
           name: m.name,
           type: m.type || "unknown",
-          status: "available",
+          status: typeof m.status === 'string'
+            ? (m.status === 'loaded' ? 'running' : m.status)
+            : (m.status && typeof m.status === 'object' && 'value' in m.status
+              ? (m.status.value === 'loaded' ? 'running' : m.status.value)
+              : 'idle'),
           size: m.size,
           createdAt: new Date(m.modified_at * 1000).toISOString(),
           updatedAt: new Date(m.modified_at * 1000).toISOString(),
@@ -74,19 +80,23 @@ export class LlamaServerIntegration {
       timestamp: Date.now(),
     });
 
-    this.io.emit("models", {
-      type: "models",
-      data: state.models.map((m: LlamaModel) => ({
-        id: m.id || m.name,
-        name: m.name,
-        type: m.type || "unknown",
-        status: "available",
-        size: m.size,
-        createdAt: new Date(m.modified_at * 1000).toISOString(),
-        updatedAt: new Date(m.modified_at * 1000).toISOString(),
-      })),
-      timestamp: Date.now(),
-    });
+      this.io.emit("models", {
+        type: "models",
+        data: state.models.map((m: LlamaModel) => ({
+          id: m.id || m.name,
+          name: m.name,
+          type: m.type || "unknown",
+          status: typeof m.status === 'string'
+            ? (m.status === 'loaded' ? 'running' : m.status)
+            : (m.status && typeof m.status === 'object' && 'value' in m.status
+              ? (m.status.value === 'loaded' ? 'running' : m.status.value)
+              : 'idle'),
+          size: m.size,
+          createdAt: new Date(m.modified_at * 1000).toISOString(),
+          updatedAt: new Date(m.modified_at * 1000).toISOString(),
+        })),
+        timestamp: Date.now(),
+      });
   }
 
   private startMetricsBroadcast(): void {
@@ -190,7 +200,11 @@ export class LlamaServerIntegration {
             id: m.id || m.name,
             name: m.name,
             type: m.type || "unknown",
-            status: "available",
+            status: typeof m.status === 'string'
+              ? (m.status === 'loaded' ? 'running' : m.status)
+              : (m.status && typeof m.status === 'object' && 'value' in m.status
+                ? (m.status.value === 'loaded' ? 'running' : m.status.value)
+                : 'idle'),
             size: m.size,
             createdAt: new Date(m.modified_at * 1000).toISOString(),
             updatedAt: new Date(m.modified_at * 1000).toISOString(),
@@ -212,6 +226,29 @@ export class LlamaServerIntegration {
           },
           timestamp: Date.now(),
         });
+      }
+    });
+
+    socket.on("rescanModels", async () => {
+      console.log("[WS] Rescan models request received");
+      if (this.llamaService && this.currentConfig) {
+        try {
+          await this.llamaService.stop();
+          await this.llamaService.start();
+          console.log("[WS] ✅ Models rescanned successfully");
+          socket.emit("llamaStatus", {
+            type: "status",
+            data: { message: "Models rescanned successfully" },
+            timestamp: Date.now(),
+          });
+        } catch (error) {
+          console.error("[WS] ❌ Failed to rescan models:", error);
+          socket.emit("llamaStatus", {
+            type: "error",
+            data: { error: "Failed to rescan models" },
+            timestamp: Date.now(),
+          });
+        }
       }
     });
 
@@ -277,6 +314,28 @@ export class LlamaServerIntegration {
         data: [],
         timestamp: Date.now(),
       });
+    });
+
+    socket.on("restart_server", async () => {
+      try {
+        console.log("[WS] Restarting llama-server...");
+        await this.llamaService?.stop();
+        await this.llamaService?.start();
+        console.log("[WS] ✅ Llama-server restarted successfully");
+        socket.emit("serverRestarted", { message: "Server restarted successfully" });
+      } catch (error) {
+        console.error("[WS] ❌ Failed to restart llama-server:", error);
+        socket.emit("error", { message: "Failed to restart server" });
+      }
+    });
+
+    socket.on("download_logs", () => {
+      try {
+        console.log("[WS] Downloading logs requested");
+        socket.emit("error", { message: "Log download not implemented yet" });
+      } catch (error) {
+        console.error("[WS] ❌ Failed to download logs:", error);
+      }
     });
   }
 

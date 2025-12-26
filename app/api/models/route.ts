@@ -6,9 +6,13 @@ let llamaService: LlamaService | null | undefined = null;
 // Get models list
 export async function GET(): Promise<NextResponse> {
   try {
-    // Get the service instance from global scope
-    const globalAny = global as unknown as { llamaService: LlamaService | undefined };
-    llamaService = globalAny.llamaService;
+    // Get service instance from registry
+    const globalAny = global as unknown as { registry: any };
+    const registry = globalAny.registry as {
+      get: (name: string) => LlamaService | null;
+    };
+
+    const llamaService = registry?.get("llamaService");
 
     if (!llamaService) {
       return NextResponse.json(

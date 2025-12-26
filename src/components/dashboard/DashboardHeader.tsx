@@ -1,15 +1,35 @@
-import { Box, Typography, Chip, Divider } from "@mui/material";
+import { Box, Typography, Chip, IconButton, Tooltip } from "@mui/material";
+import { Refresh, Settings as SettingsIcon, CloudUpload } from "@mui/icons-material";
 import { m } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useRouter } from "next/navigation";
 
 interface DashboardHeaderProps {
   isConnected: boolean;
+  metrics?: {
+    serverStatus?: string;
+    cpuUsage?: number;
+    memoryUsage?: number;
+    uptime?: number;
+  } | undefined;
+  onRefresh?: () => void;
 }
 
 export function DashboardHeader({
   isConnected,
+  metrics,
+  onRefresh
 }: DashboardHeaderProps): React.ReactNode {
   const { isDark } = useTheme();
+  const router = useRouter();
+
+  const formatUptime = (seconds?: number): string => {
+    if (!seconds) return 'N/A';
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    return `${days}d ${hours}h ${mins}m`;
+  };
 
   return (
     <>
@@ -26,10 +46,16 @@ export function DashboardHeader({
             Real-time AI Model Management & Monitoring
           </Typography>
         </m.div>
-        <Box sx={{ textAlign: "right" }}>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1, display: "block" }}>
-            {isConnected ? "WebSocket Connected" : "WebSocket Disconnected"}
-          </Typography>
+
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          {metrics && (
+            <Chip
+              label={`Uptime: ${formatUptime(metrics.uptime)}`}
+              color="info"
+              size="small"
+              variant="outlined"
+            />
+          )}
           <Chip
             label={isConnected ? "CONNECTED" : "DISCONNECTED"}
             color={isConnected ? "success" : "error"}
@@ -39,21 +65,24 @@ export function DashboardHeader({
               fontWeight: "bold",
               animation: !isConnected ? "pulse 2s infinite" : "none",
               "@keyframes pulse": {
-                "0%": { boxShadow: "0 0 0 0 rgba(255, 82, 82, 0.7)" },
-                "70%": { boxShadow: "0 0 0 10px rgba(255, 82, 82, 0)" },
-                "100%": { boxShadow: "0 0 0 0 rgba(255, 82, 82, 0)" },
+                "0%": { boxShadow: "0 0 0 rgba(255, 82, 82, 0.7)" },
+                "70%": { boxShadow: "0 0 10px rgba(255, 82, 82, 0)" },
+                "100%": { boxShadow: "0 0 0 rgba(255, 82, 82, 0)" },
               },
             }}
           />
+          <Tooltip title="Refresh Dashboard">
+            <IconButton onClick={onRefresh} color="primary">
+              <Refresh />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Open Settings">
+            <IconButton onClick={() => router.push('/settings')} color="secondary">
+              <SettingsIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
       </Box>
-
-      <Divider
-        sx={{
-          my: 4,
-          borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
-        }}
-      />
     </>
   );
 }

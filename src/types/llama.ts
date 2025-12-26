@@ -4,6 +4,7 @@ export interface LlamaModel {
   size: number;
   type: string;
   modified_at: number;
+  available: boolean; // Indicates if model is available for loading
   status?: string;
   createdAt?: string;
   updatedAt?: string;

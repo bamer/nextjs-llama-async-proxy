@@ -7,7 +7,7 @@ interface Model {
   id?: string;
   name: string;
   description?: string;
-  status: 'running' | 'stopped' | 'loading' | 'available';
+  status: 'running' | 'idle' | 'loading';
   version?: string;
   path?: string;
   type?: string;
@@ -20,6 +20,7 @@ const ModelsPage = () => {
   const [models, setModels] = useState<Model[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDiscovering, setIsDiscovering] = useState(false);
+  const [isRescanning, setIsRescanning] = useState(false);
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
 
   // Load models on mount and subscribe to real-time updates
@@ -107,6 +108,20 @@ const ModelsPage = () => {
     }
   };
 
+  const rescanModels = async () => {
+    setIsRescanning(true);
+    try {
+      websocketServer.rescanModels();
+      // Models will reload via WebSocket update
+    } catch (error) {
+      console.error('Failed to rescan models:', error);
+    } finally {
+      setIsRescanning(false);
+    }
+  };
+ 
+ 
+
   const startModel = async (modelName: string) => {
     setLoadingStates(prev => ({ ...prev, [modelName]: true }));
     try {
@@ -137,7 +152,7 @@ const ModelsPage = () => {
       if (response.ok) {
         // Update model status
         setModels(prev => prev.map(model =>
-          model.name === modelName ? { ...model, status: 'stopped' as const } : model
+          model.name === modelName ? { ...model, status: 'idle' as const } : model
         ));
       }
     } catch (error) {
@@ -163,24 +178,34 @@ const ModelsPage = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="border border-border rounded-lg px-4 py-3 w-64 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
         />
-        <button
-          onClick={discoverModels}
-          disabled={isDiscovering}
-          className="bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
-        >
-          {isDiscovering ? 'Discovering...' : 'Discover Models'}
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={discoverModels}
+            disabled={isDiscovering}
+            className="bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+          >
+            {isDiscovering ? 'Discovering...' : 'Discover Models'}
+          </button>
+          <button
+            onClick={rescanModels}
+            disabled={isRescanning}
+            className="bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+          >
+            {isRescanning ? 'Rescanning...' : 'Rescan Models'}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredModels.map((model) => (
           <div key={model.name} className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-300">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-foreground">{model.name}</h3>
-               <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${
-                  model.status === 'running' ? 'bg-success' :
-                  model.status === 'loading' ? 'bg-warning' : 'bg-danger'
-                }`}>
+             <div className="flex justify-between items-center mb-4">
+               <h3 className="text-xl font-bold text-foreground">{model.name}</h3>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${
+                   model.status === 'running' ? 'bg-success' :
+                   model.status === 'loading' ? 'bg-warning' :
+                   'bg-info'
+                 }`}>
                 {loadingStates[model.name] ? 'loading' : model.status}
               </span>
             </div>
@@ -191,21 +216,21 @@ const ModelsPage = () => {
             </div>
 
             <div className="flex gap-3">
-              {model.status === 'running' ? (
+              {model.status !== 'running' ? (
+                <button
+                  onClick={() => startModel(model.name)}
+                  disabled={loadingStates[model.name] || model.status === 'loading'}
+                  className="bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50 px-4 py-2 rounded-lg transition-colors font-medium"
+                >
+                  {model.status === 'loading' ? 'Loading...' : 'Start'}
+                </button>
+              ) : (
                 <button
                   onClick={() => stopModel(model.name)}
                   disabled={loadingStates[model.name]}
                   className="border border-border hover:bg-muted disabled:opacity-50 px-4 py-2 rounded-lg transition-colors text-foreground font-medium"
                 >
                   Stop
-                </button>
-              ) : (
-                <button
-                  onClick={() => startModel(model.name)}
-                  disabled={loadingStates[model.name]}
-                  className="bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50 px-4 py-2 rounded-lg transition-colors font-medium"
-                >
-                  Start
                 </button>
               )}
               <button className="border border-border hover:bg-muted px-4 py-2 rounded-lg transition-colors text-foreground font-medium">

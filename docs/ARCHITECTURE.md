@@ -11,129 +11,237 @@ The Next.js Llama Async Proxy is a sophisticated web-based management interface 
 │   Next.js App   │    │   Express API   │    │  Llama Server   │
 │   (Frontend)    │◄──►│   (Backend)     │◄──►│   (AI Models)   │
 │                 │    │                 │    │                 │
-│ • React 19      │    │ • REST API      │    │ • llama.cpp     │
-│ • TypeScript    │    │ • WebSocket     │    │ • GGUF models   │
+│ • React 19.2    │    │ • REST API      │    │ • llama.cpp     │
+│ • TypeScript     │    │ • Socket.IO     │    │ • GGUF models   │
 │ • Tailwind CSS  │    │ • Model Mgmt    │    │ • GPU/CPU accel │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
-       │                       │                       │
-       └───────────────────────┼───────────────────────┘
-                               │
-                    ┌─────────────────┐
-                    │   Socket.IO     │
-                    │ Real-time Comm  │
-                    └─────────────────┘
+        │                       │                       │
+        └───────────────────────┼───────────────────────┘
+                                │
+                     ┌─────────────────┐
+                     │   Socket.IO     │
+                     │   (/llamaproxws)│
+                     │ Real-time Comm  │
+                     └─────────────────┘
 ```
 
 ## Technology Stack
 
 ### Frontend Layer
-- **Next.js 16** - React framework with App Router
-- **React 19** - UI library with concurrent features
-- **TypeScript** - Type-safe development
-- **Tailwind CSS v4** - Utility-first styling
+- **Next.js 16.1.0** - React framework with App Router and Turbopack
+- **React 19.2.3** - UI library with concurrent features and Server Components
+- **TypeScript 5.9.3** - Type-safe development with strict mode
+- **MUI v7.3.6** - Material-UI components (@mui/material-nextjs for Next.js 16)
+- **@mui/x-charts v8.23.0** - Charts and data visualization
+- **Tailwind CSS v4** - Utility-first styling with PostCSS
 - **Framer Motion** - Animation library with LazyMotion optimization
-- **Material-UI v7** - Component library
-- **Zustand** - Lightweight state management
-- **React Query** - Server state management
+- **Zustand v5.0.9** - Lightweight client state management
+- **@tanstack/react-query v5** - Server state management with caching
+- **React Hook Form v7.69.0** - Form handling with validation
+- **Zod v4.2.1** - Runtime validation and schema definition
+- **Socket.IO Client v4.8.1** - Real-time bidirectional communication
 
 ### Backend Layer
-- **Express.js** - REST API server
-- **Socket.IO** - Real-time bidirectional communication
-- **Winston** - Structured logging
-- **Node Cache** - In-memory caching
-- **Axios** - HTTP client for llama-server communication
+- **Express 5.2.1** - REST API server wrapper
+- **Socket.IO Server v4.8.1** - WebSocket server with real-time streaming
+- **Winston 3.19.0** - Structured logging with daily rotation
+- **Axios 1.13.2** - HTTP client for external requests
+- **tsx 4.21.0** - TypeScript runtime for server execution
 
-### External Dependencies
-- **llama-server** - C++ binary for model inference
-- **GGUF models** - Quantized model format
-- **GPU/CPU acceleration** - Hardware-accelerated inference
+### Configuration System
+- **llama-server-config.json** - JSON-based configuration file
+- **server-config.ts** - TypeScript ESM configuration service (replaced CommonJS)
+- **API Endpoints** - GET/POST /api/config for configuration management
+- **Dynamic Loading** - Config loaded at server startup with logging
+
+### Testing
+- **Jest 30.2.0** - Testing framework
+- **ts-jest 29.4.6** - TypeScript Jest preset
+- **React Testing Library** - Component testing utilities
+- **Coverage** - 70%+ threshold achieved
 
 ## Directory Structure
 
 ```
-├── app/                          # Next.js App Router pages
-│   ├── api/                     # API routes (legacy SSE)
-│   ├── dashboard/               # Main dashboard page
-│   ├── logs/                    # Logs monitoring page
-│   ├── models/                  # Model management page
-│   ├── monitoring/              # Performance monitoring page
-│   ├── settings/                # Configuration page
-│   └── layout.tsx               # Root layout component
-├── pages/                        # Legacy pages (SSE only)
+nextjs-llama-async-proxy/
+├── app/                          # Next.js App Router
+│   ├── api/                     # API routes
+│   │   ├── config/             # Configuration API (GET/POST)
+│   │   ├── llama-server/        # Llama server control endpoints
+│   │   ├── models/             # Model management
+│   │   ├── logger/             # Logger configuration
+│   │   └── health/            # Health checks
+│   ├── dashboard/              # Dashboard page
+│   ├── settings/               # Settings page (uses API, not localStorage)
+│   ├── models/                # Models page
+│   ├── monitoring/             # Monitoring page
+│   ├── logs/                  # Logs page
+│   ├── layout.tsx             # Root layout component
+│   ├── page.tsx               # Home page
+│   └── globals.css           # Global styles
 ├── src/
-│   ├── components/               # React components
-│   │   ├── layout/              # Layout components (Header, Sidebar)
-│   │   ├── pages/               # Page-specific components
-│   │   ├── ui/                  # Reusable UI components
-│   │   ├── animate/             # Animation components
-│   │   └── websocket/           # WebSocket connection management
-│   ├── hooks/                   # Custom React hooks
-│   ├── services/                # API service functions
-│   ├── contexts/                # React contexts (theme, etc.)
-│   ├── types/                   # TypeScript type definitions
-│   ├── config/                  # Configuration utilities
-│   ├── lib/                     # Utility libraries
-│   ├── styles/                  # Global styles and themes
-│   ├── providers/               # Context providers
-│   └── utils/                   # Helper functions
-├── src/server/                   # Backend server logic
-│   ├── config.js                # Server configuration
-│   ├── models.js                # Model management logic
-│   ├── metrics.js               # Performance metrics collection
-│   ├── logs.js                  # Log aggregation and streaming
-│   ├── llama-server.js          # Llama server process management
-│   ├── proxy.js                 # Proxy utilities
-│   └── runtime-config.js        # Runtime configuration management
-├── public/                       # Static assets
-├── server.js                     # Express + Socket.IO server entry point
-└── [config files]               # Build and development configuration
+│   ├── components/           # React components
+│   │   ├── dashboard/      # Dashboard-specific components
+│   │   ├── configuration/  # Settings components
+│   │   ├── layout/         # Layout components (Header, Sidebar)
+│   │   ├── ui/             # Reusable UI components
+│   │   ├── animate/        # Animation components (Framer Motion)
+│   │   └── websocket/      # WebSocket connection management
+│   ├── hooks/              # Custom React hooks
+│   │   ├── use-api.ts      # React Query integration
+│   │   ├── use-websocket.ts # WebSocket hook
+│   │   └── use-logger-config.ts
+│   ├── lib/                # Utilities and services
+│   │   ├── server-config.ts # Config service (TypeScript ESM)
+│   │   ├── logger.ts       # Winston logger
+│   │   ├── analytics.ts    # Analytics
+│   │   └── services/       # Server-side services
+│   ├── services/           # Client-side services
+│   │   └── api-service.ts # API service layer
+│   ├── server/             # Server-side code
+│   │   ├── services/       # Llama integration
+│   │   │   ├── LlamaService.ts
+│   │   │   ├── LlamaServerIntegration.ts
+│   │   │   └── ServiceRegistry.ts
+│   │   └── [other server modules]
+│   ├── contexts/           # React contexts
+│   │   └── ThemeContext.tsx # Theme provider
+│   ├── types/              # TypeScript definitions
+│   │   └── global.d.ts   # Global types
+│   ├── config/             # Configuration utilities
+│   ├── styles/            # Global styles and themes
+│   ├── providers/         # Context providers
+│   └── utils/             # Utility functions
+│       └── api-client.ts   # Axios wrapper
+├── __tests__/            # Test files (Jest)
+│   ├── lib/
+│   │   ├── server-config.test.ts  # Config loading/saving
+│   │   └── logger.test.ts       # Winston logger
+│   ├── app/api/
+│   │   └── config/
+│   │       └── route.test.ts      # Config API
+│   ├── hooks/
+│   │   └── use-logger-config.test.ts
+│   ├── components/
+│   │   └── configuration/
+│   │       └── hooks/
+│   │           └── useConfigurationForm.test.ts
+│   └── server/
+│       └── ServiceRegistry.test.ts  # Service registry
+├── public/              # Static assets
+├── docs/               # Documentation
+│   ├── README.md
+│   ├── ARCHITECTURE.md
+│   ├── API.md
+│   ├── API_REFERENCE.md
+│   ├── DEVELOPMENT_SETUP.md
+│   ├── USER_GUIDE.md
+│   ├── DEPLOYMENT_GUIDE.md
+│   └── ANIMATION_ARCHITECTURE.md
+├── server.js           # Express + Socket.IO server entry point
+├── llama-server-config.json  # Configuration file
+└── [config files]      # Build and development configuration
 ```
 
 ## Core Components
 
-### 1. Frontend Application (Next.js)
+### 1. Frontend Application (Next.js 16)
 
 #### App Router Structure
 - **`/dashboard`** - Main dashboard with real-time metrics
 - **`/models`** - Model discovery, loading, and management
 - **`/monitoring`** - Performance charts and system health
-- **`/logs`** - Real-time log streaming with filtering
-- **`/settings`** - Configuration and theme management
+- **`//logs`** - Real-time log streaming with filtering
+- **`/settings`** - Configuration (uses API endpoints, not localStorage)
 
 #### Key Components
 - **Layout Components**: Header, Sidebar, Navigation
 - **Page Components**: Dashboard, Models, Monitoring, Logs, Settings
-- **UI Components**: Buttons, Cards, Charts, Tables, Forms
+- **UI Components**: Buttons, Cards, Charts, Tables, Forms (MUI v7)
 - **Animation Components**: Motion wrappers with LazyMotion optimization
 
 ### 2. Backend Server (Express + Socket.IO)
 
 #### API Endpoints
+- **Config API** (`/api/config`) - GET/POST configuration management
 - **Models API** (`/api/models`) - Model registration and discovery
-- **Config API** (`/api/config`) - Configuration management
-- **Monitoring API** (`/api/monitoring`) - Performance metrics
-- **Parameters API** (`/api/parameters`) - Model parameter management
+- **Health API** (`/api/health`) - Health checks
+- **Logger API** (`/api/logger`) - Logger configuration
 
 #### Real-time Communication
-- **Socket.IO Namespaces**:
-  - `/metrics` - Performance data streaming (10s intervals)
-  - `/models` - Model status updates (30s intervals)
-  - `/logs` - Log streaming (15s intervals)
+- **Socket.IO Path**: `/llamaproxws`
+- **Socket.IO Host**: `localhost:3000` (default, configurable via PORT env var)
+- **Server Socket.IO**: `/socket.io` namespace
+- **Metrics Streaming**: Performance data (10s intervals)
+- **Model Updates**: Model status changes (30s intervals)
+- **Log Streaming**: Log entries (15s intervals)
 
 #### Process Management
 - **Llama Server Lifecycle**: Spawn, monitor, restart on failure
 - **Health Checks**: HTTP-based monitoring with configurable timeouts
 - **Error Recovery**: Exponential backoff retry logic
 
-### 3. Llama Server Integration
+### 3. Configuration Management
+
+#### Configuration Service (TypeScript ESM)
+```typescript
+// src/lib/server-config.ts
+export interface LlamaServerConfig {
+  host: string;
+  port: number;
+  basePath: string;
+  serverPath: string;
+  ctx_size: number;
+  batch_size: number;
+  threads: number;
+  gpu_layers: number;
+}
+
+// Load configuration from JSON file
+export async function loadConfig(): Promise<LlamaServerConfig> { }
+
+// Save configuration to JSON file
+export async function saveConfig(config: LlamaServerConfig): Promise<void> { }
+```
+
+**Key Changes:**
+- Migrated from CommonJS `server-config.js` to TypeScript ESM `server-config.ts`
+- Removed deprecated `config-service.ts` (deleted)
+- Configuration stored in `llama-server-config.json`
+- Server loads config dynamically at startup with logging
+- API endpoints: `GET/POST /api/config`
+- Settings page uses API (not localStorage) for llama config
+
+#### Configuration File Structure
+```json
+{
+  "host": "localhost",
+  "port": 8134,
+  "basePath": "/path/to/models",
+  "serverPath": "/home/bamer/llama.cpp/build/bin/llama-server",
+  "ctx_size": 8192,
+  "batch_size": 512,
+  "threads": -1,
+  "gpu_layers": -1
+}
+```
+
+### 4. Llama Server Integration
 
 #### Process Management
-```javascript
+```typescript
 // Server-side process spawning
-const spawnLlamaServer = (config) => {
-  const process = spawn(llamaPath, args, {
-    stdio: ['pipe', 'pipe', 'pipe'],
-    env: { ...process.env, ...config }
+const spawnLlamaServer = (config: LlamaServerConfig) => {
+  const process = spawn(config.serverPath, [
+    `--port ${config.port}`,
+    `--host ${config.host}`,
+    `--model-path ${config.basePath}`,
+    `--ctx-size ${config.ctx_size}`,
+    `--batch-size ${config.batch_size}`,
+    config.threads !== -1 ? `--threads ${config.threads}` : '',
+    config.gpu_layers !== -1 ? `--gpu-layers ${config.gpu_layers}` : ''
+  ].filter(Boolean), {
+    stdio: ['pipe', 'pipe', 'pipe']
   });
 
   // Monitor stdout/stderr for logs
@@ -147,26 +255,48 @@ const spawnLlamaServer = (config) => {
 - **API-based Discovery**: Query llama-server for loaded models
 - **Hybrid Approach**: Combine filesystem and API methods for reliability
 
-#### Configuration Management
-- **Runtime Config**: Dynamic parameter updates without restart
-- **Environment Variables**: Static configuration via `.env`
-- **File-based Config**: JSON configuration files for persistence
+#### Service Registry Pattern
+```typescript
+// ServiceRegistry manages all background services
+class ServiceRegistry {
+  private services: Map<string, Service> = new Map();
+
+  register(name: string, service: Service): void {
+    this.services.set(name, service);
+  }
+
+  start(name: string): Promise<void> { }
+  stop(name: string): Promise<void> { }
+  stopAll(): Promise<void> { }
+}
+```
 
 ## Data Flow Architecture
 
-### 1. Model Loading Flow
+### 1. Configuration Flow
 ```
-User Request → API Endpoint → Model Discovery → Llama Server → Process Spawn → Health Check → Status Update
+llama-server-config.json
+    ↓
+Server startup → server-config.ts (TypeScript ESM)
+    ↓
+Load config with logging → API endpoint: GET /api/config
+    ↓
+Settings page → POST /api/config (updates JSON file)
 ```
 
-### 2. Real-time Metrics Flow
+### 2. Model Loading Flow
 ```
-System Metrics → Collection Service → Socket.IO → Frontend → Charts Update
+User Request → API Endpoint → Model Discovery → Llama Server → Process Spawn → Health Check → Status Update → WebSocket Broadcast
 ```
 
-### 3. Log Streaming Flow
+### 3. Real-time Metrics Flow
 ```
-Llama Server Logs → Log Parser → Socket.IO → Frontend → Log Display
+System Metrics → Collection Service → Socket.IO → Frontend → Charts Update (every 10s)
+```
+
+### 4. Log Streaming Flow
+```
+Llama Server Logs → Winston Logger → Socket.IO → Frontend → Log Display (every 15s)
 ```
 
 ## State Management
@@ -174,12 +304,11 @@ Llama Server Logs → Log Parser → Socket.IO → Frontend → Log Display
 ### Client State (Zustand)
 - **Theme Store**: Dark/light mode, color preferences
 - **UI Store**: Sidebar state, modal visibility
-- **Config Store**: User preferences and settings
 
 ### Server State (React Query)
+- **Config Data**: Application configuration from API
 - **Models Data**: Cached model information with background updates
 - **Metrics Data**: Real-time performance data with polling
-- **Config Data**: Application configuration with optimistic updates
 
 ### Real-time State (Socket.IO)
 - **Live Metrics**: CPU, memory, GPU usage
@@ -190,9 +319,9 @@ Llama Server Logs → Log Parser → Socket.IO → Frontend → Log Display
 
 ### Frontend Optimizations
 - **LazyMotion**: Deferred animation loading for better initial bundle size
-- **Code Splitting**: Automatic route-based splitting via Next.js
+- **Code Splitting**: Automatic route-based splitting via Next.js 16 Turbopack
 - **Image Optimization**: Next.js built-in image optimization
-- **Memoization**: React.memo and useMemo for expensive computations
+- **Memoization**: React Compiler awareness (no manual memoization needed)
 
 ### Backend Optimizations
 - **Connection Pooling**: Reused HTTP connections to llama-server
@@ -205,6 +334,31 @@ Llama Server Logs → Log Parser → Socket.IO → Frontend → Log Display
 - **Component-level Animations**: Scoped animations for better performance
 - **Reduced Motion Support**: Respects user accessibility preferences
 - **GPU Acceleration**: Hardware-accelerated animations where possible
+
+## Testing Architecture
+
+### Test Structure
+```
+__tests__/
+├── lib/
+│   ├── server-config.test.ts      # Config loading/saving
+│   └── logger.test.ts              # Winston logger
+├── app/api/
+│   └── config/
+│       └── route.test.ts           # Config API (enhanced)
+├── hooks/
+│   └── use-logger-config.test.ts    # Logger config hook
+├── components/configuration/
+│   └── hooks/
+│       └── useConfigurationForm.test.ts  # Settings form
+└── server/
+    └── ServiceRegistry.test.ts     # Service registry
+```
+
+### Test Coverage
+- **70%+ coverage threshold** for branches, functions, lines, statements
+- **Proper mocking** of external dependencies
+- **Jest with ts-jest** for TypeScript support
 
 ## Security Considerations
 
@@ -220,36 +374,46 @@ Llama Server Logs → Log Parser → Socket.IO → Frontend → Log Display
 - **HTTPS/TLS**: Encrypted communication channels
 - **Input Sanitization**: Comprehensive input validation and sanitization
 
-## Scalability Considerations
-
-### Horizontal Scaling
-- **Stateless Design**: API servers can be scaled independently
-- **Shared Storage**: Model files on network storage
-- **Load Balancing**: Multiple proxy instances behind load balancer
-
-### Vertical Scaling
-- **GPU Utilization**: Multiple GPU support with tensor splitting
-- **Memory Management**: Efficient model loading and unloading
-- **Process Optimization**: CPU thread optimization for concurrent requests
-
-### Monitoring and Observability
-- **Performance Metrics**: CPU, memory, GPU, and request throughput
-- **Health Checks**: Automated monitoring with alerts
-- **Log Aggregation**: Centralized logging with structured data
-- **Error Tracking**: Comprehensive error reporting and analysis
-
 ## Development Workflow
 
 ### Build Process
-1. **TypeScript Compilation**: Type checking and transpilation
-2. **Next.js Build**: Frontend optimization and static generation
+1. **TypeScript Compilation**: Type checking with tsc --noEmit
+2. **Next.js Build**: Frontend optimization via Turbopack
 3. **Asset Optimization**: Image compression and bundle splitting
-4. **Testing**: Unit and integration test execution
+4. **Testing**: Jest test execution with coverage
 
-### Deployment Process
-1. **Container Build**: Docker image creation with multi-stage builds
-2. **Configuration**: Environment-specific configuration injection
-3. **Health Checks**: Pre-deployment validation
-4. **Rolling Updates**: Zero-downtime deployment with health monitoring
+### Server Execution
+```bash
+# Development (uses tsx)
+pnpm dev
 
-This architecture provides a robust, scalable foundation for AI model management with excellent developer experience and production readiness.
+# Production (uses tsx)
+pnpm start
+```
+
+**Note**: Server uses `tsx` for TypeScript runtime execution, not `node server.js`
+
+## WebSocket Communication
+
+### Connection Details
+- **Path**: `/llamaproxws`
+- **Host**: `localhost:3000` (default, configurable via PORT env var)
+- **Transport**: WebSocket with HTTP polling fallback
+- **Events**: Metrics, models, logs, status updates
+
+### Message Format
+```typescript
+interface WebSocketMessage {
+  type: string;
+  data: unknown;
+  timestamp: number;
+  requestId?: string;
+}
+```
+
+This architecture provides a robust, scalable foundation for AI model management with excellent developer experience and production readiness, comprehensive testing, and modern React 19.2 patterns.
+
+---
+
+**Architecture Overview - Next.js Llama Async Proxy**
+**Version 0.1.0 - December 27, 2025**

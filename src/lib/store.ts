@@ -4,6 +4,20 @@ import { APP_CONFIG } from "@/config/app.config";
 import { ThemeMode } from "@/contexts/ThemeContext";
 
 // Define store types
+interface ChartDataPoint {
+  time: string;
+  displayTime: string;
+  value: number;
+}
+
+interface ChartHistory {
+  cpu: ChartDataPoint[];
+  memory: ChartDataPoint[];
+  requests: ChartDataPoint[];
+  gpuUtil: ChartDataPoint[];
+  power: ChartDataPoint[];
+}
+
 interface AppState {
   models: ModelConfig[];
   activeModelId: string | null;
@@ -18,6 +32,7 @@ interface AppState {
     isLoading: boolean;
     error: string | null;
   };
+  chartHistory: ChartHistory;
 }
 
 interface AppActions {
@@ -34,6 +49,9 @@ interface AppActions {
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
+  addChartData: (type: 'cpu' | 'memory' | 'requests' | 'gpuUtil' | 'power', value: number) => void;
+  trimChartData: (maxPoints?: number) => void;
+  clearChartData: () => void;
 }
 
 export type AppStore = AppState & AppActions;
@@ -52,6 +70,13 @@ const initialState: AppState = {
   status: {
     isLoading: false,
     error: null,
+  },
+  chartHistory: {
+    cpu: [],
+    memory: [],
+    requests: [],
+    gpuUtil: [],
+    power: [],
   },
 };
 
@@ -85,6 +110,42 @@ const useAppStore = create<AppStore>()(
       setLoading: (isLoading) => set({ status: { ...initialState.status, isLoading } }),
       setError: (error) => set({ status: { ...initialState.status, error } }),
       clearError: () => set({ status: { ...initialState.status, error: null } }),
+      addChartData: (type, value) => {
+        const now = new Date();
+        const displayTime = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        const newPoint = { time: now.toISOString(), displayTime, value };
+        set((state) => {
+          const newHistory = { ...state.chartHistory };
+          newHistory[type].push(newPoint);
+          if (newHistory[type].length > 60) {
+            newHistory[type].shift();
+          }
+          return { ...state, chartHistory: newHistory };
+        });
+      },
+      trimChartData: (maxPoints = 60) => {
+        set((state) => {
+          const trimmed = { ...state.chartHistory };
+          Object.keys(trimmed).forEach((key) => {
+            if (trimmed[key].length > maxPoints) {
+              trimmed[key] = trimmed[key].slice(-maxPoints);
+            }
+          });
+          return { ...state, chartHistory: trimmed };
+        });
+      },
+      clearChartData: () => {
+        set((state) => ({
+          ...state,
+          chartHistory: {
+            cpu: [],
+            memory: [],
+            requests: [],
+            gpuUtil: [],
+            power: [],
+          },
+        }));
+      },
     }),
     {
       name: "llama-app-storage-v2",
@@ -93,6 +154,7 @@ const useAppStore = create<AppStore>()(
         models: state.models,
         activeModelId: state.activeModelId,
         settings: state.settings,
+        chartHistory: state.chartHistory,
       }),
     }
   )
@@ -107,3 +169,4 @@ export const selectMetrics = (state: AppState) => state.metrics;
 export const selectLogs = (state: AppState) => state.logs;
 export const selectSettings = (state: AppState) => state.settings;
 export const selectStatus = (state: AppState) => state.status;
+export const selectChartHistory = (state: AppState) => state.chartHistory;

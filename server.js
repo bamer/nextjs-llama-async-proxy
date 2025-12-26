@@ -2,14 +2,18 @@ import { createServer } from 'http';
 import next from 'next';
 import { Server } from 'socket.io';
 import express from 'express';
-import LlamaServerIntegration from './src/server/services/LlamaServerIntegration';
-import { registry } from './src/server/ServiceRegistry';
+import LlamaServerIntegration from './src/server/services/LlamaServerIntegration.ts';
+import { registry } from './src/server/ServiceRegistry.ts';
+import { loadConfig } from './src/lib/server-config.ts';
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const nextHandler = app.getRequestHandler()
 const hostname = 'localhost';
 const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+
+// Make registry available globally for API routes
+global.registry = registry;
 
 const logger = {
   info: (...args) => console.log('[INFO]', ...args),
@@ -93,18 +97,40 @@ app.prepare().then(() => {
     logger.info(`🚀 [SOCKET.IO] Server listening at http://${hostname}:${port}`);
     logger.info('🚀 [SOCKET.IO] Socket.IO server is ready');
 
-    const llamaConfig = {
-      host: process.env.LLAMA_SERVER_HOST || 'localhost',
-      port: parseInt(process.env.LLAMA_SERVER_PORT || '8134', 10),
-      basePath: process.env.MODELS_PATH || '/models',
-      ctx_size: 8192,
-      batch_size: 512,
-      threads: -1,
-      gpu_layers: -1,
-    };
+    // Load configuration from llama-server-config.json
+    let llamaConfig;
+    try {
+      const loadedConfig = loadConfig();
+      llamaConfig = {
+        host: process.env.LLAMA_SERVER_HOST || loadedConfig.host,
+        port: parseInt(process.env.LLAMA_SERVER_PORT || String(loadedConfig.port), 10),
+        basePath: process.env.MODELS_PATH || loadedConfig.basePath,
+        serverPath: loadedConfig.serverPath,
+        ctx_size: loadedConfig.ctx_size,
+        batch_size: loadedConfig.batch_size,
+        threads: loadedConfig.threads,
+        gpu_layers: loadedConfig.gpu_layers,
+      };
+      logger.info('📝 [CONFIG] Configuration loaded from llama-server-config.json');
+    } catch (error) {
+      logger.warn(`⚠️ [CONFIG] Failed to load config file, using defaults: ${error.message}`);
+      llamaConfig = {
+        host: process.env.LLAMA_SERVER_HOST || 'localhost',
+        port: parseInt(process.env.LLAMA_SERVER_PORT || '8134', 10),
+        basePath: process.env.MODELS_PATH || '/models',
+        serverPath: '/home/bamer/llama.cpp/build/bin/llama-server',
+        ctx_size: 8192,
+        batch_size: 512,
+        threads: -1,
+        gpu_layers: -1,
+      };
+    }
 
     try {
       logger.info('🦙 Initializing LlamaServer integration...');
+      logger.info(`📋 [CONFIG] Llama server path: ${llamaConfig.serverPath}`);
+      logger.info(`📋 [CONFIG] Host: ${llamaConfig.host}:${llamaConfig.port}`);
+      logger.info(`📋 [CONFIG] Base path: ${llamaConfig.basePath}`);
       await llamaIntegration.initialize(llamaConfig);
 
       registry.register('llamaService', llamaIntegration.getLlamaService());
@@ -135,6 +161,22 @@ app.prepare().then(() => {
       process.exit(0);
     });
   };
+
+process.on('SIGTERM', cleanup);
+process.on('SIGINT', cleanup);
+process.on('exit', (code) => {
+  logger.info(`👋 [SHUTDOWN] Server exited with code ${code}`);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('❌ [UNCAUGHT EXCEPTION]', error);
+  cleanup();
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('❌ [UNHANDLED REJECTION]', reason);
+  cleanup();
+});
 
   process.on('SIGTERM', cleanup);
   process.on('SIGINT', cleanup);

@@ -104,6 +104,10 @@ class WebSocketClient extends EventEmitter {
     this.sendMessage('requestLlamaStatus');
   }
 
+  rescanModels() {
+    this.sendMessage('rescanModels');
+  }
+
   startModel(modelId: string) {
     this.sendMessage('startModel', { modelId });
   }

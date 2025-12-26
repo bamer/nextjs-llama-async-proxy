@@ -1,23 +1,97 @@
-import { useState } from "react";
-import { useConfig } from "@/hooks/use-config";
+import { useState, useEffect } from "react";
 import { useLoggerConfig } from "@/hooks/use-logger-config";
-import { DEFAULT_LLAMA_SERVER_CONFIG } from "@/config/llama-defaults";
+
+interface LlamaServerConfig {
+  host: string;
+  port: number;
+  basePath: string;
+  serverPath: string;
+  ctx_size: number;
+  batch_size: number;
+  threads: number;
+  gpu_layers: number;
+}
+
+interface ValidationResult {
+  valid: boolean;
+  errors?: string[];
+}
 
 export function useConfigurationForm() {
-  const { config, loading, updateConfig, resetConfig, syncWithBackend, validateConfig } =
-    useConfig();
   const { applyToLogger } = useLoggerConfig();
   const [activeTab, setActiveTab] = useState(0);
-  const [formConfig, setFormConfig] = useState<any>(() => {
-    const initialConfig = { ...config };
-    if (!initialConfig.llamaServer) {
-      initialConfig.llamaServer = {} as any;
-    }
-    return initialConfig;
-  });
+  const [formConfig, setFormConfig] = useState<Partial<LlamaServerConfig>>({});
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
+
+  // Load config from API on mount
+  useEffect(() => {
+    loadServerConfig();
+  }, []);
+
+  const loadServerConfig = async () => {
+    setIsLoadingConfig(true);
+    try {
+      const response = await fetch("/api/config");
+      if (response.ok) {
+        const serverConfig = await response.json();
+        // Wrap in llamaServer object for compatibility with form structure
+        setFormConfig({
+          llamaServer: {
+            host: serverConfig.host,
+            port: serverConfig.port,
+            basePath: serverConfig.basePath,
+            serverPath: serverConfig.serverPath,
+            ctx_size: serverConfig.ctx_size,
+            batch_size: serverConfig.batch_size,
+            threads: serverConfig.threads,
+            gpu_layers: serverConfig.gpu_layers,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Failed to load server config:", error);
+    } finally {
+      setIsLoadingConfig(false);
+    }
+  };
+
+  const validateConfig = (configToValidate: Partial<LlamaServerConfig>): ValidationResult => {
+    const errors: string[] = [];
+
+    if (!configToValidate.host || configToValidate.host.trim() === "") {
+      errors.push("Host is required");
+    }
+
+    if (configToValidate.port !== undefined) {
+      if (isNaN(configToValidate.port) || configToValidate.port < 1 || configToValidate.port > 65535) {
+        errors.push("Port must be a valid port number (1-65535)");
+      }
+    }
+
+    if (!configToValidate.serverPath || configToValidate.serverPath.trim() === "") {
+      errors.push("Server path is required");
+    }
+
+    if (configToValidate.ctx_size !== undefined) {
+      if (isNaN(configToValidate.ctx_size) || configToValidate.ctx_size < 0) {
+        errors.push("Context size must be a positive number");
+      }
+    }
+
+    if (configToValidate.batch_size !== undefined) {
+      if (isNaN(configToValidate.batch_size) || configToValidate.batch_size < 0) {
+        errors.push("Batch size must be a positive number");
+      }
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+    };
+  };
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -65,13 +139,30 @@ export function useConfigurationForm() {
         throw new Error("Validation failed");
       }
 
-      await updateConfig(formConfig);
+      // Save llama-server config to file via API
+      const serverConfigResponse = await fetch("/api/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          host: formConfig.host || "127.0.0.1",
+          port: formConfig.port || 8080,
+          basePath: formConfig.basePath || "/models",
+          serverPath: formConfig.serverPath || "/home/bamer/llama.cpp/build/bin/llama-server",
+          ctx_size: formConfig.ctx_size || 8192,
+          batch_size: formConfig.batch_size || 512,
+          threads: formConfig.threads || -1,
+          gpu_layers: formConfig.gpu_layers || -1,
+        }),
+      });
 
-      // Also apply logger configuration to backend
-      await applyToLogger();
+      if (!serverConfigResponse.ok) {
+        throw new Error("Failed to save server config");
+      }
+
+      // Apply logger configuration to backend
+      applyToLogger();
 
       setSaveSuccess(true);
-
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
       console.error("Save error:", err);
@@ -80,23 +171,24 @@ export function useConfigurationForm() {
     }
   };
 
-  const handleReset = () => {
-    resetConfig();
-    setFormConfig(config);
+  const handleReset = async () => {
+    setFormConfig({});
+    await loadServerConfig();
   };
 
   const handleSync = async () => {
-    await syncWithBackend();
+    await loadServerConfig();
   };
 
   return {
-    config,
-    loading,
+    config: formConfig,
+    loading: isLoadingConfig,
     activeTab,
     formConfig,
     validationErrors,
     isSaving,
     saveSuccess,
+    isLoadingConfig,
     handleTabChange,
     handleInputChange,
     handleLlamaServerChange,
@@ -104,6 +196,5 @@ export function useConfigurationForm() {
     handleSave,
     handleReset,
     handleSync,
-    setFormConfig,
   };
 }
