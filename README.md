@@ -1,178 +1,276 @@
 # Llama Runner Async Proxy
 
-Une interface web moderne et élégante pour gérer les modèles Llama avec support Ollama et LMStudio. Construit avec Next.js 16, Tailwind CSS, et React 19.
+A modern, elegant web interface for managing Llama models with Ollama and LMStudio support. Built with Next.js 16, React 19, TypeScript, and Tailwind CSS.
 
-## ⚠️ AVERTISSEMENT DE SÉCURITÉ IMPORTANT
+## ⚠️ SECURITY WARNING
 
-**🔓 CE PROJET EST INTENTIONNELLEMENT SANS AUTHENTIFICATION**
+**🔓 THIS PROJECT IS INTENTIONALLY WITHOUT AUTHENTICATION**
 
-Ce système est conçu pour un **accès public** sans mécanismes d'authentification. Tous les endpoints (WebSocket, SSE, API) sont ouverts et accessibles sans identifiants. Cela fait partie intégrante de la conception architecturale.
+This system is designed for **public access** without authentication mechanisms. All endpoints (WebSocket, SSE, API) are open and accessible without credentials. This is integral to the architectural design.
 
-📄 [Lire le document complet de sécurité](SECURITY_NOTICE.md)
+📄 [Read the complete security document](SECURITY_NOTICE.md)
 
-## 🚀 Fonctionnalités
+## 🚀 Features
 
-- **Dashboard temps réel** : Métriques, graphiques de performance, activité en direct
-- **Gestion des modèles** : Découverte automatique, gestion et monitoring
-- **Logs colorés** : Système de logs avec niveaux de couleur distincts
-- **Thème moderne** : Design sombre/clair avec animations fluides et effets 3D
-- **API REST** : Endpoints complets pour la gestion des modèles et configurations
-- **WebSocket** : Communication temps réel pour les métriques et logs
+- **Real-time Dashboard**: Metrics, performance graphs, live activity
+- **Model Management**: Automatic discovery, management, and monitoring
+- **Colored Logs**: Log system with distinct color levels
+- **Modern Theme**: Dark/light design with smooth animations and 3D effects
+- **REST API**: Complete endpoints for model management and configuration
+- **WebSocket**: Real-time communication for metrics and logs
+- **Socket.IO Integration**: Robust real-time data streaming
 
 ## 🏗️ Architecture
 
-### Structure des dossiers
+### Directory Structure
 
 ```
+├── app/                        # Next.js App Router (new pages)
+│   ├── api/                   # API routes (legacy, for SSE)
+│   ├── layout.tsx             # Root layout
+│   ├── page.tsx               # Home page
+│   ├── dashboard/             # Dashboard page
+│   ├── logs/                  # Logs page
+│   ├── models/                # Models management page
+│   ├── monitoring/            # Monitoring page
+│   ├── settings/              # Settings page
+│   └── not-found.tsx          # 404 page
+├── pages/
+│   └── api/                   # SSE endpoint
 ├── src/
-│   ├── app/                    # Routes Next.js App Router
-│   │   ├── api/               # API routes (config, models, monitoring, etc.)
-│   │   ├── dashboard/         # Page dashboard
-│   │   ├── logs/              # Page logs
-│   │   ├── models/            # Page modèles
-│   │   ├── monitoring/        # Page monitoring
-│   │   ├── settings/          # Page paramètres
-│   │   ├── layout.tsx         # Layout principal
-│   │   ├── page.tsx           # Page d'accueil (redirect)
-│   │   └── globals.css        # Styles globaux
-│   ├── components/            # Composants React
+│   ├── components/            # React components
 │   │   ├── layout/           # Header, Sidebar, Layout
-│   │   ├── pages/            # Composants de pages
-│   │   ├── ui/               # Composants UI réutilisables
-│   │   └── websocket/        # Gestionnaire WebSocket
-│   └── config/               # Configurations (models, app config)
-├── app/                       # Proxy App Router (requis par Next.js)
-├── public/                    # Assets statiques
-└── [config files]            # tsconfig.json, tailwind.config.js, etc.
+│   │   ├── pages/            # Page-specific components
+│   │   ├── ui/               # Reusable UI components
+│   │   ├── seo/              # SEO components
+│   │   ├── animate/          # Animation components
+│   │   └── websocket/        # WebSocket manager
+│   ├── hooks/                # Custom React hooks
+│   ├── services/             # API services & utilities
+│   ├── contexts/             # React contexts (theme, etc.)
+│   ├── types/                # TypeScript type definitions
+│   ├── config/               # Configuration
+│   ├── lib/                  # Utility libraries
+│   ├── styles/               # Global styles
+│   ├── providers/            # Context providers
+│   └── utils/                # Helper functions
+├── src/server/               # Backend logic
+│   ├── config.js             # Configuration management
+│   ├── config-schema.js      # Config validation schema
+│   ├── models.js             # Model management
+│   ├── metrics.js            # Metrics collection
+│   ├── logs.js               # Log management
+│   ├── llama-server.js       # Llama server integration
+│   ├── proxy.js              # Proxy utilities
+│   └── runtime-config.js     # Runtime configuration
+├── public/                   # Static assets
+├── server.js                 # Express + Socket.IO server
+└── [config files]           # tsconfig.json, tailwind.config.ts, etc.
 ```
 
-### Technologies utilisées
+### Technology Stack
 
-- **Frontend** : Next.js 16 (App Router), React 19, TypeScript
-- **Styling** : Tailwind CSS v4, animations CSS modernes
-- **UI/UX** : Design système avec composants réutilisables
-- **Temps réel** : WebSocket pour métriques et logs
-- **Build** : Turbopack, optimisation automatique
+- **Frontend**: Next.js 16 (App Router), React 19, TypeScript
+- **Styling**: Tailwind CSS v4, Emotion, Material-UI v7
+- **Real-time**: Socket.IO + WebSocket, Server-Sent Events (SSE)
+- **Forms & Validation**: React Hook Form, Zod
+- **Charts**: Recharts, MUI X-Charts
+- **State Management**: Zustand, React Query
+- **Server**: Express.js, Node.js
+- **Package Manager**: pnpm (required)
+- **Build**: Turbopack (Next.js built-in)
+- **Testing**: Jest, React Testing Library
+- **Logging**: Winston
 
-## 🛠️ Installation & Développement
+## 🛠️ Installation & Development
 
-### Prérequis
+### Prerequisites
 
-- Node.js 18+
-- pnpm (recommandé) ou npm/yarn
+- **Node.js 18+** (required)
+- **pnpm 9+** (required - not npm or yarn)
 
-### Installation
+### Quick Start
 
 ```bash
-# Cloner le repository
+# Clone the repository
 git clone <repository-url>
 cd nextjs-llama-async-proxy
 
-# Installer les dépendances
+# Install dependencies with pnpm
 pnpm install
 
-# Lancer le serveur de développement
+# Start development server
 pnpm dev
 ```
 
-Ouvrez [http://localhost:3000](http://localhost:3000) pour voir l'application.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### Scripts disponibles
+### Available Scripts
 
 ```bash
-pnpm dev          # Serveur de développement
-pnpm build        # Build de production
-pnpm start        # Serveur de production
-pnpm test         # Tests unitaires
-pnpm lint         # Linting du code
-pnpm lint:fix     # Correction automatique du linting
+# Development
+pnpm dev              # Start dev server (Next.js + Express + Socket.IO)
+pnpm dev:debug       # Development with debug logging
+
+# Build & Production
+pnpm build           # Build for production
+pnpm start           # Start production server
+
+# Testing
+pnpm test            # Run Jest tests
+pnpm test:watch      # Run tests in watch mode
+pnpm test:coverage   # Run tests with coverage report
+
+# Linting & Type Checking
+pnpm lint            # Run ESLint
+pnpm lint:fix        # Auto-fix linting issues
+pnpm type:check      # Type check with TypeScript
+
+# Other
+pnpm format          # Format code (if available)
 ```
 
 ## 📊 API Routes
 
-### Modèles (`/api/models`)
-- `GET /api/models` : Liste des modèles enregistrés
-- `POST /api/models` : Enregistrer de nouveaux modèles
-- `POST /api/models/discover` : Découverte automatique de modèles
+### Models Management
+- `GET /api/models` - List registered models
+- `POST /api/models` - Register new models
+- `POST /api/models/discover` - Automatic model discovery
+- `DELETE /api/models/:id` - Remove a model
 
-### Configuration (`/api/config`)
-- `GET /api/config` : Configuration de l'application
-- `POST /api/config` : Mise à jour de la configuration
+### Configuration
+- `GET /api/config` - Get application configuration
+- `POST /api/config` - Update configuration
 
-### Monitoring (`/api/monitoring`)
-- `GET /api/monitoring` : Métriques de performance
-- `GET /api/monitoring/history` : Historique des métriques
+### Monitoring
+- `GET /api/monitoring` - Performance metrics
+- `GET /api/monitoring/history` - Metrics history
 
-### Paramètres (`/api/parameters`)
-- `GET /api/parameters` : Liste des catégories de paramètres
-- `GET /api/parameters/[category]` : Paramètres d'une catégorie
-- `GET /api/parameters/category/[paramName]` : Valeur d'un paramètre spécifique
+### Parameters
+- `GET /api/parameters` - List parameter categories
+- `GET /api/parameters/[category]` - Category parameters
+- `GET /api/parameters/category/[paramName]` - Specific parameter value
 
-### WebSocket (`/api/websocket`)
-- Connexion WebSocket pour les données temps réel
+### Real-time Communication
+- **WebSocket** (`/socket.io`): Socket.IO for metrics, models, logs
+- **SSE** (`/api/sse`): Server-Sent Events endpoint
 
-## 🎨 Thème & Design
+## 🎨 Theme & Design
 
-### Palette de couleurs
-- **Primaire** : Tons gris chauds modernes
-- **Secondaire** : Rouge pour les accents
-- **Succès/Erreur** : Vert/Rouge standards
-- **Fond** : Blanc/crème (light), gris foncé (dark)
+### Color Palette
+- **Primary**: Modern warm grays
+- **Secondary**: Red accents
+- **Success/Error**: Standard green/red
+- **Background**: White/cream (light), dark gray (dark)
 
-### Fonctionnalités UI
-- **Mode sombre/clair** : Toggle automatique
-- **Animations fluides** : Transitions CSS avec easing cubic-bezier
-- **Effets 3D** : Ombres multicouches, transforms au hover
-- **Responsive** : Design mobile-first
-- **Accessibilité** : Contrastes élevés, navigation clavier
+### UI Features
+- **Dark/Light Mode**: Automatic toggle
+- **Smooth Animations**: CSS transitions with cubic-bezier easing
+- **3D Effects**: Layered shadows, hover transforms
+- **Responsive Design**: Mobile-first approach
+- **Accessibility**: High contrast, keyboard navigation
 
-### Composants clés
-- **Sidebar** : Navigation avec états actifs et hover
-- **Cards** : Composants avec effets verre et profondeur
-- **Charts** : Graphiques temps réel avec Recharts
-- **Logs** : Affichage coloré par niveau de sévérité
+### Key Components
+- **Sidebar**: Navigation with active states and hover effects
+- **Cards**: Glass effect with depth
+- **Charts**: Real-time updating graphs
+- **Logs**: Color-coded by severity level
 
-## 🚀 Déploiement
+## 🚀 Deployment
 
-### Build de production
+### Production Build
 
 ```bash
+# Build the application
 pnpm build
+
+# Start production server
 pnpm start
 ```
 
-### Variables d'environnement
+### Environment Variables
 
-Créer un fichier `.env.local` :
+Create a `.env.local` file in the project root:
 
 ```env
-NEXT_PUBLIC_WS_URL=ws://localhost:8080
+# Frontend
+NEXT_PUBLIC_WS_URL=ws://localhost:3000
 NEXT_PUBLIC_API_BASE_URL=http://localhost:3000/api
+
+# Backend (optional)
+NODE_ENV=production
+PORT=3000
 ```
 
-### Déploiement sur Vercel
+### Deployment Platforms
 
-1. Connecter le repository GitHub
-2. Configurer les variables d'environnement
-3. Déployer automatiquement
+**Vercel** (recommended for Next.js):
+1. Connect GitHub repository
+2. Configure environment variables in Vercel dashboard
+3. Push to deploy automatically
 
-## 🤝 Contribution
+**Docker**:
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
+COPY . .
+RUN pnpm build
+EXPOSE 3000
+CMD ["pnpm", "start"]
+```
 
-### Structure de code recommandée
+**Self-hosted**:
+1. Build with `pnpm build`
+2. Deploy with `pnpm start`
+3. Use a reverse proxy (nginx/caddy) for SSL/TLS
 
-Voir [DEVELOPMENT.md](DEVELOPMENT.md) pour les bonnes pratiques de développement.
+## 🤝 Contributing
 
-### Agents IA
+### Development Guidelines
 
-Ce projet utilise un système d'agents IA pour l'assistance au développement. Voir [AGENTS.md](AGENTS.md) pour les instructions détaillées.
+See [AGENTS.md](AGENTS.md) for detailed coding guidelines, including:
+- Code style conventions
+- TypeScript requirements
+- Import ordering
+- Testing expectations
 
-## 📝 Licence
+### Project Standards
 
-MIT - Voir le fichier LICENSE pour plus de détails.
+- **TypeScript**: Strict mode enabled
+- **Formatting**: 2 spaces, double quotes, 100-char line width
+- **Linting**: ESLint with auto-fix support
+- **React**: Functional components with hooks only
+- **Testing**: Jest + React Testing Library
 
-## 🔗 Liens utiles
+## 📝 Documentation
+
+- [AGENTS.md](AGENTS.md) - Coding guidelines & project standards
+- [CONFIGURATION.md](CONFIGURATION.md) - Configuration options
+- [SECURITY_NOTICE.md](SECURITY_NOTICE.md) - Security considerations
+- [PRODUCTION_SETUP.md](PRODUCTION_SETUP.md) - Production deployment guide
+- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues & solutions
+
+## 🔗 Resources
 
 - [Next.js Documentation](https://nextjs.org/docs)
+- [React Documentation](https://react.dev)
+- [TypeScript Handbook](https://www.typescriptlang.org/docs)
 - [Tailwind CSS](https://tailwindcss.com)
-- [Recharts](https://recharts.org)
-- [Lucide Icons](https://lucide.dev)
+- [Socket.IO Documentation](https://socket.io/docs)
+- [Zod Validation](https://zod.dev)
+- [Zustand State Management](https://github.com/pmndrs/zustand)
+- [pnpm Package Manager](https://pnpm.io)
+
+## 📄 License
+
+MIT - See LICENSE file for details
+
+## 🆘 Support
+
+For issues, questions, or contributions:
+1. Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+2. Review existing GitHub issues
+3. Create a new issue with detailed information
+4. Check the security notice before reporting security issues

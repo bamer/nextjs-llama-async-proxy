@@ -1,206 +1,467 @@
-# Guide de Dépannage
+# Troubleshooting Guide
 
-## Problèmes Courants et Solutions
+## Common Issues and Solutions
 
-### 1. WebSocket Non Connecté
+### 1. Port 3000 Already in Use
 
-**Symptômes** :
-- Message "WebSocket not connected, using fallback mock data"
-- Pas de données GPU affichées
-- Erreurs de timeout WebSocket
+**Symptom**: Error "EADDRINUSE: address already in use :::3000"
 
-**Solutions** :
+**Solutions**:
 
-#### Option A: Démarrer le serveur WebSocket (recommandé)
-
+#### Option A: Use a different port
 ```bash
-# Dans un terminal séparé
-pnpm run dev:full
-
-# Puis dans un autre terminal
-pnpm run dev
+PORT=3001 pnpm dev
 ```
 
-#### Option B: Utiliser les données mock (pour le développement)
+#### Option B: Kill the process using port 3000
+```bash
+# macOS/Linux
+lsof -i :3000
+kill -9 <PID>
 
-Les données GPU mock sont maintenant incluses dans le fallback. Si WebSocket n'est pas disponible, vous devriez voir :
-- 4 cartes GPU avec des données aléatoires réalistes
-- Graphique GPU avec historique
-- Toutes les fonctionnalités GPU disponibles
+# Windows
+netstat -ano | findstr :3000
+taskkill /PID <PID> /F
+```
 
-### 2. Erreurs de Compilation
+---
 
-**Symptômes** :
-- Erreurs TypeScript lors de `pnpm run build`
-- Messages comme "'Divider' is declared but its value is never read"
+### 2. WebSocket Connection Failed
 
-**Solutions** :
+**Symptoms**:
+- "WebSocket not connected" message in console
+- Metrics/models not updating in real-time
+- Repeated connection timeout errors
 
-#### Import inutilisé
-Supprimez les imports non utilisés. Exemple :
+**Solutions**:
 
+#### Check server is running
+```bash
+# Verify server is listening
+curl http://localhost:3000
+
+# Check WebSocket endpoint
+curl http://localhost:3000/llamaproxws
+```
+
+#### Check WebSocket URL configuration
+In `.env.local`:
+```env
+NEXT_PUBLIC_WS_URL=ws://localhost:3000
+```
+
+#### Verify firewall rules
+- Allow inbound connections to port 3000
+- Check if corporate firewall blocks WebSocket
+
+#### Review server logs
+```bash
+# Start with debug logging
+pnpm dev 2>&1 | grep -i socket
+```
+
+#### Browser console errors
+1. Open DevTools (F12)
+2. Check Console tab for specific errors
+3. Check Network tab for failed WebSocket connections
+
+---
+
+### 3. TypeScript Compilation Errors
+
+**Symptoms**:
+- Build fails with TypeScript errors
+- Unused variable/import warnings
+- Type mismatches
+
+**Solutions**:
+
+#### Run type checking
+```bash
+pnpm type:check
+```
+
+#### Remove unused imports
 ```typescript
-// Avant
-import { Card, CardContent, Typography, Box, Chip, TextField, InputAdornment, IconButton, Pagination, Divider } from "@mui/material";
+// ❌ Before
+import { Card, Divider, Button } from "@mui/material";
 
-// Après  
-import { Card, CardContent, Typography, Box, Chip, TextField, InputAdornment, IconButton, Pagination } from "@mui/material";
+// ✅ After
+import { Card, Button } from "@mui/material";
 ```
 
-#### Composants dépréciés
-Remplacez `GridLegacy` par `Grid` :
-
+#### Fix type mismatches
 ```typescript
-// Avant
-import { GridLegacy } from "@mui/material";
-<GridLegacy container spacing={3}>
+// ❌ Before
+const value: string = 123;
 
-// Après
-import { Grid } from "@mui/material";
-<Grid container spacing={3}>
+// ✅ After
+const value: number = 123;
+// OR
+const value: string = "123";
 ```
 
-### 3. Problèmes de Performance
+#### Mark unused parameters
+```typescript
+// ❌ Before
+function handler(event, unused) {
+  return event.data;
+}
 
-**Symptômes** :
-- Messages "handler took XXXms"
-- Interface lente ou saccadée
+// ✅ After
+function handler(event, _unused) {
+  return event.data;
+}
+```
 
-**Solutions** :
+---
 
-#### Optimisation des graphiques
-- Limitez le nombre de points de données (actuellement 20)
-- Utilisez `ResponsiveContainer` pour éviter les redimensionnements coûteux
+### 4. pnpm Dependency Issues
 
-#### Réduction des mises à jour
-- Le code vérifie déjà les changements avant de mettre à jour les graphiques
-- Les données sont mises à jour toutes les 5 secondes (configurable)
+**Symptoms**:
+- "Cannot find module" errors
+- Package not found after installation
+- Build fails with missing dependencies
 
-### 4. Problèmes d'Icônes
+**Solutions**:
 
-**Symptômes** :
-- Erreurs "Failed to load icon"
-- Icônes manquantes dans la barre d'adresse
-
-**Solutions** :
-
-Vérifiez que les fichiers d'icônes existent :
-- `public/apple-touch-icon.png`
-- `public/favicon.ico`
-
-Si manquants, créez des icônes de fallback ou supprimez les références.
-
-## Configuration Recommandée
-
-### Pour le développement
-
+#### Clean reinstall dependencies
 ```bash
-# Terminal 1: Serveur WebSocket + Next.js
-pnpm run dev:full
+# Remove lock file and node_modules
+rm -rf node_modules pnpm-lock.yaml
 
-# Terminal 2: (Optionnel) Juste Next.js si vous voulez utiliser les mocks
-pnpm run dev
+# Reinstall
+pnpm install --frozen-lockfile
 ```
 
-### Pour la production
-
+#### Update pnpm
 ```bash
-# Build
-pnpm run build
-
-# Start
-pnpm run start
+npm install -g pnpm@latest
+pnpm --version  # Should be 9.x or higher
 ```
 
-## Vérification des Fonctionnalités
+#### Verify using pnpm (not npm or yarn)
+```bash
+# ✅ Correct
+pnpm dev
+pnpm install
 
-### Vérifier que les données GPU s'affichent
+# ❌ Wrong
+npm dev
+npm install
+yarn dev
+```
 
-1. Ouvrez le dashboard (`/dashboard`)
-2. Faites défiler vers le bas
-3. Vous devriez voir :
-   - Section "GPU Performance" avec 4 cartes
-   - Graphique "GPU Performance History"
-   - Données réalistes même sans WebSocket
+#### Check Node.js version
+```bash
+node --version  # Should be 18.x or higher
+```
 
-### Vérifier la connexion WebSocket
+---
 
-1. Ouvrez les outils de développement (F12)
-2. Allez dans l'onglet "Console"
-3. Cherchez les messages :
-   - "WebSocket hook: connecting..." → Tentative de connexion
-   - "Socket.IO connected to http://localhost:3000" → Connexion réussie
-   - "WebSocket not connected, using fallback mock data" → Utilisation des mocks
+### 5. Build Fails in Production
 
-### Vérifier les données en temps réel
+**Symptoms**:
+- `pnpm build` fails with various errors
+- Works in dev but not after build
+- "Module not found" during production build
 
-Si WebSocket est connecté :
-1. Les données devraient se mettre à jour toutes les 5 secondes
-2. Les graphiques devraient montrer des courbes qui évoluent
-3. Les valeurs devraient changer légèrement à chaque mise à jour
+**Solutions**:
 
-## Résolution des Problèmes Spécifiques
+#### Full clean rebuild
+```bash
+# Remove all build artifacts
+rm -rf .next node_modules pnpm-lock.yaml
 
-### "WebSocket is closed before the connection is established"
+# Reinstall and rebuild
+pnpm install --frozen-lockfile
+pnpm build
+```
 
-**Cause** : Le serveur WebSocket n'est pas démarré ou il y a un problème de CORS.
+#### Check environment variables
+```bash
+# Verify .env.local has correct values
+cat .env.local
 
-**Solution** :
-1. Assurez-vous que `pnpm run dev:full` est en cours d'exécution
-2. Vérifiez que le port 3000 est disponible
-3. Si vous utilisez un proxy ou un VPN, désactivez-le temporairement
+# Or use defaults
+NEXT_PUBLIC_WS_URL=ws://localhost:3000 pnpm build
+```
 
-### Les données GPU ne s'affichent pas
+#### Check disk space
+```bash
+df -h  # macOS/Linux
+diskpart (Windows)
+```
 
-**Causes possibles** :
-1. WebSocket non connecté ET mock data non généré
-2. Erreur dans le code de rendu
-3. Problème de CSS
+#### Verify Node.js and pnpm versions
+```bash
+node --version  # 18+
+pnpm --version  # 9+
+npm --version   # Only for installing pnpm globally
+```
 
-**Solutions** :
-1. Vérifiez que `metrics.gpuUsage` est défini dans le store
-2. Ouvrez les outils de développement et vérifiez l'onglet "Components"
-3. Cherchez la section GPU dans le DOM
+---
 
-### Les graphiques ne se mettent pas à jour
+### 6. Development Server Issues
 
-**Causes possibles** :
-1. Le hook useEffect n'est pas déclenché
-2. Les données ne changent pas assez
-3. Problème de référence
+**Symptom**: Dev server crashes or hangs
 
-**Solutions** :
-1. Ajoutez des logs dans le useEffect de génération des graphiques
-2. Vérifiez que `metrics` change bien
-3. Assurez-vous que le tableau `chartData` est mis à jour
+**Solutions**:
 
-## Bonnes Pratiques
+#### Check for infinite loops
+Look for:
+- Infinite `useEffect` hooks
+- Circular dependencies
+- Memory leaks
 
-### Pour le développement
+#### Clear Next.js cache
+```bash
+rm -rf .next .swc
+pnpm dev
+```
 
-- Utilisez `pnpm run dev:full` pour avoir toutes les fonctionnalités
-- Si vous travaillez sur l'UI uniquement, `pnpm run dev` suffit
-- Vérifiez toujours la console pour les erreurs
+#### Check console for error messages
+Start with full output:
+```bash
+pnpm dev 2>&1 | tee dev.log
+```
 
-### Pour le débogage
+---
 
-- Utilisez `console.log()` stratégiquement
-- Utilisez les outils de développement React
-- Vérifiez le store Redux/Zustand pour voir les données
+### 7. Socket.IO Connection Issues
 
-### Pour les tests
+**Symptoms**:
+- Socket.IO errors in console
+- Real-time updates not working
+- Multiple connection errors
 
-- Testez toujours avec et sans WebSocket
-- Vérifiez le comportement responsive
-- Testez les thèmes sombre et clair
+**Solutions**:
 
-## Support
+#### Verify Socket.IO path
+Default: `/llamaproxws` (configured in `server.js`)
 
-Si vous rencontrez des problèmes persistants :
+Check in browser console:
+```javascript
+// Open DevTools console and check:
+// You should see Socket.IO debug messages
+```
 
-1. Vérifiez les logs du serveur WebSocket
-2. Vérifiez les logs du navigateur
-3. Consultez la documentation des composants utilisés
-4. Vérifiez que toutes les dépendances sont à jour (`pnpm update`)
+#### Check CORS settings
+In `server.js`, CORS is open:
+```javascript
+cors: {
+  origin: '*',
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}
+```
 
-N'hésitez pas à demander de l'aide si vous avez besoin d'assistance supplémentaire !
+For production, restrict origin:
+```javascript
+cors: {
+  origin: 'https://your-domain.com',
+  methods: ['GET', 'POST']
+}
+```
+
+#### Verify update intervals
+In `server.js`:
+```javascript
+const UPDATE_CONFIG = {
+  METRICS_INTERVAL: 10000,  // 10 seconds
+  MODELS_INTERVAL: 30000,   // 30 seconds
+  LOGS_INTERVAL: 15000,     // 15 seconds
+};
+```
+
+---
+
+### 8. Memory Leaks or High Memory Usage
+
+**Symptoms**:
+- Application getting slower over time
+- Memory usage increasing
+- Server crashes after running for a while
+
+**Solutions**:
+
+#### Monitor memory usage
+```bash
+# macOS/Linux
+top -p <PID>
+ps aux | grep node
+
+# Windows
+tasklist | findstr node
+wmic process where name="node.exe" get WorkingSetSize
+```
+
+#### Check for memory leaks
+- Look for event listeners not being removed
+- Check for circular references
+- Review WebSocket connection cleanup
+
+#### Restart periodically
+Use PM2 with restart:
+```javascript
+// ecosystem.config.js
+max_memory_restart: "500M",  // Restart if exceeds 500MB
+```
+
+---
+
+### 9. ESLint Errors
+
+**Symptom**: Linting fails with `pnpm lint`
+
+**Solutions**:
+
+#### Auto-fix linting issues
+```bash
+pnpm lint:fix
+```
+
+#### Check specific rules
+Common issues:
+- Import ordering
+- Unused variables (mark with `_`)
+- Missing return types
+- console.log() in non-test files
+
+#### Disable rule for specific line
+```typescript
+// eslint-disable-next-line rule-name
+const value = calculateSomething();
+```
+
+---
+
+### 10. React/Component Errors
+
+**Symptoms**:
+- "Cannot read property X of undefined"
+- White screen with error in console
+- Component not rendering
+
+**Solutions**:
+
+#### Check component exports
+```typescript
+// ✅ Correct
+export function Button() { ... }
+export default Button;
+
+// ❌ Wrong (missing export)
+function Button() { ... }
+```
+
+#### Use optional chaining
+```typescript
+// ❌ Old way (crashes if undefined)
+const value = data.nested.property;
+
+// ✅ Safe way
+const value = data?.nested?.property;
+```
+
+#### Add error boundaries
+Wrap components that might error:
+```typescript
+<ErrorBoundary>
+  <YourComponent />
+</ErrorBoundary>
+```
+
+---
+
+### 11. Deployment Issues
+
+**Symptom**: Works locally but fails on production
+
+**Solutions**:
+
+#### Verify environment variables
+```bash
+# Check all required env vars are set
+NEXT_PUBLIC_WS_URL=... pnpm build
+NEXT_PUBLIC_API_BASE_URL=... pnpm start
+```
+
+#### Check Node.js version on server
+```bash
+node --version
+```
+
+#### Verify build output
+```bash
+# After build, check .next directory exists
+ls -la .next/
+```
+
+#### Test production build locally
+```bash
+pnpm build
+pnpm start
+# Open http://localhost:3000
+```
+
+---
+
+### 12. Git/Commit Issues
+
+**Common issues**:
+- "pre-commit hook failed" (ESLint errors)
+- Merge conflicts in lock file
+- Revert unwanted changes
+
+**Solutions**:
+
+#### Fix linting before commit
+```bash
+pnpm lint:fix
+git add .
+git commit -m "message"
+```
+
+#### Resolve pnpm-lock.yaml conflicts
+```bash
+# Remove and regenerate lock file
+rm pnpm-lock.yaml
+pnpm install
+git add pnpm-lock.yaml
+git commit -m "resolve lock file"
+```
+
+#### Check git status
+```bash
+git status
+git diff
+```
+
+---
+
+## Getting Help
+
+### Information to collect when asking for help
+
+1. **Error message** (exact text)
+2. **Node.js version**: `node --version`
+3. **pnpm version**: `pnpm --version`
+4. **Operating system**: Windows/macOS/Linux
+5. **Steps to reproduce**
+6. **Console output**: Run with `2>&1 | tee debug.log`
+
+### Resources
+
+- [Next.js Docs](https://nextjs.org/docs)
+- [React Docs](https://react.dev)
+- [Socket.IO Troubleshooting](https://socket.io/docs/v4/troubleshooting-connection-issues/)
+- [pnpm Documentation](https://pnpm.io/)
+- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
+
+### Check Related Documents
+
+- [README.md](README.md) - Project overview
+- [AGENTS.md](AGENTS.md) - Development guidelines
+- [PRODUCTION_SETUP.md](PRODUCTION_SETUP.md) - Production deployment
+- [CONFIGURATION.md](CONFIGURATION.md) - Configuration options
