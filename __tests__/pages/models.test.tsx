@@ -1,15 +1,15 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
-import { ThemeProvider } from "../../../src/contexts/ThemeContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { createTheme, ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
-import ModelsPage from "../../../app/models/page";
+import ModelsPage from "../../app/models/page";
 
-jest.mock("../../../src/lib/store", () => ({
+jest.mock("@/lib/store", () => ({
   useStore: jest.fn(),
 }));
 
-jest.mock("../../../src/lib/websocket-client", () => ({
+jest.mock("@/lib/websocket-client", () => ({
   websocketServer: {
     connect: jest.fn(),
     disconnect: jest.fn(),
@@ -19,13 +19,13 @@ jest.mock("../../../src/lib/websocket-client", () => ({
   },
 }));
 
-jest.mock("../../../src/components/layout/main-layout", () => ({
+jest.mock("@/components/layout/MainLayout", () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="main-layout">{children}</div>,
 }));
 
 global.fetch = jest.fn();
 
-const { useStore } = require("../../../src/lib/store");
+const { useStore } = require("@/lib/store");
 
 const createMockModels = (overrides = {}) => [
   {

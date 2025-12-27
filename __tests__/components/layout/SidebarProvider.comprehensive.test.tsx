@@ -136,7 +136,7 @@ describe('SidebarProvider - Comprehensive Tests', () => {
       const toggleButton = screen.getByTestId('toggle');
       const isOpenSpan = screen.getByTestId('is-open');
 
-      for (let i = 0; i < 5; i++) {
+      for (let i = 1; i <= 5; i++) {
         fireEvent.click(toggleButton);
         expect(isOpenSpan).toHaveTextContent(i % 2 === 0 ? 'false' : 'true');
       }
@@ -221,10 +221,10 @@ describe('SidebarProvider - Comprehensive Tests', () => {
       const closeButton = screen.getByTestId('close');
       const isOpenSpan = screen.getByTestId('is-open');
 
-      openButton.click();
+      fireEvent.click(openButton);
       expect(isOpenSpan).toHaveTextContent('true');
 
-      closeButton.click();
+      fireEvent.click(closeButton);
       expect(isOpenSpan).toHaveTextContent('false');
     });
 

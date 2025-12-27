@@ -269,10 +269,25 @@ describe('LlamaService', () => {
       // Set up a running process
       (llamaService as any).process = mockProcess;
 
-      await llamaService.stop();
+      // Track the exit callback
+      let exitCallback: ((code: number | null, signal: string | null) => void) | null = null;
+      mockProcess.on = jest.fn().mockImplementation((event: string, callback: Function) => {
+        if (event === 'exit') {
+          exitCallback = callback;
+        }
+      });
+
+      const stopPromise = llamaService.stop();
 
       expect(mockProcess.kill).toHaveBeenCalledWith('SIGTERM');
-      
+
+      // Trigger the exit callback to resolve the stop promise
+      if (exitCallback) {
+        exitCallback(0, 'SIGTERM');
+      }
+
+      await stopPromise;
+
       const state = llamaService.getState();
       expect(state.status).toBe('initial');
     });

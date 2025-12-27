@@ -1,24 +1,24 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
-import { ThemeProvider } from "../../../src/contexts/ThemeContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { createTheme, ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
-import LogsPage from "../../../app/logs/page";
+import LogsPage from "../../app/logs/page";
 
-jest.mock("../../../src/lib/store", () => ({
+jest.mock("@/lib/store", () => ({
   useStore: jest.fn(),
 }));
 
-jest.mock("../../../src/hooks/use-websocket", () => ({
+jest.mock("@/hooks/use-websocket", () => ({
   useWebSocket: jest.fn(),
 }));
 
-jest.mock("../../../src/components/layout/main-layout", () => ({
+jest.mock("@/components/layout/MainLayout", () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="main-layout">{children}</div>,
 }));
 
-const { useStore } = require("../../../src/lib/store");
-const { useWebSocket } = require("../../../src/hooks/use-websocket");
+const { useStore } = require("@/lib/store");
+const { useWebSocket } = require("@/hooks/use-websocket");
 
 const createMockLogs = (overrides = {}) => [
   {

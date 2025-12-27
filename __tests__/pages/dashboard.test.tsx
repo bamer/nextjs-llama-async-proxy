@@ -1,25 +1,27 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
-import { ThemeProvider } from "../../../src/contexts/ThemeContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { createTheme, ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
-import ModernDashboard from "../../../src/components/dashboard/ModernDashboard";
+import ModernDashboard from "@/components/dashboard/ModernDashboard";
+
+const mockPush = jest.fn();
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({
-    push: jest.fn(),
+    push: mockPush,
   }),
 }));
 
-jest.mock("../../../src/lib/store", () => ({
+jest.mock("@/lib/store", () => ({
   useStore: jest.fn(),
 }));
 
-jest.mock("../../../src/hooks/use-websocket", () => ({
+jest.mock("@/hooks/use-websocket", () => ({
   useWebSocket: jest.fn(),
 }));
 
-jest.mock("../../../src/hooks/useChartHistory", () => ({
+jest.mock("@/hooks/useChartHistory", () => ({
   useChartHistory: jest.fn(),
 }));
 
@@ -38,16 +40,9 @@ jest.mock("@mui/x-charts", () => ({
   BarChart: () => <div data-testid="bar-chart">BarChart</div>,
 }));
 
-const mockPush = jest.fn();
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({
-    push: mockPush,
-  }),
-}));
-
-const { useStore } = require("../../../src/lib/store");
-const { useWebSocket } = require("../../../src/hooks/use-websocket");
-const { useChartHistory } = require("../../../src/hooks/useChartHistory");
+const { useStore } = require("@/lib/store");
+const { useWebSocket } = require("@/hooks/use-websocket");
+const { useChartHistory } = require("@/hooks/useChartHistory");
 
 const createMockStore = (overrides = {}) => ({
   models: [

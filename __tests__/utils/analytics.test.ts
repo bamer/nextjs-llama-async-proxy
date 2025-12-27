@@ -297,8 +297,8 @@ describe('analytics', () => {
       analytics.clear();
 
       expect(mockCaptureMetrics.clear).toHaveBeenCalled();
-      expect(mockCaptureMetrics.clearEvents.mockResolvedValue(undefined).toHaveBeenCalled();
-      expect(mockCaptureMetrics.clearSessions.mockResolvedValue(undefined).toHaveBeenCalled();
+      expect(mockCaptureMetrics.clearEvents).toHaveBeenCalled();
+      expect(mockCaptureMetrics.clearSessions).toHaveBeenCalled();
     });
   });
 

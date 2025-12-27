@@ -1,15 +1,15 @@
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
-import { ThemeProvider } from "../../../src/contexts/ThemeContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { createTheme, ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
-import SettingsPage from "../../../app/settings/page";
+import SettingsPage from "../../app/settings/page";
 
-jest.mock("../../../src/components/configuration/ModernConfiguration", () => ({
+jest.mock("@/components/configuration/ModernConfiguration", () => ({
   default: () => <div data-testid="modern-configuration">ModernConfiguration</div>,
 }));
 
-jest.mock("../../../src/components/layout/main-layout", () => ({
+jest.mock("@/components/layout/MainLayout", () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="main-layout">{children}</div>,
 }));
 

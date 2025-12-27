@@ -8,6 +8,7 @@ const jestConfig: Config = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@/app/(.*)$': '<rootDir>/app/$1',
   },
+  snapshotSerializers: ['@emotion/jest/serializer'],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',

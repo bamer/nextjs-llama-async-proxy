@@ -1,32 +1,32 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
-import { ThemeProvider } from "../../../src/contexts/ThemeContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { createTheme, ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
-import MonitoringPage from "../../../app/monitoring/page";
+import MonitoringPage from "../../app/monitoring/page";
 
-jest.mock("../../../src/lib/store", () => ({
+jest.mock("@/lib/store", () => ({
   useStore: jest.fn(),
 }));
 
-jest.mock("../../../src/hooks/useChartHistory", () => ({
+jest.mock("@/hooks/useChartHistory", () => ({
   useChartHistory: jest.fn(),
 }));
 
-jest.mock("../../../src/components/charts/PerformanceChart", () => ({
+jest.mock("@/components/charts/PerformanceChart", () => ({
   PerformanceChart: () => <div data-testid="performance-chart">PerformanceChart</div>,
 }));
 
-jest.mock("../../../src/components/charts/GPUUMetricsCard", () => ({
-  GPUUMetricsCard: () => <div data-testid="gpu-metrics-card">GPUUMetricsCard</div>,
+jest.mock("@/components/charts/GPUMetricsCard", () => ({
+  GPUMetricsCard: () => <div data-testid="gpu-metrics-card">GPUMetricsCard</div>,
 }));
 
-jest.mock("../../../src/components/layout/main-layout", () => ({
+jest.mock("@/components/layout/MainLayout", () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="main-layout">{children}</div>,
 }));
 
-const { useStore } = require("../../../src/lib/store");
-const { useChartHistory } = require("../../../src/hooks/useChartHistory");
+const { useStore } = require("@/lib/store");
+const { useChartHistory } = require("@/hooks/useChartHistory");
 
 const createMockMetrics = (overrides = {}) => ({
   cpuUsage: 45,

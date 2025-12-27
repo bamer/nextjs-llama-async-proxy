@@ -219,8 +219,6 @@ describe('ProcessManager', () => {
       // Both promises should resolve
       expect(mockProcess.kill).toHaveBeenCalledTimes(2);
     });
-      expect(processManager.getProcess()).toBeNull();
-    });
 
     it('should handle exit with signal', async () => {
       processManager.spawn('test-binary', []);
