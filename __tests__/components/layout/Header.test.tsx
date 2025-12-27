@@ -67,14 +67,14 @@ describe('Header', () => {
   });
 
   it('renders app bar with correct height', () => {
-    const { container } = renderWithTheme(<Header />);
-    const appBar = container.querySelector('.MuiAppBar-root');
+    renderWithTheme(<Header />);
+    const appBar = screen.getByTestId('header-appbar');
     expect(appBar).toBeInTheDocument();
   });
 
   it('renders toolbar', () => {
-    const { container } = renderWithTheme(<Header />);
-    const toolbar = container.querySelector('.MuiToolbar-root');
+    renderWithTheme(<Header />);
+    const toolbar = screen.getByTestId('header-toolbar');
     expect(toolbar).toBeInTheDocument();
   });
 
@@ -93,7 +93,7 @@ describe('Header', () => {
     });
 
     const { container } = renderWithTheme(<Header />);
-    const appBar = container.querySelector('.MuiAppBar-root');
+    const appBar = screen.getByTestId('header-appbar');
     expect(appBar).toBeInTheDocument();
   });
 
@@ -107,7 +107,7 @@ describe('Header', () => {
     });
 
     const { container } = renderWithTheme(<Header />);
-    const appBar = container.querySelector('.MuiAppBar-root');
+    const appBar = screen.getByTestId('header-appbar');
     expect(appBar).toBeInTheDocument();
   });
 
@@ -213,7 +213,7 @@ describe('Header', () => {
       }));
 
       const { container } = renderWithTheme(<Header />);
-      const appBar = container.querySelector('.MuiAppBar-root');
+      const appBar = screen.getByTestId('header-appbar');
       expect(appBar).toBeInTheDocument();
     });
 
@@ -232,9 +232,9 @@ describe('Header', () => {
     it('handles missing Rocket icon gracefully', () => {
       const { container } = renderWithTheme(<Header />);
 
-      const rocketIcon = document.querySelector('.MuiSvgIcon-root');
       // Even if icon is missing, component should render
-      expect(container.querySelector('.MuiAppBar-root')).toBeInTheDocument();
+      expect(screen.getByTestId('header-appbar')).toBeInTheDocument();
+      expect(screen.getByText('Llama Runner Pro')).toBeInTheDocument();
     });
 
     it('handles window resize events', () => {
@@ -273,18 +273,19 @@ describe('Header', () => {
     });
 
     it('handles very long title text', () => {
-      const { container } = renderWithTheme(<Header />);
+      renderWithTheme(<Header />);
 
-      const title = container.querySelector('.MuiTypography-root');
+      const title = screen.getByText('Llama Runner Pro');
       expect(title).toBeInTheDocument();
       // Should not overflow or break layout
     });
 
     it('handles missing aria-label gracefully', () => {
-      const { container } = renderWithTheme(<Header />);
+      renderWithTheme(<Header />);
 
-      const iconButtons = container.querySelectorAll('.MuiIconButton-root');
-      expect(iconButtons.length).toBeGreaterThan(0);
+      const toggleButton = screen.getByLabelText('Toggle sidebar');
+      expect(toggleButton).toBeInTheDocument();
+      expect(toggleButton).toHaveAttribute('aria-label', 'Toggle sidebar');
     });
 
     it('handles concurrent theme and sidebar state changes', () => {
@@ -314,12 +315,12 @@ describe('Header', () => {
 
   describe('Accessibility Edge Cases', () => {
     it('maintains correct ARIA structure', () => {
-      const { container } = renderWithTheme(<Header />);
+      renderWithTheme(<Header />);
 
-      const appBar = container.querySelector('.MuiAppBar-root');
+      const appBar = screen.getByRole('banner');
       expect(appBar).toBeInTheDocument();
 
-      const toolbar = container.querySelector('.MuiToolbar-root');
+      const toolbar = screen.getByRole('toolbar');
       expect(toolbar).toBeInTheDocument();
     });
 

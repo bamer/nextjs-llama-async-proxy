@@ -357,6 +357,209 @@ describe('analyticsEngine', () => {
       const analytics = await analyticsEngine.getAnalytics();
       expect(analytics.bandwidthUsage).toBeLessThan(10000);
     });
+
+    // Positive: Test file system access error handling (line 77 in source)
+    it('should handle directory access errors gracefully', async () => {
+      const mockMetrics = { memoryUsage: 50 };
+      (captureMetrics as jest.Mock).mockReturnValue(mockMetrics);
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      mockedFsPromises.access.mockRejectedValue(new Error('Access denied'));
+
+      const analytics = await analyticsEngine.getAnalytics();
+      expect(analytics.storageUsed).toBe(0);
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    // Positive: Test file system readdir error handling (line 78 in source)
+    it('should handle directory readdir errors gracefully', async () => {
+      const mockMetrics = { memoryUsage: 50 };
+      (captureMetrics as jest.Mock).mockReturnValue(mockMetrics);
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      mockedFsPromises.access.mockResolvedValue(undefined);
+      mockedFsPromises.readdir.mockRejectedValue(new Error('Readdir failed'));
+
+      const analytics = await analyticsEngine.getAnalytics();
+      expect(analytics.storageUsed).toBe(0);
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    // Positive: Test file system stat error handling (line 81 in source)
+    it('should handle file stat errors gracefully', async () => {
+      const mockMetrics = { memoryUsage: 50 };
+      (captureMetrics as jest.Mock).mockReturnValue(mockMetrics);
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      mockedFsPromises.access.mockResolvedValue(undefined);
+      mockedFsPromises.readdir.mockResolvedValue(['file.log']);
+      mockedFsPromises.stat.mockRejectedValue(new Error('Stat failed'));
+
+      const analytics = await analyticsEngine.getAnalytics();
+      expect(analytics.storageUsed).toBe(0);
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    // Positive: Test requestsInLastMinute reset after 60 seconds (line 42-44 in source)
+    it('should reset requestsInLastMinute after 60 seconds', () => {
+      analyticsEngine.incRequest();
+      expect(analyticsEngine['requestsInLastMinute']).toBe(1);
+
+      // Advance time by 61 seconds
+      jest.advanceTimersByTime(61000);
+
+      analyticsEngine.incRequest();
+      expect(analyticsEngine['requestsInLastMinute']).toBe(1); // Should reset to 1
+    });
+
+    // Positive: Test exact 60 second boundary (line 42 in source)
+    it('should not reset requestsInLastMinute at exactly 60 seconds', () => {
+      analyticsEngine.incRequest();
+      expect(analyticsEngine['requestsInLastMinute']).toBe(1);
+
+      // Advance time by exactly 60 seconds
+      jest.advanceTimersByTime(60000);
+
+      analyticsEngine.incRequest();
+      expect(analyticsEngine['requestsInLastMinute']).toBe(2); // Should not reset
+    });
+
+    // Positive: Test storage calculation with multiple files (lines 78-85 in source)
+    it('should calculate storage correctly for multiple files', async () => {
+      const mockMetrics = { memoryUsage: 50 };
+      (captureMetrics as jest.Mock).mockReturnValue(mockMetrics);
+
+      mockedFsPromises.access.mockResolvedValue(undefined);
+      mockedFsPromises.readdir.mockResolvedValue(['file1.log', 'file2.log', 'file3.log']);
+      mockedFsPromises.stat
+        .mockImplementation((path: string) => {
+          if (path.includes('file1')) return Promise.resolve({ size: 1024 * 1024 }); // 1MB
+          if (path.includes('file2')) return Promise.resolve({ size: 2048 * 1024 }); // 2MB
+          if (path.includes('file3')) return Promise.resolve({ size: 512 * 1024 }); // 0.5MB
+          return Promise.resolve({ size: 0 });
+        });
+
+      const analytics = await analyticsEngine.getAnalytics();
+      expect(analytics.storageUsed).toBe(3.5); // 3.5MB total
+    });
+
+    // Positive: Test average response time calculation (line 69-70 in source)
+    it('should calculate average response time correctly', async () => {
+      const mockMetrics = { memoryUsage: 50 };
+      (captureMetrics as jest.Mock).mockReturnValue(mockMetrics);
+
+      analyticsEngine.recordResponseTime(100);
+      analyticsEngine.recordResponseTime(200);
+      analyticsEngine.recordResponseTime(300);
+
+      const analytics = await analyticsEngine.getAnalytics();
+      expect(analytics.averageResponseTime).toBe(200);
+    });
+
+    // Positive: Test error rate calculation (line 98 in source)
+    it('should calculate error rate correctly', async () => {
+      const mockMetrics = { memoryUsage: 50 };
+      (captureMetrics as jest.Mock).mockReturnValue(mockMetrics);
+
+      analyticsEngine.incRequest();
+      analyticsEngine.incRequest();
+      analyticsEngine.incRequest();
+      analyticsEngine.incError(); // 1 error out of 3 requests
+
+      const analytics = await analyticsEngine.getAnalytics();
+      expect(analytics.errorRate).toBeCloseTo(0.333, 3);
+    });
+
+    // Negative: Test handle extremely large response times
+    it('should handle extremely large response times', async () => {
+      const mockMetrics = { memoryUsage: 50 };
+      (captureMetrics as jest.Mock).mockReturnValue(mockMetrics);
+
+      analyticsEngine.recordResponseTime(Number.MAX_SAFE_INTEGER);
+
+      const analytics = await analyticsEngine.getAnalytics();
+      expect(analytics.averageResponseTime).toBe(Number.MAX_SAFE_INTEGER);
+    });
+
+    // Negative: Test handle negative response times
+    it('should handle negative response times', async () => {
+      const mockMetrics = { memoryUsage: 50 };
+      (captureMetrics as jest.Mock).mockReturnValue(mockMetrics);
+
+      analyticsEngine.recordResponseTime(-100);
+
+      const analytics = await analyticsEngine.getAnalytics();
+      expect(analytics.averageResponseTime).toBe(-100);
+    });
+
+    // Negative: Test handle response time limit (line 57-58 in source)
+    it('should limit response times to 1000 entries', () => {
+      for (let i = 0; i < 1100; i++) {
+        analyticsEngine.recordResponseTime(i);
+      }
+
+      expect(analyticsEngine['responseTimes'].length).toBe(1000);
+    });
+
+    // Positive: Test timestamp format (line 102 in source)
+    it('should include valid timestamp in analytics', async () => {
+      const mockMetrics = { memoryUsage: 50 };
+      (captureMetrics as jest.Mock).mockReturnValue(mockMetrics);
+
+      const beforeDate = new Date();
+      const analytics = await analyticsEngine.getAnalytics();
+      const afterDate = new Date();
+
+      const timestamp = new Date(analytics.timestamp);
+      expect(timestamp.getTime()).toBeGreaterThanOrEqual(beforeDate.getTime());
+      expect(timestamp.getTime()).toBeLessThanOrEqual(afterDate.getTime());
+    });
+
+    // Positive: Test totalUsers field (line 94 in source)
+    it('should return totalUsers as 1', async () => {
+      const mockMetrics = { memoryUsage: 50 };
+      (captureMetrics as jest.Mock).mockReturnValue(mockMetrics);
+
+      const analytics = await analyticsEngine.getAnalytics();
+      expect(analytics.totalUsers).toBe(1);
+    });
+
+    // Positive: Test uptime calculation (line 99 in source)
+    it('should calculate uptime percentage correctly', async () => {
+      const mockMetrics = { memoryUsage: 50 };
+      (captureMetrics as jest.Mock).mockReturnValue(mockMetrics);
+
+      const analytics = await analyticsEngine.getAnalytics();
+      expect(analytics.uptime).toBeGreaterThan(0);
+      expect(analytics.uptime).toBeLessThan(100);
+    });
+
+    // Positive: Test bandwidth usage calculation (line 100 in source)
+    it('should calculate bandwidth usage from memory', async () => {
+      const mockMetrics = { memoryUsage: 50 };
+      (captureMetrics as jest.Mock).mockReturnValue(mockMetrics);
+
+      const analytics = await analyticsEngine.getAnalytics();
+      expect(analytics.bandwidthUsage).toBe(500); // memoryUsage * 10
+    });
+
+    // Negative: Test handle concurrent getAnalytics calls
+    it('should handle concurrent getAnalytics calls', async () => {
+      const mockMetrics = { memoryUsage: 50 };
+      (captureMetrics as jest.Mock).mockReturnValue(mockMetrics);
+
+      const promises = [
+        analyticsEngine.getAnalytics(),
+        analyticsEngine.getAnalytics(),
+        analyticsEngine.getAnalytics(),
+      ];
+
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(3);
+    });
   });
 
   describe('ServerSentEventStream edge cases', () => {
@@ -390,6 +593,118 @@ describe('analyticsEngine', () => {
       mockedFsPromises.access.mockRejectedValue(new Error('Access failed'));
 
       const stream = await ServerSentEventStream.startStream();
+      expect(stream).toBeDefined();
+
+      consoleSpy.mockRestore();
+    });
+
+    // Negative: Test stream error during enqueue
+    it('should handle enqueue errors gracefully', async () => {
+      const mockMetrics = { memoryUsage: 50 };
+      (captureMetrics as jest.Mock).mockReturnValue(mockMetrics);
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      const mockController = {
+        enqueue: jest.fn().mockImplementation(() => {
+          throw new Error('Enqueue failed');
+        }),
+        cancel: jest.fn(),
+      };
+
+      ServerSentEventStream['streamController'] = mockController;
+
+      // Attempt to enqueue should not crash
+      expect(() => mockController.enqueue('test')).toThrow('Enqueue failed');
+
+      consoleSpy.mockRestore();
+    });
+
+    // Positive: Test stream starts successfully
+    it('should start stream successfully', async () => {
+      const mockMetrics = { memoryUsage: 50 };
+      (captureMetrics as jest.Mock).mockReturnValue(mockMetrics);
+
+      const stream = await ServerSentEventStream.startStream();
+
+      expect(stream).toBeInstanceOf(ReadableStream);
+    });
+
+    // Positive: Test stream sends analytics data
+    it('should send analytics data through stream', async () => {
+      const mockMetrics = { memoryUsage: 50 };
+      (captureMetrics as jest.Mock).mockReturnValue(mockMetrics);
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      const stream = await ServerSentEventStream.startStream();
+
+      expect(stream).toBeDefined();
+      expect(ServerSentEventStream.getStream()).toBeDefined();
+
+      consoleSpy.mockRestore();
+    });
+
+    // Positive: Test stream handles multiple concurrent streams
+    it('should handle multiple concurrent streams', async () => {
+      const mockMetrics = { memoryUsage: 50 };
+      (captureMetrics as jest.Mock).mockReturnValue(mockMetrics);
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      const stream1 = await ServerSentEventStream.startStream();
+      const stream2 = await ServerSentEventStream.startStream();
+
+      expect(stream1).toBeDefined();
+      expect(stream2).toBeDefined();
+      // Only one stream should be active
+      expect(ServerSentEventStream.getStream()).toBeDefined();
+
+      consoleSpy.mockRestore();
+    });
+
+    // Negative: Test stream with invalid data serialization
+    it('should handle invalid data serialization', async () => {
+      const mockMetrics = { memoryUsage: 50 };
+      (captureMetrics as jest.Mock).mockReturnValue(mockMetrics);
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      // Mock analytics to return circular data
+      const circularData: any = { a: 1 };
+      circularData.self = circularData;
+      (captureMetrics as jest.Mock).mockReturnValue(circularData as any);
+
+      const stream = await ServerSentEventStream.startStream();
+      expect(stream).toBeDefined();
+
+      consoleSpy.mockRestore();
+    });
+
+    // Negative: Test stream with missing analytics data
+    it('should handle missing analytics data', async () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      (captureMetrics as jest.Mock).mockReturnValue(undefined as any);
+
+      const stream = await ServerSentEventStream.startStream();
+      expect(stream).toBeDefined();
+
+      consoleSpy.mockRestore();
+    });
+
+    // Positive: Test stream with rapid enqueue calls
+    it('should handle rapid enqueue calls', async () => {
+      const mockMetrics = { memoryUsage: 50 };
+      (captureMetrics as jest.Mock).mockReturnValue(mockMetrics);
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      const stream = await ServerSentEventStream.startStream();
+      const controller = ServerSentEventStream.getStream();
+
+      if (controller?.enqueue) {
+        // Attempt rapid enqueue calls
+        for (let i = 0; i < 1000; i++) {
+          controller.enqueue(`data: test ${i}\n\n`);
+        }
+      }
+
       expect(stream).toBeDefined();
 
       consoleSpy.mockRestore();

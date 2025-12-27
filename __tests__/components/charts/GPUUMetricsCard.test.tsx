@@ -649,4 +649,72 @@ describe('GPUUMetricsCard', () => {
       expect(screen.getByText('No GPU data available')).toBeInTheDocument();
     });
   });
+
+  // ===== EXPLICIT UNDEFINED VALUE TESTS =====
+  // Test objective: Verify ternary operators handle undefined correctly (line 88, 106, 111)
+  describe('Explicit Undefined Values', () => {
+    it('renders N/A when gpuUsage is explicitly undefined but gpuName is provided', () => {
+      // This test covers the false branch of line 88:
+      // metrics.gpuUsage !== undefined ? `${metrics.gpuUsage.toFixed(1)}%` : 'N/A'
+      // We need gpuName to be defined to avoid "No GPU data available" state
+      const metricsWithUndefined = {
+        gpuUsage: undefined,
+        gpuName: 'Test GPU',
+        gpuMemoryUsed: 8,
+        gpuMemoryTotal: 24,
+        gpuTemperature: 65,
+      } as any;
+
+      renderWithTheme(
+        <GPUUMetricsCard
+          metrics={metricsWithUndefined}
+          isDark={false}
+        />
+      );
+
+      const naElements = screen.getAllByText('N/A');
+      expect(naElements.length).toBeGreaterThan(0);
+    });
+
+    it('renders N/A when gpuMemoryUsed and gpuMemoryTotal are undefined', () => {
+      // This covers line 106 branch where both are undefined
+      const metricsWithUndefinedMemory = {
+        gpuUsage: 80,
+        gpuName: 'Test GPU',
+        gpuMemoryUsed: undefined,
+        gpuMemoryTotal: undefined,
+      } as any;
+
+      renderWithTheme(
+        <GPUUMetricsCard
+          metrics={metricsWithUndefinedMemory}
+          isDark={false}
+        />
+      );
+
+      const naElements = screen.getAllByText('N/A');
+      expect(naElements.length).toBeGreaterThan(0);
+    });
+
+    it('renders N/A when gpuTemperature is undefined', () => {
+      // This covers line 111 branch where temperature is undefined
+      const metricsWithUndefinedTemp = {
+        gpuUsage: 80,
+        gpuName: 'Test GPU',
+        gpuMemoryUsed: 8,
+        gpuMemoryTotal: 24,
+        gpuTemperature: undefined,
+      } as any;
+
+      renderWithTheme(
+        <GPUUMetricsCard
+          metrics={metricsWithUndefinedTemp}
+          isDark={false}
+        />
+      );
+
+      const naElements = screen.getAllByText('N/A');
+      expect(naElements.length).toBeGreaterThan(0);
+    });
+  });
 });

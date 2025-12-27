@@ -5,6 +5,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { PerformanceChart } from '@/components/charts/PerformanceChart';
 
+// Default mock for most tests
 jest.mock('@mui/x-charts', () => ({
   LineChart: () => <div data-testid="line-chart" />,
   ChartsXAxis: () => null,

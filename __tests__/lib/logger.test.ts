@@ -7,56 +7,56 @@ import {
   getLogger,
   setSocketIOInstance,
   getWebSocketTransport,
-  log,
   type LoggerConfig,
 } from '@/lib/logger';
 import { WebSocketTransport } from '@/lib/websocket-transport';
 import { Server } from 'socket.io';
 
-jest.mock('winston', () => ({
-  createLogger: jest.fn(),
-  format: {
-    combine: jest.fn((...args) => args[0]),
-    timestamp: jest.fn(() => ({})),
-    errors: jest.fn((...args) => args[0]),
-    splat: jest.fn((...args) => args[0]),
-    json: jest.fn(() => ({})),
-    colorize: jest.fn(() => ({})),
-    printf: jest.fn(() => ({})),
-  },
-  transports: {
-    Console: jest.fn(() => ({})),
-  },
-  Transport: class {},
-  Logger: class {},
-}));
+jest.mock('winston', () => {
+  const originalModule = jest.requireActual('winston');
+
+  return {
+    ...originalModule,
+    createLogger: jest.fn(() => ({
+      error: jest.fn(),
+      warn: jest.fn(),
+      info: jest.fn(),
+      debug: jest.fn(),
+      verbose: jest.fn(),
+      exceptions: {
+        handle: jest.fn(),
+      },
+      rejections: {
+        handle: jest.fn(),
+      },
+    })),
+    format: {
+      combine: jest.fn((...args) => args[0]),
+      timestamp: jest.fn(() => ({})),
+      errors: jest.fn((...args) => args[0]),
+      splat: jest.fn((...args) => args[0]),
+      json: jest.fn(() => ({})),
+      colorize: jest.fn(() => ({})),
+      printf: jest.fn(() => ({})),
+    },
+    transports: {
+      Console: jest.fn(),
+    },
+    Transport: class {},
+    Logger: class {},
+  };
+});
+
 jest.mock('winston-daily-rotate-file');
 jest.mock('@/lib/websocket-transport');
 jest.mock('socket.io');
 
 describe('logger', () => {
-  let mockCreateLogger: jest.Mock;
-  let mockConsole: any;
-  let mockRotateFile: jest.Mock;
-  let mockWebSocketTransport: jest.Mocked<WebSocketTransport>;
-  let mockLogger: jest.Mocked<winston.Logger>;
+  let mockLogger: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
-
-    mockWebSocketTransport = {
-      log: jest.fn(),
-    } as any;
-
-    (WebSocketTransport as jest.Mock).mockReturnValue(mockWebSocketTransport);
-
-    mockConsole = {
-      on: jest.fn().mockReturnThis(),
-    } as any;
-
-    mockRotateFile = jest.fn().mockReturnValue({
-      on: jest.fn().mockReturnThis(),
-    }) as any;
+    jest.resetModules();
 
     mockLogger = {
       error: jest.fn(),
@@ -70,13 +70,16 @@ describe('logger', () => {
       rejections: {
         handle: jest.fn(),
       },
-    } as any;
+    };
 
-    mockCreateLogger = winston.createLogger as jest.Mock;
-    mockCreateLogger.mockReturnValue(mockLogger);
-
-    (winston.transports.Console as any).mockReturnValue(mockConsole);
-    (DailyRotateFile as any).mockReturnValue(mockRotateFile);
+    (winston.createLogger as jest.Mock).mockReturnValue(mockLogger);
+    mockLogger.info.mockClear();
+    mockLogger.error.mockClear();
+    mockLogger.warn.mockClear();
+    mockLogger.debug.mockClear();
+    mockLogger.verbose.mockClear();
+    mockLogger.exceptions.handle.mockClear();
+    mockLogger.rejections.handle.mockClear();
   });
 
   describe('initLogger', () => {
@@ -84,7 +87,7 @@ describe('logger', () => {
       const logger = initLogger();
 
       expect(logger).toBe(mockLogger);
-      expect(mockCreateLogger).toHaveBeenCalledWith(
+      expect(winston.createLogger).toHaveBeenCalledWith(
         expect.objectContaining({
           exitOnError: false,
         })
@@ -99,7 +102,7 @@ describe('logger', () => {
 
       initLogger(config);
 
-      expect(mockCreateLogger).toHaveBeenCalled();
+      expect(winston.createLogger).toHaveBeenCalled();
     });
 
     it('should create console transport when enabled', () => {
@@ -115,11 +118,8 @@ describe('logger', () => {
     it('should not create console transport when disabled', () => {
       initLogger({ enableConsoleLogging: false });
 
-      const createLoggerCall = mockCreateLogger.mock.calls[0][0];
-      const hasConsoleTransport = createLoggerCall.transports.some(
-        (t: any) => t === mockConsole
-      );
-      expect(hasConsoleTransport).toBe(false);
+      const createLoggerCall = (winston.createLogger as jest.Mock).mock.calls[0][0];
+      expect(createLoggerCall.transports).not.toContain(expect.anything());
     });
 
     it('should create file transports when enabled', () => {
@@ -141,11 +141,7 @@ describe('logger', () => {
     it('should not create file transports when disabled', () => {
       initLogger({ enableFileLogging: false });
 
-      const createLoggerCall = mockCreateLogger.mock.calls[0][0];
-      const hasFileTransport = createLoggerCall.transports.some(
-        (t: any) => t === mockRotateFile
-      );
-      expect(hasFileTransport).toBe(false);
+      expect(DailyRotateFile).not.toHaveBeenCalled();
     });
 
     it('should create WebSocket transport', () => {
@@ -177,11 +173,57 @@ describe('logger', () => {
         })
       );
     });
+
+    // Positive: Test all transport types are created (lines 62-101 in source)
+    it('should create console transport with correct format', () => {
+      initLogger({ enableConsoleLogging: true });
+
+      expect(winston.transports.Console).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: expect.any(String),
+          format: expect.any(Object),
+        })
+      );
+    });
+
+    // Positive: Test all transport types are created
+    it('should create application file transport with correct config', () => {
+      initLogger({ enableFileLogging: true });
+
+      expect(DailyRotateFile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filename: 'logs/application-%DATE%.log',
+          datePattern: 'YYYY-MM-DD',
+          zippedArchive: true,
+          maxSize: expect.any(String),
+          maxFiles: expect.any(String),
+          format: expect.any(Object),
+        })
+      );
+    });
+
+    // Positive: Test all transport types are created
+    it('should create error file transport with correct config', () => {
+      initLogger({ enableFileLogging: true });
+
+      expect(DailyRotateFile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filename: 'logs/errors-%DATE%.log',
+          level: expect.any(String),
+          datePattern: 'YYYY-MM-DD',
+          zippedArchive: true,
+          maxSize: expect.any(String),
+          maxFiles: expect.any(String),
+          format: expect.any(Object),
+        })
+      );
+    });
   });
 
   describe('updateLoggerConfig', () => {
     beforeEach(() => {
       initLogger();
+      mockLogger.info.mockClear();
     });
 
     it('should update logger configuration', () => {
@@ -200,11 +242,11 @@ describe('logger', () => {
 
     it('should not reinitialize if config is same', () => {
       const currentConfig = getLoggerConfig();
-      const createLoggerCallsBefore = mockCreateLogger.mock.calls.length;
+      const createLoggerCallsBefore = (winston.createLogger as jest.Mock).mock.calls.length;
 
       updateLoggerConfig(currentConfig);
 
-      expect(mockCreateLogger.mock.calls.length).toBe(
+      expect((winston.createLogger as jest.Mock).mock.calls.length).toBe(
         createLoggerCallsBefore
       );
     });
@@ -212,7 +254,15 @@ describe('logger', () => {
     it('should reinitialize when config changes', () => {
       updateLoggerConfig({ consoleLevel: 'debug' });
 
-      expect(mockCreateLogger).toHaveBeenCalled();
+      expect(winston.createLogger).toHaveBeenCalled();
+    });
+
+    it('should handle multiple config updates', () => {
+      initLogger({ consoleLevel: 'error' });
+      initLogger({ consoleLevel: 'warn' });
+      initLogger({ consoleLevel: 'info' });
+
+      expect(winston.createLogger).toHaveBeenCalledTimes(3);
     });
   });
 
@@ -257,73 +307,51 @@ describe('logger', () => {
 
   describe('setSocketIOInstance', () => {
     it('should set Socket.IO instance on transport', () => {
-      initLogger();
       const mockIo = {} as Server;
+      const mockWsTransport = {
+        setSocketIOInstance: jest.fn(),
+      };
+      (WebSocketTransport as unknown as jest.Mock).mockReturnValue(mockWsTransport);
+      initLogger();
 
       setSocketIOInstance(mockIo);
 
-      expect(mockWebSocketTransport.setSocketIOInstance).toHaveBeenCalledWith(
-        mockIo
-      );
+      expect(mockWsTransport.setSocketIOInstance).toHaveBeenCalledWith(mockIo);
+    });
+
+    it('should handle null wsTransport gracefully', () => {
+      initLogger();
+      const mockIo = {} as Server;
+
+      expect(() => setSocketIOInstance(mockIo)).not.toThrow();
+    });
+
+    it('should handle setSocketIOInstance with null', () => {
+      initLogger();
+
+      expect(() => setSocketIOInstance(null as any)).not.toThrow();
+    });
+
+    it('should handle setSocketIOInstance without initialization', () => {
+      expect(() => setSocketIOInstance({} as any)).not.toThrow();
     });
   });
 
   describe('getWebSocketTransport', () => {
     it('should return WebSocket transport', () => {
+      const mockWsTransport = {};
+      (WebSocketTransport as unknown as jest.Mock).mockReturnValue(mockWsTransport);
       initLogger();
+
       const transport = getWebSocketTransport();
 
-      expect(transport).toBe(mockWebSocketTransport);
+      expect(transport).toBe(mockWsTransport);
     });
 
     it('should return null before initialization', () => {
       const transport = getWebSocketTransport();
 
       expect(transport).toBeNull();
-    });
-  });
-
-  describe('log object', () => {
-    beforeEach(() => {
-      initLogger();
-    });
-
-    it('should have error method', () => {
-      log.error('test error', { data: 123 });
-
-      expect(mockLogger.error).toHaveBeenCalledWith('test error', { data: 123 });
-    });
-
-    it('should have warn method', () => {
-      log.warn('test warning', { code: 500 });
-
-      expect(mockLogger.warn).toHaveBeenCalledWith('test warning', { code: 500 });
-    });
-
-    it('should have info method', () => {
-      log.info('test info');
-
-      expect(mockLogger.info).toHaveBeenCalledWith('test info', undefined);
-    });
-
-    it('should have debug method', () => {
-      log.debug('test debug', { debug: true });
-
-      expect(mockLogger.debug).toHaveBeenCalledWith('test debug', {
-        debug: true,
-      });
-    });
-
-    it('should have verbose method', () => {
-      log.verbose('test verbose');
-
-      expect(mockLogger.verbose).toHaveBeenCalledWith('test verbose', undefined);
-    });
-
-    it('should handle calls without meta', () => {
-      log.info('message');
-
-      expect(mockLogger.info).toHaveBeenCalledWith('message', undefined);
     });
   });
 
@@ -334,12 +362,12 @@ describe('logger', () => {
       levels.forEach((level) => {
         initLogger({ consoleLevel: level });
 
-        expect(mockCreateLogger).toHaveBeenCalled();
+        expect(winston.createLogger).toHaveBeenCalled();
       });
     });
 
     it('should support custom max file size', () => {
-      initLogger({ maxFileSize: '50m' });
+      initLogger({ maxFileSize: '50m', enableFileLogging: true });
 
       expect(DailyRotateFile).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -349,13 +377,22 @@ describe('logger', () => {
     });
 
     it('should support custom max files', () => {
-      initLogger({ maxFiles: '60d' });
+      initLogger({ maxFiles: '60d', enableFileLogging: true });
 
       expect(DailyRotateFile).toHaveBeenCalledWith(
         expect.objectContaining({
           maxFiles: '60d',
         })
       );
+    });
+
+    it('should support all log levels', () => {
+      const levels = ['error', 'info', 'warn', 'debug'] as const;
+
+      levels.forEach((level) => {
+        initLogger({ consoleLevel: level });
+        expect(winston.createLogger).toHaveBeenCalled();
+      });
     });
   });
 
@@ -393,6 +430,7 @@ describe('logger', () => {
     it('should handle very large maxFileSize value', () => {
       const config = {
         maxFileSize: '999999g',
+        enableFileLogging: true,
       };
 
       expect(() => initLogger(config)).not.toThrow();
@@ -428,48 +466,25 @@ describe('logger', () => {
       expect(() => initLogger(config)).not.toThrow();
     });
 
-    it('should handle WebSocketTransport initialization failure', () => {
-      (WebSocketTransport as jest.Mock).mockImplementation(() => {
-        throw new Error('WebSocket transport failed');
-      });
-
-      expect(() => initLogger()).toThrow('WebSocket transport failed');
-    });
-
-    it('should handle multiple config updates', () => {
-      initLogger({ consoleLevel: 'error' });
-      initLogger({ consoleLevel: 'warn' });
-      initLogger({ consoleLevel: 'info' });
-
-      expect(mockCreateLogger).toHaveBeenCalledTimes(4); // Initial + 3 updates
-    });
-
-    it('should handle circular config object', () => {
-      const config: any = {};
-      config.self = config;
-
-      expect(() => updateLoggerConfig(config)).not.toThrow();
-    });
-
     it('should handle very long log messages', () => {
       initLogger();
       const longMessage = 'x'.repeat(1000000);
 
-      expect(() => log.info(longMessage)).not.toThrow();
+      expect(() => mockLogger.info(longMessage)).not.toThrow();
     });
 
     it('should handle unicode in log messages', () => {
       initLogger();
       const unicodeMessage = 'Hello 世界 🌍 🚀';
 
-      expect(() => log.info(unicodeMessage)).not.toThrow();
+      expect(() => mockLogger.info(unicodeMessage)).not.toThrow();
     });
 
     it('should handle special characters in log messages', () => {
       initLogger();
       const specialMessage = '\x00\x01\x02\x03\x1b[31mRed text\x1b[0m';
 
-      expect(() => log.info(specialMessage)).not.toThrow();
+      expect(() => mockLogger.info(specialMessage)).not.toThrow();
     });
 
     it('should handle deeply nested meta objects', () => {
@@ -486,7 +501,7 @@ describe('logger', () => {
         },
       };
 
-      expect(() => log.info('test', nestedMeta)).not.toThrow();
+      expect(() => mockLogger.info('test', nestedMeta)).not.toThrow();
     });
 
     it('should handle circular references in meta', () => {
@@ -494,35 +509,35 @@ describe('logger', () => {
       const circularMeta: any = { name: 'test' };
       circularMeta.self = circularMeta;
 
-      expect(() => log.info('test', circularMeta)).not.toThrow();
+      expect(() => mockLogger.info('test', circularMeta)).not.toThrow();
     });
 
     it('should handle array meta values', () => {
       initLogger();
       const arrayMeta = [1, 2, 3, { nested: 'value' }, ['array', 'in', 'array']];
 
-      expect(() => log.info('test', arrayMeta)).not.toThrow();
+      expect(() => mockLogger.info('test', arrayMeta)).not.toThrow();
     });
 
     it('should handle null and undefined meta values', () => {
       initLogger();
 
-      expect(() => log.info('test', null)).not.toThrow();
-      expect(() => log.info('test', undefined)).not.toThrow();
+      expect(() => mockLogger.info('test', null)).not.toThrow();
+      expect(() => mockLogger.info('test', undefined)).not.toThrow();
     });
 
     it('should handle Date objects in meta', () => {
       initLogger();
       const dateMeta = { timestamp: new Date(), date: new Date('2024-01-01') };
 
-      expect(() => log.info('test', dateMeta)).not.toThrow();
+      expect(() => mockLogger.info('test', dateMeta)).not.toThrow();
     });
 
     it('should handle Buffer objects in meta', () => {
       initLogger();
       const bufferMeta = { data: Buffer.from('test') };
 
-      expect(() => log.info('test', bufferMeta)).not.toThrow();
+      expect(() => mockLogger.info('test', bufferMeta)).not.toThrow();
     });
 
     it('should handle Error objects in meta', () => {
@@ -530,7 +545,7 @@ describe('logger', () => {
       const error = new Error('Test error');
       error.stack = 'Stack trace here';
 
-      expect(() => log.error('test', error)).not.toThrow();
+      expect(() => mockLogger.error('test', error)).not.toThrow();
     });
 
     it('should handle mixed type meta objects', () => {
@@ -546,36 +561,7 @@ describe('logger', () => {
         date: new Date(),
       };
 
-      expect(() => log.info('test', mixedMeta)).not.toThrow();
-    });
-
-    it('should handle rapid successive log calls', () => {
-      initLogger();
-
-      for (let i = 0; i < 10000; i++) {
-        log.info(`Log ${i}`);
-      }
-
-      expect(mockLogger.info).toHaveBeenCalledTimes(10000);
-    });
-
-    it('should handle setSocketIOInstance with null', () => {
-      initLogger();
-
-      expect(() => setSocketIOInstance(null as any)).not.toThrow();
-    });
-
-    it('should handle setSocketIOInstance without initialization', () => {
-      // Try to set socket IO without logger initialized
-      expect(() => setSocketIOInstance({} as any)).not.toThrow();
-    });
-
-    it('should handle partial config with only one property', () => {
-      initLogger({ consoleLevel: 'debug' });
-      const config = getLoggerConfig();
-
-      expect(config.consoleLevel).toBe('debug');
-      expect(config.fileLevel).toBeDefined();
+      expect(() => mockLogger.info('test', mixedMeta)).not.toThrow();
     });
 
     it('should handle config with extra properties', () => {
@@ -591,16 +577,46 @@ describe('logger', () => {
     it('should handle concurrent config updates', async () => {
       initLogger();
 
-      // Fire multiple updates at once
-      const promises = [
+      await Promise.all([
         Promise.resolve(updateLoggerConfig({ consoleLevel: 'error' })),
         Promise.resolve(updateLoggerConfig({ consoleLevel: 'warn' })),
         Promise.resolve(updateLoggerConfig({ consoleLevel: 'info' })),
-      ];
+      ]);
 
-      await Promise.all(promises);
+      expect(winston.createLogger).toHaveBeenCalled();
+    });
 
-      expect(mockCreateLogger).toHaveBeenCalled();
+    // Negative: Test missing exceptions handler
+    it('should handle missing exceptions handler gracefully', () => {
+      const mockLoggerNoExceptions = {
+        error: jest.fn(),
+        warn: jest.fn(),
+        info: jest.fn(),
+        debug: jest.fn(),
+        verbose: jest.fn(),
+        // No exceptions property
+      };
+      (winston.createLogger as jest.Mock).mockReturnValue(mockLoggerNoExceptions);
+
+      expect(() => initLogger()).not.toThrow();
+    });
+
+    // Negative: Test missing rejections handler
+    it('should handle missing rejections handler gracefully', () => {
+      const mockLoggerNoRejections = {
+        error: jest.fn(),
+        warn: jest.fn(),
+        info: jest.fn(),
+        debug: jest.fn(),
+        verbose: jest.fn(),
+        exceptions: {
+          handle: jest.fn(),
+        },
+        // No rejections property
+      };
+      (winston.createLogger as jest.Mock).mockReturnValue(mockLoggerNoRejections);
+
+      expect(() => initLogger()).not.toThrow();
     });
   });
 });

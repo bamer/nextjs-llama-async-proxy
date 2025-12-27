@@ -301,4 +301,224 @@ describe('GeneralSettingsTab', () => {
 
     expect(mockOnInputChange).toHaveBeenCalled();
   });
+
+  // Positive test: Verify Auto Update switch onChange handler works correctly
+  // This covers lines 103-110: Switch onChange handler for autoUpdate
+  it('calls onInputChange with correct event when Auto Update is toggled from false to true', () => {
+    const config = { ...defaultFormConfig, autoUpdate: false };
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} />
+    );
+
+    const checkbox = screen.getByLabelText('Auto Update') as HTMLInputElement;
+    fireEvent.click(checkbox);
+
+    expect(mockOnInputChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({
+          name: 'autoUpdate',
+          checked: true,
+          type: 'checkbox',
+        }),
+      })
+    );
+  });
+
+  it('calls onInputChange with correct event when Auto Update is toggled from true to false', () => {
+    const config = { ...defaultFormConfig, autoUpdate: true };
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} />
+    );
+
+    const checkbox = screen.getByLabelText('Auto Update') as HTMLInputElement;
+    fireEvent.click(checkbox);
+
+    expect(mockOnInputChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({
+          name: 'autoUpdate',
+          checked: false,
+          type: 'checkbox',
+        }),
+      })
+    );
+  });
+
+  // Positive test: Verify Notifications Enabled switch onChange handler works correctly
+  // This covers lines 133-140: Switch onChange handler for notificationsEnabled
+  it('calls onInputChange with correct event when Notifications is toggled from false to true', () => {
+    const config = { ...defaultFormConfig, notificationsEnabled: false };
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} />
+    );
+
+    const checkbox = screen.getByLabelText('Notifications Enabled') as HTMLInputElement;
+    fireEvent.click(checkbox);
+
+    expect(mockOnInputChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({
+          name: 'notificationsEnabled',
+          checked: true,
+          type: 'checkbox',
+        }),
+      })
+    );
+  });
+
+  it('calls onInputChange with correct event when Notifications is toggled from true to false', () => {
+    const config = { ...defaultFormConfig, notificationsEnabled: true };
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} />
+    );
+
+    const checkbox = screen.getByLabelText('Notifications Enabled') as HTMLInputElement;
+    fireEvent.click(checkbox);
+
+    expect(mockOnInputChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({
+          name: 'notificationsEnabled',
+          checked: false,
+          type: 'checkbox',
+        }),
+      })
+    );
+  });
+
+  // Positive test: Verify direct FormControlLabel onChange events work
+  it('handles direct FormControlLabel onChange for Auto Update', () => {
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+    );
+
+    // Find the FormControlLabel and trigger click on it
+    const autoUpdateLabel = screen.getByText('Auto Update');
+    fireEvent.click(autoUpdateLabel);
+
+    expect(mockOnInputChange).toHaveBeenCalled();
+  });
+
+  it('handles direct FormControlLabel onChange for Notifications', () => {
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+    );
+
+    const notificationsLabel = screen.getByText('Notifications Enabled');
+    fireEvent.click(notificationsLabel);
+
+    expect(mockOnInputChange).toHaveBeenCalled();
+  });
+
+  // Positive test: Test extreme values for number inputs (0, 1, 20, 21)
+  it('accepts min value of 1 for Max Concurrent Models', () => {
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+    );
+
+    const input = screen.getByLabelText('Max Concurrent Models');
+    fireEvent.change(input, { target: { name: 'maxConcurrentModels', value: '1' } });
+
+    expect(mockOnInputChange).toHaveBeenCalled();
+  });
+
+  it('accepts max value of 20 for Max Concurrent Models', () => {
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+    );
+
+    const input = screen.getByLabelText('Max Concurrent Models');
+    fireEvent.change(input, { target: { name: 'maxConcurrentModels', value: '20' } });
+
+    expect(mockOnInputChange).toHaveBeenCalled();
+  });
+
+  it('handles boundary value 0 for Max Concurrent Models', () => {
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+    );
+
+    const input = screen.getByLabelText('Max Concurrent Models');
+    fireEvent.change(input, { target: { name: 'maxConcurrentModels', value: '0' } });
+
+    expect(mockOnInputChange).toHaveBeenCalled();
+  });
+
+  it('handles boundary value 21 for Max Concurrent Models', () => {
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+    );
+
+    const input = screen.getByLabelText('Max Concurrent Models');
+    fireEvent.change(input, { target: { name: 'maxConcurrentModels', value: '21' } });
+
+    expect(mockOnInputChange).toHaveBeenCalled();
+  });
+
+  // Positive test: Test accessibility features (ARIA attributes)
+  it('has correct ARIA attributes for Max Concurrent Models input', () => {
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+    );
+
+    const input = screen.getByLabelText('Max Concurrent Models');
+    expect(input).toHaveAttribute('type', 'number');
+    expect(input).toHaveAttribute('min', '1');
+    expect(input).toHaveAttribute('max', '20');
+  });
+
+  it('has correct role for Switch components', () => {
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+    );
+
+    const switches = screen.getAllByRole('switch');
+    expect(switches.length).toBeGreaterThanOrEqual(2);
+  });
+
+  // Negative test: Verify undefined values don't crash Switch components
+  it('handles undefined autoUpdate value gracefully', () => {
+    const config = {
+      ...defaultFormConfig,
+      autoUpdate: undefined,
+    };
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} />
+    );
+
+    const checkbox = screen.getByLabelText('Auto Update');
+    expect(checkbox).toBeInTheDocument();
+  });
+
+  it('handles undefined notificationsEnabled value gracefully', () => {
+    const config = {
+      ...defaultFormConfig,
+      notificationsEnabled: undefined,
+    };
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} />
+    );
+
+    const checkbox = screen.getByLabelText('Notifications Enabled');
+    expect(checkbox).toBeInTheDocument();
+  });
+
+  // Positive test: Verify multiple switch toggles work correctly
+  it('handles multiple switch toggles in sequence', () => {
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+    );
+
+    const autoUpdateCheckbox = screen.getByLabelText('Auto Update');
+    const notificationsCheckbox = screen.getByLabelText('Notifications Enabled');
+
+    fireEvent.click(autoUpdateCheckbox);
+    expect(mockOnInputChange).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(notificationsCheckbox);
+    expect(mockOnInputChange).toHaveBeenCalledTimes(2);
+
+    fireEvent.click(autoUpdateCheckbox);
+    expect(mockOnInputChange).toHaveBeenCalledTimes(3);
+  });
 });

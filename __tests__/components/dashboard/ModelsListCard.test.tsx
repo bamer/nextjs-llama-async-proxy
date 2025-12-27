@@ -10,7 +10,10 @@ global.fetch = jest.fn();
 const theme = createTheme();
 
 function renderWithProviders(component: React.ReactElement) {
-  return render(<MuiThemeProvider theme={theme}>{component}</MuiThemeProvider>);
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <MuiThemeProvider theme={theme}>{children}</MuiThemeProvider>
+  );
+  return render(component, { wrapper });
 }
 
 describe("ModelsListCard", () => {
@@ -312,7 +315,7 @@ describe("ModelsListCard", () => {
       alertMock.mockRestore();
     });
 
-    it("disables button during loading state", () => {
+    it("disables button during loading state", async () => {
       const loadingModels = [
         {
           id: "model1",
@@ -326,6 +329,9 @@ describe("ModelsListCard", () => {
       renderWithProviders(
         <ModelsListCard models={loadingModels} isDark={false} onToggleModel={mockOnToggle} />
       );
+
+      // Wait for async state to update
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       const startButton = screen.getByText("Start");
       expect(startButton.closest("button")).toBeDisabled();
@@ -607,7 +613,7 @@ describe("ModelsListCard", () => {
       expect(idleModelButton).toBeInTheDocument();
     });
 
-    it("disables button for loading model", () => {
+    it("disables button for loading model", async () => {
       const loadingModels = [
         {
           id: "model1",
@@ -622,7 +628,7 @@ describe("ModelsListCard", () => {
         <ModelsListCard models={loadingModels} isDark={false} onToggleModel={mockOnToggle} />
       );
 
-      const startButton = screen.getByRole("button", { name: /Start/i });
+      const startButton = await screen.findByRole("button", { name: /Start/i });
       expect(startButton).toBeDisabled();
     });
 

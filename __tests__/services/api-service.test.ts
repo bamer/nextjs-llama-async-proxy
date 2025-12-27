@@ -551,10 +551,8 @@ describe('api-service', () => {
     });
 
     it('should handle timeout errors', async () => {
-      const timeoutError = {
-        code: 'ECONNABORTED',
-        message: 'Request timeout',
-      };
+      const timeoutError = new Error('Request timeout');
+      (timeoutError as any).code = 'ECONNABORTED';
 
       mockApiClient.get.mockRejectedValue(timeoutError);
 

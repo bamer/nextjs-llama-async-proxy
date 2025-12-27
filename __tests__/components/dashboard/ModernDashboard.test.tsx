@@ -74,14 +74,14 @@ const queryClient = new QueryClient({
   },
 });
 
-const { useStore: mockedUseStore } = require("@/lib/store") as { useStore: jest.Mock };
-const { useWebSocket: mockedUseWebSocket } = require("@/hooks/use-websocket") as { useWebSocket: jest.Mock };
-const { useChartHistory: mockedUseChartHistory } = require("@/hooks/useChartHistory") as { useChartHistory: jest.Mock };
+const { useStore: mockedUseStore } = require('@/lib/store') as { useStore: jest.Mock };
+const { useWebSocket: mockedUseWebSocket } = require('@/hooks/use-websocket') as { useWebSocket: jest.Mock };
+const { useChartHistory: mockedUseChartHistory } = require('@/hooks/useChartHistory') as { useChartHistory: jest.Mock };
 
 const mockState = {
   models: [
-    { id: "model1", name: "Llama 2 7B", status: "running", type: "llama" },
-    { id: "model2", name: "Mistral 7B", status: "idle", type: "mistral" },
+    { id: 'model1', name: 'Llama 2 7B', status: 'running', type: 'llama' },
+    { id: 'model2', name: 'Mistral 7B', status: 'idle', type: 'mistral' },
   ],
   metrics: {
     cpuUsage: 50,
@@ -95,17 +95,18 @@ const mockState = {
     gpuMemoryUsed: 10,
     gpuMemoryTotal: 24,
     gpuTemperature: 65,
-    gpuName: "NVIDIA RTX 4090",
+    gpuName: 'NVIDIA RTX 4090',
   },
   logs: [],
 };
 
 function renderWithProviders(component: React.ReactElement) {
-  return render(
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-      <MuiThemeProvider theme={theme}>{component}</MuiThemeProvider>
+      <MuiThemeProvider theme={theme}>{children}</MuiThemeProvider>
     </QueryClientProvider>
   );
+  return render(component, { wrapper });
 }
 
 describe("ModernDashboard", () => {

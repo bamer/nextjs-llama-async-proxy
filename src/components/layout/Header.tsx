@@ -12,8 +12,9 @@ export function Header() {
   const { isDark } = useTheme();
 
   return (
-    <AppBar 
+    <AppBar
       position="fixed"
+      data-testid="header-appbar"
       sx={{
         height: '64px',
         background: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(248, 250, 252, 0.9)',
@@ -23,7 +24,7 @@ export function Header() {
         zIndex: (theme) => theme.zIndex.drawer + 1,
       }}
     >
-      <Toolbar sx={{ height: '100%' }}>
+      <Toolbar sx={{ height: '100%' }} data-testid="header-toolbar">
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
           <IconButton
             onClick={toggleSidebar}
@@ -34,7 +35,7 @@ export function Header() {
           </IconButton>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Rocket sx={{ color: isDark ? '#3b82f6' : '#0d9ef8', fontSize: '1.5rem' }} />
-            <Typography 
+            <Typography
               variant="h6"
               fontWeight="bold"
               sx={{ color: isDark ? '#f1f5f9' : '#1e293b' }}

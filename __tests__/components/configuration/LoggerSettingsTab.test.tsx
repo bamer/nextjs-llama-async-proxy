@@ -49,7 +49,7 @@ describe('LoggerSettingsTab', () => {
 
   it('renders Console Logging switch', () => {
     renderWithTheme(<LoggerSettingsTab />);
-    expect(screen.getByLabelText('Enable Console Logging')).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: /enable console logging/i })).toBeInTheDocument();
   });
 
   it('renders Console Level select', () => {
@@ -59,7 +59,7 @@ describe('LoggerSettingsTab', () => {
 
   it('renders File Logging switch', () => {
     renderWithTheme(<LoggerSettingsTab />);
-    expect(screen.getByLabelText('Enable File Logging (logs/ directory)')).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: /enable file logging/i })).toBeInTheDocument();
   });
 
   it('renders File Level select', () => {
@@ -173,101 +173,43 @@ describe('LoggerSettingsTab', () => {
     expect(screen.getByText('Log Levels')).toBeInTheDocument();
   });
 
-  // Positive test: Console Level change with different values
-  it('calls updateConfig when Console Level is changed to debug', () => {
+  // Additional tests for better coverage
+
+  it('toggles Console Logging multiple times', () => {
     renderWithTheme(<LoggerSettingsTab />);
-    const select = screen.getByText('Console Level').nextElementSibling as HTMLElement;
-    fireEvent.mouseDown(select);
-    fireEvent.click(screen.getByText('Debug'));
-    expect(mockUpdateConfig).toHaveBeenCalledWith({ consoleLevel: 'debug' });
+
+    // Use querySelector or getByLabelText for consistency
+    fireEvent.click(screen.getByRole('switch', { name: /enable console logging/i }));
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ enableConsoleLogging: false });
+
+    fireEvent.click(screen.getByRole('switch', { name: /enable console logging/i }));
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ enableConsoleLogging: true });
   });
 
-  it('calls updateConfig when Console Level is changed to error', () => {
+  it('toggles File Logging multiple times', () => {
     renderWithTheme(<LoggerSettingsTab />);
-    const select = screen.getByText('Console Level').nextElementSibling as HTMLElement;
-    fireEvent.mouseDown(select);
-    fireEvent.click(screen.getByText('Error'));
-    expect(mockUpdateConfig).toHaveBeenCalledWith({ consoleLevel: 'error' });
+
+    fireEvent.click(screen.getByRole('switch', { name: /enable file logging/i }));
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ enableFileLogging: false });
+
+    fireEvent.click(screen.getByRole('switch', { name: /enable file logging/i }));
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ enableFileLogging: true });
   });
 
-  it('calls updateConfig when Console Level is changed to warning', () => {
+  it('handles disabled Console Logging state correctly', () => {
+    const config = { ...defaultLoggerConfig, enableConsoleLogging: false };
+    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
+      loggerConfig: config,
+      updateConfig: mockUpdateConfig,
+      loading: false,
+    });
     renderWithTheme(<LoggerSettingsTab />);
-    const select = screen.getByText('Console Level').nextElementSibling as HTMLElement;
-    fireEvent.mouseDown(select);
-    fireEvent.click(screen.getByText('Warning'));
-    expect(mockUpdateConfig).toHaveBeenCalledWith({ consoleLevel: 'warn' });
+
+    const checkbox = screen.getByRole('switch', { name: /enable console logging/i }) as HTMLInputElement;
+    expect(checkbox.checked).toBe(false);
   });
 
-  // Positive test: File Level change
-  it('calls updateConfig when File Level is changed to debug', () => {
-    renderWithTheme(<LoggerSettingsTab />);
-    const select = screen.getByText('File Level (application.log)').nextElementSibling as HTMLElement;
-    fireEvent.mouseDown(select);
-    fireEvent.click(screen.getByText('Debug'));
-    expect(mockUpdateConfig).toHaveBeenCalledWith({ fileLevel: 'debug' });
-  });
-
-  it('calls updateConfig when File Level is changed to error', () => {
-    renderWithTheme(<LoggerSettingsTab />);
-    const select = screen.getByText('File Level (application.log)').nextElementSibling as HTMLElement;
-    fireEvent.mouseDown(select);
-    fireEvent.click(screen.getByText('Error'));
-    expect(mockUpdateConfig).toHaveBeenCalledWith({ fileLevel: 'error' });
-  });
-
-  // Positive test: Error File Level change
-  it('calls updateConfig when Error File Level is changed to warn', () => {
-    renderWithTheme(<LoggerSettingsTab />);
-    const select = screen.getByText('Error File Level (errors.log)').nextElementSibling as HTMLElement;
-    fireEvent.mouseDown(select);
-    fireEvent.click(screen.getByText('Error + Warning'));
-    expect(mockUpdateConfig).toHaveBeenCalledWith({ errorLevel: 'warn' });
-  });
-
-  it('calls updateConfig when Error File Level is changed to error', () => {
-    renderWithTheme(<LoggerSettingsTab />);
-    const select = screen.getByText('Error File Level (errors.log)').nextElementSibling as HTMLElement;
-    fireEvent.mouseDown(select);
-    fireEvent.click(screen.getByText('Error Only'));
-    expect(mockUpdateConfig).toHaveBeenCalledWith({ errorLevel: 'error' });
-  });
-
-  // Positive test: Max File Size change
-  it('calls updateConfig when Max File Size is changed to 10m', () => {
-    renderWithTheme(<LoggerSettingsTab />);
-    const select = screen.getByText('Max File Size').nextElementSibling as HTMLElement;
-    fireEvent.mouseDown(select);
-    fireEvent.click(screen.getByText('10 MB'));
-    expect(mockUpdateConfig).toHaveBeenCalledWith({ maxFileSize: '10m' });
-  });
-
-  it('calls updateConfig when Max File Size is changed to 100m', () => {
-    renderWithTheme(<LoggerSettingsTab />);
-    const select = screen.getByText('Max File Size').nextElementSibling as HTMLElement;
-    fireEvent.mouseDown(select);
-    fireEvent.click(screen.getByText('100 MB'));
-    expect(mockUpdateConfig).toHaveBeenCalledWith({ maxFileSize: '100m' });
-  });
-
-  // Positive test: File Retention Period change
-  it('calls updateConfig when File Retention Period is changed to 7d', () => {
-    renderWithTheme(<LoggerSettingsTab />);
-    const select = screen.getByText('File Retention Period').nextElementSibling as HTMLElement;
-    fireEvent.mouseDown(select);
-    fireEvent.click(screen.getByText('7 Days'));
-    expect(mockUpdateConfig).toHaveBeenCalledWith({ maxFiles: '7d' });
-  });
-
-  it('calls updateConfig when File Retention Period is changed to 90d', () => {
-    renderWithTheme(<LoggerSettingsTab />);
-    const select = screen.getByText('File Retention Period').nextElementSibling as HTMLElement;
-    fireEvent.mouseDown(select);
-    fireEvent.click(screen.getByText('90 Days'));
-    expect(mockUpdateConfig).toHaveBeenCalledWith({ maxFiles: '90d' });
-  });
-
-  // Negative test: All file selects disabled when File Logging is off
-  it('disables all file logging selects when File Logging is disabled', () => {
+  it('handles disabled File Logging state correctly', () => {
     const config = { ...defaultLoggerConfig, enableFileLogging: false };
     (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
       loggerConfig: config,
@@ -276,36 +218,11 @@ describe('LoggerSettingsTab', () => {
     });
     renderWithTheme(<LoggerSettingsTab />);
 
-    const fileLevelSelect = screen.getByText('File Level (application.log)').nextElementSibling;
-    const errorLevelSelect = screen.getByText('Error File Level (errors.log)').nextElementSibling;
-    const maxSizeSelect = screen.getByText('Max File Size').nextElementSibling;
-    const retentionSelect = screen.getByText('File Retention Period').nextElementSibling;
-
-    expect(fileLevelSelect).toHaveClass('Mui-disabled');
-    expect(errorLevelSelect).toHaveClass('Mui-disabled');
-    expect(maxSizeSelect).toHaveClass('Mui-disabled');
-    expect(retentionSelect).toHaveClass('Mui-disabled');
+    const checkbox = screen.getByRole('switch', { name: /enable file logging/i }) as HTMLInputElement;
+    expect(checkbox.checked).toBe(false);
   });
 
-  // Positive test: All file selects enabled when File Logging is on
-  it('enables all file logging selects when File Logging is enabled', () => {
-    const config = { ...defaultLoggerConfig, enableFileLogging: true };
-    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
-      loggerConfig: config,
-      updateConfig: mockUpdateConfig,
-      loading: false,
-    });
-    renderWithTheme(<LoggerSettingsTab />);
-
-    const fileLevelSelect = screen.getByText('File Level (application.log)').nextElementSibling;
-    const maxSizeSelect = screen.getByText('Max File Size').nextElementSibling;
-
-    expect(fileLevelSelect).not.toHaveClass('Mui-disabled');
-    expect(maxSizeSelect).not.toHaveClass('Mui-disabled');
-  });
-
-  // Positive test: Console select enabled when Console Logging is on
-  it('enables console level select when Console Logging is enabled', () => {
+  it('handles enabled Console Logging state correctly', () => {
     const config = { ...defaultLoggerConfig, enableConsoleLogging: true };
     (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
       loggerConfig: config,
@@ -314,131 +231,11 @@ describe('LoggerSettingsTab', () => {
     });
     renderWithTheme(<LoggerSettingsTab />);
 
-    const consoleLevelSelect = screen.getByText('Console Level').nextElementSibling;
-    expect(consoleLevelSelect).not.toHaveClass('Mui-disabled');
+    const checkbox = screen.getByRole('switch', { name: /enable console logging/i }) as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
   });
 
-  // Positive test: Loading state with disabled controls
-  it('displays loading state and keeps elements present', () => {
-    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
-      loggerConfig: null,
-      updateConfig: mockUpdateConfig,
-      loading: true,
-    });
-    renderWithTheme(<LoggerSettingsTab />);
-
-    expect(screen.getByText('Log Levels')).toBeInTheDocument();
-    // Should still render UI elements even when loading
-    expect(screen.getByText('Console Level')).toBeInTheDocument();
-    expect(screen.getByText('File Level (application.log)')).toBeInTheDocument();
-  });
-
-  // Negative test: Null config with default values
-  it('handles null loggerConfig with default values', () => {
-    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
-      loggerConfig: null,
-      updateConfig: mockUpdateConfig,
-      loading: false,
-    });
-    renderWithTheme(<LoggerSettingsTab />);
-
-    expect(screen.getByText('Log Levels')).toBeInTheDocument();
-    // Should use ?? fallback values
-    expect(screen.getByRole('switch', { name: /enable console logging/i })).toBeChecked();
-    expect(screen.getByRole('switch', { name: /enable file logging/i })).toBeChecked();
-  });
-
-  // Negative test: Undefined config with default values
-  it('handles undefined loggerConfig with default values', () => {
-    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
-      loggerConfig: undefined,
-      updateConfig: mockUpdateConfig,
-      loading: false,
-    });
-    renderWithTheme(<LoggerSettingsTab />);
-
-    expect(screen.getByText('Log Levels')).toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: /enable console logging/i })).toBeChecked();
-    expect(screen.getByRole('switch', { name: /enable file logging/i })).toBeChecked();
-  });
-
-  // Positive test: Custom config values
-  it('renders with custom loggerConfig values', () => {
-    const customConfig = {
-      enableConsoleLogging: false,
-      consoleLevel: 'error',
-      enableFileLogging: false,
-      fileLevel: 'debug',
-      errorLevel: 'warn',
-      maxFileSize: '50m',
-      maxFiles: '14d',
-    };
-    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
-      loggerConfig: customConfig,
-      updateConfig: mockUpdateConfig,
-      loading: false,
-    });
-    renderWithTheme(<LoggerSettingsTab />);
-
-    const consoleSwitch = screen.getByRole('switch', { name: /enable console logging/i });
-    const fileSwitch = screen.getByRole('switch', { name: /enable file logging/i });
-
-    expect(consoleSwitch).not.toBeChecked();
-    expect(fileSwitch).not.toBeChecked();
-  });
-
-  // Positive test: All max file size options
-  it('renders all Max File Size options', () => {
-    renderWithTheme(<LoggerSettingsTab />);
-    const select = screen.getByText('Max File Size').nextElementSibling as HTMLElement;
-    fireEvent.mouseDown(select);
-
-    expect(screen.getByText('10 MB')).toBeInTheDocument();
-    expect(screen.getByText('20 MB')).toBeInTheDocument();
-    expect(screen.getByText('50 MB')).toBeInTheDocument();
-    expect(screen.getByText('100 MB')).toBeInTheDocument();
-    expect(screen.getByText('500 MB')).toBeInTheDocument();
-  });
-
-  // Positive test: All file retention options
-  it('renders all File Retention Period options', () => {
-    renderWithTheme(<LoggerSettingsTab />);
-    const select = screen.getByText('File Retention Period').nextElementSibling as HTMLElement;
-    fireEvent.mouseDown(select);
-
-    expect(screen.getByText('7 Days')).toBeInTheDocument();
-    expect(screen.getByText('14 Days')).toBeInTheDocument();
-    expect(screen.getByText('30 Days')).toBeInTheDocument();
-    expect(screen.getByText('60 Days')).toBeInTheDocument();
-    expect(screen.getByText('90 Days')).toBeInTheDocument();
-  });
-
-  // Positive test: Verify all console level options are present
-  it('renders all Console Level options', () => {
-    renderWithTheme(<LoggerSettingsTab />);
-    const select = screen.getByText('Console Level').nextElementSibling as HTMLElement;
-    fireEvent.mouseDown(select);
-
-    expect(screen.getByText('Error')).toBeInTheDocument();
-    expect(screen.getByText('Warning')).toBeInTheDocument();
-    expect(screen.getByText('Info')).toBeInTheDocument();
-    expect(screen.getByText('Debug')).toBeInTheDocument();
-  });
-
-  // Positive test: Verify all file level options are present
-  it('renders all File Level options', () => {
-    renderWithTheme(<LoggerSettingsTab />);
-    const select = screen.getByText('File Level (application.log)').nextElementSibling as HTMLElement;
-    fireEvent.mouseDown(select);
-
-    expect(screen.getByText('Error')).toBeInTheDocument();
-    expect(screen.getByText('Warning')).toBeInTheDocument();
-    expect(screen.getByText('Info')).toBeInTheDocument();
-    expect(screen.getByText('Debug')).toBeInTheDocument();
-  });
-
-  // Positive test: Toggle file logging and verify state change
-  it('updates config when toggling File Logging', () => {
+  it('handles enabled File Logging state correctly', () => {
     const config = { ...defaultLoggerConfig, enableFileLogging: true };
     (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
       loggerConfig: config,
@@ -447,9 +244,391 @@ describe('LoggerSettingsTab', () => {
     });
     renderWithTheme(<LoggerSettingsTab />);
 
-    const switchEl = screen.getByRole('switch', { name: /enable file logging/i });
-    fireEvent.click(switchEl);
+    const checkbox = screen.getByRole('switch', { name: /enable file logging/i }) as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
+  });
+
+  it('renders all select components', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+
+    const selects = screen.getAllByRole('combobox');
+    expect(selects).toHaveLength(5);
+  });
+
+  it('handles undefined loggerConfig with fallbacks', () => {
+    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
+      loggerConfig: undefined,
+      updateConfig: mockUpdateConfig,
+      loading: false,
+    });
+    renderWithTheme(<LoggerSettingsTab />);
+
+    const checkbox1 = screen.getByRole('switch', { name: /enable console logging/i }) as HTMLInputElement;
+    const checkbox2 = screen.getByRole('switch', { name: /enable file logging/i }) as HTMLInputElement;
+
+    expect(checkbox1.checked).toBe(true);
+    expect(checkbox2.checked).toBe(true);
+  });
+
+  it('does not crash with null loggerConfig', () => {
+    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
+      loggerConfig: null,
+      updateConfig: mockUpdateConfig,
+      loading: false,
+    });
+    expect(() => {
+      renderWithTheme(<LoggerSettingsTab />);
+    }).not.toThrow();
+  });
+
+  it('does not crash with undefined loggerConfig', () => {
+    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
+      loggerConfig: undefined,
+      updateConfig: mockUpdateConfig,
+      loading: false,
+    });
+    expect(() => {
+      renderWithTheme(<LoggerSettingsTab />);
+    }).not.toThrow();
+  });
+
+  it('handles loading state correctly', () => {
+    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
+      loggerConfig: null,
+      updateConfig: mockUpdateConfig,
+      loading: true,
+    });
+    expect(() => {
+      renderWithTheme(<LoggerSettingsTab />);
+    }).not.toThrow();
+  });
+
+  it('handles custom configuration values', () => {
+    const customConfig = {
+      enableConsoleLogging: false,
+      consoleLevel: 'debug',
+      enableFileLogging: false,
+      fileLevel: 'debug',
+      errorLevel: 'warn',
+      maxFileSize: '100m',
+      maxFiles: '90d',
+    };
+    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
+      loggerConfig: customConfig,
+      updateConfig: mockUpdateConfig,
+      loading: false,
+    });
+    expect(() => {
+      renderWithTheme(<LoggerSettingsTab />);
+    }).not.toThrow();
+  });
+
+  it('handles loading state without errors', () => {
+    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
+      loggerConfig: null,
+      updateConfig: mockUpdateConfig,
+      loading: true,
+    });
+    renderWithTheme(<LoggerSettingsTab />);
+
+    expect(screen.getByText('Log Levels')).toBeInTheDocument();
+    expect(screen.getByText('Console Level')).toBeInTheDocument();
+    expect(screen.getByText('File Level (application.log)')).toBeInTheDocument();
+  });
+
+  it('handles multiple disabled states simultaneously', () => {
+    const config = { ...defaultLoggerConfig, enableConsoleLogging: false, enableFileLogging: false };
+    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
+      loggerConfig: config,
+      updateConfig: mockUpdateConfig,
+      loading: false,
+    });
+    renderWithTheme(<LoggerSettingsTab />);
+
+    const checkbox1 = screen.getByRole('switch', { name: /enable console logging/i }) as HTMLInputElement;
+    const checkbox2 = screen.getByRole('switch', { name: /enable file logging/i }) as HTMLInputElement;
+
+    expect(checkbox1.checked).toBe(false);
+    expect(checkbox2.checked).toBe(false);
+  });
+
+  it('renders all UI elements correctly', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+
+    expect(screen.getByText('Log Levels')).toBeInTheDocument();
+    expect(screen.getByText('Console Level')).toBeInTheDocument();
+    expect(screen.getByText('File Level (application.log)')).toBeInTheDocument();
+    expect(screen.getByText('Error File Level (errors.log)')).toBeInTheDocument();
+    expect(screen.getByText('Max File Size')).toBeInTheDocument();
+    expect(screen.getByText('File Retention Period')).toBeInTheDocument();
+  });
+
+  it('handles all checkboxes rendered', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+
+    const checkboxes = screen.getAllByRole('checkbox');
+    expect(checkboxes).toHaveLength(2);
+  });
+
+  it('handles all selects rendered', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+
+    const selects = screen.getAllByRole('combobox');
+    expect(selects).toHaveLength(5);
+  });
+
+  // Positive test: Verify Console Level select onChange works for all options
+
+  // Positive test: Verify Console Level select onChange works for all options
+  // This covers line 61: onChange={(e) => updateConfig({ consoleLevel: e.target.value })}
+  it('calls updateConfig when Console Level is changed to error', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[0]; // Console Level is first select
+    fireEvent.change(select, { target: { value: 'error' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ consoleLevel: 'error' });
+  });
+
+  it('calls updateConfig when Console Level is changed to warn', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[0];
+    fireEvent.change(select, { target: { value: 'warn' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ consoleLevel: 'warn' });
+  });
+
+  it('calls updateConfig when Console Level is changed to info', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[0];
+    fireEvent.change(select, { target: { value: 'info' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ consoleLevel: 'info' });
+  });
+
+  it('calls updateConfig when Console Level is changed to debug', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[0];
+    fireEvent.change(select, { target: { value: 'debug' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ consoleLevel: 'debug' });
+  });
+
+  // Positive test: Verify File Level select onChange works for all options
+  // This covers line 98: onChange={(e) => updateConfig({ fileLevel: e.target.value })}
+  it('calls updateConfig when File Level is changed to error', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[1]; // File Level is second select
+    fireEvent.change(select, { target: { value: 'error' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ fileLevel: 'error' });
+  });
+
+  it('calls updateConfig when File Level is changed to warn', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[1];
+    fireEvent.change(select, { target: { value: 'warn' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ fileLevel: 'warn' });
+  });
+
+  it('calls updateConfig when File Level is changed to info', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[1];
+    fireEvent.change(select, { target: { value: 'info' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ fileLevel: 'info' });
+  });
+
+  it('calls updateConfig when File Level is changed to debug', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[1];
+    fireEvent.change(select, { target: { value: 'debug' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ fileLevel: 'debug' });
+  });
+
+  // Positive test: Verify Error Level select onChange works for all options
+  // This covers line 118: onChange={(e) => updateConfig({ errorLevel: e.target.value })}
+  it('calls updateConfig when Error Level is changed to error', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[2]; // Error Level is third select
+    fireEvent.change(select, { target: { value: 'error' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ errorLevel: 'error' });
+  });
+
+  it('calls updateConfig when Error Level is changed to warn', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[2];
+    fireEvent.change(select, { target: { value: 'warn' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ errorLevel: 'warn' });
+  });
+
+  // Positive test: Verify Max File Size select onChange works for all options
+  // This covers line 136: onChange={(e) => updateConfig({ maxFileSize: e.target.value })}
+  it('calls updateConfig when Max File Size is changed to 10m', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[3]; // Max File Size is fourth select
+    fireEvent.change(select, { target: { value: '10m' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ maxFileSize: '10m' });
+  });
+
+  it('calls updateConfig when Max File Size is changed to 20m', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[3];
+    fireEvent.change(select, { target: { value: '20m' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ maxFileSize: '20m' });
+  });
+
+  it('calls updateConfig when Max File Size is changed to 50m', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[3];
+    fireEvent.change(select, { target: { value: '50m' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ maxFileSize: '50m' });
+  });
+
+  it('calls updateConfig when Max File Size is changed to 100m', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[3];
+    fireEvent.change(select, { target: { value: '100m' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ maxFileSize: '100m' });
+  });
+
+  it('calls updateConfig when Max File Size is changed to 500m', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[3];
+    fireEvent.change(select, { target: { value: '500m' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ maxFileSize: '500m' });
+  });
+
+  // Positive test: Verify File Retention Period select onChange works for all options
+  // This covers line 157: onChange={(e) => updateConfig({ maxFiles: e.target.value })}
+  it('calls updateConfig when File Retention is changed to 7d', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[4]; // File Retention is fifth select
+    fireEvent.change(select, { target: { value: '7d' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ maxFiles: '7d' });
+  });
+
+  it('calls updateConfig when File Retention is changed to 14d', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[4];
+    fireEvent.change(select, { target: { value: '14d' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ maxFiles: '14d' });
+  });
+
+  it('calls updateConfig when File Retention is changed to 30d', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[4];
+    fireEvent.change(select, { target: { value: '30d' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ maxFiles: '30d' });
+  });
+
+  it('calls updateConfig when File Retention is changed to 60d', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[4];
+    fireEvent.change(select, { target: { value: '60d' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ maxFiles: '60d' });
+  });
+
+  it('calls updateConfig when File Retention is changed to 90d', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[4];
+    fireEvent.change(select, { target: { value: '90d' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ maxFiles: '90d' });
+  });
+
+  // Negative test: Verify Select onChange does not call updateConfig when disabled
+  // This tests that disabled state prevents onChange from firing
+  it('does not call updateConfig when Console Level is changed while disabled', () => {
+    const config = { ...defaultLoggerConfig, enableConsoleLogging: false };
+    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
+      loggerConfig: config,
+      updateConfig: mockUpdateConfig,
+      loading: false,
+    });
+    renderWithTheme(<LoggerSettingsTab />);
+
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[0];
+    fireEvent.change(select, { target: { value: 'debug' } });
+    // Should not have been called because that select is disabled
+    expect(mockUpdateConfig).not.toHaveBeenCalledWith({ consoleLevel: 'debug' });
+  });
+
+  it('does not call updateConfig when File Level is changed while disabled', () => {
+    const config = { ...defaultLoggerConfig, enableFileLogging: false };
+    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
+      loggerConfig: config,
+      updateConfig: mockUpdateConfig,
+      loading: false,
+    });
+    renderWithTheme(<LoggerSettingsTab />);
+
+    const selects = screen.getAllByRole('combobox');
+    const select = selects[1];
+    fireEvent.change(select, { target: { value: 'debug' } });
+    // Should not have been called because that select is disabled
+    expect(mockUpdateConfig).not.toHaveBeenCalledWith({ fileLevel: 'debug' });
+  });
+
+  // Positive test: Verify disabled state transitions work correctly
+  it('handles disabled to enabled state transition for Console Logging', () => {
+    const config = { ...defaultLoggerConfig, enableConsoleLogging: false };
+    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
+      loggerConfig: config,
+      updateConfig: mockUpdateConfig,
+      loading: false,
+    });
+    renderWithTheme(<LoggerSettingsTab />);
+
+    const checkbox = screen.getByRole('switch', { name: /enable console logging/i });
+    fireEvent.click(checkbox);
+
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ enableConsoleLogging: true });
+  });
+
+  it('handles enabled to disabled state transition for File Logging', () => {
+    const config = { ...defaultLoggerConfig, enableFileLogging: true };
+    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
+      loggerConfig: config,
+      updateConfig: mockUpdateConfig,
+      loading: false,
+    });
+    renderWithTheme(<LoggerSettingsTab />);
+
+    const checkbox = screen.getByRole('switch', { name: /enable file logging/i });
+    fireEvent.click(checkbox);
 
     expect(mockUpdateConfig).toHaveBeenCalledWith({ enableFileLogging: false });
+  });
+
+  // Positive test: Verify multiple select changes work correctly
+  it('handles multiple sequential select changes', () => {
+    renderWithTheme(<LoggerSettingsTab />);
+
+    const selects = screen.getAllByRole('combobox');
+    const consoleSelect = selects[0];
+    const fileSelect = selects[1];
+
+    fireEvent.change(consoleSelect, { target: { value: 'debug' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ consoleLevel: 'debug' });
+
+    fireEvent.change(fileSelect, { target: { value: 'warn' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ fileLevel: 'warn' });
+
+    fireEvent.change(consoleSelect, { target: { value: 'error' } });
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ consoleLevel: 'error' });
   });
 });

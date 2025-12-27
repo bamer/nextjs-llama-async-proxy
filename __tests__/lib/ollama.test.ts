@@ -15,15 +15,15 @@ describe('ollama.ts', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
-    jest.resetModules();
 
-    mockGet = jest.fn();
-    mockPost = jest.fn();
+    // Get the mock functions from the axios mock module
+    const mockAxios = require('axios');
+    mockGet = mockAxios.mockGet;
+    mockPost = mockAxios.mockPost;
 
-    (axios.create as jest.Mock).mockReturnValue({
-      get: mockGet,
-      post: mockPost,
-    });
+    // Clear previous mock calls
+    mockGet.mockClear();
+    mockPost.mockClear();
   });
 
   afterEach(() => {
@@ -163,6 +163,45 @@ describe('ollama.ts', () => {
 
       await expect(pullModel(modelName)).rejects.toThrow('Connection failed');
     });
+
+    // Positive: Test with model name containing special characters
+    it('should handle model names with special characters', async () => {
+      const modelName = 'model-with_special.chars';
+      const mockResponse = { data: { status: 'success' } };
+
+      mockPost.mockResolvedValue(mockResponse);
+
+      await pullModel(modelName);
+
+      expect(mockPost).toHaveBeenCalledWith('/api/pull', { name: modelName });
+    });
+
+    // Positive: Test pull returns correct status
+    it('should return pull status', async () => {
+      const modelName = 'llama2';
+      const mockResponse = {
+        data: { status: 'downloading', progress: 50 },
+      };
+
+      mockPost.mockResolvedValue(mockResponse);
+
+      const result = await pullModel(modelName);
+
+      expect(result.status).toBe('downloading');
+      expect(result.progress).toBe(50);
+    });
+
+    // Negative: Test pull with empty model name
+    it('should handle empty model name', async () => {
+      const modelName = '';
+      const mockResponse = { data: { status: 'success' } };
+
+      mockPost.mockResolvedValue(mockResponse);
+
+      const result = await pullModel(modelName);
+
+      expect(result).toEqual(mockResponse.data);
+    });
   });
 
   describe('stopModel', () => {
@@ -202,6 +241,33 @@ describe('ollama.ts', () => {
       mockPost.mockRejectedValue(error);
 
       await expect(stopModel(modelName)).rejects.toEqual(error);
+    });
+
+    // Positive: Test URL encoding of model name
+    it('should URL encode model name', async () => {
+      const modelName = 'model with spaces';
+      const mockResponse = { data: { status: 'success' } };
+
+      mockPost.mockResolvedValue(mockResponse);
+
+      await stopModel(modelName);
+
+      expect(mockPost).toHaveBeenCalledWith(
+        '/api/models/model%20with%20spaces/stop',
+        undefined
+      );
+    });
+
+    // Positive: Test stop returns correct response
+    it('should return stop response', async () => {
+      const modelName = 'llama2';
+      const mockResponse = { data: { status: 'success' } };
+
+      mockPost.mockResolvedValue(mockResponse);
+
+      const result = await stopModel(modelName);
+
+      expect(result).toEqual(mockResponse.data);
     });
   });
 
@@ -315,6 +381,74 @@ describe('ollama.ts', () => {
       expect(result).toEqual({ status: 'pulled' });
       expect(mockPost).toHaveBeenCalled();
     });
+
+    // Positive: Test ensureModel with 500 error
+    it('should handle 500 errors during ensureModel', async () => {
+      const modelName = 'new-model';
+      const mockListResponse = { data: { models: [] } };
+      const error = {
+        response: { status: 500, data: { error: 'Internal Server Error' } },
+      };
+
+      mockGet.mockResolvedValue(mockListResponse);
+      mockPost.mockRejectedValue(error);
+
+      await expect(ensureModel(modelName)).rejects.toEqual(error);
+    });
+
+    // Positive: Test ensureModel with 400 error
+    it('should handle 400 errors during ensureModel', async () => {
+      const modelName = 'invalid-model';
+      const error = {
+        response: { status: 400, data: { error: 'Bad Request' } },
+      };
+
+      mockGet.mockRejectedValue(error);
+
+      await expect(ensureModel(modelName)).rejects.toEqual(error);
+    });
+
+    // Positive: Test ensureModel with 404 error
+    it('should handle 404 errors during ensureModel', async () => {
+      const modelName = 'not-found';
+      const error = {
+        response: { status: 404, data: { error: 'Not Found' } },
+      };
+
+      mockGet.mockRejectedValue(error);
+
+      await expect(ensureModel(modelName)).rejects.toEqual(error);
+    });
+
+    // Negative: Test concurrent ensureModel calls
+    it('should handle concurrent ensureModel calls', async () => {
+      const mockListResponse = { data: { models: [] } };
+      const mockPullResponse = { data: { status: 'success' } };
+
+      mockGet.mockResolvedValue(mockListResponse);
+      mockPost.mockResolvedValue(mockPullResponse);
+
+      const results = await Promise.all([
+        ensureModel('model1'),
+        ensureModel('model2'),
+        ensureModel('model3'),
+      ]);
+
+      expect(results).toHaveLength(3);
+      results.forEach((result) => {
+        expect(result).toEqual({ status: 'pulled' });
+      });
+    });
+
+    // Negative: Test ensureModel with network timeout
+    it('should handle network timeout during ensureModel', async () => {
+      const modelName = 'timeout-model';
+      const timeoutError = { code: 'ECONNABORTED', message: 'timeout' };
+
+      mockGet.mockRejectedValue(timeoutError);
+
+      await expect(ensureModel(modelName)).rejects.toEqual(timeoutError);
+    });
   });
 
   describe('edge cases', () => {
@@ -334,6 +468,139 @@ describe('ollama.ts', () => {
 
       const result = await listModels();
       expect(result).toEqual({ message: 'OK' });
+    });
+
+    // Positive: Test with very long model names
+    it('should handle very long model names', async () => {
+      const longName = 'a'.repeat(1000);
+      const mockResponse = { data: { status: 'success' } };
+
+      mockPost.mockResolvedValue(mockResponse);
+
+      const result = await pullModel(longName);
+
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    // Negative: Test with special characters in model names
+    it('should handle special characters in model names', async () => {
+      const specialName = 'model@#$%^&*()';
+      const mockResponse = { data: { status: 'success' } };
+
+      mockPost.mockResolvedValue(mockResponse);
+
+      const result = await pullModel(specialName);
+
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    // Negative: Test with unicode characters in model names
+    it('should handle unicode characters in model names', async () => {
+      const unicodeName = '模型';
+      const mockResponse = { data: { status: 'success' } };
+
+      mockPost.mockResolvedValue(mockResponse);
+
+      const result = await pullModel(unicodeName);
+
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    // Negative: Test with null model name
+    it('should handle null model name', async () => {
+      const mockResponse = { data: { status: 'success' } };
+
+      mockPost.mockResolvedValue(mockResponse);
+
+      const result = await pullModel(null as any);
+
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    // Negative: Test with undefined model name
+    it('should handle undefined model name', async () => {
+      const mockResponse = { data: { status: 'success' } };
+
+      mockPost.mockResolvedValue(mockResponse);
+
+      const result = await pullModel(undefined as any);
+
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    // Positive: Test rapid consecutive calls
+    it('should handle rapid consecutive API calls', async () => {
+      const mockResponse = { data: { models: [] } };
+
+      mockGet.mockResolvedValue(mockResponse);
+
+      const promises = Array(100)
+        .fill(null)
+        .map(() => listModels());
+
+      await Promise.all(promises);
+
+      expect(mockGet).toHaveBeenCalledTimes(100);
+    });
+
+    // Positive: Test API response with extra fields
+    it('should handle API response with extra fields', async () => {
+      const mockResponse = {
+        data: {
+          models: [{ name: 'llama2', extraField: 'value' }],
+          timestamp: '2024-01-01',
+        },
+      };
+
+      mockGet.mockResolvedValue(mockResponse);
+
+      const result = await listModels();
+
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    // Negative: Test API response with undefined data
+    it('should handle API response with undefined data', async () => {
+      const mockResponse = { data: undefined };
+
+      mockGet.mockResolvedValue(mockResponse);
+
+      const result = await listModels();
+
+      expect(result).toBeUndefined();
+    });
+
+    // Positive: Test stopModel with URL path traversal attempts
+    it('should handle URL path traversal in model names', async () => {
+      const maliciousName = '../../../etc/passwd';
+      const mockResponse = { data: { status: 'success' } };
+
+      mockPost.mockResolvedValue(mockResponse);
+
+      await stopModel(maliciousName);
+
+      expect(mockPost).toHaveBeenCalledWith(
+        `/api/models/${encodeURIComponent(maliciousName)}/stop`,
+        undefined
+      );
+    });
+
+    // Negative: Test API connection refused
+    it('should handle connection refused errors', async () => {
+      const error = { code: 'ECONNREFUSED', message: 'connect ECONNREFUSED' };
+
+      mockGet.mockRejectedValue(error);
+
+      await expect(listModels()).rejects.toEqual(error);
+    });
+
+    // Negative: Test API DNS resolution failure
+    it('should handle DNS resolution failure', async () => {
+      const error = { code: 'ENOTFOUND', message: 'getaddrinfo ENOTFOUND' };
+
+      mockGet.mockRejectedValue(error);
+
+      await expect(listModels()).rejects.toEqual(error);
     });
   });
 });

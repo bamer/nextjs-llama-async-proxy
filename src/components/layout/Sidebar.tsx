@@ -53,6 +53,7 @@ export function Sidebar() {
       {/* Overlay when sidebar is open */}
       {isOpen && (
         <Box
+          data-testid="sidebar-overlay"
           sx={{
             position: 'fixed',
             inset: 0,
@@ -68,6 +69,7 @@ export function Sidebar() {
         variant="temporary"
         open={isOpen}
         onClose={closeSidebar}
+        data-testid="sidebar-drawer"
         sx={{
           '& .MuiDrawer-paper': {
             width: 256,
@@ -87,7 +89,7 @@ export function Sidebar() {
               <Typography variant="h6" fontWeight="bold" sx={{ color: isDark ? '#f1f5f9' : '#1e293b' }}>
                 Llama Runner
               </Typography>
-              <IconButton onClick={closeSidebar} sx={{ color: isDark ? '#cbd5e1' : '#64748b' }}>
+              <IconButton onClick={closeSidebar} aria-label="Close sidebar" sx={{ color: isDark ? '#cbd5e1' : '#64748b' }}>
                 <X className="h-5 w-5" />
               </IconButton>
             </Box>
@@ -101,12 +103,14 @@ export function Sidebar() {
                 const active = isActive(item.path);
 
                 return (
-       
+
                     <ListItem key={item.id} disablePadding sx={{ px: 2 }}>
                       <Link href={item.path} style={{ textDecoration: 'none', width: '100%' }} onClick={closeSidebar}>
 
                         <ListItemButton
                           selected={active}
+                          data-testid={`menu-item-${item.id}`}
+                          aria-label={item.label}
                           sx={{
                             borderRadius: '8px',
                             mb: 1,
@@ -122,6 +126,7 @@ export function Sidebar() {
                           </ListItemIcon>
                           <ListItemText
                             primary={item.label}
+                            data-testid={`menu-label-${item.id}`}
                             primaryTypographyProps={{
                               fontWeight: active ? 'medium' : 'normal',
                               color: active ? (isDark ? '#f1f5f9' : '#1e293b') : (isDark ? '#cbd5e1' : '#64748b'),
@@ -133,7 +138,7 @@ export function Sidebar() {
                       </Link>
 
                     </ListItem>
-         
+
                 );
               })}
             </List>

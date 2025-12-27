@@ -940,4 +940,157 @@ describe('useWebSocket', () => {
     expect(mockAddLog).toHaveBeenCalledTimes(1);
     expect(mockAddLog).toHaveBeenCalledWith({ id: 1, message: 'Single log' });
   });
+
+  it('should handle processLogQueue with empty queue after clearing', () => {
+    // Positive test: Verifies that processLogQueue gracefully handles
+    // the defensive check when queue is empty (line 31 FALSE branch)
+    // Arrange: Set up hook and message handler
+    const { unmount } = renderHook(() => useWebSocket());
+
+    const messageHandler = mockWebSocketServer.on.mock.calls.find(
+      (call: any[]) => call[0] === 'message'
+    )[1];
+
+    // Act: Send a log to schedule timeout
+    act(() => {
+      messageHandler({
+        type: 'log',
+        data: { id: 1, message: 'First log' },
+      });
+    });
+
+    // Act: Run timers to process the first log
+    act(() => {
+      jest.runAllTimers();
+    });
+
+    // Assert: First log should be processed
+    expect(mockAddLog).toHaveBeenCalledTimes(1);
+    mockAddLog.mockClear();
+
+    // Act: Send another log to schedule new timeout
+    act(() => {
+      messageHandler({
+        type: 'log',
+        data: { id: 2, message: 'Second log' },
+      });
+    });
+
+    // Act: Run timers to process second log
+    act(() => {
+      jest.runAllTimers();
+    });
+
+    // Assert: Second log should be processed
+    expect(mockAddLog).toHaveBeenCalledTimes(1);
+    mockAddLog.mockClear();
+
+    // Act: Send a third log
+    act(() => {
+      messageHandler({
+        type: 'log',
+        data: { id: 3, message: 'Third log' },
+      });
+    });
+
+    // Act: Clear all timers (this cancels the pending timeout)
+    act(() => {
+      jest.clearAllTimers();
+    });
+
+    // Act: Unmount the hook
+    unmount();
+
+    // Assert: Third log should have been flushed during unmount
+    expect(mockAddLog).toHaveBeenCalledTimes(1);
+    expect(mockAddLog).toHaveBeenCalledWith({ id: 3, message: 'Third log' });
+  });
+
+  it('should test defensive empty queue handling on rapid unmount', () => {
+    // Negative test: Tests the FALSE branch of processLogQueue
+    // by ensuring it doesn't crash when queue might be in different states
+    // Arrange: Set up hook with a log queued
+    const { unmount } = renderHook(() => useWebSocket());
+
+    const messageHandler = mockWebSocketServer.on.mock.calls.find(
+      (call: any[]) => call[0] === 'message'
+    )[1];
+
+    // Act: Send a log
+    act(() => {
+      messageHandler({
+        type: 'log',
+        data: { id: 1, message: 'Test log' },
+      });
+    });
+
+    // Act: Run timers to process queue
+    act(() => {
+      jest.runAllTimers();
+    });
+
+    // Assert: Log processed
+    expect(mockAddLog).toHaveBeenCalledTimes(1);
+    mockAddLog.mockClear();
+
+    // Act: Send another log and immediately unmount
+    act(() => {
+      messageHandler({
+        type: 'log',
+        data: { id: 2, message: 'Second test log' },
+      });
+    });
+
+    // Act: Unmount without running timers
+    unmount();
+
+    // Assert: Queue should be flushed during unmount
+    expect(mockAddLog).toHaveBeenCalledTimes(1);
+    expect(mockAddLog).toHaveBeenCalledWith({ id: 2, message: 'Second test log' });
+  });
+
+  it('should handle multiple rapid log messages with concurrent timeouts', () => {
+    // Edge case: Tests log queue behavior with rapid message bursts
+    // This exercises the queue processing logic in various states
+    const { unmount } = renderHook(() => useWebSocket());
+
+    const messageHandler = mockWebSocketServer.on.mock.calls.find(
+      (call: any[]) => call[0] === 'message'
+    )[1];
+
+    // Act: Send multiple logs rapidly
+    for (let i = 1; i <= 5; i++) {
+      act(() => {
+        messageHandler({
+          type: 'log',
+          data: { id: i, message: `Log ${i}` },
+        });
+      });
+    }
+
+    // Act: Run timers to process all logs
+    act(() => {
+      jest.runAllTimers();
+    });
+
+    // Assert: All 5 logs should be processed
+    expect(mockAddLog).toHaveBeenCalledTimes(5);
+    mockAddLog.mockClear();
+
+    // Act: Send more logs
+    for (let i = 6; i <= 10; i++) {
+      act(() => {
+        messageHandler({
+          type: 'log',
+          data: { id: i, message: `Log ${i}` },
+        });
+      });
+    }
+
+    // Act: Unmount before timers fire
+    unmount();
+
+    // Assert: Logs 6-10 should be flushed
+    expect(mockAddLog).toHaveBeenCalledTimes(5);
+  });
 });

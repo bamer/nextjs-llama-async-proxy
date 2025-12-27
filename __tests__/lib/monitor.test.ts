@@ -639,5 +639,257 @@ describe('monitor', () => {
 
       expect(history).toEqual([]);
     });
+
+    // Positive: Test readHistory with existing file (lines 19-22 in source)
+    it('should parse JSON file when exists', () => {
+      const mockData = JSON.stringify([
+        { cpu: 50, memory: 60, timestamp: '2024-01-01' },
+      ]);
+      (fs.existsSync as jest.Mock).mockReturnValue(true);
+      (fs.readFileSync as jest.Mock).mockReturnValue(mockData);
+
+      const history = monitor.readHistory();
+
+      expect(history).toHaveLength(1);
+      expect(history[0].cpu).toBe(50);
+    });
+
+    // Positive: Test writeHistory creates temp file first (line 33 in source)
+    it('should write to temporary file first', () => {
+      const history = [{ cpu: 50 }];
+
+      monitor.writeHistory(history);
+
+      const writeCall = (fs.writeFileSync as jest.Mock).mock.calls[0];
+      expect(writeCall[0]).toMatch(/\.tmp$/);
+    });
+
+    // Positive: Test writeHistory renames temp file (line 35 in source)
+    it('should rename temporary file to final location', () => {
+      const history = [{ cpu: 50 }];
+
+      monitor.writeHistory(history);
+
+      expect(fs.renameSync).toHaveBeenCalledWith(
+        expect.stringMatching(/\.tmp$/),
+        expect.stringContaining('monitoring-history.json')
+      );
+    });
+
+    // Negative: Test writeHistory handles EACCES error (line 36 in source)
+    it('should handle permission errors in writeHistory', () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      (fs.writeFileSync as jest.Mock).mockImplementation(() => {
+        const error: any = new Error('Permission denied');
+        error.code = 'EACCES';
+        throw error;
+      });
+
+      monitor.writeHistory([]);
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Failed to persist monitoring history:',
+        expect.any(Error)
+      );
+      consoleSpy.mockRestore();
+    });
+
+    // Negative: Test writeHistory handles ENOSPC error (line 36 in source)
+    it('should handle disk full errors in writeHistory', () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      (fs.writeFileSync as jest.Mock).mockImplementation(() => {
+        const error: any = new Error('No space left');
+        error.code = 'ENOSPC';
+        throw error;
+      });
+
+      monitor.writeHistory([]);
+
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    // Negative: Test writeHistory handles ENOENT error (line 36 in source)
+    it('should handle file not found errors in writeHistory', () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      (fs.writeFileSync as jest.Mock).mockImplementation(() => {
+        const error: any = new Error('No such file');
+        error.code = 'ENOENT';
+        throw error;
+      });
+
+      monitor.writeHistory([]);
+
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    // Positive: Test writeHistory JSON formatting (line 34 in source)
+    it('should write formatted JSON with 2 spaces', () => {
+      const history = [{ cpu: 50 }];
+
+      monitor.writeHistory(history);
+
+      const writeCall = (fs.writeFileSync as jest.Mock).mock.calls[0];
+      const writtenData = JSON.parse(writeCall[1]);
+      expect(writeCall[2]).toBe('utf8');
+    });
+
+    // Negative: Test readHistory handles SyntaxError (line 22 in source)
+    it('should handle JSON parse errors', () => {
+      (fs.existsSync as jest.Mock).mockReturnValue(true);
+      (fs.readFileSync as jest.Mock).mockReturnValue('{ invalid json }');
+
+      const history = monitor.readHistory();
+
+      expect(history).toEqual([]);
+    });
+
+    // Positive: Test startPeriodicRecording returns early if already running (line 86 in source)
+    it('should not start multiple intervals', () => {
+      const mockFn = jest.fn(() => ({ timeoutId: 123 }));
+      (global as any).setInterval = mockFn;
+
+      monitor.startPeriodicRecording();
+      monitor.startPeriodicRecording();
+
+      expect(mockFn).toHaveBeenCalledTimes(1);
+
+      (global as any).setInterval = realSetInterval;
+    });
+
+    // Positive: Test idleCpu helper function (lines 69-77 in source)
+    it('should calculate idle CPU correctly', () => {
+      (os.cpus as jest.Mock).mockReturnValue([
+        { times: { user: 100, sys: 50, idle: 200 } },
+      ]);
+
+      const metrics = monitor.captureMetrics();
+
+      expect(metrics.cpuUsage).toBeDefined();
+      expect(metrics.cpuUsage).toBeGreaterThanOrEqual(0);
+      expect(metrics.cpuUsage).toBeLessThanOrEqual(100);
+    });
+
+    // Positive: Test timestamp formatting (line 62 in source)
+    it('should format timestamp as ISO string', () => {
+      const metrics = monitor.captureMetrics();
+
+      expect(metrics.timestamp).toBeDefined();
+      const date = new Date(metrics.timestamp);
+      expect(date.getTime()).not.toBeNaN();
+    });
+
+    // Negative: Test captureMetrics with empty CPU array (line 46-49 in source)
+    it('should handle empty CPU array', () => {
+      (os.cpus as jest.Mock).mockReturnValue([]);
+
+      const metrics = monitor.captureMetrics();
+
+      expect(metrics).toBeDefined();
+    });
+
+    // Negative: Test captureMetrics with invalid total time (line 49 in source)
+    it('should handle zero total CPU time', () => {
+      (os.cpus as jest.Mock).mockReturnValue([
+        { times: { user: 0, sys: 0, idle: 0 } },
+      ]);
+
+      const metrics = monitor.captureMetrics();
+
+      expect(metrics.cpuUsage).toBeDefined();
+    });
+
+    // Negative: Test captureMetrics with missing CPU properties (line 47 in source)
+    it('should handle missing CPU properties', () => {
+      (os.cpus as jest.Mock).mockReturnValue([
+        { times: {} as any },
+      ]);
+
+      const metrics = monitor.captureMetrics();
+
+      expect(metrics).toBeDefined();
+    });
+
+    // Positive: Test memory calculation edge cases (line 54 in source)
+    it('should handle memory equal to total', () => {
+      (os.freemem as jest.Mock).mockReturnValue(0);
+      (os.totalmem as jest.Mock).mockReturnValue(8000000000);
+
+      const metrics = monitor.captureMetrics();
+
+      expect(metrics.memoryUsage).toBe(100);
+    });
+
+    // Positive: Test uptime formatting (line 61 in source)
+    it('should format uptime as integer seconds', () => {
+      (os.uptime as jest.Mock).mockReturnValue(1234.567);
+
+      const metrics = monitor.captureMetrics();
+
+      expect(metrics.uptimeSeconds).toBe(1235);
+    });
+
+    // Negative: Test readHistory with null data (line 22 in source)
+    it('should handle null file contents', () => {
+      (fs.existsSync as jest.Mock).mockReturnValue(true);
+      (fs.readFileSync as jest.Mock).mockReturnValue(null as any);
+
+      const history = monitor.readHistory();
+
+      expect(history).toEqual([]);
+    });
+
+    // Positive: Test writeHistory preserves existing data structure (line 34 in source)
+    it('should write history preserving data structure', () => {
+      const history = [
+        { cpu: 50, memory: 60, id: 1 },
+        { cpu: 70, memory: 80, id: 2 },
+      ];
+
+      monitor.writeHistory(history);
+
+      const writeCall = (fs.writeFileSync as jest.Mock).mock.calls[0];
+      const writtenData = JSON.parse(writeCall[1]);
+      expect(writtenData).toHaveLength(2);
+      expect(writtenData[0].id).toBe(1);
+      expect(writtenData[1].id).toBe(2);
+    });
+
+    // Negative: Test writeHistory handles undefined history (line 31 in source)
+    it('should handle undefined history array', () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      monitor.writeHistory(undefined as any);
+
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    // Positive: Test startPeriodicRecording interval duration (line 82 in source)
+    it('should use correct interval duration', () => {
+      const mockFn = jest.fn(() => ({ timeoutId: 123 }));
+      (global as any).setInterval = mockFn;
+
+      monitor.startPeriodicRecording();
+
+      expect(mockFn).toHaveBeenCalledWith(
+        expect.any(Function),
+        30000
+      );
+
+      (global as any).setInterval = realSetInterval;
+    });
+
+    // Negative: Test captureMetrics handles division by zero (line 49 in source)
+    it('should handle division by zero in CPU calculation', () => {
+      (os.cpus as jest.Mock).mockReturnValue([
+        { times: { user: 0, sys: 0, idle: 0 } },
+      ]);
+
+      const metrics = monitor.captureMetrics();
+
+      expect(metrics.cpuUsage).toBeDefined();
+    });
   });
 });
