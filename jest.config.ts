@@ -11,8 +11,11 @@ const jestConfig: Config = {
   snapshotSerializers: ['@emotion/jest/serializer'],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
+    'app/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
+    '!app/**/*.d.ts',
     '!src/**/*.stories.tsx',
+    '!app/**/*.stories.tsx',
     '!src/components/**/__tests__/**/*',
   ],
   coverageThreshold: {

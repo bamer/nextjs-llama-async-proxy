@@ -3,6 +3,7 @@
  * This resolves with `ReferenceError: Request is not defined` errors seen in tests
  * that import from `next/server`.
  */
+import React from 'react';
 (global as any).Request = class Request {
   url: string;
   method: string;
@@ -41,6 +42,22 @@ jest.mock('@mui/icons-material', () => {
   return require('./jest-mocks').iconMocks;
 });
 
+// Mock Lucide React icons
+jest.mock('lucide-react', () => ({
+  Monitor: () => React.createElement('span', { 'data-icon': 'Monitor' }),
+  Bot: () => React.createElement('span', { 'data-icon': 'Bot' }),
+  FileText: () => React.createElement('span', { 'data-icon': 'FileText' }),
+  Settings: () => React.createElement('span', { 'data-icon': 'Settings' }),
+  X: () => React.createElement('span', { 'data-icon': 'X' }),
+  Home: () => React.createElement('span', { 'data-icon': 'Home' }),
+  Rocket: () => React.createElement('span', { 'data-icon': 'Rocket' }),
+  Dashboard: () => React.createElement('span', { 'data-icon': 'Dashboard' }),
+  ModelTraining: () => React.createElement('span', { 'data-icon': 'ModelTraining' }),
+  Menu: () => React.createElement('span', { 'data-icon': 'Menu' }),
+  ChevronLeft: () => React.createElement('span', { 'data-icon': 'ChevronLeft' }),
+  ChevronRight: () => React.createElement('span', { 'data-icon': 'ChevronRight' }),
+}));
+
 // Mock MUI styles
 jest.mock('@mui/material/styles', () => {
   return require('./jest-mocks').muiStyles;
@@ -53,6 +70,12 @@ jest.mock('next-themes', () => ({
     theme: 'light',
   }),
   ThemeProvider: ({ children }: any) => React.createElement(React.Fragment, null, children),
+}));
+
+// Mock ThemeContext
+jest.mock('@/contexts/ThemeContext', () => ({
+  ThemeProvider: ({ children }: any) => React.createElement(React.Fragment, null, children),
+  useTheme: jest.fn(() => ({ isDark: false, mode: 'light' as const, setMode: jest.fn(), toggleTheme: jest.fn() })),
 }));
 
 // Mock ReadableStream for Server-Sent Events

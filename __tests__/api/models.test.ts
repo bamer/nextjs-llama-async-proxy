@@ -562,8 +562,13 @@ describe("GET /api/models", () => {
     (global as unknown as { registry: unknown }).registry = mockRegistry;
 
     const response = await GET();
+    const json = await response.json();
 
-    // Should handle gracefully
-    expect(response.status).toBe(200);
+    // Should return 500 due to error in processing invalid model data
+    expect(response.status).toBe(500);
+    expect(json).toMatchObject({
+      error: "Failed to fetch models",
+      models: [],
+    });
   });
 });

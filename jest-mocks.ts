@@ -29,6 +29,8 @@ const MockTooltip = ({ children, ...props }: any) => React.createElement('div', 
 const MockDivider = (props: any) => React.createElement('hr', filterMUIProps(props));
 const MockList = ({ children, ...props }: any) => React.createElement('ul', filterMUIProps(props), children);
 const MockListItem = ({ children, ...props }: any) => React.createElement('li', filterMUIProps(props), children);
+const MockListItemButton = ({ children, ...props }: any) => React.createElement('button', filterMUIProps({ ...props, className: props.className || 'MuiListItemButton-root' }), children);
+const MockListItemIcon = ({ children, ...props }: any) => React.createElement('span', filterMUIProps({ ...props, className: props.className || 'MuiListItemIcon-root' }), children);
 const MockListItemText = ({ children, ...props }: any) => React.createElement('span', filterMUIProps(props), children);
 const MockCircularProgress = (props: any) => React.createElement('div', filterMUIProps(props));
 const MockLinearProgress = (props: any) => React.createElement('div', { ...filterMUIProps(props), role: 'progressbar', style: { width: '100%', height: '4px', backgroundColor: '#e0e0e0' } });
@@ -81,6 +83,8 @@ export const muiMocks = {
   Divider: MockDivider,
   List: MockList,
   ListItem: MockListItem,
+  ListItemButton: MockListItemButton,
+  ListItemIcon: MockListItemIcon,
   ListItemText: MockListItemText,
   CircularProgress: MockCircularProgress,
   LinearProgress: MockLinearProgress,
