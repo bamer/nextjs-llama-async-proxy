@@ -88,10 +88,31 @@ describe('ModernConfiguration', () => {
   it('renders configuration tabs', async () => {
     renderWithTheme(<ModernConfiguration />);
     await waitFor(() => {
-      expect(screen.getByText('General Settings')).toBeInTheDocument();
+      const tabs = screen.getAllByText('General Settings');
+      expect(tabs).toHaveLength(2);
       expect(screen.getByText('Llama-Server Settings')).toBeInTheDocument();
       expect(screen.getByText('Advanced')).toBeInTheDocument();
       expect(screen.getByText('Logger Settings')).toBeInTheDocument();
+    });
+  });
+
+  it('renders General Settings tab when activeTab is 0', async () => {
+    renderWithTheme(<ModernConfiguration />);
+    await waitFor(() => {
+      const headings = screen.getAllByText('General Settings');
+      expect(headings).toHaveLength(2);
+    });
+  });
+
+  it('renders Llama-Server Settings tab when activeTab is 1', async () => {
+    (configHook.useConfigurationForm as jest.Mock).mockReturnValue({
+      ...defaultConfig,
+      activeTab: 1,
+    });
+    renderWithTheme(<ModernConfiguration />);
+    await waitFor(() => {
+      const headings = screen.getAllByText('Llama-Server Settings');
+      expect(headings).toHaveLength(2);
     });
   });
 
@@ -105,7 +126,8 @@ describe('ModernConfiguration', () => {
   it('renders General Settings tab when activeTab is 0', async () => {
     renderWithTheme(<ModernConfiguration />);
     await waitFor(() => {
-      expect(screen.getByText('General Settings')).toBeInTheDocument();
+      const elements = screen.getAllByText('General Settings');
+      expect(elements).toHaveLength(2);
     });
   });
 
@@ -116,7 +138,8 @@ describe('ModernConfiguration', () => {
     });
     renderWithTheme(<ModernConfiguration />);
     await waitFor(() => {
-      expect(screen.getByText('Llama-Server Settings')).toBeInTheDocument();
+      const elements = screen.getAllByText('Llama-Server Settings');
+      expect(elements).toHaveLength(2);
     });
   });
 

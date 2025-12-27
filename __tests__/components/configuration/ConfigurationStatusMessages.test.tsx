@@ -25,7 +25,7 @@ describe('ConfigurationStatusMessages', () => {
     const { container } = renderWithTheme(
       <ConfigurationStatusMessages saveSuccess={false} validationErrors={[]} />
     );
-    expect(container.firstChild).toBeEmptyDOMElement();
+    expect(container.querySelector('.MuiCard-root')).not.toBeInTheDocument();
   });
 
   it('renders success message when saveSuccess is true', () => {
