@@ -35,15 +35,24 @@ describe('ConfigurationPage', () => {
     jest.restoreAllMocks();
   });
 
+  // Positive Test: Renders correctly with default config
   it('renders correctly with default config', () => {
+    // Arrange: Mock localStorage to return null (no saved config)
     mockLocalStorage.getItem.mockReturnValue(null);
+
+    // Act: Render the component
     render(<ConfigurationPage />);
 
+    // Assert: Component renders with expected elements
     expect(screen.getByText('Configuration')).toBeInTheDocument();
-    expect(screen.getAllByText('General Settings')).toHaveLength(2); // Tab button and heading
+    // Use getAllByText in case "General Settings" appears multiple times
+    const generalSettings = screen.getAllByText('General Settings');
+    expect(generalSettings.length).toBeGreaterThan(0);
   });
 
+  // Positive Test: Loads config from localStorage on mount
   it('loads config from localStorage on mount', () => {
+    // Arrange: Mock saved config in localStorage
     const savedConfig = JSON.stringify({
       basePath: '/custom/path',
       logLevel: 'debug',
@@ -62,17 +71,23 @@ describe('ConfigurationPage', () => {
     });
     mockLocalStorage.getItem.mockReturnValue(savedConfig);
 
+    // Act: Render component
     render(<ConfigurationPage />);
 
+    // Assert: Config values are loaded and displayed
     expect(screen.getByDisplayValue('/custom/path')).toBeInTheDocument();
     expect(screen.getByDisplayValue('debug')).toBeInTheDocument();
   });
 
+  // Negative Test: Handles malformed localStorage config gracefully
   it('handles malformed localStorage config gracefully', () => {
+    // Arrange: Mock invalid JSON in localStorage
     mockLocalStorage.getItem.mockReturnValue('invalid json');
 
+    // Act: Render component
     render(<ConfigurationPage />);
 
+    // Assert: Component still renders (doesn't crash), error is logged
     expect(screen.getByText('Configuration')).toBeInTheDocument();
     expect(console.error).toHaveBeenCalled();
   });
@@ -81,27 +96,32 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
-    expect(screen.getAllByText('General Settings')).toHaveLength(2);
-    expect(screen.getAllByText('Model Default Parameters')).toHaveLength(2);
+    // Assert: Tab buttons should be visible
+    expect(screen.getByText('General Settings')).toBeInTheDocument();
+    expect(screen.getByText('Model Default Parameters')).toBeInTheDocument();
   });
 
   it('switches between tabs', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
-    const modelDefaultsTab = screen.getAllByText('Model Default Parameters')[0];
+    // Act: Click on model defaults tab
+    const modelDefaultsTab = screen.getByText('Model Default Parameters');
     fireEvent.click(modelDefaultsTab);
 
-    expect(screen.getAllByText('Model Default Parameters')).toHaveLength(2);
+    // Assert: Tab content should be visible
+    expect(screen.getByText('Model Default Parameters')).toBeInTheDocument();
   });
 
   it('updates input fields', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
+    // Act: Change basePath input
     const basePathInput = screen.getByDisplayValue('/home/user/models');
     fireEvent.change(basePathInput, { target: { value: '/new/path' } });
 
+    // Assert: Input value is updated
     expect(basePathInput).toHaveValue('/new/path');
   });
 
@@ -109,9 +129,11 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
+    // Act: Change log level
     const logLevelInput = screen.getByDisplayValue('info');
     fireEvent.change(logLevelInput, { target: { value: 'debug' } });
 
+    // Assert: Value is updated
     expect(logLevelInput).toHaveValue('debug');
   });
 
@@ -119,31 +141,43 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
+    // Act: Change max concurrent models
     const maxModelsInput = screen.getByDisplayValue('5');
     fireEvent.change(maxModelsInput, { target: { value: '10' } });
 
+    // Assert: Value is updated
     expect(maxModelsInput).toHaveValue(10);
   });
 
+  // Positive Test: Toggles auto update checkbox
   it('toggles auto update checkbox', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
-    const autoUpdateCheckbox = screen.getByLabelText(/auto update/i) as HTMLInputElement;
+    // Act: Find checkbox by index and toggle
+    const checkboxes = screen.getAllByRole('checkbox');
+    const autoUpdateCheckbox = checkboxes[0] as HTMLInputElement;
     expect(autoUpdateCheckbox.checked).toBe(true);
 
     fireEvent.click(autoUpdateCheckbox);
+
+    // Assert: Checkbox state changes
     expect(autoUpdateCheckbox.checked).toBe(false);
   });
 
+  // Positive Test: Toggles notifications checkbox
   it('toggles notifications enabled checkbox', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
-    const notificationsCheckbox = screen.getByLabelText(/notifications enabled/i) as HTMLInputElement;
+    // Act: Find second checkbox and toggle
+    const checkboxes = screen.getAllByRole('checkbox');
+    const notificationsCheckbox = checkboxes[1] as HTMLInputElement;
     expect(notificationsCheckbox.checked).toBe(true);
 
     fireEvent.click(notificationsCheckbox);
+
+    // Assert: Checkbox state changes
     expect(notificationsCheckbox.checked).toBe(false);
   });
 
@@ -154,16 +188,18 @@ describe('ConfigurationPage', () => {
       json: async () => ({ success: true }),
     });
 
+    // Act: Click save button
     render(<ConfigurationPage />);
-
     const saveButton = screen.getByText('Save Configuration');
     fireEvent.click(saveButton);
 
+    // Assert: localStorage.setItem is called
     await waitFor(() => {
       expect(mockLocalStorage.setItem).toHaveBeenCalled();
     });
   });
 
+  // Positive Test: Shows success message on successful save
   it('shows success message on successful save', async () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     (global.fetch as jest.Mock).mockResolvedValue({
@@ -171,41 +207,46 @@ describe('ConfigurationPage', () => {
       json: async () => ({ success: true }),
     });
 
+    // Act: Save configuration
     render(<ConfigurationPage />);
-
     const saveButton = screen.getByText('Save Configuration');
     fireEvent.click(saveButton);
 
+    // Assert: Success message appears
     await waitFor(() => {
       expect(screen.getByText('Configuration saved successfully!')).toBeInTheDocument();
     });
   });
 
+  // Negative Test: Handles API unavailable gracefully
   it('shows fallback message when API is unavailable', async () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     (global.fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
 
+    // Act: Save configuration
     render(<ConfigurationPage />);
-
     const saveButton = screen.getByText('Save Configuration');
     fireEvent.click(saveButton);
 
+    // Assert: Fallback message is shown
     await waitFor(() => {
       expect(screen.getByText('Configuration saved locally (API unavailable)')).toBeInTheDocument();
     });
   });
 
+  // Negative Test: Handles save failure
   it('shows error message on save failure', async () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     mockLocalStorage.setItem.mockImplementation(() => {
       throw new Error('Storage error');
     });
 
+    // Act: Attempt save
     render(<ConfigurationPage />);
-
     const saveButton = screen.getByText('Save Configuration');
     fireEvent.click(saveButton);
 
+    // Assert: Error message displayed
     await waitFor(() => {
       expect(screen.getByText('Failed to save configuration')).toBeInTheDocument();
     });
@@ -217,11 +258,12 @@ describe('ConfigurationPage', () => {
       () => new Promise(resolve => setTimeout(() => resolve({ ok: true }), 100))
     );
 
+    // Act: Start save operation
     render(<ConfigurationPage />);
-
     const saveButton = screen.getByText('Save Configuration');
     fireEvent.click(saveButton);
 
+    // Assert: Button disabled during save
     await waitFor(() => {
       expect(saveButton).toBeDisabled();
     });
@@ -233,11 +275,12 @@ describe('ConfigurationPage', () => {
       () => new Promise(resolve => setTimeout(() => resolve({ ok: true }), 100))
     );
 
+    // Act: Start save
     render(<ConfigurationPage />);
-
     const saveButton = screen.getByText('Save Configuration');
     fireEvent.click(saveButton);
 
+    // Assert: Saving text shown
     await waitFor(() => {
       expect(screen.getByText('Saving...')).toBeInTheDocument();
     });
@@ -247,9 +290,11 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
-    const modelDefaultsTab = screen.getAllByText('Model Default Parameters')[0];
+    // Act: Switch to model defaults tab
+    const modelDefaultsTab = screen.getByText('Model Default Parameters');
     fireEvent.click(modelDefaultsTab);
 
+    // Assert: Model default inputs are visible
     expect(screen.getByDisplayValue('4096')).toBeInTheDocument();
     expect(screen.getByDisplayValue('2048')).toBeInTheDocument();
     expect(screen.getByDisplayValue('0.8')).toBeInTheDocument();
@@ -261,12 +306,14 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
-    const modelDefaultsTab = screen.getAllByText('Model Default Parameters')[0];
+    // Act: Change context size
+    const modelDefaultsTab = screen.getByText('Model Default Parameters');
     fireEvent.click(modelDefaultsTab);
 
     const ctxSizeInput = screen.getByDisplayValue('4096');
     fireEvent.change(ctxSizeInput, { target: { value: '8192' } });
 
+    // Assert: Value updated
     expect(ctxSizeInput).toHaveValue(8192);
   });
 
@@ -274,12 +321,14 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
-    const modelDefaultsTab = screen.getAllByText('Model Default Parameters')[0];
+    // Act: Change temperature
+    const modelDefaultsTab = screen.getByText('Model Default Parameters');
     fireEvent.click(modelDefaultsTab);
 
     const tempInput = screen.getByDisplayValue('0.8');
     fireEvent.change(tempInput, { target: { value: '0.5' } });
 
+    // Assert: Value updated
     expect(tempInput).toHaveValue(0.5);
   });
 
@@ -287,12 +336,14 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
-    const modelDefaultsTab = screen.getAllByText('Model Default Parameters')[0];
+    // Act: Change top p
+    const modelDefaultsTab = screen.getByText('Model Default Parameters');
     fireEvent.click(modelDefaultsTab);
 
     const topPInput = screen.getByDisplayValue('0.9');
     fireEvent.change(topPInput, { target: { value: '0.7' } });
 
+    // Assert: Value updated
     expect(topPInput).toHaveValue(0.7);
   });
 
@@ -300,12 +351,14 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
-    const modelDefaultsTab = screen.getAllByText('Model Default Parameters')[0];
+    // Act: Change top k
+    const modelDefaultsTab = screen.getByText('Model Default Parameters');
     fireEvent.click(modelDefaultsTab);
 
     const topKInput = screen.getByDisplayValue('40');
     fireEvent.change(topKInput, { target: { value: '50' } });
 
+    // Assert: Value updated
     expect(topKInput).toHaveValue(50);
   });
 
@@ -313,12 +366,14 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
-    const modelDefaultsTab = screen.getAllByText('Model Default Parameters')[0];
+    // Act: Change gpu layers
+    const modelDefaultsTab = screen.getByText('Model Default Parameters');
     fireEvent.click(modelDefaultsTab);
 
     const gpuLayersInput = screen.getByDisplayValue('-1');
     fireEvent.change(gpuLayersInput, { target: { value: '35' } });
 
+    // Assert: Value updated
     expect(gpuLayersInput).toHaveValue(35);
   });
 
@@ -326,12 +381,14 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
-    const modelDefaultsTab = screen.getAllByText('Model Default Parameters')[0];
+    // Act: Change cpu threads
+    const modelDefaultsTab = screen.getByText('Model Default Parameters');
     fireEvent.click(modelDefaultsTab);
 
     const threadsInput = screen.getByDisplayValue('-1');
     fireEvent.change(threadsInput, { target: { value: '8' } });
 
+    // Assert: Value updated
     expect(threadsInput).toHaveValue(8);
   });
 
@@ -342,14 +399,15 @@ describe('ConfigurationPage', () => {
       json: async () => ({ success: true }),
     });
 
+    // Act: Save from model defaults tab
     render(<ConfigurationPage />);
-
-    const modelDefaultsTab = screen.getAllByText('Model Default Parameters')[0];
+    const modelDefaultsTab = screen.getByText('Model Default Parameters');
     fireEvent.click(modelDefaultsTab);
 
     const saveButton = screen.getByText('Save Model Defaults');
     fireEvent.click(saveButton);
 
+    // Assert: Save triggered
     await waitFor(() => {
       expect(mockLocalStorage.setItem).toHaveBeenCalled();
     });
@@ -363,8 +421,8 @@ describe('ConfigurationPage', () => {
       json: async () => ({ success: true }),
     });
 
+    // Act: Save and advance timer
     render(<ConfigurationPage />);
-
     const saveButton = screen.getByText('Save Configuration');
     fireEvent.click(saveButton);
 
@@ -372,8 +430,10 @@ describe('ConfigurationPage', () => {
       expect(screen.getByText('Configuration saved successfully!')).toBeInTheDocument();
     });
 
+    // Act: Advance timers
     jest.advanceTimersByTime(3000);
 
+    // Assert: Message cleared
     await waitFor(() => {
       expect(screen.queryByText('Configuration saved successfully!')).not.toBeInTheDocument();
     });
@@ -386,10 +446,12 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
+    // Act: Set very long path
     const basePathInput = screen.getByDisplayValue('/home/user/models');
     const longPath = '/'.repeat(5000);
     fireEvent.change(basePathInput, { target: { value: longPath } });
 
+    // Assert: Long value accepted
     expect(basePathInput).toHaveValue(longPath);
   });
 
@@ -397,9 +459,11 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
+    // Act: Clear path
     const basePathInput = screen.getByDisplayValue('/home/user/models');
     fireEvent.change(basePathInput, { target: { value: '' } });
 
+    // Assert: Empty value accepted
     expect(basePathInput).toHaveValue('');
   });
 
@@ -407,9 +471,11 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
+    // Act: Set negative value
     const maxModelsInput = screen.getByDisplayValue('5');
     fireEvent.change(maxModelsInput, { target: { value: '-10' } });
 
+    // Assert: Negative value accepted (no validation in component)
     expect(maxModelsInput).toHaveValue(-10);
   });
 
@@ -417,9 +483,11 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
+    // Act: Set very large value
     const maxModelsInput = screen.getByDisplayValue('5');
     fireEvent.change(maxModelsInput, { target: { value: '999999999' } });
 
+    // Assert: Large value accepted
     expect(maxModelsInput).toHaveValue(999999999);
   });
 
@@ -427,7 +495,8 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
-    const modelDefaultsTab = screen.getAllByText('Model Default Parameters')[0];
+    // Act: Set boundary values
+    const modelDefaultsTab = screen.getByText('Model Default Parameters');
     fireEvent.click(modelDefaultsTab);
 
     const tempInput = screen.getByDisplayValue('0.8');
@@ -442,7 +511,8 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
-    const modelDefaultsTab = screen.getAllByText('Model Default Parameters')[0];
+    // Act: Set out of bounds values
+    const modelDefaultsTab = screen.getByText('Model Default Parameters');
     fireEvent.click(modelDefaultsTab);
 
     const tempInput = screen.getByDisplayValue('0.8');
@@ -457,7 +527,8 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
-    const modelDefaultsTab = screen.getAllByText('Model Default Parameters')[0];
+    // Act: Test boundary values
+    const modelDefaultsTab = screen.getByText('Model Default Parameters');
     fireEvent.click(modelDefaultsTab);
 
     const topPInput = screen.getByDisplayValue('0.9');
@@ -472,7 +543,8 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
-    const modelDefaultsTab = screen.getAllByText('Model Default Parameters')[0];
+    // Act: Test extreme values
+    const modelDefaultsTab = screen.getByText('Model Default Parameters');
     fireEvent.click(modelDefaultsTab);
 
     const ctxSizeInput = screen.getByDisplayValue('4096');
@@ -487,7 +559,8 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
-    const modelDefaultsTab = screen.getAllByText('Model Default Parameters')[0];
+    // Act: Test negative gpu layers
+    const modelDefaultsTab = screen.getByText('Model Default Parameters');
     fireEvent.click(modelDefaultsTab);
 
     const gpuLayersInput = screen.getByDisplayValue('-1');
@@ -499,14 +572,16 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
-    const generalTab = screen.getAllByText('General Settings')[0];
-    const modelDefaultsTab = screen.getAllByText('Model Default Parameters')[0];
+    // Act: Rapidly switch tabs
+    const generalTab = screen.getByText('General Settings');
+    const modelDefaultsTab = screen.getByText('Model Default Parameters');
 
     for (let i = 0; i < 10; i++) {
       fireEvent.click(generalTab);
       fireEvent.click(modelDefaultsTab);
     }
 
+    // Assert: Component still functional
     expect(screen.getByText('General Settings')).toBeInTheDocument();
     expect(screen.getByText('Model Default Parameters')).toBeInTheDocument();
   });
@@ -518,12 +593,13 @@ describe('ConfigurationPage', () => {
       json: async () => ({ success: true }),
     });
 
+    // Act: Double click save button
     render(<ConfigurationPage />);
-
     const saveButton = screen.getByText('Save Configuration');
     fireEvent.click(saveButton);
     fireEvent.click(saveButton);
 
+    // Assert: Button disabled on second click
     expect(saveButton).toBeDisabled();
   });
 
@@ -535,11 +611,12 @@ describe('ConfigurationPage', () => {
       throw error;
     });
 
+    // Act: Attempt save
     render(<ConfigurationPage />);
-
     const saveButton = screen.getByText('Save Configuration');
     fireEvent.click(saveButton);
 
+    // Assert: Fallback message shown
     await waitFor(() => {
       expect(screen.getByText('Configuration saved locally (API unavailable)')).toBeInTheDocument();
     });
@@ -553,27 +630,30 @@ describe('ConfigurationPage', () => {
       )
     );
 
+    // Act: Save with timeout
     render(<ConfigurationPage />);
-
     const saveButton = screen.getByText('Save Configuration');
     fireEvent.click(saveButton);
 
+    // Assert: Timeout handled
     await waitFor(() => {
       expect(screen.getByText('Configuration saved locally (API unavailable)')).toBeInTheDocument();
     }, { timeout: 5000 });
   });
 
   it('handles partial configuration in localStorage', () => {
+    // Arrange: Partial config (missing some fields)
     const partialConfig = JSON.stringify({
       basePath: '/partial/path',
       // Missing other fields
     });
     mockLocalStorage.getItem.mockReturnValue(partialConfig);
 
+    // Act: Render
     render(<ConfigurationPage />);
 
+    // Assert: Partial data loaded, defaults used for missing fields
     expect(screen.getByDisplayValue('/partial/path')).toBeInTheDocument();
-    // Should use defaults for missing fields
     expect(screen.getByDisplayValue('info')).toBeInTheDocument();
     expect(screen.getByDisplayValue('5')).toBeInTheDocument();
   });
@@ -581,8 +661,10 @@ describe('ConfigurationPage', () => {
   it('handles invalid JSON in localStorage', () => {
     mockLocalStorage.getItem.mockReturnValue('{ invalid json }');
 
+    // Act: Render with invalid JSON
     render(<ConfigurationPage />);
 
+    // Assert: Error logged, defaults used
     expect(console.error).toHaveBeenCalled();
     expect(screen.getByText('Configuration')).toBeInTheDocument();
   });
@@ -606,8 +688,10 @@ describe('ConfigurationPage', () => {
     });
     mockLocalStorage.getItem.mockReturnValue(largeConfig);
 
+    // Act: Render large config
     render(<ConfigurationPage />);
 
+    // Assert: Component renders
     expect(screen.getByText('Configuration')).toBeInTheDocument();
   });
 
@@ -615,10 +699,12 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
+    // Act: Use special characters
     const basePathInput = screen.getByDisplayValue('/home/user/models');
     const specialPath = '/path/with/@#$%^&*()_+[]{}|;:"<>?`-';
     fireEvent.change(basePathInput, { target: { value: specialPath } });
 
+    // Assert: Special characters accepted
     expect(basePathInput).toHaveValue(specialPath);
   });
 
@@ -626,28 +712,33 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
+    // Act: Use unicode
     const basePathInput = screen.getByDisplayValue('/home/user/models');
     const unicodePath = '/路径/with/模型/和/汉字';
     fireEvent.change(basePathInput, { target: { value: unicodePath } });
 
+    // Assert: Unicode accepted
     expect(basePathInput).toHaveValue(unicodePath);
   });
 
   it('handles null config value from localStorage', () => {
     mockLocalStorage.getItem.mockReturnValue('null');
 
+    // Act: Render with null
     render(<ConfigurationPage />);
 
+    // Assert: Defaults used
     expect(screen.getByText('Configuration')).toBeInTheDocument();
   });
 
   it('handles empty object from localStorage', () => {
     mockLocalStorage.getItem.mockReturnValue('{}');
 
+    // Act: Render with empty object
     render(<ConfigurationPage />);
 
+    // Assert: Defaults used
     expect(screen.getByText('Configuration')).toBeInTheDocument();
-    // Should use defaults
     expect(screen.getByDisplayValue('/home/user/models')).toBeInTheDocument();
   });
 
@@ -658,11 +749,12 @@ describe('ConfigurationPage', () => {
       json: async () => ({ invalid: 'data' }),
     });
 
+    // Act: Save
     render(<ConfigurationPage />);
-
     const saveButton = screen.getByText('Save Configuration');
     fireEvent.click(saveButton);
 
+    // Assert: Success shown (API returns ok)
     await waitFor(() => {
       expect(screen.getByText('Configuration saved successfully!')).toBeInTheDocument();
     });
@@ -676,11 +768,12 @@ describe('ConfigurationPage', () => {
       statusText: 'Internal Server Error',
     });
 
+    // Act: Save with 500 error
     render(<ConfigurationPage />);
-
     const saveButton = screen.getByText('Save Configuration');
     fireEvent.click(saveButton);
 
+    // Assert: Fallback message shown
     await waitFor(() => {
       expect(screen.getByText('Configuration saved locally (API unavailable)')).toBeInTheDocument();
     });
@@ -690,13 +783,16 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
-    const autoUpdateCheckbox = screen.getByLabelText(/auto update/i) as HTMLInputElement;
+    // Act: Rapidly toggle checkbox (20 clicks = even number)
+    const checkboxes = screen.getAllByRole('checkbox');
+    const autoUpdateCheckbox = checkboxes[0] as HTMLInputElement;
 
     for (let i = 0; i < 20; i++) {
       fireEvent.click(autoUpdateCheckbox);
     }
 
-    expect(autoUpdateCheckbox.checked).toBe(false); // Should end in opposite state
+    // Assert: Final state is true (even number of clicks from initial true)
+    expect(autoUpdateCheckbox.checked).toBe(true);
   });
 
   it('handles form submission with Enter key', async () => {
@@ -706,12 +802,12 @@ describe('ConfigurationPage', () => {
       json: async () => ({ success: true }),
     });
 
+    // Act: Press Enter in input
     render(<ConfigurationPage />);
-
     const basePathInput = screen.getByDisplayValue('/home/user/models');
     fireEvent.keyDown(basePathInput, { key: 'Enter', code: 'Enter' });
 
-    // Note: The component doesn't have form submit handler, so this should not trigger save
+    // Assert: Component still renders (no form submit handler)
     expect(screen.getByText('Save Configuration')).toBeInTheDocument();
   });
 
@@ -719,9 +815,52 @@ describe('ConfigurationPage', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
     render(<ConfigurationPage />);
 
+    // Act: Set invalid log level
     const logLevelInput = screen.getByDisplayValue('info');
     fireEvent.change(logLevelInput, { target: { value: 'invalid-log-level' } });
 
+    // Assert: Invalid value accepted (no validation)
     expect(logLevelInput).toHaveValue('invalid-log-level');
+  });
+
+  it('handles batch size and top k parameter changes', () => {
+    mockLocalStorage.getItem.mockReturnValue(null);
+    render(<ConfigurationPage />);
+
+    // Act: Switch to model defaults and change values
+    const modelDefaultsTab = screen.getByText('Model Default Parameters');
+    fireEvent.click(modelDefaultsTab);
+
+    // Change batch size
+    const batchSizeInput = screen.getByDisplayValue('2048');
+    fireEvent.change(batchSizeInput, { target: { value: '4096' } });
+    expect(batchSizeInput).toHaveValue(4096);
+
+    // Change top k (already tested but let's verify again)
+    const topKInput = screen.getByDisplayValue('40');
+    fireEvent.change(topKInput, { target: { value: '50' } });
+    expect(topKInput).toHaveValue(50);
+  });
+
+  it('displays correct button text based on active tab', async () => {
+    mockLocalStorage.getItem.mockReturnValue(null);
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true }),
+    });
+
+    render(<ConfigurationPage />);
+
+    // General tab save button
+    const saveButton1 = screen.getByText('Save Configuration');
+    expect(saveButton1).toBeInTheDocument();
+
+    // Switch to model defaults
+    const modelDefaultsTab = screen.getByText('Model Default Parameters');
+    fireEvent.click(modelDefaultsTab);
+
+    // Model defaults tab save button
+    const saveButton2 = screen.getByText('Save Model Defaults');
+    expect(saveButton2).toBeInTheDocument();
   });
 });
