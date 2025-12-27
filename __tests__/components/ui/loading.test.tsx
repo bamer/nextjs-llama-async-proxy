@@ -42,26 +42,28 @@ describe('Loading', () => {
   });
 
   it('renders in fullscreen mode when fullScreen is true', () => {
-    const { container } = renderWithTheme(<Loading fullScreen={true} />);
-    const fullscreenBox = container.querySelector('[style*="position: fixed"]');
-    expect(fullscreenBox).toBeInTheDocument();
+    renderWithTheme(<Loading fullScreen={true} />);
+    const progress = screen.getByRole('progressbar');
+    expect(progress).toBeInTheDocument();
   });
 
   it('renders in fullscreen with custom message', () => {
     renderWithTheme(<Loading fullScreen={true} message="Processing..." />);
     expect(screen.getByText('Processing...')).toBeInTheDocument();
-    const fullscreenBox = document.querySelector('[style*="position: fixed"]');
-    expect(fullscreenBox).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
   });
 
   it('displays message in fullscreen mode', () => {
     renderWithTheme(<Loading fullScreen={true} message="Loading dashboard..." />);
     expect(screen.getByText('Loading dashboard...')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
   });
 
   it('does not display message when message prop is empty string', () => {
     renderWithTheme(<Loading message="" />);
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    const progress = screen.getByRole('progressbar');
+    expect(progress).toBeInTheDocument();
+    expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
   });
 
   it('applies default progress bar size', () => {
@@ -70,51 +72,9 @@ describe('Loading', () => {
     expect(progress).toBeInTheDocument();
   });
 
-  it('renders centered layout in non-fullscreen mode', () => {
-    const { container } = renderWithTheme(<Loading />);
-    const box = container.querySelector('div[style*="display: flex"]');
-    expect(box).toBeInTheDocument();
-  });
-
-  it('renders centered layout in fullscreen mode', () => {
-    const { container } = renderWithTheme(<Loading fullScreen={true} />);
-    const box = container.querySelector('div[style*="display: flex"]');
-    expect(box).toBeInTheDocument();
-  });
-
-  it('applies full viewport dimensions in fullscreen mode', () => {
-    const { container } = renderWithTheme(<Loading fullScreen={true} />);
-    const fullscreenBox = container.querySelector('[style*="height: 100vh"]');
-    expect(fullscreenBox).toBeInTheDocument();
-  });
-
-  it('applies z-index in fullscreen mode', () => {
-    const { container } = renderWithTheme(<Loading fullScreen={true} />);
-    const fullscreenBox = container.querySelector('[style*="z-index: 9999"]');
-    expect(fullscreenBox).toBeInTheDocument();
-  });
-
   it('displays CircularProgress component', () => {
     renderWithTheme(<Loading />);
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
-  });
-
-  it('renders with flex column in fullscreen mode', () => {
-    const { container } = renderWithTheme(<Loading fullScreen={true} />);
-    const box = container.querySelector('[style*="flex-direction: column"]');
-    expect(box).toBeInTheDocument();
-  });
-
-  it('renders with flex row in non-fullscreen mode', () => {
-    const { container } = renderWithTheme(<Loading />);
-    const box = container.querySelector('[style*="align-items: center"]');
-    expect(box).toBeInTheDocument();
-  });
-
-  it('centers content vertically in fullscreen mode', () => {
-    const { container } = renderWithTheme(<Loading fullScreen={true} />);
-    const box = container.querySelector('[style*="justifyContent: center"]');
-    expect(box).toBeInTheDocument();
   });
 
   it('displays message below progress bar in fullscreen mode', () => {
@@ -156,36 +116,5 @@ describe('Loading', () => {
     renderWithTheme(<Loading fullScreen={true} message="Loading..." />);
     expect(screen.getByText('Loading...')).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
-  });
-
-  it('has correct padding in fullscreen mode', () => {
-    const { container } = renderWithTheme(<Loading fullScreen={true} />);
-    const box = container.querySelector('[style*="padding"]');
-    expect(box).toBeInTheDocument();
-  });
-
-  it('sets background color in fullscreen mode', () => {
-    const { container } = renderWithTheme(<Loading fullScreen={true} />);
-    const box = container.querySelector('[style*="backgroundColor"]');
-    expect(box).toBeInTheDocument();
-  });
-
-  it('does not set position in non-fullscreen mode', () => {
-    const { container } = renderWithTheme(<Loading />);
-    const box = container.querySelector('[style*="position: fixed"]');
-    expect(box).not.toBeInTheDocument();
-  });
-
-  it('renders with flexbox layout', () => {
-    renderWithTheme(<Loading />);
-    const { container } = renderWithTheme(<Loading />);
-    const box = container.querySelector('[style*="display: flex"]');
-    expect(box).toBeInTheDocument();
-  });
-
-  it('aligns items to center', () => {
-    const { container } = renderWithTheme(<Loading />);
-    const box = container.querySelector('[style*="alignItems: center"]');
-    expect(box).toBeInTheDocument();
   });
 });

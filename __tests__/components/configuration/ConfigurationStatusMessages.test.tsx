@@ -21,6 +21,11 @@ function renderWithTheme(component: React.ReactElement) {
 }
 
 describe('ConfigurationStatusMessages', () => {
+  beforeEach(() => {
+    const { useTheme } = require('@/contexts/ThemeContext');
+    useTheme.mockReturnValue({ isDark: false });
+  });
+
   it('renders nothing when no messages', () => {
     const { container } = renderWithTheme(
       <ConfigurationStatusMessages saveSuccess={false} validationErrors={[]} />

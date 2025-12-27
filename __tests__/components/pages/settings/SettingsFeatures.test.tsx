@@ -14,10 +14,19 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/',
 }));
 
+jest.mock('@tanstack/react-query', () => ({
+  useQuery: jest.fn(),
+  useMutation: jest.fn(),
+  QueryClient: jest.fn(),
+  QueryClientProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 jest.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
   },
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 const theme = createTheme();
@@ -250,5 +259,25 @@ describe('SettingsFeatures', () => {
 
     expect(mockOnToggle).toHaveBeenCalledTimes(3);
     expect(mockOnToggle).toHaveBeenCalledWith('autoUpdate');
+  });
+
+  it('has exactly two toggle buttons', () => {
+    const settings = { autoUpdate: false, notificationsEnabled: false };
+    renderWithTheme(
+      <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
+    );
+
+    const buttons = screen.getAllByRole('button');
+    expect(buttons.length).toBe(2);
+  });
+
+  it('displays feature descriptions', () => {
+    const settings = { autoUpdate: false, notificationsEnabled: false };
+    renderWithTheme(
+      <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
+    );
+
+    expect(screen.getByText('Auto-update models and dependencies')).toBeInTheDocument();
+    expect(screen.getByText('Receive system alerts')).toBeInTheDocument();
   });
 });

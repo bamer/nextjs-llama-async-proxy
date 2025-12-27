@@ -233,14 +233,56 @@ describe('SettingsAppearance', () => {
     });
   });
 
-  it('displays theme names capitalized', () => {
+  it('displays theme names', () => {
     const settings = { theme: 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );
 
-    expect(screen.getByText('Light')).toBeInTheDocument();
-    expect(screen.getByText('Dark')).toBeInTheDocument();
-    expect(screen.getByText('System')).toBeInTheDocument();
+    expect(screen.getByText('light')).toBeInTheDocument();
+    expect(screen.getByText('dark')).toBeInTheDocument();
+    expect(screen.getByText('system')).toBeInTheDocument();
+  });
+
+  it('handles theme set to null', () => {
+    const settings = { theme: null };
+    renderWithTheme(
+      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
+    );
+
+    expect(screen.getByText('Appearance')).toBeInTheDocument();
+  });
+
+  it('handles theme set to undefined', () => {
+    const settings = { theme: undefined };
+    renderWithTheme(
+      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
+    );
+
+    expect(screen.getByText('Appearance')).toBeInTheDocument();
+  });
+
+  it('handles rapid clicking on same theme button', () => {
+    const settings = { theme: 'light' };
+    renderWithTheme(
+      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
+    );
+
+    const lightButton = screen.getByText('light').closest('button');
+    fireEvent.click(lightButton!);
+    fireEvent.click(lightButton!);
+    fireEvent.click(lightButton!);
+
+    expect(mockOnThemeChange).toHaveBeenCalledTimes(3);
+    expect(mockOnThemeChange).toHaveBeenCalledWith('light');
+  });
+
+  it('renders correctly with empty settings object', () => {
+    const settings = {};
+    renderWithTheme(
+      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
+    );
+
+    expect(screen.getByText('Appearance')).toBeInTheDocument();
   });
 });

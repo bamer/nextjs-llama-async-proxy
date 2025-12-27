@@ -19,6 +19,8 @@ describe('ConfigurationTabs', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    const { useTheme } = require('@/contexts/ThemeContext');
+    useTheme.mockReturnValue({ isDark: false });
   });
 
   it('renders all tabs', () => {

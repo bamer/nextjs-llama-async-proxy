@@ -40,6 +40,8 @@ describe('LlamaServerSettingsTab', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    const { useTheme } = require('@/contexts/ThemeContext');
+    useTheme.mockReturnValue({ isDark: false });
   });
 
   it('renders correctly', () => {
@@ -190,5 +192,14 @@ describe('LlamaServerSettingsTab', () => {
     expect(screen.getByText('Server hostname or IP address')).toBeInTheDocument();
     expect(screen.getByText('Server port number')).toBeInTheDocument();
     expect(screen.getByText('Maximum context window size')).toBeInTheDocument();
+  });
+
+  it('renders with dark theme', () => {
+    const { useTheme } = require('@/contexts/ThemeContext');
+    useTheme.mockReturnValue({ isDark: true });
+    renderWithTheme(
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+    );
+    expect(screen.getByText('Llama-Server Settings')).toBeInTheDocument();
   });
 });

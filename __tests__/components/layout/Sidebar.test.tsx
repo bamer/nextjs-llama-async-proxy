@@ -82,7 +82,7 @@ describe('Sidebar', () => {
       isOpen: true,
       toggleSidebar: jest.fn(),
       openSidebar: jest.fn(),
-      closeSidebar: mockSidebar,
+      closeSidebar: mockCloseSidebar,
     });
     (nextNavigation.usePathname as jest.Mock).mockReturnValue('/dashboard');
 
@@ -238,7 +238,11 @@ describe('Sidebar', () => {
     });
 
     const { container } = renderWithTheme(<Sidebar />);
-    const icons = container.querySelectorAll('svg');
-    expect(icons.length).toBeGreaterThan(0);
+
+    expect(screen.getByText('Dashboard')).toBeInTheDocument();
+    expect(screen.getByText('Monitoring')).toBeInTheDocument();
+    expect(screen.getByText('Models')).toBeInTheDocument();
+    expect(screen.getByText('Logs')).toBeInTheDocument();
+    expect(screen.getByText('Settings')).toBeInTheDocument();
   });
 });

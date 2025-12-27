@@ -23,6 +23,11 @@ function renderWithTheme(component: React.ReactElement) {
 }
 
 describe('ConfigurationHeader', () => {
+  beforeEach(() => {
+    const { useTheme } = require('@/contexts/ThemeContext');
+    useTheme.mockReturnValue({ isDark: false });
+  });
+
   it('renders correctly', () => {
     renderWithTheme(<ConfigurationHeader />);
     expect(screen.getByText('Configuration Center')).toBeInTheDocument();

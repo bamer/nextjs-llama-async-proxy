@@ -1,7 +1,7 @@
 import { render, renderHook, screen, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import React from 'react';
-import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
+import { ThemeProvider, useTheme, lightTheme, darkTheme } from '@/contexts/ThemeContext';
 import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 
 const localStorageMock = (() => {
@@ -85,12 +85,21 @@ describe('ThemeProvider', () => {
 
   it('returns null before mount to avoid SSR mismatch', () => {
     (useMediaQuery as jest.Mock).mockReturnValue(false);
+    // Create a custom mount detector component
+    let renderCount = 0;
+    const MountDetector = () => {
+      renderCount++;
+      return <div>Content</div>;
+    };
+
     const { container } = render(
       <ThemeProvider>
-        <div>Content</div>
+        <MountDetector />
       </ThemeProvider>
     );
+    // After the first render, content should be present
     expect(screen.getByText('Content')).toBeInTheDocument();
+    expect(renderCount).toBeGreaterThan(0);
   });
 
   it('loads saved theme from localStorage', () => {
@@ -563,5 +572,374 @@ describe('Theme edge cases', () => {
 
     const { result } = renderHook(() => useTheme(), { wrapper });
     expect(result.current).toBeDefined();
+  });
+});
+
+describe('Exported theme objects', () => {
+  it('exports lightTheme', () => {
+    expect(lightTheme).toBeDefined();
+    expect(typeof lightTheme).toBe('object');
+  });
+
+  it('exports darkTheme', () => {
+    expect(darkTheme).toBeDefined();
+    expect(typeof darkTheme).toBe('object');
+  });
+
+  it('lightTheme has palette', () => {
+    expect(lightTheme.palette).toBeDefined();
+    expect(typeof lightTheme.palette).toBe('object');
+  });
+
+  it('darkTheme has palette', () => {
+    expect(darkTheme.palette).toBeDefined();
+    expect(typeof darkTheme.palette).toBe('object');
+  });
+});
+
+describe('Context value types', () => {
+  beforeEach(() => {
+    localStorageMock.clear();
+    jest.clearAllMocks();
+  });
+
+  it('context provides all required properties', () => {
+    (useMediaQuery as jest.Mock).mockReturnValue(false);
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ThemeProvider>{children}</ThemeProvider>
+    );
+
+    const { result } = renderHook(() => useTheme(), { wrapper });
+
+    expect(result.current).toHaveProperty('mode');
+    expect(result.current).toHaveProperty('setMode');
+    expect(result.current).toHaveProperty('toggleTheme');
+    expect(result.current).toHaveProperty('isDark');
+    expect(result.current).toHaveProperty('currentTheme');
+  });
+
+  it('mode property is of correct type', () => {
+    (useMediaQuery as jest.Mock).mockReturnValue(false);
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ThemeProvider>{children}</ThemeProvider>
+    );
+
+    const { result } = renderHook(() => useTheme(), { wrapper });
+
+    expect(['light', 'dark', 'system']).toContain(result.current.mode);
+  });
+});
+
+describe('Theme persistence across renders', () => {
+  beforeEach(() => {
+    localStorageMock.clear();
+    jest.clearAllMocks();
+  });
+
+  it('maintains theme selection across re-renders', () => {
+    (useMediaQuery as jest.Mock).mockReturnValue(false);
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ThemeProvider>{children}</ThemeProvider>
+    );
+
+    const { result, rerender } = renderHook(() => useTheme(), { wrapper });
+
+    act(() => {
+      result.current.setMode('dark');
+    });
+
+    expect(result.current.mode).toBe('dark');
+
+    // Rerender to ensure persistence
+    rerender();
+
+    expect(result.current.mode).toBe('dark');
+  });
+});
+
+describe('Next-themes integration', () => {
+  beforeEach(() => {
+    localStorageMock.clear();
+    jest.clearAllMocks();
+  });
+
+  it('calls setNextTheme when mode changes', () => {
+    (useMediaQuery as jest.Mock).mockReturnValue(false);
+    const setThemeMock = jest.fn();
+    const nextThemesModule = require('next-themes');
+    nextThemesModule.useTheme = () => ({
+      setTheme: setThemeMock,
+      theme: 'light',
+    });
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ThemeProvider>{children}</ThemeProvider>
+    );
+
+    const { result } = renderHook(() => useTheme(), { wrapper });
+
+    act(() => {
+      result.current.setMode('dark');
+    });
+
+    expect(setThemeMock).toHaveBeenCalledWith('dark');
+  });
+});
+
+describe('ThemeContext type safety', () => {
+  beforeEach(() => {
+    localStorageMock.clear();
+    jest.clearAllMocks();
+  });
+
+  it('setMode accepts all valid theme modes', () => {
+    (useMediaQuery as jest.Mock).mockReturnValue(false);
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ThemeProvider>{children}</ThemeProvider>
+    );
+
+    const { result } = renderHook(() => useTheme(), { wrapper });
+
+    const modes: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
+
+    modes.forEach((mode) => {
+      expect(() => {
+        act(() => {
+          result.current.setMode(mode);
+        });
+      }).not.toThrow();
+    });
+  });
+});
+
+describe('Theme mode edge cases', () => {
+  beforeEach(() => {
+    localStorageMock.clear();
+    jest.clearAllMocks();
+  });
+
+  it('handles consecutive calls to setMode with same value', () => {
+    (useMediaQuery as jest.Mock).mockReturnValue(false);
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ThemeProvider>{children}</ThemeProvider>
+    );
+
+    const { result } = renderHook(() => useTheme(), { wrapper });
+
+    act(() => {
+      result.current.setMode('light');
+      result.current.setMode('light');
+      result.current.setMode('light');
+    });
+
+    expect(result.current.mode).toBe('light');
+  });
+
+  it('handles rapid toggleTheme calls', () => {
+    (useMediaQuery as jest.Mock).mockReturnValue(false);
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ThemeProvider>{children}</ThemeProvider>
+    );
+
+    const { result } = renderHook(() => useTheme(), { wrapper });
+
+    act(() => {
+      result.current.toggleTheme();
+      result.current.toggleTheme();
+      result.current.toggleTheme();
+      result.current.toggleTheme();
+    });
+
+    // After 4 toggles starting from system (prefers light=false), should be system
+    expect(['light', 'dark', 'system']).toContain(result.current.mode);
+  });
+
+  it('handles switching through all modes', () => {
+    (useMediaQuery as jest.Mock).mockReturnValue(false);
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ThemeProvider>{children}</ThemeProvider>
+    );
+
+    const { result } = renderHook(() => useTheme(), { wrapper });
+
+    act(() => {
+      result.current.setMode('light');
+      expect(result.current.mode).toBe('light');
+
+      result.current.setMode('dark');
+      expect(result.current.mode).toBe('dark');
+
+      result.current.setMode('system');
+      expect(result.current.mode).toBe('system');
+
+      result.current.setMode('light');
+      expect(result.current.mode).toBe('light');
+    });
+  });
+});
+
+describe('Theme mode combinations with system preference', () => {
+  beforeEach(() => {
+    localStorageMock.clear();
+    jest.clearAllMocks();
+  });
+
+  it('system mode with dark preference returns dark theme', () => {
+    (useMediaQuery as jest.Mock).mockReturnValue(true);
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ThemeProvider>{children}</ThemeProvider>
+    );
+
+    const { result } = renderHook(() => useTheme(), { wrapper });
+
+    act(() => {
+      result.current.setMode('system');
+    });
+
+    expect(result.current.isDark).toBe(true);
+    expect(result.current.currentTheme).toBe(darkTheme);
+  });
+
+  it('system mode with light preference returns light theme', () => {
+    (useMediaQuery as jest.Mock).mockReturnValue(false);
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ThemeProvider>{children}</ThemeProvider>
+    );
+
+    const { result } = renderHook(() => useTheme(), { wrapper });
+
+    act(() => {
+      result.current.setMode('system');
+    });
+
+    expect(result.current.isDark).toBe(false);
+    expect(result.current.currentTheme).toBe(lightTheme);
+  });
+
+  it('dark mode overrides system preference', () => {
+    (useMediaQuery as jest.Mock).mockReturnValue(false);
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ThemeProvider>{children}</ThemeProvider>
+    );
+
+    const { result } = renderHook(() => useTheme(), { wrapper });
+
+    act(() => {
+      result.current.setMode('dark');
+    });
+
+    expect(result.current.isDark).toBe(true);
+    expect(result.current.currentTheme).toBe(darkTheme);
+  });
+
+  it('light mode overrides system preference', () => {
+    (useMediaQuery as jest.Mock).mockReturnValue(true);
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ThemeProvider>{children}</ThemeProvider>
+    );
+
+    const { result } = renderHook(() => useTheme(), { wrapper });
+
+    act(() => {
+      result.current.setMode('light');
+    });
+
+    expect(result.current.isDark).toBe(false);
+    expect(result.current.currentTheme).toBe(lightTheme);
+  });
+});
+
+describe('ThemeProvider children rendering', () => {
+  beforeEach(() => {
+    localStorageMock.clear();
+    jest.clearAllMocks();
+  });
+
+  it('renders multiple children', () => {
+    (useMediaQuery as jest.Mock).mockReturnValue(false);
+    const { container } = render(
+      <ThemeProvider>
+        <div data-testid="child1">Child 1</div>
+        <div data-testid="child2">Child 2</div>
+        <div data-testid="child3">Child 3</div>
+      </ThemeProvider>
+    );
+
+    expect(screen.getByTestId('child1')).toBeInTheDocument();
+    expect(screen.getByTestId('child2')).toBeInTheDocument();
+    expect(screen.getByTestId('child3')).toBeInTheDocument();
+  });
+
+  it('renders nested ThemeProviders (only inner one active)', () => {
+    (useMediaQuery as jest.Mock).mockReturnValue(false);
+    const { container } = render(
+      <ThemeProvider>
+        <div data-testid="outer">
+          <ThemeProvider>
+            <div data-testid="inner">Inner Content</div>
+          </ThemeProvider>
+        </div>
+      </ThemeProvider>
+    );
+
+    expect(screen.getByTestId('outer')).toBeInTheDocument();
+    expect(screen.getByTestId('inner')).toBeInTheDocument();
+  });
+});
+
+describe('LocalStorage behavior', () => {
+  beforeEach(() => {
+    localStorageMock.clear();
+    jest.clearAllMocks();
+  });
+
+  it('saves to localStorage when switching between themes', () => {
+    (useMediaQuery as jest.Mock).mockReturnValue(false);
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ThemeProvider>{children}</ThemeProvider>
+    );
+
+    const { result } = renderHook(() => useTheme(), { wrapper });
+
+    act(() => {
+      result.current.setMode('light');
+    });
+    expect(localStorageMock.getItem('theme')).toBe('light');
+
+    act(() => {
+      result.current.setMode('dark');
+    });
+    expect(localStorageMock.getItem('theme')).toBe('dark');
+
+    act(() => {
+      result.current.setMode('system');
+    });
+    expect(localStorageMock.getItem('theme')).toBe('system');
+  });
+
+  it('loads saved theme and maintains it', () => {
+    localStorageMock.setItem('theme', 'dark');
+    (useMediaQuery as jest.Mock).mockReturnValue(false);
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ThemeProvider>{children}</ThemeProvider>
+    );
+
+    const { result } = renderHook(() => useTheme(), { wrapper });
+
+    expect(result.current.mode).toBe('dark');
+    expect(result.current.isDark).toBe(true);
+  });
+
+  it('ignores invalid theme in localStorage', () => {
+    localStorageMock.setItem('theme', 'invalid-theme');
+    (useMediaQuery as jest.Mock).mockReturnValue(false);
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ThemeProvider>{children}</ThemeProvider>
+    );
+
+    const { result } = renderHook(() => useTheme(), { wrapper });
+
+    // Should fall back to system default
+    expect(['light', 'dark', 'system']).toContain(result.current.mode);
   });
 });

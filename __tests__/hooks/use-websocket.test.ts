@@ -5,6 +5,11 @@ import { useWebSocket } from '@/hooks/use-websocket';
 jest.mock('@/lib/websocket-client');
 jest.mock('@/lib/store');
 
+const mockAddLog = jest.fn();
+const mockSetMetrics = jest.fn();
+const mockSetModels = jest.fn();
+const mockSetLogs = jest.fn();
+
 const mockWebSocketServer = {
   connect: jest.fn(),
   disconnect: jest.fn(),
@@ -21,10 +26,10 @@ const mockWebSocketServer = {
 
 const mockStore = {
   getState: jest.fn(() => ({
-    addLog: jest.fn(),
-    setMetrics: jest.fn(),
-    setModels: jest.fn(),
-    setLogs: jest.fn(),
+    addLog: mockAddLog,
+    setMetrics: mockSetMetrics,
+    setModels: mockSetModels,
+    setLogs: mockSetLogs,
   })),
 };
 
@@ -39,6 +44,10 @@ describe('useWebSocket', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
+    mockAddLog.mockClear();
+    mockSetMetrics.mockClear();
+    mockSetModels.mockClear();
+    mockSetLogs.mockClear();
   });
 
   afterEach(() => {
@@ -147,7 +156,7 @@ describe('useWebSocket', () => {
       messageHandler(metricsMessage);
     });
 
-    expect(mockStore.getState().setMetrics).toHaveBeenCalledWith({ cpu: 50, memory: 60 });
+    expect(mockSetMetrics).toHaveBeenCalledWith({ cpu: 50, memory: 60 });
   });
 
   it('should handle models messages', async () => {
@@ -167,7 +176,7 @@ describe('useWebSocket', () => {
       messageHandler(modelsMessage);
     });
 
-    expect(mockStore.getState().setModels).toHaveBeenCalledWith([{ id: 'model1', name: 'Test Model' }]);
+    expect(mockSetModels).toHaveBeenCalledWith([{ id: 'model1', name: 'Test Model' }]);
   });
 
   it('should handle batch logs messages', async () => {
@@ -187,7 +196,7 @@ describe('useWebSocket', () => {
       messageHandler(logsMessage);
     });
 
-    expect(mockStore.getState().setLogs).toHaveBeenCalledWith([{ id: 1, message: 'Log 1' }, { id: 2, message: 'Log 2' }]);
+    expect(mockSetLogs).toHaveBeenCalledWith([{ id: 1, message: 'Log 1' }, { id: 2, message: 'Log 2' }]);
   });
 
   it('should handle individual log events with throttling', async () => {
@@ -211,7 +220,7 @@ describe('useWebSocket', () => {
     });
 
     // Logs should be queued but not processed immediately
-    expect(mockStore.getState().addLog).not.toHaveBeenCalled();
+    expect(mockAddLog).not.toHaveBeenCalled();
 
     // Advance time to trigger throttled processing
     act(() => {
@@ -219,8 +228,8 @@ describe('useWebSocket', () => {
     });
 
     // Now logs should be processed
-    expect(mockStore.getState().addLog).toHaveBeenCalledTimes(3);
-    expect(mockStore.getState().addLog).toHaveBeenCalledWith({ id: 1, message: 'Individual log' });
+    expect(mockAddLog).toHaveBeenCalledTimes(3);
+    expect(mockAddLog).toHaveBeenCalledWith({ id: 1, message: 'Individual log' });
   });
 
   it('should flush log queue on unmount', () => {
@@ -241,13 +250,13 @@ describe('useWebSocket', () => {
     });
 
     // Logs should be queued
-    expect(mockStore.getState().addLog).not.toHaveBeenCalled();
+    expect(mockAddLog).not.toHaveBeenCalled();
 
     // Unmount should flush the queue
     unmount();
 
     // Flush should happen immediately on unmount
-    expect(mockStore.getState().addLog).toHaveBeenCalledWith({ id: 1, message: 'Test log' });
+    expect(mockAddLog).toHaveBeenCalledWith({ id: 1, message: 'Test log' });
   });
 
   it('should cleanup event listeners on unmount', () => {
@@ -361,10 +370,10 @@ describe('useWebSocket', () => {
     });
 
     // Should not crash or call store methods
-    expect(mockStore.getState().addLog).not.toHaveBeenCalled();
-    expect(mockStore.getState().setMetrics).not.toHaveBeenCalled();
-    expect(mockStore.getState().setModels).not.toHaveBeenCalled();
-    expect(mockStore.getState().setLogs).not.toHaveBeenCalled();
+    expect(mockAddLog).not.toHaveBeenCalled();
+    expect(mockSetMetrics).not.toHaveBeenCalled();
+    expect(mockSetModels).not.toHaveBeenCalled();
+    expect(mockSetLogs).not.toHaveBeenCalled();
 
     consoleSpy.mockRestore();
   });
@@ -392,10 +401,10 @@ describe('useWebSocket', () => {
     });
 
     // Should not crash when data is missing
-    expect(mockStore.getState().setMetrics).toHaveBeenCalledWith(undefined);
-    expect(mockStore.getState().setModels).toHaveBeenCalledWith(undefined);
-    expect(mockStore.getState().setLogs).toHaveBeenCalledWith(undefined);
-    expect(mockStore.getState().addLog).not.toHaveBeenCalled(); // Individual logs need data
+    expect(mockSetMetrics).toHaveBeenCalledWith(undefined);
+    expect(mockSetModels).toHaveBeenCalledWith(undefined);
+    expect(mockSetLogs).toHaveBeenCalledWith(undefined);
+    expect(mockAddLog).not.toHaveBeenCalled(); // Individual logs need data
   });
 
   it('should clear timeout on unmount if log throttling is active', () => {

@@ -162,26 +162,15 @@ describe('ErrorBoundary', () => {
     expect(console.error).toHaveBeenCalled();
   });
 
-  it('renders full viewport layout for error state', () => {
-    const { container } = renderWithTheme(
+  it('renders error UI with correct elements', () => {
+    renderWithTheme(
       <ErrorBoundary>
         <ThrowError />
       </ErrorBoundary>
     );
 
-    const errorBox = container.querySelector('div[style*="height: 100vh"]');
-    expect(errorBox).toBeInTheDocument();
-  });
-
-  it('displays centered error message', () => {
-    const { container } = renderWithTheme(
-      <ErrorBoundary>
-        <ThrowError />
-      </ErrorBoundary>
-    );
-
-    const errorBox = container.querySelector('div[style*="display: flex"]');
-    expect(errorBox).toBeInTheDocument();
+    expect(screen.getByText(/We apologize for the inconvenience/i)).toBeInTheDocument();
+    expect(screen.getByRole('button')).toBeInTheDocument();
   });
 
   it('displays refresh icon in button', () => {

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import React from 'react';
 import { SidebarProvider, useSidebar } from '@/components/layout/SidebarProvider';
@@ -72,10 +72,14 @@ describe('SidebarProvider', () => {
 
     expect(isOpenSpan).toHaveTextContent('false');
 
-    toggleButton.click();
+    act(() => {
+      toggleButton.click();
+    });
     expect(isOpenSpan).toHaveTextContent('true');
 
-    toggleButton.click();
+    act(() => {
+      toggleButton.click();
+    });
     expect(isOpenSpan).toHaveTextContent('false');
   });
 
@@ -101,7 +105,9 @@ describe('SidebarProvider', () => {
 
     expect(isOpenSpan).toHaveTextContent('false');
 
-    openButton.click();
+    act(() => {
+      openButton.click();
+    });
     expect(isOpenSpan).toHaveTextContent('true');
   });
 
@@ -127,10 +133,14 @@ describe('SidebarProvider', () => {
     const closeButton = screen.getByTestId('close');
     const isOpenSpan = screen.getByTestId('is-open');
 
-    openButton.click();
+    act(() => {
+      openButton.click();
+    });
     expect(isOpenSpan).toHaveTextContent('true');
 
-    closeButton.click();
+    act(() => {
+      closeButton.click();
+    });
     expect(isOpenSpan).toHaveTextContent('false');
   });
 

@@ -14,6 +14,22 @@ jest.mock('@/contexts/ThemeContext', () => ({
   useTheme: jest.fn(),
 }));
 
+jest.mock('@tanstack/react-query', () => ({
+  useQuery: jest.fn(),
+  useMutation: jest.fn(),
+  QueryClient: jest.fn(),
+  QueryClientProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
+jest.mock('framer-motion', () => ({
+  m: {
+    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+  },
+  motion: {
+    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+  },
+}));
+
 const { useStore } = require('@/lib/store');
 const { useTheme } = require('@/contexts/ThemeContext');
 

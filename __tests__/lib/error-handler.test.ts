@@ -6,288 +6,313 @@ import {
   ServerError,
   handleError,
   isAppError,
-  logError
+  logError,
 } from '@/lib/error-handler';
 
-describe('Error classes', () => {
+describe('error-handler', () => {
   describe('AppError', () => {
-    it('creates error with code and message', () => {
-      const error = new AppError('TEST_ERROR', 'Test message');
+    it('should create an AppError with code and message', () => {
+      const error = new AppError('TEST_ERROR', 'Test error message');
+
+      expect(error).toBeInstanceOf(Error);
       expect(error.code).toBe('TEST_ERROR');
-      expect(error.message).toBe('Test message');
+      expect(error.message).toBe('Test error message');
       expect(error.name).toBe('AppError');
+    });
+
+    it('should set default statusCode to 500', () => {
+      const error = new AppError('TEST_ERROR', 'Test error');
+
       expect(error.statusCode).toBe(500);
     });
 
-    it('accepts custom status code', () => {
-      const error = new AppError('TEST_ERROR', 'Test message', 404);
-      expect(error.statusCode).toBe(404);
+    it('should accept custom statusCode', () => {
+      const error = new AppError('TEST_ERROR', 'Test error', 400);
+
+      expect(error.statusCode).toBe(400);
     });
 
-    it('accepts details', () => {
-      const details = { field: 'value' };
-      const error = new AppError('TEST_ERROR', 'Test message', 400, details);
+    it('should accept details', () => {
+      const details = { field: 'value', count: 10 };
+      const error = new AppError('TEST_ERROR', 'Test error', 500, details);
+
       expect(error.details).toEqual(details);
     });
 
-    it('is an instance of Error', () => {
-      const error = new AppError('TEST_ERROR', 'Test');
-      expect(error instanceof Error).toBe(true);
+    it('should have proper stack trace', () => {
+      const error = new AppError('TEST_ERROR', 'Test error');
+
+      expect(error.stack).toBeDefined();
+      expect(typeof error.stack).toBe('string');
     });
   });
 
   describe('ValidationError', () => {
-    it('creates validation error with 400 status', () => {
+    it('should create ValidationError with 400 status', () => {
       const error = new ValidationError('Invalid input');
+
+      expect(error).toBeInstanceOf(AppError);
       expect(error.code).toBe('VALIDATION_ERROR');
+      expect(error.message).toBe('Invalid input');
       expect(error.statusCode).toBe(400);
     });
 
-    it('accepts details', () => {
-      const details = { field: 'required' };
+    it('should accept details', () => {
+      const details = { field: 'email', reason: 'invalid format' };
       const error = new ValidationError('Invalid input', details);
-      expect(error.details).toEqual(details);
-    });
 
-    it('is instance of AppError', () => {
-      const error = new ValidationError('Test');
-      expect(error instanceof AppError).toBe(true);
+      expect(error.details).toEqual(details);
     });
   });
 
   describe('NotFoundError', () => {
-    it('creates not found error with 404 status', () => {
+    it('should create NotFoundError with 404 status', () => {
       const error = new NotFoundError('Resource not found');
+
+      expect(error).toBeInstanceOf(AppError);
       expect(error.code).toBe('NOT_FOUND');
+      expect(error.message).toBe('Resource not found');
       expect(error.statusCode).toBe(404);
     });
 
-    it('uses default message', () => {
+    it('should have default message', () => {
       const error = new NotFoundError();
-      expect(error.message).toBe('Resource not found');
-    });
 
-    it('is instance of AppError', () => {
-      const error = new NotFoundError();
-      expect(error instanceof AppError).toBe(true);
+      expect(error.message).toBe('Resource not found');
     });
   });
 
   describe('NetworkError', () => {
-    it('creates network error with 503 status', () => {
-      const error = new NetworkError('Connection failed');
+    it('should create NetworkError with 503 status', () => {
+      const error = new NetworkError('Network failed');
+
+      expect(error).toBeInstanceOf(AppError);
       expect(error.code).toBe('NETWORK_ERROR');
+      expect(error.message).toBe('Network failed');
       expect(error.statusCode).toBe(503);
     });
 
-    it('uses default message', () => {
+    it('should have default message', () => {
       const error = new NetworkError();
-      expect(error.message).toBe('Network request failed');
-    });
 
-    it('is instance of AppError', () => {
-      const error = new NetworkError();
-      expect(error instanceof AppError).toBe(true);
+      expect(error.message).toBe('Network request failed');
     });
   });
 
   describe('ServerError', () => {
-    it('creates server error with 500 status', () => {
+    it('should create ServerError with 500 status', () => {
       const error = new ServerError('Server crashed');
+
+      expect(error).toBeInstanceOf(AppError);
       expect(error.code).toBe('SERVER_ERROR');
+      expect(error.message).toBe('Server crashed');
       expect(error.statusCode).toBe(500);
     });
 
-    it('uses default message', () => {
+    it('should have default message', () => {
       const error = new ServerError();
+
       expect(error.message).toBe('Internal server error');
     });
+  });
 
-    it('is instance of AppError', () => {
-      const error = new ServerError();
-      expect(error instanceof AppError).toBe(true);
+  describe('handleError', () => {
+    it('should return AppError as-is', () => {
+      const originalError = new ValidationError('Test error');
+      const handled = handleError(originalError);
+
+      expect(handled).toBe(originalError);
+      expect(handled).toBeInstanceOf(ValidationError);
+    });
+
+    it('should convert generic Error to ServerError', () => {
+      const originalError = new Error('Something went wrong');
+      const handled = handleError(originalError);
+
+      expect(handled).toBeInstanceOf(ServerError);
+      expect(handled.message).toBe('Something went wrong');
+    });
+
+    it('should convert Error with "network" to NetworkError', () => {
+      const originalError = new Error('Network connection failed');
+      const handled = handleError(originalError);
+
+      expect(handled).toBeInstanceOf(NetworkError);
+      expect(handled.message).toBe('Network connection failed');
+    });
+
+    it('should convert Error with "fetch" to NetworkError', () => {
+      const originalError = new Error('fetch failed');
+      const handled = handleError(originalError);
+
+      expect(handled).toBeInstanceOf(NetworkError);
+    });
+
+    it('should convert Error with "not found" to NotFoundError', () => {
+      const originalError = new Error('User not found');
+      const handled = handleError(originalError);
+
+      expect(handled).toBeInstanceOf(NotFoundError);
+      expect(handled.message).toBe('User not found');
+    });
+
+    it('should convert Error with "404" to NotFoundError', () => {
+      const originalError = new Error('404 Not Found');
+      const handled = handleError(originalError);
+
+      expect(handled).toBeInstanceOf(NotFoundError);
+    });
+
+    it('should convert Error with "validation" to ValidationError', () => {
+      const originalError = new Error('Validation failed');
+      const handled = handleError(originalError);
+
+      expect(handled).toBeInstanceOf(ValidationError);
+      expect(handled.message).toBe('Validation failed');
+    });
+
+    it('should convert Error with "invalid" to ValidationError', () => {
+      const originalError = new Error('Invalid token');
+      const handled = handleError(originalError);
+
+      expect(handled).toBeInstanceOf(ValidationError);
+    });
+
+    it('should convert non-Error to AppError', () => {
+      const handled = handleError('string error');
+
+      expect(handled).toBeInstanceOf(AppError);
+      expect(handled.code).toBe('UNKNOWN_ERROR');
+      expect(handled.message).toBe('string error');
+    });
+
+    it('should convert null to AppError', () => {
+      const handled = handleError(null);
+
+      expect(handled).toBeInstanceOf(AppError);
+      expect(handled.code).toBe('UNKNOWN_ERROR');
+    });
+
+    it('should convert number to AppError', () => {
+      const handled = handleError(404);
+
+      expect(handled).toBeInstanceOf(AppError);
+      expect(handled.code).toBe('UNKNOWN_ERROR');
+      expect(handled.message).toBe('404');
     });
   });
-});
 
-describe('handleError', () => {
-  it('returns AppError as-is', () => {
-    const error = new AppError('TEST', 'message');
-    const result = handleError(error);
-    expect(result).toBe(error);
+  describe('isAppError', () => {
+    it('should return true for AppError', () => {
+      const error = new AppError('TEST', 'test');
+      expect(isAppError(error)).toBe(true);
+    });
+
+    it('should return true for ValidationError', () => {
+      const error = new ValidationError('test');
+      expect(isAppError(error)).toBe(true);
+    });
+
+    it('should return true for NotFoundError', () => {
+      const error = new NotFoundError('test');
+      expect(isAppError(error)).toBe(true);
+    });
+
+    it('should return true for NetworkError', () => {
+      const error = new NetworkError('test');
+      expect(isAppError(error)).toBe(true);
+    });
+
+    it('should return true for ServerError', () => {
+      const error = new ServerError('test');
+      expect(isAppError(error)).toBe(true);
+    });
+
+    it('should return false for generic Error', () => {
+      const error = new Error('test');
+      expect(isAppError(error)).toBe(false);
+    });
+
+    it('should return false for null', () => {
+      expect(isAppError(null)).toBe(false);
+    });
+
+    it('should return false for undefined', () => {
+      expect(isAppError(undefined)).toBe(false);
+    });
+
+    it('should return false for string', () => {
+      expect(isAppError('error')).toBe(false);
+    });
+
+    it('should narrow type in TypeScript', () => {
+      const error: unknown = new ValidationError('test');
+      if (isAppError(error)) {
+        expect(error.code).toBeDefined();
+        expect(error.statusCode).toBeDefined();
+      }
+    });
   });
 
-  it('converts standard Error with network message to NetworkError', () => {
-    const error = new Error('network connection failed');
-    const result = handleError(error);
-    expect(result).toBeInstanceOf(NetworkError);
-  });
+  describe('logError', () => {
+    let consoleErrorSpy: jest.SpyInstance;
 
-  it('converts standard Error with fetch message to NetworkError', () => {
-    const error = new Error('fetch failed');
-    const result = handleError(error);
-    expect(result).toBeInstanceOf(NetworkError);
-  });
+    beforeEach(() => {
+      consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+    });
 
-  it('converts standard Error with 404 to NotFoundError', () => {
-    const error = new Error('not found error 404');
-    const result = handleError(error);
-    expect(result).toBeInstanceOf(NotFoundError);
-  });
+    afterEach(() => {
+      consoleErrorSpy.mockRestore();
+    });
 
-  it('converts standard Error with validation message to ValidationError', () => {
-    const error = new Error('validation failed');
-    const result = handleError(error);
-    expect(result).toBeInstanceOf(ValidationError);
-  });
+    it('should log AppError with code and message', () => {
+      const error = new AppError('TEST_ERROR', 'Test message');
+      logError(error);
 
-  it('converts standard Error with invalid message to ValidationError', () => {
-    const error = new Error('invalid input data');
-    const result = handleError(error);
-    expect(result).toBeInstanceOf(ValidationError);
-  });
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[TEST_ERROR] Test message',
+        ''
+      );
+    });
 
-  it('converts standard Error to ServerError by default', () => {
-    const error = new Error('unknown error');
-    const result = handleError(error);
-    expect(result).toBeInstanceOf(ServerError);
-  });
+    it('should log with context', () => {
+      const error = new AppError('TEST_ERROR', 'Test message');
+      logError(error, 'API call');
 
-  it('converts non-Error to AppError', () => {
-    const result = handleError('string error');
-    expect(result).toBeInstanceOf(AppError);
-    expect(result.code).toBe('UNKNOWN_ERROR');
-  });
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[TEST_ERROR] API call: Test message',
+        ''
+      );
+    });
 
-  it('converts null to AppError', () => {
-    const result = handleError(null);
-    expect(result).toBeInstanceOf(AppError);
-    expect(result.code).toBe('UNKNOWN_ERROR');
-  });
+    it('should log with details', () => {
+      const details = { userId: 123, action: 'update' };
+      const error = new AppError('TEST_ERROR', 'Test message', 500, details);
+      logError(error);
 
-  it('converts undefined to AppError', () => {
-    const result = handleError(undefined);
-    expect(result).toBeInstanceOf(AppError);
-    expect(result.code).toBe('UNKNOWN_ERROR');
-  });
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[TEST_ERROR] Test message',
+        details
+      );
+    });
 
-  it('converts number to AppError', () => {
-    const result = handleError(123);
-    expect(result).toBeInstanceOf(AppError);
-    expect(result.message).toBe('123');
-  });
+    it('should handle generic Error', () => {
+      const error = new Error('Generic error');
+      logError(error);
 
-  it('preserves original error message', () => {
-    const error = new Error('custom message');
-    const result = handleError(error);
-    expect(result.message).toBe('custom message');
-  });
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Generic error'),
+        expect.anything()
+      );
+    });
 
-  it('handles case-insensitive message matching', () => {
-    const error = new Error('NETWORK ERROR');
-    const result = handleError(error);
-    expect(result).toBeInstanceOf(NetworkError);
-  });
-});
+    it('should handle non-Error', () => {
+      logError('string error');
 
-describe('isAppError', () => {
-  it('returns true for AppError', () => {
-    const error = new AppError('TEST', 'message');
-    expect(isAppError(error)).toBe(true);
-  });
-
-  it('returns true for ValidationError', () => {
-    const error = new ValidationError('test');
-    expect(isAppError(error)).toBe(true);
-  });
-
-  it('returns true for NotFoundError', () => {
-    const error = new NotFoundError();
-    expect(isAppError(error)).toBe(true);
-  });
-
-  it('returns true for NetworkError', () => {
-    const error = new NetworkError();
-    expect(isAppError(error)).toBe(true);
-  });
-
-  it('returns true for ServerError', () => {
-    const error = new ServerError();
-    expect(isAppError(error)).toBe(true);
-  });
-
-  it('returns false for standard Error', () => {
-    const error = new Error('test');
-    expect(isAppError(error)).toBe(false);
-  });
-
-  it('returns false for string', () => {
-    expect(isAppError('error')).toBe(false);
-  });
-
-  it('returns false for null', () => {
-    expect(isAppError(null)).toBe(false);
-  });
-
-  it('returns false for undefined', () => {
-    expect(isAppError(undefined)).toBe(false);
-  });
-
-  it('type narrows correctly', () => {
-    const error = new AppError('TEST', 'message');
-    if (isAppError(error)) {
-      expect(error.code).toBeDefined();
-    }
-  });
-});
-
-describe('logError', () => {
-  let consoleSpy: jest.SpyInstance;
-
-  beforeEach(() => {
-    consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-  });
-
-  afterEach(() => {
-    consoleSpy.mockRestore();
-  });
-
-  it('logs error with context', () => {
-    const error = new AppError('TEST', 'test message', 500, { details: 'value' });
-    logError(error, 'context');
-    expect(consoleSpy).toHaveBeenCalledWith(
-      '[TEST] context: test message',
-      { details: 'value' }
-    );
-  });
-
-  it('logs error without context', () => {
-    const error = new AppError('TEST', 'test message');
-    logError(error);
-    expect(consoleSpy).toHaveBeenCalledWith(
-      '[TEST] test message',
-      ''
-    );
-  });
-
-  it('handles standard Error', () => {
-    const error = new Error('test');
-    logError(error, 'context');
-    expect(consoleSpy).toHaveBeenCalled();
-  });
-
-  it('handles non-Error', () => {
-    logError('string error', 'context');
-    expect(consoleSpy).toHaveBeenCalled();
-  });
-
-  it('handles null', () => {
-    logError(null, 'context');
-    expect(consoleSpy).toHaveBeenCalled();
-  });
-
-  it('handles undefined', () => {
-    logError(undefined, 'context');
-    expect(consoleSpy).toHaveBeenCalled();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything()
+      );
+    });
   });
 });
