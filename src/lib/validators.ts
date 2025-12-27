@@ -225,8 +225,8 @@ export const modelConfigSchema = z
     type: z
       .enum(["llama", "mistral", "other"])
       .describe("Model architecture type"),
-    parameters: z
-      .record(z.unknown())
+      parameters: z
+      .record(z.string(), z.unknown())
       .describe("Model-specific parameters"),
     status: modelStatusSchema,
     createdAt: z
@@ -516,7 +516,7 @@ export const logEntrySchema = z
     message: z
       .union([
         z.string(),
-        z.record(z.unknown())
+        z.record(z.string(), z.unknown())
       ])
       .describe("Log message or structured data"),
     timestamp: z
@@ -528,7 +528,7 @@ export const logEntrySchema = z
       .optional()
       .describe("Source of the log entry"),
     context: z
-      .record(z.unknown())
+      .record(z.string(), z.unknown())
       .optional()
       .describe("Additional context information"),
   })
@@ -562,7 +562,7 @@ export const systemEventSchema = z
       .min(1)
       .describe("Event message"),
     details: z
-      .record(z.unknown())
+      .record(z.string(), z.unknown())
       .optional()
       .describe("Additional event details"),
     timestamp: z
@@ -879,6 +879,53 @@ export const websocketSchema = z.object({
   timestamp: z.number().int(),
 }).strict().describe("Legacy websocket schema - use websocketMessageSchema");
 
+/**
+ * Model Template Schema
+ * Validates individual model template entries
+ */
+export const modelTemplateSchema = z
+  .object({
+    name: z.string().min(1).describe("Template name identifier"),
+    template: z.string().min(1).describe("Template value/pattern"),
+  })
+  .strict()
+  .describe("Individual model template");
+
+/**
+ * Model Templates Configuration Schema
+ * Validates the complete model templates configuration structure
+ */
+export const modelTemplatesConfigSchema = z
+  .object({
+    model_templates: z.record(z.string(), z.string().min(1)).describe("Record of model templates"),
+    default_model: z.string().nullable().optional().describe("Default model template"),
+  })
+  .strict()
+  .describe("Model templates configuration");
+
+/**
+ * Model Template Save Request Schema
+ * Validates requests to save model templates
+ */
+export const modelTemplateSaveRequestSchema = z
+  .object({
+    model_templates: z.record(z.string(), z.string().min(1)).describe("Templates to save"),
+  })
+  .strict()
+  .describe("Request to save model templates");
+
+/**
+ * Model Template Response Schema
+ * Validates API responses containing model templates
+ */
+export const modelTemplateResponseSchema = z
+  .object({
+    model_templates: z.record(z.string(), z.string().min(1)).describe("Loaded templates"),
+    message: z.string().optional().describe("Response message"),
+  })
+  .strict()
+  .describe("Response containing model templates");
+
 // ============================================================================
 // 7. Inferred Types (TypeScript types from schemas)
 // ============================================================================
@@ -928,6 +975,12 @@ export type LoggerConfigRequest = z.infer<typeof loggerConfigRequestSchema>;
 export type Config = z.infer<typeof configSchema>;
 export type Parameter = z.infer<typeof parameterSchema>;
 export type LegacyWebSocket = z.infer<typeof websocketSchema>;
+
+// Model Template Types
+export type ModelTemplate = z.infer<typeof modelTemplateSchema>;
+export type ModelTemplatesConfig = z.infer<typeof modelTemplatesConfigSchema>;
+export type ModelTemplateSaveRequest = z.infer<typeof modelTemplateSaveRequestSchema>;
+export type ModelTemplateResponse = z.infer<typeof modelTemplateResponseSchema>;
 
 // ============================================================================
 // 8. Utility Functions
@@ -1076,4 +1129,62 @@ export function safeParseSettingsForm(data: unknown) {
  */
 export function safeParseSystemMetrics(data: unknown) {
   return systemMetricsSchema.safeParse(data);
+}
+
+/**
+ * Parse and validate model template
+ * @param data - Raw model template data
+ * @returns Parsed and validated template
+ * @throws ZodError if validation fails
+ */
+export function parseModelTemplate(data: unknown): ModelTemplate {
+  return modelTemplateSchema.parse(data);
+}
+
+/**
+ * Parse and validate model templates configuration
+ * @param data - Raw templates configuration data
+ * @returns Parsed and validated configuration
+ * @throws ZodError if validation fails
+ */
+export function parseModelTemplatesConfig(data: unknown): ModelTemplatesConfig {
+  return modelTemplatesConfigSchema.parse(data);
+}
+
+/**
+ * Parse and validate model template save request
+ * @param data - Raw save request data
+ * @returns Parsed and validated request
+ * @throws ZodError if validation fails
+ */
+export function parseModelTemplateSaveRequest(data: unknown): ModelTemplateSaveRequest {
+  return modelTemplateSaveRequestSchema.parse(data);
+}
+
+/**
+ * Parse and validate model template response
+ * @param data - Raw response data
+ * @returns Parsed and validated response
+ * @throws ZodError if validation fails
+ */
+export function parseModelTemplateResponse(data: unknown): ModelTemplateResponse {
+  return modelTemplateResponseSchema.parse(data);
+}
+
+/**
+ * Safe parse model templates configuration
+ * @param data - Raw templates configuration data
+ * @returns Zod parse result
+ */
+export function safeParseModelTemplatesConfig(data: unknown) {
+  return modelTemplatesConfigSchema.safeParse(data);
+}
+
+/**
+ * Safe parse model template save request
+ * @param data - Raw save request data
+ * @returns Zod parse result
+ */
+export function safeParseModelTemplateSaveRequest(data: unknown) {
+  return modelTemplateSaveRequestSchema.safeParse(data);
 }

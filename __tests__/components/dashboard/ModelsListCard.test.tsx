@@ -676,4 +676,527 @@ describe("ModelsListCard", () => {
       expect(screen.getByText("Loading... 67%")).toBeInTheDocument();
     });
   });
+
+  // TEMPLATE-SPECIFIC TESTS - Comprehensive template functionality tests
+  describe("Template Functionality", () => {
+    beforeEach(() => {
+      // Mock localStorage
+      const localStorageMock = (() => {
+        let store: Record<string, string> = {};
+        return {
+          getItem: (key: string) => store[key] || null,
+          setItem: (key: string, value: string) => {
+            store[key] = value.toString();
+          },
+          removeItem: (key: string) => {
+            delete store[key];
+          },
+          clear: () => {
+            store = {};
+          },
+        };
+      })();
+      Object.defineProperty(window, "localStorage", {
+        value: localStorageMock,
+      });
+    });
+
+    it("should load and display available templates from API", async () => {
+      const modelsWithTemplates = [
+        {
+          id: "model1",
+          name: "Llama 2 7B",
+          status: "idle" as const,
+          type: "llama" as const,
+          availableTemplates: ["llama-2-7b", "llama-chat", "llama-instruct"],
+          template: "llama-2-7b",
+        },
+      ];
+
+      renderWithProviders(
+        <ModelsListCard models={modelsWithTemplates} isDark={false} onToggleModel={mockOnToggle} />
+      );
+
+      // Wait for templates to load
+      await waitFor(() => {
+        expect(screen.getByText("Available Models")).toBeInTheDocument();
+      });
+    });
+
+    it("should show template dropdown when model has available templates", async () => {
+      const modelsWithTemplates = [
+        {
+          id: "model1",
+          name: "Llama 2 7B",
+          status: "idle" as const,
+          type: "llama" as const,
+          availableTemplates: ["llama-2-7b", "llama-chat"],
+          template: "llama-2-7b",
+        },
+      ];
+
+      renderWithProviders(
+        <ModelsListCard models={modelsWithTemplates} isDark={false} onToggleModel={mockOnToggle} />
+      );
+
+      await waitFor(() => {
+        const dropdown = screen.queryByRole("combobox");
+        expect(dropdown).toBeInTheDocument();
+      });
+    });
+
+    it("should not show template dropdown when model is running", () => {
+      const runningModels = [
+        {
+          id: "model1",
+          name: "Running Model",
+          status: "running" as const,
+          type: "llama" as const,
+          availableTemplates: ["template1", "template2"],
+          template: "template1",
+        },
+      ];
+
+      renderWithProviders(
+        <ModelsListCard models={runningModels} isDark={false} onToggleModel={mockOnToggle} />
+      );
+
+      const dropdowns = screen.queryAllByRole("combobox");
+      expect(dropdowns.length).toBe(0);
+    });
+
+    it("should save selected template to localStorage", async () => {
+      const modelsWithTemplates = [
+        {
+          id: "model1",
+          name: "Llama 2 7B",
+          status: "idle" as const,
+          type: "llama" as const,
+          availableTemplates: ["llama-2-7b", "llama-chat"],
+          template: "llama-2-7b",
+        },
+      ];
+
+      renderWithProviders(
+        <ModelsListCard models={modelsWithTemplates} isDark={false} onToggleModel={mockOnToggle} />
+      );
+
+      await waitFor(() => {
+        const dropdown = screen.getByRole("combobox");
+        fireEvent.change(dropdown, { target: { value: "llama-chat" } });
+      });
+
+      await waitFor(() => {
+        const saved = window.localStorage.getItem("selected-templates");
+        expect(saved).toBeDefined();
+        const parsed = JSON.parse(saved || "{}");
+        expect(parsed["Llama 2 7B"]).toBe("llama-chat");
+      });
+    });
+
+    it("should load saved templates from localStorage on mount", () => {
+      const savedTemplates = {
+        "Llama 2 7B": "llama-chat",
+      };
+      window.localStorage.setItem(
+        "selected-templates",
+        JSON.stringify(savedTemplates)
+      );
+
+      const modelsWithTemplates = [
+        {
+          id: "model1",
+          name: "Llama 2 7B",
+          status: "idle" as const,
+          type: "llama" as const,
+          availableTemplates: ["llama-2-7b", "llama-chat"],
+          template: "llama-2-7b",
+        },
+      ];
+
+      renderWithProviders(
+        <ModelsListCard models={modelsWithTemplates} isDark={false} onToggleModel={mockOnToggle} />
+      );
+
+      // Template should be loaded from localStorage
+      expect(window.localStorage.getItem("selected-templates")).toBeDefined();
+    });
+
+    it("should handle localStorage parse errors gracefully", () => {
+      window.localStorage.setItem("selected-templates", "invalid json");
+
+      const modelsWithTemplates = [
+        {
+          id: "model1",
+          name: "Llama 2 7B",
+          status: "idle" as const,
+          type: "llama" as const,
+          availableTemplates: ["llama-2-7b"],
+          template: "llama-2-7b",
+        },
+      ];
+
+      expect(() => {
+        renderWithProviders(
+          <ModelsListCard models={modelsWithTemplates} isDark={false} onToggleModel={mockOnToggle} />
+        );
+      }).not.toThrow();
+    });
+
+    it("should include selected template when starting model", async () => {
+      const modelsWithTemplates = [
+        {
+          id: "model1",
+          name: "Llama 2 7B",
+          status: "idle" as const,
+          type: "llama" as const,
+          availableTemplates: ["llama-2-7b", "llama-chat"],
+          template: "llama-2-7b",
+        },
+      ];
+
+      window.localStorage.setItem(
+        "selected-templates",
+        JSON.stringify({ "Llama 2 7B": "llama-chat" })
+      );
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({}),
+      });
+
+      renderWithProviders(
+        <ModelsListCard models={modelsWithTemplates} isDark={false} onToggleModel={mockOnToggle} />
+      );
+
+      await waitFor(() => {
+        const startButton = screen.getByText("Start");
+        fireEvent.click(startButton);
+      });
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining("/api/models/"),
+          expect.objectContaining({
+            body: expect.stringContaining("llama-chat"),
+          })
+        );
+      });
+    });
+
+    it("should show save button for running models with templates", () => {
+      const runningModelsWithTemplates = [
+        {
+          id: "model1",
+          name: "Running Model",
+          status: "running" as const,
+          type: "llama" as const,
+          availableTemplates: ["template1", "template2"],
+          template: "template1",
+        },
+      ];
+
+      renderWithProviders(
+        <ModelsListCard models={runningModelsWithTemplates} isDark={false} onToggleModel={mockOnToggle} />
+      );
+
+      const saveButtons = screen.getAllByText("💾");
+      expect(saveButtons.length).toBe(1);
+    });
+
+    it("should handle model with no available templates", () => {
+      const modelsWithoutTemplates = [
+        {
+          id: "model1",
+          name: "No Templates Model",
+          status: "idle" as const,
+          type: "llama" as const,
+        },
+      ];
+
+      renderWithProviders(
+        <ModelsListCard models={modelsWithoutTemplates} isDark={false} onToggleModel={mockOnToggle} />
+      );
+
+      const dropdowns = screen.queryAllByRole("combobox");
+      expect(dropdowns.length).toBe(0);
+    });
+
+    it("should handle model with empty availableTemplates array", () => {
+      const modelsWithEmptyTemplates = [
+        {
+          id: "model1",
+          name: "Empty Templates Model",
+          status: "idle" as const,
+          type: "llama" as const,
+          availableTemplates: [],
+          template: "default",
+        },
+      ];
+
+      renderWithProviders(
+        <ModelsListCard models={modelsWithEmptyTemplates} isDark={false} onToggleModel={mockOnToggle} />
+      );
+
+      const dropdowns = screen.queryAllByRole("combobox");
+      expect(dropdowns.length).toBe(0);
+    });
+
+    it("should filter templates by model type (llama)", async () => {
+      const llamaModels = [
+        {
+          id: "model1",
+          name: "llama-2-7b",
+          status: "idle" as const,
+          type: "llama" as const,
+          availableTemplates: [
+            "llama-2-7b",
+            "llama-chat",
+            "llama-instruct",
+            "mistral-7b",
+          ],
+          template: "llama-2-7b",
+        },
+      ];
+
+      renderWithProviders(
+        <ModelsListCard models={llamaModels} isDark={false} onToggleModel={mockOnToggle} />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("combobox")).toBeInTheDocument();
+      });
+    });
+
+    it("should filter templates by model type (mistral)", async () => {
+      const mistralModels = [
+        {
+          id: "model1",
+          name: "mistral-7b",
+          status: "idle" as const,
+          type: "mistral" as const,
+          availableTemplates: [
+            "mistral-7b",
+            "mistral-instruct",
+            "llama-2-7b",
+          ],
+          template: "mistral-7b",
+        },
+      ];
+
+      renderWithProviders(
+        <ModelsListCard models={mistralModels} isDark={false} onToggleModel={mockOnToggle} />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("combobox")).toBeInTheDocument();
+      });
+    });
+
+    it("should handle templates with special characters", async () => {
+      const modelsWithSpecialTemplates = [
+        {
+          id: "model1",
+          name: "Special Template Model",
+          status: "idle" as const,
+          type: "llama" as const,
+          availableTemplates: [
+            'template "with" quotes',
+            "template 'with' apostrophes",
+            "template-with-dashes",
+            "template_with_underscores",
+          ],
+          template: 'template "with" quotes',
+        },
+      ];
+
+      renderWithProviders(
+        <ModelsListCard models={modelsWithSpecialTemplates} isDark={false} onToggleModel={mockOnToggle} />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("combobox")).toBeInTheDocument();
+      });
+    });
+
+    it("should handle templates with unicode characters", async () => {
+      const modelsWithUnicodeTemplates = [
+        {
+          id: "model1",
+          name: "Unicode Template Model",
+          status: "idle" as const,
+          type: "llama" as const,
+          availableTemplates: [
+            "模板",
+            "テンプレート",
+            "🎯 template",
+            "template-with-ño",
+          ],
+          template: "テンプレート",
+        },
+      ];
+
+      renderWithProviders(
+        <ModelsListCard models={modelsWithUnicodeTemplates} isDark={false} onToggleModel={mockOnToggle} />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("combobox")).toBeInTheDocument();
+      });
+    });
+
+    it("should handle very large number of templates", async () => {
+      const manyTemplates = Array.from({ length: 100 }, (_, i) => `template-${i}`);
+      const modelsWithManyTemplates = [
+        {
+          id: "model1",
+          name: "Many Templates Model",
+          status: "idle" as const,
+          type: "llama" as const,
+          availableTemplates: manyTemplates,
+          template: "template-0",
+        },
+      ];
+
+      renderWithProviders(
+        <ModelsListCard models={modelsWithManyTemplates} isDark={false} onToggleModel={mockOnToggle} />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("combobox")).toBeInTheDocument();
+      });
+    });
+
+    it("should handle template loading errors gracefully", async () => {
+      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
+
+      const modelsWithTemplates = [
+        {
+          id: "model1",
+          name: "Llama 2 7B",
+          status: "idle" as const,
+          type: "llama" as const,
+          availableTemplates: ["template1"],
+          template: "template1",
+        },
+      ];
+
+      renderWithProviders(
+        <ModelsListCard models={modelsWithTemplates} isDark={false} onToggleModel={mockOnToggle} />
+      );
+
+      // Component should still render even if templates fail to load
+      await waitFor(() => {
+        expect(screen.getByText("Available Models")).toBeInTheDocument();
+      });
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("should persist template selection across model restarts", async () => {
+      const modelsWithTemplates = [
+        {
+          id: "model1",
+          name: "Llama 2 7B",
+          status: "idle" as const,
+          type: "llama" as const,
+          availableTemplates: ["llama-2-7b", "llama-chat"],
+          template: "llama-2-7b",
+        },
+      ];
+
+      // First render and select template
+      renderWithProviders(
+        <ModelsListCard models={modelsWithTemplates} isDark={false} onToggleModel={mockOnToggle} />
+      );
+
+      await waitFor(() => {
+        const dropdown = screen.getByRole("combobox");
+        fireEvent.change(dropdown, { target: { value: "llama-chat" } });
+      });
+
+      await waitFor(() => {
+        const saved = window.localStorage.getItem("selected-templates");
+        expect(saved).toBeDefined();
+      });
+
+      // Re-render should use saved template
+      window.localStorage.setItem(
+        "selected-templates",
+        JSON.stringify({ "Llama 2 7B": "llama-chat" })
+      );
+
+      renderWithProviders(
+        <ModelsListCard models={modelsWithTemplates} isDark={false} onToggleModel={mockOnToggle} />
+      );
+
+      await waitFor(() => {
+        expect(window.localStorage.getItem("selected-templates")).toBeDefined();
+      });
+    });
+
+    it("should show alert when template save fails", async () => {
+      const alertMock = jest.spyOn(window, "alert").mockImplementation();
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        json: () => Promise.resolve({ error: "Save failed" }),
+      });
+
+      const runningModels = [
+        {
+          id: "model1",
+          name: "Running Model",
+          status: "running" as const,
+          type: "llama" as const,
+          availableTemplates: ["template1"],
+          template: "template1",
+        },
+      ];
+
+      renderWithProviders(
+        <ModelsListCard models={runningModels} isDark={false} onToggleModel={mockOnToggle} />
+      );
+
+      await waitFor(() => {
+        const saveButton = screen.getByText("💾");
+        fireEvent.click(saveButton);
+      });
+
+      await waitFor(() => {
+        expect(alertMock).toHaveBeenCalled();
+      });
+
+      alertMock.mockRestore();
+    });
+
+    it("should clear template from localStorage when null is saved", async () => {
+      const modelsWithTemplates = [
+        {
+          id: "model1",
+          name: "Llama 2 7B",
+          status: "idle" as const,
+          type: "llama" as const,
+          availableTemplates: ["llama-2-7b", "llama-chat"],
+          template: "llama-2-7b",
+        },
+      ];
+
+      renderWithProviders(
+        <ModelsListCard models={modelsWithTemplates} isDark={false} onToggleModel={mockOnToggle} />
+      );
+
+      await waitFor(() => {
+        const dropdown = screen.getByRole("combobox");
+        fireEvent.change(dropdown, { target: { value: "" } });
+      });
+
+      await waitFor(() => {
+        const saved = window.localStorage.getItem("selected-templates");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          expect(parsed["Llama 2 7B"]).toBeUndefined();
+        }
+      });
+    });
+  });
 });

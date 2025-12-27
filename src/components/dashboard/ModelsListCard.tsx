@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, Typography, Box, Grid, Chip, LinearProgress, Button, TextField, MenuItem, Select, InputLabel, FormControl, Tooltip } from "@mui/material";
 import { PlayArrow, Stop, MoreVert } from "@mui/icons-material";
-import { loadModelTemplates, saveModelTemplate, getModelTemplate, getModelTemplates } from '@/lib/model-templates';
+import { loadModelTemplates, saveModelTemplate, getModelTemplates, getModelTemplatesSync } from '@/lib/client-model-templates';
 import { useStore } from '@/lib/store';
 
 interface ModelConfig {
@@ -40,15 +40,20 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
         console.error('Failed to load saved templates from localStorage:', e);
       }
     }
-    
-    const allTemplates = getModelTemplates();
-    const templatesForModels: Record<string, string> = {};
-    modelsList.forEach(model => {
-      if (model.availableTemplates && model.availableTemplates.length > 0) {
-        templatesForModels[model.name] = model.availableTemplates[0];
-      }
+
+    // Load templates asynchronously
+    loadModelTemplates().then(() => {
+      const templatesForModels: Record<string, string> = {};
+      modelsList.forEach(model => {
+        if (model.availableTemplates && model.availableTemplates.length > 0) {
+          const template = model.availableTemplates[0];
+          templatesForModels[model.name] = template;
+        }
+      });
+      setTemplates(templatesForModels);
+    }).catch(error => {
+      console.error('Failed to load templates:', error);
     });
-    setTemplates(templatesForModels);
   }, [modelsList]);
 
   const saveSelectedTemplate = (modelName: string, template: string | null) => {
@@ -64,20 +69,16 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
     });
   };
 
-  const saveTemplateToConfigFile = (modelName: string, template: string) => {
-    saveModelTemplate(modelName, template);
-    const currentTemplates = getModelTemplates();
-    const templatesObj = { ...currentTemplates };
-    templatesObj[modelName] = template;
-    const config = { model_templates: templatesObj };
+  const saveTemplateToConfigFile = async (modelName: string, template: string) => {
     try {
-      fetch('/api/model-templates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config),
-      });
+      await saveModelTemplate(modelName, template);
+      // Update local cache
+      const currentTemplates = getModelTemplatesSync();
+      currentTemplates[modelName] = template;
+      setTemplates({ ...currentTemplates });
     } catch (error) {
       console.error('Failed to save template to config file:', error);
+      alert(error instanceof Error ? error.message : 'Failed to save template');
     }
   };
 
@@ -92,18 +93,21 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
     return 'other';
   };
 
-  const getModelTypeTemplates = (modelType: 'llama' | 'mistral'): string[] => {
-    const allTemplates = getModelTemplates();
+  const getModelTypeTemplates = (modelType: 'llama' | 'mistral' | 'other'): string[] => {
+    const allTemplates = getModelTemplatesSync();
+    if (modelType === 'other') {
+      return Object.values(allTemplates);
+    }
     return Object.values(allTemplates).filter(t => {
+      const template = t.toLowerCase();
       if (modelType === 'llama') {
-        const t = t.toLowerCase();
-        return t.includes('llama') || t.includes('chat') || t.includes('instruct');
+        return template.includes('llama') || template.includes('chat') || template.includes('instruct');
       }
-      return t.toLowerCase().includes('mistral');
+      return template.includes('mistral');
     });
   };
 
-  const getStatusColor = (status: string): string => {
+  const getStatusColor = (status: string): 'default' | 'error' | 'primary' | 'secondary' | 'info' | 'success' | 'warning' => {
     switch (status) {
       case 'running': return 'success';
       case 'loading': return 'warning';
@@ -173,8 +177,8 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
         <Grid container spacing={2} sx={{ mb: 3 }}>
           {models?.map((model) => {
             const modelType = detectModelType(model.name);
-            const typeTemplates = getModelTypeTemplates(modelType);
-            const currentTemplate = selectedTemplates[model.name] || model.template || (typeTemplates[0] || '');
+            const typeTemplates: string[] = getModelTypeTemplates(modelType);
+            const currentTemplate = selectedTemplates[model.name] || model.template || (typeTemplates?.[0] || '');
             
             return (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={model.id}>
