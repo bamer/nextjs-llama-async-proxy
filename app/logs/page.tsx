@@ -170,7 +170,7 @@ export default function LogsPage() {
               }}
             >
               <Grid container spacing={2}>
-                {filteredLogs.map((log) => {
+                 {paginatedLogs.map((log) => {
                   const levelColor = getLevelColor(log.level);
                   return (
                     <Grid size={{ xs: 12 }} key={log.id} sx={{ fontSize: '0.75rem' }}>
