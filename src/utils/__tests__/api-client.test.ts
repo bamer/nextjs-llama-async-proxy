@@ -1,61 +1,60 @@
-import { apiClient } from '@/utils/api-client';
-import axios, { AxiosError, AxiosResponse } from 'axios';
 import { APP_CONFIG } from '@/config/app.config';
 
-jest.mock('axios');
+jest.mock('axios', () => {
+  const mockAxiosInstance = {
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+    patch: jest.fn(),
+    interceptors: {
+      request: {
+        use: jest.fn((onFulfilled: any, onRejected: any) => {
+          return onFulfilled;
+        }),
+      },
+      response: {
+        use: jest.fn((onFulfilled: any, onRejected: any) => {
+          return onFulfilled;
+        }),
+      },
+    },
+  };
+
+  return {
+    create: jest.fn(() => mockAxiosInstance),
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+    patch: jest.fn(),
+    mockAxiosInstance,
+  };
+});
+
 jest.mock('@/config/app.config');
 
+const axios = require('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 const mockedAPP_CONFIG = APP_CONFIG as any;
+const mockAxiosInstance = axios.mockAxiosInstance as any;
+
+import { apiClient } from '@/utils/api-client';
+import axiosModule, { AxiosError } from 'axios';
 
 describe('ApiClient', () => {
-  let mockAxiosInstance: any;
-  let formatErrorSpy: jest.SpyInstance;
-
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.resetAllMocks();
 
-    formatErrorSpy = jest.spyOn(require('@/utils/api-client').apiClient, 'formatError' as any)
-      .mockImplementation((error: any) => ({
-        success: false,
-        error: {
-          code: error.response?.status?.toString() || error.code || 'UNKNOWN_ERROR',
-          message: error.response?.statusText || error.message || 'Unknown error',
-          details: error.response?.data || error.message || error.stack,
-        },
-        timestamp: new Date().toISOString(),
-      }));
+    mockAxiosInstance.interceptors.request.use.mockClear();
+    mockAxiosInstance.interceptors.response.use.mockClear();
 
-    mockAxiosInstance = {
-      get: jest.fn(),
-      post: jest.fn(),
-      put: jest.fn(),
-      delete: jest.fn(),
-      patch: jest.fn(),
-      interceptors: {
-        request: {
-          use: jest.fn((onFulfilled: any, onRejected: any) => {
-            return onFulfilled;
-          }),
-        },
-        response: {
-          use: jest.fn((onFulfilled: any, onRejected: any) => {
-            return onFulfilled;
-          }),
-        },
-      },
-    };
-
-    mockedAxios.create.mockReturnValue(mockAxiosInstance);
     mockedAPP_CONFIG.api = {
       baseUrl: 'http://localhost:3000',
       websocketUrl: 'ws://localhost:3000',
       timeout: 30000,
     };
-  });
-
-  afterEach(() => {
-    formatErrorSpy.mockRestore();
   });
 
   describe('constructor', () => {

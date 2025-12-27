@@ -449,16 +449,406 @@ describe('MonitoringPage', () => {
     useWebSocket.mockReturnValue({
       isConnected: false,
     });
-    
+
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       json: async () => mockMetrics,
     });
-    
+
     const { rerender } = render(<MonitoringPage />);
-    
+
     await waitFor(() => {
       expect(screen.getByText('Disconnected')).toBeInTheDocument();
     });
+  });
+
+  // Edge Case Tests
+  it('handles metrics with zero values', async () => {
+    const zeroMetrics = {
+      ...mockMetrics,
+      system: {
+        cpu: { usage: 0, cores: 8 },
+        memory: { used: 0, total: 16, percentage: 0 },
+        disk: { used: 0, total: 500, percentage: 0 },
+        network: { rx: 0, tx: 0 },
+        uptime: 0,
+      },
+      models: [
+        {
+          id: '1',
+          name: 'ZeroModel',
+          status: 'idle',
+          memory: 0,
+          requests: 0,
+          uptime: 0,
+        },
+      ],
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => zeroMetrics,
+    });
+
+    render(<MonitoringPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('0%')).toBeInTheDocument();
+      expect(screen.getByText('0 GB')).toBeInTheDocument();
+    });
+  });
+
+  it('handles metrics with extreme values', async () => {
+    const extremeMetrics = {
+      ...mockMetrics,
+      system: {
+        cpu: { usage: 100, cores: 128 },
+        memory: { used: 999.9, total: 1024, percentage: 97.6 },
+        disk: { used: 9999.9, total: 10000, percentage: 99.9 },
+        network: { rx: 9999999999, tx: 9999999999 },
+        uptime: 999999999,
+      },
+      models: [],
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => extremeMetrics,
+    });
+
+    render(<MonitoringPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('100%')).toBeInTheDocument();
+      expect(screen.getByText('999.9 GB')).toBeInTheDocument();
+    });
+  });
+
+  it('handles metrics with very large uptime', async () => {
+    const longUptimeMetrics = {
+      ...mockMetrics,
+      system: {
+        ...mockMetrics.system,
+        uptime: 86400 * 365, // One year in seconds
+      },
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => longUptimeMetrics,
+    });
+
+    render(<MonitoringPage />);
+
+    await waitFor(() => {
+      // Should format correctly as hours
+      expect(screen.getByText(/\d+h \d+m/)).toBeInTheDocument();
+    });
+  });
+
+  it('handles metrics with negative values (edge case)', async () => {
+    const negativeMetrics = {
+      ...mockMetrics,
+      system: {
+        cpu: { usage: -1, cores: 8 },
+        memory: { used: -1, total: 16, percentage: -1 },
+        disk: { used: -1, total: 500, percentage: -1 },
+        network: { rx: -1, tx: -1 },
+        uptime: -1,
+      },
+      models: [],
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => negativeMetrics,
+    });
+
+    render(<MonitoringPage />);
+
+    await waitFor(() => {
+      // Should not crash with negative values
+      expect(screen.getByText('System Metrics')).toBeInTheDocument();
+    });
+  });
+
+  it('handles missing system metrics', async () => {
+    const noSystemMetrics = {
+      timestamp: '2024-01-01T10:00:00Z',
+      system: null as any,
+      models: [],
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => noSystemMetrics,
+    });
+
+    render(<MonitoringPage />);
+
+    await waitFor(() => {
+      // Should handle gracefully
+      expect(screen.getByText('Real-time Monitoring')).toBeInTheDocument();
+    });
+  });
+
+  it('handles missing models array', async () => {
+    const noModelsMetrics = {
+      timestamp: '2024-01-01T10:00:00Z',
+      system: mockMetrics.system,
+      models: null as any,
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => noModelsMetrics,
+    });
+
+    render(<MonitoringPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Model Performance')).toBeInTheDocument();
+    });
+  });
+
+  it('handles API timeout', async () => {
+    (global.fetch as jest.Mock).mockImplementation(
+      () => new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout')), 100)
+      )
+    );
+
+    render(<MonitoringPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Timeout')).toBeInTheDocument();
+    }, { timeout: 5000 });
+  });
+
+  it('handles malformed JSON response', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => {
+        throw new SyntaxError('Invalid JSON');
+      },
+    });
+
+    render(<MonitoringPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Error/i)).toBeInTheDocument();
+    });
+  });
+
+  it('handles rapid refresh intervals', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => mockMetrics,
+    });
+
+    jest.useFakeTimers();
+
+    render(<MonitoringPage />);
+
+    // Trigger multiple rapid refreshes
+    for (let i = 0; i < 10; i++) {
+      jest.advanceTimersByTime(30000);
+    }
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledTimes(11); // Initial + 10 refreshes
+    });
+
+    jest.useRealTimers();
+  });
+
+  it('handles network RX/TX values in bytes', async () => {
+    const byteMetrics = {
+      ...mockMetrics,
+      system: {
+        ...mockMetrics.system,
+        network: { rx: 1000, tx: 500 }, // Small byte values
+      },
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => byteMetrics,
+    });
+
+    render(<MonitoringPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('0.00 MB')).toBeInTheDocument();
+    });
+  });
+
+  it('handles multiple concurrent requests', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => mockMetrics,
+    });
+
+    render(<MonitoringPage />);
+
+    // Manually trigger multiple fetches
+    await waitFor(() => {
+      expect(screen.getByText('Real-time Monitoring')).toBeInTheDocument();
+    });
+  });
+
+  it('handles metrics with fractional CPU cores', async () => {
+    const fractionalCoresMetrics = {
+      ...mockMetrics,
+      system: {
+        ...mockMetrics.system,
+        cpu: { usage: 50.5, cores: 4.5 },
+      },
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => fractionalCoresMetrics,
+    });
+
+    render(<MonitoringPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('50.5%')).toBeInTheDocument();
+    });
+  });
+
+  it('handles empty logs array', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => mockMetrics,
+    });
+
+    render(<MonitoringPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('No logs available...')).toBeInTheDocument();
+    });
+  });
+
+  it('handles large number of logs', async () => {
+    const largeLogs = Array.from({ length: 1000 }, (_, i) => ({
+      level: 'info',
+      message: `Log message ${i}`,
+      timestamp: '2024-01-01T10:00:00Z',
+    }));
+
+    const metricsWithLargeLogs = {
+      ...mockMetrics,
+      logs: largeLogs,
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => metricsWithLargeLogs,
+    });
+
+    render(<MonitoringPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Live Logs')).toBeInTheDocument();
+    });
+  });
+
+  it('handles API returning undefined metrics', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => undefined,
+    });
+
+    render(<MonitoringPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('No monitoring data available')).toBeInTheDocument();
+    });
+  });
+
+  it('handles WebSocket disconnection during render', async () => {
+    const { useWebSocket } = require('@/hooks/use-websocket');
+
+    // Mock to throw error
+    useWebSocket.mockImplementation(() => {
+      throw new Error('WebSocket error');
+    });
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => mockMetrics,
+    });
+
+    render(<MonitoringPage />);
+
+    await waitFor(() => {
+      // Should still render despite WebSocket error
+      expect(screen.getByText('Real-time Monitoring')).toBeInTheDocument();
+    });
+  });
+
+  it('handles metrics with null timestamp', async () => {
+    const nullTimestampMetrics = {
+      timestamp: null as any,
+      system: mockMetrics.system,
+      models: [],
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => nullTimestampMetrics,
+    });
+
+    render(<MonitoringPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Real-time Monitoring')).toBeInTheDocument();
+    });
+  });
+
+  it('handles metrics with invalid data types', async () => {
+    const invalidMetrics = {
+      timestamp: '2024-01-01T10:00:00Z',
+      system: {
+        cpu: { usage: 'invalid' as any, cores: '8' as any },
+        memory: { used: 'invalid' as any, total: '16' as any, percentage: 'invalid' as any },
+        disk: { used: null as any, total: null as any, percentage: null as any },
+        network: { rx: null as any, tx: null as any },
+        uptime: 'invalid' as any,
+      },
+      models: [],
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => invalidMetrics,
+    });
+
+    render(<MonitoringPage />);
+
+    await waitFor(() => {
+      // Should handle gracefully without crashing
+      expect(screen.getByText('Real-time Monitoring')).toBeInTheDocument();
+    });
+  });
+
+  it('handles cleanup on unmount before timeout', async () => {
+    jest.useFakeTimers();
+
+    (global.fetch as jest.Mock).mockImplementation(
+      () => new Promise(() => {})
+    );
+
+    const { unmount } = render(<MonitoringPage />);
+
+    // Unmount before initial fetch completes
+    unmount();
+
+    jest.useRealTimers();
+
+    // Should not cause memory leaks or errors
+    expect(true).toBe(true);
   });
 });

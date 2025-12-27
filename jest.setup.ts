@@ -30,3 +30,18 @@ if (typeof (global as any).setImmediate === 'undefined') {
     setTimeout(callback, 0);
   };
 }
+
+// Mock MUI components for testing (MUI v7 compatibility)
+jest.mock('@mui/material', () => {
+  return require('./jest-mocks').muiMocks;
+});
+
+// Mock MUI icons
+jest.mock('@mui/icons-material', () => {
+  return require('./jest-mocks').iconMocks;
+});
+
+// Mock @mui/material/useMediaQuery
+jest.mock('@mui/material/useMediaQuery', () => {
+  return jest.fn(() => false);
+});

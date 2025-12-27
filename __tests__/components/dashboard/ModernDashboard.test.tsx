@@ -11,10 +11,7 @@ jest.mock('@/contexts/ThemeContext', () => ({
 }));
 
 jest.mock('@/hooks/use-websocket', () => ({
-  useWebSocket: () => ({
-    isConnected: true,
-    sendMessage: jest.fn(),
-  }),
+  useWebSocket: jest.fn(),
 }));
 
 jest.mock('@/hooks/useChartHistory', () => ({
@@ -38,6 +35,7 @@ jest.mock('next/navigation', () => ({
 }));
 
 const { useStore: mockedUseStore } = require('@/lib/store') as { useStore: jest.Mock };
+const { useWebSocket: mockedUseWebSocket } = require('@/hooks/use-websocket') as { useWebSocket: jest.Mock };
 const theme = createTheme();
 
 const mockState = {
@@ -118,6 +116,17 @@ describe('ModernDashboard', () => {
         return selector(mockState);
       }
       return mockState;
+    });
+    mockedUseWebSocket.mockReturnValue({
+      isConnected: true,
+      connectionState: 'connected',
+      sendMessage: jest.fn(),
+      requestMetrics: jest.fn(),
+      requestLogs: jest.fn(),
+      requestModels: jest.fn(),
+      startModel: jest.fn(),
+      stopModel: jest.fn(),
+      socketId: 'socket-123',
     });
   });
 
@@ -485,10 +494,17 @@ describe('ModernDashboard', () => {
   });
 
   it('handles WebSocket disconnected state', async () => {
-    const { useWebSocket } = require('@/hooks/use-websocket');
-    useWebSocket.mockReturnValue({
+    // Override the mock for this test
+    mockedUseWebSocket.mockReturnValue({
       isConnected: false,
+      connectionState: 'disconnected',
       sendMessage: jest.fn(),
+      requestMetrics: jest.fn(),
+      requestLogs: jest.fn(),
+      requestModels: jest.fn(),
+      startModel: jest.fn(),
+      stopModel: jest.fn(),
+      socketId: null,
     });
 
     renderWithProviders(<ModernDashboard />);

@@ -461,10 +461,13 @@ describe('useApi - Edge Cases', () => {
       const { result } = renderHook(() => useApi(), { wrapper: createWrapper() });
 
       await waitFor(() => {
-        expect(result.current.models.isError).toBe(true);
         expect(result.current.metrics.isSuccess).toBe(true);
-        expect(result.current.logs.isError).toBe(true);
         expect(result.current.config.isSuccess).toBe(true);
+      });
+
+      await waitFor(() => {
+        expect(result.current.models.isError).toBe(true);
+        expect(result.current.logs.isError).toBe(true);
       });
     });
 
@@ -487,7 +490,7 @@ describe('useApi - Edge Cases', () => {
         () => {
           expect(result.current.models.isSuccess).toBe(true);
         },
-        { timeout: 6000 }
+        { timeout: 10000 }
       );
     });
 

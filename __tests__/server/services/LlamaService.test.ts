@@ -270,23 +270,25 @@ describe('LlamaService', () => {
     });
 
     it('should stop running process gracefully', async () => {
-      // Set up a running process
-      (llamaService as any).process = mockProcess;
+      const exitCallbacks: any = {};
 
-      const exitCallback: ((code: number | null, signal: string | null) => void) | null = null;
-      mockProcess.on = jest.fn().mockImplementation((event: string, callback: (code: number | null, signal: string | null) => void) => {
-        if (event === 'exit') {
-          return callback;
-        }
-      });
+      const mockProcessWithExitHandler = {
+        ...mockProcess,
+        on: jest.fn().mockImplementation((event: string, callback: any): void => {
+          if (event === 'exit') {
+            exitCallbacks.exit = callback;
+          }
+        }),
+      } as any;
+
+      (llamaService as any).process = mockProcessWithExitHandler;
 
       const stopPromise = llamaService.stop();
 
-      expect(mockProcess.kill).toHaveBeenCalledWith('SIGTERM');
+      expect(mockProcessWithExitHandler.kill).toHaveBeenCalledWith('SIGTERM');
 
-      // Trigger the exit callback to resolve the stop promise
-      if (exitCallback) {
-        exitCallback(0, 'SIGTERM');
+      if (exitCallbacks.exit) {
+        exitCallbacks.exit(0, 'SIGTERM');
       }
 
       await stopPromise;
@@ -296,12 +298,11 @@ describe('LlamaService', () => {
     });
 
     it('should force kill if SIGTERM timeout', async () => {
-      // Mock process that doesn't exit on SIGTERM
       const mockProcessThatHangs = {
         ...mockProcess,
-        on: jest.fn().mockImplementation((event: string, callback: Function) => {
+        on: jest.fn().mockImplementation((event: string, callback: Function): void => {
+          void callback;
           if (event === 'exit') {
-            // Never call exit callback to simulate hanging
           }
         }),
       } as any;
@@ -574,7 +575,7 @@ describe('LlamaService', () => {
     });
 
     it('should handle flash attention settings', () => {
-      const configOn = { ...mockConfig, flash_attn: 'on' };
+      const configOn = { ...mockConfig, flash_attn: 'on' as const };
       llamaService = new LlamaService(configOn);
 
       const argsOn = (llamaService as any).buildArgs();
@@ -582,7 +583,7 @@ describe('LlamaService', () => {
       expect(argsOn).toContain('-fa');
       expect(argsOn).not.toContain('--no-flash-attn');
 
-      const configOff = { ...mockConfig, flash_attn: 'off' };
+      const configOff = { ...mockConfig, flash_attn: 'off' as const };
       llamaService = new LlamaService(configOff);
 
       const argsOff = (llamaService as any).buildArgs();
@@ -590,7 +591,7 @@ describe('LlamaService', () => {
       expect(argsOff).toContain('--no-flash-attn');
       expect(argsOff).not.toContain('-fa');
 
-      const configAuto = { ...mockConfig, flash_attn: 'auto' };
+      const configAuto = { ...mockConfig, flash_attn: 'auto' as const };
       llamaService = new LlamaService(configAuto);
 
       const argsAuto = (llamaService as any).buildArgs();

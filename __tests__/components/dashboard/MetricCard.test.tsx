@@ -7,7 +7,10 @@ import { MetricCard } from '@/components/dashboard/MetricCard';
 const theme = createTheme();
 
 function renderWithTheme(component: React.ReactElement) {
-  return render(<ThemeProvider theme={theme}>{component}</ThemeProvider>);
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <ThemeProvider theme={theme}>{children}</ThemeProvider>
+  );
+  return render(component, { wrapper });
 }
 
 describe('MetricCard', () => {

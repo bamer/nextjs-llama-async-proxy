@@ -53,7 +53,7 @@ export class ModelLoader {
     }
 
     try {
-      const files = fs.readdirSync(this.basePath);
+      const files = fs.readdirSync(this.basePath, "utf8");
       const modelFiles = files.filter(
         (file) => file.endsWith(".gguf") || file.endsWith(".bin")
       );

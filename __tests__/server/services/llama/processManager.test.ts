@@ -7,10 +7,12 @@ const mockedSpawn = spawn as jest.MockedFunction<typeof spawn>;
 
 describe('ProcessManager', () => {
   let processManager: ProcessManager;
-  let mockProcess: Partial<ChildProcess>;
+  let mockProcess: any;
+  let listeners: Map<string, any[]>;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    listeners = new Map();
     processManager = new ProcessManager();
 
     mockProcess = {
@@ -18,13 +20,11 @@ describe('ProcessManager', () => {
       killed: false,
       kill: jest.fn(),
       on: jest.fn((event: string, callback: any) => {
-        if ((mockProcess as any).listeners === undefined) {
-          (mockProcess as any).listeners = new Map<string, any[]>();
+        if (!listeners.has(event)) {
+          listeners.set(event, []);
         }
-        if (!(mockProcess as any).listeners.has(event)) {
-          (mockProcess as any).listeners.set(event, []);
-        }
-        (mockProcess as any).listeners.get(event).push(callback);
+        listeners.get(event).push(callback);
+        return mockProcess;
       }),
       stdout: {
         on: jest.fn(),
@@ -120,20 +120,12 @@ describe('ProcessManager', () => {
     it('should kill process with SIGTERM by default', async () => {
       processManager.spawn('test-binary', []);
 
-      let exitCallback: ((code: number | null, signal: string | null) => void) | null = null;
-      mockProcess.on = jest.fn((event: string, callback: any) => {
-        if (event === 'exit') {
-          exitCallback = callback;
-        }
-      });
-
       const killPromise = processManager.kill('SIGTERM');
 
       expect(mockProcess.kill).toHaveBeenCalledWith('SIGTERM');
 
-      if (exitCallback) {
-        exitCallback(0, 'SIGTERM');
-      }
+      const exitCallbacks = listeners.get('exit') || [];
+      exitCallbacks.forEach(cb => cb(0, 'SIGTERM'));
 
       await killPromise;
     });
@@ -141,18 +133,10 @@ describe('ProcessManager', () => {
     it('should clear process after successful kill', async () => {
       processManager.spawn('test-binary', []);
 
-      let exitCallback: ((code: number | null, signal: string | null) => void) | null = null;
-      mockProcess.on = jest.fn((event: string, callback: any) => {
-        if (event === 'exit') {
-          exitCallback = callback;
-        }
-      });
-
       const killPromise = processManager.kill('SIGTERM');
 
-      if (exitCallback) {
-        exitCallback(0, 'SIGTERM');
-      }
+      const exitCallbacks = listeners.get('exit') || [];
+      exitCallbacks.forEach(cb => cb(0, 'SIGTERM'));
 
       await killPromise;
 
@@ -163,11 +147,6 @@ describe('ProcessManager', () => {
       jest.useFakeTimers();
 
       processManager.spawn('test-binary', []);
-
-      mockProcess.on = jest.fn((event: string, callback: any) => {
-        if (event === 'exit') {
-        }
-      });
 
       const killPromise = processManager.kill('SIGTERM', 5000);
 
@@ -187,8 +166,6 @@ describe('ProcessManager', () => {
 
       processManager.spawn('test-binary', []);
 
-      mockProcess.on = jest.fn(() => {});
-
       const killPromise = processManager.kill('SIGTERM', 2000);
 
       jest.advanceTimersByTime(2000);
@@ -203,46 +180,27 @@ describe('ProcessManager', () => {
     it('should handle multiple kill calls', async () => {
       processManager.spawn('test-binary', []);
 
-      let exitCallback: ((code: number | null, signal: string | null) => void) | null = null;
-      mockProcess.on = jest.fn((event: string, callback: any) => {
-        if (event === 'exit') {
-          exitCallback = callback;
-        }
-      });
-
       const killPromise1 = processManager.kill();
       const killPromise2 = processManager.kill();
 
-      // Both kill calls should trigger kill (no guard in implementation)
       expect(mockProcess.kill).toHaveBeenCalledTimes(2);
       expect(mockProcess.kill).toHaveBeenCalledWith('SIGTERM');
 
-      // Trigger exit to resolve both promises
-      if (exitCallback) {
-        exitCallback(0, 'SIGTERM');
-      }
+      const exitCallbacks = listeners.get('exit') || [];
+      exitCallbacks.forEach(cb => cb(0, 'SIGTERM'));
 
       await Promise.all([killPromise1, killPromise2]);
 
-      // Both promises should resolve
       expect(mockProcess.kill).toHaveBeenCalledTimes(2);
     });
 
     it('should handle exit with signal', async () => {
       processManager.spawn('test-binary', []);
 
-      let exitCallback: ((code: number | null, signal: string | null) => void) | null = null;
-      mockProcess.on = jest.fn((event: string, callback: any) => {
-        if (event === 'exit') {
-          exitCallback = callback;
-        }
-      });
-
       const killPromise = processManager.kill();
 
-      if (exitCallback) {
-        exitCallback(null, 'SIGKILL');
-      }
+      const exitCallbacks = listeners.get('exit') || [];
+      exitCallbacks.forEach(cb => cb(null, 'SIGKILL'));
 
       await killPromise;
 
@@ -380,18 +338,10 @@ describe('ProcessManager', () => {
       processManager.spawn('test-binary', []);
       const callback = jest.fn();
 
-      let exitCallback: ((code: number | null, signal: string | null) => void) | null = null;
-      mockProcess.on = jest.fn((event: string, callback: any) => {
-        if (event === 'exit') {
-          exitCallback = callback;
-        }
-      });
-
       processManager.onExit(callback);
 
-      if (exitCallback) {
-        exitCallback(0, 'SIGTERM');
-      }
+      const exitCallbacks = listeners.get('exit') || [];
+      exitCallbacks.forEach(cb => cb(0, 'SIGTERM'));
 
       expect(callback).toHaveBeenCalledWith(0, 'SIGTERM');
     });

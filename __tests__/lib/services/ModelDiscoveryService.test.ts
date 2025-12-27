@@ -1,6 +1,6 @@
-import { promises as fs } from 'fs';
+import * as fs from 'fs';
 import * as path from 'path';
-import { ModelDiscoveryService, ModelMetadata } from '@/lib/services/ModelDiscoveryService';
+import { ModelDiscoveryService } from '@/lib/services/ModelDiscoveryService';
 
 jest.mock('fs');
 jest.mock('path');
@@ -20,7 +20,7 @@ describe('ModelDiscoveryService', () => {
       error: jest.fn(),
     };
 
-    jest.mock('@/lib/services/../logger', () => ({
+    jest.mock('@/lib/logger', () => ({
       getLogger: () => mockLogger,
     }));
 
@@ -53,8 +53,8 @@ describe('ModelDiscoveryService', () => {
         isDirectory: jest.fn().mockReturnValue(false),
       };
 
-      mockedFs.readdir.mockResolvedValue([mockDirent] as any);
-      mockedFs.stat.mockResolvedValue({
+      mockedFsPromises.readdir.mockResolvedValue([mockDirent] as any);
+      mockedFsPromises.stat.mockResolvedValue({
         isDirectory: jest.fn().mockReturnValue(false),
         size: 1000000000,
       } as any);
@@ -75,8 +75,8 @@ describe('ModelDiscoveryService', () => {
         isDirectory: jest.fn().mockReturnValue(false),
       };
 
-      mockedFs.readdir.mockResolvedValue([mockDirent] as any);
-      mockedFs.stat.mockResolvedValue({
+      mockedFsPromises.readdir.mockResolvedValue([mockDirent] as any);
+      mockedFsPromises.stat.mockResolvedValue({
         isDirectory: jest.fn().mockReturnValue(false),
         size: 500000000,
       } as any);
@@ -95,8 +95,8 @@ describe('ModelDiscoveryService', () => {
         isDirectory: jest.fn().mockReturnValue(false),
       };
 
-      mockedFs.readdir.mockResolvedValue([mockDirent] as any);
-      mockedFs.stat.mockResolvedValue({
+      mockedFsPromises.readdir.mockResolvedValue([mockDirent] as any);
+      mockedFsPromises.stat.mockResolvedValue({
         isDirectory: jest.fn().mockReturnValue(false),
         size: 750000000,
       } as any);
@@ -119,11 +119,11 @@ describe('ModelDiscoveryService', () => {
         isDirectory: jest.fn().mockReturnValue(false),
       };
 
-      mockedFs.readdir
+      mockedFsPromises.readdir
         .mockResolvedValueOnce([subDirDirent] as any)
         .mockResolvedValueOnce([modelDirent] as any);
 
-      mockedFs.stat
+      mockedFsPromises.stat
         .mockResolvedValueOnce({
           isDirectory: jest.fn().mockReturnValue(true),
         } as any)
@@ -144,8 +144,8 @@ describe('ModelDiscoveryService', () => {
         isDirectory: jest.fn().mockReturnValue(true),
       };
 
-      mockedFs.readdir.mockResolvedValue([subDirDirent] as any);
-      mockedFs.stat.mockResolvedValue({
+      mockedFsPromises.readdir.mockResolvedValue([subDirDirent] as any);
+      mockedFsPromises.stat.mockResolvedValue({
         isDirectory: jest.fn().mockReturnValue(true),
       } as any);
 
@@ -160,12 +160,12 @@ describe('ModelDiscoveryService', () => {
         isDirectory: jest.fn().mockReturnValue(false),
       };
 
-      mockedFs.readdir.mockResolvedValue([mockDirent] as any);
-      mockedFs.stat.mockResolvedValue({
+      mockedFsPromises.readdir.mockResolvedValue([mockDirent] as any);
+      mockedFsPromises.stat.mockResolvedValue({
         isDirectory: jest.fn().mockReturnValue(false),
         size: 1000000000,
       } as any);
-      mockedFs.readFile.mockResolvedValue(JSON.stringify({ author: 'Test Author', version: '1.0' }));
+      mockedFsPromises.readFile.mockResolvedValue(JSON.stringify({ author: 'Test Author', version: '1.0' }));
 
       const models = await service.discoverModels('/models');
 
@@ -179,12 +179,12 @@ describe('ModelDiscoveryService', () => {
         isDirectory: jest.fn().mockReturnValue(false),
       };
 
-      mockedFs.readdir.mockResolvedValue([mockDirent] as any);
-      mockedFs.stat.mockResolvedValue({
+      mockedFsPromises.readdir.mockResolvedValue([mockDirent] as any);
+      mockedFsPromises.stat.mockResolvedValue({
         isDirectory: jest.fn().mockReturnValue(false),
         size: 1000000000,
       } as any);
-      mockedFs.readFile.mockRejectedValue(new Error('File not found'));
+      mockedFsPromises.readFile.mockRejectedValue(new Error('File not found'));
 
       const models = await service.discoverModels('/models');
 
@@ -199,8 +199,8 @@ describe('ModelDiscoveryService', () => {
         isDirectory: jest.fn().mockReturnValue(false),
       };
 
-      mockedFs.readdir.mockResolvedValue([mockDirent] as any);
-      mockedFs.stat.mockRejectedValue(new Error('Permission denied'));
+      mockedFsPromises.readdir.mockResolvedValue([mockDirent] as any);
+      mockedFsPromises.stat.mockRejectedValue(new Error('Permission denied'));
 
       const models = await service.discoverModels('/models');
 
@@ -214,8 +214,8 @@ describe('ModelDiscoveryService', () => {
         isDirectory: jest.fn().mockReturnValue(false),
       };
 
-      mockedFs.readdir.mockResolvedValue([mockDirent] as any);
-      mockedFs.stat.mockResolvedValue({
+      mockedFsPromises.readdir.mockResolvedValue([mockDirent] as any);
+      mockedFsPromises.stat.mockResolvedValue({
         isDirectory: jest.fn().mockReturnValue(false),
         size: 1000,
       } as any);
@@ -226,7 +226,7 @@ describe('ModelDiscoveryService', () => {
     });
 
     it('should handle directory scan errors', async () => {
-      mockedFs.readdir.mockRejectedValue(new Error('Permission denied'));
+      mockedFsPromises.readdir.mockRejectedValue(new Error('Permission denied'));
 
       const models = await service.discoverModels('/models');
 
@@ -244,8 +244,8 @@ describe('ModelDiscoveryService', () => {
         isDirectory: jest.fn().mockReturnValue(false),
       };
 
-      mockedFs.readdir.mockResolvedValue([mockDirent1, mockDirent2] as any);
-      mockedFs.stat
+      mockedFsPromises.readdir.mockResolvedValue([mockDirent1, mockDirent2] as any);
+      mockedFsPromises.stat
         .mockResolvedValueOnce({
           isDirectory: jest.fn().mockReturnValue(false),
           size: 1000000000,

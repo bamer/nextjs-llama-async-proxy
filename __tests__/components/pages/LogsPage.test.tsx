@@ -86,7 +86,8 @@ const mockState = {
   clearChartData: jest.fn(),
 };
 
-(useStore as jest.Mock).mockImplementation((selector) => {
+const mockUseStore = useStore as any;
+(mockUseStore as jest.Mock).mockImplementation((selector) => {
   if (typeof selector === 'function') {
     return selector(mockState);
   }

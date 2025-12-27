@@ -237,8 +237,8 @@ describe('ModelLoader', () => {
 
     it('should load gguf files from filesystem', () => {
       mockedFs.existsSync.mockReturnValue(true);
-      mockedFs.readdirSync.mockReturnValue(['model1.gguf', 'model2.gguf']);
-      mockedFs.statSync
+      (mockedFs.readdirSync as jest.Mock).mockReturnValue(['model1.gguf', 'model2.gguf'] as any);
+      (mockedFs.statSync as jest.Mock)
         .mockReturnValueOnce({
           size: 1000000000,
           mtimeMs: Date.now(),

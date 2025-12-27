@@ -527,5 +527,243 @@ describe('WebSocketClient', () => {
 
       consoleSpy.mockRestore();
     });
+
+    it('should handle connect errors without error message', () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      client.on('connect_error', jest.fn());
+      (io as jest.Mock).mockImplementation(() => {
+        throw new Error();
+      });
+
+      client.connect();
+
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle io returning null socket', () => {
+      (io as jest.Mock).mockReturnValue(null as any);
+
+      expect(() => client.connect()).not.toThrow();
+    });
+
+    it('should handle socket without connected property', () => {
+      const socketWithoutConnected = {
+        id: 'test-id',
+        emit: mockEmit,
+        on: mockOn,
+        disconnect: mockDisconnect,
+      } as any;
+      (io as jest.Mock).mockReturnValue(socketWithoutConnected);
+
+      expect(() => client.connect()).not.toThrow();
+    });
+
+    it('should handle rapid connect/disconnect cycles', () => {
+      mockSocket.connected = false;
+
+      for (let i = 0; i < 100; i++) {
+        client.connect();
+        client.disconnect();
+      }
+
+      expect(mockDisconnect).toHaveBeenCalledTimes(100);
+    });
+
+    it('should handle sendMessage with null data', () => {
+      mockSocket.connected = true;
+      client['socket'] = mockSocket;
+
+      client.sendMessage('test', null);
+
+      expect(mockEmit).toHaveBeenCalledWith('test', null);
+    });
+
+    it('should handle sendMessage with undefined data', () => {
+      mockSocket.connected = true;
+      client['socket'] = mockSocket;
+
+      client.sendMessage('test', undefined);
+
+      expect(mockEmit).toHaveBeenCalledWith('test', undefined);
+    });
+
+    it('should handle sendMessage with empty string event', () => {
+      mockSocket.connected = true;
+      client['socket'] = mockSocket;
+
+      client.sendMessage('', { data: 'test' });
+
+      expect(mockEmit).toHaveBeenCalledWith('', { data: 'test' });
+    });
+
+    it('should handle sendMessage with special characters in event name', () => {
+      mockSocket.connected = true;
+      client['socket'] = mockSocket;
+
+      client.sendMessage('event/with/slashes', { data: 'test' });
+
+      expect(mockEmit).toHaveBeenCalledWith('event/with/slashes', { data: 'test' });
+    });
+
+    it('should handle startModel with empty modelId', () => {
+      mockSocket.connected = true;
+      client['socket'] = mockSocket;
+
+      client.startModel('');
+
+      expect(mockEmit).toHaveBeenCalledWith('startModel', { modelId: '' });
+    });
+
+    it('should handle startModel with null modelId', () => {
+      mockSocket.connected = true;
+      client['socket'] = mockSocket;
+
+      client.startModel(null as any);
+
+      expect(mockEmit).toHaveBeenCalledWith('startModel', { modelId: null });
+    });
+
+    it('should handle stopModel with empty modelId', () => {
+      mockSocket.connected = true;
+      client['socket'] = mockSocket;
+
+      client.stopModel('');
+
+      expect(mockEmit).toHaveBeenCalledWith('stopModel', { modelId: '' });
+    });
+
+    it('should handle message events with null data', (done) => {
+      client.connect();
+      const handler = jest.fn();
+      client.on('message', handler);
+
+      setTimeout(() => {
+        const messageHandler = mockOn.mock.calls.find(call => call[0] === 'message')?.[1];
+        if (messageHandler) {
+          messageHandler({ type: 'test', data: null });
+        }
+
+        setTimeout(() => {
+          expect(handler).toHaveBeenCalledWith({ type: 'test', data: null });
+          done();
+        }, 10);
+      }, 10);
+    });
+
+    it('should handle message events with undefined data', (done) => {
+      client.connect();
+      const handler = jest.fn();
+      client.on('message', handler);
+
+      setTimeout(() => {
+        const messageHandler = mockOn.mock.calls.find(call => call[0] === 'message')?.[1];
+        if (messageHandler) {
+          messageHandler({ type: 'test', data: undefined });
+        }
+
+        setTimeout(() => {
+          expect(handler).toHaveBeenCalledWith({ type: 'test', data: undefined });
+          done();
+        }, 10);
+      }, 10);
+    });
+
+    it('should handle multiple listeners for same event', () => {
+      const handler1 = jest.fn();
+      const handler2 = jest.fn();
+      const handler3 = jest.fn();
+
+      client.on('connect', handler1);
+      client.on('connect', handler2);
+      client.on('connect', handler3);
+
+      // All handlers should be registered
+      expect(() => {
+        client.emit('connect');
+      }).not.toThrow();
+    });
+
+    it('should handle removing listeners', () => {
+      const handler = jest.fn();
+      client.on('connect', handler);
+
+      client.removeListener('connect', handler);
+
+      // Should not throw when removing
+      expect(() => {
+        client.emit('connect');
+      }).not.toThrow();
+    });
+
+    it('should handle disconnect when already disconnected', () => {
+      client['socket'] = null;
+
+      expect(() => client.disconnect()).not.toThrow();
+    });
+
+    it('should handle disconnect multiple times', () => {
+      client['socket'] = mockSocket;
+
+      for (let i = 0; i < 10; i++) {
+        client.disconnect();
+      }
+
+      expect(mockDisconnect).toHaveBeenCalled();
+    });
+
+    it('should handle socket id updates to empty string', (done) => {
+      client.connect();
+      mockSocket.id = '';
+
+      setTimeout(() => {
+        const messageHandler = mockOn.mock.calls.find(call => call[0] === 'message')?.[1];
+        if (messageHandler) {
+          messageHandler({ type: 'connection', clientId: '' });
+        }
+
+        setTimeout(() => {
+          expect(client['socketId']).toBe('');
+          done();
+        }, 10);
+      }, 10);
+    });
+
+    it('should handle metrics event with null data', (done) => {
+      client.connect();
+      const handler = jest.fn();
+      client.on('message', handler);
+
+      setTimeout(() => {
+        const metricsHandler = mockOn.mock.calls.find(call => call[0] === 'metrics')?.[1];
+        if (metricsHandler) {
+          metricsHandler({ data: null });
+        }
+
+        setTimeout(() => {
+          expect(handler).toHaveBeenCalledWith({ type: 'metrics', data: null });
+          done();
+        }, 10);
+      }, 10);
+    });
+
+    it('should handle log event without data property', (done) => {
+      client.connect();
+      const handler = jest.fn();
+      client.on('message', handler);
+
+      setTimeout(() => {
+        const logHandler = mockOn.mock.calls.find(call => call[0] === 'log')?.[1];
+        if (logHandler) {
+          logHandler({});
+        }
+
+        setTimeout(() => {
+          // Should not emit message if data is missing
+          expect(handler).not.toHaveBeenCalled();
+          done();
+        }, 10);
+      }, 10);
+    });
   });
 });

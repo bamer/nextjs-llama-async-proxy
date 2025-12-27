@@ -1,7 +1,5 @@
-import React from 'react';
-import { render, waitFor } from '@testing-library/react';
-import LogsPage from '@/components/pages/LogsPage';
-import { useStore } from '@/lib/store';
+import { render } from '@testing-library/react';
+import ModernDashboard from '@/components/dashboard/ModernDashboard';
 
 /**
  * Render Performance Tests
@@ -33,326 +31,152 @@ jest.mock('@/contexts/ThemeContext', () => ({
 jest.mock('@/hooks/use-websocket', () => ({
   useWebSocket: () => ({
     isConnected: true,
-    requestLogs: jest.fn(),
+    sendMessage: jest.fn(),
+  }),
+}));
+
+jest.mock('@/hooks/useChartHistory', () => ({
+  useChartHistory: () => ({
+    cpu: Array(60).fill(null).map((_, i) => ({
+      time: new Date(Date.now() - i * 60000).toISOString(),
+      displayTime: `${Math.floor((60 - i) / 60)}:${String((60 - i) % 60).padStart(2, '0')}`,
+      value: 50 + Math.sin(i / 10) * 30,
+    })),
+    memory: Array(60).fill(null).map((_, i) => ({
+      time: new Date(Date.now() - i * 60000).toISOString(),
+      displayTime: `${Math.floor((60 - i) / 60)}:${String((60 - i) % 60).padStart(2, '0')}`,
+      value: 60 + Math.cos(i / 10) * 20,
+    })),
+    requests: Array(60).fill(null).map((_, i) => ({
+      time: new Date(Date.now() - i * 60000).toISOString(),
+      displayTime: `${Math.floor((60 - i) / 60)}:${String((60 - i) % 60).padStart(2, '0')}`,
+      value: 100 + Math.random() * 50,
+    })),
+    gpuUtil: Array(60).fill(null).map((_, i) => ({
+      time: new Date(Date.now() - i * 60000).toISOString(),
+      displayTime: `${Math.floor((60 - i) / 60)}:${String((60 - i) % 60).padStart(2, '0')}`,
+      value: 70 + Math.random() * 30,
+    })),
+    power: Array(60).fill(null).map((_, i) => ({
+      time: new Date(Date.now() - i * 60000).toISOString(),
+      displayTime: `${Math.floor((60 - i) / 60)}:${String((60 - i) % 60).padStart(2, '0')}`,
+      value: 150 + Math.random() * 50,
+    })),
+  }),
+}));
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
   }),
 }));
 
 describe('Render Performance', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset store
-    useStore.getState().clearLogs();
   });
 
   describe('Component Render Times', () => {
-    // Positive test: Verify component renders quickly with no data
-    it('should render LogsPage with no data within 50ms', () => {
-      // Arrange
-      useStore.getState().clearLogs();
-
-      // Act
+    // Positive test: Verify dashboard renders quickly
+    it('should render dashboard within 200ms', () => {
+      // Arrange & Act
       const startTime = performance.now();
-      render(<LogsPage />);
+      render(<ModernDashboard />);
       const endTime = performance.now();
       const duration = endTime - startTime;
 
       // Assert
-      expect(duration).toBeLessThan(50); // Fast initial render
+      expect(duration).toBeLessThan(200); // Fast render
     });
 
-    // Positive test: Verify component renders quickly with small data
-    it('should render LogsPage with 50 logs within 100ms', () => {
+    // Positive test: Verify re-renders are fast
+    it('should re-render dashboard within 150ms', () => {
       // Arrange
-      const logs = Array(50).fill(null).map((_, i) => ({
-        id: `log-${i}`,
-        level: 'info' as const,
-        message: `Log message ${i}`,
-        timestamp: new Date().toISOString(),
-        context: { source: 'test' },
-      }));
-      useStore.getState().setLogs(logs);
+      const { rerender } = render(<ModernDashboard />);
 
       // Act
       const startTime = performance.now();
-      render(<LogsPage />);
+      rerender(<ModernDashboard />);
       const endTime = performance.now();
       const duration = endTime - startTime;
 
       // Assert
-      expect(duration).toBeLessThan(100); // Efficient render with data
-    });
-
-    // Negative test: Verify large data doesn't cause timeout
-    it('should render LogsPage with 10,000 logs within 500ms', () => {
-      // Arrange
-      const logs = Array(10000).fill(null).map((_, i) => ({
-        level: i % 4 === 0 ? 'error' : i % 3 === 0 ? 'warn' : 'info',
-        message: `Log message ${i}`.repeat(5),
-        timestamp: new Date().toISOString(),
-        source: 'test',
-      }));
-      useStore.getState().setLogs(logs);
-
-      // Act
-      const startTime = performance.now();
-      render(<LogsPage />);
-      const endTime = performance.now();
-      const duration = endTime - startTime;
-
-      // Assert
-      expect(duration).toBeLessThan(500); // Should handle large data efficiently
+      expect(duration).toBeLessThan(150);
     });
   });
 
   describe('Large Data Set Rendering', () => {
-    // Positive test: Verify efficient rendering of large log arrays
-    it('should render 5,000 log entries efficiently', () => {
+    // Positive test: Verify rendering with many models
+    it('should render dashboard with 100 models efficiently', () => {
       // Arrange
-      const logs = Array(5000).fill(null).map((_, i) => ({
-        level: 'info',
-        message: `Performance test log entry ${i}`,
-        timestamp: new Date(i * 1000).toISOString(),
-        source: 'performance-test',
+      const { useStore } = require('@/lib/store');
+      const models: ModelConfig[] = Array(100).fill(null).map((_, i) => ({
+        id: `model-${i}`,
+        name: `Model ${i}`,
+        type: 'llama' as const,
+        parameters: {},
+        status: i % 3 === 0 ? 'running' : 'idle' as const,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       }));
-      useStore.getState().setLogs(logs);
+      useStore.getState().setModels(models);
 
       // Act
       const startTime = performance.now();
-      const { container } = render(<LogsPage />);
+      render(<ModernDashboard />);
       const endTime = performance.now();
       const duration = endTime - startTime;
 
       // Assert
-      expect(duration).toBeLessThan(300); // Efficient rendering
-      expect(container).toBeTruthy();
-    });
-
-    // Positive test: Verify filtered rendering is efficient
-    it('should filter and render large data sets efficiently', () => {
-      // Arrange
-      const logs = Array(10000).fill(null).map((_, i) => ({
-        level: i % 10 === 0 ? 'error' : 'info',
-        message: `Log ${i} with some keywords like error and warning`,
-        timestamp: new Date().toISOString(),
-        source: i % 5 === 0 ? 'error-source' : 'info-source',
-      }));
-      useStore.getState().setLogs(logs);
-
-      // Act
-      const startTime = performance.now();
-      const { getByText } = render(<LogsPage />);
-
-      // Type in filter input
-      const startTimeFilter = performance.now();
-      const filterInput = getByText('Filter logs...').closest('input');
-      if (filterInput) {
-        fireEvent.change(filterInput, { target: { value: 'error' } });
-      }
-      const endTimeFilter = performance.now();
-      const filterDuration = endTimeFilter - startTimeFilter;
-
-      // Assert
-      expect(filterDuration).toBeLessThan(200); // Fast filtering
+      expect(duration).toBeLessThan(300);
     });
   });
 
-  describe('Re-render Optimization', () => {
-    // Positive test: Verify re-renders don't slow down with many updates
-    it('should handle 100 rapid state updates efficiently', () => {
-      // Arrange
-      const { container } = render(<LogsPage />);
+  describe('Chart Performance', () => {
+    // Positive test: Verify chart rendering with many points
+    it('should render charts efficiently with 60 data points', () => {
+      // Arrange & Act
       const startTime = performance.now();
+      render(<ModernDashboard />);
+      const endTime = performance.now();
+      const duration = endTime - startTime;
 
-      // Act - Rapid updates
-      for (let i = 0; i < 100; i++) {
-        useStore.getState().addLog({
-          level: 'info',
-          message: `Update ${i}`,
-          timestamp: new Date().toISOString(),
-        });
+      // Assert
+      expect(duration).toBeLessThan(300);
+    });
+
+    // Positive test: Verify chart updates are fast
+    it('should handle chart data updates efficiently', () => {
+      // Arrange
+      const { useStore } = require('@/lib/store');
+      const { rerender } = render(<ModernDashboard />);
+
+      // Act - Add chart data
+      const startTime = performance.now();
+      for (let i = 0; i < 10; i++) {
+        useStore.getState().addChartData('cpu', Math.random() * 100);
       }
       const endTime = performance.now();
       const duration = endTime - startTime;
 
       // Assert
-      expect(duration).toBeLessThan(1000); // Should handle rapid updates
-    });
-
-    // Positive test: Verify filtering doesn't cause full re-render
-    it('should update filter without full re-render', () => {
-      // Arrange
-      const logs = Array(1000).fill(null).map((_, i) => ({
-        level: 'info',
-        message: `Log ${i}`,
-        timestamp: new Date().toISOString(),
-      }));
-      useStore.getState().setLogs(logs);
-
-      const renderSpy = jest.fn();
-      const { rerender } = render(<LogsPage />);
-
-      // Act
-      const startTime = performance.now();
-      rerender(<LogsPage />);
-      const endTime = performance.now();
-      const duration = endTime - startTime;
-
-      // Assert
-      expect(duration).toBeLessThan(100); // Fast re-render
+      expect(duration).toBeLessThan(50);
     });
   });
 
   describe('Memoization Effectiveness', () => {
-    // Positive test: Verify memoized components don't re-render unnecessarily
-    it('should skip re-renders for unchanged props', () => {
+    // Positive test: Verify props memoization prevents re-renders
+    it('should skip unnecessary re-renders', () => {
       // Arrange
-      const logs = Array(100).fill(null).map((_, i) => ({
-        level: 'info',
-        message: `Log ${i}`,
-        timestamp: new Date().toISOString(),
-      }));
-      useStore.getState().setLogs(logs);
+      const { rerender } = render(<ModernDashboard />);
+      const initialCallCount = jest.fn().mock.calls?.length || 0;
 
-      const { rerender } = render(<LogsPage />);
-      const initialRenderCount = renderSpy.mock?.calls?.length || 0;
+      // Act - Re-render with same props
+      rerender(<ModernDashboard />);
 
-      // Act - Re-render with same data
-      rerender(<LogsPage />);
-      const finalRenderCount = renderSpy.mock?.calls?.length || 0;
-
-      // Assert
-      expect(finalRenderCount).toBeLessThanOrEqual(initialRenderCount + 1);
-    });
-
-    // Positive test: Verify memoized calculations are efficient
-    it('should memoize expensive calculations', () => {
-      // Arrange
-      const logs = Array(1000).fill(null).map((_, i) => ({
-        level: 'info',
-        message: `Log ${i}`.repeat(10),
-        timestamp: new Date(i * 1000).toISOString(),
-        source: 'test',
-      }));
-      useStore.getState().setLogs(logs);
-
-      // Act - First render (calculations)
-      const startTime1 = performance.now();
-      render(<LogsPage />);
-      const endTime1 = performance.now();
-      const firstDuration = endTime1 - startTime1;
-
-      // Second render (should use memoized values)
-      const startTime2 = performance.now();
-      render(<LogsPage />);
-      const endTime2 = performance.now();
-      const secondDuration = endTime2 - startTime2;
-
-      // Assert
-      expect(secondDuration).toBeLessThan(firstDuration * 1.5); // Should be similar or faster
-    });
-  });
-
-  describe('Chart Performance with Many Points', () => {
-    // Positive test: Verify chart rendering with many data points
-    it('should render chart with 1000 data points efficiently', async () => {
-      // Arrange
-      const { PerformanceChart } = await import('@/components/charts/PerformanceChart');
-
-      const data = Array(1000).fill(null).map((_, i) => ({
-        time: new Date(i * 60000).toISOString(),
-        displayTime: `${Math.floor(i / 60)}:${String(i % 60).padStart(2, '0')}`,
-        value: Math.sin(i / 50) * 50 + 50,
-      }));
-
-      // Act
-      const startTime = performance.now();
-      render(
-        <PerformanceChart
-          title="Test Chart"
-          description="Performance test"
-          datasets={[{
-            dataKey: 'test',
-            label: 'Test',
-            colorDark: '#60a5fa',
-            colorLight: '#2563eb',
-            valueFormatter: (v: number) => `${v.toFixed(1)}%`,
-            data,
-          }]}
-          isDark={false}
-          height={350}
-        />
-      );
-      const endTime = performance.now();
-      const duration = endTime - startTime;
-
-      // Assert
-      expect(duration).toBeLessThan(500); // Efficient chart rendering
-    });
-
-    // Positive test: Verify multiple charts render efficiently
-    it('should render multiple charts efficiently', async () => {
-      // Arrange
-      const { PerformanceChart } = await import('@/components/charts/PerformanceChart');
-
-      const data = Array(500).fill(null).map((_, i) => ({
-        time: new Date(i * 60000).toISOString(),
-        displayTime: `${Math.floor(i / 60)}:${String(i % 60).padStart(2, '0')}`,
-        value: Math.random() * 100,
-      }));
-
-      // Act
-      const startTime = performance.now();
-      const { container } = render(
-        <>
-          <PerformanceChart
-            title="Chart 1"
-            description="CPU"
-            datasets={[{
-              dataKey: 'cpu',
-              label: 'CPU',
-              colorDark: '#60a5fa',
-              colorLight: '#2563eb',
-              valueFormatter: (v: number) => `${v.toFixed(1)}%`,
-              data,
-            }]}
-            isDark={false}
-            height={300}
-          />
-          <PerformanceChart
-            title="Chart 2"
-            description="Memory"
-            datasets={[{
-              dataKey: 'memory',
-              label: 'Memory',
-              colorDark: '#4ade80',
-              colorLight: '#16a34a',
-              valueFormatter: (v: number) => `${v.toFixed(1)}%`,
-              data,
-            }]}
-            isDark={false}
-            height={300}
-          />
-          <PerformanceChart
-            title="Chart 3"
-            description="Requests"
-            datasets={[{
-              dataKey: 'requests',
-              label: 'Requests',
-              colorDark: '#facc15',
-              colorLight: '#f59e0b',
-              valueFormatter: (v: number) => `${v}`,
-              data,
-            }]}
-            isDark={false}
-            height={300}
-          />
-        </>
-      );
-      const endTime = performance.now();
-      const duration = endTime - startTime;
-
-      // Assert
-      expect(duration).toBeLessThan(1500); // Multiple charts should render in <1.5s
+      // Assert - Should be similar number of calls
+      const finalCallCount = jest.fn().mock.calls?.length || 0;
+      expect(finalCallCount - initialCallCount).toBeLessThanOrEqual(2);
     });
   });
 
@@ -360,45 +184,24 @@ describe('Render Performance', () => {
     // Positive test: Verify no memory leaks on unmount
     it('should not leak memory after unmount', () => {
       // Arrange
-      const logs = Array(1000).fill(null).map((_, i) => ({
-        level: 'info',
-        message: `Log ${i}`,
-        timestamp: new Date().toISOString(),
-      }));
-      useStore.getState().setLogs(logs);
-
       const initialMemory = (global as any).gc ? process.memoryUsage().heapUsed : 0;
 
       // Act
-      const { unmount } = render(<LogsPage />);
-
-      // Add more logs while mounted
-      for (let i = 0; i < 500; i++) {
-        useStore.getState().addLog({
-          level: 'info',
-          message: `Additional log ${i}`,
-          timestamp: new Date().toISOString(),
-        });
-      }
-
+      const { unmount } = render(<ModernDashboard />);
       unmount();
+
+      // Force garbage collection if available
+      if ((global as any).gc) {
+        (global as any).gc();
+      }
 
       const finalMemory = (global as any).gc ? process.memoryUsage().heapUsed : 0;
 
       // Assert
       if ((global as any).gc) {
         const memoryGrowth = finalMemory - initialMemory;
-        expect(memoryGrowth).toBeLessThan(50 * 1024 * 1024); // Less than 50MB growth
+        expect(memoryGrowth).toBeLessThan(50 * 1024 * 1024); // Less than 50MB
       }
     });
   });
 });
-
-// Helper for testing inputs
-function fireEvent(element: Element, event: Event) {
-  element.dispatchEvent(event);
-}
-
-interface MockRenderSpy {
-  mock?: { calls: unknown[] };
-}

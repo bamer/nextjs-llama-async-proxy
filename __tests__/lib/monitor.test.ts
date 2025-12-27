@@ -106,7 +106,7 @@ describe('monitor', () => {
     it('should return empty array if file does not exist', () => {
       (fs.existsSync as jest.Mock).mockReturnValue(false);
 
-      const history = monitor.readHistory();
+      const history = readHistory();
 
       expect(history).toEqual([]);
       expect(fs.readFileSync).not.toHaveBeenCalled();
@@ -118,7 +118,7 @@ describe('monitor', () => {
       ]);
       (fs.readFileSync as jest.Mock).mockReturnValue(mockData);
 
-      const history = monitor.readHistory();
+      const history = readHistory();
 
       expect(history).toHaveLength(1);
       expect(history[0].cpu).toBe(50);
@@ -127,7 +127,7 @@ describe('monitor', () => {
     it('should handle JSON parse errors gracefully', () => {
       (fs.readFileSync as jest.Mock).mockReturnValue('invalid json');
 
-      const history = monitor.readHistory();
+      const history = readHistory();
 
       expect(history).toEqual([]);
     });
@@ -137,7 +137,7 @@ describe('monitor', () => {
         throw new Error('Read error');
       });
 
-      const history = monitor.readHistory();
+      const history = readHistory();
 
       expect(history).toEqual([]);
     });
@@ -149,7 +149,7 @@ describe('monitor', () => {
         { cpu: 50, memory: 60, timestamp: '2024-01-01' },
       ];
 
-      monitor.writeHistory(history);
+      writeHistory(history);
 
       expect(fs.writeFileSync).toHaveBeenCalledWith(
         expect.stringContaining('.tmp'),
@@ -161,7 +161,7 @@ describe('monitor', () => {
     it('should rename temp file to history file', () => {
       const history = [{ cpu: 50, memory: 60 }];
 
-      monitor.writeHistory(history);
+      writeHistory(history);
 
       expect(fs.renameSync).toHaveBeenCalledWith(
         expect.stringContaining('.tmp'),
@@ -175,7 +175,7 @@ describe('monitor', () => {
         throw new Error('Write error');
       });
 
-      monitor.writeHistory([]);
+      writeHistory([]);
 
       expect(consoleSpy).toHaveBeenCalledWith(
         'Failed to persist monitoring history:',
@@ -255,7 +255,7 @@ describe('monitor', () => {
         { times: { user: 0, sys: 0, idle: 100 } },
       ]);
 
-      const metrics = monitor.captureMetrics();
+      const metrics = captureMetrics();
 
       expect(metrics.cpuUsage).toBeDefined();
     });
@@ -265,7 +265,7 @@ describe('monitor', () => {
         { times: { user: 0, sys: 0, idle: 100 } },
       ]);
 
-      const metrics = monitor.captureMetrics();
+      const metrics = captureMetrics();
 
       expect(metrics.cpuUsage).toBeLessThanOrEqual(100);
     });
@@ -275,7 +275,7 @@ describe('monitor', () => {
         { times: { user: 100, sys: 0, idle: 0 } },
       ]);
 
-      const metrics = monitor.captureMetrics();
+      const metrics = captureMetrics();
 
       expect(metrics.cpuUsage).toBeGreaterThanOrEqual(0);
     });
@@ -286,7 +286,7 @@ describe('monitor', () => {
       (os.freemem as jest.Mock).mockReturnValue(0);
       (os.totalmem as jest.Mock).mockReturnValue(8000000000);
 
-      const metrics = monitor.captureMetrics();
+      const metrics = captureMetrics();
 
       expect(metrics.memoryUsage).toBe(100);
     });
@@ -295,9 +295,245 @@ describe('monitor', () => {
       (os.freemem as jest.Mock).mockReturnValue(8000000000);
       (os.totalmem as jest.Mock).mockReturnValue(8000000000);
 
-      const metrics = monitor.captureMetrics();
+      const metrics = captureMetrics();
 
       expect(metrics.memoryUsage).toBe(0);
+    });
+  });
+
+  describe('additional edge cases', () => {
+    it('should handle single CPU core', () => {
+      (os.cpus as jest.Mock).mockReturnValue([
+        { times: { user: 100, sys: 50, idle: 150 } },
+      ]);
+
+      const metrics = monitor.captureMetrics();
+
+      expect(metrics.cpuUsage).toBeGreaterThanOrEqual(0);
+      expect(metrics.cpuUsage).toBeLessThanOrEqual(100);
+    });
+
+    it('should handle many CPU cores', () => {
+      const manyCores = Array(64).fill({ times: { user: 100, sys: 50, idle: 200 } });
+      (os.cpus as jest.Mock).mockReturnValue(manyCores);
+
+      const metrics = monitor.captureMetrics();
+
+      expect(metrics.cpuUsage).toBeGreaterThanOrEqual(0);
+      expect(metrics.cpuUsage).toBeLessThanOrEqual(100);
+    });
+
+    it('should handle CPU with zero total time', () => {
+      (os.cpus as jest.Mock).mockReturnValue([
+        { times: { user: 0, sys: 0, idle: 0 } },
+      ]);
+
+      const metrics = monitor.captureMetrics();
+
+      expect(metrics.cpuUsage).toBeDefined();
+    });
+
+    it('should handle CPU with negative time values', () => {
+      (os.cpus as jest.Mock).mockReturnValue([
+        { times: { user: -100, sys: -50, idle: -150 } },
+      ]);
+
+      const metrics = monitor.captureMetrics();
+
+      expect(metrics.cpuUsage).toBeDefined();
+    });
+
+    it('should handle extremely large memory values', () => {
+      (os.freemem as jest.Mock).mockReturnValue(Number.MAX_SAFE_INTEGER);
+      (os.totalmem as jest.Mock).mockReturnValue(Number.MAX_SAFE_INTEGER);
+
+      const metrics = monitor.captureMetrics();
+
+      expect(metrics.memoryUsage).toBeGreaterThanOrEqual(0);
+      expect(metrics.memoryUsage).toBeLessThanOrEqual(100);
+    });
+
+    it('should handle zero total memory', () => {
+      (os.freemem as jest.Mock).mockReturnValue(0);
+      (os.totalmem as jest.Mock).mockReturnValue(0);
+
+      const metrics = monitor.captureMetrics();
+
+      expect(metrics.memoryUsage).toBeDefined();
+    });
+
+    it('should handle negative uptime', () => {
+      (os.uptime as jest.Mock).mockReturnValue(-1);
+
+      const metrics = monitor.captureMetrics();
+
+      expect(metrics.uptimeSeconds).toBeDefined();
+    });
+
+    it('should handle zero uptime', () => {
+      (os.uptime as jest.Mock).mockReturnValue(0);
+
+      const metrics = monitor.captureMetrics();
+
+      expect(metrics.uptimeSeconds).toBe(0);
+    });
+
+    it('should handle very large uptime', () => {
+      const largeUptime = Number.MAX_SAFE_INTEGER;
+      (os.uptime as jest.Mock).mockReturnValue(largeUptime);
+
+      const metrics = monitor.captureMetrics();
+
+      expect(metrics.uptimeSeconds).toBe(Math.round(largeUptime));
+    });
+
+    it('should handle readHistory with corrupted JSON', () => {
+      (fs.existsSync as jest.Mock).mockReturnValue(true);
+      (fs.readFileSync as jest.Mock).mockReturnValue('{ invalid json }');
+
+      const history = monitor.readHistory();
+
+      expect(history).toEqual([]);
+    });
+
+    it('should handle writeHistory with very large array', () => {
+      const largeHistory = Array(100000).fill({ cpu: 50, memory: 50 });
+
+      monitor.writeHistory(largeHistory);
+
+      expect(fs.writeFileSync).toHaveBeenCalled();
+    });
+
+    it('should handle writeHistory with circular references', () => {
+      const circularData: any = { cpu: 50 };
+      circularData.self = circularData;
+
+      monitor.writeHistory([circularData]);
+
+      expect(fs.writeFileSync).toHaveBeenCalled();
+    });
+
+    it('should handle writeHistory with undefined values', () => {
+      const dataWithUndefined = [
+        { cpu: 50, memory: undefined, timestamp: new Date().toISOString() },
+      ];
+
+      monitor.writeHistory(dataWithUndefined);
+
+      expect(fs.writeFileSync).toHaveBeenCalled();
+    });
+
+    it('should handle concurrent writeHistory calls', () => {
+      const data1 = { cpu: 50 };
+      const data2 = { cpu: 60 };
+
+      monitor.writeHistory([data1]);
+      monitor.writeHistory([data2]);
+
+      expect(fs.writeFileSync).toHaveBeenCalledTimes(2);
+    });
+
+    it('should handle empty readHistory file', () => {
+      (fs.existsSync as jest.Mock).mockReturnValue(true);
+      (fs.readFileSync as jest.Mock).mockReturnValue('');
+
+      const history = monitor.readHistory();
+
+      expect(history).toEqual([]);
+    });
+
+    it('should handle readHistory with null bytes in file', () => {
+      (fs.existsSync as jest.Mock).mockReturnValue(true);
+      (fs.readFileSync as jest.Mock).mockReturnValue('\x00\x01\x02');
+
+      const history = monitor.readHistory();
+
+      expect(history).toEqual([]);
+    });
+
+    it('should handle readHistory with very large file', () => {
+      const largeData = JSON.stringify(Array(10000).fill({ cpu: 50 }));
+      (fs.existsSync as jest.Mock).mockReturnValue(true);
+      (fs.readFileSync as jest.Mock).mockReturnValue(largeData);
+
+      const history = monitor.readHistory();
+
+      expect(history.length).toBe(10000);
+    });
+
+    it('should handle file permission errors in writeHistory', () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      (fs.writeFileSync as jest.Mock).mockImplementation(() => {
+        const error: any = new Error('Permission denied');
+        error.code = 'EACCES';
+        throw error;
+      });
+
+      monitor.writeHistory([]);
+
+      expect(consoleSpy).toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle disk full errors in writeHistory', () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      (fs.writeFileSync as jest.Mock).mockImplementation(() => {
+        const error: any = new Error('No space left');
+        error.code = 'ENOSPC';
+        throw error;
+      });
+
+      monitor.writeHistory([]);
+
+      expect(consoleSpy).toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle renameSync errors in writeHistory', () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      (fs.renameSync as jest.Mock).mockImplementation(() => {
+        throw new Error('Rename failed');
+      });
+
+      monitor.writeHistory([{ cpu: 50 }]);
+
+      expect(consoleSpy).toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle startPeriodicRecording errors', () => {
+      jest.clearAllTimers();
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      (monitor.captureMetrics as jest.Mock).mockImplementation(() => {
+        throw new Error('Capture failed');
+      });
+
+      monitor.startPeriodicRecording();
+      jest.runAllTimers();
+
+      expect(consoleSpy).toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle timestamp in metrics', () => {
+      const metrics = monitor.captureMetrics();
+
+      expect(metrics.timestamp).toBeDefined();
+      expect(typeof metrics.timestamp).toBe('string');
+      const date = new Date(metrics.timestamp);
+      expect(date.toISOString()).toBe(metrics.timestamp);
+    });
+
+    it('should handle invalid Date parsing in timestamp', () => {
+      const metrics = monitor.captureMetrics();
+
+      expect(metrics.timestamp).toBeDefined();
+      const date = new Date(metrics.timestamp);
+      expect(date.getTime()).not.toBeNaN();
     });
   });
 });

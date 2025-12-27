@@ -46,7 +46,8 @@ const mockStore = {
   })),
 };
 
-(useStore as jest.Mock).mockReturnValue(mockStore);
+const mockUseStore = useStore as any;
+(mockUseStore as jest.Mock).mockReturnValue(mockStore);
 
 function renderWithThemeProvider(component: React.ReactElement) {
   return render(<ThemeProvider>{component}</ThemeProvider>);
@@ -315,11 +316,297 @@ describe('LoggingSettings', () => {
 
   it('handles error level slider change', () => {
     renderWithThemeProvider(<LoggingSettings />);
-    
+
     const sliders = screen.getAllByRole('slider');
     if (sliders.length > 2) {
       fireEvent.change(sliders[2], { target: { value: 0 } });
       expect(sliders[2]).toBeInTheDocument();
     }
+  });
+
+  // Edge Case Tests
+  it('handles invalid maxFileSize value', () => {
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const maxSizeInput = screen.getByLabelText(/max file size/i);
+    fireEvent.change(maxSizeInput, { target: { value: 'invalid' } });
+
+    expect(maxSizeInput).toHaveValue('invalid');
+  });
+
+  it('handles very large maxFileSize value', () => {
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const maxSizeInput = screen.getByLabelText(/max file size/i);
+    fireEvent.change(maxSizeInput, { target: { value: '999999g' } });
+
+    expect(maxSizeInput).toHaveValue('999999g');
+  });
+
+  it('handles negative maxFileSize value', () => {
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const maxSizeInput = screen.getByLabelText(/max file size/i);
+    fireEvent.change(maxSizeInput, { target: { value: '-20m' } });
+
+    expect(maxSizeInput).toHaveValue('-20m');
+  });
+
+  it('handles invalid maxFiles value', () => {
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const maxFilesInput = screen.getByLabelText(/max files/i);
+    fireEvent.change(maxFilesInput, { target: { value: 'invalid' } });
+
+    expect(maxFilesInput).toHaveValue('invalid');
+  });
+
+  it('handles very large maxFiles value', () => {
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const maxFilesInput = screen.getByLabelText(/max files/i);
+    fireEvent.change(maxFilesInput, { target: { value: '999999d' } });
+
+    expect(maxFilesInput).toHaveValue('999999d');
+  });
+
+  it('handles empty file size value', () => {
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const maxSizeInput = screen.getByLabelText(/max file size/i);
+    fireEvent.change(maxSizeInput, { target: { value: '' } });
+
+    expect(maxSizeInput).toHaveValue('');
+  });
+
+  it('handles empty max files value', () => {
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const maxFilesInput = screen.getByLabelText(/max files/i);
+    fireEvent.change(maxFilesInput, { target: { value: '' } });
+
+    expect(maxFilesInput).toHaveValue('');
+  });
+
+  it('handles rapid slider changes', () => {
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const sliders = screen.getAllByRole('slider');
+    if (sliders.length > 0) {
+      for (let i = 0; i <= 4; i++) {
+        fireEvent.change(sliders[0], { target: { value: i } });
+      }
+    }
+  });
+
+  it('handles concurrent toggles', () => {
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const checkboxes = screen.getAllByRole('checkbox');
+
+    for (let i = 0; i < 10; i++) {
+      fireEvent.click(checkboxes[0]);
+    }
+  });
+
+  it('handles save operation with all disabled', () => {
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const checkboxes = screen.getAllByRole('checkbox');
+    checkboxes.forEach(cb => fireEvent.click(cb));
+
+    const saveButton = screen.getByText('Save Configuration');
+    fireEvent.click(saveButton);
+
+    const { updateLoggerConfig } = require('@/lib/logger');
+    expect(updateLoggerConfig).toHaveBeenCalled();
+  });
+
+  it('handles save operation with all enabled', () => {
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const saveButton = screen.getByText('Save Configuration');
+    fireEvent.click(saveButton);
+
+    const { updateLoggerConfig } = require('@/lib/logger');
+    expect(updateLoggerConfig).toHaveBeenCalled();
+  });
+
+  it('handles reset operation multiple times', () => {
+    const { updateLoggerConfig } = require('@/lib/logger');
+    const { sendMessage } = require('@/hooks/use-websocket').useWebSocket();
+
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const resetButton = screen.getByText('Reset to Defaults');
+
+    for (let i = 0; i < 5; i++) {
+      fireEvent.click(resetButton);
+    }
+
+    expect(updateLoggerConfig).toHaveBeenCalledTimes(5);
+    expect(sendMessage).toHaveBeenCalledTimes(5);
+  });
+
+  it('handles very long log level values', () => {
+    const { getLoggerConfig } = require('@/lib/logger');
+    getLoggerConfig.mockReturnValue({
+      consoleLevel: 'a'.repeat(100) as any,
+      fileLevel: 'b'.repeat(100) as any,
+      errorLevel: 'c'.repeat(100) as any,
+      maxFileSize: '20m',
+      maxFiles: '30d',
+      enableFileLogging: true,
+      enableConsoleLogging: true,
+    });
+
+    renderWithThemeProvider(<LoggingSettings />);
+
+    expect(screen.getByText('Loading Logging Configuration...')).not.toBeInTheDocument();
+  });
+
+  it('handles logger config throwing error on load', () => {
+    const { getLoggerConfig } = require('@/lib/logger');
+    getLoggerConfig.mockImplementation(() => {
+      throw new Error('Config load error');
+    });
+
+    renderWithThemeProvider(<LoggingSettings />);
+
+    expect(screen.getByText('Loading Logging Configuration...')).toBeInTheDocument();
+  });
+
+  it('handles updateLoggerConfig throwing error', () => {
+    const { updateLoggerConfig } = require('@/lib/logger');
+    updateLoggerConfig.mockImplementation(() => {
+      throw new Error('Update error');
+    });
+
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const saveButton = screen.getByText('Save Configuration');
+    fireEvent.click(saveButton);
+
+    expect(console.error).toHaveBeenCalled();
+  });
+
+  it('handles special characters in file size', () => {
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const maxSizeInput = screen.getByLabelText(/max file size/i);
+    fireEvent.change(maxSizeInput, { target: { value: '@#$%^&*()' } });
+
+    expect(maxSizeInput).toHaveValue('@#$%^&*()');
+  });
+
+  it('handles unicode in configuration', () => {
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const maxSizeInput = screen.getByLabelText(/max file size/i);
+    fireEvent.change(maxSizeInput, { target: { value: '文件大小' } });
+
+    expect(maxSizeInput).toHaveValue('文件大小');
+  });
+
+  it('handles empty configuration', () => {
+    const { getLoggerConfig } = require('@/lib/logger');
+    getLoggerConfig.mockReturnValue({} as any);
+
+    renderWithThemeProvider(<LoggingSettings />);
+
+    expect(screen.getByText('Loading Logging Configuration...')).not.toBeInTheDocument();
+  });
+
+  it('handles null configuration', () => {
+    const { getLoggerConfig } = require('@/lib/logger');
+    getLoggerConfig.mockReturnValue(null as any);
+
+    renderWithThemeProvider(<LoggingSettings />);
+
+    expect(screen.getByText('Loading Logging Configuration...')).not.toBeInTheDocument();
+  });
+
+  it('handles slider value at boundaries', () => {
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const sliders = screen.getAllByRole('slider');
+    if (sliders.length > 0) {
+      // Test minimum
+      fireEvent.change(sliders[0], { target: { value: 0 } });
+
+      // Test maximum
+      fireEvent.change(sliders[0], { target: { value: 4 } });
+    }
+  });
+
+  it('handles slider values outside range', () => {
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const sliders = screen.getAllByRole('slider');
+    if (sliders.length > 0) {
+      // Test below minimum
+      fireEvent.change(sliders[0], { target: { value: -1 } });
+
+      // Test above maximum
+      fireEvent.change(sliders[0], { target: { value: 10 } });
+    }
+  });
+
+  it('handles concurrent save and reset operations', () => {
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const saveButton = screen.getByText('Save Configuration');
+    const resetButton = screen.getByText('Reset to Defaults');
+
+    fireEvent.click(saveButton);
+    fireEvent.click(resetButton);
+    fireEvent.click(saveButton);
+
+    const { updateLoggerConfig } = require('@/lib/logger');
+    expect(updateLoggerConfig).toHaveBeenCalled();
+  });
+
+  it('handles WebSocket sendMessage errors', () => {
+    const { sendMessage } = require('@/hooks/use-websocket').useWebSocket();
+    sendMessage.mockImplementation(() => {
+      throw new Error('WebSocket error');
+    });
+
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const saveButton = screen.getByText('Save Configuration');
+    fireEvent.click(saveButton);
+
+    expect(sendMessage).toHaveBeenCalled();
+  });
+
+  it('handles very rapid consecutive saves', () => {
+    renderWithThemeProvider(<LoggingSettings />);
+
+    const saveButton = screen.getByText('Save Configuration');
+
+    for (let i = 0; i < 10; i++) {
+      fireEvent.click(saveButton);
+    }
+
+    const { updateLoggerConfig } = require('@/lib/logger');
+    expect(updateLoggerConfig).toHaveBeenCalledTimes(10);
+  });
+
+  it('handles configuration with all log levels disabled', () => {
+    const { getLoggerConfig } = require('@/lib/logger');
+    getLoggerConfig.mockReturnValue({
+      consoleLevel: 'error' as any,
+      fileLevel: 'error' as any,
+      errorLevel: 'error' as any,
+      maxFileSize: '20m',
+      maxFiles: '30d',
+      enableFileLogging: false,
+      enableConsoleLogging: false,
+    });
+
+    renderWithThemeProvider(<LoggingSettings />);
+
+    expect(screen.getByText('Loading Logging Configuration...')).not.toBeInTheDocument();
   });
 });

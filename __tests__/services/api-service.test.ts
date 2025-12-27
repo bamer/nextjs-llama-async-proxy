@@ -26,6 +26,16 @@ const mockStore = useStore as jest.Mocked<typeof useStore>;
 describe('api-service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockStore.getState.mockReturnValue({
+      setModels: jest.fn(),
+      addModel: jest.fn(),
+      updateModel: jest.fn(),
+      removeModel: jest.fn(),
+      setMetrics: jest.fn(),
+      setLogs: jest.fn(),
+      clearLogs: jest.fn(),
+      updateSettings: jest.fn(),
+    } as any);
   });
 
   describe('getModels', () => {
@@ -45,6 +55,7 @@ describe('api-service', () => {
 
       expect(mockApiClient.get).toHaveBeenCalledWith('/api/models');
       expect(result).toEqual(mockResponse.data);
+      expect(mockStore.getState().setModels).toHaveBeenCalledWith(mockResponse.data);
     });
 
     it('should throw error on failure', async () => {
@@ -68,6 +79,222 @@ describe('api-service', () => {
 
       await expect(apiService.getModels()).rejects.toThrow('Network error');
     });
+
+    it('should handle undefined error message', async () => {
+      const mockResponse = {
+        success: false,
+        error: {
+          code: '500',
+          message: '',
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      mockApiClient.get.mockResolvedValue(mockResponse);
+
+      await expect(apiService.getModels()).rejects.toThrow('Failed to fetch models');
+    });
+  });
+
+  describe('getModel', () => {
+    it('should get single model', async () => {
+      const mockResponse = {
+        success: true,
+        data: { id: 'model1', name: 'Model 1' },
+        timestamp: new Date().toISOString(),
+      };
+
+      mockApiClient.get.mockResolvedValue(mockResponse);
+
+      const result = await apiService.getModel('model1');
+
+      expect(mockApiClient.get).toHaveBeenCalledWith('/api/models/model1');
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    it('should handle model not found', async () => {
+      const mockResponse = {
+        success: false,
+        error: {
+          code: '404',
+          message: 'Model not found',
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      mockApiClient.get.mockResolvedValue(mockResponse);
+
+      await expect(apiService.getModel('nonexistent')).rejects.toThrow('Model not found');
+    });
+
+    it('should handle network errors', async () => {
+      mockApiClient.get.mockRejectedValue(new Error('Connection refused'));
+
+      await expect(apiService.getModel('model1')).rejects.toThrow('Connection refused');
+    });
+  });
+
+  describe('createModel', () => {
+    it('should create model successfully', async () => {
+      const mockResponse = {
+        success: true,
+        data: { id: 'model1', name: 'Model 1' },
+        timestamp: new Date().toISOString(),
+      };
+
+      mockApiClient.post.mockResolvedValue(mockResponse);
+
+      const result = await apiService.createModel({ name: 'Model 1' } as any);
+
+      expect(mockApiClient.post).toHaveBeenCalledWith('/api/models', { name: 'Model 1' });
+      expect(result).toEqual(mockResponse.data);
+      expect(mockStore.getState().addModel).toHaveBeenCalledWith(mockResponse.data);
+    });
+
+    it('should handle creation errors', async () => {
+      const mockResponse = {
+        success: false,
+        error: {
+          code: '400',
+          message: 'Invalid model data',
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      mockApiClient.post.mockResolvedValue(mockResponse);
+
+      await expect(apiService.createModel({ name: 'Model 1' } as any)).rejects.toThrow('Invalid model data');
+    });
+  });
+
+  describe('updateModel', () => {
+    it('should update model successfully', async () => {
+      const mockResponse = {
+        success: true,
+        data: { id: 'model1', name: 'Updated Model 1' },
+        timestamp: new Date().toISOString(),
+      };
+
+      mockApiClient.put.mockResolvedValue(mockResponse);
+
+      const result = await apiService.updateModel('model1', { name: 'Updated Model 1' });
+
+      expect(mockApiClient.put).toHaveBeenCalledWith('/api/models/model1', { name: 'Updated Model 1' });
+      expect(result).toEqual(mockResponse.data);
+      expect(mockStore.getState().updateModel).toHaveBeenCalledWith('model1', mockResponse.data);
+    });
+
+    it('should handle update errors', async () => {
+      const mockResponse = {
+        success: false,
+        error: {
+          code: '404',
+          message: 'Model not found',
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      mockApiClient.put.mockResolvedValue(mockResponse);
+
+      await expect(apiService.updateModel('nonexistent', { name: 'Test' })).rejects.toThrow('Model not found');
+    });
+  });
+
+  describe('deleteModel', () => {
+    it('should delete model successfully', async () => {
+      const mockResponse = {
+        success: true,
+        timestamp: new Date().toISOString(),
+      };
+
+      mockApiClient.delete.mockResolvedValue(mockResponse);
+
+      await apiService.deleteModel('model1');
+
+      expect(mockApiClient.delete).toHaveBeenCalledWith('/api/models/model1');
+      expect(mockStore.getState().removeModel).toHaveBeenCalledWith('model1');
+    });
+
+    it('should handle delete errors', async () => {
+      const mockResponse = {
+        success: false,
+        error: {
+          code: '404',
+          message: 'Model not found',
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      mockApiClient.delete.mockResolvedValue(mockResponse);
+
+      await expect(apiService.deleteModel('nonexistent')).rejects.toThrow('Model not found');
+    });
+  });
+
+  describe('startModel', () => {
+    it('should start model successfully', async () => {
+      const mockResponse = {
+        success: true,
+        data: { id: 'model1', status: 'running' },
+        timestamp: new Date().toISOString(),
+      };
+
+      mockApiClient.post.mockResolvedValue(mockResponse);
+
+      const result = await apiService.startModel('model1');
+
+      expect(mockApiClient.post).toHaveBeenCalledWith('/api/models/model1/start');
+      expect(result).toEqual(mockResponse.data);
+      expect(mockStore.getState().updateModel).toHaveBeenCalledWith('model1', { status: 'running' });
+    });
+
+    it('should handle start errors', async () => {
+      const mockResponse = {
+        success: false,
+        error: {
+          code: '500',
+          message: 'Failed to start model',
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      mockApiClient.post.mockResolvedValue(mockResponse);
+
+      await expect(apiService.startModel('model1')).rejects.toThrow('Failed to start model');
+    });
+  });
+
+  describe('stopModel', () => {
+    it('should stop model successfully', async () => {
+      const mockResponse = {
+        success: true,
+        data: { id: 'model1', status: 'idle' },
+        timestamp: new Date().toISOString(),
+      };
+
+      mockApiClient.post.mockResolvedValue(mockResponse);
+
+      const result = await apiService.stopModel('model1');
+
+      expect(mockApiClient.post).toHaveBeenCalledWith('/api/models/model1/stop');
+      expect(result).toEqual(mockResponse.data);
+      expect(mockStore.getState().updateModel).toHaveBeenCalledWith('model1', { status: 'idle' });
+    });
+
+    it('should handle stop errors', async () => {
+      const mockResponse = {
+        success: false,
+        error: {
+          code: '500',
+          message: 'Failed to stop model',
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      mockApiClient.post.mockResolvedValue(mockResponse);
+
+      await expect(apiService.stopModel('model1')).rejects.toThrow('Failed to stop model');
+    });
   });
 
   describe('loadModel', () => {
@@ -83,10 +310,26 @@ describe('api-service', () => {
       const result = await apiService.loadModel('model1');
 
       expect(mockApiClient.post).toHaveBeenCalledWith('/api/models/model1/load', { config: undefined });
-      expect(result).toEqual(mockResponse.data);
+      expect(result).toEqual(mockResponse);
     });
 
-    it('should handle load errors', async () => {
+    it('should load model with config', async () => {
+      const mockResponse = {
+        success: true,
+        data: { id: 'model1', loaded: true },
+        timestamp: new Date().toISOString(),
+      };
+      const config = { ctx_size: 4096 };
+
+      mockApiClient.post.mockResolvedValue(mockResponse);
+
+      const result = await apiService.loadModel('model1', config);
+
+      expect(mockApiClient.post).toHaveBeenCalledWith('/api/models/model1/load', { config });
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should handle load errors gracefully', async () => {
       const mockResponse = {
         success: false,
         error: {
@@ -98,7 +341,9 @@ describe('api-service', () => {
 
       mockApiClient.post.mockResolvedValue(mockResponse);
 
-      await expect(apiService.loadModel('nonexistent')).rejects.toThrow('Model not found');
+      const result = await apiService.loadModel('nonexistent');
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toBe('Model not found');
     });
   });
 
@@ -115,10 +360,10 @@ describe('api-service', () => {
       const result = await apiService.unloadModel('model1');
 
       expect(mockApiClient.post).toHaveBeenCalledWith('/api/models/model1/unload');
-      expect(result).toEqual(mockResponse.data);
+      expect(result).toEqual(mockResponse);
     });
 
-    it('should handle unload errors', async () => {
+    it('should handle unload errors gracefully', async () => {
       const mockResponse = {
         success: false,
         error: {
@@ -130,7 +375,9 @@ describe('api-service', () => {
 
       mockApiClient.post.mockResolvedValue(mockResponse);
 
-      await expect(apiService.unloadModel('model1')).rejects.toThrow('Unload failed');
+      const result = await apiService.unloadModel('model1');
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toBe('Unload failed');
     });
   });
 
@@ -194,6 +441,7 @@ describe('api-service', () => {
 
       expect(mockApiClient.get).toHaveBeenCalledWith('/api/metrics');
       expect(result).toEqual(mockResponse.data);
+      expect(mockStore.getState().setMetrics).toHaveBeenCalledWith(mockResponse.data);
     });
 
     it('should handle metrics error', async () => {

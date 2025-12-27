@@ -139,6 +139,7 @@ export default function ModernDashboard() {
         <Grid size={{ xs: 12, lg: 4 }}>
           <QuickActionsCard
             isDark={isDark}
+            onDownloadLogs={handleDownloadLogs}
             onRestartServer={handleRestartServer}
             onStartServer={handleStartServer}
           />
@@ -207,7 +208,15 @@ export default function ModernDashboard() {
               height={350}
             />
           ) : (
-            <GPUUMetricsCard metrics={safeMetrics} isDark={isDark} />
+            <GPUUMetricsCard metrics={safeMetrics ? Object.fromEntries(
+              Object.entries({
+                gpuUsage: safeMetrics.gpuUsage,
+                gpuMemoryUsed: safeMetrics.gpuMemoryUsed,
+                gpuMemoryTotal: safeMetrics.gpuMemoryTotal,
+                gpuTemperature: safeMetrics.gpuTemperature,
+                gpuName: safeMetrics.gpuName,
+              }).filter(([_, v]) => v !== undefined)
+            ) : {}} isDark={isDark} />
           )}
         </Grid>
       </Grid>

@@ -10,12 +10,8 @@ describe("MONITORING_CONFIG", () => {
       expect(typeof MONITORING_CONFIG.REQUIRE_REAL_DATA).toBe("boolean");
     });
 
-    it("reflects NODE_ENV in production", () => {
-      const originalEnv = process.env.NODE_ENV;
-
+    it("is defined as environment-dependent value", () => {
       expect(MONITORING_CONFIG.REQUIRE_REAL_DATA).toBeDefined();
-
-      process.env.NODE_ENV = originalEnv;
     });
   });
 

@@ -14,7 +14,19 @@ import { WebSocketTransport } from '@/lib/websocket-transport';
 import { Server } from 'socket.io';
 
 jest.mock('winston', () => ({
-  createLogger: jest.fn(),
+  createLogger: jest.fn(() => ({
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+    verbose: jest.fn(),
+    exceptions: {
+      handle: jest.fn(),
+    },
+    rejections: {
+      handle: jest.fn(),
+    },
+  })),
   format: {
     combine: jest.fn(() => ({})),
     timestamp: jest.fn(() => ({})),
@@ -25,7 +37,7 @@ jest.mock('winston', () => ({
     printf: jest.fn(() => ({})),
   },
   transports: {
-    Console: jest.fn(),
+    Console: jest.fn(() => ({})),
   },
   Logger: jest.fn(),
 }));

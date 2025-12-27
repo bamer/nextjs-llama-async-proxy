@@ -349,4 +349,349 @@ describe('WebSocketTransport', () => {
       });
     });
   });
+
+  describe('edge cases and boundary conditions', () => {
+    it('should handle null message', (done) => {
+      const callback = jest.fn();
+
+      transport.log({ level: 'info', message: null as any }, callback);
+
+      setImmediate(() => {
+        const logs = transport.getCachedLogs();
+        expect(logs).toHaveLength(1);
+        expect(logs[0].message).toBe('null');
+        done();
+      });
+    });
+
+    it('should handle undefined message', (done) => {
+      const callback = jest.fn();
+
+      transport.log({ level: 'info', message: undefined as any }, callback);
+
+      setImmediate(() => {
+        const logs = transport.getCachedLogs();
+        expect(logs).toHaveLength(1);
+        expect(logs[0].message).toBe('undefined');
+        done();
+      });
+    });
+
+    it('should handle empty string message', (done) => {
+      const callback = jest.fn();
+
+      transport.log({ level: 'info', message: '' }, callback);
+
+      setImmediate(() => {
+        const logs = transport.getCachedLogs();
+        expect(logs).toHaveLength(1);
+        expect(logs[0].message).toBe('');
+        done();
+      });
+    });
+
+    it('should handle very long message', (done) => {
+      const callback = jest.fn();
+      const longMessage = 'x'.repeat(100000);
+
+      transport.log({ level: 'info', message: longMessage }, callback);
+
+      setImmediate(() => {
+        const logs = transport.getCachedLogs();
+        expect(logs).toHaveLength(1);
+        expect(logs[0].message).toBe(longMessage);
+        done();
+      });
+    });
+
+    it('should handle message with unicode', (done) => {
+      const callback = jest.fn();
+      const unicodeMessage = 'Hello 世界 🌍 🚀 测试';
+
+      transport.log({ level: 'info', message: unicodeMessage }, callback);
+
+      setImmediate(() => {
+        const logs = transport.getCachedLogs();
+        expect(logs).toHaveLength(1);
+        expect(logs[0].message).toBe(unicodeMessage);
+        done();
+      });
+    });
+
+    it('should handle message with special characters', (done) => {
+      const callback = jest.fn();
+      const specialMessage = '\x00\x01\x02\x03\x1b[31mRed\x1b[0m\n\t\r';
+
+      transport.log({ level: 'info', message: specialMessage }, callback);
+
+      setImmediate(() => {
+        const logs = transport.getCachedLogs();
+        expect(logs).toHaveLength(1);
+        done();
+      });
+    });
+
+    it('should handle circular object message', (done) => {
+      const callback = jest.fn();
+      const circular: any = { name: 'test' };
+      circular.self = circular;
+
+      transport.log({ level: 'info', message: circular }, callback);
+
+      setImmediate(() => {
+        const logs = transport.getCachedLogs();
+        expect(logs).toHaveLength(1);
+        done();
+      });
+    });
+
+    it('should handle deeply nested object message', (done) => {
+      const callback = jest.fn();
+      const nested = {
+        level1: {
+          level2: {
+            level3: {
+              level4: {
+                level5: {
+                  value: 'deep',
+                },
+              },
+            },
+          },
+        },
+      };
+
+      transport.log({ level: 'info', message: nested }, callback);
+
+      setImmediate(() => {
+        const logs = transport.getCachedLogs();
+        expect(logs).toHaveLength(1);
+        done();
+      });
+    });
+
+    it('should handle array message', (done) => {
+      const callback = jest.fn();
+      const arrayMessage = [1, 2, 3, { nested: 'value' }, ['array', 'in', 'array']];
+
+      transport.log({ level: 'info', message: arrayMessage }, callback);
+
+      setImmediate(() => {
+        const logs = transport.getCachedLogs();
+        expect(logs).toHaveLength(1);
+        done();
+      });
+    });
+
+    it('should handle null level', (done) => {
+      const callback = jest.fn();
+
+      transport.log({ level: null as any, message: 'test' }, callback);
+
+      setImmediate(() => {
+        const logs = transport.getCachedLogs();
+        expect(logs).toHaveLength(1);
+        expect(logs[0].level).toBe('info'); // Should default to 'info'
+        done();
+      });
+    });
+
+    it('should handle undefined level', (done) => {
+      const callback = jest.fn();
+
+      transport.log({ level: undefined as any, message: 'test' }, callback);
+
+      setImmediate(() => {
+        const logs = transport.getCachedLogs();
+        expect(logs).toHaveLength(1);
+        expect(logs[0].level).toBe('info');
+        done();
+      });
+    });
+
+    it('should handle invalid level string', (done) => {
+      const callback = jest.fn();
+
+      transport.log({ level: 'invalid' as any, message: 'test' }, callback);
+
+      setImmediate(() => {
+        const logs = transport.getCachedLogs();
+        expect(logs).toHaveLength(1);
+        expect(logs[0].level).toBe('invalid');
+        done();
+      });
+    });
+
+    it('should handle null timestamp', (done) => {
+      const callback = jest.fn();
+
+      transport.log({ level: 'info', message: 'test', timestamp: null as any }, callback);
+
+      setImmediate(() => {
+        const logs = transport.getCachedLogs();
+        expect(logs).toHaveLength(1);
+        expect(new Date(logs[0].timestamp)).not.toBeNaN();
+        done();
+      });
+    });
+
+    it('should handle invalid timestamp format', (done) => {
+      const callback = jest.fn();
+
+      transport.log({ level: 'info', message: 'test', timestamp: 'invalid' as any }, callback);
+
+      setImmediate(() => {
+        const logs = transport.getCachedLogs();
+        expect(logs).toHaveLength(1);
+        expect(typeof logs[0].timestamp).toBe('string');
+        done();
+      });
+    });
+
+    it('should handle rapid successive logs', (done) => {
+      const callback = jest.fn();
+
+      for (let i = 0; i < 1000; i++) {
+        transport.log({ level: 'info', message: `Log ${i}` }, callback);
+      }
+
+      setImmediate(() => {
+        const logs = transport.getCachedLogs();
+        expect(logs.length).toBe(500); // Should be limited to maxQueueSize
+        expect(callback).toHaveBeenCalledTimes(1000);
+        done();
+      });
+    });
+
+    it('should handle queue rotation correctly', (done) => {
+      const callback = jest.fn();
+
+      // Add exactly 500 logs
+      for (let i = 0; i < 500; i++) {
+        transport.log({ level: 'info', message: `Log ${i}` }, callback);
+      }
+
+      setImmediate(() => {
+        const logs = transport.getCachedLogs();
+        expect(logs).toHaveLength(500);
+        expect(logs[0].message).toBe('Log 499'); // Most recent first
+        expect(logs[499].message).toBe('Log 0');
+
+        // Add one more, should remove oldest
+        transport.log({ level: 'info', message: 'Log 500' }, callback);
+
+        setImmediate(() => {
+          const updatedLogs = transport.getCachedLogs();
+          expect(updatedLogs).toHaveLength(500);
+          expect(updatedLogs[0].message).toBe('Log 500');
+          expect(updatedLogs[499].message).toBe('Log 1');
+          done();
+        });
+      });
+    });
+
+    it('should handle callback throwing error', (done) => {
+      const errorThrowingCallback = jest.fn(() => {
+        throw new Error('Callback error');
+      });
+
+      expect(() => {
+        transport.log({ level: 'info', message: 'test' }, errorThrowingCallback);
+      }).not.toThrow();
+
+      setImmediate(() => {
+        done();
+      });
+    });
+
+    it('should handle log with all possible log levels', (done) => {
+      const callback = jest.fn();
+      const levels: any[] = ['error', 'warn', 'info', 'debug', 'verbose', 'silly'];
+
+      levels.forEach(level => {
+        transport.log({ level, message: 'test' }, callback);
+      });
+
+      setImmediate(() => {
+        const logs = transport.getCachedLogs();
+        expect(logs).toHaveLength(levels.length);
+        logs.forEach(log => {
+          expect(levels).toContain(log.level);
+        });
+        done();
+      });
+    });
+
+    it('should handle getLogsByLevel with empty queue', () => {
+      const logs = transport.getLogsByLevel('info');
+      expect(logs).toEqual([]);
+    });
+
+    it('should handle getLogsByLevel with non-existent level', () => {
+      transport.log({ level: 'info', message: 'test' }, jest.fn());
+
+      setImmediate(() => {
+        const logs = transport.getLogsByLevel('nonexistent');
+        expect(logs).toEqual([]);
+      });
+    });
+
+    it('should handle clearQueue on empty queue', () => {
+      expect(() => transport.clearQueue()).not.toThrow();
+      expect(transport.getCachedLogs()).toHaveLength(0);
+    });
+
+    it('should handle clearQueue multiple times', () => {
+      const callback = jest.fn();
+      transport.log({ level: 'info', message: 'test' }, callback);
+
+      setImmediate(() => {
+        transport.clearQueue();
+        transport.clearQueue();
+        transport.clearQueue();
+        expect(transport.getCachedLogs()).toHaveLength(0);
+      });
+    });
+
+    it('should handle Socket.IO instance replacement', (done) => {
+      const callback = jest.fn();
+      const mockIo1 = { emit: jest.fn() } as any;
+      const mockIo2 = { emit: jest.fn() } as any;
+
+      transport.setSocketIOInstance(mockIo1);
+      transport.log({ level: 'info', message: 'test' }, callback);
+
+      setImmediate(() => {
+        expect(mockIo1.emit).toHaveBeenCalled();
+
+        transport.setSocketIOInstance(mockIo2);
+        transport.log({ level: 'info', message: 'test2' }, callback);
+
+        setImmediate(() => {
+          expect(mockIo2.emit).toHaveBeenCalled();
+          done();
+        });
+      });
+    });
+
+    it('should handle log without callback', (done) => {
+      transport.log({ level: 'info', message: 'test' });
+
+      setImmediate(() => {
+        const logs = transport.getCachedLogs();
+        expect(logs).toHaveLength(1);
+        done();
+      });
+    });
+
+    it('should handle callback as null', (done) => {
+      transport.log({ level: 'info', message: 'test' }, null as any);
+
+      setImmediate(() => {
+        const logs = transport.getCachedLogs();
+        expect(logs).toHaveLength(1);
+        done();
+      });
+    });
+  });
 });

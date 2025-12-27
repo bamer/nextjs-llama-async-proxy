@@ -3,7 +3,7 @@ import type { Config } from 'jest';
 const jestConfig: Config = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'], // Temporarily removed mui-mocks.tsx due to module resolution issues
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@/app/(.*)$': '<rootDir>/app/$1',

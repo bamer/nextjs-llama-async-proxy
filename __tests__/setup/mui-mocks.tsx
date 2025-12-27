@@ -8,11 +8,6 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { render, RenderOptions } from '@testing-library/react';
 import React from 'react';
 
-// Mock MUI Next.js InitColorSchemeScript
-jest.mock('@mui/material-nextjs/InitColorSchemeScript', () => ({
-  InitColorSchemeScript: () => null,
-}));
-
 // Mock window.matchMedia for responsive components
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
