@@ -17,11 +17,13 @@ import { useTheme } from "@/contexts/ThemeContext";
 interface GeneralSettingsTabProps {
   formConfig: any;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  fieldErrors: Record<string, string>;
 }
 
 export function GeneralSettingsTab({
   formConfig,
   onInputChange,
+  fieldErrors,
 }: GeneralSettingsTabProps): React.ReactNode {
   const { isDark } = useTheme();
 
@@ -66,7 +68,8 @@ export function GeneralSettingsTab({
                 value={formConfig.basePath}
                 onChange={onInputChange}
                 variant="outlined"
-                helperText="Path to your models directory"
+                helperText={fieldErrors.basePath || "Path to your models directory"}
+                error={!!fieldErrors.basePath}
                 sx={{ mb: 3 }}
               />
             </Grid>
@@ -81,7 +84,8 @@ export function GeneralSettingsTab({
                 select
                 SelectProps={{ native: true }}
                 variant="outlined"
-                helperText="Logging verbosity level"
+                helperText={fieldErrors.logLevel || "Logging verbosity level"}
+                error={!!fieldErrors.logLevel}
                 sx={{ mb: 3 }}
               >
                 {["debug", "info", "warn", "error"].map((level) => (
@@ -101,9 +105,13 @@ export function GeneralSettingsTab({
                 value={formConfig.maxConcurrentModels || 1}
                 onChange={onInputChange}
                 variant="outlined"
-                helperText={formConfig.maxConcurrentModels === 1
-                  ? "Single model mode: Only one model loaded at a time"
-                  : "Parallel mode: Multiple models can be loaded simultaneously"}
+                helperText={
+                  fieldErrors.maxConcurrentModels ||
+                  (formConfig.maxConcurrentModels === 1
+                    ? "Single model mode: Only one model loaded at a time"
+                    : "Parallel mode: Multiple models can be loaded simultaneously")
+                }
+                error={!!fieldErrors.maxConcurrentModels}
                 InputProps={{ inputProps: { min: 1, max: 20 } }}
                 sx={{ mb: 3 }}
               />
@@ -177,7 +185,8 @@ export function GeneralSettingsTab({
                 value={formConfig.llamaServerPath || ""}
                 onChange={onInputChange}
                 variant="outlined"
-                helperText="Path to llama-server executable"
+                helperText={fieldErrors.llamaServerPath || "Path to llama-server executable"}
+                error={!!fieldErrors.llamaServerPath}
                 sx={{ mb: 3 }}
               />
             </Grid>

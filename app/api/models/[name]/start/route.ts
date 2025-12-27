@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLogger } from "@/lib/logger";
 import { loadAppConfig } from "@/lib/server-config";
+import { validateRequestBody } from "@/lib/validation-utils";
+import { startModelRequestSchema } from "@/lib/validators";
 
 const logger = getLogger();
 
@@ -19,7 +21,20 @@ export async function POST(
     }
 
     const body = await request.json().catch(() => ({}));
-    const selectedTemplate = body.template;
+
+    // Validate request body with Zod
+    const validation = validateRequestBody(startModelRequestSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid request body",
+          details: validation.errors,
+        },
+        { status: 400 }
+      );
+    }
+
+    const selectedTemplate = validation.data?.template;
 
     logger.info(`[API] Loading model: ${name}`, body);
 

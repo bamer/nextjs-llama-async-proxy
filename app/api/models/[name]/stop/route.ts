@@ -1,10 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getLogger } from "@/lib/logger";
+import { validateRequestBody } from "@/lib/validation-utils";
+import { stopModelRequestSchema } from "@/lib/validators";
 
 const logger = getLogger();
 
 export async function POST(
-  _request: unknown,
+  request: NextRequest,
   { params }: { params: Promise<{ name: string }> }
 ): Promise<NextResponse> {
   try {
@@ -16,6 +18,22 @@ export async function POST(
         { status: 400 }
       );
     }
+
+    const body = await request.json().catch(() => ({}));
+
+    // Validate request body with Zod
+    const validation = validateRequestBody(stopModelRequestSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid request body",
+          details: validation.errors,
+        },
+        { status: 400 }
+      );
+    }
+
+    const force = validation.data?.force || false;
 
     logger.info(`[API] Stopping model: ${name}`);
 

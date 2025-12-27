@@ -1,21 +1,35 @@
 import { NextResponse, NextRequest } from "next/server";
 import { loadConfig, saveConfig, loadAppConfig, saveAppConfig } from "@/lib/server-config";
 import { getLogger } from "@/lib/logger";
+import { validateRequestBody } from "@/lib/validation-utils";
+import { configUpdateRequestSchema } from "@/lib/validators";
 
 const logger = getLogger();
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const config = await request.json();
+    const body = await request.json();
 
-    const { appConfig, serverConfig } = config;
-
-    if (serverConfig) {
-      saveConfig(serverConfig);
+    // Validate request body with Zod
+    const validation = validateRequestBody(configUpdateRequestSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid request body",
+          details: validation.errors,
+        },
+        { status: 400 }
+      );
     }
 
-    if (appConfig) {
-      saveAppConfig(appConfig);
+    const { appConfig, serverConfig } = validation.data || {};
+    
+    if (serverConfig && Object.keys(serverConfig).length > 0) {
+      saveConfig(serverConfig as any);
+    }
+
+    if (appConfig && Object.keys(appConfig).length > 0) {
+      saveAppConfig(appConfig as any);
     }
 
     const response: any = {
@@ -32,9 +46,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json(response);
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     logger.error("[API] Error saving config:", error);
     return NextResponse.json(
-      { error: "Failed to save config" },
+      { error: "Failed to save config", details: message },
       { status: 500 }
     );
   }

@@ -260,28 +260,56 @@ describe('WebSocketClient', () => {
       expect(mockEmit).toHaveBeenCalledWith('testEvent', undefined);
     });
 
-    it('should not send message when not connected', () => {
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    it('should queue message when not connected', () => {
+      const consoleDebugSpy = jest.spyOn(console, 'debug').mockImplementation();
       mockSocket.connected = false;
 
-      client.sendMessage('testEvent');
+      client.sendMessage('testEvent', { data: 'test' });
 
       expect(mockEmit).not.toHaveBeenCalled();
-      expect(consoleWarnSpy).toHaveBeenCalledWith('Socket.IO is not connected');
+      expect(client['messageQueue']).toEqual([{ event: 'testEvent', data: { data: 'test' } }]);
+      expect(consoleDebugSpy).toHaveBeenCalledWith('Message queued (not connected):', 'testEvent');
 
-      consoleWarnSpy.mockRestore();
+      consoleDebugSpy.mockRestore();
     });
 
     it('should not send message when socket is null', () => {
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const consoleDebugSpy = jest.spyOn(console, 'debug').mockImplementation();
       client['socket'] = null;
 
       client.sendMessage('testEvent');
 
       expect(mockEmit).not.toHaveBeenCalled();
-      expect(consoleWarnSpy).toHaveBeenCalledWith('Socket.IO is not connected');
+      expect(client['messageQueue']).toEqual([{ event: 'testEvent', data: undefined }]);
+      expect(consoleDebugSpy).toHaveBeenCalledWith('Message queued (not connected):', 'testEvent');
 
-      consoleWarnSpy.mockRestore();
+      consoleDebugSpy.mockRestore();
+    });
+
+    it('should flush message queue on connection', (done) => {
+      const consoleDebugSpy = jest.spyOn(console, 'debug').mockImplementation();
+      mockSocket.connected = false;
+
+      // Queue some messages
+      client.sendMessage('event1', { data: 'test1' });
+      client.sendMessage('event2', { data: 'test2' });
+      expect(client['messageQueue'].length).toBe(2);
+
+      // Simulate connection
+      mockSocket.connected = true;
+      const connectHandler = mockOn.mock.calls.find(call => call[0] === 'connect')?.[1];
+      if (connectHandler) {
+        connectHandler();
+      }
+
+      setTimeout(() => {
+        expect(client['messageQueue'].length).toBe(0);
+        expect(mockEmit).toHaveBeenCalledWith('event1', { data: 'test1' });
+        expect(mockEmit).toHaveBeenCalledWith('event2', { data: 'test2' });
+        expect(consoleDebugSpy).toHaveBeenCalledWith('Flushing 2 queued messages');
+        consoleDebugSpy.mockRestore();
+        done();
+      }, 10);
     });
   });
 
@@ -379,6 +407,7 @@ describe('WebSocketClient', () => {
   describe('getConnectionState', () => {
     it('should return disconnected when socket is null', () => {
       client['socket'] = null;
+      client['isConnecting'] = false;
 
       const state = client.getConnectionState();
 
@@ -388,6 +417,7 @@ describe('WebSocketClient', () => {
     it('should return connected when socket is connected', () => {
       mockSocket.connected = true;
       client['socket'] = mockSocket;
+      client['isConnecting'] = false;
 
       const state = client.getConnectionState();
 
@@ -397,10 +427,20 @@ describe('WebSocketClient', () => {
     it('should return disconnected when socket is not connected', () => {
       mockSocket.connected = false;
       client['socket'] = mockSocket;
+      client['isConnecting'] = false;
 
       const state = client.getConnectionState();
 
       expect(state).toBe('disconnected');
+    });
+
+    it('should return connecting when isConnecting is true', () => {
+      client['socket'] = mockSocket;
+      client['isConnecting'] = true;
+
+      const state = client.getConnectionState();
+
+      expect(state).toBe('connecting');
     });
   });
 

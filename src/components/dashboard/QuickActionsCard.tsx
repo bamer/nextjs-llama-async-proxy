@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent, Typography, Box, Grid, Button, Divider } from "@mui/material";
+import { Card, CardContent, Typography, Box, Grid, Button, Divider, CircularProgress } from "@mui/material";
 import { Download, PowerSettingsNew } from "@mui/icons-material";
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -11,6 +11,7 @@ interface QuickActionsCardProps {
   onStartServer: () => void;
   serverRunning?: boolean;
   serverLoading?: boolean;
+  downloading?: boolean;
 }
 
 export function QuickActionsCard({
@@ -19,7 +20,8 @@ export function QuickActionsCard({
   onRestartServer,
   onStartServer,
   serverRunning = false,
-  serverLoading = false
+  serverLoading = false,
+  downloading = false
 }: QuickActionsCardProps) {
   const actions: Array<{
     icon: React.ReactNode;
@@ -30,11 +32,12 @@ export function QuickActionsCard({
     disabled?: boolean;
   }> = [
     {
-      icon: <Download />,
-      label: 'Download Logs',
+      icon: downloading ? <CircularProgress size={20} color="inherit" /> : <Download />,
+      label: downloading ? 'Downloading...' : 'Download Logs',
       description: 'Export system logs',
       color: 'info',
       onClick: onDownloadLogs,
+      disabled: downloading,
     },
   ];
 

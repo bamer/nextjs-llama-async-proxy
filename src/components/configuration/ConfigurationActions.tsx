@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Button } from "@mui/material";
+import { Box, Button, CircularProgress } from "@mui/material";
 import { Save } from "@mui/icons-material";
 
 interface ConfigurationActionsProps {
@@ -17,7 +17,7 @@ export function ConfigurationActions({
       <Button
         variant="contained"
         color="primary"
-        startIcon={<Save />}
+        startIcon={isSaving ? <CircularProgress size={20} color="inherit" /> : <Save />}
         onClick={onSave}
         disabled={isSaving}
         size="large"

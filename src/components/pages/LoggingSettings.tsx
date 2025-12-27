@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { useWebSocket } from '@/hooks/use-websocket';
-import { getLoggerConfig, updateLoggerConfig, LoggerConfig } from '@/lib/logger';
+import { getLoggerConfig, updateLoggerConfig, LoggerConfig } from '@/lib/client-logger';
 import { Card, CardContent, Typography, Box, Grid, Divider, 
          TextField, Switch, FormControlLabel, Button, Chip, Slider } from '@mui/material';
 import { m } from 'framer-motion';

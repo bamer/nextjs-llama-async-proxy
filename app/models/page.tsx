@@ -2,41 +2,31 @@
 
 import { MainLayout } from "@/components/layout/main-layout";
 import { useStore } from "@/lib/store";
-import { useEffect, useState } from "react";
-import { Card, CardContent, Typography, Box, Grid, Chip, LinearProgress, Button, IconButton } from "@mui/material";
+import { useState, useEffect } from "react";
+import { Card, CardContent, Typography, Box, Grid, Chip, LinearProgress, Button, IconButton, CircularProgress } from "@mui/material";
 import { useTheme } from "@/contexts/ThemeContext";
 import { PlayArrow, Stop, Refresh, Add } from "@mui/icons-material";
-import { websocketServer } from "@/lib/websocket-client";
+import { useWebSocket } from "@/hooks/use-websocket";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { ModelsFallback } from "@/components/ui/error-fallbacks";
+import { SkeletonCard } from "@/components/ui";
 
 export default function ModelsPage() {
   const models = useStore((state) => state.models);
   const { isDark } = useTheme();
   const [loading, setLoading] = useState<string | null>(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { requestModels } = useWebSocket();
 
   useEffect(() => {
-    // Connect to WebSocket to receive model updates
-    websocketServer.connect();
-
-    const handleModels = (message: { type: string; data: any[] }) => {
-      if (message.type === 'models' && message.data) {
-        useStore.getState().setModels(message.data);
-      }
-    };
-
-    const handleConnect = () => {
-      // Request initial models when connected
-      websocketServer.requestModels();
-    };
-
-    websocketServer.on('message', handleModels);
-    websocketServer.on('connect', handleConnect);
-
-    return () => {
-      websocketServer.off('message', handleModels);
-      websocketServer.off('connect', handleConnect);
-    };
-  }, []);
+    // Request initial models when component mounts
+    requestModels();
+    // Set initial loading to false after a brief delay
+    const timer = setTimeout(() => setIsInitialLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, [requestModels]);
 
   const normalizeStatus = (status: string | { value?: string; args?: unknown; preset?: unknown } | unknown): string => {
     if (typeof status === 'string') {
@@ -134,13 +124,45 @@ export default function ModelsPage() {
   };
 
   const handleRefresh = () => {
-    console.log('Refreshing models list');
-    // In a real app, this would fetch fresh data from the server
+    setRefreshing(true);
+    requestModels();
+    setTimeout(() => setRefreshing(false), 800);
   };
+
+  // Show skeleton loader during initial load
+  if (isInitialLoading && models.length === 0) {
+    return (
+      <MainLayout>
+        <Box sx={{ p: 4 }}>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h3" component="h1" fontWeight="bold" gutterBottom>
+              AI Models Management
+            </Typography>
+            <LinearProgress sx={{ height: 4, borderRadius: 2 }} />
+          </Box>
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+              <SkeletonCard height={200} />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+              <SkeletonCard height={200} />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+              <SkeletonCard height={200} />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+              <SkeletonCard height={200} />
+            </Grid>
+          </Grid>
+        </Box>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
-      <Box sx={{ p: 4 }}>
+      <ErrorBoundary fallback={<ModelsFallback />}>
+        <Box sx={{ p: 4 }}>
         {/* Error message */}
         {error && (
           <Box
@@ -178,17 +200,18 @@ export default function ModelsPage() {
             >
               Add Model
             </Button>
-            <IconButton 
+            <IconButton
               onClick={handleRefresh}
               color="primary"
-              sx={{ 
+              disabled={refreshing}
+              sx={{
                 background: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(13, 158, 248, 0.1)',
                 '&:hover': {
                   background: isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(13, 158, 248, 0.2)'
                 }
               }}
             >
-              <Refresh />
+              {refreshing ? <CircularProgress size={20} /> : <Refresh />}
             </IconButton>
           </Box>
         </Box>
@@ -294,6 +317,7 @@ export default function ModelsPage() {
           </Box>
         )}
       </Box>
+      </ErrorBoundary>
     </MainLayout>
   );
 }

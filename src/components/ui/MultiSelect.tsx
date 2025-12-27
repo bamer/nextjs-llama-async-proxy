@@ -87,6 +87,8 @@ export function MultiSelect<T = string>({
   return (
     <Box sx={{ minWidth: 200, ...sx }}>
       <Select
+        id="log-levels-select"
+        name="log-levels-select"
         multiple
         open={open}
         onClose={() => setOpen(false)}

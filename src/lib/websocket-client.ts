@@ -1,22 +1,31 @@
 import { EventEmitter } from 'events';
 import { io, Socket } from 'socket.io-client';
 
+interface QueuedMessage {
+  event: string;
+  data?: unknown;
+}
+
 class WebSocketClient extends EventEmitter {
   private socket: Socket | null = null;
   private socketId: string | null = null;
+  private messageQueue: QueuedMessage[] = [];
+  private isConnecting: boolean = false;
 
   constructor() {
     super();
   }
 
   connect() {
-    if (this.socket?.connected) {
+    if (this.socket?.connected || this.isConnecting) {
       return;
     }
 
+    this.isConnecting = true;
+
     try {
-      const url = typeof window !== 'undefined' 
-        ? window.location.origin 
+      const url = typeof window !== 'undefined'
+        ? window.location.origin
         : 'http://localhost:3000';
 
       this.socket = io(url, {
@@ -29,8 +38,12 @@ class WebSocketClient extends EventEmitter {
       });
 
       this.socket.on('connect', () => {
+        this.isConnecting = false;
         this.socketId = this.socket?.id || null;
         this.emit('connect');
+
+        // Send queued messages after connection is established
+        this.flushMessageQueue();
       });
 
       this.socket.on('message', (message) => {
@@ -60,11 +73,13 @@ class WebSocketClient extends EventEmitter {
       });
 
       this.socket.on('connect_error', (error) => {
+        this.isConnecting = false;
         console.error('Socket.IO connection error:', error);
         this.emit('connect_error', error);
       });
 
       this.socket.on('disconnect', (reason) => {
+        this.isConnecting = false;
         console.log('Socket.IO disconnected:', reason);
         this.emit('disconnect');
       });
@@ -79,27 +94,45 @@ class WebSocketClient extends EventEmitter {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
+      this.isConnecting = false;
     }
   }
 
-  sendMessage(event: string, data?: any) {
+  sendMessage(event: string, data?: unknown) {
     if (this.socket?.connected) {
       this.socket.emit(event, data);
     } else {
-      console.warn('Socket.IO is not connected');
+      // Queue message if not connected
+      this.messageQueue.push({ event, data });
+      console.debug('Message queued (not connected):', event);
+    }
+  }
+
+  private flushMessageQueue() {
+    if (this.messageQueue.length === 0) {
+      return;
+    }
+
+    console.debug(`Flushing ${this.messageQueue.length} queued messages`);
+
+    while (this.messageQueue.length > 0) {
+      const queued = this.messageQueue.shift();
+      if (queued && this.socket?.connected) {
+        this.socket.emit(queued.event, queued.data);
+      }
     }
   }
 
   requestMetrics() {
-    this.sendMessage('requestMetrics');
+    this.sendMessage('request_metrics', {});
   }
 
   requestLogs() {
-    this.sendMessage('requestLogs');
+    this.sendMessage('request_logs', {});
   }
 
   requestModels() {
-    this.sendMessage('requestModels');
+    this.sendMessage('request_models', {});
   }
 
   requestLlamaStatus() {
@@ -119,6 +152,7 @@ class WebSocketClient extends EventEmitter {
   }
 
   getConnectionState(): string {
+    if (this.isConnecting) return 'connecting';
     if (!this.socket) return 'disconnected';
     return this.socket.connected ? 'connected' : 'disconnected';
   }

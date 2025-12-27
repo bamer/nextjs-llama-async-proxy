@@ -1,4 +1,8 @@
 import { useState, useEffect } from 'react';
+import {
+  loggerSettingsSchema,
+  type LoggerSettings,
+} from '@/lib/validators';
 
 interface LoggerConfig {
   consoleLevel: string;
@@ -8,6 +12,10 @@ interface LoggerConfig {
   maxFiles: string;
   enableFileLogging: boolean;
   enableConsoleLogging: boolean;
+}
+
+interface FieldErrors {
+  [key: string]: string;
 }
 
 const STORAGE_KEY = 'logger-config';
@@ -24,6 +32,7 @@ const DEFAULT_CONFIG: LoggerConfig = {
 
 export function useLoggerConfig() {
   const [config, setConfig] = useState<LoggerConfig>(DEFAULT_CONFIG);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -37,14 +46,50 @@ export function useLoggerConfig() {
     }
   }, []);
 
+  const validateConfig = (configToValidate: Partial<LoggerConfig>): FieldErrors => {
+    const newFieldErrors: FieldErrors = {};
+
+    const loggerSettings = {
+      consoleLevel: (configToValidate.consoleLevel || "info") as "error" | "warn" | "info" | "debug",
+      fileLevel: (configToValidate.fileLevel || "info") as "error" | "warn" | "info" | "debug",
+      errorLevel: (configToValidate.errorLevel || "error") as "error" | "warn",
+      maxFileSize: configToValidate.maxFileSize || "20m",
+      maxFiles: configToValidate.maxFiles || "30d",
+      enableFileLogging: configToValidate.enableFileLogging !== undefined ? configToValidate.enableFileLogging : true,
+      enableConsoleLogging: configToValidate.enableConsoleLogging !== undefined ? configToValidate.enableConsoleLogging : true,
+    };
+
+    const result = loggerSettingsSchema.safeParse(loggerSettings);
+    if (!result.success) {
+      result.error.issues.forEach((error: any) => {
+        const fieldName = error.path[0] as string;
+        newFieldErrors[fieldName] = error.message;
+      });
+    }
+
+    return newFieldErrors;
+  };
+
   const updateConfig = (updates: Partial<LoggerConfig>) => {
     const newConfig = { ...config, ...updates };
+
+    // Validate the config
+    const errors = validateConfig(newConfig);
+    setFieldErrors(errors);
+
     setConfig(newConfig);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newConfig));
     } catch (error) {
       console.error('Failed to save logger config:', error);
     }
+  };
+
+  const clearFieldError = (fieldName: string) => {
+    setFieldErrors((prev) => ({
+      ...prev,
+      [fieldName]: "",
+    }));
   };
 
   const resetConfig = () => {
@@ -69,9 +114,11 @@ export function useLoggerConfig() {
 
   return {
     loggerConfig: config,
+    fieldErrors,
     updateConfig,
     resetConfig,
     applyToLogger,
     loading,
+    clearFieldError,
   };
 }

@@ -10,6 +10,7 @@ import { LlamaServerSettingsTab } from "./LlamaServerSettingsTab";
 import { AdvancedSettingsTab } from "./AdvancedSettingsTab";
 import { LoggerSettingsTab } from "./LoggerSettingsTab";
 import { ConfigurationActions } from "./ConfigurationActions";
+import { SkeletonSettingsForm } from "@/components/ui";
 
 export default function ModernConfiguration() {
   const {
@@ -18,6 +19,7 @@ export default function ModernConfiguration() {
     activeTab,
     formConfig,
     validationErrors,
+    fieldErrors,
     isSaving,
     saveSuccess,
     handleTabChange,
@@ -30,11 +32,8 @@ export default function ModernConfiguration() {
 
   if (loading) {
     return (
-      <Box sx={{ p: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          Loading Configuration...
-        </Typography>
-        <LinearProgress />
+      <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
+        <SkeletonSettingsForm fields={8} />
       </Box>
     );
   }
@@ -55,6 +54,7 @@ export default function ModernConfiguration() {
         <GeneralSettingsTab
           formConfig={formConfig}
           onInputChange={handleInputChange}
+          fieldErrors={fieldErrors.general}
         />
       )}
 
@@ -62,6 +62,7 @@ export default function ModernConfiguration() {
         <LlamaServerSettingsTab
           formConfig={formConfig}
           onLlamaServerChange={handleLlamaServerChange}
+          fieldErrors={fieldErrors.llamaServer}
         />
       )}
 

@@ -4,25 +4,71 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { useStore } from "@/lib/store";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useEffect, useState } from "react";
-import { Card, CardContent, Typography, Box, Chip, TextField, InputAdornment, IconButton, Pagination, Grid } from "@mui/material";
-import { MultiSelect, MultiSelectOption } from "@/components/ui";
+import { Card, CardContent, Typography, Box, Chip, TextField, InputAdornment, IconButton, Pagination, Grid, CircularProgress } from "@mui/material";
+import { MultiSelect, MultiSelectOption, SkeletonLogEntry } from "@/components/ui";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Search, Refresh, Delete, Download } from "@mui/icons-material";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { LogsFallback } from "@/components/ui/error-fallbacks";
 
 export default function LogsPage() {
   const logs = useStore((state) => state.logs);
   const { isDark } = useTheme();
   const { requestLogs, isConnected } = useWebSocket();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedLevels, setSelectedLevels] = useState<Set<string>>(new Set(['error', 'warn', 'info', 'debug']));
+  // Ensure selectedLevels is always initialized with all levels
+  const [selectedLevels, setSelectedLevels] = useState<Set<string>>(() => new Set(['error', 'warn', 'info', 'debug']));
   const [page, setPage] = useState(1);
   const logsPerPage = 20;
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [hasLoadedLogs, setHasLoadedLogs] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
-  // Request logs on mount or when connection is established
+  // Request logs on mount and periodically to ensure fresh data
   useEffect(() => {
-    if (isConnected) {
-      requestLogs();
+    const loadLogs = () => {
+      if (isConnected) {
+        // Initial request
+        requestLogs();
+        setIsInitialLoad(false);
+        setHasLoadedLogs(true);
+        return undefined;
+      }
+      // Try again after a delay if not connected yet
+      if (isInitialLoad) {
+        const retryTimer = setTimeout(() => {
+          if (isConnected) {
+            requestLogs();
+            setIsInitialLoad(false);
+            setHasLoadedLogs(true);
+          }
+        }, 1000);
+        return () => clearTimeout(retryTimer);
+      }
+      return undefined;
+    };
+
+    const cleanup = loadLogs();
+    return cleanup;
+  }, [isConnected, requestLogs, isInitialLoad]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, selectedLevels]);
+
+  // Refresh logs every 15 seconds to keep data current
+  useEffect(() => {
+    if (!isConnected) {
+      return undefined;
     }
+
+    const refreshInterval = setInterval(() => {
+      requestLogs();
+    }, 15000);
+
+    return () => clearInterval(refreshInterval);
   }, [isConnected, requestLogs]);
 
   const getLevelColor = (level: string) => {
@@ -62,7 +108,9 @@ export default function LogsPage() {
                           source.toLowerCase().includes(searchTerm.toLowerCase());
 
     // Handle log level filtering - check if log level is in selected levels
-    const matchesLevel = selectedLevels.has(log.level);
+    // Normalize log level to lowercase for comparison
+    const logLevel = log.level?.toLowerCase() || 'info';
+    const matchesLevel = selectedLevels.has(logLevel);
 
     return matchesSearch && matchesLevel;
   });
@@ -71,6 +119,7 @@ export default function LogsPage() {
 
   const handleClearLogs = () => {
     useStore.getState().clearLogs();
+    setHasLoadedLogs(false);
   };
 
   const logLevelOptions: MultiSelectOption[] = [
@@ -80,14 +129,47 @@ export default function LogsPage() {
     { value: 'debug', label: 'Debug', color: '#4caf50' },
   ];
 
+  // Get status message based on connection and logs state
+  const getStatusMessage = () => {
+    if (selectedLevels.size === 0) {
+      return 'No log levels selected';
+    }
+    if (!isConnected && logs.length === 0) {
+      return 'Connecting to server...';
+    }
+    if (logs.length === 0) {
+      return hasLoadedLogs ? 'No logs available' : 'Loading logs...';
+    }
+    return '';
+  };
+
   const handleRefresh = () => {
     if (isConnected) {
+      setRefreshing(true);
       requestLogs();
+      setHasLoadedLogs(true);
+      setTimeout(() => setRefreshing(false), 800);
+    } else {
+      // Warn user that connection is not available
+      console.warn('Cannot refresh logs: WebSocket not connected');
     }
   };
 
   const handleDownload = () => {
-    console.log('Downloading logs');
+    // Download logs as JSON file
+    setDownloading(true);
+    const logsToDownload = filteredLogs;
+    const dataStr = JSON.stringify(logsToDownload, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `logs-${new Date().toISOString()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setTimeout(() => setDownloading(false), 800);
   };
 
   const getLogTime = (timestamp: string) => {
@@ -96,7 +178,8 @@ export default function LogsPage() {
 
   return (
     <MainLayout>
-      <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
+      <ErrorBoundary fallback={<LogsFallback />}>
+        <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
           <Typography variant="h4" fontWeight="bold">
             Logs
@@ -105,6 +188,8 @@ export default function LogsPage() {
 
         <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'nowrap' }}>
           <TextField
+            id="logs-search-input"
+            name="logs-search-input"
             size="small"
             placeholder="Search logs..."
             value={searchTerm}
@@ -141,9 +226,10 @@ export default function LogsPage() {
             onClick={handleRefresh}
             color="primary"
             size="small"
+            disabled={refreshing}
             title="Refresh logs"
           >
-            <Refresh fontSize="small" />
+            {refreshing ? <CircularProgress size={16} /> : <Refresh fontSize="small" />}
           </IconButton>
           <IconButton
             onClick={handleClearLogs}
@@ -157,17 +243,36 @@ export default function LogsPage() {
             onClick={handleDownload}
             color="info"
             size="small"
+            disabled={downloading}
             title="Download logs"
           >
-            <Download fontSize="small" />
+            {downloading ? <CircularProgress size={16} /> : <Download fontSize="small" />}
           </IconButton>
         </Box>
 
-        {filteredLogs.length === 0 ? (
+        {/* Show skeleton during initial load */}
+        {isInitialLoad && !hasLoadedLogs && filteredLogs.length === 0 ? (
+          <Box
+            sx={{
+              mt: 4,
+              background: isDark ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' : 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)',
+              borderRadius: 2,
+              boxShadow: isDark ? '0 8px 30px rgba(0,0,0,0.3)' : '0 8px 30px rgba(0,0,0,0.1)',
+              p: 4,
+            }}
+          >
+            <SkeletonLogEntry count={10} />
+          </Box>
+        ) : filteredLogs.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 8, mt: 4 }}>
             <Typography variant="body2" color="text.secondary">
-              {selectedLevels.size === 0 ? 'No log levels selected' : 'No logs available'}
+              {getStatusMessage()}
             </Typography>
+            {!isConnected && (
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                Waiting for WebSocket connection...
+              </Typography>
+            )}
           </Box>
         ) : (
           <Box
@@ -260,6 +365,7 @@ export default function LogsPage() {
           />
         </Box>
       </Box>
+      </ErrorBoundary>
     </MainLayout>
   );
 }

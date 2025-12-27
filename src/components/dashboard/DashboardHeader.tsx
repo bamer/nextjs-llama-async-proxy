@@ -1,4 +1,4 @@
-import { Box, Typography, Chip, IconButton, Tooltip } from "@mui/material";
+import { Box, Typography, Chip, IconButton, Tooltip, CircularProgress } from "@mui/material";
 import { Refresh, Settings as SettingsIcon, CloudUpload } from "@mui/icons-material";
 import { m } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 
 interface DashboardHeaderProps {
   isConnected: boolean;
+  connectionState?: string;
+  reconnectionAttempts?: number;
   metrics?: {
     serverStatus?: string;
     cpuUsage?: number;
@@ -13,12 +15,16 @@ interface DashboardHeaderProps {
     uptime?: number;
   } | undefined;
   onRefresh?: () => void;
+  refreshing?: boolean;
 }
 
 export function DashboardHeader({
   isConnected,
+  connectionState = 'disconnected',
+  reconnectionAttempts = 0,
   metrics,
-  onRefresh
+  onRefresh,
+  refreshing = false
 }: DashboardHeaderProps): React.ReactNode {
   const { isDark } = useTheme();
   const router = useRouter();
@@ -57,13 +63,34 @@ export function DashboardHeader({
             />
           )}
           <Chip
-            label={isConnected ? "CONNECTED" : "DISCONNECTED"}
-            color={isConnected ? "success" : "error"}
+            label={
+              connectionState === 'reconnecting'
+                ? `RECONNECTING (${reconnectionAttempts}/${5})...`
+                : connectionState === 'error'
+                ? "CONNECTION ERROR"
+                : isConnected
+                ? "CONNECTED"
+                : "DISCONNECTED"
+            }
+            color={
+              connectionState === 'reconnecting'
+                ? "warning"
+                : connectionState === 'error'
+                ? "error"
+                : isConnected
+                ? "success"
+                : "error"
+            }
             size="small"
             variant="filled"
             sx={{
               fontWeight: "bold",
-              animation: !isConnected ? "pulse 2s infinite" : "none",
+              animation:
+                !isConnected && connectionState !== 'reconnecting'
+                  ? "pulse 2s infinite"
+                  : connectionState === 'reconnecting'
+                  ? "pulse 1s infinite"
+                  : "none",
               "@keyframes pulse": {
                 "0%": { boxShadow: "0 0 0 rgba(255, 82, 82, 0.7)" },
                 "70%": { boxShadow: "0 0 10px rgba(255, 82, 82, 0)" },
@@ -72,8 +99,8 @@ export function DashboardHeader({
             }}
           />
           <Tooltip title="Refresh Dashboard">
-            <IconButton onClick={onRefresh} color="primary">
-              <Refresh />
+            <IconButton onClick={onRefresh} color="primary" disabled={refreshing}>
+              {refreshing ? <CircularProgress size={20} color="inherit" /> : <Refresh />}
             </IconButton>
           </Tooltip>
           <Tooltip title="Open Settings">

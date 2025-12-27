@@ -4,25 +4,28 @@ import { useEffect, useState } from 'react';
 import { useStore } from '@/lib/store';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useChartHistory } from '@/hooks/useChartHistory';
-import { Box, Grid, Typography, LinearProgress, IconButton, Tooltip } from '@mui/material';
+import { Box, Grid, Typography, LinearProgress, IconButton, Tooltip, CircularProgress } from '@mui/material';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Refresh, Settings as SettingsIcon } from '@mui/icons-material';
+import { Refresh, Settings as SettingsIcon, Download } from '@mui/icons-material';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { ModelsListCard } from '@/components/dashboard/ModelsListCard';
 import { QuickActionsCard } from '@/components/dashboard/QuickActionsCard';
 import { PerformanceChart } from '@/components/charts/PerformanceChart';
-import { GPUUMetricsCard } from '@/components/charts/GPUUMetricsCard';
+import { GPUMetricsSection } from '@/components/dashboard/GPUMetricsSection';
+import { Loading, SkeletonMetricCard } from '@/components/ui';
 import { useRouter } from 'next/navigation';
 
 export default function ModernDashboard() {
-  const { isConnected, sendMessage } = useWebSocket();
+  const { isConnected, connectionState, sendMessage, reconnectionAttempts } = useWebSocket();
   const models = useStore((state) => state.models);
   const rawMetrics = useStore((state) => state.metrics);
   const safeMetrics = rawMetrics ? rawMetrics : undefined;
   const [loading, setLoading] = useState(true);
   const [serverLoading, setServerLoading] = useState(false);
   const [serverRunning, setServerRunning] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const chartHistory = useChartHistory();
   const { isDark } = useTheme();
   const router = useRouter();
@@ -33,15 +36,20 @@ export default function ModernDashboard() {
 
     const timer = setTimeout(() => setLoading(false), 1500);
     return () => clearTimeout(timer);
-  }, [sendMessage]);
+  }, [sendMessage, isConnected]);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
+    setRefreshing(true);
     sendMessage('request_metrics', {});
     sendMessage('request_models', {});
+    // Simulate brief loading for better UX
+    setTimeout(() => setRefreshing(false), 800);
   };
 
   const handleDownloadLogs = () => {
+    setDownloading(true);
     sendMessage('download_logs', {});
+    setTimeout(() => setDownloading(false), 800);
   };
 
   const handleRestartServer = () => {
@@ -80,18 +88,41 @@ export default function ModernDashboard() {
 
   if (loading && !safeMetrics) {
     return (
-      <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '50vh' }}>
-        <Typography variant="h4" gutterBottom sx={{ mb: 2 }}>
-          Loading Dashboard...
-        </Typography>
-        <LinearProgress sx={{ width: '50%' }} />
+      <Box sx={{ p: 4, maxWidth: 1600, mx: 'auto' }}>
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" fontWeight="bold" sx={{ mb: 2 }}>
+            Dashboard Overview
+          </Typography>
+          <LinearProgress sx={{ height: 4, borderRadius: 2 }} />
+        </Box>
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+            <SkeletonMetricCard icon="🖥️" />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+            <SkeletonMetricCard icon="💾" />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+            <SkeletonMetricCard icon="💿" />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+            <SkeletonMetricCard icon="🤖" />
+          </Grid>
+        </Grid>
       </Box>
     );
   }
 
   return (
     <Box data-testid="modern-dashboard" sx={{ p: 4, maxWidth: 1600, mx: 'auto' }}>
-      <DashboardHeader isConnected={isConnected} metrics={safeMetrics} onRefresh={handleRefresh} />
+      <DashboardHeader
+        isConnected={isConnected}
+        connectionState={connectionState}
+        reconnectionAttempts={reconnectionAttempts}
+        metrics={safeMetrics}
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+      />
 
       <Typography variant="h5" fontWeight="bold" sx={{ mb: 4 }}>
         Dashboard Overview
@@ -156,6 +187,7 @@ export default function ModernDashboard() {
             onStartServer={handleStartServer}
             serverRunning={serverRunning}
             serverLoading={serverLoading}
+            downloading={downloading}
           />
         </Grid>
       </Grid>
@@ -195,47 +227,16 @@ export default function ModernDashboard() {
             height={350}
           />
         </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
-          {safeMetrics?.gpuUsage ? (
-            <PerformanceChart
-              title="GPU Utilization & Power"
-              description="GPU percentage and power consumption over time"
-              datasets={[
-                {
-                  dataKey: 'gpuUtil',
-                  label: 'GPU Utilization %',
-                  colorDark: '#f472b6',
-                  colorLight: '#dc2626',
-                  valueFormatter: (value) => value !== null ? `${value.toFixed(1)}%` : 'N/A',
-                  data: chartHistory.gpuUtil,
-                },
-                {
-                  dataKey: 'power',
-                  label: 'Power (W)',
-                  colorDark: '#fb923c',
-                  colorLight: '#f97316',
-                  valueFormatter: (value) => value !== null ? `${value.toFixed(1)}W` : 'N/A',
-                  data: chartHistory.power,
-                },
-              ]}
-              isDark={isDark}
-              height={350}
-            />
-          ) : (
-            <GPUUMetricsCard metrics={safeMetrics ? Object.fromEntries(
-              Object.entries({
-                gpuUsage: safeMetrics.gpuUsage,
-                gpuMemoryUsed: safeMetrics.gpuMemoryUsed,
-                gpuMemoryTotal: safeMetrics.gpuMemoryTotal,
-                gpuTemperature: safeMetrics.gpuTemperature,
-                gpuName: safeMetrics.gpuName,
-              }).filter(([_, v]) => v !== undefined)
-            ) : {}} isDark={isDark} />
-          )}
-        </Grid>
-      </Grid>
 
-      <Grid size={{ xs: 12 }}>
+        {/* GPU Metrics Section - Reusable component showing both card and chart */}
+        <GPUMetricsSection
+          metrics={safeMetrics}
+          chartHistory={chartHistory}
+          isDark={isDark}
+        />
+       </Grid>
+
+       <Grid size={{ xs: 12 }}>
         <Box sx={{
           p: 3,
           background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',

@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
 import { useLoggerConfig } from "@/hooks/use-logger-config";
+import {
+  generalSettingsSchema,
+  llamaServerSettingsSchema,
+  loggerSettingsSchema,
+  type GeneralSettings,
+  type LlamaServerSettings,
+  type LoggerSettings,
+} from "@/lib/validators";
 
 interface LlamaServerConfig {
   host: string;
@@ -51,11 +59,22 @@ interface ValidationResult {
   errors?: string[];
 }
 
+interface FieldErrors {
+  general: Record<string, string>;
+  llamaServer: Record<string, string>;
+  logger: Record<string, string>;
+}
+
 export function useConfigurationForm() {
   const { applyToLogger } = useLoggerConfig();
   const [activeTab, setActiveTab] = useState(0);
   const [formConfig, setFormConfig] = useState<FormConfig>({});
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({
+    general: {},
+    llamaServer: {},
+    logger: {},
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
@@ -101,33 +120,56 @@ export function useConfigurationForm() {
 
   const validateConfig = (configToValidate: FormConfig): ValidationResult => {
     const errors: string[] = [];
+    const newFieldErrors: FieldErrors = {
+      general: {},
+      llamaServer: {},
+      logger: {},
+    };
+
+    // Validate General Settings using Zod
+    const generalSettings = {
+      basePath: configToValidate.basePath || "",
+      logLevel: (configToValidate.logLevel || "info") as "error" | "warn" | "info" | "debug",
+      maxConcurrentModels: configToValidate.maxConcurrentModels || 1,
+      autoUpdate: configToValidate.autoUpdate || false,
+      notificationsEnabled: configToValidate.notificationsEnabled !== undefined ? configToValidate.notificationsEnabled : true,
+      llamaServerPath: configToValidate.llamaServerPath || "",
+    };
+
+    const generalResult = generalSettingsSchema.safeParse(generalSettings);
+    if (!generalResult.success) {
+      generalResult.error.issues.forEach((error: any) => {
+        const fieldName = error.path[0] as string;
+        newFieldErrors.general[fieldName] = error.message;
+        errors.push(`General Settings: ${fieldName} - ${error.message}`);
+      });
+    }
+
+    // Validate Llama Server Settings using Zod
     const llamaServer = configToValidate.llamaServer;
+    if (llamaServer) {
+      const llamaServerSettings = {
+        host: llamaServer.host || "",
+        port: llamaServer.port || 8080,
+        basePath: llamaServer.basePath || "",
+        serverPath: llamaServer.serverPath || "",
+        ctx_size: llamaServer.ctx_size || 0,
+        batch_size: llamaServer.batch_size || 512,
+        threads: llamaServer.threads || -1,
+        gpu_layers: llamaServer.gpu_layers || -1,
+      };
 
-    if (!llamaServer || !llamaServer.host || llamaServer.host.trim() === "") {
-      errors.push("Host is required");
-    }
-
-    if (llamaServer && llamaServer.port !== undefined) {
-      if (isNaN(llamaServer.port) || llamaServer.port < 1 || llamaServer.port > 65535) {
-        errors.push("Port must be a valid port number (1-65535)");
+      const llamaServerResult = llamaServerSettingsSchema.safeParse(llamaServerSettings);
+      if (!llamaServerResult.success) {
+        llamaServerResult.error.issues.forEach((error: any) => {
+          const fieldName = error.path[0] as string;
+          newFieldErrors.llamaServer[fieldName] = error.message;
+          errors.push(`Llama Server Settings: ${fieldName} - ${error.message}`);
+        });
       }
     }
 
-    if (!llamaServer || !llamaServer.serverPath || llamaServer.serverPath.trim() === "") {
-      errors.push("Server path is required");
-    }
-
-    if (llamaServer && llamaServer.ctx_size !== undefined) {
-      if (isNaN(llamaServer.ctx_size) || llamaServer.ctx_size < 0) {
-        errors.push("Context size must be a positive number");
-      }
-    }
-
-    if (llamaServer && llamaServer.batch_size !== undefined) {
-      if (isNaN(llamaServer.batch_size) || llamaServer.batch_size < 0) {
-        errors.push("Batch size must be a positive number");
-      }
-    }
+    setFieldErrors(newFieldErrors);
 
     return {
       valid: errors.length === 0,
@@ -145,6 +187,14 @@ export function useConfigurationForm() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    // Clear field error for this field on change
+    setFieldErrors((prev) => ({
+      ...prev,
+      general: {
+        ...prev.general,
+        [name]: "",
+      },
+    }));
   };
 
   const handleLlamaServerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,6 +205,14 @@ export function useConfigurationForm() {
       llamaServer: {
         ...prev.llamaServer,
         [fieldName]: type === "number" ? parseFloat(value) : value,
+      },
+    }));
+    // Clear field error for this field on change
+    setFieldErrors((prev) => ({
+      ...prev,
+      llamaServer: {
+        ...prev.llamaServer,
+        [fieldName]: "",
       },
     }));
   };
@@ -238,6 +296,7 @@ export function useConfigurationForm() {
     activeTab,
     formConfig,
     validationErrors,
+    fieldErrors,
     isSaving,
     saveSuccess,
     isLoadingConfig,

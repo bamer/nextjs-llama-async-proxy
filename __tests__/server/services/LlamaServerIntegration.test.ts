@@ -1,9 +1,14 @@
 import { Server, Socket } from 'socket.io';
 import { LlamaServerIntegration } from '@/server/services/LlamaServerIntegration';
 import { LlamaService, LlamaServerConfig } from '@/server/services/LlamaService';
+import { getWebSocketTransport } from '@/lib/logger';
 
 jest.mock('@/server/services/LlamaService');
 jest.mock('child_process');
+jest.mock('@/lib/logger', () => ({
+  ...jest.requireActual('@/lib/logger'),
+  getWebSocketTransport: jest.fn(),
+}));
 
 const mockedLlamaService = LlamaService as jest.MockedClass<typeof LlamaService>;
 
@@ -391,7 +396,7 @@ describe('LlamaServerIntegration', () => {
       );
     });
 
-    it('should handle download_logs event', async () => {
+    it('should handle download_logs event and return cached logs', async () => {
       let downloadLogsCallback: any;
       const socketOnMock = mockSocket.on as jest.Mock;
       socketOnMock.mockImplementation((event: string, callback: any): any => {
@@ -401,6 +406,11 @@ describe('LlamaServerIntegration', () => {
         return mockSocket;
       });
 
+      // Mock getWebSocketTransport to return logs
+      (getWebSocketTransport as jest.Mock).mockReturnValue({
+        getCachedLogs: () => [{ id: '1', level: 'info', message: 'Test log', timestamp: '2024-01-01' }],
+      });
+
       integration.setupWebSocketHandlers(mockSocket as Socket);
 
       if (downloadLogsCallback) {
@@ -408,9 +418,38 @@ describe('LlamaServerIntegration', () => {
       }
 
       expect(mockSocket.emit).toHaveBeenCalledWith(
-        'error',
+        'logs',
         expect.objectContaining({
-          message: 'Log download not implemented yet',
+          type: 'logs',
+        })
+      );
+    });
+
+    it('should handle downloadLogs event and return cached logs', async () => {
+      let downloadLogsCallback: any;
+      const socketOnMock = mockSocket.on as jest.Mock;
+      socketOnMock.mockImplementation((event: string, callback: any): any => {
+        if (event === 'downloadLogs') {
+          downloadLogsCallback = callback;
+        }
+        return mockSocket;
+      });
+
+      // Mock getWebSocketTransport to return logs
+      (getWebSocketTransport as jest.Mock).mockReturnValue({
+        getCachedLogs: () => [{ id: '1', level: 'info', message: 'Test log', timestamp: '2024-01-01' }],
+      });
+
+      integration.setupWebSocketHandlers(mockSocket as Socket);
+
+      if (downloadLogsCallback) {
+        await downloadLogsCallback();
+      }
+
+      expect(mockSocket.emit).toHaveBeenCalledWith(
+        'logs',
+        expect.objectContaining({
+          type: 'logs',
         })
       );
     });

@@ -4,22 +4,48 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { useStore } from "@/lib/store";
 import { useChartHistory } from '@/hooks/useChartHistory';
 import { useState, useEffect } from "react";
-import { Card, CardContent, Typography, Box, Grid, LinearProgress, Chip, IconButton, Tooltip, Divider } from "@mui/material";
+import { Card, CardContent, Typography, Box, Grid, LinearProgress, Chip, IconButton, Tooltip, Divider, CircularProgress } from "@mui/material";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Refresh, Warning, CheckCircle, Info, Memory, Storage, Timer, NetworkCheck, Computer } from "@mui/icons-material";
 import { PerformanceChart } from '@/components/charts/PerformanceChart';
 import { GPUUMetricsCard } from '@/components/charts/GPUUMetricsCard';
+import { Loading, SkeletonMetricCard } from '@/components/ui';
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { MonitoringFallback } from "@/components/ui/error-fallbacks";
 
 export default function MonitoringPage() {
+  return (
+    <ErrorBoundary fallback={<MonitoringFallback />}>
+      <MonitoringContent />
+    </ErrorBoundary>
+  );
+}
+
+function MonitoringContent() {
   const metrics = useStore((state) => state.metrics);
   const { isDark } = useTheme();
   const chartHistory = useChartHistory();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      if (metrics) {
+        setLoading(false);
+      } else {
+        setLoading(false);
+        setMetricsError("No metrics data available. Check if that /api/metrics endpoint is working.");
+      }
+    }, 5000);
+
     if (metrics) {
       setLoading(false);
+      setMetricsError(null);
+      clearTimeout(timer);
     }
+
+    return () => clearTimeout(timer);
   }, [metrics]);
 
   const getStatusColor = (value: number, threshold: number = 80) => {
@@ -36,6 +62,7 @@ export default function MonitoringPage() {
   };
 
   const handleRefresh = () => {
+    setRefreshing(true);
     console.log('Refreshing monitoring data');
     if (metrics) {
       const updatedMetrics = {
@@ -47,9 +74,10 @@ export default function MonitoringPage() {
       };
       useStore.getState().setMetrics(updatedMetrics);
     }
+    setTimeout(() => setRefreshing(false), 800);
   };
 
-  if (loading || !metrics) {
+  if (!metrics) {
     return (
       <MainLayout>
         <Box sx={{ p: 4 }}>
@@ -74,8 +102,8 @@ export default function MonitoringPage() {
             </Typography>
           </div>
           <Tooltip title="Refresh metrics">
-            <IconButton onClick={handleRefresh} color="primary" size="large">
-              <Refresh fontSize="large" />
+            <IconButton onClick={handleRefresh} color="primary" size="large" disabled={refreshing}>
+              {refreshing ? <CircularProgress size={24} color="inherit" /> : <Refresh fontSize="large" />}
             </IconButton>
           </Tooltip>
         </Box>
@@ -94,17 +122,17 @@ export default function MonitoringPage() {
                   <Typography variant="h6" fontWeight="bold">Memory Usage</Typography>
                 </Box>
                 <Typography variant="h3" fontWeight="bold" mb={1}>
-                  {metrics.memoryUsage}%
+                  {metrics?.memoryUsage ?? 0}%
                 </Typography>
                 <LinearProgress
                   variant="determinate"
-                  value={metrics.memoryUsage}
-                  color={getStatusColor(metrics.memoryUsage, 85)}
+                  value={metrics?.memoryUsage ?? 0}
+                  color={getStatusColor(metrics?.memoryUsage ?? 0, 85)}
                   sx={{ height: '8px', borderRadius: '4px', mb: 1 }}
                 />
                 <Chip
-                  label={metrics.memoryUsage > 85 ? 'High' : metrics.memoryUsage > 70 ? 'Medium' : 'Normal'}
-                  color={getStatusColor(metrics.memoryUsage, 85) as any}
+                  label={(metrics?.memoryUsage ?? 0) > 85 ? 'High' : (metrics?.memoryUsage ?? 0) > 70 ? 'Medium' : 'Normal'}
+                  color={getStatusColor(metrics?.memoryUsage ?? 0, 85) as any}
                   size="small"
                 />
               </CardContent>
@@ -123,17 +151,17 @@ export default function MonitoringPage() {
                   <Typography variant="h6" fontWeight="bold">CPU Usage</Typography>
                 </Box>
                 <Typography variant="h3" fontWeight="bold" mb={1}>
-                  {metrics.cpuUsage}%
+                  {metrics?.cpuUsage ?? 0}%
                 </Typography>
                 <LinearProgress
                   variant="determinate"
-                  value={metrics.cpuUsage}
-                  color={getStatusColor(metrics.cpuUsage, 90)}
+                  value={metrics?.cpuUsage ?? 0}
+                  color={getStatusColor(metrics?.cpuUsage ?? 0, 90)}
                   sx={{ height: '8px', borderRadius: '4px', mb: 1 }}
                 />
                 <Chip
-                  label={metrics.cpuUsage > 90 ? 'High' : metrics.cpuUsage > 60 ? 'Medium' : 'Normal'}
-                  color={getStatusColor(metrics.cpuUsage, 90) as any}
+                  label={(metrics?.cpuUsage ?? 0) > 90 ? 'High' : (metrics?.cpuUsage ?? 0) > 60 ? 'Medium' : 'Normal'}
+                  color={getStatusColor(metrics?.cpuUsage ?? 0, 90) as any}
                   size="small"
                 />
               </CardContent>
@@ -152,17 +180,17 @@ export default function MonitoringPage() {
                   <Typography variant="h6" fontWeight="bold">Disk Usage</Typography>
                 </Box>
                 <Typography variant="h3" fontWeight="bold" mb={1}>
-                  {metrics.diskUsage}%
+                  {metrics?.diskUsage ?? 0}%
                 </Typography>
                 <LinearProgress
                   variant="determinate"
-                  value={metrics.diskUsage}
-                  color={getStatusColor(metrics.diskUsage, 95)}
+                  value={metrics?.diskUsage ?? 0}
+                  color={getStatusColor(metrics?.diskUsage ?? 0, 95)}
                   sx={{ height: '8px', borderRadius: '4px', mb: 1 }}
                 />
                 <Chip
-                  label={metrics.diskUsage > 95 ? 'Critical' : metrics.diskUsage > 80 ? 'High' : 'Normal'}
-                  color={getStatusColor(metrics.diskUsage, 95) as any}
+                  label={(metrics?.diskUsage ?? 0) > 95 ? 'Critical' : (metrics?.diskUsage ?? 0) > 80 ? 'High' : 'Normal'}
+                  color={getStatusColor(metrics?.diskUsage ?? 0, 95) as any}
                   size="small"
                 />
               </CardContent>
@@ -181,16 +209,16 @@ export default function MonitoringPage() {
                   <Typography variant="h6" fontWeight="bold">Available Models</Typography>
                 </Box>
                 <Typography variant="h3" fontWeight="bold" mb={1}>
-                  {metrics.activeModels}
+                  {metrics?.activeModels ?? 0}
                 </Typography>
                 <LinearProgress
                   variant="determinate"
-                  value={(metrics.activeModels / 10) * 100}
+                  value={(metrics?.activeModels ?? 0) / 10 * 100}
                   color="info"
                   sx={{ height: '8px', borderRadius: '4px', mb: 1 }}
                 />
                 <Chip
-                  label={`${metrics.activeModels}/10 models active`}
+                  label={`${metrics?.activeModels ?? 0}/10 models active`}
                   color="info"
                   size="small"
                 />
@@ -237,41 +265,46 @@ export default function MonitoringPage() {
           xAxisType="band"
         />
 
-        {/* GPU Metrics */}
-        {metrics.gpuUsage !== undefined && (
-          <GPUUMetricsCard metrics={metrics} isDark={isDark} />
-        )}
+        {/* GPU Metrics - Show when ANY GPU data is available */}
+        {(metrics?.gpuUsage !== undefined || metrics?.gpuPowerUsage !== undefined || metrics?.gpuMemoryUsage !== undefined) && (
+          <>
+            {/* Show GPU card when gpuUsage or gpuMemory data is available */}
+            {(metrics?.gpuUsage !== undefined || metrics?.gpuMemoryUsage !== undefined) && (
+              <GPUUMetricsCard metrics={metrics} isDark={isDark} />
+            )}
 
-        {/* GPU Power Chart */}
-        {metrics.gpuPowerUsage !== undefined && (
-          <PerformanceChart
-            title="GPU Power & Utilization"
-            description="GPU percentage and power consumption over time"
-            datasets={[
-              {
-                dataKey: 'gpuUtil',
-                label: 'GPU Utilization %',
-                colorDark: '#f472b6',
-                colorLight: '#dc2626',
-                valueFormatter: (value) => value !== null ? `${value.toFixed(1)}%` : 'N/A',
-                yAxisLabel: '%',
-                data: chartHistory.gpuUtil,
-              },
-              {
-                dataKey: 'power',
-                label: 'Power (W)',
-                colorDark: '#fb923c',
-                colorLight: '#f97316',
-                valueFormatter: (value) => value !== null ? `${value.toFixed(1)}W` : 'N/A',
-                yAxisLabel: 'W',
-                data: chartHistory.power,
-              },
-            ]}
-            isDark={isDark}
-            height={250}
-            showAnimation={false}
-            xAxisType="band"
-          />
+            {/* GPU Power & Utilization Chart - Show when ANY GPU data is available */}
+            {(metrics?.gpuUsage !== undefined || metrics?.gpuPowerUsage !== undefined || metrics?.gpuMemoryUsage !== undefined) && (
+              <PerformanceChart
+                title="GPU Power & Utilization"
+                description="GPU percentage and power consumption over time"
+                datasets={[
+                  {
+                    dataKey: 'gpuUtil',
+                    label: 'GPU Utilization %',
+                    colorDark: '#f472b6',
+                    colorLight: '#dc2626',
+                    valueFormatter: (value) => value !== null ? `${value.toFixed(1)}%` : 'N/A',
+                    yAxisLabel: '%',
+                    data: chartHistory.gpuUtil,
+                  },
+                  {
+                    dataKey: 'power',
+                    label: 'Power (W)',
+                    colorDark: '#fb923c',
+                    colorLight: '#f97316',
+                    valueFormatter: (value) => value !== null ? `${value.toFixed(1)}W` : 'N/A',
+                    yAxisLabel: 'W',
+                    data: chartHistory.power,
+                  },
+                ]}
+                isDark={isDark}
+                height={250}
+                showAnimation={false}
+                xAxisType="band"
+              />
+            )}
+          </>
         )}
 
         {/* System Health Summary */}
@@ -291,7 +324,7 @@ export default function MonitoringPage() {
                   <Typography variant="subtitle1" fontWeight="medium">System Uptime</Typography>
                 </Box>
                 <Typography variant="h4" fontWeight="bold" color="success.main" mb={2}>
-                  {formatUptime(metrics.uptime)}
+                  {formatUptime(metrics?.uptime ?? 0)}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <CheckCircle color="success" />
@@ -307,12 +340,12 @@ export default function MonitoringPage() {
                   <Typography variant="subtitle1" fontWeight="medium">Performance Status</Typography>
                 </Box>
                 <Typography variant="h4" fontWeight="bold" color="info.main" mb={2}>
-                  {metrics.avgResponseTime}ms avg
+                  {metrics?.avgResponseTime ?? 0}ms avg
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Info color="info" />
                   <Typography variant="body2" color="text.secondary">
-                    {metrics.totalRequests} requests processed
+                    {metrics?.totalRequests ?? 0} requests processed
                   </Typography>
                 </Box>
               </Grid>
@@ -327,26 +360,26 @@ export default function MonitoringPage() {
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {metrics.memoryUsage > 85 ? <Warning color="error" /> : <CheckCircle color="success" />}
-                  <Typography variant="body2">Memory: {metrics.memoryUsage}%</Typography>
+                  {metrics?.memoryUsage && (metrics.memoryUsage > 85) ? <Warning color="error" /> : <CheckCircle color="success" />}
+                  <Typography variant="body2">Memory: {metrics?.memoryUsage ?? 0}%</Typography>
                 </Box>
               </Grid>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {metrics.cpuUsage > 90 ? <Warning color="error" /> : <CheckCircle color="success" />}
-                  <Typography variant="body2">CPU: {metrics.cpuUsage}%</Typography>
+                  {metrics?.cpuUsage && (metrics.cpuUsage > 90) ? <Warning color="error" /> : <CheckCircle color="success" />}
+                  <Typography variant="body2">CPU: {metrics?.cpuUsage ?? 0}%</Typography>
                 </Box>
               </Grid>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {metrics.diskUsage > 95 ? <Warning color="error" /> : <CheckCircle color="success" />}
-                  <Typography variant="body2">Disk: {metrics.diskUsage}%</Typography>
+                  {metrics?.diskUsage && (metrics.diskUsage > 95) ? <Warning color="error" /> : <CheckCircle color="success" />}
+                  <Typography variant="body2">Disk: {metrics?.diskUsage ?? 0}%</Typography>
                 </Box>
               </Grid>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <CheckCircle color="success" />
-                  <Typography variant="body2">Models: {metrics.activeModels} active</Typography>
+                  <Typography variant="body2">Models: {metrics?.activeModels ?? 0} active</Typography>
                 </Box>
               </Grid>
             </Grid>

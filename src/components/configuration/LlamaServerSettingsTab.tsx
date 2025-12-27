@@ -13,11 +13,13 @@ import { useTheme } from "@/contexts/ThemeContext";
 interface LlamaServerSettingsTabProps {
   formConfig: any;
   onLlamaServerChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  fieldErrors: Record<string, string>;
 }
 
 export function LlamaServerSettingsTab({
   formConfig,
   onLlamaServerChange,
+  fieldErrors,
 }: LlamaServerSettingsTabProps): React.ReactNode {
   const { isDark } = useTheme();
 
@@ -69,7 +71,8 @@ export function LlamaServerSettingsTab({
                   value={formConfig.llamaServer?.host || "127.0.0.1"}
                   onChange={onLlamaServerChange}
                   variant="outlined"
-                  helperText="Server hostname or IP address"
+                  helperText={fieldErrors.host || "Server hostname or IP address"}
+                  error={!!fieldErrors.host}
                   size="small"
                 />
               </Grid>,
@@ -82,7 +85,8 @@ export function LlamaServerSettingsTab({
                   value={formConfig.llamaServer?.port || 8080}
                   onChange={onLlamaServerChange}
                   variant="outlined"
-                  helperText="Server port number"
+                  helperText={fieldErrors.port || "Server port number"}
+                  error={!!fieldErrors.port}
                   size="small"
                 />
               </Grid>,
@@ -99,7 +103,8 @@ export function LlamaServerSettingsTab({
                   value={formConfig.llamaServer?.ctx_size || 4096}
                   onChange={onLlamaServerChange}
                   variant="outlined"
-                  helperText="Maximum context window size"
+                  helperText={fieldErrors.ctx_size || "Maximum context window size"}
+                  error={!!fieldErrors.ctx_size}
                   size="small"
                 />
               </Grid>,
@@ -112,7 +117,8 @@ export function LlamaServerSettingsTab({
                   value={formConfig.llamaServer?.batch_size || 2048}
                   onChange={onLlamaServerChange}
                   variant="outlined"
-                  helperText="Logical maximum batch size"
+                  helperText={fieldErrors.batch_size || "Logical maximum batch size"}
+                  error={!!fieldErrors.batch_size}
                   size="small"
                 />
               </Grid>,
@@ -138,7 +144,8 @@ export function LlamaServerSettingsTab({
                   value={formConfig.llamaServer?.threads || -1}
                   onChange={onLlamaServerChange}
                   variant="outlined"
-                  helperText="CPU threads (-1 = auto)"
+                  helperText={fieldErrors.threads || "CPU threads (-1 = auto)"}
+                  error={!!fieldErrors.threads}
                   size="small"
                 />
               </Grid>,
@@ -155,7 +162,8 @@ export function LlamaServerSettingsTab({
                   value={formConfig.llamaServer?.gpu_layers || -1}
                   onChange={onLlamaServerChange}
                   variant="outlined"
-                  helperText="Layers to offload to GPU (-1 = all)"
+                  helperText={fieldErrors.gpu_layers || "Layers to offload to GPU (-1 = all)"}
+                  error={!!fieldErrors.gpu_layers}
                   size="small"
                 />
               </Grid>,

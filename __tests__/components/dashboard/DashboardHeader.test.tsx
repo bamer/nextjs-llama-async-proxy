@@ -607,5 +607,46 @@ describe("DashboardHeader", () => {
       expect(screen.getByText("Llama Runner Pro Dashboard")).toBeInTheDocument();
       expect(screen.getByText("CONNECTED")).toBeInTheDocument();
     });
+
+    it("displays reconnection attempt count when reconnecting", () => {
+      renderWithProviders(
+        <DashboardHeader
+          isConnected={false}
+          connectionState="reconnecting"
+          reconnectionAttempts={3}
+          metrics={undefined}
+          onRefresh={mockOnRefresh}
+        />
+      );
+
+      expect(screen.getByText("RECONNECTING (3/5)...")).toBeInTheDocument();
+    });
+
+    it("displays connection error when max attempts reached", () => {
+      renderWithProviders(
+        <DashboardHeader
+          isConnected={false}
+          connectionState="error"
+          reconnectionAttempts={5}
+          metrics={undefined}
+          onRefresh={mockOnRefresh}
+        />
+      );
+
+      expect(screen.getByText("CONNECTION ERROR")).toBeInTheDocument();
+    });
+
+    it("defaults reconnection attempts to 0", () => {
+      renderWithProviders(
+        <DashboardHeader
+          isConnected={false}
+          connectionState="disconnected"
+          metrics={undefined}
+          onRefresh={mockOnRefresh}
+        />
+      );
+
+      expect(screen.getByText("DISCONNECTED")).toBeInTheDocument();
+    });
   });
 });

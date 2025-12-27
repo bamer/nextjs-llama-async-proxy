@@ -191,13 +191,45 @@ export class LlamaServerIntegration {
   }
 
   public setupWebSocketHandlers(socket: Socket): void {
+    // Handle both camelCase and snake_case naming for compatibility
     socket.on("requestMetrics", () => {
       this.collectMetrics().then(metrics => {
         socket.emit("metrics", { type: "metrics", data: metrics, timestamp: Date.now() });
       });
     });
 
+    socket.on("request_metrics", () => {
+      this.collectMetrics().then(metrics => {
+        socket.emit("metrics", { type: "metrics", data: metrics, timestamp: Date.now() });
+      });
+    });
+
     socket.on("requestModels", async () => {
+      if (this.llamaService) {
+        const state = this.llamaService.getState();
+        socket.emit("models", {
+          type: "models",
+          data: state.models.map((m: any) => ({
+            id: m.id || m.name,
+            name: m.name,
+            type: m.type || "unknown",
+            status: typeof m.status === 'string'
+              ? (m.status === 'loaded' ? 'running' : m.status)
+              : (m.status && typeof m.status === 'object' && 'value' in m.status
+                ? (m.status.value === 'loaded' ? 'running' : m.status.value)
+                : 'idle'),
+            size: m.size,
+            template: m.template,
+            availableTemplates: m.availableTemplates,
+            createdAt: new Date(m.modified_at * 1000).toISOString(),
+            updatedAt: new Date(m.modified_at * 1000).toISOString(),
+          })),
+          timestamp: Date.now(),
+        });
+      }
+    });
+
+    socket.on("request_models", async () => {
       if (this.llamaService) {
         const state = this.llamaService.getState();
         socket.emit("models", {
@@ -343,6 +375,33 @@ export class LlamaServerIntegration {
       }
     });
 
+    socket.on("request_logs", () => {
+      try {
+        const wsTransport = getWebSocketTransport();
+        if (wsTransport) {
+          const cachedLogs = wsTransport.getCachedLogs();
+          socket.emit("logs", {
+            type: "logs",
+            data: cachedLogs,
+            timestamp: Date.now(),
+          });
+        } else {
+          socket.emit("logs", {
+            type: "logs",
+            data: [],
+            timestamp: Date.now(),
+          });
+        }
+      } catch (error) {
+        logger.error("[WS] Error retrieving logs:", error);
+        socket.emit("logs", {
+          type: "logs",
+          data: [],
+          timestamp: Date.now(),
+        });
+      }
+    });
+
     socket.on("restart_server", async () => {
       try {
         logger.info("[WS] Restarting llama-server...");
@@ -356,12 +415,229 @@ export class LlamaServerIntegration {
       }
     });
 
+    socket.on("restartServer", async () => {
+      try {
+        logger.info("[WS] Restarting llama-server...");
+        await this.llamaService?.stop();
+        await this.llamaService?.start();
+        logger.info("[WS] ✅ Llama-server restarted successfully");
+        socket.emit("serverRestarted", { message: "Server restarted successfully" });
+      } catch (error) {
+        logger.error("[WS] ❌ Failed to restart llama-server:", error);
+        socket.emit("error", { message: "Failed to restart server" });
+      }
+    });
+
+    socket.on("start_llama_server", async () => {
+      try {
+        logger.info("[WS] Starting llama-server...");
+        if (!this.llamaService) {
+          socket.emit("error", { message: "Llama service not available" });
+          return;
+        }
+        await this.llamaService.start();
+        logger.info("[WS] ✅ Llama-server started successfully");
+        socket.emit("serverStarted", { message: "Server started successfully" });
+      } catch (error) {
+        logger.error("[WS] ❌ Failed to start llama-server:", error);
+        socket.emit("error", { message: "Failed to start server" });
+      }
+    });
+
+    socket.on("startLlamaServer", async () => {
+      try {
+        logger.info("[WS] Starting llama-server...");
+        if (!this.llamaService) {
+          socket.emit("error", { message: "Llama service not available" });
+          return;
+        }
+        await this.llamaService.start();
+        logger.info("[WS] ✅ Llama-server started successfully");
+        socket.emit("serverStarted", { message: "Server started successfully" });
+      } catch (error) {
+        logger.error("[WS] ❌ Failed to start llama-server:", error);
+        socket.emit("error", { message: "Failed to start server" });
+      }
+    });
+
+    socket.on("toggle_model", async (data: { modelId: string }) => {
+      try {
+        logger.info(`[WS] Toggling model: ${data.modelId}`);
+
+        if (!this.llamaService) {
+          socket.emit("error", { message: "Llama service not available" });
+          return;
+        }
+
+        const state = this.llamaService.getState();
+        const model = state.models.find((m: LlamaModel) => m.id === data.modelId || m.name === data.modelId);
+
+        if (!model) {
+          socket.emit("error", { message: `Model ${data.modelId} not found` });
+          return;
+        }
+
+        // Check current status - models from llama-server API don't have status in LlamaModel
+        // We need to check the current loaded model state via the API
+        const llamaServerHost = process.env.LLAMA_SERVER_HOST || "localhost";
+        const llamaServerPort = process.env.LLAMA_SERVER_PORT || "8134";
+
+        // Try to start the model by making a chat completion request
+        const response = await fetch(`http://${llamaServerHost}:${llamaServerPort}/v1/chat/completions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: model.name,
+            messages: [{ role: "user", content: "Hi" }],
+            max_tokens: 1,
+          }),
+        });
+
+        if (response.ok) {
+          socket.emit("modelToggled", { modelId: data.modelId, status: "running" });
+          logger.info(`[WS] Model started: ${data.modelId}`);
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          socket.emit("error", { message: `Failed to start model: ${errorData.error || response.statusText}` });
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        logger.error(`[WS] ❌ Failed to toggle model:`, error);
+        socket.emit("error", { message: `Failed to toggle model: ${message}` });
+      }
+    });
+
+    socket.on("toggleModel", async (data: { modelId: string }) => {
+      try {
+        logger.info(`[WS] Toggling model: ${data.modelId}`);
+
+        if (!this.llamaService) {
+          socket.emit("error", { message: "Llama service not available" });
+          return;
+        }
+
+        const state = this.llamaService.getState();
+        const model = state.models.find((m: LlamaModel) => m.id === data.modelId || m.name === data.modelId);
+
+        if (!model) {
+          socket.emit("error", { message: `Model ${data.modelId} not found` });
+          return;
+        }
+
+        // Check current status - models from llama-server API don't have status in LlamaModel
+        // We need to check the current loaded model state via the API
+        const llamaServerHost = process.env.LLAMA_SERVER_HOST || "localhost";
+        const llamaServerPort = process.env.LLAMA_SERVER_PORT || "8134";
+
+        // Try to start the model by making a chat completion request
+        const response = await fetch(`http://${llamaServerHost}:${llamaServerPort}/v1/chat/completions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: model.name,
+            messages: [{ role: "user", content: "Hi" }],
+            max_tokens: 1,
+          }),
+        });
+
+        if (response.ok) {
+          socket.emit("modelToggled", { modelId: data.modelId, status: "running" });
+          logger.info(`[WS] Model started: ${data.modelId}`);
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          socket.emit("error", { message: `Failed to start model: ${errorData.error || response.statusText}` });
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        logger.error(`[WS] ❌ Failed to toggle model:`, error);
+        socket.emit("error", { message: `Failed to toggle model: ${message}` });
+      }
+    });
+
+    socket.on("toggleModel", async (data: { modelId: string }) => {
+      try {
+        logger.info(`[WS] Toggling model: ${data.modelId}`);
+
+        if (!this.llamaService) {
+          socket.emit("error", { message: "Llama service not available" });
+          return;
+        }
+
+        const state = this.llamaService.getState();
+        const model = state.models.find((m: LlamaModel) => m.id === data.modelId || m.name === data.modelId);
+
+        if (!model) {
+          socket.emit("error", { message: `Model ${data.modelId} not found` });
+          return;
+        }
+
+        // Try to start model by making a chat completion request
+        const llamaServerHost = process.env.LLAMA_SERVER_HOST || "localhost";
+        const llamaServerPort = process.env.LLAMA_SERVER_PORT || "8134";
+
+        const response = await fetch(`http://${llamaServerHost}:${llamaServerPort}/v1/chat/completions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: model.name,
+            messages: [{ role: "user", content: "Hi" }],
+            max_tokens: 1,
+          }),
+        });
+
+        if (response.ok) {
+          socket.emit("modelToggled", { modelId: data.modelId, status: "running" });
+          logger.info(`[WS] Model started: ${data.modelId}`);
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          socket.emit("error", { message: `Failed to start model: ${errorData.error || response.statusText}` });
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        logger.error(`[WS] ❌ Failed to toggle model:`, error);
+        socket.emit("error", { message: `Failed to toggle model: ${message}` });
+      }
+    });
+
     socket.on("download_logs", () => {
       try {
         logger.info("[WS] Downloading logs requested");
-        socket.emit("error", { message: "Log download not implemented yet" });
+        const wsTransport = getWebSocketTransport();
+        if (wsTransport) {
+          const cachedLogs = wsTransport.getCachedLogs();
+          socket.emit("logs", {
+            type: "logs",
+            data: cachedLogs,
+            timestamp: Date.now(),
+          });
+          logger.info("[WS] ✅ Logs sent for download");
+        } else {
+          socket.emit("error", { message: "No logs available" });
+        }
       } catch (error) {
         logger.error("[WS] ❌ Failed to download logs:", error);
+        socket.emit("error", { message: "Failed to download logs" });
+      }
+    });
+
+    socket.on("downloadLogs", () => {
+      try {
+        logger.info("[WS] Downloading logs requested");
+        const wsTransport = getWebSocketTransport();
+        if (wsTransport) {
+          const cachedLogs = wsTransport.getCachedLogs();
+          socket.emit("logs", {
+            type: "logs",
+            data: cachedLogs,
+            timestamp: Date.now(),
+          });
+          logger.info("[WS] ✅ Logs sent for download");
+        } else {
+          socket.emit("error", { message: "No logs available" });
+        }
+      } catch (error) {
+        logger.error("[WS] ❌ Failed to download logs:", error);
+        socket.emit("error", { message: "Failed to download logs" });
       }
     });
   }

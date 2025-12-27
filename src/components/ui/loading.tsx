@@ -1,14 +1,15 @@
 "use client";
 
-import { CircularProgress, Box, Typography } from "@mui/material";
+import { CircularProgress, Box, Typography, LinearProgress } from "@mui/material";
 import { m } from "framer-motion";
 
 interface LoadingProps {
   fullScreen?: boolean;
   message?: string;
+  variant?: "circular" | "linear";
 }
 
-export function Loading({ fullScreen = false, message = "Loading..." }: LoadingProps) {
+export function Loading({ fullScreen = false, message = "Loading...", variant = "circular" }: LoadingProps) {
   if (fullScreen) {
     return (
       <Box
@@ -31,15 +32,26 @@ export function Loading({ fullScreen = false, message = "Loading..." }: LoadingP
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <CircularProgress size={60} thickness={4} color="primary" />
-          <Typography
-            variant="h6"
-            mt={3}
-            color="text.secondary"
-            sx={{ fontWeight: 500 }}
-          >
-            {message}
-          </Typography>
+          {variant === "linear" ? (
+            <>
+              <Typography variant="h6" mb={2} color="text.secondary" sx={{ fontWeight: 500 }}>
+                {message}
+              </Typography>
+              <LinearProgress sx={{ width: '60%', height: 8, borderRadius: 4 }} />
+            </>
+          ) : (
+            <>
+              <CircularProgress size={60} thickness={4} color="primary" />
+              <Typography
+                variant="h6"
+                mt={3}
+                color="text.secondary"
+                sx={{ fontWeight: 500 }}
+              >
+                {message}
+              </Typography>
+            </>
+          )}
         </m.div>
       </Box>
     );
@@ -49,21 +61,35 @@ export function Loading({ fullScreen = false, message = "Loading..." }: LoadingP
     <Box
       sx={{
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         py: 4,
+        gap: 2,
       }}
     >
-      <CircularProgress size={40} thickness={4} color="primary" />
-      {message && (
-        <Typography
-          variant="body2"
-          ml={2}
-          color="text.secondary"
-          sx={{ fontWeight: 500 }}
-        >
-          {message}
-        </Typography>
+      {variant === "linear" ? (
+        <>
+          {message && (
+            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+              {message}
+            </Typography>
+          )}
+          <LinearProgress sx={{ width: '60%', height: 4, borderRadius: 2 }} />
+        </>
+      ) : (
+        <>
+          <CircularProgress size={40} thickness={4} color="primary" />
+          {message && (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ fontWeight: 500 }}
+            >
+              {message}
+            </Typography>
+          )}
+        </>
       )}
     </Box>
   );
