@@ -50,7 +50,7 @@ export function MetricCard({
                 {title}
               </Typography>
               <Typography variant="h4" fontWeight="bold">
-                {value.toFixed(1)}
+                {Number.isInteger(value) ? value : value.toFixed(1)}
                 {unit}
               </Typography>
             </Box>

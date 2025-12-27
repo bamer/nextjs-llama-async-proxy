@@ -2,8 +2,9 @@ import { Server, Socket } from "socket.io";
 import { LlamaService, LlamaServerConfig, LlamaModel } from "./LlamaService";
 import { exec } from "child_process";
 import { promisify } from "util";
-import { getWebSocketTransport } from "../../lib/logger";
+import { getWebSocketTransport, getLogger } from "../../lib/logger";
 
+const logger = getLogger();
 const execAsync = promisify(exec);
 
 export interface SystemMetrics {
@@ -47,12 +48,12 @@ export class LlamaServerIntegration {
       });
 
       await this.llamaService.start();
-      console.log("✅ LlamaServer integration initialized");
+      logger.info("✅ LlamaServer integration initialized");
 
       this.startMetricsBroadcast();
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      console.error(`❌ Failed to initialize LlamaServer integration: ${message}`);
+      logger.error(`❌ Failed to initialize LlamaServer integration: ${message}`);
       throw error;
     }
   }
@@ -64,7 +65,7 @@ export class LlamaServerIntegration {
         status: state.status,
         lastError: state.lastError,
         uptime: state.uptime,
-        models: state.models.map((m: LlamaModel) => ({
+        models: state.models.map((m: any) => ({
           id: m.id || m.name,
           name: m.name,
           type: m.type || "unknown",
@@ -74,6 +75,8 @@ export class LlamaServerIntegration {
               ? (m.status.value === 'loaded' ? 'running' : m.status.value)
               : 'idle'),
           size: m.size,
+          template: m.template,
+          availableTemplates: m.availableTemplates,
           createdAt: new Date(m.modified_at * 1000).toISOString(),
           updatedAt: new Date(m.modified_at * 1000).toISOString(),
         })),
@@ -83,7 +86,7 @@ export class LlamaServerIntegration {
 
       this.io.emit("models", {
         type: "models",
-        data: state.models.map((m: LlamaModel) => ({
+        data: state.models.map((m: any) => ({
           id: m.id || m.name,
           name: m.name,
           type: m.type || "unknown",
@@ -93,6 +96,8 @@ export class LlamaServerIntegration {
               ? (m.status.value === 'loaded' ? 'running' : m.status.value)
               : 'idle'),
           size: m.size,
+          template: m.template,
+          availableTemplates: m.availableTemplates,
           createdAt: new Date(m.modified_at * 1000).toISOString(),
           updatedAt: new Date(m.modified_at * 1000).toISOString(),
         })),
@@ -110,7 +115,7 @@ export class LlamaServerIntegration {
       this.io.emit("metrics", { type: "metrics", data: metrics, timestamp: Date.now() });
     }, 3000);
 
-    console.log("📊 Metrics broadcasting started (every 3s)");
+    logger.info("📊 Metrics broadcasting started (every 3s)");
   }
 
   private async collectMetrics(): Promise<SystemMetrics> {
@@ -197,7 +202,7 @@ export class LlamaServerIntegration {
         const state = this.llamaService.getState();
         socket.emit("models", {
           type: "models",
-          data: state.models.map((m: LlamaModel) => ({
+          data: state.models.map((m: any) => ({
             id: m.id || m.name,
             name: m.name,
             type: m.type || "unknown",
@@ -207,6 +212,8 @@ export class LlamaServerIntegration {
                 ? (m.status.value === 'loaded' ? 'running' : m.status.value)
                 : 'idle'),
             size: m.size,
+            template: m.template,
+            availableTemplates: m.availableTemplates,
             createdAt: new Date(m.modified_at * 1000).toISOString(),
             updatedAt: new Date(m.modified_at * 1000).toISOString(),
           })),
@@ -231,19 +238,19 @@ export class LlamaServerIntegration {
     });
 
     socket.on("rescanModels", async () => {
-      console.log("[WS] Rescan models request received");
+      logger.info("[WS] Rescan models request received");
       if (this.llamaService && this.currentConfig) {
         try {
           await this.llamaService.stop();
           await this.llamaService.start();
-          console.log("[WS] ✅ Models rescanned successfully");
+          logger.info("[WS] ✅ Models rescanned successfully");
           socket.emit("llamaStatus", {
             type: "status",
             data: { message: "Models rescanned successfully" },
             timestamp: Date.now(),
           });
         } catch (error) {
-          console.error("[WS] ❌ Failed to rescan models:", error);
+          logger.error("[WS] ❌ Failed to rescan models:", error);
           socket.emit("llamaStatus", {
             type: "error",
             data: { error: "Failed to rescan models" },
@@ -255,8 +262,8 @@ export class LlamaServerIntegration {
 
     socket.on("startModel", async (data: { modelId: string }) => {
       try {
-        console.log(`[WS] Starting model: ${data.modelId}`);
-        
+        logger.info(`[WS] Starting model: ${data.modelId}`);
+
         if (!this.llamaService) {
           socket.emit("error", { message: "Llama service not available" });
           return;
@@ -297,9 +304,9 @@ export class LlamaServerIntegration {
 
     socket.on("stopModel", async (data: { modelId: string }) => {
       try {
-        console.log(`[WS] Stopping model: ${data.modelId}`);
-        
-        socket.emit("modelStopped", { 
+        logger.info(`[WS] Stopping model: ${data.modelId}`);
+
+        socket.emit("modelStopped", {
           modelId: data.modelId,
           message: "llama.cpp auto-manages model memory. Model will be unloaded when loading a different one."
         });
@@ -327,7 +334,7 @@ export class LlamaServerIntegration {
           });
         }
       } catch (error) {
-        console.error("[WS] Error retrieving logs:", error);
+        logger.error("[WS] Error retrieving logs:", error);
         socket.emit("logs", {
           type: "logs",
           data: [],
@@ -338,23 +345,23 @@ export class LlamaServerIntegration {
 
     socket.on("restart_server", async () => {
       try {
-        console.log("[WS] Restarting llama-server...");
+        logger.info("[WS] Restarting llama-server...");
         await this.llamaService?.stop();
         await this.llamaService?.start();
-        console.log("[WS] ✅ Llama-server restarted successfully");
+        logger.info("[WS] ✅ Llama-server restarted successfully");
         socket.emit("serverRestarted", { message: "Server restarted successfully" });
       } catch (error) {
-        console.error("[WS] ❌ Failed to restart llama-server:", error);
+        logger.error("[WS] ❌ Failed to restart llama-server:", error);
         socket.emit("error", { message: "Failed to restart server" });
       }
     });
 
     socket.on("download_logs", () => {
       try {
-        console.log("[WS] Downloading logs requested");
+        logger.info("[WS] Downloading logs requested");
         socket.emit("error", { message: "Log download not implemented yet" });
       } catch (error) {
-        console.error("[WS] ❌ Failed to download logs:", error);
+        logger.error("[WS] ❌ Failed to download logs:", error);
       }
     });
   }
@@ -370,7 +377,7 @@ export class LlamaServerIntegration {
       this.llamaService = null;
     }
 
-    console.log("🛑 LlamaServer integration stopped");
+    logger.info("🛑 LlamaServer integration stopped");
   }
 
   public getLlamaService(): LlamaService | null {

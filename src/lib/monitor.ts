@@ -7,6 +7,9 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { getLogger } from './logger';
+
+const logger = getLogger();
 
 // Path to the persisted history file
 const HISTORY_FILE = path.join(process.cwd(), 'data', 'monitoring-history.json');
@@ -34,7 +37,7 @@ export function writeHistory(history: any[]) {
     fs.writeFileSync(tmp, JSON.stringify(history, null, 2), 'utf8');
     fs.renameSync(tmp, HISTORY_FILE);
   } catch (e) {
-    console.error('Failed to persist monitoring history:', e);
+    logger.error('Failed to persist monitoring history:', e);
   }
 }
 

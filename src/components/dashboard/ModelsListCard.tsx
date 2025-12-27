@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Card, CardContent, Typography, Box, Grid, Chip, LinearProgress, Button } from "@mui/material";
+import { Card, CardContent, Typography, Box, Grid, Chip, LinearProgress, Button, TextField, MenuItem, Select, InputLabel, FormControl } from "@mui/material";
 import { PlayArrow, Stop, MoreVert } from "@mui/icons-material";
 
 interface ModelConfig {
@@ -10,6 +10,8 @@ interface ModelConfig {
   status: 'idle' | 'loading' | 'running' | 'error';
   type: "llama" | "mistral" | "other";
   progress?: number;
+  template?: string;
+  availableTemplates?: string[];
 }
 
 interface ModelsListCardProps {
@@ -20,6 +22,18 @@ interface ModelsListCardProps {
 
 export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCardProps) {
   const [loadingModels, setLoadingModels] = useState<Record<string, boolean>>({});
+  const [selectedTemplates, setSelectedTemplates] = useState<Record<string, string>>({});
+
+  const detectModelType = (modelName: string): 'llama' | 'mistral' | 'other' => {
+    const nameLower = modelName.toLowerCase();
+    if (nameLower.includes('llama') || nameLower.includes('codellama') || nameLower.includes('gemma') || nameLower.includes('granite')) {
+      return 'llama';
+    }
+    if (nameLower.includes('mistral') || nameLower.includes('qwen') || nameLower.includes('nemotron') || nameLower.includes('magnus') || nameLower.includes('fluently')) {
+      return 'mistral';
+    }
+    return 'other';
+  };
 
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -48,7 +62,17 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
       if (model.status === 'running') {
         await fetch(`/api/models/${encodeURIComponent(model.name)}/stop`, { method: 'POST' });
       } else {
-        const response = await fetch(`/api/models/${encodeURIComponent(model.name)}/start`, { method: 'POST' });
+        const selectedTemplate = selectedTemplates[model.name] || model.template;
+        const body: any = {};
+        if (selectedTemplate) {
+          body.template = selectedTemplate;
+        }
+
+        const response = await fetch(`/api/models/${encodeURIComponent(model.name)}/start`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Failed to start model');
       }
@@ -99,9 +123,19 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
                     <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 0.5 }}>
                       {model.name}
                     </Typography>
-                     <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
-                       {model.type}
-                     </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                        {detectModelType(model.name)}
+                      </Typography>
+                      {model.status === 'running' && (
+                        <Chip
+                          label="LOADED"
+                          size="small"
+                          color="success"
+                          sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700, ml: 0.5 }}
+                        />
+                      )}
+                    </Box>
                   </Box>
                   <Chip
                     label={getStatusLabel(model.status)}
@@ -122,6 +156,44 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
                       Loading... {model.progress.toFixed(0)}%
                     </Typography>
                   </Box>
+                )}
+
+                {model.availableTemplates && model.availableTemplates.length > 0 && model.status !== 'running' && (
+                  <Box sx={{ mt: 2 }}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel shrink sx={{ fontSize: '0.75rem' }}>Template</InputLabel>
+                      <Select
+                        value={selectedTemplates[model.name] || model.template || ''}
+                        onChange={(e) => setSelectedTemplates(prev => ({ ...prev, [model.name]: e.target.value as string }))}
+                        label="Template"
+                        size="small"
+                        sx={{
+                          '& .MuiSelect-select': {
+                            fontSize: '0.85rem',
+                            padding: '8px',
+                          },
+                        }}
+                      >
+                        <MenuItem value="">
+                          <em>Default</em>
+                        </MenuItem>
+                        {model.availableTemplates.map((template) => (
+                          <MenuItem key={template} value={template}>
+                            {template}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Box>
+                )}
+
+                {model.template && model.status === 'running' && (
+                  <Chip
+                    label={`Template: ${model.template}`}
+                    size="small"
+                    variant="outlined"
+                    sx={{ mt: 1, fontSize: '0.7rem', height: 20 }}
+                  />
                 )}
 
                 <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>

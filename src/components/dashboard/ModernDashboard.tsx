@@ -21,6 +21,8 @@ export default function ModernDashboard() {
   const rawMetrics = useStore((state) => state.metrics);
   const safeMetrics = rawMetrics ? rawMetrics : undefined;
   const [loading, setLoading] = useState(true);
+  const [serverLoading, setServerLoading] = useState(false);
+  const [serverRunning, setServerRunning] = useState(false);
   const chartHistory = useChartHistory();
   const { isDark } = useTheme();
   const router = useRouter();
@@ -43,11 +45,21 @@ export default function ModernDashboard() {
   };
 
   const handleRestartServer = () => {
+    setServerLoading(true);
     sendMessage('restart_server', {});
+    setTimeout(() => {
+      setServerRunning(true);
+      setServerLoading(false);
+    }, 2000);
   };
 
   const handleStartServer = () => {
+    setServerLoading(true);
     sendMessage('start_llama_server', {});
+    setTimeout(() => {
+      setServerRunning(true);
+      setServerLoading(false);
+    }, 2000);
   };
 
   const handleOpenSettings = () => {
@@ -119,7 +131,7 @@ export default function ModernDashboard() {
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <MetricCard
             title="Active Models"
-            value={safeMetrics?.activeModels || 0}
+            value={models.filter(m => m.status === 'running').length}
             unit="/10"
             icon="🤖"
             isDark={isDark}
@@ -142,6 +154,8 @@ export default function ModernDashboard() {
             onDownloadLogs={handleDownloadLogs}
             onRestartServer={handleRestartServer}
             onStartServer={handleStartServer}
+            serverRunning={serverRunning}
+            serverLoading={serverLoading}
           />
         </Grid>
       </Grid>

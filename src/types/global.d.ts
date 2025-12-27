@@ -58,6 +58,8 @@ declare global {
     status: "idle" | "loading" | "running" | "error";
     createdAt: string;
     updatedAt: string;
+    template?: string;
+    availableTemplates?: string[];
   }
 
   interface SystemMetrics {
@@ -84,6 +86,7 @@ declare global {
     level: "info" | "warn" | "error" | "debug";
     message: string | Record<string, unknown>;
     timestamp: string;
+    source?: string;
     context?: Record<string, unknown>;
   }
 }

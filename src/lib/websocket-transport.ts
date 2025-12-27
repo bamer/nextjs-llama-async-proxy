@@ -12,9 +12,10 @@ export class WebSocketTransport extends Transport {
   private io: Server | null = null;
   private logQueue: LogEntry[] = [];
   private maxQueueSize = 500;
+  private logCounter: number = 0; // Counter to ensure unique IDs
 
   constructor(opts: { io?: Server } = {}) {
-    super(opts);
+    super({});
     this.io = opts.io || null;
   }
 
@@ -42,9 +43,10 @@ export class WebSocketTransport extends Transport {
         message = String(message);
       }
 
-      // Create log entry
+      // Create log entry with unique ID using counter to prevent duplicates
+      this.logCounter++;
       const logEntry: LogEntry = {
-        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: `${Date.now()}-${this.logCounter}-${Math.random().toString(36).substr(2, 9)}`,
         timestamp,
         level: (level as "error" | "warn" | "info" | "debug") || "info",
         message,

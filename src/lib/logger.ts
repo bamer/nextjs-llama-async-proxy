@@ -114,6 +114,12 @@ export function initLogger(config: Partial<LoggerConfig> = {}): Logger {
     exitOnError: false,
   });
 
+  // Increase max listeners to prevent memory leak warnings
+  // Multiple transports + exception/rejection handlers can exceed default limit of 10
+  if (typeof (logger as any).setMaxListeners === 'function') {
+    (logger as any).setMaxListeners(20);
+  }
+
   // Add exception handling
   if (logger.exceptions) {
     logger.exceptions.handle(

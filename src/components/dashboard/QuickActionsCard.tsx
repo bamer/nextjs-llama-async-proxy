@@ -9,15 +9,26 @@ interface QuickActionsCardProps {
   onDownloadLogs: () => void;
   onRestartServer: () => void;
   onStartServer: () => void;
+  serverRunning?: boolean;
+  serverLoading?: boolean;
 }
 
 export function QuickActionsCard({
   isDark,
   onDownloadLogs,
   onRestartServer,
-  onStartServer
+  onStartServer,
+  serverRunning = false,
+  serverLoading = false
 }: QuickActionsCardProps) {
-  const actions = [
+  const actions: Array<{
+    icon: React.ReactNode;
+    label: string;
+    description: string;
+    color: string;
+    onClick: () => void;
+    disabled?: boolean;
+  }> = [
     {
       icon: <Download />,
       label: 'Download Logs',
@@ -25,21 +36,26 @@ export function QuickActionsCard({
       color: 'info',
       onClick: onDownloadLogs,
     },
-    {
+  ];
+
+  if (serverRunning) {
+    actions.push({
       icon: <PowerSettingsNew />,
       label: 'Restart Server',
       description: 'Restart llama-server',
       color: 'warning',
       onClick: onRestartServer,
-    },
-    {
+    });
+  } else {
+    actions.push({
       icon: <PowerSettingsNew />,
-      label: 'Start Server',
+      label: serverLoading ? 'Starting...' : 'Start Server',
       description: 'Start llama-server',
       color: 'success',
       onClick: onStartServer,
-    },
-  ];
+      disabled: serverLoading,
+    });
+  }
 
   return (
     <Card sx={{
@@ -62,6 +78,7 @@ export function QuickActionsCard({
                 color={action.color as any}
                 startIcon={action.icon}
                 onClick={action.onClick}
+                disabled={(action as any).disabled || false}
                 sx={{
                   justifyContent: 'flex-start',
                   p: 1.5,
@@ -70,6 +87,9 @@ export function QuickActionsCard({
                   background: index === 0 ? 'rgba(59, 130, 246, 0.2)' : undefined,
                   '&:hover': {
                     background: index === 0 ? 'rgba(59, 130, 246, 0.3)' : 'rgba(13, 110, 253, 0.1)',
+                  },
+                  '&:disabled': {
+                    opacity: 0.5,
                   },
                 }}
               >

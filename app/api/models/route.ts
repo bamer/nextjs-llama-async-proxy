@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { LlamaService } from "@/server/services/LlamaService";
+import { getLogger } from "@/lib/logger";
+
+const logger = getLogger();
 
 const llamaService: LlamaService | null | undefined = null;
 
@@ -45,7 +48,7 @@ export async function GET(): Promise<NextResponse> {
 
     return NextResponse.json({ models }, { status: 200 });
   } catch (error) {
-    console.error("Error fetching models:", error);
+    logger.error("Error fetching models:", error);
     return NextResponse.json(
       { error: "Failed to fetch models", models: [] },
       { status: 500 }

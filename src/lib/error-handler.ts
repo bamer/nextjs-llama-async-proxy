@@ -1,3 +1,7 @@
+import { getLogger } from './logger';
+
+const logger = getLogger();
+
 export class AppError extends Error {
   constructor(
     public code: string,
@@ -66,5 +70,5 @@ export function isAppError(error: unknown): error is AppError {
 
 export function logError(error: unknown, context?: string): void {
   const appError = handleError(error);
-  console.error(`[${appError.code}] ${context ? `${context}: ` : ''}${appError.message}`, appError.details || '');
+  logger.error(`[${appError.code}] ${context ? `${context}: ` : ''}${appError.message}`, appError.details || '');
 }

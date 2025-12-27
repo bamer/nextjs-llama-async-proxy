@@ -8,6 +8,8 @@ import {
   TextField,
   Switch,
   FormControlLabel,
+  Box,
+  Alert,
 } from "@mui/material";
 import { m } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -44,6 +46,16 @@ export function GeneralSettingsTab({
           <Typography variant="h5" fontWeight="bold" mb={4}>
             General Settings
           </Typography>
+
+          {formConfig.maxConcurrentModels === 1 && (
+            <Alert severity="info" sx={{ mb: 4 }}>
+              <Typography variant="body2">
+                <strong>Single Model Mode:</strong> Only one model can be loaded at a time.
+                Loading a new model will require stopping the currently running one first.
+                Change "Max Concurrent Models" to a higher value for parallel loading.
+              </Typography>
+            </Alert>
+          )}
 
           <Grid container spacing={4}>
             <Grid size={{ xs: 12, md: 6 }}>
@@ -86,10 +98,12 @@ export function GeneralSettingsTab({
                 label="Max Concurrent Models"
                 name="maxConcurrentModels"
                 type="number"
-                value={formConfig.maxConcurrentModels}
+                value={formConfig.maxConcurrentModels || 1}
                 onChange={onInputChange}
                 variant="outlined"
-                helperText="Maximum number of models that can run simultaneously"
+                helperText={formConfig.maxConcurrentModels === 1
+                  ? "Single model mode: Only one model loaded at a time"
+                  : "Parallel mode: Multiple models can be loaded simultaneously"}
                 InputProps={{ inputProps: { min: 1, max: 20 } }}
                 sx={{ mb: 3 }}
               />

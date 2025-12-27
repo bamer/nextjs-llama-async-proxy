@@ -1,4 +1,7 @@
 import { LlamaServiceState, LlamaServiceStatus, LlamaModel } from "./types";
+import { getLogger } from "@/lib/logger";
+
+const logger = getLogger();
 
 export class StateManager {
   private state: LlamaServiceState;
@@ -78,7 +81,7 @@ export class StateManager {
       try {
         callback(this.getState());
       } catch (error) {
-        console.error("Error in state change callback:", error);
+        logger.error("Error in state change callback:", error);
       }
     });
   }

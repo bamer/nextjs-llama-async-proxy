@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { getLogger } from "@/lib/logger";
+
+const logger = getLogger();
 
 export async function POST(
   _request: unknown,
@@ -14,13 +17,13 @@ export async function POST(
       );
     }
 
-    console.log(`[API] Stopping model: ${name}`);
+    logger.info(`[API] Stopping model: ${name}`);
 
     // llama.cpp does not support dynamic model unloading
     // Models are automatically unloaded when switching to a different one
     // Return a message explaining this behavior
-    console.log(`[API] Note: llama.cpp does not support explicit model unloading`);
-    console.log(`[API] Model will be unloaded automatically when loading a different model`);
+    logger.info(`[API] Note: llama.cpp does not support explicit model unloading`);
+    logger.info(`[API] Model will be unloaded automatically when loading a different model`);
 
     return NextResponse.json(
       {
@@ -32,7 +35,7 @@ export async function POST(
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error stopping model:", error);
+    logger.error("Error stopping model:", error);
     return NextResponse.json(
       { error: "Internal server error", status: "error" },
       { status: 500 }

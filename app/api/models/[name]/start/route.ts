@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getLogger } from "@/lib/logger";
+import { loadAppConfig } from "@/lib/server-config";
+
+const logger = getLogger();
 
 export async function POST(
   request: NextRequest,
@@ -14,12 +18,11 @@ export async function POST(
       );
     }
 
-    // Get request body if provided
     const body = await request.json().catch(() => ({}));
+    const selectedTemplate = body.template;
 
-    console.log(`[API] Loading model: ${name}`, body);
+    logger.info(`[API] Loading model: ${name}`, body);
 
-    // Get Llama service from ServiceRegistry
     const globalAny = global as unknown as { registry: any };
     const registry = globalAny.registry as {
       get: (name: string) => {
@@ -34,7 +37,7 @@ export async function POST(
     const llamaService = registry?.get("llamaService");
 
     if (!llamaService) {
-      console.error("[API] LlamaService not available");
+      logger.error("[API] LlamaService not available");
       return NextResponse.json(
         {
           error: "Llama service not initialized",
@@ -45,140 +48,156 @@ export async function POST(
       );
     }
 
-    try {
-      // Get current service state
-      const state = llamaService.getState();
-      console.log(`[API] Current llama-server status: ${state.status}`);
+    const appConfig = loadAppConfig();
+    const maxConcurrent = appConfig.maxConcurrentModels || 1;
+    logger.info(`[API] Max concurrent models setting: ${maxConcurrent}`);
 
-      if (state.status !== "ready") {
-        return NextResponse.json(
-          {
-            error: `Llama server is not ready (status: ${state.status})`,
-            model: name,
-            status: "error",
-          },
-          { status: 503 }
-        );
-      }
+    const state = llamaService.getState();
+    logger.info(`[API] Current llama-server status: ${state.status}`);
 
-      // Try to load the model through the llama-server HTTP API
-      const llamaServerHost = process.env.LLAMA_SERVER_HOST || "localhost";
-      const llamaServerPort = process.env.LLAMA_SERVER_PORT || "8134";
-
-      console.log(
-        `[API] Forwarding model load to llama-server at ${llamaServerHost}:${llamaServerPort}`
-      );
-
-      // Find the model in the discovered models to get its full path
-      const models = state.models || [];
-      const modelData = models.find(
-        (m: { id?: string; name?: string; available?: boolean }) =>
-          m.id === name || m.name === name
-      );
-
-      // Use model name/alias (not path) - llama.cpp uses the alias from models-dir
-      const modelName = modelData?.name || name;
-
-      // Check if model exists in discovered models
-      if (!modelData) {
-        console.warn(`[API] Model ${name} was not found in discovered models`);
-        return NextResponse.json(
-          {
-            error: "Model not found",
-            model: name,
-            status: "not_found",
-            message: "This model is not in the discovered models list. Ensure the model files exist in the models directory.",
-          },
-          { status: 404 }
-        );
-      }
-
-      console.log(`[API] Loading model: ${modelName}`);
-
-      // llama.cpp auto-loads models on first request
-      // Make a minimal completion request to trigger model loading
-      const loadResponse = await fetch(
-        `http://${llamaServerHost}:${llamaServerPort}/v1/chat/completions`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: modelName,
-            messages: [{ role: "user", content: "Hi" }],
-            max_tokens: 1,
-          }),
-        }
-      ).catch((error) => {
-        console.error(
-          `[API] Failed to connect to llama-server: ${error.message}`
-        );
-        return null;
-      });
-
-      if (!loadResponse) {
-        return NextResponse.json(
-          {
-            error:
-              "Failed to connect to llama-server. Make sure it's running on the configured host and port.",
-            model: name,
-            status: "error",
-            debug: {
-              host: llamaServerHost,
-              port: llamaServerPort,
-            },
-          },
-          { status: 503 }
-        );
-      }
-
-      const loadData = await loadResponse.json().catch(() => ({}));
-
-      if (!loadResponse.ok) {
-        console.error(
-          `[API] llama-server returned error: ${loadResponse.status}`,
-          loadData
-        );
-        return NextResponse.json(
-          {
-            error: loadData.error || `Failed to load model (HTTP ${loadResponse.status})`,
-            model: name,
-            status: "error",
-            detail: loadData,
-          },
-          { status: loadResponse.status }
-        );
-      }
-
-      console.log(`[API] Model ${name} loaded successfully`);
+    if (state.status !== "ready") {
       return NextResponse.json(
         {
-          model: name,
-          status: "loaded",
-          message: `Model ${name} loaded successfully`,
-          data: loadData,
-        },
-        { status: 200 }
-      );
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(`[API] Error loading model: ${message}`, error);
-      return NextResponse.json(
-        {
-          error: `Failed to load model: ${message}`,
+          error: `Llama server is not ready (status: ${state.status})`,
           model: name,
           status: "error",
         },
-        { status: 500 }
+        { status: 503 }
       );
     }
+
+    const models = state.models || [];
+    const runningModels = models.filter((m: { status?: string }) =>
+      m.status === 'running' || m.status === 'loaded'
+    );
+
+    logger.info(`[API] Currently running models: ${runningModels.length} (max: ${maxConcurrent})`);
+
+    if (runningModels.length >= maxConcurrent) {
+      const runningModelNames = runningModels.map((m: any) => m.name).join(", ");
+      logger.warn(`[API] Max concurrent models (${maxConcurrent}) reached. Currently running: ${runningModelNames}`);
+      return NextResponse.json(
+        {
+          error: `Maximum concurrent models (${maxConcurrent}) reached. Currently running: ${runningModelNames}`,
+          model: name,
+          status: "error",
+          runningModels: runningModelNames,
+          maxConcurrent,
+          hint: maxConcurrent === 1 ? "Stop the currently running model first, or increase Max Concurrent Models in Settings." : "Increase Max Concurrent Models in Settings to run more models simultaneously.",
+        },
+        { status: 409 }
+      );
+    }
+
+    const llamaServerHost = process.env.LLAMA_SERVER_HOST || "localhost";
+    const llamaServerPort = process.env.LLAMA_SERVER_PORT || "8134";
+
+    logger.info(
+      `[API] Forwarding model load to llama-server at ${llamaServerHost}:${llamaServerPort}`
+    );
+
+    const modelsList = state.models || [];
+    const modelData = modelsList.find(
+      (m: { id?: string; name?: string; available?: boolean }) =>
+        m.id === name || m.name === name
+    );
+
+    const modelName = modelData?.name || name;
+
+    if (!modelData) {
+      logger.warn(`[API] Model ${name} was not found in discovered models`);
+      return NextResponse.json(
+        {
+          error: "Model not found",
+          model: name,
+          status: "not_found",
+          message: "This model is not in the discovered models list. Ensure the model file exists in the models directory.",
+        },
+        { status: 404 }
+      );
+    }
+
+    logger.info(`[API] Loading model: ${modelName} ${selectedTemplate ? `with template: ${selectedTemplate}` : ''}`);
+
+    const requestBody: any = {
+      model: modelName,
+      messages: [{ role: "user", content: "Hi" }],
+      max_tokens: 1,
+    };
+
+    if (selectedTemplate) {
+      requestBody.template = selectedTemplate;
+    }
+
+    const loadResponse = await fetch(
+      `http://${llamaServerHost}:${llamaServerPort}/v1/chat/completions`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      }
+    ).catch((error) => {
+      logger.error(
+        `[API] Failed to connect to llama-server: ${error.message}`
+      );
+      return null;
+    });
+
+    if (!loadResponse) {
+      return NextResponse.json(
+        {
+          error:
+            "Failed to connect to llama-server. Make sure it's running on the configured host and port.",
+          model: name,
+          status: "error",
+          debug: {
+            host: llamaServerHost,
+            port: llamaServerPort,
+          },
+        },
+        { status: 503 }
+      );
+    }
+
+    const loadData = await loadResponse.json().catch(() => ({}));
+
+    if (!loadResponse.ok) {
+      logger.error(
+        `[API] llama-server returned error: ${loadResponse.status}`,
+        loadData
+      );
+      return NextResponse.json(
+        {
+          error: loadData.error || `Failed to load model (HTTP ${loadResponse.status})`,
+          model: name,
+          status: "error",
+          detail: loadData,
+        },
+        { status: loadResponse.status }
+      );
+    }
+
+    logger.info(`[API] Model ${name} loaded successfully`);
+    return NextResponse.json(
+      {
+        model: name,
+        status: "loaded",
+        message: `Model ${name} loaded successfully`,
+        data: loadData,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`[API] Unexpected error: ${message}`, error);
+    logger.error(`[API] Error loading model: ${message}`, error);
     return NextResponse.json(
-      { error: "Internal server error", status: "error", detail: message },
+      {
+        error: `Failed to load model: ${message}`,
+        model: name,
+        status: "error",
+      },
       { status: 500 }
     );
   }
-}

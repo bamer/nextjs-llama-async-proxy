@@ -5,7 +5,9 @@ import express from 'express';
 import LlamaServerIntegration from './src/server/services/LlamaServerIntegration.ts';
 import { registry } from './src/server/ServiceRegistry.ts';
 import { loadConfig } from './src/lib/server-config.ts';
-import { setSocketIOInstance } from './src/lib/logger.ts';
+import { setSocketIOInstance, getLogger } from './src/lib/logger.ts';
+
+const logger = getLogger();
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
@@ -16,18 +18,11 @@ const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 // Make registry available globally for API routes
 global.registry = registry;
 
-const logger = {
-  info: (...args) => console.log('[INFO]', ...args),
-  debug: (...args) => console.debug('[DEBUG]', ...args),
-  error: (...args) => console.error('[ERROR]', ...args),
-  warn: (...args) => console.warn('[WARN]', ...args)
-};
-
 logger.info('🚀 [SOCKET.IO] Initializing Socket.IO server...');
 
 app.prepare().then(() => {
   logger.info('✅ [SOCKET.IO] Next.js app prepared, starting HTTP server...');
-  
+
   const expressApp = express();
   const server = createServer(expressApp);
 
@@ -61,7 +56,7 @@ app.prepare().then(() => {
   io.on('connection', (socket) => {
     const clientId = socket.id;
     clients.set(clientId, socket);
-    
+
     logger.info(`🔌 [SOCKET.IO] New client connected (ID: ${clientId}) - Total clients: ${clients.size}`);
 
     socket.emit('message', {
@@ -98,7 +93,7 @@ app.prepare().then(() => {
 
   server.listen(port, async (err) => {
     if (err) throw err
-    console.log(`> Ready on http://${hostname}:${port}`)
+    logger.info(`> Ready on http://${hostname}:${port}`);
     logger.info(`🚀 [SOCKET.IO] Server listening at http://${hostname}:${port}`);
     logger.info('🚀 [SOCKET.IO] Socket.IO server is ready');
 

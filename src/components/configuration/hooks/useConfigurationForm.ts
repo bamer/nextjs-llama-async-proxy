@@ -12,6 +12,40 @@ interface LlamaServerConfig {
   gpu_layers: number;
 }
 
+interface ModelDefaultsConfig {
+  ctx_size?: number;
+  batch_size?: number;
+  ubatch_size?: number;
+  threads?: number;
+  gpu_layers?: number;
+  main_gpu?: number;
+  temperature?: number;
+  top_k?: number;
+  top_p?: number;
+}
+
+interface GeneralSettingsConfig {
+  basePath?: string;
+  logLevel?: string;
+  maxConcurrentModels?: number;
+  autoUpdate?: boolean;
+  notificationsEnabled?: boolean;
+  llamaServerPath?: string;
+}
+
+interface FormConfig {
+  llamaServer?: Partial<LlamaServerConfig>;
+  modelDefaults?: ModelDefaultsConfig;
+  general?: GeneralSettingsConfig;
+  // Legacy support for direct properties
+  basePath?: string;
+  logLevel?: string;
+  maxConcurrentModels?: number;
+  autoUpdate?: boolean;
+  notificationsEnabled?: boolean;
+  llamaServerPath?: string;
+}
+
 interface ValidationResult {
   valid: boolean;
   errors?: string[];
@@ -20,7 +54,7 @@ interface ValidationResult {
 export function useConfigurationForm() {
   const { applyToLogger } = useLoggerConfig();
   const [activeTab, setActiveTab] = useState(0);
-  const [formConfig, setFormConfig] = useState<Partial<LlamaServerConfig>>({});
+  const [formConfig, setFormConfig] = useState<FormConfig>({});
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -36,19 +70,26 @@ export function useConfigurationForm() {
     try {
       const response = await fetch("/api/config");
       if (response.ok) {
-        const serverConfig = await response.json();
-        // Wrap in llamaServer object for compatibility with form structure
+        const config = await response.json();
+        const { serverConfig, appConfig } = config;
+
         setFormConfig({
           llamaServer: {
-            host: serverConfig.host,
-            port: serverConfig.port,
-            basePath: serverConfig.basePath,
-            serverPath: serverConfig.serverPath,
-            ctx_size: serverConfig.ctx_size,
-            batch_size: serverConfig.batch_size,
-            threads: serverConfig.threads,
-            gpu_layers: serverConfig.gpu_layers,
+            host: serverConfig?.host,
+            port: serverConfig?.port,
+            basePath: serverConfig?.basePath,
+            serverPath: serverConfig?.serverPath,
+            ctx_size: serverConfig?.ctx_size,
+            batch_size: serverConfig?.batch_size,
+            threads: serverConfig?.threads,
+            gpu_layers: serverConfig?.gpu_layers,
           },
+          basePath: serverConfig?.basePath,
+          logLevel: appConfig?.logLevel,
+          maxConcurrentModels: appConfig?.maxConcurrentModels,
+          autoUpdate: appConfig?.autoUpdate,
+          notificationsEnabled: appConfig?.notificationsEnabled,
+          llamaServerPath: serverConfig?.serverPath,
         });
       }
     } catch (error) {
@@ -58,31 +99,32 @@ export function useConfigurationForm() {
     }
   };
 
-  const validateConfig = (configToValidate: Partial<LlamaServerConfig>): ValidationResult => {
+  const validateConfig = (configToValidate: FormConfig): ValidationResult => {
     const errors: string[] = [];
+    const llamaServer = configToValidate.llamaServer;
 
-    if (!configToValidate.host || configToValidate.host.trim() === "") {
+    if (!llamaServer || !llamaServer.host || llamaServer.host.trim() === "") {
       errors.push("Host is required");
     }
 
-    if (configToValidate.port !== undefined) {
-      if (isNaN(configToValidate.port) || configToValidate.port < 1 || configToValidate.port > 65535) {
+    if (llamaServer && llamaServer.port !== undefined) {
+      if (isNaN(llamaServer.port) || llamaServer.port < 1 || llamaServer.port > 65535) {
         errors.push("Port must be a valid port number (1-65535)");
       }
     }
 
-    if (!configToValidate.serverPath || configToValidate.serverPath.trim() === "") {
+    if (!llamaServer || !llamaServer.serverPath || llamaServer.serverPath.trim() === "") {
       errors.push("Server path is required");
     }
 
-    if (configToValidate.ctx_size !== undefined) {
-      if (isNaN(configToValidate.ctx_size) || configToValidate.ctx_size < 0) {
+    if (llamaServer && llamaServer.ctx_size !== undefined) {
+      if (isNaN(llamaServer.ctx_size) || llamaServer.ctx_size < 0) {
         errors.push("Context size must be a positive number");
       }
     }
 
-    if (configToValidate.batch_size !== undefined) {
-      if (isNaN(configToValidate.batch_size) || configToValidate.batch_size < 0) {
+    if (llamaServer && llamaServer.batch_size !== undefined) {
+      if (isNaN(llamaServer.batch_size) || llamaServer.batch_size < 0) {
         errors.push("Batch size must be a positive number");
       }
     }
@@ -139,27 +181,37 @@ export function useConfigurationForm() {
         throw new Error("Validation failed");
       }
 
-      // Save llama-server config to file via API
+      const llamaServer = formConfig.llamaServer || {};
+
+      const payload: any = {
+        serverConfig: {
+          host: llamaServer.host || "127.0.0.1",
+          port: llamaServer.port || 8080,
+          basePath: llamaServer.basePath || "/models",
+          serverPath: llamaServer.serverPath || "/home/bamer/llama.cpp/build/bin/llama-server",
+          ctx_size: llamaServer.ctx_size || 8192,
+          batch_size: llamaServer.batch_size || 512,
+          threads: llamaServer.threads || -1,
+          gpu_layers: llamaServer.gpu_layers || -1,
+        },
+        appConfig: {
+          maxConcurrentModels: formConfig.maxConcurrentModels || 1,
+          logLevel: formConfig.logLevel || "info",
+          autoUpdate: formConfig.autoUpdate || false,
+          notificationsEnabled: formConfig.notificationsEnabled !== undefined ? formConfig.notificationsEnabled : true,
+        },
+      };
+
       const serverConfigResponse = await fetch("/api/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          host: formConfig.host || "127.0.0.1",
-          port: formConfig.port || 8080,
-          basePath: formConfig.basePath || "/models",
-          serverPath: formConfig.serverPath || "/home/bamer/llama.cpp/build/bin/llama-server",
-          ctx_size: formConfig.ctx_size || 8192,
-          batch_size: formConfig.batch_size || 512,
-          threads: formConfig.threads || -1,
-          gpu_layers: formConfig.gpu_layers || -1,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!serverConfigResponse.ok) {
-        throw new Error("Failed to save server config");
+        throw new Error("Failed to save config");
       }
 
-      // Apply logger configuration to backend
       applyToLogger();
 
       setSaveSuccess(true);

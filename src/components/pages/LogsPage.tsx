@@ -4,14 +4,6 @@ import { useState, useEffect } from 'react';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useStore } from '@/lib/store';
 
-interface LogEntry {
-  level: 'info' | 'warn' | 'error' | 'debug';
-  message: string;
-  timestamp: string;
-  source?: string;
-  context?: { source?: string };
-}
-
 const LogsPage = () => {
   const { requestLogs, isConnected } = useWebSocket();
   const logs = useStore((state) => state.logs);
@@ -29,9 +21,10 @@ const LogsPage = () => {
 
 
   const filteredLogs = logs.filter((log) => {
-    const source = log.source || log.context?.source || 'application';
+    const source = log.source || (typeof log.context?.source === 'string' ? log.context.source : 'application');
+    const messageText = typeof log.message === 'string' ? log.message : JSON.stringify(log.message);
     const matchesText =
-      log.message.toLowerCase().includes(filterText.toLowerCase()) ||
+      messageText.toLowerCase().includes(filterText.toLowerCase()) ||
       source.toLowerCase().includes(filterText.toLowerCase());
     const matchesLevel = selectedLevel === 'all' || log.level === selectedLevel;
     return matchesText && matchesLevel;
@@ -124,20 +117,21 @@ const LogsPage = () => {
                {logs.length === 0 ? 'No logs available' : 'No logs match the selected filters'}
              </div>
            ) : (
-             filteredLogs.map((log, index) => {
-               const source = log.source || log.context?.source || 'application';
-               return (
-                 <div key={index} className={`p-3 border rounded-md ${getLogLevelColor(log.level)} transition-all hover:shadow-sm`}>
-                   <div className="flex justify-between items-start">
-                     <span className={`font-mono ${getLogLevelTextColor(log.level)} font-medium`}>
-                       {log.level.toUpperCase()} - {new Date(log.timestamp).toLocaleTimeString()}
-                     </span>
-                     <span className="text-xs opacity-60 ml-2 flex-shrink-0">{source}</span>
+               filteredLogs.map((log, index) => {
+                 const source = log.source || (typeof log.context?.source === 'string' ? log.context.source : 'application');
+                 const messageText = typeof log.message === 'string' ? log.message : JSON.stringify(log.message);
+                 return (
+                   <div key={index} className={`p-3 border rounded-md ${getLogLevelColor(log.level)} transition-all hover:shadow-sm`}>
+                     <div className="flex justify-between items-start">
+                       <span className={`font-mono ${getLogLevelTextColor(log.level)} font-medium`}>
+                         {log.level.toUpperCase()} - {new Date(log.timestamp).toLocaleTimeString()}
+                       </span>
+                       <span className="text-xs opacity-60 ml-2 flex-shrink-0">{source}</span>
+                     </div>
+                     <p className="mt-2 font-mono text-sm leading-relaxed">{messageText}</p>
                    </div>
-                   <p className="mt-2 font-mono text-sm leading-relaxed">{log.message}</p>
-                 </div>
-               );
-             })
+                 );
+               })
            )}
          </div>
       </div>

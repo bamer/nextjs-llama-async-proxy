@@ -1,16 +1,18 @@
-import { NextResponse } from "next/server";
-import { NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
+import { getLogger } from "@/lib/logger";
+
+const logger = getLogger();
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    console.log("[API] Rescanning models - restarting llama-server...");
+    logger.info("[API] Rescanning models - restarting llama-server...");
 
     // Get config from request body (client sends its current config from Settings)
     const body = await request.json().catch(() => ({}));
-    
+
     const llamaConfig = {
       host: body.host || process.env.LLAMA_SERVER_HOST || 'localhost',
-      port: body.port ? parseInt(String(body.port), 10) : 
+      port: body.port ? parseInt(String(body.port), 10) :
               parseInt(process.env.LLAMA_SERVER_PORT || '8134', 10),
       basePath: body.modelsPath || process.env.MODELS_PATH || '/models',
       serverPath: body.llamaServerPath || process.env.LLAMA_SERVER_PATH || '/home/bamer/llama.cpp/build/bin/llama-server',
@@ -38,14 +40,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     await llamaIntegration.stop();
     await llamaIntegration.initialize(llamaConfig);
 
-    console.log("[API] ✅ Models rescanned successfully with config:", llamaConfig);
+    logger.info("[API] ✅ Models rescanned successfully with config:", llamaConfig);
 
     return NextResponse.json(
       { message: "Models rescanned successfully", config: llamaConfig },
       { status: 200 }
     );
   } catch (error) {
-    console.error("[API] Error rescanning models:", error);
+    logger.error("[API] Error rescanning models:", error);
     return NextResponse.json(
       { error: "Failed to rescan models" },
       { status: 500 }

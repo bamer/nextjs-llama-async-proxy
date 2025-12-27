@@ -3,6 +3,9 @@ import axios from "axios";
 import type { AxiosInstance } from "axios";
 import fs from "fs";
 import path from "path";
+import { getLogger } from "@/lib/logger";
+
+const logger = getLogger();
 
 export interface LlamaServerConfig {
   host: string;
@@ -39,6 +42,8 @@ export interface LlamaModel {
   size: number;
   type: string;
   modified_at: number;
+  path: string;
+  availableTemplates?: string[];
 }
 
 export type LlamaServiceStatus =
@@ -338,19 +343,112 @@ export class LlamaService {
     }
   }
 
-  /**
-   * Fallback: Load models by scanning the filesystem
-   */
-  private loadModelsFromFilesystem(): void {
-    try {
-      if (!this.config.basePath) {
+
+
+      this.logger(
+        "info",
+        `📂 Fallback: Scanning filesystem for models in: ${this.config.basePath}`
+      );
+
+      if (!fs.existsSync(this.config.basePath)) {
         this.logger(
           "warn",
-          "⚠️ No basePath configured. Cannot discover models."
+          `⚠️ Models directory not found: ${this.config.basePath}`
         );
         this.state.models = [];
         return;
       }
+
+      const files = fs.readdirSync(this.config.basePath);
+      const builtinTemplates = ["chatml", "alpaca", "vicuna", "llama-2", "llama-3", "chatml-falcon", "zephyr"];
+
+      const models: Array<{ name: string; path: string; size: number; modified_at: number }> = [];
+
+      files.forEach((file) => {
+        const fullPath = path.join(this.config.basePath || "", file);
+        const stats = fs.statSync(fullPath);
+
+        if (stats.isDirectory()) {
+          const dirFiles = fs.readdirSync(fullPath);
+          const ggufFile = dirFiles.find((f) => f.endsWith(".gguf") || f.endsWith(".bin"));
+
+          if (ggufFile) {
+            models.push({
+              name: file,
+              path: path.join(fullPath, ggufFile),
+              size: fs.statSync(path.join(fullPath, ggufFile)).size,
+              modified_at: Math.floor(stats.mtimeMs / 1000),
+            });
+          }
+        }
+      });
+
+      this.state.models = models.map((model) => {
+        const modelName = model.name;
+        const availableTemplates = [...builtinTemplates];
+
+        const modelDirPath = path.join(this.config.basePath, modelName);
+
+        if (fs.existsSync(modelDirPath)) {
+          const dirFiles = fs.readdirSync(modelDirPath);
+          dirFiles.forEach((file) => {
+            const templateName = file.replace(/\.jinja$/i, "");
+            if (!availableTemplates.includes(templateName) && (templateName.toLowerCase() === modelName.toLowerCase() ||
+                templateName.toLowerCase().includes(modelName.toLowerCase()) ||
+                templateName.toLowerCase().includes("chat"))) {
+              availableTemplates.push(templateName);
+            }
+          });
+
+          const matchingTemplate = availableTemplates.find((t) => {
+            const templateFile = `${t}.jinja`;
+            return fs.existsSync(path.join(modelDirPath, templateFile));
+          });
+
+          return {
+            id: modelName,
+            name: modelName,
+            path: model.path,
+            size: model.size,
+            type: model.path.endsWith(".gguf") ? "gguf" : "bin",
+            modified_at: model.modified_at,
+            availableTemplates: availableTemplates.length > 0 ? availableTemplates : undefined,
+            template: matchingTemplate || undefined,
+          };
+        }
+
+        return {
+          id: modelName,
+          name: modelName,
+          path: model.path,
+          size: model.size,
+          type: model.path.endsWith(".gguf") ? "gguf" : "bin",
+          modified_at: model.modified_at,
+          availableTemplates: undefined,
+          template: undefined,
+        };
+      });
+
+      this.logger(
+        "info",
+        `✅ Loaded ${this.state.models.length} model(s) from filesystem`
+      );
+
+      this.state.models.forEach((model) => {
+        this.logger(
+          "info",
+          `  - ${model.name} (${(model.size / 1024 / 1024 / 1024).toFixed(2)} GB)` +
+            (model.availableTemplates ? ` with ${model.availableTemplates.length} template(s)` : "")
+        );
+      });
+
+      this.emitStateChange();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger("warn", `Failed to load models from filesystem: ${message}`);
+      this.state.models = [];
+    }
+  }
 
       this.logger(
         "info",
@@ -403,6 +501,125 @@ export class LlamaService {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : String(error);
+      this.logger("warn", `Failed to load models from filesystem: ${message}`);
+      this.state.models = [];
+    }
+  }
+
+  /**
+   * Fallback: Load models by scanning filesystem (with template detection)
+   */
+  private loadModelsFromFilesystem(): void {
+    try {
+      if (!this.config.basePath) {
+        this.logger(
+          "warn",
+          "⚠️ No basePath configured. Cannot discover models."
+        );
+        this.state.models = [];
+        return;
+      }
+
+      this.logger(
+        "info",
+        `📂 Fallback: Scanning filesystem for models in: ${this.config.basePath}`
+      );
+
+      if (!fs.existsSync(this.config.basePath)) {
+        this.logger(
+          "warn",
+          `⚠️ Models directory not found: ${this.config.basePath}`
+        );
+        this.state.models = [];
+        return;
+      }
+
+      const files = fs.readdirSync(this.config.basePath);
+      const builtinTemplates = ["chatml", "alpaca", "vicuna", "llama-2", "llama-3", "chatml-falcon", "zephyr"];
+
+      const models: Array<{ name: string; path: string; size: number; modified_at: number }> = [];
+
+      files.forEach((file) => {
+        const fullPath = path.join(this.config.basePath || "", file);
+        const stats = fs.statSync(fullPath);
+
+        if (stats.isDirectory()) {
+          const dirFiles = fs.readdirSync(fullPath);
+          const ggufFile = dirFiles.find((f) => f.endsWith(".gguf") || f.endsWith(".bin"));
+
+          if (ggufFile) {
+            models.push({
+              name: file,
+              path: path.join(fullPath, ggufFile),
+              size: fs.statSync(path.join(fullPath, ggufFile)).size,
+              modified_at: Math.floor(stats.mtimeMs / 1000),
+            });
+          }
+        }
+      });
+
+      this.state.models = models.map((model) => {
+        const modelName = model.name;
+        const availableTemplates = [...builtinTemplates];
+
+        const modelDirPath = path.join(this.config.basePath, modelName);
+
+        if (fs.existsSync(modelDirPath)) {
+          const dirFiles = fs.readdirSync(modelDirPath);
+          dirFiles.forEach((file) => {
+            const templateName = file.replace(/\.jinja$/i, "");
+            if (!availableTemplates.includes(templateName) && (templateName.toLowerCase() === modelName.toLowerCase() ||
+                  templateName.toLowerCase().includes(modelName.toLowerCase()) ||
+                  templateName.toLowerCase().includes("chat"))) {
+              availableTemplates.push(templateName);
+            }
+          });
+
+          const matchingTemplate = availableTemplates.find((t) => {
+            const templateFile = `${t}.jinja`;
+            return fs.existsSync(path.join(modelDirPath, templateFile));
+          });
+
+          return {
+            id: modelName,
+            name: modelName,
+            path: model.path,
+            size: model.size,
+            type: model.path.endsWith(".gguf") ? "gguf" : "bin",
+            modified_at: model.modified_at,
+            availableTemplates: availableTemplates.length > 0 ? availableTemplates : undefined,
+            template: matchingTemplate || undefined,
+          };
+        }
+
+        return {
+          id: modelName,
+          name: modelName,
+          path: model.path,
+          size: model.size,
+          type: model.path.endsWith(".gguf") ? "gguf" : "bin",
+          modified_at: model.modified_at,
+          availableTemplates: undefined,
+          template: undefined,
+        };
+      });
+
+      this.logger(
+        "info",
+        `✅ Loaded ${this.state.models.length} model(s) from filesystem`
+      );
+
+      this.state.models.forEach((model) => {
+        this.logger(
+          "info",
+          `  - ${model.name} (${(model.size / 1024 / 1024 / 1024).toFixed(2)} GB)` +
+            (model.availableTemplates ? ` with ${model.availableTemplates.length} template(s)` : "")
+        );
+      });
+
+      this.emitStateChange();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       this.logger("warn", `Failed to load models from filesystem: ${message}`);
       this.state.models = [];
     }
@@ -685,27 +902,24 @@ export class LlamaService {
   }
 
   /**
-   * Logging utility
-   */
+    * Logging utility
+    */
   private logger(
     level: "info" | "warn" | "error" | "debug",
     message: string
   ): void {
-    const timestamp = new Date().toISOString();
-    const prefix = `[${timestamp}] [LlamaService] ${message}`;
-
     switch (level) {
       case "info":
-        console.log(prefix);
+        logger.info(`[LlamaService] ${message}`);
         break;
       case "warn":
-        console.warn(prefix);
+        logger.warn(`[LlamaService] ${message}`);
         break;
       case "error":
-        console.error(prefix);
+        logger.error(`[LlamaService] ${message}`);
         break;
       case "debug":
-        console.debug(prefix);
+        logger.debug(`[LlamaService] ${message}`);
         break;
     }
   }

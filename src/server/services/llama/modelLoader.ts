@@ -29,7 +29,7 @@ export class ModelLoader {
           return modelsData.map((model) => ({
             id: model.id || model.name,
             name: model.id || model.name,
-            path: (model as any).path,
+            path: model.path,
             size: model.size || 0,
             type: model.type || "unknown",
             modified_at: Math.floor(Date.now() / 1000),
