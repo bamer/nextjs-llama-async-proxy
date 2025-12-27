@@ -38,6 +38,20 @@ const MockPaper = ({ children, ...props }: any) => React.createElement('div', pr
 const MockContainer = ({ children, ...props }: any) => React.createElement('div', props, children);
 const MockStack = ({ children, ...props }: any) => React.createElement('div', props, children);
 
+// Mock MuiThemeProvider (wraps children with a div)
+const MockMuiThemeProvider = ({ children, ...props }: any) => React.createElement('div', props, children);
+// Mock CssBaseline (renders nothing, just a div)
+const MockCssBaseline = (props: any) => React.createElement('div', props);
+
+// Mock createTheme function
+const createTheme = (theme: any) => ({ ...theme, _isMock: true });
+
+export const muiStyles = {
+  ThemeProvider: MockMuiThemeProvider,
+  createTheme,
+  responsiveFontSizes: (theme: any) => theme,
+};
+
 export const muiMocks = {
   Box: MockBox,
   Grid: MockGrid,
@@ -76,6 +90,9 @@ export const muiMocks = {
   Paper: MockPaper,
   Container: MockContainer,
   Stack: MockStack,
+  CssBaseline: MockCssBaseline,
+  // Mock useMediaQuery hook
+  useMediaQuery: jest.fn(() => false),
 };
 
 const iconNames = [

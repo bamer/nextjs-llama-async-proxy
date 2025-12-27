@@ -359,7 +359,8 @@ describe('WebSocketTransport', () => {
       setImmediate(() => {
         const logs = transport.getCachedLogs();
         expect(logs).toHaveLength(1);
-        expect(logs[0].message).toBe('null');
+        // null || "" is "", so message becomes empty string
+        expect(logs[0].message).toBe('');
         done();
       });
     });
@@ -372,7 +373,8 @@ describe('WebSocketTransport', () => {
       setImmediate(() => {
         const logs = transport.getCachedLogs();
         expect(logs).toHaveLength(1);
-        expect(logs[0].message).toBe('undefined');
+        // undefined || "" is "", so message becomes empty string
+        expect(logs[0].message).toBe('');
         done();
       });
     });

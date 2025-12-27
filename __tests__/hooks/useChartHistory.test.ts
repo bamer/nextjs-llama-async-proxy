@@ -249,6 +249,52 @@ describe('useChartHistory', () => {
     );
   });
 
+  // Positive: Test branch where gpuUsage is defined (line 36)
+  it('should add gpuUtil on interval when gpuUsage is defined', () => {
+    useStore.mockImplementation((selector: any) => {
+      const state = {
+        metrics: { cpuUsage: 75, memoryUsage: 50, totalRequests: 100, gpuUsage: 80 },
+        chartHistory: { cpu: [], memory: [], requests: [], gpuUtil: [], power: [] },
+        addChartData: mockAddChartData,
+      };
+      return selector(state);
+    });
+
+    renderHook(() => useChartHistory());
+
+    const initialCallCount = mockAddChartData.mock.calls.length;
+
+    act(() => {
+      jest.advanceTimersByTime(10000);
+    });
+
+    expect(mockAddChartData.mock.calls.length).toBeGreaterThan(initialCallCount);
+    expect(mockAddChartData).toHaveBeenCalledWith('gpuUtil', 80);
+  });
+
+  // Positive: Test branch where gpuPowerUsage is defined (line 40)
+  it('should add power on interval when gpuPowerUsage is defined', () => {
+    useStore.mockImplementation((selector: any) => {
+      const state = {
+        metrics: { cpuUsage: 75, memoryUsage: 50, totalRequests: 100, gpuPowerUsage: 200 },
+        chartHistory: { cpu: [], memory: [], requests: [], gpuUtil: [], power: [] },
+        addChartData: mockAddChartData,
+      };
+      return selector(state);
+    });
+
+    renderHook(() => useChartHistory());
+
+    const initialCallCount = mockAddChartData.mock.calls.length;
+
+    act(() => {
+      jest.advanceTimersByTime(10000);
+    });
+
+    expect(mockAddChartData.mock.calls.length).toBeGreaterThan(initialCallCount);
+    expect(mockAddChartData).toHaveBeenCalledWith('power', 200);
+  });
+
   it('should add all basic metrics data', () => {
     useStore.mockImplementation((selector: any) => {
       const state = {
@@ -500,5 +546,51 @@ describe('useChartHistory', () => {
     expect(result.current).toHaveProperty('gpuUtil');
     expect(result.current).toHaveProperty('power');
     expect(result.current.cpu).toEqual(history.cpu);
+  });
+
+  // Positive: Test branch where gpuUsage is defined (line 36)
+  it('should add gpuUtil on interval when gpuUsage is defined', () => {
+    useStore.mockImplementation((selector) => {
+      const state = {
+        metrics: { cpuUsage: 75, memoryUsage: 50, totalRequests: 100, gpuUsage: 80 },
+        chartHistory: { cpu: [], memory: [], requests: [], gpuUtil: [], power: [] },
+        addChartData: mockAddChartData,
+      };
+      return selector(state);
+    });
+
+    renderHook(() => useChartHistory());
+
+    const initialCallCount = mockAddChartData.mock.calls.length;
+
+    act(() => {
+      jest.advanceTimersByTime(10000);
+    });
+
+    expect(mockAddChartData.mock.calls.length).toBeGreaterThan(initialCallCount);
+    expect(mockAddChartData).toHaveBeenCalledWith('gpuUtil', 80);
+  });
+
+  // Positive: Test branch where gpuPowerUsage is defined (line 40)
+  it('should add power on interval when gpuPowerUsage is defined', () => {
+    useStore.mockImplementation((selector) => {
+      const state = {
+        metrics: { cpuUsage: 75, memoryUsage: 50, totalRequests: 100, gpuPowerUsage: 200 },
+        chartHistory: { cpu: [], memory: [], requests: [], gpuUtil: [], power: [] },
+        addChartData: mockAddChartData,
+      };
+      return selector(state);
+    });
+
+    renderHook(() => useChartHistory());
+
+    const initialCallCount = mockAddChartData.mock.calls.length;
+
+    act(() => {
+      jest.advanceTimersByTime(10000);
+    });
+
+    expect(mockAddChartData.mock.calls.length).toBeGreaterThan(initialCallCount);
+    expect(mockAddChartData).toHaveBeenCalledWith('power', 200);
   });
 });
