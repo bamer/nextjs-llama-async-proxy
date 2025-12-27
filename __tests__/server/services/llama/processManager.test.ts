@@ -17,7 +17,15 @@ describe('ProcessManager', () => {
       pid: 12345,
       killed: false,
       kill: jest.fn(),
-      on: jest.fn(),
+      on: jest.fn((event: string, callback: any) => {
+        if ((mockProcess as any).listeners === undefined) {
+          (mockProcess as any).listeners = new Map<string, any[]>();
+        }
+        if (!(mockProcess as any).listeners.has(event)) {
+          (mockProcess as any).listeners.set(event, []);
+        }
+        (mockProcess as any).listeners.get(event).push(callback);
+      }),
       stdout: {
         on: jest.fn(),
       },

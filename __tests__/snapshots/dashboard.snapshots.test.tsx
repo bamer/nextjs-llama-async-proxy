@@ -267,7 +267,12 @@ describe("Dashboard Snapshots", () => {
     it("should match snapshot in light mode", () => {
       const { container } = render(
         <MockThemeProvider isDark={false}>
-          <QuickActionsCard isDark={false} onRestartServer={jest.fn()} onStartServer={jest.fn()} />
+          <QuickActionsCard
+            isDark={false}
+            onDownloadLogs={jest.fn()}
+            onRestartServer={jest.fn()}
+            onStartServer={jest.fn()}
+          />
         </MockThemeProvider>
       );
       expect(container.firstChild).toMatchSnapshot("quick-actions-light");
@@ -277,7 +282,12 @@ describe("Dashboard Snapshots", () => {
     it("should match snapshot in dark mode", () => {
       const { container } = render(
         <MockThemeProvider isDark={true}>
-          <QuickActionsCard isDark={true} onRestartServer={jest.fn()} onStartServer={jest.fn()} />
+          <QuickActionsCard
+            isDark={true}
+            onDownloadLogs={jest.fn()}
+            onRestartServer={jest.fn()}
+            onStartServer={jest.fn()}
+          />
         </MockThemeProvider>
       );
       expect(container.firstChild).toMatchSnapshot("quick-actions-dark");

@@ -78,7 +78,7 @@ export default function ModernDashboard() {
   }
 
   return (
-    <Box sx={{ p: 4, maxWidth: 1600, mx: 'auto' }}>
+    <Box data-testid="modern-dashboard" sx={{ p: 4, maxWidth: 1600, mx: 'auto' }}>
       <DashboardHeader isConnected={isConnected} metrics={safeMetrics} onRefresh={handleRefresh} />
 
       <Typography variant="h5" fontWeight="bold" sx={{ mb: 4 }}>

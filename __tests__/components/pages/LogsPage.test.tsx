@@ -372,4 +372,359 @@ describe('LogsPage', () => {
     const debugEntry = screen.getByText('Debug information').closest('.bg-gray-50, .dark\\:bg-gray-800');
     expect(debugEntry).toBeInTheDocument();
   });
+
+  // Edge Case Tests
+  it('handles very large number of logs (1000+)', () => {
+    const manyLogs = Array.from({ length: 1500 }, (_, i) => ({
+      level: ['info', 'warn', 'error', 'debug'][i % 4] as 'info' | 'warn' | 'error' | 'debug',
+      message: `Log message ${i}`.repeat(10),
+      timestamp: '2024-01-01T10:00:00Z',
+      source: `source-${i % 10}`,
+    }));
+    mockState.logs = manyLogs;
+
+    render(<LogsPage />);
+
+    // Should only display first 50 due to maxLines default
+    const logEntries = screen.getAllByText(/Log message/);
+    expect(logEntries.length).toBeLessThanOrEqual(50);
+  });
+
+  it('handles logs with extremely long messages', () => {
+    const longMessageLogs = [
+      {
+        level: 'info' as const,
+        message: 'A'.repeat(10000),
+        timestamp: '2024-01-01T10:00:00Z',
+        source: 'application',
+      },
+    ];
+    mockState.logs = longMessageLogs;
+
+    render(<LogsPage />);
+
+    expect(screen.getByText('A'.repeat(10000))).toBeInTheDocument();
+  });
+
+  it('handles logs with special characters', () => {
+    const specialCharLogs = [
+      {
+        level: 'info' as const,
+        message: 'Special: @#$%^&*()_+-={}[]|\\:;"\'<>,.?/~`',
+        timestamp: '2024-01-01T10:00:00Z',
+        source: 'application',
+      },
+    ];
+    mockState.logs = specialCharLogs;
+
+    render(<LogsPage />);
+
+    expect(screen.getByText(/Special: @/)).toBeInTheDocument();
+  });
+
+  it('handles logs with unicode characters', () => {
+    const unicodeLogs = [
+      {
+        level: 'info' as const,
+        message: 'Unicode: 你好世界 🌍 مرحبا 😊',
+        timestamp: '2024-01-01T10:00:00Z',
+        source: 'application',
+      },
+    ];
+    mockState.logs = unicodeLogs;
+
+    render(<LogsPage />);
+
+    expect(screen.getByText(/Unicode: 你好世界/)).toBeInTheDocument();
+  });
+
+  it('handles logs with invalid timestamps', () => {
+    const invalidTimestampLogs = [
+      {
+        level: 'info' as const,
+        message: 'Invalid timestamp log',
+        timestamp: 'invalid-date',
+        source: 'application',
+      },
+    ];
+    mockState.logs = invalidTimestampLogs;
+
+    render(<LogsPage />);
+
+    expect(screen.getByText('Invalid timestamp log')).toBeInTheDocument();
+  });
+
+  it('handles logs with missing source', () => {
+    const noSourceLogs = [
+      {
+        level: 'info' as const,
+        message: 'No source log',
+        timestamp: '2024-01-01T10:00:00Z',
+      },
+    ];
+    mockState.logs = noSourceLogs;
+
+    render(<LogsPage />);
+
+    expect(screen.getByText('No source log')).toBeInTheDocument();
+    // Should show 'application' as default source
+    expect(screen.getByText('application')).toBeInTheDocument();
+  });
+
+  it('handles rapid filter changes', () => {
+    render(<LogsPage />);
+
+    const filterInput = screen.getByPlaceholderText('Filter logs...');
+
+    for (let i = 0; i < 20; i++) {
+      fireEvent.change(filterInput, { target: { value: `search${i}` } });
+    }
+
+    expect(filterInput).toHaveValue('search19');
+  });
+
+  it('handles rapid level changes', () => {
+    render(<LogsPage />);
+
+    const levelSelect = screen.getByRole('combobox');
+
+    fireEvent.change(levelSelect, { target: { value: 'error' } });
+    fireEvent.change(levelSelect, { target: { value: 'warn' } });
+    fireEvent.change(levelSelect, { target: { value: 'info' } });
+    fireEvent.change(levelSelect, { target: { value: 'debug' } });
+    fireEvent.change(levelSelect, { target: { value: 'all' } });
+
+    expect(levelSelect).toHaveValue('all');
+  });
+
+  it('handles rapid max lines changes', () => {
+    render(<LogsPage />);
+
+    const button50 = screen.getByText('50');
+    const button100 = screen.getByText('100');
+    const button200 = screen.getByText('200');
+
+    for (let i = 0; i < 10; i++) {
+      fireEvent.click(button50);
+      fireEvent.click(button100);
+      fireEvent.click(button200);
+    }
+
+    expect(button200).toHaveClass('bg-primary');
+  });
+
+  it('handles empty filter text', () => {
+    mockState.logs = mockLogs;
+    render(<LogsPage />);
+
+    const filterInput = screen.getByPlaceholderText('Filter logs...');
+    fireEvent.change(filterInput, { target: { value: 'started' } });
+    fireEvent.change(filterInput, { target: { value: '' } });
+
+    expect(screen.getByText('Application started')).toBeInTheDocument();
+  });
+
+  it('handles filter with only whitespace', () => {
+    mockState.logs = mockLogs;
+    render(<LogsPage />);
+
+    const filterInput = screen.getByPlaceholderText('Filter logs...');
+    fireEvent.change(filterInput, { target: { value: '   ' } });
+
+    // Should show all logs when filtering by whitespace
+    expect(screen.getByText('Application started')).toBeInTheDocument();
+  });
+
+  it('handles filter with regex-like patterns', () => {
+    mockState.logs = mockLogs;
+    render(<LogsPage />);
+
+    const filterInput = screen.getByPlaceholderText('Filter logs...');
+    fireEvent.change(filterInput, { target: { value: '[test]' } });
+
+    // Should search for literal string, not as regex
+    expect(screen.queryByText('Application started')).not.toBeInTheDocument();
+  });
+
+  it('handles clearing logs multiple times', () => {
+    render(<LogsPage />);
+
+    const clearButton = screen.getByText('Clear Logs');
+
+    for (let i = 0; i < 5; i++) {
+      fireEvent.click(clearButton);
+    }
+
+    expect(mockClearLogs).toHaveBeenCalledTimes(5);
+  });
+
+  it('handles logs with null values in message', () => {
+    const nullMessageLogs = [
+      {
+        level: 'info' as const,
+        message: null as any,
+        timestamp: '2024-01-01T10:00:00Z',
+        source: 'application',
+      },
+    ];
+    mockState.logs = nullMessageLogs;
+
+    render(<LogsPage />);
+
+    // Should not crash with null message
+    expect(screen.getByText('No logs match the selected filters')).toBeInTheDocument();
+  });
+
+  it('handles logs with undefined level', () => {
+    const undefinedLevelLogs = [
+      {
+        level: undefined as any,
+        message: 'Undefined level log',
+        timestamp: '2024-01-01T10:00:00Z',
+        source: 'application',
+      },
+    ];
+    mockState.logs = undefinedLevelLogs;
+
+    render(<LogsPage />);
+
+    expect(screen.getByText('Undefined level log')).toBeInTheDocument();
+  });
+
+  it('handles all logs being filtered out', () => {
+    mockState.logs = mockLogs;
+    render(<LogsPage />);
+
+    const filterInput = screen.getByPlaceholderText('Filter logs...');
+    fireEvent.change(filterInput, { target: { value: 'nonexistent-log-message' } });
+
+    expect(screen.getByText('No logs match the selected filters')).toBeInTheDocument();
+  });
+
+  it('handles very short log messages', () => {
+    const shortMessageLogs = [
+      {
+        level: 'info' as const,
+        message: 'X',
+        timestamp: '2024-01-01T10:00:00Z',
+        source: 'application',
+      },
+    ];
+    mockState.logs = shortMessageLogs;
+
+    render(<LogsPage />);
+
+    expect(screen.getByText('X')).toBeInTheDocument();
+  });
+
+  it('handles logs with HTML in message', () => {
+    const htmlLogs = [
+      {
+        level: 'info' as const,
+        message: 'HTML: <script>alert("xss")</script>',
+        timestamp: '2024-01-01T10:00:00Z',
+        source: 'application',
+      },
+    ];
+    mockState.logs = htmlLogs;
+
+    render(<LogsPage />);
+
+    expect(screen.getByText(/HTML: <script>/)).toBeInTheDocument();
+  });
+
+  it('handles logs with newlines in message', () => {
+    const newlineLogs = [
+      {
+        level: 'info' as const,
+        message: 'Line 1\nLine 2\nLine 3',
+        timestamp: '2024-01-01T10:00:00Z',
+        source: 'application',
+      },
+    ];
+    mockState.logs = newlineLogs;
+
+    render(<LogsPage />);
+
+    expect(screen.getByText(/Line 1/)).toBeInTheDocument();
+  });
+
+  it('handles logs with tabs in message', () => {
+    const tabLogs = [
+      {
+        level: 'info' as const,
+        message: 'Column1\tColumn2\tColumn3',
+        timestamp: '2024-01-01T10:00:00Z',
+        source: 'application',
+      },
+    ];
+    mockState.logs = tabLogs;
+
+    render(<LogsPage />);
+
+    expect(screen.getByText(/Column1/)).toBeInTheDocument();
+  });
+
+  it('handles concurrent filter operations', () => {
+    mockState.logs = mockLogs;
+    render(<LogsPage />);
+
+    const filterInput = screen.getByPlaceholderText('Filter logs...');
+    const levelSelect = screen.getByRole('combobox');
+
+    fireEvent.change(filterInput, { target: { value: 'started' } });
+    fireEvent.change(levelSelect, { target: { value: 'info' } });
+    fireEvent.change(filterInput, { target: { value: '' } });
+
+    expect(screen.getByText('Application started')).toBeInTheDocument();
+  });
+
+  it('handles logs with emoji in message', () => {
+    const emojiLogs = [
+      {
+        level: 'info' as const,
+        message: 'Log with emoji 🚀✨🎉🔥💡',
+        timestamp: '2024-01-01T10:00:00Z',
+        source: 'application',
+      },
+    ];
+    mockState.logs = emojiLogs;
+
+    render(<LogsPage />);
+
+    expect(screen.getByText(/Log with emoji/)).toBeInTheDocument();
+  });
+
+  it('handles logs with very long source names', () => {
+    const longSourceLogs = [
+      {
+        level: 'info' as const,
+        message: 'Long source log',
+        timestamp: '2024-01-01T10:00:00Z',
+        source: 'A'.repeat(500),
+      },
+    ];
+    mockState.logs = longSourceLogs;
+
+    render(<LogsPage />);
+
+    expect(screen.getByText('Long source log')).toBeInTheDocument();
+  });
+
+  it('handles setting max lines to current number of logs', () => {
+    const exactLogs = Array.from({ length: 100 }, (_, i) => ({
+      level: 'info' as const,
+      message: `Log ${i}`,
+      timestamp: '2024-01-01T10:00:00Z',
+      source: 'application',
+    }));
+    mockState.logs = exactLogs;
+
+    render(<LogsPage />);
+
+    const button100 = screen.getByText('100');
+    fireEvent.click(button100);
+
+    expect(screen.getAllByText(/Log \d+/).length).toBe(100);
+  });
 });
