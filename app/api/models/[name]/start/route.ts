@@ -67,7 +67,7 @@ export async function POST(
     }
 
     const models = state.models || [];
-    const runningModels = models.filter((m: { status?: string }) =>
+    const runningModels = models.filter((m: any) =>
       m.status === 'running' || m.status === 'loaded'
     );
 
@@ -201,3 +201,4 @@ export async function POST(
       { status: 500 }
     );
   }
+}

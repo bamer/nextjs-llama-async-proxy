@@ -1,0 +1,6 @@
+{
+  "maxConcurrentModels": 1,
+  "logLevel": "info",
+  "autoUpdate": false,
+  "notificationsEnabled": true
+}

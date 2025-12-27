@@ -44,6 +44,7 @@ export interface LlamaModel {
   modified_at: number;
   path: string;
   availableTemplates?: string[];
+  template?: string;
 }
 
 export type LlamaServiceStatus =
@@ -277,35 +278,31 @@ export class LlamaService {
 
     throw new Error(
       `Llama server did not respond after ${this.maxHealthChecks * this.healthCheckIntervalMs / 1000}s`
-  /**
-   * Fallback: Load models by scanning filesystem (with template detection)
-   */
-  private loadModelsFromFilesystem(): void {
     );
   }
 
   /**
-    * Load available models from llama-server
-    * Uses the /models endpoint (not /api/models)
-    */
+   * Load available models from llama-server
+   * Uses the /models endpoint (not /api/models)
+   */
   private async loadModels(): Promise<void> {
     try {
       this.logger("info", "🔍 Querying llama-server for available models...");
-      
+
       // Try the correct endpoint: /models (OpenAI-compatible)
       const response = await this.client.get("/models");
 
       if (response.status === 200 && response.data) {
         // Handle both array and object with data property
-        const modelsData = Array.isArray(response.data) 
-          ? response.data 
+        const modelsData = Array.isArray(response.data)
+          ? response.data
           : response.data.data || response.data;
 
         if (Array.isArray(modelsData) && modelsData.length > 0) {
           this.state.models = modelsData.map((model) => ({
             id: model.id || model.name,
             name: model.id || model.name,
-            path: model.path, // Path from llama-server if available
+            path: model.path || "", // Path from llama-server if available
             size: model.size || 0,
             type: model.type || "unknown",
             modified_at: Math.floor(Date.now() / 1000),
@@ -317,8 +314,8 @@ export class LlamaService {
           );
 
           this.state.models.forEach((model) => {
-            const sizeGb = model.size > 0 
-              ? (model.size / 1024 / 1024 / 1024).toFixed(2) 
+            const sizeGb = model.size > 0
+              ? (model.size / 1024 / 1024 / 1024).toFixed(2)
               : "unknown";
             this.logger("info", `  - ${model.name} (${sizeGb} GB)`);
           });
@@ -348,7 +345,9 @@ export class LlamaService {
   }
 
   /**
-   * Fallback: Load models by scanning filesystem
+   * Load models by scanning filesystem (with template detection)
+   * Scans models directory for subdirectories containing .gguf or .bin files
+   * Detects .jinja template files and includes built-in templates
    */
   private loadModelsFromFilesystem(): void {
     try {
@@ -375,18 +374,35 @@ export class LlamaService {
         return;
       }
 
+      // Built-in templates supported by llama.cpp
+      const builtinTemplates = [
+        "chatml",
+        "alpaca",
+        "vicuna",
+        "llama-2",
+        "llama-3",
+        "chatml-falcon",
+        "zephyr"
+      ];
+
       const files = fs.readdirSync(this.config.basePath);
-      const builtinTemplates = ["chatml", "alpaca", "vicuna", "llama-2", "llama-3", "chatml-falcon", "zephyr"];
+      const models: Array<{
+        name: string;
+        path: string;
+        size: number;
+        modified_at: number;
+      }> = [];
 
-      const models: Array<{ name: string; path: string; size: number; modified_at: number }> = [];
-
+      // Scan for subdirectories containing model files
       files.forEach((file) => {
         const fullPath = path.join(this.config.basePath || "", file);
         const stats = fs.statSync(fullPath);
 
         if (stats.isDirectory()) {
           const dirFiles = fs.readdirSync(fullPath);
-          const ggufFile = dirFiles.find((f) => f.endsWith(".gguf") || f.endsWith(".bin"));
+          const ggufFile = dirFiles.find((f) =>
+            f.endsWith(".gguf") || f.endsWith(".bin")
+          );
 
           if (ggufFile) {
             models.push({
@@ -399,38 +415,32 @@ export class LlamaService {
         }
       });
 
+      // Build model objects with template detection
       this.state.models = models.map((model) => {
         const modelName = model.name;
         const availableTemplates = [...builtinTemplates];
+        let matchingTemplate: string | undefined;
 
         const modelDirPath = path.join(this.config.basePath, modelName);
 
         if (fs.existsSync(modelDirPath)) {
           const dirFiles = fs.readdirSync(modelDirPath);
+
+          // Scan for .jinja template files
           dirFiles.forEach((file) => {
-            const templateName = file.replace(/\.jinja$/i, "");
-            if (!availableTemplates.includes(templateName) && (templateName.toLowerCase() === modelName.toLowerCase() ||
-                templateName.toLowerCase().includes(modelName.toLowerCase()) ||
-                templateName.toLowerCase().includes("chat"))) {
-              availableTemplates.push(templateName);
+            if (file.toLowerCase().endsWith(".jinja")) {
+              const templateName = file.replace(/\.jinja$/i, "");
+              if (!availableTemplates.includes(templateName)) {
+                availableTemplates.push(templateName);
+              }
             }
           });
 
-          const matchingTemplate = availableTemplates.find((t) => {
+          // Find matching template (first one that has a .jinja file)
+          matchingTemplate = availableTemplates.find((t) => {
             const templateFile = `${t}.jinja`;
             return fs.existsSync(path.join(modelDirPath, templateFile));
           });
-
-          return {
-            id: modelName,
-            name: modelName,
-            path: model.path,
-            size: model.size,
-            type: model.path.endsWith(".gguf") ? "gguf" : "bin",
-            modified_at: model.modified_at,
-            availableTemplates: availableTemplates.length > 0 ? availableTemplates : undefined,
-            template: matchingTemplate || undefined,
-          };
         }
 
         return {
@@ -440,8 +450,8 @@ export class LlamaService {
           size: model.size,
           type: model.path.endsWith(".gguf") ? "gguf" : "bin",
           modified_at: model.modified_at,
-          availableTemplates: undefined,
-          template: undefined,
+          availableTemplates: availableTemplates.length > 0 ? availableTemplates : undefined,
+          template: matchingTemplate || undefined,
         };
       });
 
@@ -450,73 +460,18 @@ export class LlamaService {
         `✅ Loaded ${this.state.models.length} model(s) from filesystem`
       );
 
+      // Log each model with template count
       this.state.models.forEach((model) => {
-        this.logger(
-          "info",
-          `  - ${model.name} (${(model.size / 1024 / 1024 / 1024).toFixed(2)} GB)` +
-            (model.availableTemplates ? ` with ${model.availableTemplates.length} template(s)` : "")
-        );
+        const sizeGb = (model.size / 1024 / 1024 / 1024).toFixed(2);
+        const templateInfo = model.availableTemplates
+          ? ` with ${model.availableTemplates.length} template(s)`
+          : "";
+        this.logger("info", `  - ${model.name} (${sizeGb} GB)${templateInfo}`);
       });
 
       this.emitStateChange();
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger("warn", `Failed to load models from filesystem: ${message}`);
-      this.state.models = [];
-    }
-  }
-
-      this.logger(
-        "info",
-        `📂 Fallback: Scanning filesystem for models in: ${this.config.basePath}`
-      );
-
-      // Check if directory exists
-      if (!fs.existsSync(this.config.basePath)) {
-        this.logger(
-          "warn",
-          `⚠️ Models directory not found: ${this.config.basePath}`
-        );
-        this.state.models = [];
-        return;
-      }
-
-      // Scan directory for model files
-      const files = fs.readdirSync(this.config.basePath);
-      const modelFiles = files.filter(
-        (file) => file.endsWith(".gguf") || file.endsWith(".bin")
-      );
-
-      // Convert files to model objects
-      this.state.models = modelFiles.map((file) => {
-        const fullPath = path.join(this.config.basePath || "", file);
-        const stats = fs.statSync(fullPath);
-        return {
-          id: file,
-          name: file.replace(/\.(gguf|bin)$/i, ""),
-          path: fullPath, // Include the full path so API endpoints can use it
-          size: stats.size,
-          type: file.endsWith(".gguf") ? "gguf" : "bin",
-          modified_at: Math.floor(stats.mtimeMs / 1000),
-        };
-      });
-
-      this.logger(
-        "info",
-        `✅ Loaded ${this.state.models.length} model(s) from filesystem`
-      );
-
-      this.state.models.forEach((model) => {
-        this.logger(
-          "info",
-          `  - ${model.name} (${(model.size / 1024 / 1024 / 1024).toFixed(2)} GB)`
-        );
-      });
-
-      this.emitStateChange();
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : String(error);
       this.logger("warn", `Failed to load models from filesystem: ${message}`);
       this.state.models = [];
     }
@@ -781,8 +736,8 @@ export class LlamaService {
   }
 
   /**
-    * Start tracking uptime (without emitting state changes)
-    */
+   * Start tracking uptime (without emitting state changes)
+   */
   private startUptimeTracking(): void {
     if (this.uptimeInterval) {
       clearInterval(this.uptimeInterval as NodeJS.Timeout);
@@ -799,8 +754,8 @@ export class LlamaService {
   }
 
   /**
-    * Logging utility
-    */
+   * Logging utility
+   */
   private logger(
     level: "info" | "warn" | "error" | "debug",
     message: string

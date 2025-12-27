@@ -95,4 +95,4 @@ export function saveAppConfig(config: Partial<AppConfig>): void {
   }
 }
 
-export { AppConfig };
+export type { AppConfig };
