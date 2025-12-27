@@ -5,23 +5,111 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import ModernConfiguration from '@/components/configuration/ModernConfiguration';
 import * as configHook from '@/components/configuration/hooks/useConfigurationForm';
 import * as loggerHook from '@/hooks/use-logger-config';
+import * as framerMotion from 'framer-motion';
 
-jest.mock('@/components/configuration/hooks/useConfigurationForm', () => ({
-  useConfigurationForm: jest.fn(),
-}));
-
-jest.mock('@/hooks/use-logger-config', () => ({
-  useLoggerConfig: jest.fn(),
-}));
-
+// Mock framer-motion
 jest.mock('framer-motion', () => ({
   m: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   },
 }));
 
+// Mock child components to avoid nested dependency issues
+jest.mock('@/components/configuration/ConfigurationHeader', () => ({
+  ConfigurationHeader: () => <div data-testid="configuration-header">Configuration Center</div>,
+}));
+
+jest.mock('@/components/configuration/ConfigurationTabs', () => ({
+  ConfigurationTabs: ({ onChange }: any) => (
+    <div data-testid="configuration-tabs">
+      <button onClick={() => onChange({}, 0)}>General Settings</button>
+      <button onClick={() => onChange({}, 1)}>Llama-Server Settings</button>
+      <button onClick={() => onChange({}, 2)}>Advanced</button>
+      <button onClick={() => onChange({}, 3)}>Logger Settings</button>
+    </div>
+  ),
+}));
+
+jest.mock('@/components/configuration/GeneralSettingsTab', () => ({
+  GeneralSettingsTab: ({ formConfig, onInputChange }: any) => (
+    <div data-testid="general-settings-tab">
+      <h3>General Settings</h3>
+      <input
+        name="basePath"
+        value={formConfig.basePath || ''}
+        onChange={onInputChange}
+        data-testid="basePath-input"
+      />
+    </div>
+  ),
+}));
+
+jest.mock('@/components/configuration/LlamaServerSettingsTab', () => ({
+  LlamaServerSettingsTab: ({ formConfig, onLlamaServerChange }: any) => (
+    <div data-testid="llama-server-tab">
+      <h3>Llama-Server Settings</h3>
+      <input
+        name="llamaServer.host"
+        value={formConfig.llamaServer?.host || ''}
+        onChange={onLlamaServerChange}
+        data-testid="host-input"
+      />
+    </div>
+  ),
+}));
+
+jest.mock('@/components/configuration/AdvancedSettingsTab', () => ({
+  AdvancedSettingsTab: ({ isSaving, onReset, onSync }: any) => (
+    <div data-testid="advanced-settings-tab">
+      <h3>Advanced Settings</h3>
+      <button onClick={onReset} disabled={isSaving} data-testid="reset-button">
+        Reset to Defaults
+      </button>
+      <button onClick={onSync} disabled={isSaving} data-testid="sync-button">
+        Sync with Backend
+      </button>
+    </div>
+  ),
+}));
+
+jest.mock('@/components/configuration/LoggerSettingsTab', () => ({
+  LoggerSettingsTab: () => <div data-testid="logger-settings-tab"><h3>Log Levels</h3></div>,
+}));
+
+jest.mock('@/components/configuration/ConfigurationStatusMessages', () => ({
+  ConfigurationStatusMessages: ({ saveSuccess, validationErrors }: any) => (
+    <div data-testid="status-messages">
+      {saveSuccess && <div data-testid="success-message">Configuration saved successfully!</div>}
+      {validationErrors && validationErrors.length > 0 && (
+        <div data-testid="validation-errors">
+          <h4>Configuration Errors</h4>
+          {validationErrors.map((error: string, i: number) => (
+            <div key={i}>• {error}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  ),
+}));
+
+jest.mock('@/components/configuration/ConfigurationActions', () => ({
+  ConfigurationActions: ({ isSaving, onSave }: any) => (
+    <button onClick={onSave} disabled={isSaving} data-testid="save-button">
+      {isSaving ? 'Saving...' : 'Save Configuration'}
+    </button>
+  ),
+}));
+
+jest.mock('@/hooks/use-logger-config', () => ({
+  useLoggerConfig: jest.fn(),
+}));
+
 jest.mock('@/contexts/ThemeContext', () => ({
   useTheme: () => ({ isDark: false }),
+}));
+
+jest.mock('@/components/configuration/hooks/useConfigurationForm', () => ({
+  useConfigurationForm: jest.fn(),
 }));
 
 const theme = createTheme();

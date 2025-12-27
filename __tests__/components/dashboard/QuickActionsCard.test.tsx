@@ -1,3 +1,9 @@
+// Mock ThemeContext - Must be defined before importing component
+jest.mock("@/contexts/ThemeContext", () => ({
+  ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useTheme: () => ({ isDark: false, mode: "light" as const, setMode: jest.fn(), toggleTheme: jest.fn(), currentTheme: null }),
+}));
+
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";

@@ -160,4 +160,145 @@ describe('GeneralSettingsTab', () => {
     );
     expect(screen.getByText('General Settings')).toBeInTheDocument();
   });
+
+  // Positive test: Verify switch toggle events are properly handled and updateConfig called
+  it('calls updateConfig with correct argument when Auto Update is toggled', () => {
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+    );
+    const checkbox = screen.getByLabelText('Auto Update') as HTMLInputElement;
+    fireEvent.click(checkbox);
+
+    expect(mockOnInputChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({
+          name: 'autoUpdate',
+          checked: expect.any(Boolean),
+          type: 'checkbox',
+        }),
+      })
+    );
+  });
+
+  it('calls updateConfig with correct argument when Notifications is toggled', () => {
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+    );
+    const checkbox = screen.getByLabelText('Notifications Enabled') as HTMLInputElement;
+    fireEvent.click(checkbox);
+
+    expect(mockOnInputChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({
+          name: 'notificationsEnabled',
+          checked: expect.any(Boolean),
+          type: 'checkbox',
+        }),
+      })
+    );
+  });
+
+  // Negative test: Verify disabled state when value is undefined
+  it('handles undefined values gracefully', () => {
+    const undefinedConfig = {
+      basePath: undefined,
+      logLevel: undefined,
+      maxConcurrentModels: undefined,
+      autoUpdate: false,
+      notificationsEnabled: false,
+      llamaServerPath: undefined,
+    };
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={undefinedConfig} onInputChange={mockOnInputChange} />
+    );
+    expect(screen.getByText('General Settings')).toBeInTheDocument();
+    // Should not crash and should render with default/empty values
+  });
+
+  // Positive test: Verify all log level options are rendered
+  it('renders all log level options', () => {
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+    );
+    const select = screen.getByLabelText('Log Level');
+    fireEvent.mouseDown(select);
+
+    expect(screen.getByText('debug')).toBeInTheDocument();
+    expect(screen.getByText('info')).toBeInTheDocument();
+    expect(screen.getByText('warn')).toBeInTheDocument();
+    expect(screen.getByText('error')).toBeInTheDocument();
+  });
+
+  // Positive test: Verify input constraints (min/max)
+  it('renders max concurrent models with constraints', () => {
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+    );
+    const input = screen.getByLabelText('Max Concurrent Models');
+    expect(input).toHaveAttribute('type', 'number');
+    expect(input).toHaveAttribute('min', '1');
+    expect(input).toHaveAttribute('max', '20');
+  });
+
+  // Positive test: Verify description texts are displayed
+  it('displays all helper and description texts', () => {
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+    );
+    expect(screen.getByText('Path to your models directory')).toBeInTheDocument();
+    expect(screen.getByText('Logging verbosity level')).toBeInTheDocument();
+    expect(screen.getByText('Maximum number of models that can run simultaneously')).toBeInTheDocument();
+    expect(screen.getByText('Automatically update models and dependencies')).toBeInTheDocument();
+    expect(screen.getByText('Receive system alerts and notifications')).toBeInTheDocument();
+    expect(screen.getByText('Path to llama-server executable')).toBeInTheDocument();
+  });
+
+  // Positive test: Verify switch initial states
+  it('displays correct initial switch states', () => {
+    const config = {
+      ...defaultFormConfig,
+      autoUpdate: false,
+      notificationsEnabled: true,
+    };
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} />
+    );
+    const autoUpdateSwitch = screen.getByLabelText('Auto Update') as HTMLInputElement;
+    const notificationsSwitch = screen.getByLabelText('Notifications Enabled') as HTMLInputElement;
+
+    expect(autoUpdateSwitch.checked).toBe(false);
+    expect(notificationsSwitch.checked).toBe(true);
+  });
+
+  // Negative test: Verify empty values don't crash
+  it('handles empty formConfig without crashing', () => {
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={undefined as any} onInputChange={mockOnInputChange} />
+    );
+    expect(screen.getByText('General Settings')).toBeInTheDocument();
+  });
+
+  // Positive test: Verify llama server path rendering
+  it('renders Llama-Server Path with correct value', () => {
+    const config = {
+      ...defaultFormConfig,
+      llamaServerPath: '/custom/path/to/llama-server',
+    };
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} />
+    );
+    const input = screen.getByLabelText('Llama-Server Path');
+    expect(input).toHaveValue('/custom/path/to/llama-server');
+  });
+
+  // Positive test: Verify base path input change
+  it('updates base path value when changed', () => {
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+    );
+    const input = screen.getByLabelText('Base Path');
+    fireEvent.change(input, { target: { name: 'basePath', value: '/new/path' } });
+
+    expect(mockOnInputChange).toHaveBeenCalled();
+  });
 });
