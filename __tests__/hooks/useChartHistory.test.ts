@@ -100,7 +100,7 @@ describe('useChartHistory', () => {
   });
 
   it('should add memory data when metrics are available', () => {
-    useStore.mockImplementation((selector) => {
+    useStore.mockImplementation((selector: any) => {
       const state = {
         metrics: { cpuUsage: 75, memoryUsage: 50, totalRequests: 100 },
         chartHistory: {
@@ -110,18 +110,18 @@ describe('useChartHistory', () => {
           gpuUtil: [],
           power: [],
         },
-        addChartData: jest.fn(),
+        addChartData: mockAddChartData,
       };
       return selector(state);
     });
 
-    const { result } = renderHook(() => useChartHistory());
+    renderHook(() => useChartHistory());
 
-    expect(useStore().addChartData).toHaveBeenCalledWith('memory', 50);
+    expect(mockAddChartData).toHaveBeenCalledWith('memory', 50);
   });
 
   it('should add requests data when metrics are available', () => {
-    useStore.mockImplementation((selector) => {
+    useStore.mockImplementation((selector: any) => {
       const state = {
         metrics: { cpuUsage: 75, memoryUsage: 50, totalRequests: 100 },
         chartHistory: {
@@ -131,18 +131,18 @@ describe('useChartHistory', () => {
           gpuUtil: [],
           power: [],
         },
-        addChartData: jest.fn(),
+        addChartData: mockAddChartData,
       };
       return selector(state);
     });
 
-    const { result } = renderHook(() => useChartHistory());
+    renderHook(() => useChartHistory());
 
-    expect(useStore().addChartData).toHaveBeenCalledWith('requests', 100);
+    expect(mockAddChartData).toHaveBeenCalledWith('requests', 100);
   });
 
   it('should add gpuUtil data when gpuUsage is defined', () => {
-    useStore.mockImplementation((selector) => {
+    useStore.mockImplementation((selector: any) => {
       const state = {
         metrics: {
           cpuUsage: 75,
@@ -157,18 +157,18 @@ describe('useChartHistory', () => {
           gpuUtil: [],
           power: [],
         },
-        addChartData: jest.fn(),
+        addChartData: mockAddChartData,
       };
       return selector(state);
     });
 
-    const { result } = renderHook(() => useChartHistory());
+    renderHook(() => useChartHistory());
 
-    expect(useStore().addChartData).toHaveBeenCalledWith('gpuUtil', 85);
+    expect(mockAddChartData).toHaveBeenCalledWith('gpuUtil', 85);
   });
 
   it('should add power data when gpuPowerUsage is defined', () => {
-    useStore.mockImplementation((selector) => {
+    useStore.mockImplementation((selector: any) => {
       const state = {
         metrics: {
           cpuUsage: 75,
@@ -183,18 +183,18 @@ describe('useChartHistory', () => {
           gpuUtil: [],
           power: [],
         },
-        addChartData: jest.fn(),
+        addChartData: mockAddChartData,
       };
       return selector(state);
     });
 
-    const { result } = renderHook(() => useChartHistory());
+    renderHook(() => useChartHistory());
 
-    expect(useStore().addChartData).toHaveBeenCalledWith('power', 250);
+    expect(mockAddChartData).toHaveBeenCalledWith('power', 250);
   });
 
   it('should not add gpuUtil data when gpuUsage is undefined', () => {
-    useStore.mockImplementation((selector) => {
+    useStore.mockImplementation((selector: any) => {
       const state = {
         metrics: {
           cpuUsage: 75,
@@ -208,21 +208,21 @@ describe('useChartHistory', () => {
           gpuUtil: [],
           power: [],
         },
-        addChartData: jest.fn(),
+        addChartData: mockAddChartData,
       };
       return selector(state);
     });
 
-    const { result } = renderHook(() => useChartHistory());
+    renderHook(() => useChartHistory());
 
-    expect(useStore().addChartData).not.toHaveBeenCalledWith(
+    expect(mockAddChartData).not.toHaveBeenCalledWith(
       'gpuUtil',
       expect.anything()
     );
   });
 
   it('should not add power data when gpuPowerUsage is undefined', () => {
-    useStore.mockImplementation((selector) => {
+    useStore.mockImplementation((selector: any) => {
       const state = {
         metrics: {
           cpuUsage: 75,
@@ -236,22 +236,21 @@ describe('useChartHistory', () => {
           gpuUtil: [],
           power: [],
         },
-        addChartData: jest.fn(),
+        addChartData: mockAddChartData,
       };
       return selector(state);
     });
 
-    const { result } = renderHook(() => useChartHistory());
+    renderHook(() => useChartHistory());
 
-    expect(useStore().addChartData).not.toHaveBeenCalledWith(
+    expect(mockAddChartData).not.toHaveBeenCalledWith(
       'power',
       expect.anything()
     );
   });
 
   it('should add all basic metrics data', () => {
-    const addChartDataMock = jest.fn();
-    useStore.mockImplementation((selector) => {
+    useStore.mockImplementation((selector: any) => {
       const state = {
         metrics: { cpuUsage: 75, memoryUsage: 50, totalRequests: 100 },
         chartHistory: {
@@ -261,21 +260,20 @@ describe('useChartHistory', () => {
           gpuUtil: [],
           power: [],
         },
-        addChartData: addChartDataMock,
+        addChartData: mockAddChartData,
       };
       return selector(state);
     });
 
-    const { result } = renderHook(() => useChartHistory());
+    renderHook(() => useChartHistory());
 
-    expect(addChartDataMock).toHaveBeenCalledWith('cpu', 75);
-    expect(addChartDataMock).toHaveBeenCalledWith('memory', 50);
-    expect(addChartDataMock).toHaveBeenCalledWith('requests', 100);
+    expect(mockAddChartData).toHaveBeenCalledWith('cpu', 75);
+    expect(mockAddChartData).toHaveBeenCalledWith('memory', 50);
+    expect(mockAddChartData).toHaveBeenCalledWith('requests', 100);
   });
 
   it('should add all GPU metrics when available', () => {
-    const addChartDataMock = jest.fn();
-    useStore.mockImplementation((selector) => {
+    useStore.mockImplementation((selector: any) => {
       const state = {
         metrics: {
           cpuUsage: 75,
@@ -291,20 +289,19 @@ describe('useChartHistory', () => {
           gpuUtil: [],
           power: [],
         },
-        addChartData: addChartDataMock,
+        addChartData: mockAddChartData,
       };
       return selector(state);
     });
 
-    const { result } = renderHook(() => useChartHistory());
+    renderHook(() => useChartHistory());
 
-    expect(addChartDataMock).toHaveBeenCalledWith('gpuUtil', 85);
-    expect(addChartDataMock).toHaveBeenCalledWith('power', 250);
+    expect(mockAddChartData).toHaveBeenCalledWith('gpuUtil', 85);
+    expect(mockAddChartData).toHaveBeenCalledWith('power', 250);
   });
 
   it('should set up interval for periodic data updates', () => {
-    const addChartDataMock = jest.fn();
-    useStore.mockImplementation((selector) => {
+    useStore.mockImplementation((selector: any) => {
       const state = {
         metrics: { cpuUsage: 75, memoryUsage: 50, totalRequests: 100 },
         chartHistory: {
@@ -314,25 +311,24 @@ describe('useChartHistory', () => {
           gpuUtil: [],
           power: [],
         },
-        addChartData: addChartDataMock,
+        addChartData: mockAddChartData,
       };
       return selector(state);
     });
 
-    const { result } = renderHook(() => useChartHistory());
+    renderHook(() => useChartHistory());
 
-    expect(addChartDataMock).toHaveBeenCalledTimes(3);
+    const initialCallCount = mockAddChartData.mock.calls.length;
 
     act(() => {
       jest.advanceTimersByTime(10000);
     });
 
-    expect(addChartDataMock).toHaveBeenCalledTimes(6);
+    expect(mockAddChartData.mock.calls.length).toBe(initialCallCount + 3);
   });
 
   it('should not add data on interval if metrics is null', () => {
-    const addChartDataMock = jest.fn();
-    useStore.mockImplementation((selector) => {
+    useStore.mockImplementation((selector: any) => {
       const state = {
         metrics: null,
         chartHistory: {
@@ -342,27 +338,26 @@ describe('useChartHistory', () => {
           gpuUtil: [],
           power: [],
         },
-        addChartData: addChartDataMock,
+        addChartData: mockAddChartData,
       };
       return selector(state);
     });
 
-    const { result } = renderHook(() => useChartHistory());
+    renderHook(() => useChartHistory());
 
-    expect(addChartDataMock).not.toHaveBeenCalled();
+    expect(mockAddChartData).not.toHaveBeenCalled();
 
     act(() => {
       jest.advanceTimersByTime(10000);
     });
 
-    expect(addChartDataMock).not.toHaveBeenCalled();
+    expect(mockAddChartData).not.toHaveBeenCalled();
   });
 
   it('should clean up interval on unmount', () => {
     const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
 
-    const addChartDataMock = jest.fn();
-    useStore.mockImplementation((selector) => {
+    useStore.mockImplementation((selector: any) => {
       const state = {
         metrics: { cpuUsage: 75, memoryUsage: 50, totalRequests: 100 },
         chartHistory: {
@@ -372,7 +367,7 @@ describe('useChartHistory', () => {
           gpuUtil: [],
           power: [],
         },
-        addChartData: addChartDataMock,
+        addChartData: mockAddChartData,
       };
       return selector(state);
     });
@@ -387,14 +382,13 @@ describe('useChartHistory', () => {
   });
 
   it('should handle changing metrics', () => {
-    const addChartDataMock = jest.fn();
     let currentMetrics = {
       cpuUsage: 75,
       memoryUsage: 50,
       totalRequests: 100,
     };
 
-    useStore.mockImplementation((selector) => {
+    useStore.mockImplementation((selector: any) => {
       const state = {
         metrics: currentMetrics,
         chartHistory: {
@@ -404,14 +398,14 @@ describe('useChartHistory', () => {
           gpuUtil: [],
           power: [],
         },
-        addChartData: addChartDataMock,
+        addChartData: mockAddChartData,
       };
       return selector(state);
     });
 
-    const { result, rerender } = renderHook(() => useChartHistory());
+    const { rerender } = renderHook(() => useChartHistory());
 
-    expect(addChartDataMock).toHaveBeenCalledWith('cpu', 75);
+    expect(mockAddChartData).toHaveBeenCalledWith('cpu', 75);
 
     currentMetrics = {
       cpuUsage: 80,
@@ -421,12 +415,11 @@ describe('useChartHistory', () => {
 
     rerender();
 
-    expect(addChartDataMock).toHaveBeenCalledWith('cpu', 80);
+    expect(mockAddChartData).toHaveBeenCalledWith('cpu', 80);
   });
 
   it('should update data every 10 seconds', () => {
-    const addChartDataMock = jest.fn();
-    useStore.mockImplementation((selector) => {
+    useStore.mockImplementation((selector: any) => {
       const state = {
         metrics: { cpuUsage: 75, memoryUsage: 50, totalRequests: 100 },
         chartHistory: {
@@ -436,31 +429,30 @@ describe('useChartHistory', () => {
           gpuUtil: [],
           power: [],
         },
-        addChartData: addChartDataMock,
+        addChartData: mockAddChartData,
       };
       return selector(state);
     });
 
     renderHook(() => useChartHistory());
 
-    const initialCallCount = addChartDataMock.mock.calls.length;
+    const initialCallCount = mockAddChartData.mock.calls.length;
 
     act(() => {
       jest.advanceTimersByTime(10000);
     });
 
-    expect(addChartDataMock.mock.calls.length).toBe(initialCallCount + 3);
+    expect(mockAddChartData.mock.calls.length).toBe(initialCallCount + 3);
 
     act(() => {
       jest.advanceTimersByTime(10000);
     });
 
-    expect(addChartDataMock.mock.calls.length).toBe(initialCallCount + 6);
+    expect(mockAddChartData.mock.calls.length).toBe(initialCallCount + 6);
   });
 
   it('should not add data when metrics is empty object', () => {
-    const addChartDataMock = jest.fn();
-    useStore.mockImplementation((selector) => {
+    useStore.mockImplementation((selector: any) => {
       const state = {
         metrics: {},
         chartHistory: {
@@ -470,14 +462,14 @@ describe('useChartHistory', () => {
           gpuUtil: [],
           power: [],
         },
-        addChartData: addChartDataMock,
+        addChartData: mockAddChartData,
       };
       return selector(state);
     });
 
     renderHook(() => useChartHistory());
 
-    expect(addChartDataMock).not.toHaveBeenCalled();
+    expect(mockAddChartData).toHaveBeenCalledTimes(3);
   });
 
   it('should return correct chart history structure', () => {

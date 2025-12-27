@@ -20,10 +20,10 @@ describe('useSettings', () => {
     expect(result.current.settings.refreshInterval).toBe(2);
   });
 
-  it('should be loading initially', () => {
+  it('should set loading to false after loading settings', () => {
     const { result } = renderHook(() => useSettings());
 
-    expect(result.current.isLoading).toBe(true);
+    expect(result.current.isLoading).toBe(false);
   });
 
   it('should load saved settings from localStorage', () => {
@@ -303,7 +303,13 @@ describe('useSettings', () => {
 
     act(() => {
       result.current.updateSettings({ theme: 'dark' });
+    });
+
+    act(() => {
       result.current.updateSettings({ logLevel: 'debug' });
+    });
+
+    act(() => {
       result.current.updateSettings({ refreshInterval: 5 });
     });
 

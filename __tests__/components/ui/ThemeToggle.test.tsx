@@ -161,4 +161,22 @@ describe('ThemeToggle', () => {
     render(<ThemeToggle />);
     expect(useTheme).toHaveBeenCalled();
   });
+
+  it('handles default mode in getThemeIcon', () => {
+    const { useTheme } = require('@/contexts/ThemeContext');
+    useTheme.mockReturnValue({ mode: 'invalid' as any, setMode: mockSetMode });
+
+    render(<ThemeToggle />);
+    const button = screen.getByRole('button');
+    expect(button).toBeInTheDocument();
+  });
+
+  it('handles default mode in getThemeLabel', () => {
+    const { useTheme } = require('@/contexts/ThemeContext');
+    useTheme.mockReturnValue({ mode: 'invalid' as any, setMode: mockSetMode });
+
+    render(<ThemeToggle />);
+    const button = screen.getByRole('button');
+    expect(button).toBeInTheDocument();
+  });
 });

@@ -20,7 +20,7 @@ describe('ConfigurationTabs', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     const { useTheme } = require('@/contexts/ThemeContext');
-    useTheme.mockReturnValue({ isDark: false });
+    jest.mocked(useTheme).mockReturnValue({ isDark: false });
   });
 
   it('renders all tabs', () => {
@@ -82,7 +82,8 @@ describe('ConfigurationTabs', () => {
 
   it('renders with dark theme', () => {
     const { useTheme } = require('@/contexts/ThemeContext');
-    useTheme.mockReturnValue({ isDark: true });
+    const mockUseTheme = useTheme as jest.MockedFunction<typeof useTheme>;
+    mockUseTheme.mockReturnValue({ isDark: true });
     renderWithTheme(<ConfigurationTabs activeTab={0} onChange={mockOnChange} />);
     expect(screen.getByText('General Settings')).toBeInTheDocument();
   });

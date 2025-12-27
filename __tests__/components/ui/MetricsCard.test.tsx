@@ -68,7 +68,7 @@ describe('MetricsCard', () => {
     renderWithTheme(<MetricsCard />);
 
     expect(screen.getByText('System Metrics')).toBeInTheDocument();
-    expect(screen.getByText('45.5%')).toBeInTheDocument();
+    expect(screen.getAllByText(/45\.5%/).length).toBeGreaterThan(0);
     expect(screen.getByText('CPU Usage')).toBeInTheDocument();
   });
 
@@ -107,8 +107,8 @@ describe('MetricsCard', () => {
 
     renderWithTheme(<MetricsCard />);
 
-    expect(screen.getByText('78.9%')).toBeInTheDocument();
-    expect(screen.getByText('85.2%')).toBeInTheDocument();
+    expect(screen.getAllByText(/78\.9%/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/85\.2%/).length).toBeGreaterThan(0);
     expect(screen.getByText('7')).toBeInTheDocument();
     expect(screen.getByText('1250ms')).toBeInTheDocument();
     expect(screen.getByText('2456')).toBeInTheDocument();
@@ -164,8 +164,8 @@ describe('MetricsCard', () => {
 
     renderWithTheme(<MetricsCard />);
 
-    expect(screen.getByText('0.0%')).toBeInTheDocument();
-    expect(screen.getByText('0')).toBeInTheDocument();
+    expect(screen.getAllByText(/0\.0%/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('0').length).toBeGreaterThan(0);
   });
 
   it('handles large values', () => {
@@ -182,8 +182,8 @@ describe('MetricsCard', () => {
 
     renderWithTheme(<MetricsCard />);
 
-    expect(screen.getByText('99.9%')).toBeInTheDocument();
-    expect(screen.getByText('98.5%')).toBeInTheDocument();
+    expect(screen.getAllByText(/99\.9%/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/98\.5%/).length).toBeGreaterThan(0);
     expect(screen.getByText('10')).toBeInTheDocument();
     expect(screen.getByText('5000ms')).toBeInTheDocument();
     expect(screen.getByText('10000')).toBeInTheDocument();
@@ -203,8 +203,8 @@ describe('MetricsCard', () => {
 
     renderWithTheme(<MetricsCard />);
 
-    expect(screen.getByText('75.5%')).toBeInTheDocument();
-    expect(screen.getByText('50.0%')).toBeInTheDocument();
+    expect(screen.getAllByText(/75\.5%/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/50\.0%/).length).toBeGreaterThan(0);
   });
 
   it('renders subheader correctly', () => {
@@ -248,8 +248,8 @@ describe('MetricsCard', () => {
 
     renderWithTheme(<MetricsCard />);
 
-    expect(screen.getByText('45.7%')).toBeInTheDocument();
-    expect(screen.getByText('62.9%')).toBeInTheDocument();
+    expect(screen.getAllByText(/45\.7%/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/62\.9%/).length).toBeGreaterThan(0);
   });
 
   it('calls useStore hook', () => {

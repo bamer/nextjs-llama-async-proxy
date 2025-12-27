@@ -277,13 +277,13 @@ describe('LoggingSettings', () => {
   it('shows max file size value', () => {
     renderWithThemeProvider(<LoggingSettings />);
     
-    expect(screen.getByText('Max File Size')).toBeInTheDocument();
+    expect(screen.getAllByText('Max File Size').length).toBeGreaterThan(0);
   });
 
   it('shows max files value', () => {
     renderWithThemeProvider(<LoggingSettings />);
     
-    expect(screen.getByText('Max Files')).toBeInTheDocument();
+    expect(screen.getAllByText('Max Files').length).toBeGreaterThan(0);
   });
 
   it('renders sliders with value labels', () => {

@@ -166,7 +166,9 @@ describe('SidebarProvider', () => {
 
     expect(isOpenSpan).toHaveTextContent('false');
 
-    toggleButton.click();
+    act(() => {
+      toggleButton.click();
+    });
     expect(isOpenSpan).toHaveTextContent('true');
 
     rerender(

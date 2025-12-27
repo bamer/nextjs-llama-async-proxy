@@ -34,7 +34,7 @@ describe('GeneralSettingsTab', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     const { useTheme } = require('@/contexts/ThemeContext');
-    useTheme.mockReturnValue({ isDark: false });
+    jest.mocked(useTheme).mockReturnValue({ isDark: false });
   });
 
   it('renders correctly', () => {
@@ -120,7 +120,7 @@ describe('GeneralSettingsTab', () => {
     renderWithTheme(
       <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
     );
-    const checkbox = screen.getByRole('switch', { name: /auto update/i });
+    const checkbox = screen.getByRole('checkbox', { name: /auto update/i });
     fireEvent.click(checkbox);
     expect(mockOnInputChange).toHaveBeenCalled();
   });
@@ -129,7 +129,7 @@ describe('GeneralSettingsTab', () => {
     renderWithTheme(
       <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
     );
-    const checkbox = screen.getByRole('switch', { name: /notifications enabled/i });
+    const checkbox = screen.getByRole('checkbox', { name: /notifications enabled/i });
     fireEvent.click(checkbox);
     expect(mockOnInputChange).toHaveBeenCalled();
   });
@@ -151,7 +151,8 @@ describe('GeneralSettingsTab', () => {
 
   it('renders with dark theme', () => {
     const { useTheme } = require('@/contexts/ThemeContext');
-    useTheme.mockReturnValue({ isDark: true });
+    const mockUseTheme = useTheme as jest.MockedFunction<typeof useTheme>;
+    mockUseTheme.mockReturnValue({ isDark: true });
     renderWithTheme(
       <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
     );

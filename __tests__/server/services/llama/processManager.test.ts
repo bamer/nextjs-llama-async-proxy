@@ -36,7 +36,7 @@ describe('ProcessManager', () => {
       expect(process).toBeNull();
     });
 
-    it('should return the spawned process', () => {
+    it('should return spawned process', () => {
       processManager.spawn('test-binary', ['--arg1', '--arg2']);
       const process = processManager.getProcess();
 
@@ -80,7 +80,7 @@ describe('ProcessManager', () => {
       expect(result).toBe(mockProcess);
     });
 
-    it('should store the spawned process', () => {
+    it('should store spawned process', () => {
       processManager.spawn('test-binary', []);
 
       expect(processManager.getProcess()).toBe(mockProcess);
@@ -140,7 +140,7 @@ describe('ProcessManager', () => {
         }
       });
 
-      const killPromise = processManager.kill();
+      const killPromise = processManager.kill('SIGTERM');
 
       if (exitCallback) {
         exitCallback(0, 'SIGTERM');
@@ -311,7 +311,7 @@ describe('ProcessManager', () => {
 
       let dataCallback: ((data: Buffer) => void) | null = null;
       mockProcess.stdout!.on = jest.fn((event: string, callback: any) => {
-        if (event === 'data') => {
+        if (event === 'data') {
           dataCallback = callback;
         }
       });

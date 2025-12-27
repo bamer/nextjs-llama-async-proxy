@@ -25,7 +25,7 @@ function renderWithTheme(component: React.ReactElement) {
 describe('ConfigurationHeader', () => {
   beforeEach(() => {
     const { useTheme } = require('@/contexts/ThemeContext');
-    useTheme.mockReturnValue({ isDark: false });
+    jest.mocked(useTheme).mockReturnValue({ isDark: false });
   });
 
   it('renders correctly', () => {
@@ -53,7 +53,8 @@ describe('ConfigurationHeader', () => {
 
   it('renders with dark theme', () => {
     const { useTheme } = require('@/contexts/ThemeContext');
-    useTheme.mockReturnValue({ isDark: true });
+    const mockUseTheme = useTheme as jest.MockedFunction<typeof useTheme>;
+    mockUseTheme.mockReturnValue({ isDark: true });
     const { container } = renderWithTheme(<ConfigurationHeader />);
     const divider = container.querySelector('.MuiDivider-root');
     expect(divider).toBeInTheDocument();

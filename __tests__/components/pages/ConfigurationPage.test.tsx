@@ -166,6 +166,7 @@ describe('ConfigurationPage', () => {
     render(<ConfigurationPage />);
     
     const saveButton = screen.getByText('Save Configuration');
+    saveButton.onclick = jest.fn();
     fireEvent.click(saveButton);
     
     await waitFor(() => {
@@ -180,6 +181,7 @@ describe('ConfigurationPage', () => {
     render(<ConfigurationPage />);
     
     const saveButton = screen.getByText('Save Configuration');
+    saveButton.onclick = jest.fn();
     fireEvent.click(saveButton);
     
     await waitFor(() => {

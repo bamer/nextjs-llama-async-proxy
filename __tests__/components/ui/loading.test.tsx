@@ -4,6 +4,22 @@ import React from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Loading } from '@/components/ui/loading';
 
+jest.mock('@tanstack/react-query', () => ({
+  useQuery: jest.fn(),
+  useMutation: jest.fn(),
+  QueryClient: jest.fn(),
+  QueryClientProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
+jest.mock('framer-motion', () => ({
+  m: {
+    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+  },
+  motion: {
+    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+  },
+}));
+
 const theme = createTheme();
 
 function renderWithTheme(component: React.ReactElement) {

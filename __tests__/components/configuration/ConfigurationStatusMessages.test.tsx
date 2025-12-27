@@ -23,7 +23,7 @@ function renderWithTheme(component: React.ReactElement) {
 describe('ConfigurationStatusMessages', () => {
   beforeEach(() => {
     const { useTheme } = require('@/contexts/ThemeContext');
-    useTheme.mockReturnValue({ isDark: false });
+    jest.mocked(useTheme).mockReturnValue({ isDark: false });
   });
 
   it('renders nothing when no messages', () => {
@@ -101,7 +101,8 @@ describe('ConfigurationStatusMessages', () => {
 
   it('renders success message with dark theme', () => {
     const { useTheme } = require('@/contexts/ThemeContext');
-    useTheme.mockReturnValue({ isDark: true });
+    const mockUseTheme = useTheme as jest.MockedFunction<typeof useTheme>;
+    mockUseTheme.mockReturnValue({ isDark: true });
     renderWithTheme(
       <ConfigurationStatusMessages saveSuccess={true} validationErrors={[]} />
     );
@@ -110,7 +111,8 @@ describe('ConfigurationStatusMessages', () => {
 
   it('renders validation errors with dark theme', () => {
     const { useTheme } = require('@/contexts/ThemeContext');
-    useTheme.mockReturnValue({ isDark: true });
+    const mockUseTheme = useTheme as jest.MockedFunction<typeof useTheme>;
+    mockUseTheme.mockReturnValue({ isDark: true });
     const errors = ['Test error'];
     renderWithTheme(
       <ConfigurationStatusMessages saveSuccess={false} validationErrors={errors} />

@@ -41,7 +41,7 @@ describe('LlamaServerSettingsTab', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     const { useTheme } = require('@/contexts/ThemeContext');
-    useTheme.mockReturnValue({ isDark: false });
+    jest.mocked(useTheme).mockReturnValue({ isDark: false });
   });
 
   it('renders correctly', () => {
@@ -196,7 +196,8 @@ describe('LlamaServerSettingsTab', () => {
 
   it('renders with dark theme', () => {
     const { useTheme } = require('@/contexts/ThemeContext');
-    useTheme.mockReturnValue({ isDark: true });
+    const mockUseTheme = useTheme as jest.MockedFunction<typeof useTheme>;
+    mockUseTheme.mockReturnValue({ isDark: true });
     renderWithTheme(
       <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
     );

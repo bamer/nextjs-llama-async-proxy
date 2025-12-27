@@ -1,9 +1,9 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
-import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ThemeProvider } from "../../../src/contexts/ThemeContext";
 import { createTheme, ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
-import ModernDashboard from "@/components/dashboard/ModernDashboard";
+import ModernDashboard from "../../../src/components/dashboard/ModernDashboard";
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({
@@ -11,15 +11,15 @@ jest.mock("next/navigation", () => ({
   }),
 }));
 
-jest.mock("@/lib/store", () => ({
+jest.mock("../../../src/lib/store", () => ({
   useStore: jest.fn(),
 }));
 
-jest.mock("@/hooks/use-websocket", () => ({
+jest.mock("../../../src/hooks/use-websocket", () => ({
   useWebSocket: jest.fn(),
 }));
 
-jest.mock("@/hooks/useChartHistory", () => ({
+jest.mock("../../../src/hooks/useChartHistory", () => ({
   useChartHistory: jest.fn(),
 }));
 
@@ -45,9 +45,9 @@ jest.mock("next/navigation", () => ({
   }),
 }));
 
-const { useStore } = require("@/lib/store");
-const { useWebSocket } = require("@/hooks/use-websocket");
-const { useChartHistory } = require("@/hooks/useChartHistory");
+const { useStore } = require("../../../src/lib/store");
+const { useWebSocket } = require("../../../src/hooks/use-websocket");
+const { useChartHistory } = require("../../../src/hooks/useChartHistory");
 
 const createMockStore = (overrides = {}) => ({
   models: [
@@ -126,7 +126,10 @@ describe("ModernDashboard", () => {
     jest.clearAllMocks();
     jest.useFakeTimers();
 
-    useStore.mockReturnValue(createMockStore());
+    useStore.mockImplementation((selector) => {
+      const state = createMockStore();
+      return selector ? selector(state) : state;
+    });
     useWebSocket.mockReturnValue(createMockWebSocket());
     useChartHistory.mockReturnValue({
       cpu: [

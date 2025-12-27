@@ -1,9 +1,35 @@
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import React from 'react';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Button } from '@/components/ui/Button';
-import Card from '@/components/ui/Card';
 import { Input, TextArea, Select, Label } from '@/components/ui/Input';
+
+jest.mock('@tanstack/react-query', () => ({
+  useQuery: jest.fn(),
+  useMutation: jest.fn(),
+  QueryClient: jest.fn(),
+  QueryClientProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
+jest.mock('framer-motion', () => ({
+  m: {
+    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+  },
+  motion: {
+    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+  },
+}));
+
+const theme = createTheme();
+
+function renderWithTheme(component: React.ReactElement) {
+  return render(<ThemeProvider theme={theme}>{component}</ThemeProvider>);
+}
+
+const Card = require('@/components/ui/Card').default;
 
 describe('UI Components Index', () => {
   it('exports Button component', () => {
@@ -31,32 +57,32 @@ describe('UI Components Index', () => {
   });
 
   it('Button component can be imported and rendered', () => {
-    render(<Button>Test Button</Button>);
+    renderWithTheme(<Button>Test Button</Button>);
     expect(screen.getByText('Test Button')).toBeInTheDocument();
   });
 
   it('Card component can be imported and rendered', () => {
-    render(<Card />);
+    renderWithTheme(<Card />);
     expect(screen.getByText('Word of the Day')).toBeInTheDocument();
   });
 
   it('Input component can be imported and rendered', () => {
-    render(<Input placeholder="Test Input" />);
+    renderWithTheme(<Input placeholder="Test Input" />);
     expect(screen.getByPlaceholderText('Test Input')).toBeInTheDocument();
   });
 
   it('TextArea component can be imported and rendered', () => {
-    render(<TextArea placeholder="Test TextArea" />);
+    renderWithTheme(<TextArea placeholder="Test TextArea" />);
     expect(screen.getByPlaceholderText('Test TextArea')).toBeInTheDocument();
   });
 
   it('Select component can be imported and rendered', () => {
-    render(<Select><option>Option 1</option></Select>);
+    renderWithTheme(<Select><option>Option 1</option></Select>);
     expect(screen.getByText('Option 1')).toBeInTheDocument();
   });
 
   it('Label component can be imported and rendered', () => {
-    render(<Label>Test Label</Label>);
+    renderWithTheme(<Label>Test Label</Label>);
     expect(screen.getByText('Test Label')).toBeInTheDocument();
   });
 

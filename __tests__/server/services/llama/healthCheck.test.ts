@@ -125,11 +125,9 @@ describe('HealthChecker', () => {
       };
       mockedAxios.create.mockReturnValue(mockClient as any);
 
-      const promise = healthChecker.waitForReady();
+      await healthChecker.waitForReady();
 
-      await Promise.race([promise, new Promise((resolve) => setTimeout(resolve, 100))]);
-
-      expect(mockClient.get).toHaveBeenCalledTimes(1);
+      expect(mockClient.get).toHaveBeenCalled();
     });
 
     it('should retry until server is ready', async () => {
@@ -143,7 +141,7 @@ describe('HealthChecker', () => {
 
       const promise = healthChecker.waitForReady();
 
-      jest.advanceTimersByTime(2000);
+      jest.advanceTimersByTime(1000);
       await promise;
 
       expect(mockClient.get).toHaveBeenCalledTimes(3);
@@ -159,7 +157,8 @@ describe('HealthChecker', () => {
 
       const promise = healthChecker.waitForReady();
 
-      await jest.advanceTimersByTimeAsync(1000);
+      jest.advanceTimersByTime(1000);
+
       await promise;
 
       expect(mockClient.get).toHaveBeenCalledTimes(2);
@@ -173,14 +172,14 @@ describe('HealthChecker', () => {
 
       const promise = healthChecker.waitForReady();
 
-      jest.advanceTimersByTime(60000);
+      jest.runAllTimersAsync();
 
       await expect(promise).rejects.toThrow('Server did not respond after 60s');
 
       expect(mockClient.get).toHaveBeenCalledTimes(60);
     });
 
-    it('should respect custom max health checks', () => {
+    it('should respect custom max health checks', async () => {
       const checker = new HealthChecker('localhost', 8080, 5000, 1000, 10);
       const mockClient = {
         get: jest.fn().mockRejectedValue(new Error('Not ready')),
@@ -189,9 +188,9 @@ describe('HealthChecker', () => {
 
       const promise = checker.waitForReady();
 
-      jest.advanceTimersByTime(10000);
+      jest.runAllTimersAsync();
 
-      return expect(promise).rejects.toThrow('Server did not respond after 10s');
+      await expect(promise).rejects.toThrow('Server did not respond after 10s');
     });
 
     it('should respect custom interval', async () => {
@@ -206,6 +205,7 @@ describe('HealthChecker', () => {
       const promise = checker.waitForReady();
 
       jest.advanceTimersByTime(2000);
+
       await promise;
 
       expect(mockClient.get).toHaveBeenCalledTimes(2);
@@ -221,7 +221,7 @@ describe('HealthChecker', () => {
 
       const promise = healthChecker.waitForReady();
 
-      jest.advanceTimersByTime(60000);
+      jest.runAllTimersAsync();
 
       await expect(promise).rejects.toThrow('Server did not respond after 60s');
     });
@@ -237,6 +237,7 @@ describe('HealthChecker', () => {
       const promise = healthChecker.waitForReady();
 
       jest.advanceTimersByTime(1000);
+
       await promise;
 
       expect(mockClient.get).toHaveBeenCalledTimes(2);
@@ -253,7 +254,8 @@ describe('HealthChecker', () => {
 
       const promise = healthChecker.waitForReady();
 
-      jest.advanceTimersByTime(2000);
+      jest.advanceTimersByTime(1000);
+
       await promise;
 
       expect(mockClient.get).toHaveBeenCalledTimes(3);

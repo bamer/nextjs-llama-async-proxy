@@ -27,7 +27,7 @@ describe('AdvancedSettingsTab', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     const { useTheme } = require('@/contexts/ThemeContext');
-    useTheme.mockReturnValue({ isDark: false });
+    jest.mocked(useTheme).mockReturnValue({ isDark: false });
   });
 
   it('renders correctly', () => {
@@ -129,7 +129,8 @@ describe('AdvancedSettingsTab', () => {
 
   it('renders with dark theme', () => {
     const { useTheme } = require('@/contexts/ThemeContext');
-    useTheme.mockReturnValue({ isDark: true });
+    const mockUseTheme = useTheme as jest.MockedFunction<typeof useTheme>;
+    mockUseTheme.mockReturnValue({ isDark: true });
     renderWithTheme(
       <AdvancedSettingsTab isSaving={false} onReset={mockOnReset} onSync={mockOnSync} />
     );

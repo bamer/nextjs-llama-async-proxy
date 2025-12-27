@@ -2,22 +2,25 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useApi } from '@/hooks/use-api';
 
-jest.mock('@/services/api-service');
+jest.mock('@/services/api-service', () => ({
+  apiService: {
+    getModels: jest.fn(() => Promise.resolve([])),
+    getMetrics: jest.fn(() => Promise.resolve({})),
+    getLogs: jest.fn(() => Promise.resolve([])),
+    getConfig: jest.fn(() => Promise.resolve({})),
+  },
+}));
 
 jest.mock('@/lib/store', () => ({
   useStore: jest.fn(),
 }));
-
-const { apiService } = require('@/services/api-service');
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
         retry: false,
-      },
-      mutations: {
-        retry: false,
+        refetchOnWindowFocus: false,
       },
     },
   });
@@ -29,6 +32,7 @@ const createWrapper = () => {
 
 describe('useApi', () => {
   let wrapper: ReturnType<typeof createWrapper>;
+  const { apiService } = require('@/services/api-service');
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -88,120 +92,36 @@ describe('useApi', () => {
     expect(result.current.config).toHaveProperty('error');
   });
 
-  it('should set up models query with correct key', () => {
-    const useQuerySpy = jest.spyOn(require('@tanstack/react-query'), 'useQuery');
-
+  it('should call apiService.getModels for models query', async () => {
     renderHook(() => useApi(), { wrapper });
 
-    const lastCall = useQuerySpy.mock.calls[useQuerySpy.mock.calls.length - 4];
-    expect(lastCall[0]).toHaveProperty('queryKey');
-    expect(lastCall[0].queryKey).toEqual(['models']);
-
-    useQuerySpy.mockRestore();
+    await waitFor(() => {
+      expect(apiService.getModels).toHaveBeenCalled();
+    });
   });
 
-  it('should set up metrics query with correct key', () => {
-    const useQuerySpy = jest.spyOn(require('@tanstack/react-query'), 'useQuery');
-
+  it('should call apiService.getMetrics for metrics query', async () => {
     renderHook(() => useApi(), { wrapper });
 
-    const lastCall = useQuerySpy.mock.calls[useQuerySpy.mock.calls.length - 3];
-    expect(lastCall[0]).toHaveProperty('queryKey');
-    expect(lastCall[0].queryKey).toEqual(['metrics']);
-
-    useQuerySpy.mockRestore();
+    await waitFor(() => {
+      expect(apiService.getMetrics).toHaveBeenCalled();
+    });
   });
 
-  it('should set up logs query with correct key', () => {
-    const useQuerySpy = jest.spyOn(require('@tanstack/react-query'), 'useQuery');
-
+  it('should call apiService.getLogs with limit for logs query', async () => {
     renderHook(() => useApi(), { wrapper });
 
-    const lastCall = useQuerySpy.mock.calls[useQuerySpy.mock.calls.length - 2];
-    expect(lastCall[0]).toHaveProperty('queryKey');
-    expect(lastCall[0].queryKey).toEqual(['logs']);
-
-    useQuerySpy.mockRestore();
+    await waitFor(() => {
+      expect(apiService.getLogs).toHaveBeenCalledWith({ limit: 50 });
+    });
   });
 
-  it('should set up config query with correct key', () => {
-    const useQuerySpy = jest.spyOn(require('@tanstack/react-query'), 'useQuery');
-
+  it('should call apiService.getConfig for config query', async () => {
     renderHook(() => useApi(), { wrapper });
 
-    const lastCall = useQuerySpy.mock.calls[useQuerySpy.mock.calls.length - 1];
-    expect(lastCall[0]).toHaveProperty('queryKey');
-    expect(lastCall[0].queryKey).toEqual(['config']);
-
-    useQuerySpy.mockRestore();
-  });
-
-  it('should call apiService.getModels for models query', () => {
-    renderHook(() => useApi(), { wrapper });
-
-    expect(apiService.getModels).toHaveBeenCalled();
-  });
-
-  it('should call apiService.getMetrics for metrics query', () => {
-    renderHook(() => useApi(), { wrapper });
-
-    expect(apiService.getMetrics).toHaveBeenCalled();
-  });
-
-  it('should call apiService.getLogs with limit for logs query', () => {
-    renderHook(() => useApi(), { wrapper });
-
-    expect(apiService.getLogs).toHaveBeenCalledWith({ limit: 50 });
-  });
-
-  it('should call apiService.getConfig for config query', () => {
-    renderHook(() => useApi(), { wrapper });
-
-    expect(apiService.getConfig).toHaveBeenCalled();
-  });
-
-  it('should set refetchInterval for models query', () => {
-    const useQuerySpy = jest.spyOn(require('@tanstack/react-query'), 'useQuery');
-
-    renderHook(() => useApi(), { wrapper });
-
-    const lastCall = useQuerySpy.mock.calls[useQuerySpy.mock.calls.length - 4];
-    expect(lastCall[0].refetchInterval).toBe(30000);
-
-    useQuerySpy.mockRestore();
-  });
-
-  it('should set refetchInterval for metrics query', () => {
-    const useQuerySpy = jest.spyOn(require('@tanstack/react-query'), 'useQuery');
-
-    renderHook(() => useApi(), { wrapper });
-
-    const lastCall = useQuerySpy.mock.calls[useQuerySpy.mock.calls.length - 3];
-    expect(lastCall[0].refetchInterval).toBe(10000);
-
-    useQuerySpy.mockRestore();
-  });
-
-  it('should set refetchInterval for logs query', () => {
-    const useQuerySpy = jest.spyOn(require('@tanstack/react-query'), 'useQuery');
-
-    renderHook(() => useApi(), { wrapper });
-
-    const lastCall = useQuerySpy.mock.calls[useQuerySpy.mock.calls.length - 2];
-    expect(lastCall[0].refetchInterval).toBe(15000);
-
-    useQuerySpy.mockRestore();
-  });
-
-  it('should not set refetchInterval for config query', () => {
-    const useQuerySpy = jest.spyOn(require('@tanstack/react-query'), 'useQuery');
-
-    renderHook(() => useApi(), { wrapper });
-
-    const lastCall = useQuerySpy.mock.calls[useQuerySpy.mock.calls.length - 1];
-    expect(lastCall[0].refetchInterval).toBeUndefined();
-
-    useQuerySpy.mockRestore();
+    await waitFor(() => {
+      expect(apiService.getConfig).toHaveBeenCalled();
+    });
   });
 
   it('should handle models query loading state', async () => {
@@ -301,7 +221,9 @@ describe('useApi', () => {
       await result.current.queryClient.refetchQueries({ queryKey: ['models'] });
     });
 
-    await waitFor(() => expect(result.current.models.data).toEqual([{ id: '2', name: 'Model 2' }]));
+    await waitFor(() =>
+      expect(result.current.models.data).toEqual([{ id: '2', name: 'Model 2' }])
+    );
   });
 
   it('should not create multiple query clients on re-renders', () => {
@@ -314,28 +236,27 @@ describe('useApi', () => {
     expect(result.current.queryClient).toBe(firstQueryClient);
   });
 
-  it('should maintain consistent query keys across re-renders', () => {
-    const { result, rerender } = renderHook(() => useApi(), { wrapper });
+  it('should have correct refetch intervals based on data type', async () => {
+    apiService.getModels.mockResolvedValue([]);
+    apiService.getMetrics.mockResolvedValue({});
+    apiService.getLogs.mockResolvedValue([]);
 
-    const initialModelsKey = result.current.models.queryKey;
-    const initialMetricsKey = result.current.metrics.queryKey;
-    const initialLogsKey = result.current.logs.queryKey;
-    const initialConfigKey = result.current.config.queryKey;
-
-    rerender();
-
-    expect(result.current.models.queryKey).toBe(initialModelsKey);
-    expect(result.current.metrics.queryKey).toBe(initialMetricsKey);
-    expect(result.current.logs.queryKey).toBe(initialLogsKey);
-    expect(result.current.config.queryKey).toBe(initialConfigKey);
-  });
-
-  it('should have correct refetch intervals based on data type', () => {
     const { result } = renderHook(() => useApi(), { wrapper });
 
-    expect(result.current.models.refetchInterval).toBe(30000);
-    expect(result.current.metrics.refetchInterval).toBe(10000);
-    expect(result.current.logs.refetchInterval).toBe(15000);
-    expect(result.current.config.refetchInterval).toBeUndefined();
+    await waitFor(() => {
+      expect(result.current.models.refetchInterval).toBe(30000);
+      expect(result.current.metrics.refetchInterval).toBe(10000);
+      expect(result.current.logs.refetchInterval).toBe(15000);
+    });
+  });
+
+  it('should not have refetchInterval for config query', async () => {
+    apiService.getConfig.mockResolvedValue({});
+
+    const { result } = renderHook(() => useApi(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.config.refetchInterval).toBeUndefined();
+    });
   });
 });

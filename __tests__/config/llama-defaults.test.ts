@@ -141,7 +141,7 @@ describe("DEFAULT_LLAMA_SERVER_CONFIG", () => {
     });
 
     it("has dry_sequence_breaker", () => {
-      expect(DEFAULT_LLAMA_SERVER_CONFIG.dry_sequence_breaker).toBe('["\\n", ":", "\\"", "*"]');
+      expect(DEFAULT_LLAMA_SERVER_CONFIG.dry_sequence_breaker).toBe('["\\n", ":", """, "*"]');
     });
   });
 

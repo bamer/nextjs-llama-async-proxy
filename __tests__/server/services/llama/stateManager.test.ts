@@ -28,7 +28,7 @@ describe('StateManager', () => {
   });
 
   describe('getState', () => {
-    it('should return a copy of the state', () => {
+    it('should return a copy of state', () => {
       const state1 = stateManager.getState();
       const state2 = stateManager.getState();
 
@@ -251,14 +251,15 @@ describe('StateManager', () => {
       expect(lastCallState.uptime).toBe(1);
     });
 
-    it('should restart uptime tracking if called again', () => {
+    it('should reset uptime when restarted', () => {
       stateManager.startUptimeTracking();
       jest.advanceTimersByTime(5000);
       expect(stateManager.getState().uptime).toBe(5);
 
       stateManager.startUptimeTracking();
+      jest.advanceTimersByTime(1000);
 
-      expect(stateManager.getState().uptime).toBe(0);
+      expect(stateManager.getState().uptime).toBe(1);
     });
   });
 

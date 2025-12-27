@@ -306,7 +306,7 @@ describe('AnalyticsEngine', () => {
       it('calculates storage from logs directory', async () => {
         mockedFs.access.mockResolvedValue(undefined);
         mockedFs.readdir.mockResolvedValue(['log1.log', 'log2.log']);
-        mockedFs.stat.mockImplementation(async (path) => ({
+        mockedFs.stat.mockImplementation((path) => Promise.resolve({
           size: path.includes('log1') ? 1024 : 2048,
         } as any);
 

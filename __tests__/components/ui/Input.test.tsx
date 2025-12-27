@@ -4,6 +4,24 @@ import React from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Input, TextArea, Select, Label } from '@/components/ui/Input';
 
+jest.mock('@tanstack/react-query', () => ({
+  useQuery: jest.fn(),
+  useMutation: jest.fn(),
+  QueryClient: jest.fn(),
+  QueryClientProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
+jest.mock('framer-motion', () => ({
+  m: {
+    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+  },
+  motion: {
+    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+  },
+}));
+
 const theme = createTheme();
 
 function renderWithTheme(component: React.ReactElement) {
@@ -30,7 +48,7 @@ describe('Input', () => {
   });
 
   it('displays initial value', () => {
-    renderWithTheme(<Input defaultValue="test value" />);
+    renderWithTheme(<Input value="test value" />);
     expect(screen.getByDisplayValue('test value')).toBeInTheDocument();
   });
 
@@ -101,7 +119,7 @@ describe('TextArea', () => {
   });
 
   it('displays initial value', () => {
-    renderWithTheme(<TextArea value="test value" />);
+    renderWithTheme(<TextArea value="test value" onChange={jest.fn()} />);
     expect(screen.getByDisplayValue('test value')).toBeInTheDocument();
   });
 

@@ -39,7 +39,7 @@ describe('ModernConfiguration', () => {
   const mockHandleSync = jest.fn();
   const mockApplyToLogger = jest.fn();
 
-  const defaultConfig = {
+  const defaultConfig: Record<string, unknown> = {
     loading: false,
     activeTab: 0,
     formConfig: {

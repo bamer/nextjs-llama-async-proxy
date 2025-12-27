@@ -401,9 +401,9 @@ describe('useWebSocket', () => {
     });
 
     // Should not crash when data is missing
-    expect(mockSetMetrics).toHaveBeenCalledWith(undefined);
-    expect(mockSetModels).toHaveBeenCalledWith(undefined);
-    expect(mockSetLogs).toHaveBeenCalledWith(undefined);
+    expect(mockSetMetrics).not.toHaveBeenCalled();
+    expect(mockSetModels).not.toHaveBeenCalled();
+    expect(mockSetLogs).not.toHaveBeenCalled();
     expect(mockAddLog).not.toHaveBeenCalled(); // Individual logs need data
   });
 

@@ -107,7 +107,7 @@ describe('RetryHandler', () => {
     it('should wait for calculated backoff time', async () => {
       const promise = retryHandler.waitForRetry(2);
 
-      jest.advanceTimersByTime(3000);
+      jest.advanceTimersByTime(4000);
 
       await expect(promise).resolves.not.toThrow();
     });
@@ -116,8 +116,13 @@ describe('RetryHandler', () => {
       const spy = jest.spyOn(retryHandler, 'getBackoffMs');
 
       await retryHandler.waitForRetry(0);
+      jest.runAllTimersAsync();
+
       await retryHandler.waitForRetry(1);
+      jest.runAllTimersAsync();
+
       await retryHandler.waitForRetry(2);
+      jest.runAllTimersAsync();
 
       expect(spy).toHaveBeenCalledWith(0);
       expect(spy).toHaveBeenCalledWith(1);
@@ -129,24 +134,24 @@ describe('RetryHandler', () => {
     it('should wait longer for higher retry counts', async () => {
       const startTime1 = Date.now();
       const promise1 = retryHandler.waitForRetry(0);
-      jest.advanceTimersByTime(1000);
+      jest.runAllTimersAsync();
       await promise1;
 
       const startTime2 = Date.now();
       const promise2 = retryHandler.waitForRetry(1);
-      jest.advanceTimersByTime(2000);
+      jest.runAllTimersAsync();
       await promise2;
 
       const startTime3 = Date.now();
       const promise3 = retryHandler.waitForRetry(2);
-      jest.advanceTimersByTime(4000);
+      jest.runAllTimersAsync();
       await promise3;
     });
 
     it('should cap wait time at max backoff', async () => {
       const promise = retryHandler.waitForRetry(10);
 
-      jest.advanceTimersByTime(30000);
+      jest.runAllTimersAsync();
 
       await expect(promise).resolves.not.toThrow();
     });
@@ -156,7 +161,7 @@ describe('RetryHandler', () => {
 
       const promise = customHandler.waitForRetry(3);
 
-      jest.advanceTimersByTime(4000);
+      jest.runAllTimersAsync();
 
       await expect(promise).resolves.not.toThrow();
     });
@@ -172,6 +177,7 @@ describe('RetryHandler', () => {
         }
 
         await retryHandler.waitForRetry(retryCount);
+        jest.runAllTimersAsync();
         retryCount++;
 
         throw new Error('Failed');

@@ -1,3 +1,5 @@
+import winston from 'winston';
+import DailyRotateFile from 'winston-daily-rotate-file';
 import {
   initLogger,
   updateLoggerConfig,
@@ -5,69 +7,159 @@ import {
   getLogger,
   setSocketIOInstance,
   getWebSocketTransport,
-  log
+  log,
+  type LoggerConfig,
 } from '@/lib/logger';
+import { WebSocketTransport } from '@/lib/websocket-transport';
 import { Server } from 'socket.io';
 
 jest.mock('winston');
 jest.mock('winston-daily-rotate-file');
-jest.mock('./websocket-transport', () => ({
-  WebSocketTransport: jest.fn().mockImplementation(() => ({
-    log: jest.fn(),
-    setSocketIOInstance: jest.fn(),
-  })),
-}));
+jest.mock('@/lib/websocket-transport');
+jest.mock('socket.io');
 
 describe('logger', () => {
+  let mockCreateLogger: jest.Mock;
+  let mockConsole: jest.Mocked<winston.ConsoleTransportInstance>;
+  let mockRotateFile: jest.Mock;
+  let mockWebSocketTransport: jest.Mocked<WebSocketTransport>;
+  let mockLogger: jest.Mocked<winston.Logger>;
+
   beforeEach(() => {
     jest.clearAllMocks();
+
+    mockWebSocketTransport = {
+      log: jest.fn(),
+    } as any;
+
+    (WebSocketTransport as jest.Mock).mockReturnValue(mockWebSocketTransport);
+
+    mockConsole = {
+      on: jest.fn().mockReturnThis(),
+    } as any;
+
+    mockRotateFile = jest.fn().mockReturnValue({
+      on: jest.fn().mockReturnThis(),
+    }) as any;
+
+    mockLogger = {
+      error: jest.fn(),
+      warn: jest.fn(),
+      info: jest.fn(),
+      debug: jest.fn(),
+      verbose: jest.fn(),
+      exceptions: {
+        handle: jest.fn(),
+      },
+      rejections: {
+        handle: jest.fn(),
+      },
+    } as any;
+
+    mockCreateLogger = winston.createLogger as jest.Mock;
+    mockCreateLogger.mockReturnValue(mockLogger);
+
+    (winston.transports.Console as any).mockReturnValue(mockConsole);
+    (DailyRotateFile as any).mockReturnValue(mockRotateFile);
   });
 
   describe('initLogger', () => {
-    it('initializes with default config', () => {
+    it('should initialize logger with default config', () => {
       const logger = initLogger();
-      expect(logger).toBeDefined();
-      const config = getLoggerConfig();
-      expect(config.consoleLevel).toBe('info');
-      expect(config.fileLevel).toBe('info');
-      expect(config.enableConsoleLogging).toBe(true);
-      expect(config.enableFileLogging).toBe(true);
+
+      expect(logger).toBe(mockLogger);
+      expect(mockCreateLogger).toHaveBeenCalledWith(
+        expect.objectContaining({
+          exitOnError: false,
+        })
+      );
     });
 
-    it('merges partial config with defaults', () => {
-      const logger = initLogger({ consoleLevel: 'debug' });
-      expect(logger).toBeDefined();
-      const config = getLoggerConfig();
-      expect(config.consoleLevel).toBe('debug');
-      expect(config.fileLevel).toBe('info');
+    it('should merge provided config with defaults', () => {
+      const config: Partial<LoggerConfig> = {
+        consoleLevel: 'debug',
+        fileLevel: 'warn',
+      };
+
+      initLogger(config);
+
+      expect(mockCreateLogger).toHaveBeenCalled();
     });
 
-    it('disables console logging when set', () => {
+    it('should create console transport when enabled', () => {
+      initLogger({ enableConsoleLogging: true });
+
+      expect(winston.transports.Console).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: expect.any(String),
+        })
+      );
+    });
+
+    it('should not create console transport when disabled', () => {
       initLogger({ enableConsoleLogging: false });
-      const config = getLoggerConfig();
-      expect(config.enableConsoleLogging).toBe(false);
+
+      const createLoggerCall = mockCreateLogger.mock.calls[0][0];
+      const hasConsoleTransport = createLoggerCall.transports.some(
+        (t: any) => t === mockConsole
+      );
+      expect(hasConsoleTransport).toBe(false);
     });
 
-    it('disables file logging when set', () => {
+    it('should create file transports when enabled', () => {
+      initLogger({ enableFileLogging: true });
+
+      expect(DailyRotateFile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filename: expect.stringContaining('logs/application-'),
+        })
+      );
+
+      expect(DailyRotateFile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filename: expect.stringContaining('logs/errors-'),
+        })
+      );
+    });
+
+    it('should not create file transports when disabled', () => {
       initLogger({ enableFileLogging: false });
-      const config = getLoggerConfig();
-      expect(config.enableFileLogging).toBe(false);
+
+      const createLoggerCall = mockCreateLogger.mock.calls[0][0];
+      const hasFileTransport = createLoggerCall.transports.some(
+        (t: any) => t === mockRotateFile
+      );
+      expect(hasFileTransport).toBe(false);
     });
 
-    it('updates config on subsequent calls', () => {
-      initLogger({ consoleLevel: 'info' });
-      initLogger({ consoleLevel: 'debug' });
-      const config = getLoggerConfig();
-      expect(config.consoleLevel).toBe('debug');
+    it('should create WebSocket transport', () => {
+      initLogger();
+
+      expect(WebSocketTransport).toHaveBeenCalled();
     });
 
-    it('returns logger instance', () => {
-      const logger = initLogger();
-      expect(logger).toHaveProperty('error');
-      expect(logger).toHaveProperty('warn');
-      expect(logger).toHaveProperty('info');
-      expect(logger).toHaveProperty('debug');
-      expect(logger).toHaveProperty('verbose');
+    it('should setup exception handlers', () => {
+      initLogger();
+
+      expect(mockLogger.exceptions?.handle).toHaveBeenCalled();
+    });
+
+    it('should setup rejection handlers', () => {
+      initLogger();
+
+      expect(mockLogger.rejections?.handle).toHaveBeenCalled();
+    });
+
+    it('should log initialization message', () => {
+      initLogger();
+
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Logger initialized with configuration:',
+        expect.objectContaining({
+          consoleLevel: expect.any(String),
+          fileLevel: expect.any(String),
+        })
+      );
     });
   });
 
@@ -76,168 +168,178 @@ describe('logger', () => {
       initLogger();
     });
 
-    it('updates existing config', () => {
-      updateLoggerConfig({ consoleLevel: 'debug' });
-      const config = getLoggerConfig();
-      expect(config.consoleLevel).toBe('debug');
+    it('should update logger configuration', () => {
+      const newConfig: Partial<LoggerConfig> = {
+        consoleLevel: 'debug',
+        fileLevel: 'error',
+      };
+
+      updateLoggerConfig(newConfig);
+
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Updating logger configuration:',
+        newConfig
+      );
     });
 
-    it('preserves unchanged config', () => {
-      const originalConfig = getLoggerConfig();
-      updateLoggerConfig({ consoleLevel: 'debug' });
-      const newConfig = getLoggerConfig();
-      expect(newConfig.fileLevel).toBe(originalConfig.fileLevel);
+    it('should not reinitialize if config is same', () => {
+      const currentConfig = getLoggerConfig();
+      const createLoggerCallsBefore = mockCreateLogger.mock.calls.length;
+
+      updateLoggerConfig(currentConfig);
+
+      expect(mockCreateLogger.mock.calls.length).toBe(
+        createLoggerCallsBefore
+      );
     });
 
-    it('handles multiple updates', () => {
+    it('should reinitialize when config changes', () => {
       updateLoggerConfig({ consoleLevel: 'debug' });
-      updateLoggerConfig({ fileLevel: 'debug' });
-      updateLoggerConfig({ errorLevel: 'warn' });
-      const config = getLoggerConfig();
-      expect(config.consoleLevel).toBe('debug');
-      expect(config.fileLevel).toBe('debug');
-      expect(config.errorLevel).toBe('warn');
-    });
 
-    it('reinitializes logger when config changes', () => {
-      const spy = jest.spyOn(console, 'info').mockImplementation();
-      updateLoggerConfig({ consoleLevel: 'debug' });
-      expect(spy).toHaveBeenCalled();
-      spy.mockRestore();
-    });
-
-    it('does not reinitialize when config is same', () => {
-      const config = getLoggerConfig();
-      const spy = jest.spyOn(console, 'info').mockImplementation();
-      updateLoggerConfig(config);
-      expect(spy).not.toHaveBeenCalled();
-      spy.mockRestore();
+      expect(mockCreateLogger).toHaveBeenCalled();
     });
   });
 
   describe('getLoggerConfig', () => {
-    it('returns config object', () => {
+    it('should return current config', () => {
+      initLogger({ consoleLevel: 'debug' });
+
       const config = getLoggerConfig();
-      expect(config).toHaveProperty('consoleLevel');
-      expect(config).toHaveProperty('fileLevel');
-      expect(config).toHaveProperty('errorLevel');
-      expect(config).toHaveProperty('maxFileSize');
-      expect(config).toHaveProperty('maxFiles');
-      expect(config).toHaveProperty('enableFileLogging');
-      expect(config).toHaveProperty('enableConsoleLogging');
+
+      expect(config).toEqual(
+        expect.objectContaining({
+          consoleLevel: 'debug',
+        })
+      );
     });
 
-    it('returns copy of config', () => {
+    it('should return a copy of config', () => {
+      initLogger();
       const config1 = getLoggerConfig();
       const config2 = getLoggerConfig();
-      expect(config1).toEqual(config2);
-      expect(config1).not.toBe(config2);
-    });
 
-    it('contains valid log levels', () => {
-      const config = getLoggerConfig();
-      expect(['error', 'warn', 'info', 'debug']).toContain(config.consoleLevel);
-      expect(['error', 'warn', 'info', 'debug']).toContain(config.fileLevel);
-      expect(['error', 'warn']).toContain(config.errorLevel);
+      expect(config1).not.toBe(config2);
+      expect(config1).toEqual(config2);
     });
   });
 
   describe('getLogger', () => {
-    it('returns existing logger', () => {
+    it('should return existing logger', () => {
+      initLogger();
       const logger1 = getLogger();
       const logger2 = getLogger();
+
       expect(logger1).toBe(logger2);
     });
 
-    it('initializes logger if not exists', () => {
+    it('should create logger if not exists', () => {
       const logger = getLogger();
-      expect(logger).toBeDefined();
-      expect(logger).toHaveProperty('error');
-    });
 
-    it('returns logger with all methods', () => {
-      const logger = getLogger();
-      expect(typeof logger.error).toBe('function');
-      expect(typeof logger.warn).toBe('function');
-      expect(typeof logger.info).toBe('function');
-      expect(typeof logger.debug).toBe('function');
-      expect(typeof logger.verbose).toBe('function');
+      expect(logger).toBe(mockLogger);
     });
   });
 
   describe('setSocketIOInstance', () => {
-    it('sets Socket.IO instance on transport', () => {
+    it('should set Socket.IO instance on transport', () => {
+      initLogger();
       const mockIo = {} as Server;
-      const transport = getWebSocketTransport();
-      const setSpy = jest.spyOn(transport!, 'setSocketIOInstance');
-      setSocketIOInstance(mockIo);
-      expect(setSpy).toHaveBeenCalledWith(mockIo);
-    });
 
-    it('does not throw when transport is null', () => {
-      expect(() => setSocketIOInstance({} as Server)).not.toThrow();
+      setSocketIOInstance(mockIo);
+
+      expect(mockWebSocketTransport.setSocketIOInstance).toHaveBeenCalledWith(
+        mockIo
+      );
     });
   });
 
   describe('getWebSocketTransport', () => {
-    it('returns transport instance', () => {
+    it('should return WebSocket transport', () => {
+      initLogger();
       const transport = getWebSocketTransport();
-      expect(transport).toBeDefined();
+
+      expect(transport).toBe(mockWebSocketTransport);
     });
 
-    it('returns same instance on multiple calls', () => {
-      const transport1 = getWebSocketTransport();
-      const transport2 = getWebSocketTransport();
-      expect(transport1).toBe(transport2);
+    it('should return null before initialization', () => {
+      const transport = getWebSocketTransport();
+
+      expect(transport).toBeNull();
     });
   });
 
-  describe('log convenience methods', () => {
+  describe('log object', () => {
     beforeEach(() => {
       initLogger();
     });
 
-    it('has error method', () => {
-      expect(typeof log.error).toBe('function');
+    it('should have error method', () => {
+      log.error('test error', { data: 123 });
+
+      expect(mockLogger.error).toHaveBeenCalledWith('test error', { data: 123 });
     });
 
-    it('has warn method', () => {
-      expect(typeof log.warn).toBe('function');
+    it('should have warn method', () => {
+      log.warn('test warning', { code: 500 });
+
+      expect(mockLogger.warn).toHaveBeenCalledWith('test warning', { code: 500 });
     });
 
-    it('has info method', () => {
-      expect(typeof log.info).toBe('function');
+    it('should have info method', () => {
+      log.info('test info');
+
+      expect(mockLogger.info).toHaveBeenCalledWith('test info', undefined);
     });
 
-    it('has debug method', () => {
-      expect(typeof log.debug).toBe('function');
+    it('should have debug method', () => {
+      log.debug('test debug', { debug: true });
+
+      expect(mockLogger.debug).toHaveBeenCalledWith('test debug', {
+        debug: true,
+      });
     });
 
-    it('has verbose method', () => {
-      expect(typeof log.verbose).toBe('function');
+    it('should have verbose method', () => {
+      log.verbose('test verbose');
+
+      expect(mockLogger.verbose).toHaveBeenCalledWith('test verbose', undefined);
+    });
+
+    it('should handle calls without meta', () => {
+      log.info('message');
+
+      expect(mockLogger.info).toHaveBeenCalledWith('message', undefined);
     });
   });
 
-  describe('LoggerConfig interface', () => {
-    it('accepts valid console levels', () => {
-      const levels = ['error', 'warn', 'info', 'debug'];
-      levels.forEach(level => {
-        expect(() => initLogger({ consoleLevel: level as any })).not.toThrow();
+  describe('configuration options', () => {
+    it('should support all log levels', () => {
+      const levels = ['error', 'info', 'warn', 'debug'] as const;
+
+      levels.forEach((level) => {
+        initLogger({ consoleLevel: level });
+
+        expect(mockCreateLogger).toHaveBeenCalled();
       });
     });
 
-    it('accepts valid file levels', () => {
-      const levels = ['error', 'warn', 'info', 'debug'];
-      levels.forEach(level => {
-        expect(() => initLogger({ fileLevel: level as any })).not.toThrow();
-      });
+    it('should support custom max file size', () => {
+      initLogger({ maxFileSize: '50m' });
+
+      expect(DailyRotateFile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          maxSize: '50m',
+        })
+      );
     });
 
-    it('accepts valid error levels', () => {
-      const levels = ['error', 'warn'];
-      levels.forEach(level => {
-        expect(() => initLogger({ errorLevel: level as any })).not.toThrow();
-      });
+    it('should support custom max files', () => {
+      initLogger({ maxFiles: '60d' });
+
+      expect(DailyRotateFile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          maxFiles: '60d',
+        })
+      );
     });
   });
 });

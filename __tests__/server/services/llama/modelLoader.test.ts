@@ -19,12 +19,17 @@ describe('ModelLoader', () => {
 
     mockedPath.join.mockImplementation((...args: string[]) => args.join('/'));
     mockedPath.resolve.mockImplementation((p: string) => p);
-
-    modelLoader = new ModelLoader('localhost', 8080, '/path/to/models');
   });
 
   describe('constructor', () => {
     it('should create axios client with correct config', () => {
+      const mockClient = {
+        get: jest.fn(),
+      };
+      mockedAxios.create.mockReturnValue(mockClient as any);
+
+      modelLoader = new ModelLoader('localhost', 8080, '/path/to/models');
+
       expect(mockedAxios.create).toHaveBeenCalledWith({
         baseURL: 'http://localhost:8080',
         timeout: 5000,
@@ -33,17 +38,33 @@ describe('ModelLoader', () => {
     });
 
     it('should store base path', () => {
+      const mockClient = { get: jest.fn() };
+      mockedAxios.create.mockReturnValue(mockClient as any);
+
+      modelLoader = new ModelLoader('localhost', 8080, '/path/to/models');
+
       expect((modelLoader as any).basePath).toBe('/path/to/models');
     });
 
     it('should handle undefined base path', () => {
-      const loaderWithoutPath = new ModelLoader('localhost', 8080);
+      const mockClient = { get: jest.fn() };
+      mockedAxios.create.mockReturnValue(mockClient as any);
 
-      expect((loaderWithoutPath as any).basePath).toBeUndefined();
+      modelLoader = new ModelLoader('localhost', 8080);
+
+      expect((modelLoader as any).basePath).toBeUndefined();
     });
   });
 
   describe('loadFromServer', () => {
+    beforeEach(() => {
+      const mockClient = {
+        get: jest.fn(),
+      };
+      mockedAxios.create.mockReturnValue(mockClient as any);
+      modelLoader = new ModelLoader('localhost', 8080, '/path/to/models');
+    });
+
     it('should load models from server with array response', async () => {
       const mockModels = [
         {
@@ -61,13 +82,11 @@ describe('ModelLoader', () => {
         },
       ];
 
-      const mockClient = {
-        get: jest.fn().mockResolvedValue({
-          status: 200,
-          data: mockModels,
-        }),
-      };
-      mockedAxios.create.mockReturnValue(mockClient as any);
+      const mockClient = mockedAxios.create.mock.results[0].value as any;
+      mockClient.get.mockResolvedValue({
+        status: 200,
+        data: mockModels,
+      });
 
       const models = await modelLoader.loadFromServer();
 
@@ -104,13 +123,8 @@ describe('ModelLoader', () => {
         },
       };
 
-      const mockClient = {
-        get: jest.fn().mockResolvedValue({
-          status: 200,
-          data: mockResponse.data,
-        }),
-      };
-      mockedAxios.create.mockReturnValue(mockClient as any);
+      const mockClient = mockedAxios.create.mock.results[0].value as any;
+      mockClient.get.mockResolvedValue({ status: 200, data: mockResponse.data });
 
       const models = await modelLoader.loadFromServer();
 
@@ -127,13 +141,11 @@ describe('ModelLoader', () => {
         },
       ];
 
-      const mockClient = {
-        get: jest.fn().mockResolvedValue({
-          status: 200,
-          data: mockModels,
-        }),
-      };
-      mockedAxios.create.mockReturnValue(mockClient as any);
+      const mockClient = mockedAxios.create.mock.results[0].value as any;
+      mockClient.get.mockResolvedValue({
+        status: 200,
+        data: mockModels,
+      });
 
       const models = await modelLoader.loadFromServer();
 
@@ -142,13 +154,11 @@ describe('ModelLoader', () => {
     });
 
     it('should return empty array for non-200 status', async () => {
-      const mockClient = {
-        get: jest.fn().mockResolvedValue({
-          status: 404,
-          data: null,
-        }),
-      };
-      mockedAxios.create.mockReturnValue(mockClient as any);
+      const mockClient = mockedAxios.create.mock.results[0].value as any;
+      mockClient.get.mockResolvedValue({
+        status: 404,
+        data: null,
+      });
 
       const models = await modelLoader.loadFromServer();
 
@@ -156,13 +166,11 @@ describe('ModelLoader', () => {
     });
 
     it('should return empty array for null data', async () => {
-      const mockClient = {
-        get: jest.fn().mockResolvedValue({
-          status: 200,
-          data: null,
-        }),
-      };
-      mockedAxios.create.mockReturnValue(mockClient as any);
+      const mockClient = mockedAxios.create.mock.results[0].value as any;
+      mockClient.get.mockResolvedValue({
+        status: 200,
+        data: null,
+      });
 
       const models = await modelLoader.loadFromServer();
 
@@ -170,10 +178,8 @@ describe('ModelLoader', () => {
     });
 
     it('should throw error on request failure', async () => {
-      const mockClient = {
-        get: jest.fn().mockRejectedValue(new Error('Connection refused')),
-      };
-      mockedAxios.create.mockReturnValue(mockClient as any);
+      const mockClient = mockedAxios.create.mock.results[0].value as any;
+      mockClient.get.mockRejectedValue(new Error('Connection refused'));
 
       await expect(modelLoader.loadFromServer()).rejects.toThrow(
         'Failed to fetch models from server'
@@ -181,13 +187,11 @@ describe('ModelLoader', () => {
     });
 
     it('should handle empty array response', async () => {
-      const mockClient = {
-        get: jest.fn().mockResolvedValue({
-          status: 200,
-          data: [],
-        }),
-      };
-      mockedAxios.create.mockReturnValue(mockClient as any);
+      const mockClient = mockedAxios.create.mock.results[0].value as any;
+      mockClient.get.mockResolvedValue({
+        status: 200,
+        data: [],
+      });
 
       const models = await modelLoader.loadFromServer();
 
@@ -195,13 +199,11 @@ describe('ModelLoader', () => {
     });
 
     it('should handle non-array data response', async () => {
-      const mockClient = {
-        get: jest.fn().mockResolvedValue({
-          status: 200,
-          data: { message: 'Not an array' },
-        }),
-      };
-      mockedAxios.create.mockReturnValue(mockClient as any);
+      const mockClient = mockedAxios.create.mock.results[0].value as any;
+      mockClient.get.mockResolvedValue({
+        status: 200,
+        data: { message: 'Not an array' },
+      });
 
       const models = await modelLoader.loadFromServer();
 
@@ -210,6 +212,12 @@ describe('ModelLoader', () => {
   });
 
   describe('loadFromFilesystem', () => {
+    beforeEach(() => {
+      const mockClient = { get: jest.fn() };
+      mockedAxios.create.mockReturnValue(mockClient as any);
+      modelLoader = new ModelLoader('localhost', 8080, '/path/to/models');
+    });
+
     it('should return empty array when base path is not set', () => {
       const loaderWithoutPath = new ModelLoader('localhost', 8080);
 
@@ -355,6 +363,12 @@ describe('ModelLoader', () => {
   });
 
   describe('load', () => {
+    beforeEach(() => {
+      const mockClient = { get: jest.fn() };
+      mockedAxios.create.mockReturnValue(mockClient as any);
+      modelLoader = new ModelLoader('localhost', 8080, '/path/to/models');
+    });
+
     it('should load from server when successful', async () => {
       const mockModels = [
         {
@@ -365,13 +379,11 @@ describe('ModelLoader', () => {
         },
       ];
 
-      const mockClient = {
-        get: jest.fn().mockResolvedValue({
-          status: 200,
-          data: mockModels,
-        }),
-      };
-      mockedAxios.create.mockReturnValue(mockClient as any);
+      const mockClient = mockedAxios.create.mock.results[0].value as any;
+      mockClient.get.mockResolvedValue({
+        status: 200,
+        data: mockModels,
+      });
 
       const models = await modelLoader.load();
 
@@ -380,13 +392,11 @@ describe('ModelLoader', () => {
     });
 
     it('should fallback to filesystem when server fails', async () => {
-      const mockClient = {
-        get: jest.fn().mockRejectedValue(new Error('Connection refused')),
-      };
-      mockedAxios.create.mockReturnValue(mockClient as any);
+      const mockClient = mockedAxios.create.mock.results[0].value as any;
+      mockClient.get.mockRejectedValue(new Error('Connection refused'));
 
       mockedFs.existsSync.mockReturnValue(true);
-      mockedFs.readdirSync.mockReturnValue(['model.gguf']);
+      mockedFs.readdirSync.mockReturnValue(['model1.gguf']);
       mockedFs.statSync.mockReturnValue({
         size: 1000000000,
         mtimeMs: Date.now(),
@@ -395,14 +405,12 @@ describe('ModelLoader', () => {
       const models = await modelLoader.load();
 
       expect(models).toHaveLength(1);
-      expect(models[0].name).toBe('model');
+      expect(models[0].name).toBe('model1');
     });
 
     it('should return empty array when both server and filesystem fail', async () => {
-      const mockClient = {
-        get: jest.fn().mockRejectedValue(new Error('Connection refused')),
-      };
-      mockedAxios.create.mockReturnValue(mockClient as any);
+      const mockClient = mockedAxios.create.mock.results[0].value as any;
+      mockClient.get.mockRejectedValue(new Error('Connection refused'));
 
       mockedFs.existsSync.mockReturnValue(false);
 

@@ -6,6 +6,7 @@ const jestConfig: Config = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@/app/(.*)$': '<rootDir>/app/$1',
   },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
