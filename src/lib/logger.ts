@@ -1,5 +1,7 @@
 import { createLogger, format, transports, Logger } from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
+import { WebSocketTransport } from './websocket-transport';
+import { Server } from 'socket.io';
 
 // Define log levels
 const logLevels = {
@@ -31,6 +33,9 @@ export interface LoggerConfig {
 
 // Create logger instance
 let logger: Logger;
+
+// WebSocket transport instance
+let wsTransport: WebSocketTransport | null = null;
 
 // Default configuration
 let currentConfig: LoggerConfig = {
@@ -95,32 +100,11 @@ export function initLogger(config: Partial<LoggerConfig> = {}): Logger {
     );
   }
 
-  // Add file transports if enabled
-  if (currentConfig.enableFileLogging) {
-    loggerTransports.push(
-      new DailyRotateFile({
-        level: currentConfig.fileLevel,
-        filename: 'logs/application-%DATE%.log',
-        datePattern: 'YYYY-MM-DD',
-        zippedArchive: true,
-        maxSize: currentConfig.maxFileSize,
-        maxFiles: currentConfig.maxFiles,
-        format: logFormat,
-      })
-    );
-
-    loggerTransports.push(
-      new DailyRotateFile({
-        level: currentConfig.errorLevel,
-        filename: 'logs/errors-%DATE%.log',
-        datePattern: 'YYYY-MM-DD',
-        zippedArchive: true,
-        maxSize: currentConfig.maxFileSize,
-        maxFiles: currentConfig.maxFiles,
-        format: logFormat,
-      })
-    );
+  // Add WebSocket transport for real-time streaming
+  if (!wsTransport) {
+    wsTransport = new WebSocketTransport();
   }
+  loggerTransports.push(wsTransport as any);
 
   // Create logger instance
   logger = createLogger({
@@ -133,14 +117,14 @@ export function initLogger(config: Partial<LoggerConfig> = {}): Logger {
   // Add exception handling
   if (logger.exceptions) {
     logger.exceptions.handle(
-      ...loggerTransports
+      ...(loggerTransports as any)
     );
   }
 
   // Add rejection handling
   if (logger.rejections) {
     logger.rejections.handle(
-      ...loggerTransports
+      ...(loggerTransports as any)
     );
   }
 
@@ -185,6 +169,23 @@ export function getLogger(): Logger {
     logger = initLogger();
   }
   return logger;
+}
+
+/**
+ * Set Socket.IO instance for WebSocket transport
+ * This should be called when the Socket.IO server is initialized
+ */
+export function setSocketIOInstance(io: Server): void {
+  if (wsTransport) {
+    wsTransport.setSocketIOInstance(io);
+  }
+}
+
+/**
+ * Get WebSocket transport instance
+ */
+export function getWebSocketTransport(): WebSocketTransport | null {
+  return wsTransport;
 }
 
 // Initialize logger on import

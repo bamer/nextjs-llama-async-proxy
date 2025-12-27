@@ -5,6 +5,7 @@ import express from 'express';
 import LlamaServerIntegration from './src/server/services/LlamaServerIntegration.ts';
 import { registry } from './src/server/ServiceRegistry.ts';
 import { loadConfig } from './src/lib/server-config.ts';
+import { setSocketIOInstance } from './src/lib/logger.ts';
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
@@ -48,6 +49,10 @@ app.prepare().then(() => {
   });
 
   logger.info('🔧 [SOCKET.IO] Socket.IO server configured with path: /llamaproxws');
+
+  // Set Socket.IO instance in Winston logger for real-time log streaming
+  setSocketIOInstance(io);
+  logger.info('🔧 [LOGGER] Socket.IO instance registered for WebSocket transport');
 
   const llamaIntegration = new LlamaServerIntegration(io);
 

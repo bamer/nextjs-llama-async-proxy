@@ -1,26 +1,24 @@
-import { describe, it, expect, vi } from '@jest/globals';
-import { render, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import React from 'react';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { QuickActionsCard } from '@/components/dashboard/QuickActionsCard';
-import { ThemeProvider } from '@mui/material/styles';
-import { createTheme } from '@mui/material/styles';
 
-const mockTheme = createTheme();
+const theme = createTheme();
 
 function renderWithTheme(component: React.ReactElement) {
-  return render(<ThemeProvider theme={mockTheme}>{component}</ThemeProvider>);
+  return render(<ThemeProvider theme={theme}>{component}</ThemeProvider>);
 }
 
 describe('QuickActionsCard', () => {
   const mockHandlers = {
-    onDownloadLogs: vi.fn(),
-    onRestartServer: vi.fn(),
-    onStartServer: vi.fn(),
+    onDownloadLogs: jest.fn(),
+    onRestartServer: jest.fn(),
+    onStartServer: jest.fn(),
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders correctly', () => {
@@ -31,7 +29,7 @@ describe('QuickActionsCard', () => {
       />
     );
 
-    expect(document.querySelector('h6')?.textContent).toContain('Server Actions');
+    expect(screen.getByText('Server Actions')).toBeInTheDocument();
   });
 
   it('renders all action buttons', () => {
@@ -42,7 +40,7 @@ describe('QuickActionsCard', () => {
       />
     );
 
-    const buttons = document.querySelectorAll('button');
+    const buttons = screen.getAllByRole('button');
     expect(buttons.length).toBe(3);
   });
 
@@ -54,7 +52,7 @@ describe('QuickActionsCard', () => {
       />
     );
 
-    const buttons = document.querySelectorAll('button');
+    const buttons = screen.getAllByRole('button');
     fireEvent.click(buttons[0]);
 
     expect(mockHandlers.onDownloadLogs).toHaveBeenCalledTimes(1);
@@ -68,7 +66,7 @@ describe('QuickActionsCard', () => {
       />
     );
 
-    const buttons = document.querySelectorAll('button');
+    const buttons = screen.getAllByRole('button');
     fireEvent.click(buttons[1]);
 
     expect(mockHandlers.onRestartServer).toHaveBeenCalledTimes(1);
@@ -82,7 +80,7 @@ describe('QuickActionsCard', () => {
       />
     );
 
-    const buttons = document.querySelectorAll('button');
+    const buttons = screen.getAllByRole('button');
     fireEvent.click(buttons[2]);
 
     expect(mockHandlers.onStartServer).toHaveBeenCalledTimes(1);
@@ -96,6 +94,18 @@ describe('QuickActionsCard', () => {
       />
     );
 
-    expect(document.textContent).toContain('Last Update');
+    expect(screen.getByText('Last Update')).toBeInTheDocument();
+  });
+
+  it('applies dark mode styling', () => {
+    const { container } = renderWithTheme(
+      <QuickActionsCard
+        isDark={true}
+        {...mockHandlers}
+      />
+    );
+
+    const card = container.querySelector('.MuiCard-root');
+    expect(card).toBeInTheDocument();
   });
 });

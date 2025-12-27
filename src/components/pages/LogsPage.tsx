@@ -1,47 +1,44 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
-// Hook to check if we're on the client side
-const useIsClient = () => {
-  const [isClient, setIsClient] = useState(false);
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-  return isClient;
-};
+import { useWebSocket } from '@/hooks/use-websocket';
+import { useStore } from '@/lib/store';
 
 interface LogEntry {
   level: 'info' | 'warn' | 'error' | 'debug';
   message: string;
   timestamp: string;
-  source: string;
+  source?: string;
+  context?: { source?: string };
 }
 
 const LogsPage = () => {
-  const isClient = useIsClient();
-  const [logs, setLogs] = useState<LogEntry[]>([
-    { level: 'info', message: 'Model loading started for llama-2-7b-chat', timestamp: '2025-01-01T10:00:00Z', source: 'model-manager' },
-    { level: 'debug', message: 'GPU memory allocation completed', timestamp: '2025-01-01T10:00:00Z', source: 'gpu-manager' },
-    { level: 'warn', message: 'Memory usage approaching 80%', timestamp: '2025-01-01T10:01:00Z', source: 'system-monitor' },
-    { level: 'error', message: 'Failed to load model llama-3-8b', timestamp: '2025-01-01T10:02:00Z', source: 'model-manager' },
-    { level: 'info', message: 'New log entry added', timestamp: '2025-01-01T10:03:00Z', source: 'log-manager' }
-  ]);
+  const { requestLogs, isConnected } = useWebSocket();
+  const logs = useStore((state) => state.logs);
   const [filterText, setFilterText] = useState('');
   const [selectedLevel, setSelectedLevel] = useState<string>('all');
   const [maxLines, setMaxLines] = useState(50);
 
+  // Request logs on mount
+  useEffect(() => {
+    if (isConnected) {
+      requestLogs();
+    }
+  }, [isConnected, requestLogs]);
 
 
-  const filteredLogs = logs.filter(log => {
-    const matchesText = log.message.toLowerCase().includes(filterText.toLowerCase()) ||
-                       log.source.toLowerCase().includes(filterText.toLowerCase());
+
+  const filteredLogs = logs.filter((log) => {
+    const source = log.source || log.context?.source || 'application';
+    const matchesText =
+      log.message.toLowerCase().includes(filterText.toLowerCase()) ||
+      source.toLowerCase().includes(filterText.toLowerCase());
     const matchesLevel = selectedLevel === 'all' || log.level === selectedLevel;
     return matchesText && matchesLevel;
-  });
+  }).slice(0, maxLines);
 
   const clearLogs = () => {
-    setLogs([]);
+    useStore.getState().clearLogs();
   };
 
   const getLogLevelColor = (level: string) => {
@@ -122,18 +119,27 @@ const LogsPage = () => {
 
       <div className="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
         <div className="flex flex-col gap-3 max-h-96 overflow-y-auto">
-          {filteredLogs.map((log, index) => (
-            <div key={index} className={`p-3 border rounded-md ${getLogLevelColor(log.level)} transition-all hover:shadow-sm`}>
-              <div className="flex justify-between items-start">
-                 <span className={`font-mono ${getLogLevelTextColor(log.level)} font-medium`}>
-                   {log.level.toUpperCase()} - {isClient ? new Date(log.timestamp).toLocaleTimeString() : new Date(log.timestamp).toISOString().split('T')[1].split('.')[0]}
-                 </span>
-                <span className="text-xs opacity-60 ml-2 flex-shrink-0">{log.source}</span>
-              </div>
-              <p className="mt-2 font-mono text-sm leading-relaxed">{log.message}</p>
-            </div>
-          ))}
-        </div>
+           {filteredLogs.length === 0 ? (
+             <div className="text-center py-8 text-muted-foreground">
+               {logs.length === 0 ? 'No logs available' : 'No logs match the selected filters'}
+             </div>
+           ) : (
+             filteredLogs.map((log, index) => {
+               const source = log.source || log.context?.source || 'application';
+               return (
+                 <div key={index} className={`p-3 border rounded-md ${getLogLevelColor(log.level)} transition-all hover:shadow-sm`}>
+                   <div className="flex justify-between items-start">
+                     <span className={`font-mono ${getLogLevelTextColor(log.level)} font-medium`}>
+                       {log.level.toUpperCase()} - {new Date(log.timestamp).toLocaleTimeString()}
+                     </span>
+                     <span className="text-xs opacity-60 ml-2 flex-shrink-0">{source}</span>
+                   </div>
+                   <p className="mt-2 font-mono text-sm leading-relaxed">{log.message}</p>
+                 </div>
+               );
+             })
+           )}
+         </div>
       </div>
     </div>
   );

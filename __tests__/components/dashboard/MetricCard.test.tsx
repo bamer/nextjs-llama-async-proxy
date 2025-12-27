@@ -1,15 +1,13 @@
-import { describe, it, expect } from '@jest/globals';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import React from 'react';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { MetricCard } from '@/components/dashboard/MetricCard';
-import { ThemeProvider } from '@mui/material/styles';
-import { createTheme } from '@mui/material/styles';
 
-const mockTheme = createTheme();
+const theme = createTheme();
 
 function renderWithTheme(component: React.ReactElement) {
-  return render(<ThemeProvider theme={mockTheme}>{component}</ThemeProvider>);
+  return render(<ThemeProvider theme={theme}>{component}</ThemeProvider>);
 }
 
 describe('MetricCard', () => {
@@ -23,8 +21,7 @@ describe('MetricCard', () => {
       />
     );
 
-    expect(document.querySelector('h6')).toBeInTheDocument();
-    expect(document.querySelector('h3')).toBeInTheDocument();
+    expect(screen.getByText('Test Metric')).toBeInTheDocument();
   });
 
   it('displays title, value, and unit', () => {
@@ -37,8 +34,8 @@ describe('MetricCard', () => {
       />
     );
 
-    expect(document.querySelector('h6')?.textContent).toContain('CPU Usage');
-    expect(document.querySelector('h3')?.textContent).toContain('75%');
+    expect(screen.getByText('CPU Usage')).toBeInTheDocument();
+    expect(screen.getByText('75.0%')).toBeInTheDocument();
   });
 
   it('renders icon when provided', () => {
@@ -52,7 +49,7 @@ describe('MetricCard', () => {
       />
     );
 
-    expect(document.textContent).toContain('💾');
+    expect(screen.getByText('💾')).toBeInTheDocument();
   });
 
   it('applies dark mode styles', () => {
@@ -80,6 +77,33 @@ describe('MetricCard', () => {
       />
     );
 
-    expect(document.querySelector('h3')).toBeInTheDocument();
+    expect(screen.getByText('High')).toBeInTheDocument();
+    expect(screen.getByText('High Value')).toBeInTheDocument();
+  });
+
+  it('handles zero value', () => {
+    renderWithTheme(
+      <MetricCard
+        title="Zero"
+        value={0}
+        unit="%"
+        isDark={false}
+      />
+    );
+
+    expect(screen.getByText('0.0%')).toBeInTheDocument();
+  });
+
+  it('handles large value', () => {
+    renderWithTheme(
+      <MetricCard
+        title="Large"
+        value={1000}
+        unit="ms"
+        isDark={false}
+      />
+    );
+
+    expect(screen.getByText('1000.0ms')).toBeInTheDocument();
   });
 });

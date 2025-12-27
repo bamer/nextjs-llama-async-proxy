@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { LlamaService } from "@/server/services/LlamaService";
 
-let llamaService: LlamaService | null | undefined = null;
+const llamaService: LlamaService | null | undefined = null;
 
 // Get models list
 export async function GET(): Promise<NextResponse> {
@@ -33,7 +33,7 @@ export async function GET(): Promise<NextResponse> {
       id: model.id || model.name,
       name: model.name,
       type: model.type || "unknown",
-      status: "available",
+      available: true,
       size: model.size,
       createdAt: new Date(
         model.modified_at ? model.modified_at * 1000 : Date.now()

@@ -29,13 +29,11 @@ class WebSocketClient extends EventEmitter {
       });
 
       this.socket.on('connect', () => {
-        console.log('Socket.IO connected');
         this.socketId = this.socket?.id || null;
         this.emit('connect');
       });
 
       this.socket.on('message', (message) => {
-        console.log('Socket.IO message received:', message);
         if (message.type === 'connection') {
           this.socketId = message.clientId;
         }
@@ -43,18 +41,22 @@ class WebSocketClient extends EventEmitter {
       });
 
       this.socket.on('metrics', (data) => {
-        console.log('Socket.IO metrics received:', data);
         this.emit('message', { type: 'metrics', data: data.data });
       });
 
       this.socket.on('models', (data) => {
-        console.log('Socket.IO models received:', data);
         this.emit('message', { type: 'models', data: data.data });
       });
 
       this.socket.on('logs', (data) => {
-        console.log('Socket.IO logs received:', data);
         this.emit('message', { type: 'logs', data: data.data });
+      });
+
+      // Listen for real-time individual log events
+      this.socket.on('log', (data) => {
+        if (data.data) {
+          this.emit('message', { type: 'log', data: data.data });
+        }
       });
 
       this.socket.on('connect_error', (error) => {

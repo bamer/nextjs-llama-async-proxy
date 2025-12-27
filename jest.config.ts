@@ -1,18 +1,12 @@
-import nextJest from 'next/jest.js';
 import type { Config } from 'jest';
 
-const createJestConfig = nextJest({
-  dir: './',
-});
-
 const jestConfig: Config = {
-  ...createJestConfig({
-    setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
-    testEnvironment: 'jsdom',
-    moduleNameMapper: {
-      '^@/(.*)$': '<rootDir>/src/$1',
-    },
-  }),
+  preset: 'ts-jest',
+  testEnvironment: 'jsdom',
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
@@ -21,10 +15,10 @@ const jestConfig: Config = {
   ],
   coverageThreshold: {
     global: {
-      branches: 70,
-      functions: 70,
-      lines: 70,
-      statements: 70,
+      branches: 98,
+      functions: 98,
+      lines: 98,
+      statements: 98,
     },
   },
   testMatch: [
@@ -35,6 +29,11 @@ const jestConfig: Config = {
     '/node_modules/',
     '/.next/',
   ],
+  transform: {
+    '^.+\\.tsx?$': ['ts-jest', {
+      tsconfig: '<rootDir>/tsconfig.json',
+    }],
+  },
 };
 
 export default jestConfig;

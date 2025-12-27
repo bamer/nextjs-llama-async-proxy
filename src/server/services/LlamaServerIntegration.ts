@@ -2,6 +2,7 @@ import { Server, Socket } from "socket.io";
 import { LlamaService, LlamaServerConfig, LlamaModel } from "./LlamaService";
 import { exec } from "child_process";
 import { promisify } from "util";
+import { getWebSocketTransport } from "../../lib/logger";
 
 const execAsync = promisify(exec);
 
@@ -308,12 +309,31 @@ export class LlamaServerIntegration {
       }
     });
 
-    socket.on("logs", () => {
-      socket.emit("logs", {
-        type: "logs",
-        data: [],
-        timestamp: Date.now(),
-      });
+    socket.on("requestLogs", () => {
+      try {
+        const wsTransport = getWebSocketTransport();
+        if (wsTransport) {
+          const cachedLogs = wsTransport.getCachedLogs();
+          socket.emit("logs", {
+            type: "logs",
+            data: cachedLogs,
+            timestamp: Date.now(),
+          });
+        } else {
+          socket.emit("logs", {
+            type: "logs",
+            data: [],
+            timestamp: Date.now(),
+          });
+        }
+      } catch (error) {
+        console.error("[WS] Error retrieving logs:", error);
+        socket.emit("logs", {
+          type: "logs",
+          data: [],
+          timestamp: Date.now(),
+        });
+      }
     });
 
     socket.on("restart_server", async () => {

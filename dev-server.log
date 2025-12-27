@@ -1,0 +1,12 @@
+
+> nextjs-llama-async-proxy@0.1.0 dev /home/bamer/nextjs-llama-async-proxy
+> tsx server.js
+
+undefined [[32minfo[39m]: Logger initialized with configuration:
+[INFO] 🚀 [SOCKET.IO] Initializing Socket.IO server...
+(node:962668) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 end listeners added to [DerivedLogger]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:962668) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 data listeners added to [DerivedLogger]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+⨯ Unable to acquire lock at /home/bamer/nextjs-llama-async-proxy/.next/dev/lock, is another instance of next dev running?
+  Suggestion: If you intended to restart next dev, terminate the other process, and then try again.
+ ELIFECYCLE  Command failed with exit code 1.

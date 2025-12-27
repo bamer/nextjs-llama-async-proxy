@@ -2,6 +2,7 @@
 
 import { MainLayout } from "@/components/layout/main-layout";
 import { useStore } from "@/lib/store";
+import { useWebSocket } from "@/hooks/use-websocket";
 import { useEffect, useState } from "react";
 import { Card, CardContent, Typography, Box, Chip, TextField, InputAdornment, IconButton, Pagination, Grid } from "@mui/material";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -10,10 +11,18 @@ import { Search, Refresh, Delete, Download } from "@mui/icons-material";
 export default function LogsPage() {
   const logs = useStore((state) => state.logs);
   const { isDark } = useTheme();
+  const { requestLogs, isConnected } = useWebSocket();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterLevel, setFilterLevel] = useState('all');
   const [page, setPage] = useState(1);
   const logsPerPage = 20;
+
+  // Request logs on mount or when connection is established
+  useEffect(() => {
+    if (isConnected) {
+      requestLogs();
+    }
+  }, [isConnected, requestLogs]);
 
   const getLevelColor = (level: string) => {
     switch (level) {
@@ -63,7 +72,9 @@ export default function LogsPage() {
   };
 
   const handleRefresh = () => {
-    console.log('Refreshing logs');
+    if (isConnected) {
+      requestLogs();
+    }
   };
 
   const handleDownload = () => {

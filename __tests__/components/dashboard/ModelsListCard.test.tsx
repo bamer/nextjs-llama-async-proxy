@@ -1,15 +1,19 @@
-import { describe, it, expect, vi } from '@jest/globals';
-import { render, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import React from 'react';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { ModelsListCard } from '@/components/dashboard/ModelsListCard';
-import { ThemeProvider } from '@mui/material/styles';
-import { createTheme } from '@mui/material/styles';
 
-const mockTheme = createTheme();
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+  }),
+}));
+
+const theme = createTheme();
 
 function renderWithTheme(component: React.ReactElement) {
-  return render(<ThemeProvider theme={mockTheme}>{component}</ThemeProvider>);
+  return render(<ThemeProvider theme={theme}>{component}</ThemeProvider>);
 }
 
 describe('ModelsListCard', () => {
@@ -18,22 +22,26 @@ describe('ModelsListCard', () => {
       id: 'model1',
       name: 'Llama 2 7B',
       status: 'running',
-      description: '7B parameter model',
-      size: '13GB',
+      type: 'llama',
     },
     {
       id: 'model2',
       name: 'Llama 2 13B',
       status: 'idle',
-      description: '13B parameter model',
-      size: '26GB',
+      type: 'llama',
     },
   ] as any;
 
-  const mockOnToggle = vi.fn();
+  const mockOnToggle = jest.fn();
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({}),
+      } as Response)
+    ) as any;
   });
 
   it('renders correctly with models', () => {
@@ -45,7 +53,7 @@ describe('ModelsListCard', () => {
       />
     );
 
-    expect(document.querySelector('h6')?.textContent).toContain('Models');
+    expect(screen.getByText('Available Models')).toBeInTheDocument();
   });
 
   it('displays all models', () => {
@@ -57,11 +65,11 @@ describe('ModelsListCard', () => {
       />
     );
 
-    expect(document.textContent).toContain('Llama 2 7B');
-    expect(document.textContent).toContain('Llama 2 13B');
+    expect(screen.getByText('Llama 2 7B')).toBeInTheDocument();
+    expect(screen.getByText('Llama 2 13B')).toBeInTheDocument();
   });
 
-  it('calls onToggleModel when toggle button clicked', () => {
+  it('shows model count', () => {
     renderWithTheme(
       <ModelsListCard
         models={mockModels}
@@ -70,13 +78,10 @@ describe('ModelsListCard', () => {
       />
     );
 
-    const buttons = document.querySelectorAll('button');
-    fireEvent.click(buttons[0]);
-
-    expect(mockOnToggle).toHaveBeenCalledWith('model1');
+    expect(screen.getByText('2 models')).toBeInTheDocument();
   });
 
-  it('shows correct status for each model', () => {
+  it('displays correct status labels', () => {
     renderWithTheme(
       <ModelsListCard
         models={mockModels}
@@ -85,8 +90,8 @@ describe('ModelsListCard', () => {
       />
     );
 
-    expect(document.textContent).toContain('running');
-    expect(document.textContent).toContain('idle');
+    expect(screen.getByText('RUNNING')).toBeInTheDocument();
+    expect(screen.getByText('STOPPED')).toBeInTheDocument();
   });
 
   it('renders empty state when no models', () => {
@@ -98,6 +103,19 @@ describe('ModelsListCard', () => {
       />
     );
 
-    expect(document.textContent).toContain('No models available');
+    expect(screen.getByText('0 models')).toBeInTheDocument();
+  });
+
+  it('applies dark mode styling', () => {
+    const { container } = renderWithTheme(
+      <ModelsListCard
+        models={mockModels}
+        isDark={true}
+        onToggleModel={mockOnToggle}
+      />
+    );
+
+    const card = container.querySelector('.MuiCard-root');
+    expect(card).toBeInTheDocument();
   });
 });

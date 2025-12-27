@@ -79,18 +79,17 @@ export async function POST(
       // Use model name/alias (not path) - llama.cpp uses the alias from models-dir
       const modelName = modelData?.name || name;
 
-      // Check if model is available before trying to load it
-      if (!modelData?.available) {
-        console.warn(`[API] Model ${name} is not available for loading`);
+      // Check if model exists in discovered models
+      if (!modelData) {
+        console.warn(`[API] Model ${name} was not found in discovered models`);
         return NextResponse.json(
           {
-            error: "Model is not available for loading",
+            error: "Model not found",
             model: name,
-            status: "unavailable",
-            message:
-              "This model is discovered from filesystem but not known to llama-server. Ensure llama-server is started with correct --models-dir path or restart the application.",
+            status: "not_found",
+            message: "This model is not in the discovered models list. Ensure the model files exist in the models directory.",
           },
-          { status: 400 }
+          { status: 404 }
         );
       }
 
