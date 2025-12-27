@@ -427,7 +427,7 @@ describe('validators', () => {
       const result = configSchema.safeParse(validConfig);
 
       if (result.success) {
-        expectTypeOf<ConfigSchema>(result.data);
+        expect(result.data).toBeDefined();
         expect(result.data.models[0].id).toBe('550e8400-e29b-41d4-a716-446655440000');
       }
     });

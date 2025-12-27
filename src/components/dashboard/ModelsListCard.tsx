@@ -74,12 +74,12 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
             Available Models
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {models.length} models
+            {models?.length || 0} models
           </Typography>
         </Box>
 
         <Grid container spacing={2}>
-          {models.map((model) => (
+          {(models || []).map((model) => (
             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={model.id}>
               <Box
                 sx={{

@@ -1,36 +1,49 @@
 import React from 'react';
 
-const MockBox = ({ children, ...props }: any) => React.createElement('div', props, children);
-const MockGrid = ({ children, ...props }: any) => React.createElement('div', props, children);
-const MockTypography = ({ children, ...props }: any) => React.createElement('span', props, children);
-const MockButton = ({ children, ...props }: any) => React.createElement('button', props, children);
-const MockCard = ({ children, ...props }: any) => React.createElement('div', props, children);
-const MockCardContent = ({ children, ...props }: any) => React.createElement('div', props, children);
-const MockCardHeader = ({ children, ...props }: any) => React.createElement('div', props, children);
-const MockCardActions = ({ children, ...props }: any) => React.createElement('div', props, children);
-const MockTextField = (props: any) => React.createElement('input', { type: 'text', ...props });
-const MockSwitch = (props: any) => React.createElement('input', { type: 'checkbox', ...props });
-const MockIconButton = ({ children, ...props }: any) => React.createElement('button', props, children);
-const MockAppBar = ({ children, ...props }: any) => React.createElement('header', props, children);
-const MockToolbar = ({ children, ...props }: any) => React.createElement('div', props, children);
-const MockTooltip = ({ children, ...props }: any) => React.createElement('div', props, children);
-const MockDivider = (props: any) => React.createElement('hr', props);
-const MockList = ({ children, ...props }: any) => React.createElement('ul', props, children);
-const MockListItem = ({ children, ...props }: any) => React.createElement('li', props, children);
-const MockListItemText = ({ children, ...props }: any) => React.createElement('span', props, children);
-const MockCircularProgress = (props: any) => React.createElement('div', props);
-const MockAlert = ({ children, ...props }: any) => React.createElement('div', props, children);
-const MockTabs = ({ children, ...props }: any) => React.createElement('div', props, children);
-const MockTab = ({ children, ...props }: any) => React.createElement('button', props, children);
-const MockSelect = ({ children, ...props }: any) => React.createElement('select', props, children);
-const MockMenuItem = ({ children, ...props }: any) => React.createElement('option', props, children);
-const MockSlider = (props: any) => React.createElement('input', { type: 'range', ...props });
-const MockFormControl = ({ children, ...props }: any) => React.createElement('div', props, children);
-const MockInputLabel = ({ children, ...props }: any) => React.createElement('label', props, children);
-const MockFormControlLabel = ({ children, ...props }: any) => React.createElement('label', props, children);
-const MockChip = ({ children, ...props }: any) => React.createElement('span', props, children);
-const MockCollapse = ({ children, ...props }: any) => React.createElement('div', props, children);
-const MockDrawer = ({ children, ...props }: any) => React.createElement('div', props, children);
+const muiProps = ['sx', 'mt', 'mb', 'ml', 'mr', 'my', 'mx', 'pt', 'pb', 'pl', 'pr', 'py', 'px', 'p', 'm', 'gap', 'flex', 'justifyContent', 'alignItems', 'display', 'height', 'width', 'fullWidth', 'centered', 'size', 'variant', 'color', 'disabled', 'gutterBottom', 'subheader', 'title', 'position', 'zIndex', 'overflow', 'textAlign'];
+
+const filterMUIProps = (props: any) => {
+  const filtered: any = {};
+  Object.keys(props).forEach(key => {
+    if (!muiProps.includes(key)) {
+      filtered[key] = props[key];
+    }
+  });
+  return filtered;
+};
+
+const MockBox = ({ children, ...props }: any) => React.createElement('div', filterMUIProps(props), children);
+const MockGrid = ({ children, ...props }: any) => React.createElement('div', filterMUIProps({ ...props, className: props.className || 'MuiGrid-root' }), children);
+const MockTypography = ({ children, ...props }: any) => React.createElement('span', filterMUIProps(props), children);
+const MockButton = ({ children, startIcon, ...props }: any) => React.createElement('button', filterMUIProps({ ...props, className: props.className || 'MuiButton-root' }), startIcon, children);
+const MockCard = ({ children, ...props }: any) => React.createElement('div', filterMUIProps({ ...props, className: props.className || 'MuiCard-root' }), children);
+const MockCardContent = ({ children, ...props }: any) => React.createElement('div', filterMUIProps({ ...props, className: props.className || 'MuiCardContent-root' }), children);
+const MockCardHeader = ({ children, title, subheader, ...props }: any) => React.createElement('div', filterMUIProps({ ...props, className: props.className || 'MuiCardHeader-root' }), title && React.createElement('div', {}, title), subheader && React.createElement('div', {}, subheader), children);
+const MockCardActions = ({ children, ...props }: any) => React.createElement('div', filterMUIProps({ ...props, className: props.className || 'MuiCardActions-root' }), children);
+const MockTextField = ({ children, ...props }: any) => React.createElement('div', filterMUIProps({ ...props, className: props.className || 'MuiTextField-root' }), children);
+const MockSwitch = (props: any) => React.createElement('input', { type: 'checkbox', ...filterMUIProps(props) });
+const MockIconButton = ({ children, ...props }: any) => React.createElement('button', filterMUIProps({ ...props, className: props.className || 'MuiIconButton-root' }), children);
+const MockAppBar = ({ children, ...props }: any) => React.createElement('header', filterMUIProps(props), children);
+const MockToolbar = ({ children, ...props }: any) => React.createElement('div', filterMUIProps(props), children);
+const MockTooltip = ({ children, ...props }: any) => React.createElement('div', filterMUIProps(props), children);
+const MockDivider = (props: any) => React.createElement('hr', filterMUIProps(props));
+const MockList = ({ children, ...props }: any) => React.createElement('ul', filterMUIProps(props), children);
+const MockListItem = ({ children, ...props }: any) => React.createElement('li', filterMUIProps(props), children);
+const MockListItemText = ({ children, ...props }: any) => React.createElement('span', filterMUIProps(props), children);
+const MockCircularProgress = (props: any) => React.createElement('div', filterMUIProps(props));
+const MockLinearProgress = (props: any) => React.createElement('div', { ...filterMUIProps(props), role: 'progressbar', style: { width: '100%', height: '4px', backgroundColor: '#e0e0e0' } });
+const MockAlert = ({ children, ...props }: any) => React.createElement('div', filterMUIProps(props), children);
+const MockTabs = ({ children, ...props }: any) => React.createElement('div', filterMUIProps(props), children);
+const MockTab = ({ children, ...props }: any) => React.createElement('button', filterMUIProps(props), children);
+const MockSelect = ({ children, ...props }: any) => React.createElement('select', filterMUIProps(props), children);
+const MockMenuItem = ({ children, ...props }: any) => React.createElement('option', filterMUIProps(props), children);
+const MockSlider = (props: any) => React.createElement('input', { type: 'range', ...filterMUIProps(props) });
+const MockFormControl = ({ children, ...props }: any) => React.createElement('div', filterMUIProps(props), children);
+const MockInputLabel = ({ children, ...props }: any) => React.createElement('label', filterMUIProps(props), children);
+const MockFormControlLabel = ({ children, ...props }: any) => React.createElement('label', filterMUIProps(props), children);
+const MockChip = ({ label, children, ...props }: any) => React.createElement('span', filterMUIProps(props), label || children);
+const MockCollapse = ({ children, ...props }: any) => React.createElement('div', filterMUIProps(props), children);
+const MockDrawer = ({ children, ...props }: any) => React.createElement('div', filterMUIProps(props), children);
 const MockAccordion = ({ children, ...props }: any) => React.createElement('details', props, children);
 const MockAccordionSummary = ({ children, ...props }: any) => React.createElement('summary', props, children);
 const MockAccordionDetails = ({ children, ...props }: any) => React.createElement('div', props, children);
@@ -38,16 +51,14 @@ const MockPaper = ({ children, ...props }: any) => React.createElement('div', pr
 const MockContainer = ({ children, ...props }: any) => React.createElement('div', props, children);
 const MockStack = ({ children, ...props }: any) => React.createElement('div', props, children);
 
-// Mock MuiThemeProvider (wraps children with a div)
-const MockMuiThemeProvider = ({ children, ...props }: any) => React.createElement('div', props, children);
-// Mock CssBaseline (renders nothing, just a div)
+const MockThemeProvider = ({ children, theme, ...props }: any) => React.createElement('div', props, children);
 const MockCssBaseline = (props: any) => React.createElement('div', props);
 
 // Mock createTheme function
 const createTheme = (theme: any) => ({ ...theme, _isMock: true });
 
 export const muiStyles = {
-  ThemeProvider: MockMuiThemeProvider,
+  ThemeProvider: MockThemeProvider,
   createTheme,
   responsiveFontSizes: (theme: any) => theme,
 };
@@ -72,6 +83,7 @@ export const muiMocks = {
   ListItem: MockListItem,
   ListItemText: MockListItemText,
   CircularProgress: MockCircularProgress,
+  LinearProgress: MockLinearProgress,
   Alert: MockAlert,
   Tabs: MockTabs,
   Tab: MockTab,
@@ -91,7 +103,7 @@ export const muiMocks = {
   Container: MockContainer,
   Stack: MockStack,
   CssBaseline: MockCssBaseline,
-  // Mock useMediaQuery hook
+  ThemeProvider: MockThemeProvider,
   useMediaQuery: jest.fn(() => false),
 };
 
@@ -103,6 +115,7 @@ const iconNames = [
   'Add', 'PlayArrow', 'Stop', 'Warning', 'CheckCircle',
   'Error', 'Info', 'Speed', 'Memory', 'Storage',
   'NetworkCheck', 'SettingsEthernet', 'TrendingUp', 'TrendingDown',
+  'MoreVert',
 ];
 
 const iconMocks: any = {};

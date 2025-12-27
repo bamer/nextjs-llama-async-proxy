@@ -11,7 +11,7 @@ interface ConfigurationActionsProps {
 export function ConfigurationActions({
   isSaving,
   onSave,
-}: ConfigurationActionsProps): React.ReactNode {
+}: ConfigurationActionsProps) {
   return (
     <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 4 }}>
       <Button

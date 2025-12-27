@@ -74,6 +74,23 @@ describe('ParameterService', () => {
 
       consoleErrorSpy.mockRestore();
     });
+
+    it('should handle config without llama_options property', () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      mockedFs.readFileSync.mockReturnValue(
+        JSON.stringify({
+          // Missing llama_options property
+          some_other_key: 'value',
+        })
+      );
+
+      const newService = new ParameterService();
+
+      expect(newService.getOptionsByCategoryForUI()).toEqual({});
+      expect(newService.countOptions()).toBe(0);
+
+      consoleErrorSpy.mockRestore();
+    });
   });
 
   describe('getOptionsByCategoryForUI', () => {
