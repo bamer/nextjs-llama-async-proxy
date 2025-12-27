@@ -1,14 +1,27 @@
 import axios from 'axios';
 import { listModels, pullModel, stopModel, ensureModel } from '@/lib/ollama';
 
-// Mock axios
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+// Mock axios properly for axios.create()
+jest.mock('axios', () => ({
+  create: jest.fn(() => ({
+    get: jest.fn(),
+    post: jest.fn(),
+  })),
+}));
+
+const mockedAxios = axios as any;
+const mockedApi = {
+  get: jest.fn(),
+  post: jest.fn(),
+};
+
+mockedAxios.create.mockReturnValue(mockedApi);
 
 describe('ollama.ts', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset environment variable
+    mockedApi.get.mockClear();
+    mockedApi.post.mockClear();
     delete process.env.OLLAMA_HOST;
   });
 
@@ -22,26 +35,26 @@ describe('ollama.ts', () => {
           ]
         }
       };
-      
-      mockedAxios.get.mockResolvedValue(mockResponse);
+
+      mockedApi.get.mockResolvedValue(mockResponse);
 
       const result = await listModels();
 
-      expect(mockedAxios.get).toHaveBeenCalledWith('/api/tags');
+      expect(mockedApi.get).toHaveBeenCalledWith('/api/tags');
       expect(result).toEqual(mockResponse.data);
     });
 
     it('should handle API errors', async () => {
       const error = new Error('Network Error');
-      mockedAxios.get.mockRejectedValue(error);
+      mockedApi.get.mockRejectedValue(error);
 
       await expect(listModels()).rejects.toThrow('Network Error');
-      expect(mockedAxios.get).toHaveBeenCalledWith('/api/tags');
+      expect(mockedApi.get).toHaveBeenCalledWith('/api/tags');
     });
 
     it('should handle timeout errors', async () => {
       const timeoutError = { code: 'ECONNABORTED', message: 'timeout' };
-      mockedAxios.get.mockRejectedValue(timeoutError);
+      mockedApi.get.mockRejectedValue(timeoutError);
 
       await expect(listModels()).rejects.toEqual(timeoutError);
     });
@@ -58,27 +71,27 @@ describe('ollama.ts', () => {
         }
       };
 
-      mockedAxios.post.mockResolvedValue(mockResponse);
+      mockedApi.post.mockResolvedValue(mockResponse);
 
       const result = await pullModel(modelName);
 
-      expect(mockedAxios.post).toHaveBeenCalledWith('/api/pull', { name: modelName });
+      expect(mockedApi.post).toHaveBeenCalledWith('/api/pull', { name: modelName });
       expect(result).toEqual(mockResponse.data);
     });
 
     it('should handle pull errors', async () => {
       const modelName = 'nonexistent-model';
       const error = { response: { status: 404, data: { error: 'Model not found' } } };
-      mockedAxios.post.mockRejectedValue(error);
+      mockedApi.post.mockRejectedValue(error);
 
       await expect(pullModel(modelName)).rejects.toEqual(error);
-      expect(mockedAxios.post).toHaveBeenCalledWith('/api/pull', { name: modelName });
+      expect(mockedApi.post).toHaveBeenCalledWith('/api/pull', { name: modelName });
     });
 
     it('should handle network errors during pull', async () => {
       const modelName = 'llama2';
       const error = new Error('Connection failed');
-      mockedAxios.post.mockRejectedValue(error);
+      mockedApi.post.mockRejectedValue(error);
 
       await expect(pullModel(modelName)).rejects.toThrow('Connection failed');
     });
@@ -91,31 +104,31 @@ describe('ollama.ts', () => {
         data: { status: 'success' }
       };
 
-      mockedAxios.post.mockResolvedValue(mockResponse);
+      mockedApi.post.mockResolvedValue(mockResponse);
 
       const result = await stopModel(modelName);
 
-      expect(mockedAxios.post).toHaveBeenCalledWith(`/api/models/${encodeURIComponent(modelName)}/stop`);
+      expect(mockedApi.post).toHaveBeenCalledWith(`/api/models/${encodeURIComponent(modelName)}/stop`);
       expect(result).toEqual(mockResponse.data);
     });
 
     it('should handle stopping non-existent model', async () => {
       const modelName = 'nonexistent';
       const error = { response: { status: 404, data: { error: 'Model not running' } } };
-      mockedAxios.post.mockRejectedValue(error);
+      mockedApi.post.mockRejectedValue(error);
 
       await expect(stopModel(modelName)).rejects.toEqual(error);
-      expect(mockedAxios.post).toHaveBeenCalledWith(`/api/models/${encodeURIComponent(modelName)}/stop`);
+      expect(mockedApi.post).toHaveBeenCalledWith(`/api/models/${encodeURIComponent(modelName)}/stop`);
     });
 
     it('should handle model names with special characters', async () => {
       const modelName = 'model with spaces & symbols';
       const mockResponse = { data: { status: 'success' } };
-      mockedAxios.post.mockResolvedValue(mockResponse);
+      mockedApi.post.mockResolvedValue(mockResponse);
 
       const result = await stopModel(modelName);
 
-      expect(mockedAxios.post).toHaveBeenCalledWith(`/api/models/${encodeURIComponent(modelName)}/stop`);
+      expect(mockedApi.post).toHaveBeenCalledWith(`/api/models/${encodeURIComponent(modelName)}/stop`);
       expect(result).toEqual(mockResponse.data);
     });
   });
