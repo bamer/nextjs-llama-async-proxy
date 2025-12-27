@@ -30,7 +30,7 @@ describe('Input', () => {
   });
 
   it('displays initial value', () => {
-    renderWithTheme(<Input value="test value" />);
+    renderWithTheme(<Input defaultValue="test value" />);
     expect(screen.getByDisplayValue('test value')).toBeInTheDocument();
   });
 

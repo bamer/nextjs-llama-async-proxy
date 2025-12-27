@@ -5,7 +5,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { ConfigurationTabs } from '@/components/configuration/ConfigurationTabs';
 
 jest.mock('@/contexts/ThemeContext', () => ({
-  useTheme: () => ({ isDark: false }),
+  useTheme: jest.fn(),
 }));
 
 const theme = createTheme();
@@ -76,5 +76,12 @@ describe('ConfigurationTabs', () => {
     const tabs = screen.getAllByRole('tab');
     expect(tabs[3]).toHaveAttribute('aria-selected', 'true');
     expect(tabs[0]).toHaveAttribute('aria-selected', 'false');
+  });
+
+  it('renders with dark theme', () => {
+    const { useTheme } = require('@/contexts/ThemeContext');
+    useTheme.mockReturnValue({ isDark: true });
+    renderWithTheme(<ConfigurationTabs activeTab={0} onChange={mockOnChange} />);
+    expect(screen.getByText('General Settings')).toBeInTheDocument();
   });
 });

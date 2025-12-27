@@ -13,7 +13,7 @@ jest.mock('framer-motion', () => ({
 
 jest.mock('@/contexts/ThemeContext', () => ({
   ThemeProvider: ({ children }: any) => <div>{children}</div>,
-  useTheme: () => ({ isDark: false }),
+  useTheme: jest.fn(),
 }));
 
 const theme = createTheme();
@@ -41,6 +41,14 @@ describe('ConfigurationHeader', () => {
   });
 
   it('renders divider', () => {
+    const { container } = renderWithTheme(<ConfigurationHeader />);
+    const divider = container.querySelector('.MuiDivider-root');
+    expect(divider).toBeInTheDocument();
+  });
+
+  it('renders with dark theme', () => {
+    const { useTheme } = require('@/contexts/ThemeContext');
+    useTheme.mockReturnValue({ isDark: true });
     const { container } = renderWithTheme(<ConfigurationHeader />);
     const divider = container.querySelector('.MuiDivider-root');
     expect(divider).toBeInTheDocument();

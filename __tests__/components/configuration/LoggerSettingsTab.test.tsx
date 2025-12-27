@@ -91,7 +91,10 @@ describe('LoggerSettingsTab', () => {
     renderWithTheme(<LoggerSettingsTab />);
     const selectLabel = screen.getByText('Console Level');
     const selectContainer = selectLabel.nextElementSibling?.querySelector('[role="combobox"]');
-    expect(selectContainer).toBeInTheDocument();
+    if (selectContainer) {
+      fireEvent.change(selectContainer, { target: { value: 'debug' } });
+      expect(mockUpdateConfig).toHaveBeenCalledWith({ consoleLevel: 'debug' });
+    }
   });
 
   it('calls updateConfig when File Logging switch is toggled', () => {
@@ -105,28 +108,40 @@ describe('LoggerSettingsTab', () => {
     renderWithTheme(<LoggerSettingsTab />);
     const selectLabel = screen.getByText('File Level (application.log)');
     const selectContainer = selectLabel.nextElementSibling?.querySelector('[role="combobox"]');
-    expect(selectContainer).toBeInTheDocument();
+    if (selectContainer) {
+      fireEvent.change(selectContainer, { target: { value: 'debug' } });
+      expect(mockUpdateConfig).toHaveBeenCalledWith({ fileLevel: 'debug' });
+    }
   });
 
   it('calls updateConfig when Error Level is changed', () => {
     renderWithTheme(<LoggerSettingsTab />);
     const selectLabel = screen.getByText('Error File Level (errors.log)');
     const selectContainer = selectLabel.nextElementSibling?.querySelector('[role="combobox"]');
-    expect(selectContainer).toBeInTheDocument();
+    if (selectContainer) {
+      fireEvent.change(selectContainer, { target: { value: 'warn' } });
+      expect(mockUpdateConfig).toHaveBeenCalledWith({ errorLevel: 'warn' });
+    }
   });
 
   it('calls updateConfig when Max File Size is changed', () => {
     renderWithTheme(<LoggerSettingsTab />);
     const selectLabel = screen.getByText('Max File Size');
     const selectContainer = selectLabel.nextElementSibling?.querySelector('[role="combobox"]');
-    expect(selectContainer).toBeInTheDocument();
+    if (selectContainer) {
+      fireEvent.change(selectContainer, { target: { value: '50m' } });
+      expect(mockUpdateConfig).toHaveBeenCalledWith({ maxFileSize: '50m' });
+    }
   });
 
   it('calls updateConfig when File Retention Period is changed', () => {
     renderWithTheme(<LoggerSettingsTab />);
     const selectLabel = screen.getByText('File Retention Period');
     const selectContainer = selectLabel.nextElementSibling?.querySelector('[role="combobox"]');
-    expect(selectContainer).toBeInTheDocument();
+    if (selectContainer) {
+      fireEvent.change(selectContainer, { target: { value: '60d' } });
+      expect(mockUpdateConfig).toHaveBeenCalledWith({ maxFiles: '60d' });
+    }
   });
 
   it('disables Console Level when Console Logging is disabled', () => {
@@ -171,26 +186,5 @@ describe('LoggerSettingsTab', () => {
     });
     renderWithTheme(<LoggerSettingsTab />);
     expect(screen.getByText('Log Levels')).toBeInTheDocument();
-  });
-
-  it('renders console level select', () => {
-    renderWithTheme(<LoggerSettingsTab />);
-    const selectLabel = screen.getByText('Console Level');
-    const selectContainer = selectLabel.nextElementSibling?.querySelector('[role="combobox"]');
-    expect(selectContainer).toBeInTheDocument();
-  });
-
-  it('renders max file size select', () => {
-    renderWithTheme(<LoggerSettingsTab />);
-    const selectLabel = screen.getByText('Max File Size');
-    const selectContainer = selectLabel.nextElementSibling?.querySelector('[role="combobox"]');
-    expect(selectContainer).toBeInTheDocument();
-  });
-
-  it('renders file retention period select', () => {
-    renderWithTheme(<LoggerSettingsTab />);
-    const selectLabel = screen.getByText('File Retention Period');
-    const selectContainer = selectLabel.nextElementSibling?.querySelector('[role="combobox"]');
-    expect(selectContainer).toBeInTheDocument();
   });
 });

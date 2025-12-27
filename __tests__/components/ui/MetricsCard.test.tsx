@@ -27,7 +27,7 @@ describe('MetricsCard', () => {
   });
 
   it('renders loading state when metrics is null', () => {
-    useStore.mockReturnValue({ metrics: null });
+    useStore.mockImplementation((selector) => selector({ metrics: null }));
     useTheme.mockReturnValue({ isDark: false });
 
     renderWithTheme(<MetricsCard />);
@@ -46,7 +46,7 @@ describe('MetricsCard', () => {
       totalRequests: 842,
     };
 
-    useStore.mockReturnValue({ metrics: mockMetrics });
+    useStore.mockImplementation((selector) => selector({ metrics: mockMetrics }));
     useTheme.mockReturnValue({ isDark: false });
 
     renderWithTheme(<MetricsCard />);
@@ -65,7 +65,7 @@ describe('MetricsCard', () => {
       totalRequests: 1000,
     };
 
-    useStore.mockReturnValue({ metrics: mockMetrics });
+    useStore.mockImplementation((selector) => selector({ metrics: mockMetrics }));
     useTheme.mockReturnValue({ isDark: false });
 
     renderWithTheme(<MetricsCard />);
@@ -86,7 +86,7 @@ describe('MetricsCard', () => {
       totalRequests: 2456,
     };
 
-    useStore.mockReturnValue({ metrics: mockMetrics });
+    useStore.mockImplementation((selector) => selector({ metrics: mockMetrics }));
     useTheme.mockReturnValue({ isDark: false });
 
     renderWithTheme(<MetricsCard />);
@@ -107,7 +107,7 @@ describe('MetricsCard', () => {
       totalRequests: 1000,
     };
 
-    useStore.mockReturnValue({ metrics: mockMetrics });
+    useStore.mockImplementation((selector) => selector({ metrics: mockMetrics }));
     useTheme.mockReturnValue({ isDark: true });
 
     const { container } = renderWithTheme(<MetricsCard />);
@@ -125,7 +125,7 @@ describe('MetricsCard', () => {
       totalRequests: 1000,
     };
 
-    useStore.mockReturnValue({ metrics: mockMetrics });
+    useStore.mockImplementation((selector) => selector({ metrics: mockMetrics }));
     useTheme.mockReturnValue({ isDark: false });
 
     const { container } = renderWithTheme(<MetricsCard />);
@@ -143,7 +143,7 @@ describe('MetricsCard', () => {
       totalRequests: 0,
     };
 
-    useStore.mockReturnValue({ metrics: mockMetrics });
+    useStore.mockImplementation((selector) => selector({ metrics: mockMetrics }));
     useTheme.mockReturnValue({ isDark: false });
 
     renderWithTheme(<MetricsCard />);
@@ -161,7 +161,7 @@ describe('MetricsCard', () => {
       totalRequests: 10000,
     };
 
-    useStore.mockReturnValue({ metrics: mockMetrics });
+    useStore.mockImplementation((selector) => selector({ metrics: mockMetrics }));
     useTheme.mockReturnValue({ isDark: false });
 
     renderWithTheme(<MetricsCard />);
@@ -182,7 +182,7 @@ describe('MetricsCard', () => {
       totalRequests: 500,
     };
 
-    useStore.mockReturnValue({ metrics: mockMetrics });
+    useStore.mockImplementation((selector) => selector({ metrics: mockMetrics }));
     useTheme.mockReturnValue({ isDark: false });
 
     renderWithTheme(<MetricsCard />);
@@ -192,7 +192,7 @@ describe('MetricsCard', () => {
   });
 
   it('renders subheader correctly', () => {
-    useStore.mockReturnValue({ metrics: null });
+    useStore.mockImplementation((selector) => selector({ metrics: null }));
     useTheme.mockReturnValue({ isDark: false });
 
     renderWithTheme(<MetricsCard />);
@@ -209,7 +209,7 @@ describe('MetricsCard', () => {
       totalRequests: 1000,
     };
 
-    useStore.mockReturnValue({ metrics: mockMetrics });
+    useStore.mockImplementation((selector) => selector({ metrics: mockMetrics }));
     useTheme.mockReturnValue({ isDark: false });
 
     const { container } = renderWithTheme(<MetricsCard />);
@@ -227,7 +227,7 @@ describe('MetricsCard', () => {
       totalRequests: 842,
     };
 
-    useStore.mockReturnValue({ metrics: mockMetrics });
+    useStore.mockImplementation((selector) => selector({ metrics: mockMetrics }));
     useTheme.mockReturnValue({ isDark: false });
 
     renderWithTheme(<MetricsCard />);
@@ -245,7 +245,7 @@ describe('MetricsCard', () => {
       totalRequests: 1000,
     };
 
-    useStore.mockReturnValue({ metrics: mockMetrics });
+    useStore.mockImplementation((selector) => selector({ metrics: mockMetrics }));
     useTheme.mockReturnValue({ isDark: false });
 
     renderWithTheme(<MetricsCard />);
@@ -262,7 +262,7 @@ describe('MetricsCard', () => {
       totalRequests: 1000,
     };
 
-    useStore.mockReturnValue({ metrics: mockMetrics });
+    useStore.mockImplementation((selector) => selector({ metrics: mockMetrics }));
     useTheme.mockReturnValue({ isDark: false });
 
     renderWithTheme(<MetricsCard />);

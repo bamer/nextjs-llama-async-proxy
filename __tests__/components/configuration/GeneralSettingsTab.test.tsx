@@ -11,7 +11,7 @@ jest.mock('framer-motion', () => ({
 }));
 
 jest.mock('@/contexts/ThemeContext', () => ({
-  useTheme: () => ({ isDark: false }),
+  useTheme: jest.fn(),
 }));
 
 const theme = createTheme();
@@ -145,5 +145,14 @@ describe('GeneralSettingsTab', () => {
     );
     expect(screen.getByText('Path to your models directory')).toBeInTheDocument();
     expect(screen.getByText('Logging verbosity level')).toBeInTheDocument();
+  });
+
+  it('renders with dark theme', () => {
+    const { useTheme } = require('@/contexts/ThemeContext');
+    useTheme.mockReturnValue({ isDark: true });
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+    );
+    expect(screen.getByText('General Settings')).toBeInTheDocument();
   });
 });

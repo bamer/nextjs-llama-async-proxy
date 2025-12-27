@@ -11,7 +11,7 @@ jest.mock('framer-motion', () => ({
 }));
 
 jest.mock('@/contexts/ThemeContext', () => ({
-  useTheme: () => ({ isDark: false }),
+  useTheme: jest.fn(),
 }));
 
 const theme = createTheme();
@@ -123,5 +123,14 @@ describe('AdvancedSettingsTab', () => {
     const button = screen.getByText('Sync with Backend');
     fireEvent.click(button);
     expect(mockOnSync).not.toHaveBeenCalled();
+  });
+
+  it('renders with dark theme', () => {
+    const { useTheme } = require('@/contexts/ThemeContext');
+    useTheme.mockReturnValue({ isDark: true });
+    renderWithTheme(
+      <AdvancedSettingsTab isSaving={false} onReset={mockOnReset} onSync={mockOnSync} />
+    );
+    expect(screen.getByText('Advanced Settings')).toBeInTheDocument();
   });
 });

@@ -11,7 +11,7 @@ jest.mock('framer-motion', () => ({
 }));
 
 jest.mock('@/contexts/ThemeContext', () => ({
-  useTheme: () => ({ isDark: false }),
+  useTheme: jest.fn(),
 }));
 
 const theme = createTheme();

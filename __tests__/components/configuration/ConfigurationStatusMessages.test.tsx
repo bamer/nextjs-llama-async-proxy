@@ -11,7 +11,7 @@ jest.mock('framer-motion', () => ({
 }));
 
 jest.mock('@/contexts/ThemeContext', () => ({
-  useTheme: () => ({ isDark: false }),
+  useTheme: jest.fn(),
 }));
 
 const theme = createTheme();
@@ -92,5 +92,24 @@ describe('ConfigurationStatusMessages', () => {
       <ConfigurationStatusMessages saveSuccess={false} validationErrors={errors} />
     );
     expect(screen.getByText('• Single error message')).toBeInTheDocument();
+  });
+
+  it('renders success message with dark theme', () => {
+    const { useTheme } = require('@/contexts/ThemeContext');
+    useTheme.mockReturnValue({ isDark: true });
+    renderWithTheme(
+      <ConfigurationStatusMessages saveSuccess={true} validationErrors={[]} />
+    );
+    expect(screen.getByText('Configuration saved successfully!')).toBeInTheDocument();
+  });
+
+  it('renders validation errors with dark theme', () => {
+    const { useTheme } = require('@/contexts/ThemeContext');
+    useTheme.mockReturnValue({ isDark: true });
+    const errors = ['Test error'];
+    renderWithTheme(
+      <ConfigurationStatusMessages saveSuccess={false} validationErrors={errors} />
+    );
+    expect(screen.getByText('Configuration Errors')).toBeInTheDocument();
   });
 });

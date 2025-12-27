@@ -556,4 +556,29 @@ describe('LlamaService', () => {
     });
 
     it('should handle flash attention settings', () => {
-      const configOn = { ...mockConfig, flash
+      const configOn = { ...mockConfig, flash_attn: 'on' };
+      llamaService = new LlamaService(configOn);
+
+      const argsOn = (llamaService as any).buildArgs();
+
+      expect(argsOn).toContain('-fa');
+      expect(argsOn).not.toContain('--no-flash-attn');
+
+      const configOff = { ...mockConfig, flash_attn: 'off' };
+      llamaService = new LlamaService(configOff);
+
+      const argsOff = (llamaService as any).buildArgs();
+
+      expect(argsOff).toContain('--no-flash-attn');
+      expect(argsOff).not.toContain('-fa');
+
+      const configAuto = { ...mockConfig, flash_attn: 'auto' };
+      llamaService = new LlamaService(configAuto);
+
+      const argsAuto = (llamaService as any).buildArgs();
+
+      expect(argsAuto).not.toContain('-fa');
+      expect(argsAuto).not.toContain('--no-flash-attn');
+    });
+  });
+});

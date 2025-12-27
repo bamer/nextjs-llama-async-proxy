@@ -2,28 +2,17 @@ import axios from 'axios';
 import { listModels, pullModel, stopModel, ensureModel } from '@/lib/ollama';
 
 // Mock axios properly for axios.create()
-jest.mock('axios', () => ({
-  create: jest.fn(() => ({
-    get: jest.fn(),
-    post: jest.fn(),
-  })),
-}));
-
-const mockedAxios = axios as any;
-const mockedApi = {
+const mockApi = {
   get: jest.fn(),
   post: jest.fn(),
 };
 
-mockedAxios.create.mockReturnValue(mockedApi);
-
-describe('ollama.ts', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockedApi.get.mockClear();
-    mockedApi.post.mockClear();
-    delete process.env.OLLAMA_HOST;
-  });
+jest.mock('axios', () => ({
+  create: jest.fn(() => mockApi),
+  default: {
+    create: jest.fn(() => mockApi),
+  },
+}));
 
   describe('listModels', () => {
     it('should successfully list models', async () => {
@@ -145,12 +134,12 @@ describe('ollama.ts', () => {
         }
       };
 
-      mockedAxios.get.mockResolvedValue(mockModelsResponse);
+      mockedApi.get.mockResolvedValue(mockModelsResponse);
 
       const result = await ensureModel(modelName);
 
-      expect(mockedAxios.get).toHaveBeenCalledWith('/api/tags');
-      expect(mockedAxios.post).not.toHaveBeenCalled();
+      expect(mockedApi.get).toHaveBeenCalledWith('/api/tags');
+      expect(mockedApi.post).not.toHaveBeenCalled();
       expect(result).toEqual({ status: 'present' });
     });
 
@@ -170,13 +159,13 @@ describe('ollama.ts', () => {
         }
       };
 
-      mockedAxios.get.mockResolvedValue(mockModelsResponse);
-      mockedAxios.post.mockResolvedValue(mockPullResponse);
+      mockedApi.get.mockResolvedValue(mockModelsResponse);
+      mockedApi.post.mockResolvedValue(mockPullResponse);
 
       const result = await ensureModel(modelName);
 
-      expect(mockedAxios.get).toHaveBeenCalledWith('/api/tags');
-      expect(mockedAxios.post).toHaveBeenCalledWith('/api/pull', { name: modelName });
+      expect(mockedApi.get).toHaveBeenCalledWith('/api/tags');
+      expect(mockedApi.post).toHaveBeenCalledWith('/api/pull', { name: modelName });
       expect(result).toEqual({ status: 'pulled' });
     });
 
@@ -185,22 +174,22 @@ describe('ollama.ts', () => {
       const mockModelsResponse = { data: { models: [] } };
       const mockPullResponse = { data: { status: 'success' } };
 
-      mockedAxios.get.mockResolvedValue(mockModelsResponse);
-      mockedAxios.post.mockResolvedValue(mockPullResponse);
+      mockedApi.get.mockResolvedValue(mockModelsResponse);
+      mockedApi.post.mockResolvedValue(mockPullResponse);
 
       const result = await ensureModel(modelName);
 
-      expect(mockedAxios.post).toHaveBeenCalledWith('/api/pull', { name: modelName });
+      expect(mockedApi.post).toHaveBeenCalledWith('/api/pull', { name: modelName });
       expect(result).toEqual({ status: 'pulled' });
     });
 
     it('should handle errors when checking existing models', async () => {
       const modelName = 'test-model';
       const error = new Error('Failed to list models');
-      mockedAxios.get.mockRejectedValue(error);
+      mockedApi.get.mockRejectedValue(error);
 
       await expect(ensureModel(modelName)).rejects.toThrow('Failed to list models');
-      expect(mockedAxios.post).not.toHaveBeenCalled();
+      expect(mockedApi.post).not.toHaveBeenCalled();
     });
 
     it('should handle errors during pull operation', async () => {
@@ -213,11 +202,11 @@ describe('ollama.ts', () => {
         }
       };
       const pullError = new Error('Failed to pull model');
-      mockedAxios.get.mockResolvedValue(mockModelsResponse);
-      mockedAxios.post.mockRejectedValue(pullError);
+      mockedApi.get.mockResolvedValue(mockModelsResponse);
+      mockedApi.post.mockRejectedValue(pullError);
 
       await expect(ensureModel(modelName)).rejects.toThrow('Failed to pull model');
-      expect(mockedAxios.post).toHaveBeenCalledWith('/api/pull', { name: modelName });
+      expect(mockedApi.post).toHaveBeenCalledWith('/api/pull', { name: modelName });
     });
   });
 

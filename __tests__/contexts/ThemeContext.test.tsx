@@ -32,11 +32,31 @@ jest.mock('next-themes', () => ({
   }),
 }));
 
-jest.mock('@mui/material/styles', () => ({
-  ...jest.requireActual('@mui/material/styles'),
-  ThemeProvider: ({ children, theme }: any) => <div data-theme={theme.palette.mode}>{children}</div>,
-  createTheme: jest.fn((options) => ({ ...options, palette: { mode: options.palette?.mode || 'light' } })),
-}));
+jest.mock('@/styles/theme', () => {
+  const lightTheme = {
+    palette: { mode: 'light' },
+    typography: {},
+    components: {},
+  };
+  const darkTheme = {
+    palette: { mode: 'dark' },
+    typography: {},
+    components: {},
+  };
+  return {
+    lightTheme,
+    darkTheme,
+    designTokens: {},
+  };
+});
+
+jest.mock('@mui/material/styles', () => {
+  const original = jest.requireActual('@mui/material/styles');
+  return {
+    ...original,
+    ThemeProvider: ({ children, theme }: any) => <div data-theme={theme?.palette?.mode || 'light'}>{children}</div>,
+  };
+});
 
 jest.mock('@mui/material', () => ({
   ...jest.requireActual('@mui/material'),
