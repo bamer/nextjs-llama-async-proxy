@@ -78,7 +78,7 @@ export class WebSocketTransport extends Transport {
    * Get cached logs (for requestLogs or reconnections)
    */
   getCachedLogs(): LogEntry[] {
-    return [...this.logQueue].reverse();
+    return [...this.logQueue];
   }
 
   /**

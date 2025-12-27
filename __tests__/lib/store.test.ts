@@ -371,8 +371,12 @@ describe('store', () => {
       }
       const chartHistory = useStore.getState().chartHistory;
 
+      // Array should have max 60 elements (limit enforced)
+      expect(chartHistory.cpu).toHaveLength(60);
+      // First element should be 5 (oldest element removed during add)
       expect(chartHistory.cpu[0].value).toBe(5);
-      expect(chartHistory.cpu[64].value).toBe(64);
+      // Last element should be 64 (most recent)
+      expect(chartHistory.cpu[59].value).toBe(64);
     });
 
     it('should include timestamp', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
-import { APP_CONFIG, AppConfig } from "../app.config";
+import { APP_CONFIG, AppConfig } from "@/config/app.config";
 
 describe("AppConfig", () => {
   // Store original environment variables

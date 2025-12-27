@@ -120,7 +120,8 @@ describe('GeneralSettingsTab', () => {
     renderWithTheme(
       <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
     );
-    const checkbox = screen.getByRole('checkbox', { name: /auto update/i });
+    // Use getByLabelText to find the switch since it's implemented with FormControlLabel
+    const checkbox = screen.getByLabelText('Auto Update') as HTMLInputElement;
     fireEvent.click(checkbox);
     expect(mockOnInputChange).toHaveBeenCalled();
   });
@@ -129,7 +130,8 @@ describe('GeneralSettingsTab', () => {
     renderWithTheme(
       <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
     );
-    const checkbox = screen.getByRole('checkbox', { name: /notifications enabled/i });
+    // Use getByLabelText to find switch
+    const checkbox = screen.getByLabelText('Notifications Enabled') as HTMLInputElement;
     fireEvent.click(checkbox);
     expect(mockOnInputChange).toHaveBeenCalled();
   });

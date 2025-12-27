@@ -115,14 +115,17 @@ describe('RetryHandler', () => {
     it('should use correct backoff for retry count', async () => {
       const spy = jest.spyOn(retryHandler, 'getBackoffMs');
 
-      await retryHandler.waitForRetry(0);
-      jest.runAllTimersAsync();
+      const promise1 = retryHandler.waitForRetry(0);
+      await jest.advanceTimersByTimeAsync(1000);
+      await promise1;
 
-      await retryHandler.waitForRetry(1);
-      jest.runAllTimersAsync();
+      const promise2 = retryHandler.waitForRetry(1);
+      await jest.advanceTimersByTimeAsync(2000);
+      await promise2;
 
-      await retryHandler.waitForRetry(2);
-      jest.runAllTimersAsync();
+      const promise3 = retryHandler.waitForRetry(2);
+      await jest.advanceTimersByTimeAsync(4000);
+      await promise3;
 
       expect(spy).toHaveBeenCalledWith(0);
       expect(spy).toHaveBeenCalledWith(1);
@@ -132,26 +135,24 @@ describe('RetryHandler', () => {
     });
 
     it('should wait longer for higher retry counts', async () => {
-      const startTime1 = Date.now();
       const promise1 = retryHandler.waitForRetry(0);
-      jest.runAllTimersAsync();
+      await jest.advanceTimersByTimeAsync(1000);
       await promise1;
 
-      const startTime2 = Date.now();
       const promise2 = retryHandler.waitForRetry(1);
-      jest.runAllTimersAsync();
+      await jest.advanceTimersByTimeAsync(2000);
       await promise2;
 
-      const startTime3 = Date.now();
       const promise3 = retryHandler.waitForRetry(2);
-      jest.runAllTimersAsync();
+      await jest.advanceTimersByTimeAsync(4000);
       await promise3;
     });
 
     it('should cap wait time at max backoff', async () => {
       const promise = retryHandler.waitForRetry(10);
 
-      jest.runAllTimersAsync();
+      await jest.advanceTimersByTimeAsync(30000);
+      await promise;
 
       await expect(promise).resolves.not.toThrow();
     });
@@ -161,7 +162,8 @@ describe('RetryHandler', () => {
 
       const promise = customHandler.waitForRetry(3);
 
-      jest.runAllTimersAsync();
+      await jest.advanceTimersByTimeAsync(4000);
+      await promise;
 
       await expect(promise).resolves.not.toThrow();
     });
@@ -176,8 +178,10 @@ describe('RetryHandler', () => {
           throw new Error('Max retries exceeded');
         }
 
-        await retryHandler.waitForRetry(retryCount);
-        jest.runAllTimersAsync();
+        const backoffMs = retryHandler.getBackoffMs(retryCount);
+        const promise = retryHandler.waitForRetry(retryCount);
+        await jest.advanceTimersByTimeAsync(backoffMs);
+        await promise;
         retryCount++;
 
         throw new Error('Failed');

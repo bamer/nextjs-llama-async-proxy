@@ -1,17 +1,35 @@
-import * as fsPromises from 'fs/promises';
 import * as path from 'path';
-import { persistState, STATE_FILE, STATE_FILE_NAME } from '@/lib/state-file';
 
-jest.mock('fs/promises');
+// Mock path BEFORE importing the module
 jest.mock('path');
 
-describe('state-file', () => {
-  const mockStatePath = '/test/path/data/models-state.json';
-  const mockTmpPath = mockStatePath + '.tmp';
+// Create fs promises mock
+const mockWriteFile = jest.fn();
+const mockRename = jest.fn();
 
+jest.mock('fs', () => ({
+  promises: {
+    writeFile: mockWriteFile,
+    rename: mockRename,
+  },
+}));
+
+// Set up the mock before importing
+const mockStatePath = '/test/path/data/models-state.json';
+const mockTmpPath = mockStatePath + '.tmp';
+(path.join as jest.Mock).mockReturnValue(mockStatePath);
+
+// Now import the module after mocks are set up
+import { persistState, STATE_FILE, STATE_FILE_NAME } from '@/lib/state-file';
+
+describe('state-file', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Re-apply the mock to ensure it's set
     (path.join as jest.Mock).mockReturnValue(mockStatePath);
+    // Mock fsPromises functions to return resolved promises
+    mockWriteFile.mockResolvedValue(undefined);
+    mockRename.mockResolvedValue(undefined);
   });
 
   describe('constants', () => {
@@ -31,7 +49,7 @@ describe('state-file', () => {
 
       await persistState(state);
 
-      expect(fsPromises.writeFile).toHaveBeenCalledWith(
+      expect(mockWriteFile).toHaveBeenCalledWith(
         mockTmpPath,
         JSON.stringify(state),
         'utf8'
@@ -43,7 +61,7 @@ describe('state-file', () => {
 
       await persistState(state);
 
-      expect(fsPromises.rename).toHaveBeenCalledWith(
+      expect(mockRename).toHaveBeenCalledWith(
         mockTmpPath,
         mockStatePath
       );
@@ -54,7 +72,7 @@ describe('state-file', () => {
 
       await persistState(state);
 
-      const writeCall = (fsPromises.writeFile as jest.Mock).mock.calls[0];
+      const writeCall = mockWriteFile.mock.calls[0];
       const writtenData = writeCall[1];
 
       expect(typeof writtenData).toBe('string');
@@ -66,7 +84,7 @@ describe('state-file', () => {
 
       await persistState(state);
 
-      expect(fsPromises.writeFile).toHaveBeenCalledWith(
+      expect(mockWriteFile).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(String),
         'utf8'
@@ -78,8 +96,8 @@ describe('state-file', () => {
 
       await persistState(state);
 
-      expect(fsPromises.writeFile).toHaveBeenCalled();
-      expect(fsPromises.rename).toHaveBeenCalled();
+      expect(mockWriteFile).toHaveBeenCalled();
+      expect(mockRename).toHaveBeenCalled();
     });
 
     it('should handle nested state object', async () => {
@@ -92,7 +110,7 @@ describe('state-file', () => {
 
       await persistState(state);
 
-      expect(fsPromises.writeFile).toHaveBeenCalled();
+      expect(mockWriteFile).toHaveBeenCalled();
     });
 
     it('should handle state with arrays', async () => {
@@ -103,7 +121,7 @@ describe('state-file', () => {
 
       await persistState(state);
 
-      expect(fsPromises.writeFile).toHaveBeenCalled();
+      expect(mockWriteFile).toHaveBeenCalled();
     });
 
     it('should write state in JSON format', async () => {
@@ -111,7 +129,7 @@ describe('state-file', () => {
 
       await persistState(state);
 
-      const writeCall = (fsPromises.writeFile as jest.Mock).mock.calls[0];
+      const writeCall = mockWriteFile.mock.calls[0];
       const writtenData = writeCall[1];
 
       expect(() => JSON.parse(writtenData)).not.toThrow();
@@ -126,7 +144,7 @@ describe('state-file', () => {
 
       await persistState(state);
 
-      expect(fsPromises.writeFile).toHaveBeenCalled();
+      expect(mockWriteFile).toHaveBeenCalled();
     });
 
     it('should handle state with numbers', async () => {
@@ -139,7 +157,7 @@ describe('state-file', () => {
 
       await persistState(state);
 
-      const writeCall = (fsPromises.writeFile as jest.Mock).mock.calls[0];
+      const writeCall = mockWriteFile.mock.calls[0];
       const writtenData = writeCall[1];
       const parsed = JSON.parse(writtenData);
 
@@ -158,7 +176,7 @@ describe('state-file', () => {
 
       await persistState(state);
 
-      const writeCall = (fsPromises.writeFile as jest.Mock).mock.calls[0];
+      const writeCall = mockWriteFile.mock.calls[0];
       const writtenData = writeCall[1];
       const parsed = JSON.parse(writtenData);
 
@@ -176,13 +194,11 @@ describe('state-file', () => {
 
       await persistState(state);
 
-      expect(fsPromises.writeFile).toHaveBeenCalled();
+      expect(mockWriteFile).toHaveBeenCalled();
     });
 
     it('should handle write errors', async () => {
-      (fsPromises.writeFile as jest.Mock).mockRejectedValue(
-        new Error('Write failed')
-      );
+      mockWriteFile.mockRejectedValue(new Error('Write failed'));
 
       await expect(persistState({ key: 'value' })).rejects.toThrow(
         'Write failed'
@@ -190,10 +206,8 @@ describe('state-file', () => {
     });
 
     it('should handle rename errors', async () => {
-      (fsPromises.writeFile as jest.Mock).mockResolvedValue(undefined);
-      (fsPromises.rename as jest.Mock).mockRejectedValue(
-        new Error('Rename failed')
-      );
+      mockWriteFile.mockResolvedValue(undefined);
+      mockRename.mockRejectedValue(new Error('Rename failed'));
 
       await expect(persistState({ key: 'value' })).rejects.toThrow(
         'Rename failed'
@@ -205,8 +219,8 @@ describe('state-file', () => {
 
       await persistState(state);
 
-      const writeCall = (fsPromises.writeFile as jest.Mock).mock.calls[0];
-      const renameCall = (fsPromises.rename as jest.Mock).mock.calls[0];
+      const writeCall = mockWriteFile.mock.calls[0];
+      const renameCall = mockRename.mock.calls[0];
 
       expect(writeCall[0]).toContain('.tmp');
       expect(renameCall[0]).toContain('.tmp');

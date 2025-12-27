@@ -1,4 +1,4 @@
-import { ProcessManagerAPI, ModelProcessInfo } from '@/lib/process-manager';
+import { ProcessManagerAPI, ModelProcessInfo, ProcessManager } from '@/lib/process-manager';
 import { spawn } from 'child_process';
 import { resolveBinary, binaryExists } from '@/lib/binary-lookup';
 
@@ -18,8 +18,10 @@ const mockedBinaryExists = binaryExists as jest.MockedFunction<typeof binaryExis
 describe('ProcessManager', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Clear the static process map by creating a new instance
-    (ProcessManagerAPI as any).start = require('@/lib/process-manager').ProcessManager.start;
+    // Clear the static process map
+    ProcessManager._reset();
+    mockedBinaryExists.mockResolvedValue(true);
+    mockedResolveBinary.mockReturnValue('/path/to/model.bin');
   });
 
   describe('start', () => {

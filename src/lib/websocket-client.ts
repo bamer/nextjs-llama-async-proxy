@@ -132,4 +132,6 @@ class WebSocketClient extends EventEmitter {
   }
 }
 
+// Export both the class and singleton instance
 export const websocketServer = new WebSocketClient();
+export { WebSocketClient };

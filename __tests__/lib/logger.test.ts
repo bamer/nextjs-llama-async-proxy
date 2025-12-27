@@ -13,7 +13,19 @@ import {
 import { WebSocketTransport } from '@/lib/websocket-transport';
 import { Server } from 'socket.io';
 
-jest.mock('winston');
+jest.mock('winston', () => ({
+  createLogger: jest.fn(),
+  format: {
+    combine: jest.fn((...args) => args[0]),
+    timestamp: jest.fn(() => ({})),
+    errors: jest.fn((...args) => args[0]),
+    splat: jest.fn((...args) => args[0]),
+    json: jest.fn(() => ({})),
+  },
+  transports: {},
+  Transport: class {},
+  Logger: class {},
+}));
 jest.mock('winston-daily-rotate-file');
 jest.mock('@/lib/websocket-transport');
 jest.mock('socket.io');

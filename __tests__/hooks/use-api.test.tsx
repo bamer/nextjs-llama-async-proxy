@@ -209,13 +209,21 @@ describe('useApi', () => {
   });
 
   it('should allow manual refetch via queryClient', async () => {
-    apiService.getModels.mockResolvedValue([{ id: '1', name: 'Model 1' }]);
+    // Mock implementation that returns different values on successive calls
+    let callCount = 0;
+    apiService.getModels.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        return Promise.resolve([{ id: '1', name: 'Model 1' }]);
+      } else {
+        return Promise.resolve([{ id: '2', name: 'Model 2' }]);
+      }
+    });
 
     const { result } = renderHook(() => useApi(), { wrapper });
 
     await waitFor(() => expect(result.current.models.isSuccess).toBe(true));
-
-    apiService.getModels.mockResolvedValue([{ id: '2', name: 'Model 2' }]);
+    expect(result.current.models.data).toEqual([{ id: '1', name: 'Model 1' }]);
 
     await act(async () => {
       await result.current.queryClient.refetchQueries({ queryKey: ['models'] });
@@ -244,10 +252,21 @@ describe('useApi', () => {
     const { result } = renderHook(() => useApi(), { wrapper });
 
     await waitFor(() => {
-      expect(result.current.models.refetchInterval).toBe(30000);
-      expect(result.current.metrics.refetchInterval).toBe(10000);
-      expect(result.current.logs.refetchInterval).toBe(15000);
+      // In React Query v5, refetchInterval is not directly exposed on the result
+      // Instead, we verify the queries are configured correctly by checking they fetch data
+      expect(result.current.models.isSuccess).toBe(true);
+      expect(result.current.metrics.isSuccess).toBe(true);
+      expect(result.current.logs.isSuccess).toBe(true);
     });
+
+    // Verify the queries have the correct configuration by checking the queryClient
+    const modelsQuery = result.current.queryClient.getQueryCache().find({ queryKey: ['models'] });
+    const metricsQuery = result.current.queryClient.getQueryCache().find({ queryKey: ['metrics'] });
+    const logsQuery = result.current.queryClient.getQueryCache().find({ queryKey: ['logs'] });
+
+    expect(modelsQuery?.observers[0]?.options.refetchInterval).toBe(30000);
+    expect(metricsQuery?.observers[0]?.options.refetchInterval).toBe(10000);
+    expect(logsQuery?.observers[0]?.options.refetchInterval).toBe(15000);
   });
 
   it('should not have refetchInterval for config query', async () => {
@@ -256,7 +275,11 @@ describe('useApi', () => {
     const { result } = renderHook(() => useApi(), { wrapper });
 
     await waitFor(() => {
-      expect(result.current.config.refetchInterval).toBeUndefined();
+      expect(result.current.config.isSuccess).toBe(true);
     });
+
+    // Verify the config query has no refetchInterval
+    const configQuery = result.current.queryClient.getQueryCache().find({ queryKey: ['config'] });
+    expect(configQuery?.observers[0]?.options.refetchInterval).toBeUndefined();
   });
 });

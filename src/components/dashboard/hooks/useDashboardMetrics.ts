@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { MONITORING_CONFIG } from "@/config/monitoring.config";
+import { useWebSocket } from "@/hooks/use-websocket";
 
 interface ChartDataPoint {
   timestamp: string;
@@ -14,7 +15,7 @@ interface ChartDataPoint {
 
 export function useDashboardMetrics() {
   const metrics = useStore((state) => state.metrics);
-  const { isConnected } = require("@/hooks/use-websocket")();
+  const { isConnected } = useWebSocket();
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
 

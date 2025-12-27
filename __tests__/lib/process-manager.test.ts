@@ -20,7 +20,7 @@ describe('ProcessManager', () => {
     (resolveBinary as jest.Mock).mockReturnValue('/path/to/model.bin');
     (binaryExists as jest.Mock).mockResolvedValue(true);
 
-    ProcessManager['processes'].clear();
+    ProcessManager._reset();
   });
 
   describe('start', () => {

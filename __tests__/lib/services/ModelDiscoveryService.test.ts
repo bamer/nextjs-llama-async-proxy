@@ -47,20 +47,6 @@ describe('ModelDiscoveryService', () => {
   });
 
   describe('discoverModels', () => {
-    beforeEach(() => {
-      const mockDirent = {
-        name: 'model.gguf',
-        isDirectory: jest.fn().mockReturnValue(false),
-      };
-      const mockStat = {
-        isDirectory: jest.fn().mockReturnValue(false),
-        size: 1000000000,
-      };
-
-      mockedFs.readdir.mockResolvedValue([mockDirent] as any);
-      mockedFs.stat.mockResolvedValue(mockStat as any);
-    });
-
     it('should discover .gguf model files', async () => {
       const mockDirent = {
         name: 'model.gguf',

@@ -1,9 +1,14 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import React from 'react';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ModernDashboard from '@/components/dashboard/ModernDashboard';
+
+jest.mock('@/contexts/ThemeContext', () => ({
+  ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useTheme: () => ({ isDark: false, mode: 'light' as const, setMode: jest.fn(), toggleTheme: jest.fn(), currentTheme: null }),
+}));
 
 jest.mock('@/hooks/use-websocket', () => ({
   useWebSocket: () => ({
@@ -44,7 +49,7 @@ const queryClient = new QueryClient({
 function renderWithProviders(component: React.ReactElement) {
   return render(
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={theme}>{component}</ThemeProvider>
+      <MuiThemeProvider theme={theme}>{component}</MuiThemeProvider>
     </QueryClientProvider>
   );
 }

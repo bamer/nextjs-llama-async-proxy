@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import { DEFAULT_LLAMA_SERVER_CONFIG } from "../llama-defaults";
+import { DEFAULT_LLAMA_SERVER_CONFIG } from "@/config/llama-defaults";
 
 describe("LlamaDefaults", () => {
   describe("Basic Structure", () => {

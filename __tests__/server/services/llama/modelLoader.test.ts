@@ -295,6 +295,15 @@ describe('ModelLoader', () => {
         'model2.bin',
         'config.json',
       ]);
+      mockedFs.statSync
+        .mockReturnValueOnce({
+          size: 1000000000,
+          mtimeMs: Date.now(),
+        } as any)
+        .mockReturnValueOnce({
+          size: 2000000000,
+          mtimeMs: Date.now(),
+        } as any);
 
       const models = modelLoader.loadFromFilesystem();
 

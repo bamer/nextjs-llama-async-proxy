@@ -1,10 +1,25 @@
 import { resolveBinary, binaryExists } from '@/lib/binary-lookup';
 import { promises as fs } from 'fs';
+import * as path from 'path';
 
-jest.mock('fs');
-jest.mock('path');
+// Mock fs module
+jest.mock('fs', () => ({
+  constants: {
+    R_OK: 0,
+  },
+  promises: {
+    access: jest.fn(),
+  },
+}));
+
+jest.mock('path', () => ({
+  join: jest.fn((...args) => args.join('/')),
+}));
 
 describe('binary-lookup', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
   describe('resolveBinary', () => {
     it('should resolve binary path for a model', () => {
       const model = 'test-model';

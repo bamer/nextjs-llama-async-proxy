@@ -244,11 +244,15 @@ describe('WebSocketTransport', () => {
       transport.log(info1, callback);
       transport.log(info2, callback);
 
-      setImmediate(done);
+      // Wait for all async operations to complete
+      setTimeout(done, 20);
     });
 
     it('should return cached logs', () => {
       const cachedLogs = transport.getCachedLogs();
+
+      // Debug: log what we actually got
+      console.log('Debug cachedLogs:', cachedLogs);
 
       expect(cachedLogs).toHaveLength(2);
       expect(cachedLogs[0].message).toBe('Message 2');

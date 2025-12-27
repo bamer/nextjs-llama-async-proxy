@@ -1,18 +1,22 @@
 import { apiService } from '@/services/api-service';
 import { apiClient } from '@/utils/api-client';
 
-jest.mock('@/utils/api-client');
-jest.mock('axios');
+// Mock apiClient properly before importing
+jest.mock('@/utils/api-client', () => ({
+  apiClient: {
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+    patch: jest.fn(),
+  },
+}));
+
 const mockApiClient = apiClient as jest.Mocked<typeof apiClient>;
-const mockAxios = axios as jest.Mocked<typeof axios>;
 
 describe('api-service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   describe('getModels', () => {
@@ -34,7 +38,7 @@ describe('api-service', () => {
       expect(result).toEqual(mockResponse.data);
     });
 
-    it('should handle API errors', async () => {
+    it('should throw error on failure', async () => {
       const mockResponse = {
         success: false,
         error: {
@@ -47,28 +51,13 @@ describe('api-service', () => {
 
       mockApiClient.get.mockResolvedValue(mockResponse);
 
-      const result = await apiService.getModels();
-
-      expect(result).toEqual(mockResponse.data);
-      expect(mockResponse.data).toBeUndefined();
+      await expect(apiService.getModels()).rejects.toThrow('Server error');
     });
 
     it('should handle network errors', async () => {
-      const mockResponse = {
-        success: false,
-        error: {
-          code: 'NETWORK_ERROR',
-          message: 'Network error',
-          details: 'Connection failed',
-        },
-        timestamp: new Date().toISOString(),
-      };
+      mockApiClient.get.mockRejectedValue(new Error('Network error'));
 
-      mockApiClient.get.mockResolvedValue(mockResponse);
-
-      const result = await apiService.getModels();
-
-      expect(result).toEqual(mockResponse.data);
+      await expect(apiService.getModels()).rejects.toThrow('Network error');
     });
   });
 
@@ -84,7 +73,7 @@ describe('api-service', () => {
 
       const result = await apiService.loadModel('model1');
 
-      expect(mockApiClient.post).toHaveBeenCalledWith('/api/models', { modelId: 'model1' });
+      expect(mockApiClient.post).toHaveBeenCalledWith('/api/models/model1/load', { config: undefined });
       expect(result).toEqual(mockResponse.data);
     });
 
@@ -100,9 +89,7 @@ describe('api-service', () => {
 
       mockApiClient.post.mockResolvedValue(mockResponse);
 
-      const result = await apiService.loadModel('nonexistent');
-
-      expect(result).toEqual(mockResponse.data);
+      await expect(apiService.loadModel('nonexistent')).rejects.toThrow('Model not found');
     });
   });
 
@@ -114,11 +101,11 @@ describe('api-service', () => {
         timestamp: new Date().toISOString(),
       };
 
-      mockApiClient.delete.mockResolvedValue(mockResponse);
+      mockApiClient.post.mockResolvedValue(mockResponse);
 
       const result = await apiService.unloadModel('model1');
 
-      expect(mockApiClient.delete).toHaveBeenCalledWith('/api/models/model1');
+      expect(mockApiClient.post).toHaveBeenCalledWith('/api/models/model1/unload');
       expect(result).toEqual(mockResponse.data);
     });
 
@@ -132,15 +119,13 @@ describe('api-service', () => {
         timestamp: new Date().toISOString(),
       };
 
-      mockApiClient.delete.mockResolvedValue(mockResponse);
+      mockApiClient.post.mockResolvedValue(mockResponse);
 
-      const result = await apiService.unloadModel('model1');
-
-      expect(result).toEqual(mockResponse.data);
+      await expect(apiService.unloadModel('model1')).rejects.toThrow('Unload failed');
     });
   });
 
-  describe('getServerStatus', () => {
+  describe('healthCheck', () => {
     it('should return server status', async () => {
       const mockResponse = {
         success: true,
@@ -154,10 +139,10 @@ describe('api-service', () => {
 
       mockApiClient.get.mockResolvedValue(mockResponse);
 
-      const result = await apiService.getServerStatus();
+      const result = await apiService.healthCheck();
 
-      expect(mockApiClient.get).toHaveBeenCalledWith('/api/llama-server/status');
-      expect(result).toEqual(mockResponse.data);
+      expect(mockApiClient.get).toHaveBeenCalledWith('/api/health');
+      expect(result).toEqual(mockResponse);
     });
 
     it('should handle server down', async () => {
@@ -172,77 +157,132 @@ describe('api-service', () => {
 
       mockApiClient.get.mockResolvedValue(mockResponse);
 
-      const result = await apiService.getServerStatus();
+      const result = await apiService.healthCheck();
 
-      expect(result).toEqual(mockResponse.data);
+      expect(result).toEqual(mockResponse);
     });
   });
 
-  describe('startServer', () => {
-    it('should start llama server successfully', async () => {
+  describe('getMetrics', () => {
+    it('should return metrics', async () => {
       const mockResponse = {
         success: true,
-        data: { message: 'Server started' },
-        timestamp: new Date().toISOString(),
-      };
-
-      mockApiClient.post.mockResolvedValue(mockResponse);
-
-      const result = await apiService.startServer();
-
-      expect(mockApiClient.post).toHaveBeenCalledWith('/api/llama-server/start');
-      expect(result).toEqual(mockResponse.data);
-    });
-
-    it('should handle start errors', async () => {
-      const mockResponse = {
-        success: false,
-        error: {
-          code: '500',
-          message: 'Failed to start server',
+        data: {
+          cpuUsage: 50,
+          memoryUsage: 60,
+          diskUsage: 70,
+          activeModels: 1,
+          totalRequests: 100,
+          avgResponseTime: 200,
+          uptime: 3600,
         },
         timestamp: new Date().toISOString(),
       };
 
-      mockApiClient.post.mockResolvedValue(mockResponse);
+      mockApiClient.get.mockResolvedValue(mockResponse);
 
-      const result = await apiService.startServer();
+      const result = await apiService.getMetrics();
 
+      expect(mockApiClient.get).toHaveBeenCalledWith('/api/metrics');
       expect(result).toEqual(mockResponse.data);
     });
-  });
 
-  describe('stopServer', () => {
-    it('should stop llama server successfully', async () => {
+    it('should handle metrics error', async () => {
       const mockResponse = {
-        success: true,
-        data: { message: 'Server stopped' },
+        success: false,
+        error: {
+          code: '500',
+          message: 'Failed to fetch metrics',
+        },
         timestamp: new Date().toISOString(),
       };
 
-      mockApiClient.post.mockResolvedValue(mockResponse);
+      mockApiClient.get.mockResolvedValue(mockResponse);
 
-      const result = await apiService.stopServer();
-
-      expect(mockApiClient.post).toHaveBeenCalledWith('/api/llama-server/stop');
-      expect(result).toEqual(mockResponse.data);
+      await expect(apiService.getMetrics()).rejects.toThrow('Failed to fetch metrics');
     });
   });
 
-  describe('restartServer', () => {
-    it('should restart llama server successfully', async () => {
+  describe('getLogs', () => {
+    it('should return logs', async () => {
       const mockResponse = {
         success: true,
-        data: { message: 'Server restarted' },
+        data: [
+          { level: 'info', message: 'Test log' },
+        ],
         timestamp: new Date().toISOString(),
       };
 
-      mockApiClient.post.mockResolvedValue(mockResponse);
+      mockApiClient.get.mockResolvedValue(mockResponse);
 
-      const result = await apiService.restartServer();
+      const result = await apiService.getLogs({ limit: 10 });
 
-      expect(mockApiClient.post).toHaveBeenCalledWith('/api/llama-server/restart');
+      expect(mockApiClient.get).toHaveBeenCalledWith('/api/logs', { params: { limit: 10 } });
       expect(result).toEqual(mockResponse.data);
+    });
+
+    it('should handle logs error', async () => {
+      const mockResponse = {
+        success: false,
+        error: {
+          code: '500',
+          message: 'Failed to fetch logs',
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      mockApiClient.get.mockResolvedValue(mockResponse);
+
+      await expect(apiService.getLogs({ limit: 10 })).rejects.toThrow('Failed to fetch logs');
+    });
+  });
+
+  describe('getSettings', () => {
+    it('should return settings', async () => {
+      const mockResponse = {
+        success: true,
+        data: { theme: 'dark' },
+        timestamp: new Date().toISOString(),
+      };
+
+      mockApiClient.get.mockResolvedValue(mockResponse);
+
+      const result = await apiService.getSettings();
+
+      expect(mockApiClient.get).toHaveBeenCalledWith('/api/settings');
+      expect(result).toEqual(mockResponse);
+    });
+  });
+
+  describe('updateSettings', () => {
+    it('should update settings', async () => {
+      const mockResponse = {
+        success: true,
+        data: { theme: 'light' },
+        timestamp: new Date().toISOString(),
+      };
+
+      mockApiClient.put.mockResolvedValue(mockResponse);
+
+      const result = await apiService.updateSettings({ theme: 'light' });
+
+      expect(mockApiClient.put).toHaveBeenCalledWith('/api/settings', { theme: 'light' });
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should handle update errors', async () => {
+      const mockResponse = {
+        success: false,
+        error: {
+          code: '500',
+          message: 'Failed to update settings',
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      mockApiClient.put.mockResolvedValue(mockResponse);
+
+      await expect(apiService.updateSettings({ theme: 'light' })).rejects.toThrow('Failed to update settings');
     });
   });
 
@@ -250,7 +290,7 @@ describe('api-service', () => {
     it('should throw descriptive errors', async () => {
       mockApiClient.get.mockRejectedValue(new Error('Network failure'));
 
-      await expect(apiService.getModels()).rejects.toThrow();
+      await expect(apiService.getModels()).rejects.toThrow('Network failure');
     });
 
     it('should handle timeout errors', async () => {

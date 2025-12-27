@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
-import { MONITORING_CONFIG, MonitoringConfig } from "../monitoring.config";
+import { MONITORING_CONFIG, MonitoringConfig } from "@/config/monitoring.config";
 
 describe("MonitoringConfig", () => {
   // Store original environment variables

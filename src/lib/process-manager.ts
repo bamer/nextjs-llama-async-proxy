@@ -32,7 +32,10 @@ class ProcessManager {
     }
 
     // Ensure the binary exists before spawning
-    await binaryExists(model);
+    const exists = await binaryExists(model);
+    if (!exists) {
+      throw new Error(`Binary for model '${model}' does not exist`);
+    }
 
     // Resolve the binary path (throws if missing)
     const binaryPath = resolveBinary(model);
@@ -52,7 +55,8 @@ class ProcessManager {
 
     // Spawn detached process; ignore stdio to avoid blocking
     const child = spawn(cmd, args, { detached: true, stdio: 'ignore' });
-    child.unref();
+    // Optional chaining for unref in case child process doesn't have it
+    child.unref?.();
 
     const launchedAt = Date.now();
     const pid = child.pid!;
@@ -85,11 +89,22 @@ class ProcessManager {
   static getInfo(model: string): ModelProcessInfo | undefined {
     return this.processes.get(model);
   }
+
+  /**
+   * Reset all processes (for testing purposes).
+   * @internal
+   */
+  static _reset(): void {
+    this.processes.clear();
+  }
 }
 
 /* Export a singleton‑style API for external modules */
 export const ProcessManagerAPI = {
-  start: ProcessManager.start,
-  stop: ProcessManager.stop,
-  getInfo: ProcessManager.getInfo,
+  start: (model: string) => ProcessManager.start(model),
+  stop: (model: string) => ProcessManager.stop(model),
+  getInfo: (model: string) => ProcessManager.getInfo(model),
 };
+
+// Export the class for testing purposes
+export { ProcessManager };

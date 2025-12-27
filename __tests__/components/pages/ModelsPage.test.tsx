@@ -182,11 +182,12 @@ describe('ModelsPage', () => {
       ok: true,
       json: async () => ({ models: mockModels }),
     });
-    
+
     render(<ModelsPage />);
-    
+
     await waitFor(() => {
-      expect(screen.getByText('Version: 1.0.0')).toBeInTheDocument();
+      // Check that at least one version is displayed
+      expect(screen.getAllByText('Version: 1.0.0').length).toBeGreaterThan(0);
     });
   });
 

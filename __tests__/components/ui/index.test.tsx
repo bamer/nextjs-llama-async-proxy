@@ -23,12 +23,61 @@ jest.mock('framer-motion', () => ({
   },
 }));
 
+jest.mock('@mui/material/Box', () => ({
+  __esModule: true,
+  default: ({ children, ...props }: any) => (
+    <div {...props}>{children}</div>
+  ),
+}));
+
+jest.mock('@mui/material/Card', () => ({
+  __esModule: true,
+  Card: ({ children, ...props }: any) => (
+    <div {...props} className="MuiCard-root">
+      {children}
+    </div>
+  ),
+}));
+
+jest.mock('@mui/material/CardContent', () => ({
+  __esModule: true,
+  default: ({ children, ...props }: any) => (
+    <div {...props} className="MuiCardContent-root">
+      {children}
+    </div>
+  ),
+}));
+
+jest.mock('@mui/material/CardActions', () => ({
+  __esModule: true,
+  default: ({ children, ...props }: any) => (
+    <div {...props} className="MuiCardActions-root">
+      {children}
+    </div>
+  ),
+}));
+
+jest.mock('@mui/material/Button', () => ({
+  __esModule: true,
+  default: ({ children, ...props }: any) => (
+    <button {...props}>{children}</button>
+  ),
+}));
+
+jest.mock('@mui/material/Typography', () => ({
+  __esModule: true,
+  default: ({ children, ...props }: any) => (
+    <span {...props}>{children}</span>
+  ),
+}));
+
 const theme = createTheme();
 
 function renderWithTheme(component: React.ReactElement) {
   return render(<ThemeProvider theme={theme}>{component}</ThemeProvider>);
 }
 
+// Import Card with default import
 const Card = require('@/components/ui/Card').default;
 
 describe('UI Components Index', () => {
