@@ -19,7 +19,7 @@ jest.mock("@/lib/websocket-client", () => ({
   },
 }));
 
-jest.mock("@/components/layout/MainLayout", () => ({
+jest.mock("@/components/layout/main-layout", () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="main-layout">{children}</div>,
 }));
 

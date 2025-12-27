@@ -142,4 +142,155 @@ describe("POST /api/models/[name]/stop", () => {
       error: "Model name is required",
     });
   });
+
+  // Edge case: Handle very long model names
+  it("should handle very long model names", async () => {
+    const longName = "a".repeat(10000);
+    const mockRequest = {} as unknown as NextRequest;
+    const mockParams = Promise.resolve({ name: longName });
+
+    const response = await StopModel(mockRequest, { params: mockParams });
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.model).toBe(longName);
+  });
+
+  // Edge case: Handle model names with unicode characters
+  it("should handle model names with unicode characters", async () => {
+    const unicodeName = "llama-2-7b-日本語-中文-العربية";
+    const mockRequest = {} as unknown as NextRequest;
+    const mockParams = Promise.resolve({ name: unicodeName });
+
+    const response = await StopModel(mockRequest, { params: mockParams });
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.model).toBe(unicodeName);
+  });
+
+  // Edge case: Handle concurrent stop requests for same model
+  it("should handle concurrent stop requests", async () => {
+    const mockRequest = {} as unknown as NextRequest;
+    const mockParams = Promise.resolve({ name: "llama-2-7b" });
+
+    const responses = await Promise.all([
+      StopModel(mockRequest, { params: mockParams }),
+      StopModel(mockRequest, { params: mockParams }),
+      StopModel(mockRequest, { params: mockParams }),
+    ]);
+
+    responses.forEach((response) => {
+      expect(response.status).toBe(200);
+    });
+  });
+
+  // Edge case: Handle model names with path-like characters
+  it("should handle model names with path-like characters", async () => {
+    const pathName = "../../models/test-model";
+    const mockRequest = {} as unknown as NextRequest;
+    const mockParams = Promise.resolve({ name: pathName });
+
+    const response = await StopModel(mockRequest, { params: mockParams });
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.model).toBe(pathName);
+  });
+
+  // Edge case: Handle model names with SQL-like patterns
+  it("should handle model names with SQL-like patterns", async () => {
+    const sqlName = "model'; DROP TABLE models; --";
+    const mockRequest = {} as unknown as NextRequest;
+    const mockParams = Promise.resolve({ name: sqlName });
+
+    const response = await StopModel(mockRequest, { params: mockParams });
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.model).toBe(sqlName);
+  });
+
+  // Edge case: Handle model names with emoji
+  it("should handle model names with emoji", async () => {
+    const emojiName = "llama-2-7b-🦙🚀✨";
+    const mockRequest = {} as unknown as NextRequest;
+    const mockParams = Promise.resolve({ name: emojiName });
+
+    const response = await StopModel(mockRequest, { params: mockParams });
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.model).toBe(emojiName);
+  });
+
+  // Edge case: Handle model name with null bytes
+  it("should handle model name with special null characters", async () => {
+    const specialName = "model\x00test";
+    const mockRequest = {} as unknown as NextRequest;
+    const mockParams = Promise.resolve({ name: specialName });
+
+    const response = await StopModel(mockRequest, { params: mockParams });
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.model).toBe(specialName);
+  });
+
+  // Edge case: Handle params that reject instead of resolve
+  it("should handle params promise rejection", async () => {
+    const mockParams = Promise.reject(new Error("Param error"));
+    const mockRequest = {} as unknown as NextRequest;
+
+    const response = await StopModel(mockRequest, { params: mockParams });
+    const json = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(json).toMatchObject({
+      error: "Internal server error",
+      status: "error",
+    });
+  });
+
+  // Edge case: Handle model name with whitespace only
+  it("should handle model name with only whitespace", async () => {
+    const whitespaceName = "   \t\n  ";
+    const mockRequest = {} as unknown as NextRequest;
+    const mockParams = Promise.resolve({ name: whitespaceName });
+
+    const response = await StopModel(mockRequest, { params: mockParams });
+    const json = await response.json();
+
+    // Should be considered a valid name (non-empty string)
+    expect(response.status).toBe(200);
+    expect(json.model).toBe(whitespaceName);
+  });
+
+  // Edge case: Handle model name with URL encoding characters
+  it("should handle model names with URL-encoded characters", async () => {
+    const urlName = "model%20name%20with%20spaces";
+    const mockRequest = {} as unknown as NextRequest;
+    const mockParams = Promise.resolve({ name: urlName });
+
+    const response = await StopModel(mockRequest, { params: mockParams });
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.model).toBe(urlName);
+  });
+
+  // Edge case: Verify response contains all expected fields
+  it("should include all expected fields in success response", async () => {
+    const mockRequest = {} as unknown as NextRequest;
+    const mockParams = Promise.resolve({ name: "test-model" });
+
+    const response = await StopModel(mockRequest, { params: mockParams });
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json).toHaveProperty("model");
+    expect(json).toHaveProperty("status");
+    expect(json).toHaveProperty("message");
+    expect(json).toHaveProperty("info");
+  });
 });

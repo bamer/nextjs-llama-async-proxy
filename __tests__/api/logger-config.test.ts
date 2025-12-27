@@ -187,4 +187,309 @@ describe("POST /api/logger/config", () => {
 
     expect(response.status).toBe(200);
   });
+
+  // Edge case: Handle very large configuration object
+  it("should handle very large configuration object", async () => {
+    const mockConfig = {
+      level: "info",
+      // Create a large config
+      ...Array.from({ length: 100 }, (_, i) => ({
+        [`prop_${i}`]: "x".repeat(100),
+      })).reduce((acc, curr) => ({ ...acc, ...curr }), {}),
+    };
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue(mockConfig),
+    } as unknown as NextRequest;
+
+    const response = await POST(mockRequest);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle configuration with circular reference (deep clone will break it)
+  it("should handle configuration with nested objects", async () => {
+    const mockConfig = {
+      level: "info",
+      nested: {
+        deep: {
+          deeper: {
+            value: "test",
+          },
+        },
+      },
+    };
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue(mockConfig),
+    } as unknown as NextRequest;
+
+    const response = await POST(mockRequest);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle configuration with invalid log level
+  it("should handle configuration with invalid log level", async () => {
+    const mockConfig = {
+      level: "invalid-level",
+      file: "application.log",
+    };
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue(mockConfig),
+    } as unknown as NextRequest;
+
+    const response = await POST(mockRequest);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle configuration with non-string file path
+  it("should handle configuration with non-string file path", async () => {
+    const mockConfig = {
+      level: "info",
+      file: 12345 as unknown as string,
+    };
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue(mockConfig),
+    } as unknown as NextRequest;
+
+    const response = await POST(mockRequest);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle configuration with extremely long strings
+  it("should handle configuration with extremely long strings", async () => {
+    const mockConfig = {
+      level: "info",
+      file: "a".repeat(100000),
+      prefix: "b".repeat(100000),
+    };
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue(mockConfig),
+    } as unknown as NextRequest;
+
+    const response = await POST(mockRequest);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle concurrent config requests
+  it("should handle concurrent config requests", async () => {
+    const mockConfig = {
+      level: "debug",
+      file: "test.log",
+    };
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue(mockConfig),
+    } as unknown as NextRequest;
+
+    const responses = await Promise.all([
+      POST(mockRequest),
+      POST(mockRequest),
+      POST(mockRequest),
+    ]);
+
+    responses.forEach((response) => {
+      expect(response.status).toBe(200);
+    });
+  });
+
+  // Edge case: Handle configuration with unicode characters
+  it("should handle configuration with unicode characters", async () => {
+    const mockConfig = {
+      level: "info",
+      file: "/logs/日本語/中文/العربية.log",
+      prefix: "prefix-ñ-é-中文-العربية",
+    };
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue(mockConfig),
+    } as unknown as NextRequest;
+
+    const response = await POST(mockRequest);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle configuration with array values
+  it("should handle configuration with array values", async () => {
+    const mockConfig = {
+      level: "verbose",
+      transports: ["console", "file", "websocket"],
+      excludedModules: ["module1", "module2", "module3"],
+    };
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue(mockConfig),
+    } as unknown as NextRequest;
+
+    const response = await POST(mockRequest);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle configuration with boolean and mixed types
+  it("should handle configuration with boolean and mixed types", async () => {
+    const mockConfig = {
+      level: "info",
+      enabled: true,
+      debugMode: false,
+      maxFiles: 10,
+      maxSize: "10m",
+      compress: true,
+      timestamps: true,
+    };
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue(mockConfig),
+    } as unknown as NextRequest;
+
+    const response = await POST(mockRequest);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle configuration with path-like strings
+  it("should handle configuration with path traversal-like strings", async () => {
+    const mockConfig = {
+      level: "warn",
+      file: "../../etc/passwd",
+      path: "../../../../",
+    };
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue(mockConfig),
+    } as unknown as NextRequest;
+
+    const response = await POST(mockRequest);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle configuration with emoji
+  it("should handle configuration with emoji", async () => {
+    const mockConfig = {
+      level: "info",
+      file: "📝-🚀-✨.log",
+      prefix: "🦙🔥",
+    };
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue(mockConfig),
+    } as unknown as NextRequest;
+
+    const response = await POST(mockRequest);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle configuration with reserved property names
+  it("should handle configuration with reserved property names", async () => {
+    const mockConfig = {
+      level: "info",
+      toString: "test",
+      constructor: "test2",
+      prototype: "test3",
+      __proto__: "test4",
+    };
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue(mockConfig),
+    } as unknown as NextRequest;
+
+    const response = await POST(mockRequest);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle configuration with negative numbers
+  it("should handle configuration with negative numbers", async () => {
+    const mockConfig = {
+      level: "debug",
+      maxFiles: -5,
+      retentionDays: -10,
+      timeout: -1000,
+    };
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue(mockConfig),
+    } as unknown as NextRequest;
+
+    const response = await POST(mockRequest);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle configuration with extremely large numbers
+  it("should handle configuration with extremely large numbers", async () => {
+    const mockConfig = {
+      level: "info",
+      maxFiles: Number.MAX_SAFE_INTEGER,
+      maxSize: Number.MAX_SAFE_INTEGER,
+    };
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue(mockConfig),
+    } as unknown as NextRequest;
+
+    const response = await POST(mockRequest);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle configuration with Date-like objects
+  it("should handle configuration with Date-like objects", async () => {
+    const mockConfig = {
+      level: "info",
+      startDate: "2024-01-01T00:00:00Z",
+      endDate: new Date().toISOString(),
+      timestamp: Date.now(),
+    };
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue(mockConfig),
+    } as unknown as NextRequest;
+
+    const response = await POST(mockRequest);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle configuration with whitespace-only values
+  it("should handle configuration with whitespace-only values", async () => {
+    const mockConfig = {
+      level: "   \t\n  ",
+      file: "    ",
+      prefix: "\t\n",
+    };
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue(mockConfig),
+    } as unknown as NextRequest;
+
+    const response = await POST(mockRequest);
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+  });
 });

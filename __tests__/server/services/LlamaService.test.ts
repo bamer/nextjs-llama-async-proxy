@@ -70,7 +70,11 @@ describe('LlamaService', () => {
     mockedPath.join.mockImplementation((...args) => args.join('/'));
     mockedPath.resolve.mockImplementation((...args) => args.join('/'));
     mockedFs.existsSync.mockReturnValue(true);
-    mockedFs.readdirSync.mockReturnValue(['model1.gguf', 'model2.bin']);
+    const mockDirents = [
+      { name: 'model1.gguf', isFile: () => true, isDirectory: () => false } as any,
+      { name: 'model2.bin', isFile: () => true, isDirectory: () => false } as any,
+    ];
+    mockedFs.readdirSync.mockReturnValue(mockDirents as any);
     mockedFs.statSync.mockReturnValue({
       size: 1000000000,
       mtimeMs: Date.now(),
@@ -269,11 +273,10 @@ describe('LlamaService', () => {
       // Set up a running process
       (llamaService as any).process = mockProcess;
 
-      // Track the exit callback
-      let exitCallback: ((code: number | null, signal: string | null) => void) | null = null;
-      mockProcess.on = jest.fn().mockImplementation((event: string, callback: Function) => {
+      const exitCallback: ((code: number | null, signal: string | null) => void) | null = null;
+      mockProcess.on = jest.fn().mockImplementation((event: string, callback: (code: number | null, signal: string | null) => void) => {
         if (event === 'exit') {
-          exitCallback = callback;
+          return callback;
         }
       });
 

@@ -6,7 +6,25 @@ jest.mock('@/server/services/LlamaService');
 jest.mock('child_process');
 
 const mockedLlamaService = LlamaService as jest.MockedClass<typeof LlamaService>;
-const MockSocket = jest.fn<Partial<Socket>, any[]>();
+
+type SocketEventHandler = (...args: any[]) => void;
+
+const createMockSocket = (): Partial<Socket> => {
+  const eventHandlers = new Map<string, SocketEventHandler[]>();
+
+  const mockSocket: Partial<Socket> = {
+    emit: jest.fn(),
+    on: jest.fn((event: string, handler: SocketEventHandler): any => {
+      if (!eventHandlers.has(event)) {
+        eventHandlers.set(event, []);
+      }
+      eventHandlers.get(event)!.push(handler);
+      return mockSocket;
+    }) as any,
+  };
+
+  return mockSocket;
+};
 
 describe('LlamaServerIntegration', () => {
   let integration: LlamaServerIntegration;
@@ -54,10 +72,7 @@ describe('LlamaServerIntegration', () => {
       emit: jest.fn(),
     };
 
-    mockSocket = {
-      emit: jest.fn(),
-      on: jest.fn(),
-    };
+    mockSocket = createMockSocket();
 
     integration = new LlamaServerIntegration(mockIo as Server);
   });
@@ -155,10 +170,12 @@ describe('LlamaServerIntegration', () => {
 
     it('should handle requestMetrics event', async () => {
       let requestMetricsCallback: any;
-      mockSocket.on = jest.fn((event: string, callback: any) => {
+      const socketOnMock = mockSocket.on as jest.Mock;
+      socketOnMock.mockImplementation((event: string, callback: any): any => {
         if (event === 'requestMetrics') {
           requestMetricsCallback = callback;
         }
+        return mockSocket;
       });
 
       integration.setupWebSocketHandlers(mockSocket as Socket);
@@ -177,10 +194,12 @@ describe('LlamaServerIntegration', () => {
 
     it('should handle requestModels event', async () => {
       let requestModelsCallback: any;
-      mockSocket.on = jest.fn((event: string, callback: any) => {
+      const socketOnMock = mockSocket.on as jest.Mock;
+      socketOnMock.mockImplementation((event: string, callback: any): any => {
         if (event === 'requestModels') {
           requestModelsCallback = callback;
         }
+        return mockSocket;
       });
 
       integration.setupWebSocketHandlers(mockSocket as Socket);
@@ -199,10 +218,12 @@ describe('LlamaServerIntegration', () => {
 
     it('should handle requestLlamaStatus event', async () => {
       let requestLlamaStatusCallback: any;
-      mockSocket.on = jest.fn((event: string, callback: any) => {
+      const socketOnMock = mockSocket.on as jest.Mock;
+      socketOnMock.mockImplementation((event: string, callback: any): any => {
         if (event === 'requestLlamaStatus') {
           requestLlamaStatusCallback = callback;
         }
+        return mockSocket;
       });
 
       integration.setupWebSocketHandlers(mockSocket as Socket);
@@ -221,10 +242,12 @@ describe('LlamaServerIntegration', () => {
 
     it('should handle rescanModels event', async () => {
       let rescanModelsCallback: any;
-      mockSocket.on = jest.fn((event: string, callback: any) => {
+      const socketOnMock = mockSocket.on as jest.Mock;
+      socketOnMock.mockImplementation((event: string, callback: any): any => {
         if (event === 'rescanModels') {
           rescanModelsCallback = callback;
         }
+        return mockSocket;
       });
 
       integration.setupWebSocketHandlers(mockSocket as Socket);
@@ -244,10 +267,12 @@ describe('LlamaServerIntegration', () => {
       }) as any;
 
       let startModelCallback: any;
-      mockSocket.on = jest.fn((event: string, callback: any) => {
+      const socketOnMock = mockSocket.on as jest.Mock;
+      socketOnMock.mockImplementation((event: string, callback: any): any => {
         if (event === 'startModel') {
           startModelCallback = callback;
         }
+        return mockSocket;
       });
 
       integration.setupWebSocketHandlers(mockSocket as Socket);
@@ -270,10 +295,12 @@ describe('LlamaServerIntegration', () => {
       jest.spyOn(integration, 'getLlamaService').mockReturnValue(null);
 
       let startModelCallback: any;
-      mockSocket.on = jest.fn((event: string, callback: any) => {
+      const socketOnMock = mockSocket.on as jest.Mock;
+      socketOnMock.mockImplementation((event: string, callback: any): any => {
         if (event === 'startModel') {
           startModelCallback = callback;
         }
+        return mockSocket;
       });
 
       integration.setupWebSocketHandlers(mockSocket as Socket);
@@ -292,10 +319,12 @@ describe('LlamaServerIntegration', () => {
 
     it('should handle stopModel event', async () => {
       let stopModelCallback: any;
-      mockSocket.on = jest.fn((event: string, callback: any) => {
+      const socketOnMock = mockSocket.on as jest.Mock;
+      socketOnMock.mockImplementation((event: string, callback: any): any => {
         if (event === 'stopModel') {
           stopModelCallback = callback;
         }
+        return mockSocket;
       });
 
       integration.setupWebSocketHandlers(mockSocket as Socket);
@@ -314,10 +343,12 @@ describe('LlamaServerIntegration', () => {
 
     it('should handle requestLogs event', async () => {
       let requestLogsCallback: any;
-      mockSocket.on = jest.fn((event: string, callback: any) => {
+      const socketOnMock = mockSocket.on as jest.Mock;
+      socketOnMock.mockImplementation((event: string, callback: any): any => {
         if (event === 'requestLogs') {
           requestLogsCallback = callback;
         }
+        return mockSocket;
       });
 
       integration.setupWebSocketHandlers(mockSocket as Socket);
@@ -336,10 +367,12 @@ describe('LlamaServerIntegration', () => {
 
     it('should handle restart_server event', async () => {
       let restartServerCallback: any;
-      mockSocket.on = jest.fn((event: string, callback: any) => {
+      const socketOnMock = mockSocket.on as jest.Mock;
+      socketOnMock.mockImplementation((event: string, callback: any): any => {
         if (event === 'restart_server') {
           restartServerCallback = callback;
         }
+        return mockSocket;
       });
 
       integration.setupWebSocketHandlers(mockSocket as Socket);
@@ -360,10 +393,12 @@ describe('LlamaServerIntegration', () => {
 
     it('should handle download_logs event', async () => {
       let downloadLogsCallback: any;
-      mockSocket.on = jest.fn((event: string, callback: any) => {
+      const socketOnMock = mockSocket.on as jest.Mock;
+      socketOnMock.mockImplementation((event: string, callback: any): any => {
         if (event === 'download_logs') {
           downloadLogsCallback = callback;
         }
+        return mockSocket;
       });
 
       integration.setupWebSocketHandlers(mockSocket as Socket);

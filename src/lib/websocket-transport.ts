@@ -1,4 +1,5 @@
-import { transports, Transport } from "winston";
+import { transports } from "winston";
+import Transport from "winston-transport";
 import { Server } from "socket.io";
 import { Writable } from "stream";
 

@@ -206,4 +206,364 @@ describe("GET /api/models", () => {
     expect(response.status).toBe(200);
     expect(json.models).toEqual([]);
   });
+
+  // Edge case: Handle models with extremely large size values
+  it("should handle models with extremely large size values", async () => {
+    const mockModels = [
+      {
+        id: "model-1",
+        name: "huge-model",
+        type: "llama",
+        size: Number.MAX_SAFE_INTEGER,
+        modified_at: 1703568000,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const response = await GET();
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.models[0].size).toBe(Number.MAX_SAFE_INTEGER);
+  });
+
+  // Edge case: Handle models with negative timestamp
+  it("should handle models with negative timestamp", async () => {
+    const mockModels = [
+      {
+        id: "model-1",
+        name: "old-model",
+        type: "llama",
+        size: 4096000000,
+        modified_at: -1000000000,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const response = await GET();
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.models[0].createdAt).toBeDefined();
+  });
+
+  // Edge case: Handle models with unicode characters in name
+  it("should handle models with unicode characters in name", async () => {
+    const mockModels = [
+      {
+        id: "model-1",
+        name: "llama-2-7b-日本語-中文-العربية",
+        type: "llama",
+        size: 4096000000,
+        modified_at: 1703568000,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const response = await GET();
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.models[0].name).toBe("llama-2-7b-日本語-中文-العربية");
+  });
+
+  // Edge case: Handle models with null/undefined fields
+  it("should handle models with null/undefined fields", async () => {
+    const mockModels = [
+      {
+        id: "model-1",
+        name: "test-model",
+        type: null,
+        size: null,
+        modified_at: null,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const response = await GET();
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.models[0].type).toBe("unknown");
+  });
+
+  // Edge case: Handle models with extremely long names
+  it("should handle models with extremely long names", async () => {
+    const longName = "a".repeat(10000);
+    const mockModels = [
+      {
+        id: "model-1",
+        name: longName,
+        type: "llama",
+        size: 4096000000,
+        modified_at: 1703568000,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const response = await GET();
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.models[0].name).toBe(longName);
+  });
+
+  // Edge case: Handle very large number of models
+  it("should handle very large number of models", async () => {
+    const mockModels = Array.from({ length: 1000 }, (_, i) => ({
+      id: `model-${i}`,
+      name: `model-${i}`,
+      type: "llama",
+      size: 4096000000,
+      modified_at: 1703568000 + i,
+    }));
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const response = await GET();
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.models).toHaveLength(1000);
+  });
+
+  // Edge case: Handle malformed model data
+  it("should handle malformed model data gracefully", async () => {
+    const mockModels = [
+      {
+        id: "model-1",
+        name: null as unknown as string,
+        type: "llama",
+        size: "invalid" as unknown as number,
+        modified_at: "invalid" as unknown as number,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const response = await GET();
+
+    // Should return 500 due to error in processing
+    expect(response.status).toBe(500);
+  });
+
+  // Edge case: Handle concurrent requests
+  it("should handle concurrent GET requests", async () => {
+    const mockModels = [
+      {
+        id: "model-1",
+        name: "llama-2-7b",
+        type: "llama",
+        size: 4096000000,
+        modified_at: 1703568000,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const responses = await Promise.all([GET(), GET(), GET()]);
+
+    responses.forEach((response) => {
+      expect(response.status).toBe(200);
+    });
+  });
+
+  // Edge case: Handle models with future timestamps
+  it("should handle models with future timestamps", async () => {
+    const futureTimestamp = Math.floor(Date.now() / 1000) + 100000;
+    const mockModels = [
+      {
+        id: "model-1",
+        name: "future-model",
+        type: "llama",
+        size: 4096000000,
+        modified_at: futureTimestamp,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const response = await GET();
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.models[0].createdAt).toBeDefined();
+  });
+
+  // Edge case: Handle models with zero size
+  it("should handle models with zero size", async () => {
+    const mockModels = [
+      {
+        id: "model-1",
+        name: "empty-model",
+        type: "llama",
+        size: 0,
+        modified_at: 1703568000,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const response = await GET();
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.models[0].size).toBe(0);
+  });
+
+  // Edge case: Handle registry returning undefined service
+  it("should handle registry returning undefined service", async () => {
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(undefined),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const response = await GET();
+    const json = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(json).toEqual({
+      error: "Llama service not initialized",
+      models: [],
+    });
+  });
+
+  // Edge case: Handle models array with non-object items
+  it("should handle models array with invalid items", async () => {
+    const mockModels = ["not-an-object", null, undefined];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels as unknown as Array<{ name: string }>,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const response = await GET();
+
+    // Should handle gracefully
+    expect(response.status).toBe(200);
+  });
 });

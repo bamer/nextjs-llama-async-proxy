@@ -21,7 +21,23 @@ jest.mock("@/components/charts/GPUMetricsCard", () => ({
   GPUMetricsCard: () => <div data-testid="gpu-metrics-card">GPUMetricsCard</div>,
 }));
 
-jest.mock("@/components/layout/MainLayout", () => ({
+jest.mock("@/components/layout/main-layout", () => ({
+  MainLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="main-layout">{children}</div>,
+}));
+
+jest.mock("@/hooks/useChartHistory", () => ({
+  useChartHistory: jest.fn(),
+}));
+
+jest.mock("@/components/charts/PerformanceChart", () => ({
+  PerformanceChart: () => <div data-testid="performance-chart">PerformanceChart</div>,
+}));
+
+jest.mock("@/components/charts/GPUMetricsCard", () => ({
+  GPUMetricsCard: () => <div data-testid="gpu-metrics-card">GPUMetricsCard</div>,
+}));
+
+jest.mock("@/components/layout/main-layout", () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="main-layout">{children}</div>,
 }));
 

@@ -1,5 +1,5 @@
 // Default llama-server configuration constants
-export const DEFAULT_LLAMA_SERVER_CONFIG = {
+export const DEFAULT_LLAMA_SERVER_CONFIG = Object.freeze({
   // Server binding
   host: "127.0.0.1",
   port: 8080,
@@ -104,4 +104,4 @@ export const DEFAULT_LLAMA_SERVER_CONFIG = {
   numa_poll_split: false,
   grp_attn_n: 1,
   grp_attn_w: 512,
-};
+});

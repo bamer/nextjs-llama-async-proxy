@@ -21,8 +21,12 @@ jest.mock('winston', () => ({
     errors: jest.fn((...args) => args[0]),
     splat: jest.fn((...args) => args[0]),
     json: jest.fn(() => ({})),
+    colorize: jest.fn(() => ({})),
+    printf: jest.fn(() => ({})),
   },
-  transports: {},
+  transports: {
+    Console: jest.fn(() => ({})),
+  },
   Transport: class {},
   Logger: class {},
 }));
@@ -32,7 +36,7 @@ jest.mock('socket.io');
 
 describe('logger', () => {
   let mockCreateLogger: jest.Mock;
-  let mockConsole: jest.Mocked<winston.ConsoleTransportInstance>;
+  let mockConsole: any;
   let mockRotateFile: jest.Mock;
   let mockWebSocketTransport: jest.Mocked<WebSocketTransport>;
   let mockLogger: jest.Mocked<winston.Logger>;
@@ -352,6 +356,251 @@ describe('logger', () => {
           maxFiles: '60d',
         })
       );
+    });
+  });
+
+  describe('edge cases and boundary conditions', () => {
+    it('should handle null config values', () => {
+      const config = {
+        consoleLevel: null,
+        fileLevel: null,
+      } as any;
+
+      expect(() => initLogger(config)).not.toThrow();
+    });
+
+    it('should handle undefined config values', () => {
+      const config = {
+        consoleLevel: undefined,
+        fileLevel: undefined,
+      } as any;
+
+      expect(() => initLogger(config)).not.toThrow();
+    });
+
+    it('should handle empty config object', () => {
+      expect(() => initLogger({})).not.toThrow();
+    });
+
+    it('should handle invalid log level gracefully', () => {
+      const config = {
+        consoleLevel: 'invalid' as any,
+      };
+
+      expect(() => initLogger(config)).not.toThrow();
+    });
+
+    it('should handle very large maxFileSize value', () => {
+      const config = {
+        maxFileSize: '999999g',
+      };
+
+      expect(() => initLogger(config)).not.toThrow();
+      expect(DailyRotateFile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          maxSize: '999999g',
+        })
+      );
+    });
+
+    it('should handle negative maxFiles value', () => {
+      const config = {
+        maxFiles: '-10d',
+      };
+
+      expect(() => initLogger(config)).not.toThrow();
+    });
+
+    it('should handle zero maxFiles value', () => {
+      const config = {
+        maxFiles: '0d',
+      };
+
+      expect(() => initLogger(config)).not.toThrow();
+    });
+
+    it('should handle all transports disabled', () => {
+      const config = {
+        enableConsoleLogging: false,
+        enableFileLogging: false,
+      };
+
+      expect(() => initLogger(config)).not.toThrow();
+    });
+
+    it('should handle WebSocketTransport initialization failure', () => {
+      (WebSocketTransport as jest.Mock).mockImplementation(() => {
+        throw new Error('WebSocket transport failed');
+      });
+
+      expect(() => initLogger()).toThrow('WebSocket transport failed');
+    });
+
+    it('should handle multiple config updates', () => {
+      initLogger({ consoleLevel: 'error' });
+      initLogger({ consoleLevel: 'warn' });
+      initLogger({ consoleLevel: 'info' });
+
+      expect(mockCreateLogger).toHaveBeenCalledTimes(4); // Initial + 3 updates
+    });
+
+    it('should handle circular config object', () => {
+      const config: any = {};
+      config.self = config;
+
+      expect(() => updateLoggerConfig(config)).not.toThrow();
+    });
+
+    it('should handle very long log messages', () => {
+      initLogger();
+      const longMessage = 'x'.repeat(1000000);
+
+      expect(() => log.info(longMessage)).not.toThrow();
+    });
+
+    it('should handle unicode in log messages', () => {
+      initLogger();
+      const unicodeMessage = 'Hello 世界 🌍 🚀';
+
+      expect(() => log.info(unicodeMessage)).not.toThrow();
+    });
+
+    it('should handle special characters in log messages', () => {
+      initLogger();
+      const specialMessage = '\x00\x01\x02\x03\x1b[31mRed text\x1b[0m';
+
+      expect(() => log.info(specialMessage)).not.toThrow();
+    });
+
+    it('should handle deeply nested meta objects', () => {
+      initLogger();
+      const nestedMeta = {
+        level1: {
+          level2: {
+            level3: {
+              level4: {
+                level5: 'deep value',
+              },
+            },
+          },
+        },
+      };
+
+      expect(() => log.info('test', nestedMeta)).not.toThrow();
+    });
+
+    it('should handle circular references in meta', () => {
+      initLogger();
+      const circularMeta: any = { name: 'test' };
+      circularMeta.self = circularMeta;
+
+      expect(() => log.info('test', circularMeta)).not.toThrow();
+    });
+
+    it('should handle array meta values', () => {
+      initLogger();
+      const arrayMeta = [1, 2, 3, { nested: 'value' }, ['array', 'in', 'array']];
+
+      expect(() => log.info('test', arrayMeta)).not.toThrow();
+    });
+
+    it('should handle null and undefined meta values', () => {
+      initLogger();
+
+      expect(() => log.info('test', null)).not.toThrow();
+      expect(() => log.info('test', undefined)).not.toThrow();
+    });
+
+    it('should handle Date objects in meta', () => {
+      initLogger();
+      const dateMeta = { timestamp: new Date(), date: new Date('2024-01-01') };
+
+      expect(() => log.info('test', dateMeta)).not.toThrow();
+    });
+
+    it('should handle Buffer objects in meta', () => {
+      initLogger();
+      const bufferMeta = { data: Buffer.from('test') };
+
+      expect(() => log.info('test', bufferMeta)).not.toThrow();
+    });
+
+    it('should handle Error objects in meta', () => {
+      initLogger();
+      const error = new Error('Test error');
+      error.stack = 'Stack trace here';
+
+      expect(() => log.error('test', error)).not.toThrow();
+    });
+
+    it('should handle mixed type meta objects', () => {
+      initLogger();
+      const mixedMeta = {
+        string: 'value',
+        number: 123,
+        boolean: true,
+        null: null,
+        undefined: undefined,
+        array: [1, 2, 3],
+        object: { nested: true },
+        date: new Date(),
+      };
+
+      expect(() => log.info('test', mixedMeta)).not.toThrow();
+    });
+
+    it('should handle rapid successive log calls', () => {
+      initLogger();
+
+      for (let i = 0; i < 10000; i++) {
+        log.info(`Log ${i}`);
+      }
+
+      expect(mockLogger.info).toHaveBeenCalledTimes(10000);
+    });
+
+    it('should handle setSocketIOInstance with null', () => {
+      initLogger();
+
+      expect(() => setSocketIOInstance(null as any)).not.toThrow();
+    });
+
+    it('should handle setSocketIOInstance without initialization', () => {
+      // Try to set socket IO without logger initialized
+      expect(() => setSocketIOInstance({} as any)).not.toThrow();
+    });
+
+    it('should handle partial config with only one property', () => {
+      initLogger({ consoleLevel: 'debug' });
+      const config = getLoggerConfig();
+
+      expect(config.consoleLevel).toBe('debug');
+      expect(config.fileLevel).toBeDefined();
+    });
+
+    it('should handle config with extra properties', () => {
+      const configWithExtra = {
+        consoleLevel: 'info',
+        extraProperty: 'should be ignored',
+        anotherExtra: 123,
+      } as any;
+
+      expect(() => initLogger(configWithExtra)).not.toThrow();
+    });
+
+    it('should handle concurrent config updates', async () => {
+      initLogger();
+
+      // Fire multiple updates at once
+      const promises = [
+        Promise.resolve(updateLoggerConfig({ consoleLevel: 'error' })),
+        Promise.resolve(updateLoggerConfig({ consoleLevel: 'warn' })),
+        Promise.resolve(updateLoggerConfig({ consoleLevel: 'info' })),
+      ];
+
+      await Promise.all(promises);
+
+      expect(mockCreateLogger).toHaveBeenCalled();
     });
   });
 });

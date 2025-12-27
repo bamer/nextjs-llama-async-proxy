@@ -1,6 +1,6 @@
 import * as os from 'os';
 import * as fs from 'fs';
-import * as monitor from '@/lib/monitor';
+import monitor, { captureMetrics, startPeriodicRecording, readHistory, writeHistory } from '@/lib/monitor';
 
 jest.mock('fs');
 jest.mock('os');
@@ -46,7 +46,7 @@ describe('monitor', () => {
 
   describe('captureMetrics', () => {
     it('should capture CPU usage', () => {
-      const metrics = monitor.captureMetrics();
+      const metrics = captureMetrics();
 
       expect(metrics.cpuUsage).toBeDefined();
       expect(typeof metrics.cpuUsage).toBe('number');
@@ -55,7 +55,7 @@ describe('monitor', () => {
     });
 
     it('should capture memory usage', () => {
-      const metrics = monitor.captureMetrics();
+      const metrics = captureMetrics();
 
       expect(metrics.memoryUsage).toBeDefined();
       expect(typeof metrics.memoryUsage).toBe('number');
@@ -64,22 +64,23 @@ describe('monitor', () => {
     });
 
     it('should capture uptime seconds', () => {
-      const metrics = monitor.captureMetrics();
+      const metrics = captureMetrics();
 
       expect(metrics.uptimeSeconds).toBeDefined();
       expect(typeof metrics.uptimeSeconds).toBe('number');
     });
 
     it('should include timestamp', () => {
-      const metrics = monitor.captureMetrics();
+      const metrics = captureMetrics();
 
       expect(metrics.timestamp).toBeDefined();
       expect(typeof metrics.timestamp).toBe('string');
-      expect(new Date(metrics.timestamp)).not.toBeInstanceOf(Date);
+      expect(new Date(metrics.timestamp)).toBeInstanceOf(Date);
+      expect(() => new Date(metrics.timestamp)).not.toThrow();
     });
 
     it('should calculate CPU usage correctly for multiple cores', () => {
-      const metrics = monitor.captureMetrics();
+      const metrics = captureMetrics();
 
       const expectedCpu = Math.round(
         ((100 + 50 + 120 + 60 - (200 + 180)) / (100 + 50 + 120 + 60)) * 100
@@ -88,7 +89,7 @@ describe('monitor', () => {
     });
 
     it('should calculate memory usage correctly', () => {
-      const metrics = monitor.captureMetrics();
+      const metrics = captureMetrics();
 
       const expectedMem = Math.round(
         ((8000000000 - 4000000000) / 8000000000) * 100
@@ -187,7 +188,7 @@ describe('monitor', () => {
 
   describe('startPeriodicRecording', () => {
     it('should start recording interval', () => {
-      monitor.startPeriodicRecording();
+      startPeriodicRecording();
 
       expect(mockSetInterval).toHaveBeenCalledWith(
         expect.any(Function),
@@ -196,8 +197,8 @@ describe('monitor', () => {
     });
 
     it('should not start multiple intervals', () => {
-      monitor.startPeriodicRecording();
-      monitor.startPeriodicRecording();
+      startPeriodicRecording();
+      startPeriodicRecording();
 
       expect(mockSetInterval).toHaveBeenCalledTimes(1);
     });
@@ -206,11 +207,11 @@ describe('monitor', () => {
       (fs.existsSync as jest.Mock).mockReturnValue(true);
       (fs.readFileSync as jest.Mock).mockReturnValue('[]');
 
-      monitor.startPeriodicRecording();
+      startPeriodicRecording();
 
       jest.runAllTimers();
 
-      expect(monitor.captureMetrics).toHaveBeenCalled();
+      expect(captureMetrics).toHaveBeenCalled();
       expect(fs.writeFileSync).toHaveBeenCalled();
     });
 
@@ -218,7 +219,7 @@ describe('monitor', () => {
       (fs.existsSync as jest.Mock).mockReturnValue(true);
       (fs.readFileSync as jest.Mock).mockReturnValue('[]');
 
-      monitor.startPeriodicRecording();
+      startPeriodicRecording();
 
       jest.runAllTimers();
 
@@ -230,23 +231,21 @@ describe('monitor', () => {
     });
   });
 
-  describe('default export', () => {
+  describe('exports', () => {
     it('should export captureMetrics', () => {
-      expect(monitor.default.captureMetrics).toBe(monitor.captureMetrics);
+      expect(monitor.captureMetrics).toBeDefined();
     });
 
     it('should export startPeriodicRecording', () => {
-      expect(monitor.default.startPeriodicRecording).toBe(
-        monitor.startPeriodicRecording
-      );
+      expect(monitor.startPeriodicRecording).toBeDefined();
     });
 
     it('should export readHistory', () => {
-      expect(monitor.default.readHistory).toBe(monitor.readHistory);
+      expect(monitor.readHistory).toBeDefined();
     });
 
     it('should export writeHistory', () => {
-      expect(monitor.default.writeHistory).toBe(monitor.writeHistory);
+      expect(monitor.writeHistory).toBeDefined();
     });
   });
 

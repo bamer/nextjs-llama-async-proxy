@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
-import { ThemeProvider } from "@/contexts/ThemeContext";
 import { createTheme, ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import SettingsPage from "../../app/settings/page";
 
@@ -9,8 +8,16 @@ jest.mock("@/components/configuration/ModernConfiguration", () => ({
   default: () => <div data-testid="modern-configuration">ModernConfiguration</div>,
 }));
 
-jest.mock("@/components/layout/MainLayout", () => ({
+jest.mock("@/components/layout/main-layout", () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="main-layout">{children}</div>,
+}));
+
+jest.mock("@/components/layout/SidebarProvider", () => ({
+  SidebarProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
+jest.mock("@/contexts/ThemeContext", () => ({
+  ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 function renderWithTheme(component: React.ReactElement, isDark = false) {
@@ -21,9 +28,7 @@ function renderWithTheme(component: React.ReactElement, isDark = false) {
   });
 
   return render(
-    <ThemeProvider>
-      <MuiThemeProvider theme={theme}>{component}</MuiThemeProvider>
-    </ThemeProvider>
+    <MuiThemeProvider theme={theme}>{component}</MuiThemeProvider>
   );
 }
 
@@ -91,11 +96,9 @@ describe("SettingsPage", () => {
     expect(screen.getByTestId("modern-configuration")).toBeInTheDocument();
 
     rerender(
-      <ThemeProvider>
-        <MuiThemeProvider theme={createTheme({ palette: { mode: "light" } })}>
-          <SettingsPage />
-        </MuiThemeProvider>
-      </ThemeProvider>
+      <MuiThemeProvider theme={createTheme({ palette: { mode: "light" } })}>
+        <SettingsPage />
+      </MuiThemeProvider>
     );
 
     expect(screen.getByTestId("modern-configuration")).toBeInTheDocument();
@@ -107,11 +110,9 @@ describe("SettingsPage", () => {
     expect(screen.getByTestId("modern-configuration")).toBeInTheDocument();
 
     rerender(
-      <ThemeProvider>
-        <MuiThemeProvider theme={createTheme({ palette: { mode: "dark" } })}>
-          <SettingsPage />
-        </MuiThemeProvider>
-      </ThemeProvider>
+      <MuiThemeProvider theme={createTheme({ palette: { mode: "dark" } })}>
+        <SettingsPage />
+      </MuiThemeProvider>
     );
 
     expect(screen.getByTestId("modern-configuration")).toBeInTheDocument();

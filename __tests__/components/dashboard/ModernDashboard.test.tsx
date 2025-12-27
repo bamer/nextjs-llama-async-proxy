@@ -254,4 +254,373 @@ describe('ModernDashboard', () => {
       expect(screen.queryByText('Loading Dashboard...')).not.toBeInTheDocument();
     });
   });
+
+  // Edge Case Tests
+  it('handles empty models array', async () => {
+    mockedUseStore.mockImplementation((selector) => {
+      const emptyModelsState = {
+        ...mockState,
+        models: [],
+      };
+      if (typeof selector === 'function') {
+        return selector(emptyModelsState);
+      }
+      return emptyModelsState;
+    });
+
+    renderWithProviders(<ModernDashboard />);
+    jest.advanceTimersByTime(1500);
+    await waitFor(() => {
+      expect(screen.queryByText('Loading Dashboard...')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('0 models')).toBeInTheDocument();
+  });
+
+  it('handles null metrics gracefully', async () => {
+    mockedUseStore.mockImplementation((selector) => {
+      const nullMetricsState = {
+        ...mockState,
+        metrics: null,
+      };
+      if (typeof selector === 'function') {
+        return selector(nullMetricsState);
+      }
+      return nullMetricsState;
+    });
+
+    renderWithProviders(<ModernDashboard />);
+    jest.advanceTimersByTime(1500);
+    await waitFor(() => {
+      expect(screen.queryByText('Loading Dashboard...')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('0.0%')).toBeInTheDocument();
+  });
+
+  it('handles very large uptime values', async () => {
+    mockedUseStore.mockImplementation((selector) => {
+      const largeUptimeState = {
+        ...mockState,
+        metrics: {
+          ...mockState.metrics,
+          uptime: 864000, // 10 days
+        },
+      };
+      if (typeof selector === 'function') {
+        return selector(largeUptimeState);
+      }
+      return largeUptimeState;
+    });
+
+    renderWithProviders(<ModernDashboard />);
+    jest.advanceTimersByTime(1500);
+    await waitFor(() => {
+      expect(screen.queryByText('Loading Dashboard...')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('10d 0h 0m')).toBeInTheDocument();
+  });
+
+  it('handles zero uptime', async () => {
+    mockedUseStore.mockImplementation((selector) => {
+      const zeroUptimeState = {
+        ...mockState,
+        metrics: {
+          ...mockState.metrics,
+          uptime: 0,
+        },
+      };
+      if (typeof selector === 'function') {
+        return selector(zeroUptimeState);
+      }
+      return zeroUptimeState;
+    });
+
+    renderWithProviders(<ModernDashboard />);
+    jest.advanceTimersByTime(1500);
+    await waitFor(() => {
+      expect(screen.queryByText('Loading Dashboard...')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('N/A')).toBeInTheDocument();
+  });
+
+  it('handles very large request count', async () => {
+    mockedUseStore.mockImplementation((selector) => {
+      const largeRequestsState = {
+        ...mockState,
+        metrics: {
+          ...mockState.metrics,
+          totalRequests: 999999999,
+        },
+      };
+      if (typeof selector === 'function') {
+        return selector(largeRequestsState);
+      }
+      return largeRequestsState;
+    });
+
+    renderWithProviders(<ModernDashboard />);
+    jest.advanceTimersByTime(1500);
+    await waitFor(() => {
+      expect(screen.queryByText('Loading Dashboard...')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('999999999')).toBeInTheDocument();
+  });
+
+  it('handles extreme metric values', async () => {
+    mockedUseStore.mockImplementation((selector) => {
+      const extremeValuesState = {
+        ...mockState,
+        metrics: {
+          ...mockState.metrics,
+          cpuUsage: 100,
+          memoryUsage: 100,
+          diskUsage: 100,
+        },
+      };
+      if (typeof selector === 'function') {
+        return selector(extremeValuesState);
+      }
+      return extremeValuesState;
+    });
+
+    renderWithProviders(<ModernDashboard />);
+    jest.advanceTimersByTime(1500);
+    await waitFor(() => {
+      expect(screen.queryByText('Loading Dashboard...')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('100.0%')).toBeInTheDocument();
+  });
+
+  it('handles very low metric values', async () => {
+    mockedUseStore.mockImplementation((selector) => {
+      const lowValuesState = {
+        ...mockState,
+        metrics: {
+          ...mockState.metrics,
+          cpuUsage: 0,
+          memoryUsage: 0,
+          diskUsage: 0,
+          activeModels: 0,
+        },
+      };
+      if (typeof selector === 'function') {
+        return selector(lowValuesState);
+      }
+      return lowValuesState;
+    });
+
+    renderWithProviders(<ModernDashboard />);
+    jest.advanceTimersByTime(1500);
+    await waitFor(() => {
+      expect(screen.queryByText('Loading Dashboard...')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('0.0%')).toBeInTheDocument();
+  });
+
+  it('handles models with special characters in names', async () => {
+    mockedUseStore.mockImplementation((selector) => {
+      const specialCharsState = {
+        ...mockState,
+        models: [
+          { id: 'model1', name: 'Model-α_β 🚀', loaded: true, size: '7B' },
+          { id: 'model2', name: 'Model with spaces & symbols!', loaded: false, size: '13B' },
+        ],
+      };
+      if (typeof selector === 'function') {
+        return selector(specialCharsState);
+      }
+      return specialCharsState;
+    });
+
+    renderWithProviders(<ModernDashboard />);
+    jest.advanceTimersByTime(1500);
+    await waitFor(() => {
+      expect(screen.queryByText('Loading Dashboard...')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Model-α_β 🚀')).toBeInTheDocument();
+    expect(screen.getByText('Model with spaces & symbols!')).toBeInTheDocument();
+  });
+
+  it('handles no GPU metrics', async () => {
+    mockedUseStore.mockImplementation((selector) => {
+      const noGpuState = {
+        ...mockState,
+        metrics: {
+          ...mockState.metrics,
+          gpuUsage: undefined,
+        },
+      };
+      if (typeof selector === 'function') {
+        return selector(noGpuState);
+      }
+      return noGpuState;
+    });
+
+    renderWithProviders(<ModernDashboard />);
+    jest.advanceTimersByTime(1500);
+    await waitFor(() => {
+      expect(screen.queryByText('Loading Dashboard...')).not.toBeInTheDocument();
+    });
+
+    // Should show GPU metrics card without chart instead of GPU chart
+    expect(screen.queryByText('GPU Utilization & Power')).not.toBeInTheDocument();
+  });
+
+  it('handles theme change', async () => {
+    const { rerender } = renderWithProviders(<ModernDashboard />);
+    jest.advanceTimersByTime(1500);
+    await waitFor(() => {
+      expect(screen.queryByText('Loading Dashboard...')).not.toBeInTheDocument();
+    });
+
+    // Theme should be handled by ThemeContext mock
+    expect(screen.getByText('Dashboard Overview')).toBeInTheDocument();
+  });
+
+  it('handles WebSocket disconnected state', async () => {
+    const { useWebSocket } = require('@/hooks/use-websocket');
+    useWebSocket.mockReturnValue({
+      isConnected: false,
+      sendMessage: jest.fn(),
+    });
+
+    renderWithProviders(<ModernDashboard />);
+    jest.advanceTimersByTime(1500);
+    await waitFor(() => {
+      expect(screen.queryByText('Loading Dashboard...')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('DISCONNECTED')).toBeInTheDocument();
+  });
+
+  it('handles very large number of models', async () => {
+    const manyModels = Array.from({ length: 50 }, (_, i) => ({
+      id: `model${i}`,
+      name: `Model ${i}`,
+      loaded: i % 2 === 0,
+      size: `${i + 1}B`,
+    }));
+
+    mockedUseStore.mockImplementation((selector) => {
+      const manyModelsState = {
+        ...mockState,
+        models: manyModels,
+      };
+      if (typeof selector === 'function') {
+        return selector(manyModelsState);
+      }
+      return manyModelsState;
+    });
+
+    renderWithProviders(<ModernDashboard />);
+    jest.advanceTimersByTime(1500);
+    await waitFor(() => {
+      expect(screen.queryByText('Loading Dashboard...')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('50 models')).toBeInTheDocument();
+  });
+
+  it('handles negative response time gracefully', async () => {
+    mockedUseStore.mockImplementation((selector) => {
+      const negativeResponseState = {
+        ...mockState,
+        metrics: {
+          ...mockState.metrics,
+          avgResponseTime: -1,
+        },
+      };
+      if (typeof selector === 'function') {
+        return selector(negativeResponseState);
+      }
+      return negativeResponseState;
+    });
+
+    renderWithProviders(<ModernDashboard />);
+    jest.advanceTimersByTime(1500);
+    await waitFor(() => {
+      expect(screen.queryByText('Loading Dashboard...')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('-1ms')).toBeInTheDocument();
+  });
+
+  it('handles very high response time', async () => {
+    mockedUseStore.mockImplementation((selector) => {
+      const highResponseState = {
+        ...mockState,
+        metrics: {
+          ...mockState.metrics,
+          avgResponseTime: 99999,
+        },
+      };
+      if (typeof selector === 'function') {
+        return selector(highResponseState);
+      }
+      return highResponseState;
+    });
+
+    renderWithProviders(<ModernDashboard />);
+    jest.advanceTimersByTime(1500);
+    await waitFor(() => {
+      expect(screen.queryByText('Loading Dashboard...')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('99999ms')).toBeInTheDocument();
+  });
+
+  it('handles undefined avg response time', async () => {
+    mockedUseStore.mockImplementation((selector) => {
+      const undefinedResponseState = {
+        ...mockState,
+        metrics: {
+          ...mockState.metrics,
+          avgResponseTime: undefined,
+        },
+      };
+      if (typeof selector === 'function') {
+        return selector(undefinedResponseState);
+      }
+      return undefinedResponseState;
+    });
+
+    renderWithProviders(<ModernDashboard />);
+    jest.advanceTimersByTime(1500);
+    await waitFor(() => {
+      expect(screen.queryByText('Loading Dashboard...')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('0ms')).toBeInTheDocument();
+  });
+
+  it('handles concurrent state changes', async () => {
+    renderWithProviders(<ModernDashboard />);
+    jest.advanceTimersByTime(1500);
+    await waitFor(() => {
+      expect(screen.queryByText('Loading Dashboard...')).not.toBeInTheDocument();
+    });
+
+    // Change to empty state
+    mockedUseStore.mockImplementation((selector) => {
+      const changedState = {
+        ...mockState,
+        models: [],
+        metrics: undefined,
+      };
+      if (typeof selector === 'function') {
+        return selector(changedState);
+      }
+      return changedState;
+    });
+
+    // Dashboard should still render
+    expect(screen.getByText('Dashboard Overview')).toBeInTheDocument();
+  });
 });

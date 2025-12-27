@@ -389,4 +389,516 @@ describe("POST /api/models/[name]/start", () => {
     delete process.env.LLAMA_SERVER_HOST;
     delete process.env.LLAMA_SERVER_PORT;
   });
+
+  // Edge case: Handle very long model names
+  it("should handle very long model names", async () => {
+    const longModelName = "a".repeat(10000);
+    const mockResponse = {
+      ok: true,
+      json: jest.fn().mockResolvedValue({
+        choices: [{ message: { content: "Hi" } }],
+      }),
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue(mockResponse);
+
+    const mockModels = [
+      {
+        name: longModelName,
+        available: true,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue({}),
+    } as unknown as NextRequest;
+
+    const mockParams = Promise.resolve({ name: longModelName });
+
+    const response = await StartModel(mockRequest, { params: mockParams });
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle model names with special characters
+  it("should handle model names with special characters", async () => {
+    const specialModelName = "llama-2-7b-special!@#$%^&*()";
+    const mockResponse = {
+      ok: true,
+      json: jest.fn().mockResolvedValue({
+        choices: [{ message: { content: "Hi" } }],
+      }),
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue(mockResponse);
+
+    const mockModels = [
+      {
+        name: specialModelName,
+        available: true,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue({}),
+    } as unknown as NextRequest;
+
+    const mockParams = Promise.resolve({ name: specialModelName });
+
+    const response = await StartModel(mockRequest, { params: mockParams });
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle model names with unicode characters
+  it("should handle model names with unicode characters", async () => {
+    const unicodeModelName = "llama-2-7b-日本語-中文-العربية";
+    const mockResponse = {
+      ok: true,
+      json: jest.fn().mockResolvedValue({
+        choices: [{ message: { content: "Hi" } }],
+      }),
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue(mockResponse);
+
+    const mockModels = [
+      {
+        name: unicodeModelName,
+        available: true,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue({}),
+    } as unknown as NextRequest;
+
+    const mockParams = Promise.resolve({ name: unicodeModelName });
+
+    const response = await StartModel(mockRequest, { params: mockParams });
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle concurrent requests to start same model
+  it("should handle concurrent requests to start same model", async () => {
+    const mockResponse = {
+      ok: true,
+      json: jest.fn().mockResolvedValue({
+        choices: [{ message: { content: "Hi" } }],
+      }),
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue(mockResponse);
+
+    const mockModels = [
+      {
+        id: "llama-2-7b",
+        name: "llama-2-7b",
+        available: true,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue({}),
+    } as unknown as NextRequest;
+
+    const mockParams = Promise.resolve({ name: "llama-2-7b" });
+
+    const responses = await Promise.all([
+      StartModel(mockRequest, { params: mockParams }),
+      StartModel(mockRequest, { params: mockParams }),
+      StartModel(mockRequest, { params: mockParams }),
+    ]);
+
+    responses.forEach((response) => {
+      expect(response.status).toBe(200);
+    });
+  });
+
+  // Edge case: Handle request body with large payload
+  it("should handle request body with large payload", async () => {
+    const largePayload = {
+      ...Array.from({ length: 100 }, (_, i) => ({
+        [`key_${i}`]: "x".repeat(100),
+      })).reduce((acc, curr) => ({ ...acc, ...curr }), {}),
+    };
+
+    const mockResponse = {
+      ok: true,
+      json: jest.fn().mockResolvedValue({
+        choices: [{ message: { content: "Hi" } }],
+      }),
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue(mockResponse);
+
+    const mockModels = [
+      {
+        id: "llama-2-7b",
+        name: "llama-2-7b",
+        available: true,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue(largePayload),
+    } as unknown as NextRequest;
+
+    const mockParams = Promise.resolve({ name: "llama-2-7b" });
+
+    const response = await StartModel(mockRequest, { params: mockParams });
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle llama-server returning empty response
+  it("should handle llama-server returning empty response", async () => {
+    const mockResponse = {
+      ok: true,
+      json: jest.fn().mockResolvedValue({}),
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue(mockResponse);
+
+    const mockModels = [
+      {
+        id: "llama-2-7b",
+        name: "llama-2-7b",
+        available: true,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue({}),
+    } as unknown as NextRequest;
+
+    const mockParams = Promise.resolve({ name: "llama-2-7b" });
+
+    const response = await StartModel(mockRequest, { params: mockParams });
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle invalid llama-server port in environment
+  it("should handle invalid port in environment variables", async () => {
+    process.env.LLAMA_SERVER_PORT = "invalid";
+
+    const mockModels = [
+      {
+        id: "llama-2-7b",
+        name: "llama-2-7b",
+        available: true,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue({}),
+    } as unknown as NextRequest;
+
+    const mockParams = Promise.resolve({ name: "llama-2-7b" });
+
+    const response = await StartModel(mockRequest, { params: mockParams });
+    const json = await response.json();
+
+    // Should still attempt connection with default port
+    expect(response.status).toBe(503);
+
+    delete process.env.LLAMA_SERVER_PORT;
+  });
+
+  // Edge case: Handle llama-server returning 500 error
+  it("should handle llama-server returning 500 error", async () => {
+    const mockResponse = {
+      ok: false,
+      status: 500,
+      json: jest.fn().mockResolvedValue({
+        error: "Internal server error",
+      }),
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue(mockResponse);
+
+    const mockModels = [
+      {
+        id: "llama-2-7b",
+        name: "llama-2-7b",
+        available: true,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue({}),
+    } as unknown as NextRequest;
+
+    const mockParams = Promise.resolve({ name: "llama-2-7b" });
+
+    const response = await StartModel(mockRequest, { params: mockParams });
+
+    expect(response.status).toBe(500);
+  });
+
+  // Edge case: Handle request body that fails to parse
+  it("should handle request body that fails to parse", async () => {
+    const mockRequest = {
+      json: jest.fn().mockRejectedValue(new Error("Invalid JSON")),
+    } as unknown as NextRequest;
+
+    const mockModels = [
+      {
+        id: "llama-2-7b",
+        name: "llama-2-7b",
+        available: true,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const mockParams = Promise.resolve({ name: "llama-2-7b" });
+
+    const response = await StartModel(mockRequest, { params: mockParams });
+
+    // Should handle gracefully with empty body
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle model name with path traversal characters
+  it("should handle model name with path-like characters", async () => {
+    const pathLikeModel = "../../etc/passwd";
+    const mockResponse = {
+      ok: true,
+      json: jest.fn().mockResolvedValue({
+        choices: [{ message: { content: "Hi" } }],
+      }),
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue(mockResponse);
+
+    const mockModels = [
+      {
+        name: pathLikeModel,
+        available: true,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue({}),
+    } as unknown as NextRequest;
+
+    const mockParams = Promise.resolve({ name: pathLikeModel });
+
+    const response = await StartModel(mockRequest, { params: mockParams });
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle llama-server response parsing failure
+  it("should handle llama-server response parsing failure", async () => {
+    const mockResponse = {
+      ok: true,
+      json: jest.fn().mockRejectedValue(new Error("Parse error")),
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue(mockResponse);
+
+    const mockModels = [
+      {
+        id: "llama-2-7b",
+        name: "llama-2-7b",
+        available: true,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue({}),
+    } as unknown as NextRequest;
+
+    const mockParams = Promise.resolve({ name: "llama-2-7b" });
+
+    const response = await StartModel(mockRequest, { params: mockParams });
+
+    expect(response.status).toBe(200);
+  });
+
+  // Edge case: Handle llama-server timeout
+  it("should handle llama-server timeout", async () => {
+    (global.fetch as jest.Mock).mockImplementation(
+      () =>
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Request timeout")), 10)
+        )
+    );
+
+    const mockModels = [
+      {
+        id: "llama-2-7b",
+        name: "llama-2-7b",
+        available: true,
+      },
+    ];
+
+    const mockLlamaService = {
+      getState: jest.fn().mockReturnValue({
+        status: "ready",
+        models: mockModels,
+      }),
+    };
+
+    const mockRegistry = {
+      get: jest.fn().mockReturnValue(mockLlamaService),
+    };
+
+    (global as unknown as { registry: unknown }).registry = mockRegistry;
+
+    const mockRequest = {
+      json: jest.fn().mockResolvedValue({}),
+    } as unknown as NextRequest;
+
+    const mockParams = Promise.resolve({ name: "llama-2-7b" });
+
+    const response = await StartModel(mockRequest, { params: mockParams });
+
+    expect(response.status).toBe(503);
+  });
 });

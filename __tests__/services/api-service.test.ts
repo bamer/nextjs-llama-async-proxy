@@ -1,5 +1,6 @@
 import { apiService } from '@/services/api-service';
 import { apiClient } from '@/utils/api-client';
+import { useStore } from '@/lib/store';
 
 // Mock apiClient properly before importing
 jest.mock('@/utils/api-client', () => ({
@@ -12,7 +13,15 @@ jest.mock('@/utils/api-client', () => ({
   },
 }));
 
+// Mock the store
+jest.mock('@/lib/store', () => ({
+  useStore: {
+    getState: jest.fn(),
+  },
+}));
+
 const mockApiClient = apiClient as jest.Mocked<typeof apiClient>;
+const mockStore = useStore as jest.Mocked<typeof useStore>;
 
 describe('api-service', () => {
   beforeEach(() => {

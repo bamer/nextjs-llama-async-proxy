@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } f
 import { APP_CONFIG } from "@/config/app.config";
 
 class ApiClient {
-  private instance: AxiosInstance;
+  private _instance: AxiosInstance | null = null;
   private readonly baseConfig: AxiosRequestConfig;
 
   constructor() {
@@ -14,15 +14,21 @@ class ApiClient {
         "Accept": "application/json",
       },
     };
+  }
 
-    this.instance = axios.create(this.baseConfig);
-
-    this.initializeInterceptors();
+  private getInstance(): AxiosInstance {
+    if (!this._instance) {
+      this._instance = axios.create(this.baseConfig);
+      this.initializeInterceptors();
+    }
+    return this._instance;
   }
 
   private initializeInterceptors(): void {
+    if (!this._instance) return;
+
     // Request interceptor
-    this.instance.interceptors.request.use(
+    this._instance.interceptors.request.use(
       (config) => {
         // Add auth token if available
         // const token = getAuthToken();
@@ -38,7 +44,7 @@ class ApiClient {
     );
 
     // Response interceptor
-    this.instance.interceptors.response.use(
+    this._instance.interceptors.response.use(
       (response: AxiosResponse) => {
         return response.data;
       },
@@ -102,7 +108,7 @@ class ApiClient {
 
   public async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
     try {
-      const response = await this.instance.get<T>(url, config);
+      const response = await this.getInstance().get<T>(url, config);
       return {
         success: true,
         data: response.data,
@@ -119,7 +125,7 @@ class ApiClient {
     config?: AxiosRequestConfig
   ): Promise<ApiResponse<T>> {
     try {
-      const response = await this.instance.post<T>(url, data, config);
+      const response = await this.getInstance().post<T>(url, data, config);
       return {
         success: true,
         data: response.data,
@@ -136,7 +142,7 @@ class ApiClient {
     config?: AxiosRequestConfig
   ): Promise<ApiResponse<T>> {
     try {
-      const response = await this.instance.put<T>(url, data, config);
+      const response = await this.getInstance().put<T>(url, data, config);
       return {
         success: true,
         data: response.data,
@@ -149,7 +155,7 @@ class ApiClient {
 
   public async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
     try {
-      const response = await this.instance.delete<T>(url, config);
+      const response = await this.getInstance().delete<T>(url, config);
       return {
         success: true,
         data: response.data,
@@ -166,7 +172,7 @@ class ApiClient {
     config?: AxiosRequestConfig
   ): Promise<ApiResponse<T>> {
     try {
-      const response = await this.instance.patch<T>(url, data, config);
+      const response = await this.getInstance().patch<T>(url, data, config);
       return {
         success: true,
         data: response.data,
@@ -178,4 +184,5 @@ class ApiClient {
   }
 }
 
+export { ApiClient };
 export const apiClient = new ApiClient();

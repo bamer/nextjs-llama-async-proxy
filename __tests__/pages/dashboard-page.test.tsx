@@ -23,6 +23,11 @@ jest.mock("@/contexts/ThemeContext", () => ({
   useTheme: () => ({ isDark: false }),
 }));
 
+// Mock ModernDashboard
+jest.mock("@/components/dashboard/ModernDashboard", () => ({
+  default: () => <div data-testid="modern-dashboard">ModernDashboard</div>,
+}));
+
 function renderWithTheme(component: React.ReactElement) {
   return render(component);
 }

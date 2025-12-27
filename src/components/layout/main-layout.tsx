@@ -15,7 +15,7 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <SidebarProvider>
-      <Box sx={{
+      <Box data-testid="main-layout" sx={{
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',

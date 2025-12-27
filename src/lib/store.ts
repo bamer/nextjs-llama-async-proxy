@@ -126,8 +126,10 @@ const useAppStore = create<AppStore>()(
       trimChartData: (maxPoints = 60) => {
         set((state) => {
           const trimmed = { ...state.chartHistory };
-          Object.keys(trimmed).forEach((key) => {
-            if (trimmed[key].length > maxPoints) {
+          (Object.keys(trimmed) as Array<keyof ChartHistory>).forEach((key) => {
+            if (maxPoints <= 0) {
+              trimmed[key] = [];
+            } else if (trimmed[key].length > maxPoints) {
               trimmed[key] = trimmed[key].slice(-maxPoints);
             }
           });

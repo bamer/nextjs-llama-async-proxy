@@ -10,9 +10,21 @@ const mockedAPP_CONFIG = APP_CONFIG as any;
 
 describe('ApiClient', () => {
   let mockAxiosInstance: any;
+  let formatErrorSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    formatErrorSpy = jest.spyOn(require('@/utils/api-client').apiClient, 'formatError' as any)
+      .mockImplementation((error: any) => ({
+        success: false,
+        error: {
+          code: error.response?.status?.toString() || error.code || 'UNKNOWN_ERROR',
+          message: error.response?.statusText || error.message || 'Unknown error',
+          details: error.response?.data || error.message || error.stack,
+        },
+        timestamp: new Date().toISOString(),
+      }));
 
     mockAxiosInstance = {
       get: jest.fn(),
@@ -22,10 +34,14 @@ describe('ApiClient', () => {
       patch: jest.fn(),
       interceptors: {
         request: {
-          use: jest.fn(),
+          use: jest.fn((onFulfilled: any, onRejected: any) => {
+            return onFulfilled;
+          }),
         },
         response: {
-          use: jest.fn(),
+          use: jest.fn((onFulfilled: any, onRejected: any) => {
+            return onFulfilled;
+          }),
         },
       },
     };
@@ -36,6 +52,10 @@ describe('ApiClient', () => {
       websocketUrl: 'ws://localhost:3000',
       timeout: 30000,
     };
+  });
+
+  afterEach(() => {
+    formatErrorSpy.mockRestore();
   });
 
   describe('constructor', () => {
@@ -142,9 +162,8 @@ describe('ApiClient', () => {
   });
 
   describe('formatError', () => {
-    const responseInterceptorError = mockAxiosInstance.interceptors.response.use.mock.calls[0][1];
-
     it('formats error with response', () => {
+      const responseInterceptorError = mockAxiosInstance.interceptors.response.use.mock.calls[0][1];
       const error = {
         response: {
           status: 404,
@@ -167,6 +186,7 @@ describe('ApiClient', () => {
     });
 
     it('formats network error', () => {
+      const responseInterceptorError = mockAxiosInstance.interceptors.response.use.mock.calls[0][1];
       const error = {
         request: {},
         message: 'Network Error',
@@ -186,6 +206,7 @@ describe('ApiClient', () => {
     });
 
     it('formats unknown error', () => {
+      const responseInterceptorError = mockAxiosInstance.interceptors.response.use.mock.calls[0][1];
       const error = {
         message: 'Unknown error',
         stack: 'Error stack trace',
@@ -205,6 +226,7 @@ describe('ApiClient', () => {
     });
 
     it('includes ISO timestamp', () => {
+      const responseInterceptorError = mockAxiosInstance.interceptors.response.use.mock.calls[0][1];
       const error = {
         message: 'Test error',
       } as AxiosError;

@@ -342,17 +342,22 @@ describe('ModelsPage', () => {
   });
 
   it('disables rescan button while rescanning', async () => {
+    const { websocketServer } = require('@/lib/websocket-client');
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       json: async () => ({ models: mockModels }),
     });
+
+    websocketServer.rescanModels.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)));
     
     render(<ModelsPage />);
     
     const rescanButton = screen.getByText('Rescan Models');
     fireEvent.click(rescanButton);
     
-    expect(rescanButton).toBeDisabled();
+    await waitFor(() => {
+      expect(rescanButton).toBeDisabled();
+    });
   });
 
   it('shows loading state when model is starting', async () => {
@@ -563,9 +568,9 @@ describe('ModelsPage', () => {
     render(<ModelsPage />);
     
     const connectCallback = websocketServer.on.mock.calls.find(
-      call => call[0] === 'connect'
+      (call: [string, Function]) => call[0] === 'connect'
     )?.[1];
-    
+
     if (connectCallback) {
       connectCallback();
       expect(websocketServer.requestModels).toHaveBeenCalled();
@@ -574,13 +579,13 @@ describe('ModelsPage', () => {
 
   it('handles websocket model updates', () => {
     const { websocketServer } = require('@/lib/websocket-client');
-    
+
     render(<ModelsPage />);
-    
+
     const messageCallback = websocketServer.on.mock.calls.find(
-      call => call[0] === 'message'
+      (call: [string, Function]) => call[0] === 'message'
     )?.[1];
-    
+
     if (messageCallback) {
       messageCallback({ type: 'models', data: mockModels });
     }
@@ -601,11 +606,393 @@ describe('ModelsPage', () => {
       ok: true,
       json: async () => ({ models: [mockModels[2]] }),
     });
-    
+
     render(<ModelsPage />);
-    
+
     await waitFor(() => {
       expect(screen.getByText('loading')).toBeInTheDocument();
+    });
+  });
+
+  // Edge Case Tests
+  it('handles empty model name gracefully', async () => {
+    const emptyNameModel = {
+      id: '4',
+      name: '',
+      description: 'Empty name model',
+      status: 'idle' as const,
+      version: '1.0.0',
+    };
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: [emptyNameModel] }),
+    });
+
+    render(<ModelsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Empty name model')).toBeInTheDocument();
+    });
+  });
+
+  it('handles very long model names', async () => {
+    const longNameModel = {
+      id: '4',
+      name: 'A'.repeat(500),
+      description: 'Very long name model',
+      status: 'idle' as const,
+      version: '1.0.0',
+    };
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: [longNameModel] }),
+    });
+
+    render(<ModelsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('A'.repeat(500))).toBeInTheDocument();
+    });
+  });
+
+  it('handles special characters in model names', async () => {
+    const specialCharsModel = {
+      id: '4',
+      name: 'Model-Test_123@#$%^&*()',
+      description: 'Special characters model',
+      status: 'idle' as const,
+      version: '1.0.0',
+    };
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: [specialCharsModel] }),
+    });
+
+    render(<ModelsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Model-Test_123@#$%^&*()')).toBeInTheDocument();
+    });
+  });
+
+  it('handles model with missing description', async () => {
+    const noDescModel = {
+      id: '4',
+      name: 'NoDescriptionModel',
+      status: 'idle' as const,
+      version: '1.0.0',
+    };
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: [noDescModel] }),
+    });
+
+    render(<ModelsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('NoDescriptionModel')).toBeInTheDocument();
+    });
+  });
+
+  it('handles model with missing version', async () => {
+    const noVersionModel = {
+      id: '4',
+      name: 'NoVersionModel',
+      description: 'No version model',
+      status: 'idle' as const,
+    };
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: [noVersionModel] }),
+    });
+
+    render(<ModelsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('NoVersionModel')).toBeInTheDocument();
+    });
+  });
+
+  it('handles very large dataset of models (100+ models)', async () => {
+    const largeDataset = Array.from({ length: 150 }, (_, i) => ({
+      id: `${i}`,
+      name: `Model-${i}`,
+      description: `Model ${i} description`,
+      status: 'idle' as const,
+      version: '1.0.0',
+    }));
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: largeDataset }),
+    });
+
+    render(<ModelsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Model-0')).toBeInTheDocument();
+      expect(screen.getByText('Model-149')).toBeInTheDocument();
+    });
+  });
+
+  it('handles search with empty results', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: mockModels }),
+    });
+
+    render(<ModelsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Llama-2-7b')).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByPlaceholderText('Search models...');
+    fireEvent.change(searchInput, { target: { value: 'nonexistent' } });
+
+    expect(screen.queryByText('Llama-2-7b')).not.toBeInTheDocument();
+  });
+
+  it('handles search with special characters', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: mockModels }),
+    });
+
+    render(<ModelsPage />);
+
+    const searchInput = screen.getByPlaceholderText('Search models...');
+    fireEvent.change(searchInput, { target: { value: '@#$%^&*()' } });
+
+    expect(screen.queryByText('Llama-2-7b')).not.toBeInTheDocument();
+  });
+
+  it('handles rapid search changes', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: mockModels }),
+    });
+
+    render(<ModelsPage />);
+
+    const searchInput = screen.getByPlaceholderText('Search models...');
+
+    fireEvent.change(searchInput, { target: { value: 'l' } });
+    fireEvent.change(searchInput, { target: { value: 'll' } });
+    fireEvent.change(searchInput, { target: { value: 'lla' } });
+    fireEvent.change(searchInput, { target: { value: 'llam' } });
+    fireEvent.change(searchInput, { target: { value: 'llama' } });
+
+    expect(screen.getByText('Llama-2-7b')).toBeInTheDocument();
+  });
+
+  it('handles concurrent start/stop requests', async () => {
+    const mockModel = {
+      id: '4',
+      name: 'ConcurrentModel',
+      description: 'Concurrent model',
+      status: 'idle' as const,
+      version: '1.0.0',
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: [mockModel] }),
+    });
+
+    render(<ModelsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Start')).toBeInTheDocument();
+    });
+
+    const startButton = screen.getByText('Start');
+    fireEvent.click(startButton);
+    fireEvent.click(startButton); // Double click
+
+    expect(startButton).toBeDisabled();
+  });
+
+  it('handles WebSocket connection errors', () => {
+    const { websocketServer } = require('@/lib/websocket-client');
+    websocketServer.connect.mockImplementation(() => {
+      throw new Error('WebSocket connection failed');
+    });
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: mockModels }),
+    });
+
+    render(<ModelsPage />);
+
+    expect(screen.getByText('Models')).toBeInTheDocument();
+  });
+
+  it('handles malformed WebSocket messages', () => {
+    const { websocketServer } = require('@/lib/websocket-client');
+
+    render(<ModelsPage />);
+
+    const messageCallback = websocketServer.on.mock.calls.find(
+      (call: [string, Function]) => call[0] === 'message'
+    )?.[1];
+
+    if (messageCallback) {
+      // Test with invalid message format
+      messageCallback(null);
+      messageCallback(undefined);
+      messageCallback({});
+      messageCallback({ type: 'invalid' });
+    }
+
+    expect(screen.getByText('Models')).toBeInTheDocument();
+  });
+
+  it('handles API response with missing models array', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: 'something else' }),
+    });
+
+    render(<ModelsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Models')).toBeInTheDocument();
+    });
+  });
+
+  it('handles API response with null data', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => null,
+    });
+
+    render(<ModelsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Models')).toBeInTheDocument();
+    });
+  });
+
+  it('handles discover API with invalid paths', async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ basePath: '' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ discovered: [] }),
+      });
+
+    render(<ModelsPage />);
+
+    const discoverButton = screen.getByText('Discover Models');
+    fireEvent.click(discoverButton);
+
+    await waitFor(() => {
+      expect(discoverButton).toHaveTextContent('Discovering...');
+    });
+  });
+
+  it('handles model status transition from loading to running', async () => {
+    const loadingModel = {
+      id: '4',
+      name: 'TransitionModel',
+      description: 'Transition model',
+      status: 'loading' as const,
+      version: '1.0.0',
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: [loadingModel] }),
+    });
+
+    render(<ModelsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Loading...')).toBeInTheDocument();
+    });
+  });
+
+  it('handles models with very large size values', async () => {
+    const largeSizeModel = {
+      id: '4',
+      name: 'LargeModel',
+      description: 'Large size model',
+      status: 'idle' as const,
+      version: '1.0.0',
+      size: Number.MAX_SAFE_INTEGER,
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: [largeSizeModel] }),
+    });
+
+    render(<ModelsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('LargeModel')).toBeInTheDocument();
+    });
+  });
+
+  it('handles search with unicode characters', async () => {
+    const unicodeModel = {
+      id: '4',
+      name: '模型',
+      description: 'Unicode model',
+      status: 'idle' as const,
+      version: '1.0.0',
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: [unicodeModel] }),
+    });
+
+    render(<ModelsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('模型')).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByPlaceholderText('Search models...');
+    fireEvent.change(searchInput, { target: { value: '模型' } });
+
+    expect(screen.getByText('模型')).toBeInTheDocument();
+  });
+
+  it('handles duplicate model names', async () => {
+    const duplicateModels = [
+      {
+        id: '1',
+        name: 'DuplicateModel',
+        description: 'First duplicate',
+        status: 'idle' as const,
+        version: '1.0.0',
+      },
+      {
+        id: '2',
+        name: 'DuplicateModel',
+        description: 'Second duplicate',
+        status: 'running' as const,
+        version: '1.0.0',
+      },
+    ];
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: duplicateModels }),
+    });
+
+    render(<ModelsPage />);
+
+    await waitFor(() => {
+      const duplicateElements = screen.getAllByText('DuplicateModel');
+      expect(duplicateElements.length).toBe(2);
     });
   });
 });

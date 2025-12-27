@@ -15,7 +15,7 @@ const HISTORY_FILE = path.join(process.cwd(), 'data', 'monitoring-history.json')
  * Reads the history file. Returns an empty array if the file does not exist
  * or cannot be parsed.
  */
-function readHistory(): any[] {
+export function readHistory(): any[] {
   try {
     if (!fs.existsSync(HISTORY_FILE)) return [];
     const raw = fs.readFileSync(HISTORY_FILE, 'utf8');
@@ -28,7 +28,7 @@ function readHistory(): any[] {
 /**
  * Writes the given array to the history file (atomic write).
  */
-function writeHistory(history: any[]) {
+export function writeHistory(history: any[]) {
   try {
     const tmp = HISTORY_FILE + '.tmp';
     fs.writeFileSync(tmp, JSON.stringify(history, null, 2), 'utf8');
@@ -82,7 +82,7 @@ function idleCpu(cpu: any) {
 const RECORDING_INTERVAL_MS = 30_000; // 30 seconds
 let recordingInterval: NodeJS.Timeout | undefined;
 
-function startPeriodicRecording() {
+export function startPeriodicRecording() {
   if (recordingInterval) return; // already running
   recordingInterval = setInterval(() => {
     const metrics = captureMetrics();
@@ -98,9 +98,11 @@ if (typeof window === 'undefined') {
   startPeriodicRecording();
 }
 
-export default {
+export const monitor = {
   captureMetrics,
   startPeriodicRecording,
   readHistory,
   writeHistory,
 };
+
+export default monitor;
