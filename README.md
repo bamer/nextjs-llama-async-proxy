@@ -22,6 +22,7 @@ See **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** for complete system architecture
 ### Technology Stack
 
 #### Frontend
+
 - **Next.js 16.1.0** - App Router with Server Components
 - **React 19.2.3** - Latest React features
 - **TypeScript 5.9.3** - Strict mode enabled
@@ -36,6 +37,7 @@ See **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** for complete system architecture
 - **Zod v4.2.1** - Runtime validation
 
 #### Backend/Server
+
 - **Express 5.2.1** - HTTP server wrapper
 - **Socket.IO Server v4.8.1** - WebSocket server
 - **tsx 4.21.0** - TypeScript runtime for server
@@ -44,6 +46,7 @@ See **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** for complete system architecture
 - **Axios 1.13.2** - HTTP client
 
 #### Development
+
 - **Jest 30.2.0** - Testing framework
 - **ts-jest 29.4.6** - TypeScript Jest preset
 - **ESLint 9.39.2** - Linting
@@ -90,7 +93,7 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### Configuration
+### Parametters Configuration
 
 The application uses **`llama-server-config.json`** for configuration (not localStorage):
 
@@ -108,6 +111,7 @@ The application uses **`llama-server-config.json`** for configuration (not local
 ```
 
 **Key Configuration Fields:**
+
 - `host`: Llama server host address
 - `port`: Llama server port
 - `basePath`: Directory containing GGUF model files
@@ -146,18 +150,22 @@ See **[API_REFERENCE.md](docs/API_REFERENCE.md)** for complete API documentation
 ### Quick API Reference
 
 #### Configuration
+
 - `GET /api/config` - Get current configuration
 - `POST /api/config` - Save/update configuration
 
 #### Models
+
 - `GET /api/models` - List registered models
 - `POST /api/models` - Register new models
 - `POST /api/models/discover` - Automatic model discovery
 
 #### Health
+
 - `GET /api/health` - Health check
 
 #### Llama Server Control
+
 - Various endpoints for controlling llama-server process
 
 ### Real-time Communication
@@ -192,6 +200,7 @@ See **[USER_GUIDE.md](docs/USER_GUIDE.md)** for complete user manual.
 Comprehensive test suite achieving 70%+ coverage:
 
 ### Test Structure
+
 ```
 __tests__/
 ├── lib/
@@ -379,6 +388,7 @@ MIT - See LICENSE file for details
 ## 🆘 Support
 
 For issues, questions, or contributions:
+
 1. Check existing documentation
 2. Review test files for implementation examples
 3. Create a new issue with detailed information
