@@ -42,3 +42,23 @@ next-env.d.ts
 
 # bv (beads viewer) local config and caches
 .bv/
+
+# Additional coverage directories
+coverage-api/
+coverage-websocket/
+
+# Runtime files
+*.log
+*.pid
+*.tmp
+dev.log
+dev-server.log
+server.log
+
+# Test artifacts
+test-results-real/
+
+# Beads runtime
+.beads/*.log
+.beads/*.lock
+.beads/*.pid
