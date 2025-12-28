@@ -12,7 +12,11 @@
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "type:check": "tsc --noEmit",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "db:export": "node -e \"const fs = require('fs'); const path = require('path'); const backupDir = path.join(process.cwd(), 'data', 'backup'); if (!fs.existsSync(backupDir)) { fs.mkdirSync(backupDir, { recursive: true }); } const { exportDatabase } = require('./src/lib/database'); exportDatabase(path.join(backupDir, 'llama-dashboard-backup.db'));\"",
+    "db:import": "node -e \"const path = require('path'); const backupPath = path.join(process.cwd(), 'data', 'backup', 'llama-dashboard-backup.db'); const { importDatabase } = require('./src/lib/database'); importDatabase(backupPath);\"",
+    "db:vacuum": "node -e \"const { vacuumDatabase } = require('./src/lib/database'); vacuumDatabase();\"",
+    "db:reset": "node -e \"const { initDatabase, deleteAllModels } = require('./src/lib/database'); const db = initDatabase(); deleteAllModels(); console.log('Database reset: all models deleted');\""
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",

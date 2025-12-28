@@ -45,18 +45,18 @@ jest.mock('@mui/icons-material', () => {
 
 // Mock Lucide React icons
 jest.mock('lucide-react', () => ({
-  Monitor: () => React.createElement('span', { 'data-icon': 'Monitor' }),
-  Bot: () => React.createElement('span', { 'data-icon': 'Bot' }),
-  FileText: () => React.createElement('span', { 'data-icon': 'FileText' }),
-  Settings: () => React.createElement('span', { 'data-icon': 'Settings' }),
-  X: () => React.createElement('span', { 'data-icon': 'X' }),
-  Home: () => React.createElement('span', { 'data-icon': 'Home' }),
-  Rocket: () => React.createElement('span', { 'data-icon': 'Rocket' }),
-  Dashboard: () => React.createElement('span', { 'data-icon': 'Dashboard' }),
-  ModelTraining: () => React.createElement('span', { 'data-icon': 'ModelTraining' }),
-  Menu: () => React.createElement('span', { 'data-icon': 'Menu' }),
-  ChevronLeft: () => React.createElement('span', { 'data-icon': 'ChevronLeft' }),
-  ChevronRight: () => React.createElement('span', { 'data-icon': 'ChevronRight' }),
+  Monitor: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Monitor', role: 'img' }),
+  Bot: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Bot', role: 'img' }),
+  FileText: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'FileText', role: 'img' }),
+  Settings: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Settings', role: 'img' }),
+  X: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'X', role: 'img' }),
+  Home: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Home', role: 'img' }),
+  Rocket: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Rocket', role: 'img' }),
+  Dashboard: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Dashboard', role: 'img' }),
+  ModelTraining: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'ModelTraining', role: 'img' }),
+  Menu: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Menu', role: 'img' }),
+  ChevronLeft: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'ChevronLeft', role: 'img' }),
+  ChevronRight: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'ChevronRight', role: 'img' }),
 }));
 
 // Mock MUI styles

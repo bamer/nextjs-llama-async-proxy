@@ -3,8 +3,9 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { websocketServer } from "@/lib/websocket-client";
 import { useStore } from "@/lib/store";
-import { saveMetrics, getMetricsHistory } from "@/lib/database";
+import { saveMetrics, getMetricsHistory, getModels, saveModel, updateModel, getModelByName } from "@/lib/database";
 import type { SystemMetrics, ModelConfig, LogEntry } from "@/types";
+import type { ModelConfig as DatabaseModelConfig } from "@/lib/database";
 
 interface WebSocketContextType {
   isConnected: boolean;
@@ -75,15 +76,118 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     metricsThrottleRef.current = null;
   }, []);
 
+  // Helper function to convert store model to database model format
+  const storeToDatabaseModel = useCallback((storeModel: ModelConfig): Omit<DatabaseModelConfig, 'id' | 'created_at' | 'updated_at'> => {
+    // Map store type to database type
+    const typeMap: Record<"llama" | "mistral" | "other", "llama" | "gpt" | "mistrall" | "custom"> = {
+      llama: "llama",
+      mistral: "mistrall",
+      other: "custom",
+    };
+
+    const result: Omit<DatabaseModelConfig, 'id' | 'created_at' | 'updated_at'> = {
+      name: storeModel.name,
+      type: typeMap[storeModel.type] || 'llama',
+      status: storeModel.status === 'running' || storeModel.status === 'loading' || storeModel.status === 'error'
+        ? storeModel.status
+        : 'stopped',
+      ctx_size: (storeModel.parameters?.ctx_size as number) ?? 0,
+      batch_size: (storeModel.parameters?.batch_size as number) ?? 2048,
+      threads: (storeModel.parameters?.threads as number) ?? -1,
+      gpu_layers: (storeModel.parameters?.gpu_layers as number) ?? -1,
+      temperature: (storeModel.parameters?.temperature as number) ?? 0.8,
+      top_k: (storeModel.parameters?.top_k as number) ?? 40,
+      top_p: (storeModel.parameters?.top_p as number) ?? 0.9,
+      model_path: (storeModel.parameters?.model_path as string) ?? undefined,
+      model_url: (storeModel.parameters?.model_url as string) ?? undefined,
+    };
+
+    // Only add optional field if it has a value
+    if (storeModel.template) {
+      (result as any).chat_template = storeModel.template;
+    }
+
+    return result;
+  }, []);
+
+  // Helper function to convert database model to store model format
+  const databaseToStoreModel = useCallback((dbModel: DatabaseModelConfig): ModelConfig => {
+    // Map database type to store type
+    const typeMap: Record<string, "llama" | "mistral" | "other"> = {
+      llama: "llama",
+      gpt: "other",
+      mistrall: "mistral",
+      custom: "other",
+    };
+
+    const result: ModelConfig = {
+      id: dbModel.id?.toString() || '',
+      name: dbModel.name,
+      type: typeMap[dbModel.type] || 'other',
+      parameters: {
+        ctx_size: dbModel.ctx_size,
+        batch_size: dbModel.batch_size,
+        threads: dbModel.threads,
+        gpu_layers: dbModel.gpu_layers,
+        temperature: dbModel.temperature,
+        top_k: dbModel.top_k,
+        top_p: dbModel.top_p,
+        model_path: dbModel.model_path,
+        model_url: dbModel.model_url,
+      } as Record<string, unknown>,
+      status: dbModel.status === 'running' || dbModel.status === 'loading' || dbModel.status === 'error'
+        ? dbModel.status
+        : 'idle',
+      createdAt: dbModel.created_at ? new Date(dbModel.created_at).toISOString() : new Date().toISOString(),
+      updatedAt: dbModel.updated_at ? new Date(dbModel.updated_at).toISOString() : new Date().toISOString(),
+    };
+
+    if (dbModel.chat_template) {
+      result.template = dbModel.chat_template;
+    }
+
+    return result;
+  }, []);
+
   // Process models batch
   const processModelsBatch = useCallback(() => {
     if (modelsBatchRef.current.length > 0) {
       const latestModels = modelsBatchRef.current[modelsBatchRef.current.length - 1];
       useStore.getState().setModels(latestModels);
+
+      // Sync models to database (non-blocking)
+      try {
+        // Get all existing models from database
+        const existingDbModels = getModels();
+        const existingModelNames = new Set(existingDbModels.map((m) => m.name));
+
+        for (const model of latestModels) {
+          const existingModel = existingDbModels.find((m) => m.name === model.name);
+
+          if (existingModel && existingModel.id) {
+            // Update existing model in database
+            try {
+              updateModel(existingModel.id, storeToDatabaseModel(model));
+            } catch (err) {
+              console.error('[WebSocketProvider] Failed to update model in database:', model.name, err);
+            }
+          } else if (!existingModelNames.has(model.name)) {
+            // Create new model in database
+            try {
+              saveModel(storeToDatabaseModel(model));
+            } catch (err) {
+              console.error('[WebSocketProvider] Failed to save model to database:', model.name, err);
+            }
+          }
+        }
+      } catch (dbErr) {
+        console.error('[WebSocketProvider] Failed to sync models to database:', dbErr);
+      }
+
       modelsBatchRef.current = [];
     }
     modelsThrottleRef.current = null;
-  }, []);
+  }, [storeToDatabaseModel]);
 
   // Process log queue
   const processLogQueue = useCallback(() => {

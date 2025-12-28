@@ -3,14 +3,83 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { useStore } from "@/lib/store";
 import { useState, useEffect, useCallback } from "react";
-import { Card, CardContent, Typography, Box, Grid, Chip, LinearProgress, Button, IconButton, CircularProgress } from "@mui/material";
+import { Card, CardContent, Typography, Box, Grid, Chip, LinearProgress, Button, IconButton, CircularProgress, Menu, MenuItem } from "@mui/material";
 import { useTheme } from "@/contexts/ThemeContext";
-import { PlayArrow, Stop, Refresh, Add } from "@mui/icons-material";
+import { PlayArrow, Stop, Refresh, Add, MoreVert, Delete } from "@mui/icons-material";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { ModelsFallback } from "@/components/ui/error-fallbacks";
 import { SkeletonCard } from "@/components/ui";
 import { useEffectEvent } from "@/hooks/use-effect-event";
+import { getModels, saveModel, updateModel, deleteModel } from "@/lib/database";
+import type { ModelConfig as DatabaseModelConfig } from "@/lib/database";
+
+// Helper function to convert database model to store model format
+function databaseToStoreModel(dbModel: DatabaseModelConfig): import('@/types').ModelConfig {
+  // Map database type to store type
+  const typeMap: Record<string, "llama" | "mistral" | "other"> = {
+    llama: "llama",
+    gpt: "other",
+    mistrall: "mistral", // Note: database has typo 'mistrall'
+    custom: "other",
+  };
+
+  const result: import('@/types').ModelConfig = {
+    id: dbModel.id?.toString() || '',
+    name: dbModel.name,
+    type: typeMap[dbModel.type] || 'other',
+    parameters: {
+      ctx_size: dbModel.ctx_size,
+      batch_size: dbModel.batch_size,
+      threads: dbModel.threads,
+      gpu_layers: dbModel.gpu_layers,
+      temperature: dbModel.temperature,
+      top_k: dbModel.top_k,
+      top_p: dbModel.top_p,
+      model_path: dbModel.model_path,
+      model_url: dbModel.model_url,
+    } as Record<string, unknown>,
+    status: dbModel.status === 'running' || dbModel.status === 'loading' || dbModel.status === 'error'
+      ? dbModel.status
+      : 'idle',
+    createdAt: dbModel.created_at ? new Date(dbModel.created_at).toISOString() : new Date().toISOString(),
+    updatedAt: dbModel.updated_at ? new Date(dbModel.updated_at).toISOString() : new Date().toISOString(),
+  };
+
+  // Only add optional fields if they exist
+  if (dbModel.chat_template) {
+    result.template = dbModel.chat_template;
+  }
+
+  return result;
+}
+
+// Helper function to convert store model to database model format
+function storeToDatabaseModel(storeModel: import('@/types').ModelConfig): Omit<DatabaseModelConfig, 'id' | 'created_at' | 'updated_at'> {
+  // Map store type to database type
+  const typeMap: Record<"llama" | "mistral" | "other", "llama" | "gpt" | "mistrall" | "custom"> = {
+    llama: "llama",
+    mistral: "mistrall",
+    other: "custom",
+  };
+
+  return {
+    name: storeModel.name,
+    type: typeMap[storeModel.type] || 'llama',
+    status: storeModel.status === 'running' || storeModel.status === 'loading' || storeModel.status === 'error'
+      ? storeModel.status
+      : 'stopped',
+    ctx_size: (storeModel.parameters?.ctx_size as number) ?? 0,
+    batch_size: (storeModel.parameters?.batch_size as number) ?? 2048,
+    threads: (storeModel.parameters?.threads as number) ?? -1,
+    gpu_layers: (storeModel.parameters?.gpu_layers as number) ?? -1,
+    temperature: (storeModel.parameters?.temperature as number) ?? 0.8,
+    top_k: (storeModel.parameters?.top_k as number) ?? 40,
+    top_p: (storeModel.parameters?.top_p as number) ?? 0.9,
+    model_path: (storeModel.parameters?.model_path as string) ?? undefined,
+    model_url: (storeModel.parameters?.model_url as string) ?? undefined,
+  };
+}
 
 export default function ModelsPage() {
   const models = useStore((state) => state.models);
@@ -19,15 +88,31 @@ export default function ModelsPage() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const { requestModels } = useWebSocket();
+  const setModels = useStore((state) => state.setModels);
+  const updateStoreModel = useStore((state) => state.updateModel);
 
   useEffect(() => {
-    // Request initial models when component mounts
+    // Load all models from database on mount
+    try {
+      const dbModels = getModels();
+      const storeModels = dbModels.map(databaseToStoreModel);
+      if (storeModels.length > 0) {
+        setModels(storeModels);
+        console.log('[ModelsPage] Loaded models from database:', storeModels.length, 'models');
+      }
+    } catch (err) {
+      console.error('[ModelsPage] Failed to load models from database:', err);
+    }
+
+    // Request models from WebSocket to get latest state
     requestModels();
     // Set initial loading to false after a brief delay
     const timer = setTimeout(() => setIsInitialLoading(false), 1000);
     return () => clearTimeout(timer);
-  }, [requestModels]);
+  }, [requestModels, setModels]);
 
   // Helper functions defined outside component (created once)
   const normalizeStatus = (status: string | { value?: string; args?: unknown; preset?: unknown } | unknown): string => {
@@ -52,7 +137,7 @@ export default function ModelsPage() {
 
   // Use useEffectEvent for handlers to keep them stable
   const handleStartModel = useEffectEvent(async (modelId: string) => {
-    // Find the model to get its name
+    // Find the model to get its name and database ID
     const model = useStore.getState().models.find((m) => m.id === modelId);
     if (!model) {
       setError(`Model ${modelId} not found`);
@@ -63,7 +148,14 @@ export default function ModelsPage() {
     setError(null);
 
     try {
-      useStore.getState().updateModel(modelId, { status: 'loading' });
+      updateStoreModel(modelId, { status: 'loading' });
+
+      // Update status in database (non-blocking)
+      try {
+        updateModel(parseInt(modelId, 10), { status: 'loading' });
+      } catch (dbErr) {
+        console.error('[ModelsPage] Failed to update model status in database:', dbErr);
+      }
 
       // Make real API call to load the model in llama-server
       const response = await fetch(`/api/models/${encodeURIComponent(model.name)}/start`, {
@@ -79,11 +171,25 @@ export default function ModelsPage() {
       }
 
       // Only update to running after actual confirmation from llama-server
-      useStore.getState().updateModel(modelId, { status: 'running' });
+      updateStoreModel(modelId, { status: 'running' });
+
+      // Update status in database (non-blocking)
+      try {
+        updateModel(parseInt(modelId, 10), { status: 'running' });
+      } catch (dbErr) {
+        console.error('[ModelsPage] Failed to update model status in database:', dbErr);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
-      useStore.getState().updateModel(modelId, { status: 'idle' });
+      updateStoreModel(modelId, { status: 'idle' });
+
+      // Update status in database (non-blocking)
+      try {
+        updateModel(parseInt(modelId, 10), { status: 'stopped' });
+      } catch (dbErr) {
+        console.error('[ModelsPage] Failed to update model status in database:', dbErr);
+      }
     } finally {
       setLoading(null);
     }
@@ -101,7 +207,14 @@ export default function ModelsPage() {
     setError(null);
 
     try {
-      useStore.getState().updateModel(modelId, { status: 'loading' });
+      updateStoreModel(modelId, { status: 'loading' });
+
+      // Update status in database (non-blocking)
+      try {
+        updateModel(parseInt(modelId, 10), { status: 'loading' });
+      } catch (dbErr) {
+        console.error('[ModelsPage] Failed to update model status in database:', dbErr);
+      }
 
       // Make real API call to unload the model from llama-server
       const response = await fetch(`/api/models/${encodeURIComponent(model.name)}/stop`, {
@@ -116,11 +229,25 @@ export default function ModelsPage() {
       }
 
       // Only update to idle after actual confirmation from llama-server
-      useStore.getState().updateModel(modelId, { status: 'idle' });
+      updateStoreModel(modelId, { status: 'idle' });
+
+      // Update status in database (non-blocking)
+      try {
+        updateModel(parseInt(modelId, 10), { status: 'stopped' });
+      } catch (dbErr) {
+        console.error('[ModelsPage] Failed to update model status in database:', dbErr);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
-      useStore.getState().updateModel(modelId, { status: 'running' });
+      updateStoreModel(modelId, { status: 'running' });
+
+      // Update status in database (non-blocking)
+      try {
+        updateModel(parseInt(modelId, 10), { status: 'running' });
+      } catch (dbErr) {
+        console.error('[ModelsPage] Failed to update model status in database:', dbErr);
+      }
     } finally {
       setLoading(null);
     }
@@ -131,6 +258,90 @@ export default function ModelsPage() {
     requestModels();
     setTimeout(() => setRefreshing(false), 800);
   });
+
+  // Handler for saving a model configuration (can be used by add/edit model dialogs)
+  const handleSaveModel = useEffectEvent((config: Partial<import('@/types').ModelConfig>) => {
+    const allModels = useStore.getState().models;
+    const existing = allModels.find((m) => m.name === config.name);
+
+    if (existing) {
+      // Update existing model
+      const updatedModel = { ...existing, ...config };
+      updateStoreModel(existing.id, config);
+
+      // Update in database (non-blocking)
+      try {
+        updateModel(parseInt(existing.id, 10), storeToDatabaseModel(updatedModel));
+      } catch (dbErr) {
+        console.error('[ModelsPage] Failed to update model in database:', dbErr);
+      }
+    } else if (config.name) {
+      // Create new model
+      const newModel: import('@/types').ModelConfig = {
+        id: Date.now().toString(), // Temporary ID, will be replaced by database
+        name: config.name,
+        type: config.type || 'llama',
+        parameters: config.parameters || {},
+        status: 'idle', // Store uses 'idle' instead of 'stopped'
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Save to database to get real ID
+      let dbId: number | undefined;
+      try {
+        dbId = saveModel(storeToDatabaseModel(newModel));
+        newModel.id = dbId.toString();
+        useStore.getState().addModel(newModel);
+        console.log('[ModelsPage] Created new model with ID:', dbId);
+      } catch (dbErr) {
+        console.error('[ModelsPage] Failed to save model to database:', dbErr);
+        // Still add to store even if database save fails
+        useStore.getState().addModel(newModel);
+      }
+    }
+  });
+
+  // Handler for deleting a model
+  const handleDeleteModel = useEffectEvent((modelId: string) => {
+    const model = useStore.getState().models.find((m) => m.id === modelId);
+    if (!model) {
+      console.error('[ModelsPage] Model not found:', modelId);
+      return;
+    }
+
+    // Remove from store
+    useStore.getState().removeModel(modelId);
+
+    // Remove from database (non-blocking)
+    try {
+      deleteModel(parseInt(modelId, 10));
+      console.log('[ModelsPage] Deleted model from database:', modelId);
+    } catch (dbErr) {
+      console.error('[ModelsPage] Failed to delete model from database:', dbErr);
+    }
+
+    // Close menu
+    setAnchorEl(null);
+    setSelectedModelId(null);
+  });
+
+  // Menu handlers
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>, modelId: string) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedModelId(modelId);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedModelId(null);
+  };
+
+  const handleDeleteClick = () => {
+    if (selectedModelId) {
+      handleDeleteModel(selectedModelId);
+    }
+  };
 
   // Show skeleton loader during initial load
   if (isInitialLoading && models.length === 0) {
@@ -241,12 +452,25 @@ export default function ModelsPage() {
                     <Typography variant="subtitle1" fontWeight="medium">
                       {model.name}
                     </Typography>
-                    <Chip
-                      label={normalizeStatus(model.status)}
-                      color={getStatusColor(model.status) as 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'}
-                      size="small"
-                      variant="filled"
-                    />
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Chip
+                        label={normalizeStatus(model.status)}
+                        color={getStatusColor(model.status) as 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'}
+                        size="small"
+                        variant="filled"
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleMenuClick(e, model.id)}
+                        sx={{
+                          '&:hover': {
+                            background: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'
+                          }
+                        }}
+                      >
+                        <MoreVert fontSize="small" />
+                      </IconButton>
+                    </Box>
                   </Box>
                   <Typography variant="body2" color="text.secondary" mb={2}>
                     {model.type}
@@ -292,6 +516,20 @@ export default function ModelsPage() {
             </Grid>
           ))}
         </Grid>
+
+        {/* Context menu for model actions */}
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+          transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        >
+          <MenuItem onClick={handleDeleteClick} sx={{ color: 'error.main' }}>
+            <Delete sx={{ mr: 1 }} />
+            Delete Model
+          </MenuItem>
+        </Menu>
         
         {/* Empty state */}
         {models.length === 0 && (
