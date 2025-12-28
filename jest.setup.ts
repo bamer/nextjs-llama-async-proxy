@@ -4,6 +4,7 @@
  * that import from `next/server`.
  */
 import React from 'react';
+import '@testing-library/jest-dom';
 (global as any).Request = class Request {
   url: string;
   method: string;
@@ -130,3 +131,30 @@ class MockReadableStream {
   mockStreamQueue = [];
   mockStreamController = null;
 };
+
+// Mock Next.js router
+jest.mock('next/navigation', () => ({
+  usePathname: () => '/',
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+  }),
+}));
+
+// Mock fetch for API calls
+global.fetch = jest.fn();
+
+// Mock localStorage
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: jest.fn((key) => store[key] || null),
+    setItem: jest.fn((key, value) => { store[key] = value.toString(); }),
+    removeItem: jest.fn((key) => { delete store[key]; }),
+    clear: jest.fn(() => { store = {}; }),
+  };
+})();
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock,
+});

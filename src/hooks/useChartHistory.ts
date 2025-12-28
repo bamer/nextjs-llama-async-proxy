@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useEffectEvent as ReactUseEffectEvent } from "react";
 import { useStore } from "@/lib/store";
+import { getMetricsHistory } from "@/lib/database";
 import { requestIdleCallback, cancelIdleCallback } from "@/utils/request-idle-callback";
 
 const DEBOUNCE_MS = 5000; // 5 seconds minimum between updates
@@ -132,18 +133,103 @@ export function useChartHistory() {
     lastUpdateRef.current = now;
   });
 
-  // Initialize chart history on mount from current metrics
-  // This rebuilds transient data from live data instead of persisting to localStorage
+  // Initialize chart history on mount from database
+  // Loads last 10 minutes of metrics history from database
   // Uses requestIdleCallback to avoid blocking the main thread
   useEffect(() => {
     let idleHandle: number | void;
 
     const initializeChartHistory = () => {
-      const currentMetrics = useStore.getState().metrics;
-      if (!currentMetrics) return;
+      // Load last 10 minutes from database
+      const history = getMetricsHistory(10);
 
-      // Rebuild chart history from current metrics
-      rebuildChartHistory(currentMetrics);
+      if (history && history.length > 0) {
+        // Transform database format to chart format
+        const cpuData = history.map((entry) => {
+          const timestamp = entry.timestamp || Date.now();
+          const date = new Date(timestamp);
+          return {
+            time: date.toISOString(),
+            displayTime: date.toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            }),
+            value: entry.cpu_usage || 0,
+          };
+        });
+
+        const memoryData = history.map((entry) => {
+          const timestamp = entry.timestamp || Date.now();
+          const date = new Date(timestamp);
+          return {
+            time: date.toISOString(),
+            displayTime: date.toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            }),
+            value: entry.memory_usage || 0,
+          };
+        });
+
+        const gpuUtilData = history.map((entry) => {
+          const timestamp = entry.timestamp || Date.now();
+          const date = new Date(timestamp);
+          return {
+            time: date.toISOString(),
+            displayTime: date.toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            }),
+            value: entry.gpu_usage || 0,
+          };
+        });
+
+        const powerData = history.map((entry) => {
+          const timestamp = entry.timestamp || Date.now();
+          const date = new Date(timestamp);
+          return {
+            time: date.toISOString(),
+            displayTime: date.toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            }),
+            value: entry.gpu_power_usage || 0,
+          };
+        });
+
+        const requestsData = history.map((entry) => {
+          const timestamp = entry.timestamp || Date.now();
+          const date = new Date(timestamp);
+          return {
+            time: date.toISOString(),
+            displayTime: date.toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            }),
+            value: entry.requests_per_minute || 0,
+          };
+        });
+
+        // Set complete chart data in store
+        setChartData({
+          cpu: cpuData,
+          memory: memoryData,
+          requests: requestsData,
+          gpuUtil: gpuUtilData,
+          power: powerData,
+        });
+      } else {
+        // Fallback to current metrics if no database history
+        const currentMetrics = useStore.getState().metrics;
+        if (currentMetrics) {
+          rebuildChartHistory(currentMetrics);
+        }
+      }
     };
 
     // Use requestIdleCallback to defer initialization until browser is idle
@@ -157,7 +243,7 @@ export function useChartHistory() {
     return () => {
       cancelIdleCallback(idleHandle);
     };
-  }, [rebuildChartHistory]);
+  }, []); // Empty dependency array = run only on mount
 
   // Process metrics whenever metrics data changes
   // processMetrics is stable via useEffectEvent, so only metrics is in deps

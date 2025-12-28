@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { websocketServer } from "@/lib/websocket-client";
 import { useStore } from "@/lib/store";
+import { saveMetrics, getMetricsHistory } from "@/lib/database";
 import type { SystemMetrics, ModelConfig, LogEntry } from "@/types";
 
 interface WebSocketContextType {
@@ -36,6 +37,39 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     if (metricsBatchRef.current.length > 0) {
       const latestMetrics = metricsBatchRef.current[metricsBatchRef.current.length - 1];
       useStore.getState().setMetrics(latestMetrics);
+
+      // Save to database for persistence (non-blocking)
+      try {
+        const metricsData: Record<string, number | undefined> = {
+          cpu_usage: latestMetrics.cpuUsage,
+          memory_usage: latestMetrics.memoryUsage,
+          disk_usage: latestMetrics.diskUsage,
+          active_models: latestMetrics.activeModels,
+          uptime: latestMetrics.uptime
+        };
+
+        // Add optional GPU metrics if available
+        if (latestMetrics.gpuUsage !== undefined) {
+          metricsData.gpu_usage = latestMetrics.gpuUsage;
+        }
+        if (latestMetrics.gpuTemperature !== undefined) {
+          metricsData.gpu_temperature = latestMetrics.gpuTemperature;
+        }
+        if (latestMetrics.gpuMemoryUsed !== undefined) {
+          metricsData.gpu_memory_used = latestMetrics.gpuMemoryUsed;
+        }
+        if (latestMetrics.gpuMemoryTotal !== undefined) {
+          metricsData.gpu_memory_total = latestMetrics.gpuMemoryTotal;
+        }
+        if (latestMetrics.gpuPowerUsage !== undefined) {
+          metricsData.gpu_power_usage = latestMetrics.gpuPowerUsage;
+        }
+
+        saveMetrics(metricsData);
+      } catch (error) {
+        console.error('[WebSocketProvider] Failed to save metrics to database:', error);
+      }
+
       metricsBatchRef.current = [];
     }
     metricsThrottleRef.current = null;
@@ -72,6 +106,48 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       console.log('[WebSocketProvider] WebSocket connected');
       setIsConnected(true);
       setConnectionState('connected');
+
+      // Load metrics history from database (last 10 minutes)
+      try {
+        const metricsHistory = getMetricsHistory(10);
+        console.log('[WebSocketProvider] Loaded metrics history:', metricsHistory.length, 'records');
+
+        // Set the most recent historical metrics as initial state
+        if (metricsHistory.length > 0) {
+          const mostRecentMetrics = metricsHistory[metricsHistory.length - 1];
+          const initialMetrics: SystemMetrics = {
+            cpuUsage: mostRecentMetrics.cpu_usage || 0,
+            memoryUsage: mostRecentMetrics.memory_usage || 0,
+            diskUsage: mostRecentMetrics.disk_usage || 0,
+            activeModels: mostRecentMetrics.active_models || 0,
+            totalRequests: 0,
+            avgResponseTime: 0,
+            uptime: mostRecentMetrics.uptime || 0,
+            timestamp: new Date().toISOString()
+          };
+
+          // Add optional GPU metrics if available
+          if (mostRecentMetrics.gpu_usage !== undefined) {
+            initialMetrics.gpuUsage = mostRecentMetrics.gpu_usage;
+          }
+          if (mostRecentMetrics.gpu_temperature !== undefined) {
+            initialMetrics.gpuTemperature = mostRecentMetrics.gpu_temperature;
+          }
+          if (mostRecentMetrics.gpu_memory_used !== undefined) {
+            initialMetrics.gpuMemoryUsed = mostRecentMetrics.gpu_memory_used;
+          }
+          if (mostRecentMetrics.gpu_memory_total !== undefined) {
+            initialMetrics.gpuMemoryTotal = mostRecentMetrics.gpu_memory_total;
+          }
+          if (mostRecentMetrics.gpu_power_usage !== undefined) {
+            initialMetrics.gpuPowerUsage = mostRecentMetrics.gpu_power_usage;
+          }
+
+          useStore.getState().setMetrics(initialMetrics);
+        }
+      } catch (error) {
+        console.error('[WebSocketProvider] Failed to load metrics history:', error);
+      }
 
       // Request initial data after connection
       websocketServer.requestMetrics();
