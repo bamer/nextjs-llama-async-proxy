@@ -1,13 +1,20 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { websocketServer } from '@/lib/websocket-client';
 import { useStore } from '@/lib/store';
+import type { SystemMetrics, ModelConfig } from '@/types';
 
 export function useWebSocket() {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [connectionState, setConnectionState] = useState<string>('disconnected');
+
+  // Batching refs for different data types
   const logQueueRef = useRef<any[]>([]);
   const logThrottleRef = useRef<NodeJS.Timeout | null>(null);
-  
+  const metricsBatchRef = useRef<SystemMetrics[]>([]);
+  const metricsThrottleRef = useRef<NodeJS.Timeout | null>(null);
+  const modelsBatchRef = useRef<ModelConfig[][]>([]);
+  const modelsThrottleRef = useRef<NodeJS.Timeout | null>(null);
+
   // Reconnection state
   const reconnectionAttemptsRef = useRef<number>(0);
   const reconnectionTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -65,6 +72,40 @@ export function useWebSocket() {
     }
   }, [isConnected, connectionState, attemptReconnect]);
 
+  // Process metrics batch - use latest data from batch
+  const processMetricsBatch = useCallback(() => {
+    if (metricsBatchRef.current.length > 0) {
+      // Use the most recent data (last element)
+      const latestMetrics = metricsBatchRef.current[metricsBatchRef.current.length - 1];
+      useStore.getState().setMetrics(latestMetrics);
+      metricsBatchRef.current = [];
+    }
+    metricsThrottleRef.current = null;
+  }, []);
+
+  // Process models batch - use latest data from batch
+  const processModelsBatch = useCallback(() => {
+    if (modelsBatchRef.current.length > 0) {
+      // Use the most recent data (last element)
+      const latestModels = modelsBatchRef.current[modelsBatchRef.current.length - 1];
+      useStore.getState().setModels(latestModels);
+      modelsBatchRef.current = [];
+    }
+    modelsThrottleRef.current = null;
+  }, []);
+
+  // Process log queue - process all accumulated logs
+  const processLogQueue = useCallback(() => {
+    if (logQueueRef.current.length > 0) {
+      // Process all accumulated logs at once
+      logQueueRef.current.forEach((log) => {
+        useStore.getState().addLog(log);
+      });
+      logQueueRef.current = [];
+    }
+    logThrottleRef.current = null;
+  }, []);
+
   useEffect(() => {
     // Connect on mount
     websocketServer.connect();
@@ -74,10 +115,10 @@ export function useWebSocket() {
       setIsConnected(true);
       setConnectionState('connected');
       isReconnectingRef.current = false;
-      
+
       // Check if this is a reconnection (attempt > 0)
       const wasReconnecting = reconnectionAttemptsRef.current > 0;
-      
+
       if (wasReconnecting) {
         console.log(`WebSocket reconnected successfully after ${reconnectionAttemptsRef.current} attempts`);
         // Resubscribe to all data types after successful reconnection
@@ -86,7 +127,7 @@ export function useWebSocket() {
         websocketServer.requestModels();
         websocketServer.requestLogs();
       }
-      
+
       reconnectionAttemptsRef.current = 0;
       clearReconnectionTimer();
     };
@@ -111,32 +152,34 @@ export function useWebSocket() {
       }
     };
 
-    const processLogQueue = () => {
-      if (logQueueRef.current.length > 0) {
-        // Process all accumulated logs at once
-        logQueueRef.current.forEach((log) => {
-          useStore.getState().addLog(log);
-        });
-        logQueueRef.current = [];
-      }
-      logThrottleRef.current = null;
-    };
-
     const handleMessage = (message: unknown) => {
-      // Update store based on message type
+      // Update store based on message type with batching
       if (message && typeof message === 'object' && 'type' in message) {
         const msg = message as { type: string; data?: unknown };
+
         if (msg.type === 'metrics' && msg.data) {
-          useStore.getState().setMetrics(msg.data as any);
+          // Batch metrics with 200ms debounce
+          metricsBatchRef.current.push(msg.data as SystemMetrics);
+
+          // Schedule processing if not already scheduled
+          if (!metricsThrottleRef.current) {
+            metricsThrottleRef.current = setTimeout(processMetricsBatch, 200);
+          }
         } else if (msg.type === 'models' && msg.data) {
-          useStore.getState().setModels(msg.data as any);
+          // Batch models with 300ms debounce
+          modelsBatchRef.current.push(msg.data as ModelConfig[]);
+
+          // Schedule processing if not already scheduled
+          if (!modelsThrottleRef.current) {
+            modelsThrottleRef.current = setTimeout(processModelsBatch, 300);
+          }
         } else if (msg.type === 'logs' && msg.data) {
-          // Handle batch logs (on requestLogs response)
+          // Handle batch logs (on requestLogs response) - immediate update
           useStore.getState().setLogs(msg.data as any);
         } else if (msg.type === 'log' && msg.data) {
           // Handle individual log events (real-time streaming) - throttle these
           logQueueRef.current.push(msg.data);
-          
+
           // Schedule processing if not already scheduled
           if (!logThrottleRef.current) {
             logThrottleRef.current = setTimeout(processLogQueue, 500);
@@ -161,26 +204,38 @@ export function useWebSocket() {
     return () => {
       // Remove visibility change listener
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      
+
       // Flush any remaining logs
       if (logThrottleRef.current) {
         clearTimeout(logThrottleRef.current);
         processLogQueue();
       }
-      
+
+      // Flush any remaining metrics
+      if (metricsThrottleRef.current) {
+        clearTimeout(metricsThrottleRef.current);
+        processMetricsBatch();
+      }
+
+      // Flush any remaining models
+      if (modelsThrottleRef.current) {
+        clearTimeout(modelsThrottleRef.current);
+        processModelsBatch();
+      }
+
       // Clear reconnection timer
       clearReconnectionTimer();
-      
+
       // Remove event listeners
       websocketServer.off('connect', handleConnect);
       websocketServer.off('disconnect', handleDisconnect);
       websocketServer.off('connect_error', handleError);
       websocketServer.off('message', handleMessage);
       eventListenersAddedRef.current = false;
-      
+
       websocketServer.disconnect();
     };
-  }, [clearReconnectionTimer, attemptReconnect, handleVisibilityChange]);
+  }, [clearReconnectionTimer, attemptReconnect, handleVisibilityChange, processMetricsBatch, processModelsBatch, processLogQueue]);
 
   const sendMessage = (event: string, data?: unknown) => {
     if (!isConnected) {

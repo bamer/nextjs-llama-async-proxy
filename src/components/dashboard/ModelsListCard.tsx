@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, Typography, Box, Grid, Chip, LinearProgress, Button, TextField, MenuItem, Select, InputLabel, FormControl, Tooltip } from "@mui/material";
-import { PlayArrow, Stop, MoreVert } from "@mui/icons-material";
+import { useState, useEffect, useRef, useMemo, useTransition } from 'react';
+import { Card, CardContent, Typography, Box, Grid } from "@mui/material";
 import { loadModelTemplates, saveModelTemplate, getModelTemplates, getModelTemplatesSync } from '@/lib/client-model-templates';
 import { useStore } from '@/lib/store';
+import { MemoizedModelItem } from './MemoizedModelItem';
+import { detectModelType, getModelTypeTemplates } from './MemoizedModelItem';
 
 interface ModelConfig {
   id: string;
@@ -28,9 +29,18 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
   const [loadingModels, setLoadingModels] = useState<Record<string, boolean>>({});
   const [selectedTemplates, setSelectedTemplates] = useState<Record<string, string>>({});
   const [templates, setTemplates] = useState<Record<string, string>>({});
-  
-  const modelsList = useStore((state) => state.models);
+  const [isPending, startTransition] = useTransition();
 
+  const modelsList = useStore((state) => state.models);
+  const templatesLoadedRef = useRef(false);
+  const lastModelsHashRef = useRef('');
+
+  // Compute hash of models for change detection
+  const computeModelsHash = (models: ModelConfig[]): string => {
+    return models.map(m => `${m.name}:${m.availableTemplates?.join(',')}`).join('|');
+  };
+
+  // Load saved templates from localStorage (only on mount)
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -40,22 +50,35 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
         console.error('Failed to load saved templates from localStorage:', e);
       }
     }
+  }, []);
 
-    // Load templates asynchronously
-    loadModelTemplates().then(() => {
-      const templatesForModels: Record<string, string> = {};
-      modelsList.forEach(model => {
-        if (model.availableTemplates && model.availableTemplates.length > 0) {
-          const template = model.availableTemplates[0];
-          templatesForModels[model.name] = template;
-        }
-      });
-      setTemplates(templatesForModels);
-    }).catch(error => {
-      console.error('Failed to load templates:', error);
+  // Memoize templates for models to avoid unnecessary recalculations
+  const templatesForModels = useMemo(() => {
+    const result: Record<string, string> = {};
+    modelsList.forEach(model => {
+      if (model.availableTemplates && model.availableTemplates.length > 0) {
+        result[model.name] = model.availableTemplates[0];
+      }
     });
+    return result;
   }, [modelsList]);
 
+  // Load templates only when models actually change (not on every render)
+  useEffect(() => {
+    const currentModelsHash = computeModelsHash(modelsList);
+    const shouldLoad = !templatesLoadedRef.current || currentModelsHash !== lastModelsHashRef.current;
+
+    if (shouldLoad) {
+      startTransition(async () => {
+        await loadModelTemplates();
+        setTemplates(templatesForModels);
+        templatesLoadedRef.current = true;
+        lastModelsHashRef.current = currentModelsHash;
+      });
+    }
+  }, [modelsList, templatesForModels]);
+
+  // Debounced localStorage write using requestIdleCallback
   const saveSelectedTemplate = (modelName: string, template: string | null) => {
     setSelectedTemplates(prev => {
       const updated = { ...prev };
@@ -64,7 +87,19 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
       } else {
         updated[modelName] = template;
       }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+
+      // Debounced localStorage write
+      if (typeof requestIdleCallback !== 'undefined') {
+        requestIdleCallback(() => {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        });
+      } else {
+        // Fallback for browsers without requestIdleCallback
+        setTimeout(() => {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        }, 100);
+      }
+
       return updated;
     });
   };
@@ -79,81 +114,6 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
     } catch (error) {
       console.error('Failed to save template to config file:', error);
       alert(error instanceof Error ? error.message : 'Failed to save template');
-    }
-  };
-
-  const detectModelType = (modelName: string): 'llama' | 'mistral' | 'other' => {
-    const nameLower = modelName.toLowerCase();
-    if (nameLower.includes('llama') || nameLower.includes('codellama') || nameLower.includes('gemma') || nameLower.includes('granite')) {
-      return 'llama';
-    }
-    if (nameLower.includes('mistral') || nameLower.includes('qwen') || nameLower.includes('nemotron') || nameLower.includes('magnus') || nameLower.includes('fluently')) {
-      return 'mistral';
-    }
-    return 'other';
-  };
-
-  const getModelTypeTemplates = (modelType: 'llama' | 'mistral' | 'other'): string[] => {
-    const allTemplates = getModelTemplatesSync();
-    if (modelType === 'other') {
-      return Object.values(allTemplates);
-    }
-    return Object.values(allTemplates).filter(t => {
-      const template = t.toLowerCase();
-      if (modelType === 'llama') {
-        return template.includes('llama') || template.includes('chat') || template.includes('instruct');
-      }
-      return template.includes('mistral');
-    });
-  };
-
-  const getStatusColor = (status: string): 'default' | 'error' | 'primary' | 'secondary' | 'info' | 'success' | 'warning' => {
-    switch (status) {
-      case 'running': return 'success';
-      case 'loading': return 'warning';
-      case 'error': return 'error';
-      default: return 'default';
-    }
-  };
-
-  const getStatusLabel = (status: string): string => {
-    switch (status) {
-      case 'running': return 'RUNNING';
-      case 'loading': return 'LOADING';
-      case 'error': return 'ERROR';
-      default: return 'STOPPED';
-    }
-  };
-
-  const handleStartStop = async (model: ModelConfig) => {
-    if (loadingModels[model.id]) return;
-
-    setLoadingModels(prev => ({ ...prev, [model.id]: true }));
-
-    try {
-      if (model.status === 'running') {
-        await fetch(`/api/models/${encodeURIComponent(model.name)}/stop`, { method: 'POST' });
-      } else {
-        const selectedTemplate = selectedTemplates[model.name] || model.template;
-        const body: any = {};
-        if (selectedTemplate) {
-          body.template = selectedTemplate;
-        }
-
-        const response = await fetch(`/api/models/${encodeURIComponent(model.name)}/start`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Failed to start model');
-      }
-      onToggleModel(model.id);
-    } catch (error) {
-      console.error('Failed to toggle model:', error);
-      alert(error instanceof Error ? error.message : 'Failed to start model');
-    } finally {
-      setLoadingModels(prev => ({ ...prev, [model.id]: false }));
     }
   };
 
@@ -179,103 +139,19 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
             const modelType = detectModelType(model.name);
             const typeTemplates: string[] = getModelTypeTemplates(modelType);
             const currentTemplate = selectedTemplates[model.name] || model.template || (typeTemplates?.[0] || '');
-            
+
             return (
-              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={model.id}>
-                <Box
-                  sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    background: isDark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.8)',
-                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: isDark ? '0 8px 30px rgba(0, 0, 0, 0.3)' : '0 8px 30px rgba(0, 0, 0, 0.1)',
-                    },
-                  }}
-                >
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Chip
-                        label={modelType.toUpperCase()}
-                        color={modelType === 'llama' ? 'success' : modelType === 'mistral' ? 'primary' : 'default'}
-                        size="small"
-                        sx={{ fontWeight: 600 }}
-                      />
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        {model.name}
-                      </Typography>
-                    </Box>
-                    <Chip
-                      label={getStatusLabel(model.status)}
-                      color={getStatusColor(model.status)}
-                      size="small"
-                    />
-                  </Box>
-
-                  {model.status === 'loading' && model.progress !== undefined && (
-                    <LinearProgress
-                      variant="determinate"
-                      value={model.progress}
-                      sx={{ height: 4, borderRadius: 2, mb: 1 }}
-                    />
-                  )}
-
-                  {model.availableTemplates && model.availableTemplates.length > 0 && model.status !== 'running' && (
-                    <FormControl fullWidth size="small" sx={{ mt: 1 }}>
-                      <InputLabel>Template</InputLabel>
-                      <Select
-                        value={currentTemplate}
-                        onChange={(e) => {
-                          const template = e.target.value as string;
-                          saveSelectedTemplate(model.name, template);
-                        }}
-                        size="small"
-                      >
-                        <MenuItem value="">
-                          <em>Default</em>
-                        </MenuItem>
-                        {model.availableTemplates.map((template: string) => (
-                          <MenuItem key={template} value={template}>
-                            {template}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  )}
-
-                  <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                    <Button
-                      variant={model.status === 'running' ? 'outlined' : 'contained'}
-                      color={model.status === 'running' ? 'error' : 'primary'}
-                      onClick={() => handleStartStop(model)}
-                      disabled={loadingModels[model.id] || model.status === 'loading'}
-                      startIcon={model.status === 'running' ? <Stop /> : <PlayArrow />}
-                      fullWidth
-                      size="small"
-                    >
-                      {model.status === 'running' ? 'Stop' : 'Start'}
-                    </Button>
-
-                    {model.status === 'running' && model.availableTemplates && model.availableTemplates.length > 0 && (
-                      <Tooltip title={`Selected: ${currentTemplate}`}>
-                        <Button
-                          variant="outlined"
-                          color="info"
-                          size="small"
-                          onClick={() => saveTemplateToConfigFile(model.name, currentTemplate)}
-                          sx={{ minWidth: 36, p: 0 }}
-                        >
-                          <Typography variant="caption" sx={{ fontSize: '14px' }}>
-                            💾
-                          </Typography>
-                        </Button>
-                      </Tooltip>
-                    )}
-                  </Box>
-                </Box>
-              </Grid>
+              <MemoizedModelItem
+                key={model.id}
+                model={model}
+                isDark={isDark}
+                currentTemplate={currentTemplate}
+                loadingModels={loadingModels}
+                selectedTemplates={selectedTemplates}
+                onSaveTemplate={saveSelectedTemplate}
+                onSaveTemplateToConfig={saveTemplateToConfigFile}
+                onToggleModel={onToggleModel}
+              />
             );
           })}
         </Grid>

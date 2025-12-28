@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import { Card, CardContent, Typography, Box, LinearProgress, Chip } from "@mui/material";
 
 interface MetricCardProps {
@@ -12,7 +13,14 @@ interface MetricCardProps {
   threshold?: number;
 }
 
-export function MetricCard({
+// Helper function defined outside component (created once)
+const getStatusColor = (val: number, thresh: number): 'error' | 'warning' | 'success' => {
+  if (val > thresh) return 'error';
+  if (val > thresh * 0.7) return 'warning';
+  return 'success';
+};
+
+const MemoizedMetricCard = memo(function MetricCard({
   title,
   value,
   unit = '',
@@ -21,13 +29,41 @@ export function MetricCard({
   isDark,
   threshold = 80
 }: MetricCardProps) {
-  const getStatusColor = (val: number, thresh: number): string => {
-    if (val > thresh) return 'error';
-    if (val > thresh * 0.7) return 'warning';
-    return 'success';
-  };
+  // Memoize status color calculation
+  const statusColor = useMemo(() => getStatusColor(value, threshold), [value, threshold]);
 
-  const statusColor = getStatusColor(value, threshold);
+  // Memoize display value with unit
+  const displayValue = useMemo(() => {
+    const formattedValue = Number.isInteger(value) ? value : value.toFixed(1);
+    return `${formattedValue}${unit}`;
+  }, [value, unit]);
+
+  // Memoize progress value (clamped to 0-100)
+  const progressValue = useMemo(() => Math.min(100, Math.max(0, value)), [value]);
+
+  // Memoize formatted value for progress
+  const formattedValue = useMemo(() => Number.isInteger(value) ? value : value.toFixed(1), [value]);
+
+  // Memoize status label
+  const statusLabel = useMemo(() => {
+    if (value > threshold) return 'High';
+    if (value > threshold * 0.7) return 'Medium';
+    return 'Normal';
+  }, [value, threshold]);
+
+  // Memoize trend label
+  const trendLabel = useMemo(() => {
+    if (trend === undefined) return null;
+    return trend > 0 ? `+${trend}%` : `${trend}%`;
+  }, [trend]);
+
+  // Memoize trend color
+  const trendColor = useMemo(() => {
+    if (trend === undefined) return 'default';
+    if (trend > 0) return 'error';
+    if (trend < 0) return 'success';
+    return 'default';
+  }, [trend]);
 
   return (
     <Card sx={{
@@ -50,16 +86,15 @@ export function MetricCard({
                 {title}
               </Typography>
               <Typography variant="h4" fontWeight="bold">
-                {Number.isInteger(value) ? value : value.toFixed(1)}
-                {unit}
+                {displayValue}
               </Typography>
             </Box>
           </Box>
-          {trend !== undefined && (
+          {trendLabel && (
             <Chip
-              label={trend > 0 ? `+${trend}%` : `${trend}%`}
+              label={trendLabel}
               size="small"
-              color={trend > 0 ? 'error' : trend < 0 ? 'success' : 'default'}
+              color={trendColor as any}
               sx={{ fontWeight: 600 }}
             />
           )}
@@ -67,8 +102,8 @@ export function MetricCard({
 
         <LinearProgress
           variant="determinate"
-          value={Math.min(100, Math.max(0, value))}
-          color={statusColor as any}
+          value={progressValue}
+          color={statusColor}
           sx={{
             height: '8px',
             borderRadius: '4px',
@@ -78,13 +113,29 @@ export function MetricCard({
 
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
           <Chip
-            label={value > threshold ? 'High' : value > threshold * 0.7 ? 'Medium' : 'Normal'}
+            label={statusLabel}
             size="small"
-            color={statusColor as any}
+            color={statusColor}
             sx={{ height: 24 }}
           />
         </Box>
       </CardContent>
     </Card>
   );
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison for fine-grained control
+  // Only re-render if critical props change
+  return (
+    prevProps.title === nextProps.title &&
+    prevProps.value === nextProps.value &&
+    prevProps.unit === nextProps.unit &&
+    prevProps.trend === nextProps.trend &&
+    prevProps.icon === nextProps.icon &&
+    prevProps.isDark === nextProps.isDark &&
+    prevProps.threshold === nextProps.threshold
+  );
+});
+
+MemoizedMetricCard.displayName = 'MetricCard';
+
+export { MemoizedMetricCard as MetricCard };
