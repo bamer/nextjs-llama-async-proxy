@@ -2,6 +2,7 @@
 
 import { memo, useMemo } from "react";
 import { Card, CardContent, Typography, Box, LinearProgress, Chip } from "@mui/material";
+import { CircularGauge } from "./CircularGauge";
 
 interface MetricCardProps {
   title: string;
@@ -11,6 +12,7 @@ interface MetricCardProps {
   icon?: string;
   isDark: boolean;
   threshold?: number;
+  showGauge?: boolean;
 }
 
 // Helper function defined outside component (created once)
@@ -27,7 +29,8 @@ const MemoizedMetricCard = memo(function MetricCard({
   trend,
   icon,
   isDark,
-  threshold = 80
+  threshold = 80,
+  showGauge = false
 }: MetricCardProps) {
   // Memoize status color calculation
   const statusColor = useMemo(() => getStatusColor(value, threshold), [value, threshold]);
@@ -71,23 +74,26 @@ const MemoizedMetricCard = memo(function MetricCard({
       backdropFilter: 'blur(10px)',
       border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
       height: '100%',
+      minHeight: 200,
       transition: 'all 0.2s ease',
       '&:hover': {
         transform: 'translateY(-4px)',
         boxShadow: isDark ? '0 8px 30px rgba(0,0,0,0.4)' : '0 8px 30px rgba(0,0,0,0.1)',
       },
     }}>
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
+      <CardContent sx={{ padding: '12px !important' }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             {icon && <Typography sx={{ fontSize: '1.5rem' }}>{icon}</Typography>}
             <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 0.25 }}>
                 {title}
               </Typography>
-              <Typography variant="h4" fontWeight="bold">
-                {displayValue}
-              </Typography>
+              {!showGauge && (
+                <Typography variant="h4" fontWeight="bold">
+                  {displayValue}
+                </Typography>
+              )}
             </Box>
           </Box>
           {trendLabel && (
@@ -100,25 +106,41 @@ const MemoizedMetricCard = memo(function MetricCard({
           )}
         </Box>
 
-        <LinearProgress
-          variant="determinate"
-          value={progressValue}
-          color={statusColor}
-          sx={{
-            height: '8px',
-            borderRadius: '4px',
-            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-          }}
-        />
+        {showGauge ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 0 }}>
+            <CircularGauge
+              value={value}
+              max={unit === '%' ? 100 : threshold * 2}
+              unit={unit}
+              label={title.split(' ')[0]}
+              threshold={threshold}
+              isDark={isDark}
+              size={120}
+            />
+          </Box>
+        ) : (
+          <>
+            <LinearProgress
+              variant="determinate"
+              value={progressValue}
+              color={statusColor}
+              sx={{
+                height: '8px',
+                borderRadius: '4px',
+                backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+              }}
+            />
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-          <Chip
-            label={statusLabel}
-            size="small"
-            color={statusColor}
-            sx={{ height: 24 }}
-          />
-        </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+              <Chip
+                label={statusLabel}
+                size="small"
+                color={statusColor}
+                sx={{ height: 24 }}
+              />
+            </Box>
+          </>
+        )}
       </CardContent>
     </Card>
   );
@@ -132,7 +154,8 @@ const MemoizedMetricCard = memo(function MetricCard({
     prevProps.trend === nextProps.trend &&
     prevProps.icon === nextProps.icon &&
     prevProps.isDark === nextProps.isDark &&
-    prevProps.threshold === nextProps.threshold
+    prevProps.threshold === nextProps.threshold &&
+    prevProps.showGauge === nextProps.showGauge
   );
 });
 

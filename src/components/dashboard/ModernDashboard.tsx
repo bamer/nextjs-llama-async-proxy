@@ -191,17 +191,29 @@ export default function ModernDashboard () {
           <LinearProgress sx={{ height: 4, borderRadius: 2 }} />
         </Box>
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
             <SkeletonMetricCard icon="🖥️" />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
             <SkeletonMetricCard icon="💾" />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
             <SkeletonMetricCard icon="💿" />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
             <SkeletonMetricCard icon="🤖" />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
+            <SkeletonMetricCard icon="🎮" />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
+            <SkeletonMetricCard icon="🌡️" />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
+            <SkeletonMetricCard icon="💿" />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
+            <SkeletonMetricCard icon="⚡" />
           </Grid>
         </Grid>
       </Box>
@@ -238,7 +250,7 @@ export default function ModernDashboard () {
       </Typography>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
           <MetricCard
             title="CPU Usage"
             value={safeMetrics?.cpuUsage || 0}
@@ -246,9 +258,10 @@ export default function ModernDashboard () {
             icon="🖥️"
             isDark={isDark}
             threshold={90}
+            showGauge={true}
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
           <MetricCard
             title="Memory Usage"
             value={safeMetrics?.memoryUsage || 0}
@@ -256,9 +269,10 @@ export default function ModernDashboard () {
             icon="💾"
             isDark={isDark}
             threshold={85}
+            showGauge={true}
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
           <MetricCard
             title="Disk Usage"
             value={safeMetrics?.diskUsage || 0}
@@ -266,9 +280,10 @@ export default function ModernDashboard () {
             icon="💿"
             isDark={isDark}
             threshold={95}
+            showGauge={true}
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
           <MetricCard
             title="Active Models"
             // React 19.2: Use memoized active models count
@@ -277,10 +292,11 @@ export default function ModernDashboard () {
             icon="🤖"
             isDark={isDark}
             threshold={10}
+            showGauge={true}
           />
         </Grid>
         {/* GPU Metric Cards */}
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
           <MetricCard
             title="GPU Utilization"
             value={safeMetrics?.gpuUsage || 0}
@@ -288,9 +304,10 @@ export default function ModernDashboard () {
             icon="🎮"
             isDark={isDark}
             threshold={90}
+            showGauge={true}
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
           <MetricCard
             title="GPU Temperature"
             value={safeMetrics?.gpuTemperature || 0}
@@ -298,9 +315,10 @@ export default function ModernDashboard () {
             icon="🌡️"
             isDark={isDark}
             threshold={85}
+            showGauge={true}
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
           <MetricCard
             title="GPU Memory Usage"
             value={(safeMetrics?.gpuMemoryUsed || 0) / (safeMetrics?.gpuMemoryTotal || 1) * 100}
@@ -308,9 +326,10 @@ export default function ModernDashboard () {
             icon="💿"
             isDark={isDark}
             threshold={90}
+            showGauge={true}
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
           <MetricCard
             title="GPU Power"
             value={safeMetrics?.gpuPowerUsage || 0}
@@ -318,6 +337,7 @@ export default function ModernDashboard () {
             icon="⚡"
             isDark={isDark}
             threshold={300}
+            showGauge={true}
           />
         </Grid>
       </Grid>

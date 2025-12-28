@@ -450,4 +450,64 @@ describe('MetricCard', () => {
 
     expect(screen.getByText('-Infinity%')).toBeInTheDocument();
   });
+
+  it('renders circular gauge when showGauge is true', () => {
+    const { container } = renderWithTheme(
+      <MetricCard
+        title="Test Metric"
+        value={50}
+        unit="%"
+        isDark={false}
+        showGauge={true}
+      />
+    );
+
+    // Check that the gauge is rendered (SVG element should be present)
+    const svg = container.querySelector('svg');
+    expect(svg).toBeInTheDocument();
+
+    // Check that the value is still displayed
+    expect(screen.getByText('50')).toBeInTheDocument();
+    expect(screen.getByText('%')).toBeInTheDocument();
+  });
+
+  it('renders linear progress when showGauge is false', () => {
+    const { container } = renderWithTheme(
+      <MetricCard
+        title="Test Metric"
+        value={50}
+        unit="%"
+        isDark={false}
+        showGauge={false}
+      />
+    );
+
+    // Check that the progress bar is rendered
+    const linearProgress = container.querySelector('.MuiLinearProgress-root');
+    expect(linearProgress).toBeInTheDocument();
+
+    // Check that the value and status label are displayed
+    expect(screen.getByText('50.0%')).toBeInTheDocument();
+    expect(screen.getByText('Normal')).toBeInTheDocument();
+  });
+
+  it('renders circular gauge with dark mode', () => {
+    const { container } = renderWithTheme(
+      <MetricCard
+        title="Dark Gauge"
+        value={75}
+        unit="%"
+        isDark={true}
+        showGauge={true}
+        threshold={80}
+      />
+    );
+
+    // Check that the gauge is rendered
+    const svg = container.querySelector('svg');
+    expect(svg).toBeInTheDocument();
+
+    // Check that the value is displayed
+    expect(screen.getByText('75')).toBeInTheDocument();
+  });
 });
