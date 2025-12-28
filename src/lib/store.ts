@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { shallow } from "zustand/shallow";
 import { APP_CONFIG } from "@/config/app.config";
 import { ThemeMode } from "@/contexts/ThemeContext";
 
@@ -56,6 +57,8 @@ interface AppActions {
 
 export type AppStore = AppState & AppActions;
 
+
+
 // Initial state
 const initialState: AppState = {
   models: [],
@@ -86,7 +89,7 @@ const useAppStore = create<AppStore>()(
     (set) => ({
       ...initialState,
 
-      // Actions
+      // Actions - Optimized to only update specific fields to minimize re-renders
       setModels: (models) => set({ models }),
       addModel: (model) => set((state) => ({ models: [...state.models, model] })),
       updateModel: (id, updates) =>
@@ -101,7 +104,7 @@ const useAppStore = create<AppStore>()(
           activeModelId: state.activeModelId === id ? null : state.activeModelId,
         })),
       setActiveModel: (id) => set({ activeModelId: id }),
-      setMetrics: (metrics) => set({ metrics }),
+      setMetrics: (metrics) => set({ metrics }), // Only updates metrics field
       addLog: (log) => set((state) => ({ logs: [log, ...state.logs].slice(0, 100) })),
       setLogs: (logs) => set({ logs }),
       clearLogs: () => set({ logs: [] }),
@@ -120,7 +123,8 @@ const useAppStore = create<AppStore>()(
           if (newHistory[type].length > 60) {
             newHistory[type].shift();
           }
-          return { ...state, chartHistory: newHistory };
+          // Only update chartHistory field to minimize re-renders
+          return { chartHistory: newHistory };
         });
       },
       trimChartData: (maxPoints = 60) => {
@@ -133,12 +137,13 @@ const useAppStore = create<AppStore>()(
               trimmed[key] = trimmed[key].slice(-maxPoints);
             }
           });
-          return { ...state, chartHistory: trimmed };
+          // Only update chartHistory field
+          return { chartHistory: trimmed };
         });
       },
       clearChartData: () => {
-        set((state) => ({
-          ...state,
+        set(() => ({
+          // Only update chartHistory field
           chartHistory: {
             cpu: [],
             memory: [],
@@ -164,11 +169,37 @@ const useAppStore = create<AppStore>()(
 
 export const useStore = useAppStore;
 
-export const selectModels = (state: AppState) => state.models;
-export const selectActiveModel = (state: AppState) =>
+// Selectors for fine-grained state access
+export const selectModels = (state: AppStore) => state.models;
+export const selectActiveModel = (state: AppStore) =>
   state.models.find((model) => model.id === state.activeModelId) || null;
-export const selectMetrics = (state: AppState) => state.metrics;
-export const selectLogs = (state: AppState) => state.logs;
-export const selectSettings = (state: AppState) => state.settings;
-export const selectStatus = (state: AppState) => state.status;
-export const selectChartHistory = (state: AppState) => state.chartHistory;
+export const selectMetrics = (state: AppStore) => state.metrics;
+export const selectLogs = (state: AppStore) => state.logs;
+export const selectSettings = (state: AppStore) => state.settings;
+export const selectStatus = (state: AppStore) => state.status;
+export const selectChartHistory = (state: AppStore) => state.chartHistory;
+
+/**
+ * Custom hooks with shallow comparison
+ * These hooks prevent unnecessary re-renders when the selected data hasn't changed
+ * Shallow comparison is used for object/array selectors to avoid deep equality checks
+ *
+ * Benefits:
+ * - Components only re-render when their specific data changes
+ * - Improves performance by reducing cascade re-renders
+ * - Maintains clean separation of concerns
+ *
+ * Usage:
+ * - useModels() - Subscribe to models list
+ * - useMetrics() - Subscribe to metrics data
+ * - useChartHistory() - Subscribe to chart history arrays
+ *
+ * Note: Connection state (isConnected, connectionState, reconnectionAttempts) is managed
+ * by the useWebSocket hook, not the Zustand store.
+ */
+// Using type assertion to enable shallow comparison support
+const storeWithShallow = useAppStore as unknown as <T>(selector: (state: AppStore) => T, equalityFn?: (a: T, b: T) => boolean) => T;
+
+export const useModels = () => storeWithShallow((state) => state.models, shallow);
+export const useMetrics = () => storeWithShallow((state) => state.metrics, shallow);
+export const useChartHistory = () => storeWithShallow((state) => state.chartHistory, shallow);

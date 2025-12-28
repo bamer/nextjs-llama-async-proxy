@@ -1,34 +1,83 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { useStore } from '@/lib/store';
+import { useEffect, useState, lazy, Suspense, useMemo, useCallback, useDeferredValue, useTransition } from 'react';
+import { useModels, useMetrics } from '@/lib/store';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useChartHistory } from '@/hooks/useChartHistory';
-import { Box, Grid, Typography, LinearProgress, IconButton, Tooltip, CircularProgress } from '@mui/material';
+import { Box, Grid, Typography, LinearProgress, CircularProgress } from '@mui/material';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Refresh, Settings as SettingsIcon, Download } from '@mui/icons-material';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { MetricCard } from '@/components/dashboard/MetricCard';
-import { ModelsListCard } from '@/components/dashboard/ModelsListCard';
-import { QuickActionsCard } from '@/components/dashboard/QuickActionsCard';
-import { PerformanceChart } from '@/components/charts/PerformanceChart';
-import { GPUMetricsSection } from '@/components/dashboard/GPUMetricsSection';
-import { Loading, SkeletonMetricCard } from '@/components/ui';
-import { useRouter } from 'next/navigation';
+import { SkeletonMetricCard } from '@/components/ui';
+
+// Lazy load heavy components
+const PerformanceChart = lazy(() =>
+  import('@/components/charts/PerformanceChart').then(module => ({
+    default: module.PerformanceChart,
+  })),
+);
+const GPUMetricsSection = lazy(() =>
+  import('@/components/dashboard/GPUMetricsSection').then(module => ({
+    default: module.GPUMetricsSection,
+  })),
+);
+const QuickActionsCard = lazy(() =>
+  import('@/components/dashboard/QuickActionsCard').then(module => ({
+    default: module.QuickActionsCard,
+  })),
+);
+const ModelsListCard = lazy(() =>
+  import('@/components/dashboard/ModelsListCard').then(module => ({
+    default: module.ModelsListCard,
+  })),
+);
+
+// Loading fallback component for charts
+const ChartLoadingFallback = ({ isDark }: { isDark: boolean }) => (
+  <Box
+    sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: 350,
+      background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
+      backdropFilter: 'blur(10px)',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
+      borderRadius: 2,
+    }}
+  >
+    <CircularProgress size={40} />
+    <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+      Loading chart...
+    </Typography>
+  </Box>
+);
 
 export default function ModernDashboard() {
   const { isConnected, connectionState, sendMessage, reconnectionAttempts } = useWebSocket();
-  const models = useStore((state) => state.models);
-  const rawMetrics = useStore((state) => state.metrics);
-  const safeMetrics = rawMetrics ? rawMetrics : undefined;
+  // Using optimized shallow selectors - prevents re-renders when data hasn't changed
+  // These hooks use shallow comparison from Zustand, so components only re-render
+  // when their specific data's reference changes, not when ANY store state changes
+  const models = useModels();
+  const metrics = useMetrics();
+  const safeMetrics = metrics || undefined;
   const [loading, setLoading] = useState(true);
   const [serverLoading, setServerLoading] = useState(false);
   const [serverRunning, setServerRunning] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [downloading, setDownloading] = useState(false);
+
+  // React 19.2: useTransition for non-blocking operations
+  const [isPending, startTransition] = useTransition();
+
   const chartHistory = useChartHistory();
+
+  // React 19.2: Defer heavy computations to prevent UI blocking
+  const deferredModels = useDeferredValue(models);
+  const deferredChartHistory = useDeferredValue(chartHistory);
+
   const { isDark } = useTheme();
-  const router = useRouter();
 
   useEffect(() => {
     sendMessage('request_metrics', {});
@@ -38,53 +87,106 @@ export default function ModernDashboard() {
     return () => clearTimeout(timer);
   }, [sendMessage, isConnected]);
 
-  const handleRefresh = async () => {
+  // React 19.2: Memoize event handlers with useCallback
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    sendMessage('request_metrics', {});
-    sendMessage('request_models', {});
+
+    // React 19.2: Use startTransition for non-blocking operations
+    startTransition(() => {
+      sendMessage('request_metrics', {});
+      sendMessage('request_models', {});
+    });
+
     // Simulate brief loading for better UX
     setTimeout(() => setRefreshing(false), 800);
-  };
+  }, [sendMessage]);
 
-  const handleDownloadLogs = () => {
+  const handleDownloadLogs = useCallback(() => {
     setDownloading(true);
-    sendMessage('download_logs', {});
+
+    // React 19.2: Non-blocking download operation
+    startTransition(() => {
+      sendMessage('download_logs', {});
+    });
+
     setTimeout(() => setDownloading(false), 800);
-  };
+  }, [sendMessage]);
 
-  const handleRestartServer = () => {
+  const handleRestartServer = useCallback(() => {
     setServerLoading(true);
-    sendMessage('restart_server', {});
+
+    // React 19.2: Non-blocking restart operation
+    startTransition(() => {
+      sendMessage('restart_server', {});
+    });
+
     setTimeout(() => {
       setServerRunning(true);
       setServerLoading(false);
     }, 2000);
-  };
+  }, [sendMessage]);
 
-  const handleStartServer = () => {
+  const handleStartServer = useCallback(() => {
     setServerLoading(true);
-    sendMessage('start_llama_server', {});
+
+    // React 19.2: Non-blocking start operation
+    startTransition(() => {
+      sendMessage('start_llama_server', {});
+    });
+
     setTimeout(() => {
       setServerRunning(true);
       setServerLoading(false);
     }, 2000);
-  };
+  }, [sendMessage]);
 
-  const handleOpenSettings = () => {
-    router.push('/settings');
-  };
+  const handleToggleModel = useCallback((modelId: string) => {
+    // React 19.2: Non-blocking model toggle
+    startTransition(() => {
+      sendMessage('toggle_model', { modelId });
+    });
+  }, [sendMessage]);
 
-  const handleToggleModel = (modelId: string) => {
-    sendMessage('toggle_model', { modelId });
-  };
+  // React 19.2: Memoize expensive computations
+  const activeModelsCount = useMemo(() => {
+    return deferredModels.filter((m: ModelConfig) => m.status === 'running').length;
+  }, [deferredModels]);
 
-  const formatUptime = (seconds?: number): string => {
-    if (!seconds) return 'N/A';
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
+  const formattedUptime = useMemo(() => {
+    if (!safeMetrics?.uptime) return 'N/A';
+    const days = Math.floor(safeMetrics.uptime / 86400);
+    const hours = Math.floor((safeMetrics.uptime % 86400) / 3600);
+    const mins = Math.floor((safeMetrics.uptime % 3600) / 60);
     return `${days}d ${hours}h ${mins}m`;
-  };
+  }, [safeMetrics]);
+
+  // React 19.2: Memoize chart datasets with deferred values
+  const chartDatasets = useMemo(() => [
+    {
+      dataKey: 'cpu',
+      label: 'CPU %',
+      colorDark: '#60a5fa',
+      colorLight: '#2563eb',
+      valueFormatter: (value: number | null) => value !== null ? `${value.toFixed(1)}%` : 'N/A',
+      data: deferredChartHistory.cpu,
+    },
+    {
+      dataKey: 'memory',
+      label: 'Memory %',
+      colorDark: '#4ade80',
+      colorLight: '#16a34a',
+      valueFormatter: (value: number | null) => value !== null ? `${value.toFixed(1)}%` : 'N/A',
+      data: deferredChartHistory.memory,
+    },
+    {
+      dataKey: 'requests',
+      label: 'Requests/min',
+      colorDark: '#facc15',
+      colorLight: '#f59e0b',
+      valueFormatter: (value: number | null) => value !== null ? String(Math.round(value)) : '0',
+      data: deferredChartHistory.requests,
+    },
+  ], [deferredChartHistory.cpu, deferredChartHistory.memory, deferredChartHistory.requests]);
 
   if (loading && !safeMetrics) {
     return (
@@ -124,6 +226,16 @@ export default function ModernDashboard() {
         refreshing={refreshing}
       />
 
+      {/* React 19.2: Show loading state during transitions */}
+      {isPending && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 2 }}>
+          <CircularProgress size={24} />
+          <Typography variant="body2" sx={{ ml: 2, color: 'text.secondary' }}>
+            Processing...
+          </Typography>
+        </Box>
+      )}
+
       <Typography variant="h5" fontWeight="bold" sx={{ mb: 4 }}>
         Dashboard Overview
       </Typography>
@@ -162,7 +274,8 @@ export default function ModernDashboard() {
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <MetricCard
             title="Active Models"
-            value={models.filter(m => m.status === 'running').length}
+            // React 19.2: Use memoized active models count
+            value={activeModelsCount}
             unit="/10"
             icon="🤖"
             isDark={isDark}
@@ -173,87 +286,76 @@ export default function ModernDashboard() {
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid size={{ xs: 12, lg: 8 }}>
-          <ModelsListCard
-            models={models}
-            isDark={isDark}
-            onToggleModel={handleToggleModel}
-          />
+          <Suspense fallback={<CircularProgress />}>
+            {/* React 19.2: Pass deferred models to prevent blocking */}
+            <ModelsListCard
+              models={deferredModels}
+              isDark={isDark}
+              onToggleModel={handleToggleModel}
+            />
+          </Suspense>
         </Grid>
         <Grid size={{ xs: 12, lg: 4 }}>
-          <QuickActionsCard
-            isDark={isDark}
-            onDownloadLogs={handleDownloadLogs}
-            onRestartServer={handleRestartServer}
-            onStartServer={handleStartServer}
-            serverRunning={serverRunning}
-            serverLoading={serverLoading}
-            downloading={downloading}
-          />
+          <Suspense fallback={<CircularProgress />}>
+            <QuickActionsCard
+              isDark={isDark}
+              onDownloadLogs={handleDownloadLogs}
+              onRestartServer={handleRestartServer}
+              onStartServer={handleStartServer}
+              serverRunning={serverRunning}
+              serverLoading={serverLoading}
+              downloading={downloading}
+            />
+          </Suspense>
         </Grid>
       </Grid>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <PerformanceChart
-            title="System Performance"
-            description="CPU, Memory & Requests over time"
-            datasets={[
-              {
-                dataKey: 'cpu',
-                label: 'CPU %',
-                colorDark: '#60a5fa',
-                colorLight: '#2563eb',
-                valueFormatter: (value) => value !== null ? `${value.toFixed(1)}%` : 'N/A',
-                data: chartHistory.cpu,
-              },
-              {
-                dataKey: 'memory',
-                label: 'Memory %',
-                colorDark: '#4ade80',
-                colorLight: '#16a34a',
-                valueFormatter: (value) => value !== null ? `${value.toFixed(1)}%` : 'N/A',
-                data: chartHistory.memory,
-              },
-              {
-                dataKey: 'requests',
-                label: 'Requests/min',
-                colorDark: '#facc15',
-                colorLight: '#f59e0b',
-                valueFormatter: (value) => value !== null ? String(Math.round(value)) : '0',
-                data: chartHistory.requests,
-              },
-            ]}
-            isDark={isDark}
-            height={350}
-          />
+          <Suspense fallback={<ChartLoadingFallback isDark={isDark} />}>
+            {/* React 19.2: Pass memoized chart datasets */}
+            <PerformanceChart
+              title="System Performance"
+              description="CPU, Memory & Requests over time"
+              datasets={chartDatasets}
+              isDark={isDark}
+              height={350}
+            />
+          </Suspense>
         </Grid>
 
         {/* GPU Metrics Section - Reusable component showing both card and chart */}
-        <GPUMetricsSection
-          metrics={safeMetrics}
-          chartHistory={chartHistory}
-          isDark={isDark}
-        />
-       </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Suspense fallback={<ChartLoadingFallback isDark={isDark} />}>
+            <GPUMetricsSection
+              metrics={safeMetrics}
+              chartHistory={deferredChartHistory}
+              isDark={isDark}
+            />
+          </Suspense>
+        </Grid>
+      </Grid>
 
-       <Grid size={{ xs: 12 }}>
-        <Box sx={{
-          p: 3,
-          background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
-          backdropFilter: 'blur(10px)',
-          border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
-          borderRadius: 2,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 4,
-        }}>
+      <Grid size={{ xs: 12 }}>
+        <Box
+          sx={{
+            p: 3,
+            background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
+            backdropFilter: 'blur(10px)',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
+            borderRadius: 2,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 4,
+          }}
+        >
           <Typography variant="body2" color="text.secondary">
             Uptime
           </Typography>
           <Typography variant="h6" fontWeight="bold">
-            {formatUptime(safeMetrics?.uptime)}
+            {formattedUptime}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Total Requests

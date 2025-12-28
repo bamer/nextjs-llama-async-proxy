@@ -20,10 +20,13 @@ interface MemoizedModelItemProps {
   isDark: boolean;
   currentTemplate: string;
   loadingModels: Record<string, boolean>;
+  setLoadingModels: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   selectedTemplates: Record<string, string>;
   onSaveTemplate: (modelName: string, template: string | null) => void;
   onSaveTemplateToConfig: (modelName: string, template: string) => void;
   onToggleModel: (modelId: string) => void;
+  onToggleModelOptimistic?: (modelId: string, status: string) => void;
+  optimisticStatus?: string;
 }
 
 // Exported helper function
@@ -80,14 +83,31 @@ const MemoizedModelItem = memo(function ModelItem({
   isDark,
   currentTemplate,
   loadingModels,
+  setLoadingModels,
   selectedTemplates,
   onSaveTemplate,
   onSaveTemplateToConfig,
-  onToggleModel
+  onToggleModel,
+  onToggleModelOptimistic,
+  optimisticStatus
 }: MemoizedModelItemProps) {
+  // Use optimistic status if set, otherwise use actual status
+  const displayStatus = optimisticStatus || model.status;
+  const displayStatusColor = getStatusColor(displayStatus);
+  const displayStatusLabel = getStatusLabel(displayStatus);
+
   // Memoize start/stop handler
   const handleStartStop = useCallback(async () => {
     if (loadingModels[model.id]) return;
+
+    setLoadingModels((prev: Record<string, boolean>) => ({ ...prev, [model.id]: true }));
+
+    // OPTIMISTIC: Assume success, update UI immediately
+    const optimisticNewStatus = model.status === 'running' ? 'stopped' : 'loading';
+    const originalStatus = model.status;
+
+    // Update UI immediately (will be overridden by WebSocket on actual success)
+    onToggleModelOptimistic?.(model.id, optimisticNewStatus);
 
     try {
       if (model.status === 'running') {
@@ -107,12 +127,18 @@ const MemoizedModelItem = memo(function ModelItem({
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Failed to start model');
       }
+
+      // Success - WebSocket will update with actual status
       onToggleModel(model.id);
     } catch (error) {
+      // REVERT: Update failed, revert to original status
+      onToggleModelOptimistic?.(model.id, originalStatus);
       console.error('Failed to toggle model:', error);
       alert(error instanceof Error ? error.message : 'Failed to start model');
+    } finally {
+      setLoadingModels((prev: Record<string, boolean>) => ({ ...prev, [model.id]: false }));
     }
-  }, [model.id, model.name, model.status, loadingModels, selectedTemplates, onToggleModel]);
+  }, [loadingModels, model, selectedTemplates, onToggleModel, onToggleModelOptimistic, setLoadingModels]);
 
   // Memoize template change handler
   const handleTemplateChange = useCallback((e: { target: { value: string } }) => {
@@ -156,13 +182,13 @@ const MemoizedModelItem = memo(function ModelItem({
             </Typography>
           </Box>
           <Chip
-            label={getStatusLabel(model.status)}
-            color={getStatusColor(model.status)}
+            label={displayStatusLabel}
+            color={displayStatusColor}
             size="small"
           />
         </Box>
 
-        {model.status === 'loading' && model.progress !== undefined && (
+        {displayStatus === 'loading' && model.progress !== undefined && (
           <LinearProgress
             variant="determinate"
             value={model.progress}
@@ -170,7 +196,7 @@ const MemoizedModelItem = memo(function ModelItem({
           />
         )}
 
-        {model.availableTemplates && model.availableTemplates.length > 0 && model.status !== 'running' && (
+        {model.availableTemplates && model.availableTemplates.length > 0 && displayStatus !== 'running' && (
           <FormControl fullWidth size="small" sx={{ mt: 1 }}>
             <InputLabel>Template</InputLabel>
             <Select
@@ -192,18 +218,18 @@ const MemoizedModelItem = memo(function ModelItem({
 
         <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
           <Button
-            variant={model.status === 'running' ? 'outlined' : 'contained'}
-            color={model.status === 'running' ? 'error' : 'primary'}
+            variant={displayStatus === 'running' ? 'outlined' : 'contained'}
+            color={displayStatus === 'running' ? 'error' : 'primary'}
             onClick={handleStartStop}
-            disabled={loadingModels[model.id] || model.status === 'loading'}
-            startIcon={model.status === 'running' ? <Stop /> : <PlayArrow />}
+            disabled={loadingModels[model.id] || displayStatus === 'loading'}
+            startIcon={displayStatus === 'running' ? <Stop /> : <PlayArrow />}
             fullWidth
             size="small"
           >
-            {model.status === 'running' ? 'Stop' : 'Start'}
+            {displayStatus === 'running' ? 'Stop' : 'Start'}
           </Button>
 
-          {model.status === 'running' && model.availableTemplates && model.availableTemplates.length > 0 && (
+          {displayStatus === 'running' && model.availableTemplates && model.availableTemplates.length > 0 && (
             <Tooltip title={`Selected: ${currentTemplate}`}>
               <Button
                 variant="outlined"
@@ -232,6 +258,7 @@ const MemoizedModelItem = memo(function ModelItem({
     prevProps.isDark === nextProps.isDark &&
     prevProps.currentTemplate === nextProps.currentTemplate &&
     prevProps.loadingModels[prevModel.id] === nextProps.loadingModels[nextModel.id] &&
+    prevProps.optimisticStatus === nextProps.optimisticStatus &&
     prevModel.id === nextModel.id &&
     prevModel.name === nextModel.name &&
     prevModel.status === nextModel.status &&

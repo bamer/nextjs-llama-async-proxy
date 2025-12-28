@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, useTransition } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, useTransition } from 'react';
 import { Card, CardContent, Typography, Box, Grid } from "@mui/material";
 import { loadModelTemplates, saveModelTemplate, getModelTemplates, getModelTemplatesSync } from '@/lib/client-model-templates';
 import { useStore } from '@/lib/store';
@@ -29,6 +29,7 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
   const [loadingModels, setLoadingModels] = useState<Record<string, boolean>>({});
   const [selectedTemplates, setSelectedTemplates] = useState<Record<string, string>>({});
   const [templates, setTemplates] = useState<Record<string, string>>({});
+  const [optimisticStatus, setOptimisticStatus] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
 
   const modelsList = useStore((state) => state.models);
@@ -78,6 +79,23 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
     }
   }, [modelsList, templatesForModels]);
 
+  // Clear optimistic status when models update via WebSocket
+  useEffect(() => {
+    setOptimisticStatus((prev: Record<string, string>) => {
+      const updated: Record<string, string> = {};
+      Object.keys(prev).forEach(modelId => {
+        const model = modelsList.find(m => m.id === modelId);
+        // Keep optimistic status only if model is still loading
+        // Once model reaches terminal state (running/stopped/idle/error), clear optimistic override
+        if (model && model.status === 'loading') {
+          updated[modelId] = prev[modelId];
+        }
+        // If model doesn't exist or is not loading, let actual status show
+      });
+      return updated;
+    });
+  }, [modelsList]);
+
   // Debounced localStorage write using requestIdleCallback
   const saveSelectedTemplate = (modelName: string, template: string | null) => {
     setSelectedTemplates(prev => {
@@ -117,6 +135,10 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
     }
   };
 
+  const handleToggleModelOptimistic = useCallback((modelId: string, status: string) => {
+    setOptimisticStatus((prev: Record<string, string>) => ({ ...prev, [modelId]: status }));
+  }, []);
+
   return (
     <Card sx={{
       background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
@@ -147,10 +169,13 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
                 isDark={isDark}
                 currentTemplate={currentTemplate}
                 loadingModels={loadingModels}
+                setLoadingModels={setLoadingModels}
                 selectedTemplates={selectedTemplates}
                 onSaveTemplate={saveSelectedTemplate}
                 onSaveTemplateToConfig={saveTemplateToConfigFile}
                 onToggleModel={onToggleModel}
+                onToggleModelOptimistic={handleToggleModelOptimistic}
+                optimisticStatus={optimisticStatus[model.id]}
               />
             );
           })}
