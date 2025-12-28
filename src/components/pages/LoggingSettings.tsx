@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useEffectEvent as ReactUseEffectEvent } from 'react';
 import { useStore } from '@/lib/store';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { getLoggerConfig, updateLoggerConfig, LoggerConfig } from '@/lib/client-logger';
-import { Card, CardContent, Typography, Box, Grid, Divider, 
+import { Card, CardContent, Typography, Box, Grid, Divider,
          TextField, Switch, FormControlLabel, Button, Chip, Slider } from '@mui/material';
 import { m } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -23,20 +23,20 @@ export default function LoggingSettings() {
     setLoading(false);
   }, []);
 
-  const handleConfigChange = (key: keyof LoggerConfig, value: any) => {
+  const handleConfigChange = ReactUseEffectEvent((key: keyof LoggerConfig, value: any) => {
     setConfig(prev => ({ ...prev, [key]: value }));
-  };
+  });
 
-  const handleSaveConfig = () => {
+  const handleSaveConfig = ReactUseEffectEvent(() => {
     try {
       updateLoggerConfig(config);
-      
+
       // Send configuration to server via WebSocket
       sendMessage('updateLoggerConfig', config);
-      
+
       useStore.getState().setLoading(false);
       useStore.getState().clearError();
-      
+
       // Show success notification
       // TODO: Add notification system
       console.log('Logging configuration updated successfully');
@@ -44,9 +44,9 @@ export default function LoggingSettings() {
       console.error('Failed to update logging configuration:', error);
       useStore.getState().setError('Failed to update logging configuration');
     }
-  };
+  });
 
-  const handleResetConfig = () => {
+  const handleResetConfig = ReactUseEffectEvent(() => {
     const defaultConfig: LoggerConfig = {
       consoleLevel: 'debug',
       fileLevel: 'info',
@@ -60,7 +60,7 @@ export default function LoggingSettings() {
     setConfig(defaultConfig);
     updateLoggerConfig(defaultConfig);
     sendMessage('updateLoggerConfig', defaultConfig);
-  };
+  });
 
   const getLogLevelValue = (level: string) => {
     const levels = ['error', 'warn', 'info', 'debug', 'verbose'];

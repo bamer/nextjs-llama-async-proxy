@@ -142,7 +142,7 @@ describe('useChartHistory', () => {
     expect(callArg.power[0].value).toBe(250);
   });
 
-  it('should not include gpuUtil when gpuUsage is undefined', () => {
+  it('should include all chart types even when GPU data is undefined', () => {
     useStore.mockImplementation((selector: any) => {
       const state = {
         metrics: {
@@ -165,10 +165,15 @@ describe('useChartHistory', () => {
     renderHook(() => useChartHistory());
 
     const callArg = mockSetChartData.mock.calls[0][0];
-    expect(callArg).not.toHaveProperty('gpuUtil');
+    // Complete ChartHistoryData must include all 5 types
+    expect(callArg).toHaveProperty('cpu');
+    expect(callArg).toHaveProperty('memory');
+    expect(callArg).toHaveProperty('requests');
+    expect(callArg).toHaveProperty('gpuUtil');
+    expect(callArg).toHaveProperty('power');
   });
 
-  it('should not include power when gpuPowerUsage is undefined', () => {
+  it('should include all chart types even when gpuPowerUsage is undefined', () => {
     useStore.mockImplementation((selector: any) => {
       const state = {
         metrics: {
@@ -192,7 +197,12 @@ describe('useChartHistory', () => {
     renderHook(() => useChartHistory());
 
     const callArg = mockSetChartData.mock.calls[0][0];
-    expect(callArg).not.toHaveProperty('power');
+    // Complete ChartHistoryData must include all 5 types
+    expect(callArg).toHaveProperty('cpu');
+    expect(callArg).toHaveProperty('memory');
+    expect(callArg).toHaveProperty('requests');
+    expect(callArg).toHaveProperty('gpuUtil');
+    expect(callArg).toHaveProperty('power');
   });
 
   it('should create data points with correct time format', () => {

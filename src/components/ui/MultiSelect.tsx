@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useEffectEvent as ReactUseEffectEvent } from 'react';
 import {
   Select,
   MenuItem,
@@ -58,13 +58,14 @@ export function MultiSelect<T = string>({
     setInternalSelected(selectedArray);
   }, [externalSelected]);
 
-  const handleToggleAll = useCallback(() => {
+  // Stable toggle all handler using useEffectEvent
+  const handleToggleAll = ReactUseEffectEvent(() => {
     const newSelected = externalSelectedRef.current.size === options.length
       ? new Set<T>()
       : new Set(options.map((opt) => opt.value));
     onChange(newSelected);
     setOpen(false);
-  }, [options, onChange]);
+  });
 
   const isSelectedAll = externalSelectedRef.current.size === options.length;
   const isSelectedSome = externalSelectedRef.current.size > 0 && externalSelectedRef.current.size < options.length;

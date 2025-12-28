@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useEffectEvent as ReactUseEffectEvent } from 'react';
 import { websocketServer } from '@/lib/websocket-client';
 import { useStore } from '@/lib/store';
 import type { SystemMetrics, ModelConfig, LogEntry } from '@/types';
-import { useEffectEvent } from './use-effect-event';
 
 export function useWebSocket() {
   const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -69,7 +68,7 @@ export function useWebSocket() {
   }, [calculateBackoffDelay, clearReconnectionTimer]);
 
   // Handle page visibility changes - stable callback using useEffectEvent pattern
-  const handleVisibilityChange = useEffectEvent(() => {
+  const handleVisibilityChange = ReactUseEffectEvent(() => {
     if (document.visibilityState === 'visible') {
       // User came back to tab - attempt to reconnect if disconnected
       // Use refs to avoid callback recreation when state changes
@@ -81,7 +80,7 @@ export function useWebSocket() {
   });
 
   // Extracted event handlers using useEffectEvent for stability
-  const handleConnect = useEffectEvent(() => {
+  const handleConnect = ReactUseEffectEvent(() => {
     setIsConnected(true);
     setConnectionState('connected');
     isReconnectingRef.current = false;
@@ -102,7 +101,7 @@ export function useWebSocket() {
     clearReconnectionTimer();
   });
 
-  const handleDisconnect = useEffectEvent(() => {
+  const handleDisconnect = ReactUseEffectEvent(() => {
     setIsConnected(false);
     // Only show "disconnected" if we're not already reconnecting
     if (!isReconnectingRef.current) {
@@ -114,7 +113,7 @@ export function useWebSocket() {
     }
   });
 
-  const handleError = useEffectEvent((error: unknown) => {
+  const handleError = ReactUseEffectEvent((error: unknown) => {
     console.error('WebSocket error:', error);
     // On error, attempt to reconnect
     if (!isConnectedRef.current && reconnectionAttemptsRef.current < maxReconnectionAttempts) {
@@ -122,7 +121,7 @@ export function useWebSocket() {
     }
   });
 
-  const handleMessage = useEffectEvent((message: unknown) => {
+  const handleMessage = ReactUseEffectEvent((message: unknown) => {
     // Update store based on message type with batching
     if (message && typeof message === 'object' && 'type' in message) {
       const msg = message as { type: string; data?: unknown };
@@ -160,7 +159,7 @@ export function useWebSocket() {
   });
 
   // Process metrics batch - stable callback using useEffectEvent pattern
-  const processMetricsBatch = useEffectEvent(() => {
+  const processMetricsBatch = ReactUseEffectEvent(() => {
     if (metricsBatchRef.current.length > 0) {
       // Use the most recent data (last element)
       const latestMetrics = metricsBatchRef.current[metricsBatchRef.current.length - 1];
@@ -171,7 +170,7 @@ export function useWebSocket() {
   });
 
   // Process models batch - stable callback using useEffectEvent pattern
-  const processModelsBatch = useEffectEvent(() => {
+  const processModelsBatch = ReactUseEffectEvent(() => {
     if (modelsBatchRef.current.length > 0) {
       // Use the most recent data (last element)
       const latestModels = modelsBatchRef.current[modelsBatchRef.current.length - 1];
@@ -182,7 +181,7 @@ export function useWebSocket() {
   });
 
   // Process log queue - stable callback using useEffectEvent pattern
-  const processLogQueue = useEffectEvent(() => {
+  const processLogQueue = ReactUseEffectEvent(() => {
     if (logQueueRef.current.length > 0) {
       // Process all accumulated logs at once
       logQueueRef.current.forEach((log) => {

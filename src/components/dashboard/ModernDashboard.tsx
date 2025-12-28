@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, lazy, Suspense, useMemo, useCallback, useDeferredValue, useTransition } from 'react';
+import { useEffect, useState, lazy, Suspense, useMemo, useCallback, useDeferredValue, useTransition, useEffectEvent as ReactUseEffectEvent } from 'react';
 import { useModels, useMetrics } from '@/lib/store';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useChartHistory } from '@/hooks/useChartHistory';
@@ -9,7 +9,6 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { SkeletonMetricCard } from '@/components/ui';
-import { useEffectEvent } from '@/hooks/use-effect-event';
 
 // Lazy load heavy components
 const PerformanceChart = lazy(() =>
@@ -89,7 +88,7 @@ export default function ModernDashboard() {
   }, [sendMessage, isConnected]);
 
   // React 19.2: Use useEffectEvent for stable event handlers
-  const handleRefresh = useEffectEvent(() => {
+  const handleRefresh = ReactUseEffectEvent(() => {
     setRefreshing(true);
 
     // React 19.2: Use startTransition for non-blocking operations
@@ -102,7 +101,7 @@ export default function ModernDashboard() {
     setTimeout(() => setRefreshing(false), 800);
   });
 
-  const handleDownloadLogs = useEffectEvent(() => {
+  const handleDownloadLogs = ReactUseEffectEvent(() => {
     setDownloading(true);
 
     // React 19.2: Non-blocking download operation
@@ -113,7 +112,7 @@ export default function ModernDashboard() {
     setTimeout(() => setDownloading(false), 800);
   });
 
-  const handleRestartServer = useEffectEvent(() => {
+  const handleRestartServer = ReactUseEffectEvent(() => {
     setServerLoading(true);
 
     // React 19.2: Non-blocking restart operation
@@ -127,7 +126,7 @@ export default function ModernDashboard() {
     }, 2000);
   });
 
-  const handleStartServer = useEffectEvent(() => {
+  const handleStartServer = ReactUseEffectEvent(() => {
     setServerLoading(true);
 
     // React 19.2: Non-blocking start operation
@@ -141,7 +140,7 @@ export default function ModernDashboard() {
     }, 2000);
   });
 
-  const handleToggleModel = useEffectEvent((modelId: string) => {
+  const handleToggleModel = ReactUseEffectEvent((modelId: string) => {
     // React 19.2: Non-blocking model toggle
     startTransition(() => {
       sendMessage('toggle_model', { modelId });

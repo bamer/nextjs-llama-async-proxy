@@ -1,7 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { useEffectEvent } from "@/hooks/use-effect-event";
+import { createContext, useContext, useEffect, useState, ReactNode, useEffectEvent as ReactUseEffectEvent } from "react";
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import { useMediaQuery } from "@mui/material";
 import { CssBaseline } from "@mui/material";
@@ -34,14 +33,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Stable function to update next theme - prevents re-renders
-  const updateNextTheme = useEffectEvent((themeMode: ThemeMode) => {
+  const updateNextTheme = ReactUseEffectEvent((themeMode: ThemeMode) => {
     requestIdleCallbackPromise(() => {
       setNextTheme(themeMode);
     });
   });
 
   // Stable function to save theme to localStorage - prevents re-renders
-  const saveTheme = useEffectEvent((themeMode: ThemeMode) => {
+  const saveTheme = ReactUseEffectEvent((themeMode: ThemeMode) => {
     // Use batch storage with critical priority for theme preference
     setItemCritical("theme", themeMode);
     // Update next-themes using requestIdleCallbackPromise

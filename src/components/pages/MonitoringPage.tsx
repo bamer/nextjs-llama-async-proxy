@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useEffectEvent as ReactUseEffectEvent } from 'react';
 import {
   Box,
   Typography,
@@ -24,7 +24,7 @@ const MonitoringPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchMonitoringData = async () => {
+  const fetchMonitoringData = ReactUseEffectEvent(async () => {
     try {
       const response = await fetch('/api/monitoring/latest');
       if (!response.ok) {
@@ -39,13 +39,13 @@ const MonitoringPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  });
 
   useEffect(() => {
     fetchMonitoringData();
     const interval = setInterval(fetchMonitoringData, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchMonitoringData]);
 
   const getLogLevelColor = (level: string) => {
     switch (level) {

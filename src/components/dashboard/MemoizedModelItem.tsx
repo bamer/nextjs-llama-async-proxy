@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback } from "react";
+import { memo, useCallback, useEffectEvent as ReactUseEffectEvent } from "react";
 import { Box, Grid, Chip, LinearProgress, Button, MenuItem, Select, InputLabel, FormControl, Tooltip, Typography } from "@mui/material";
 import { PlayArrow, Stop } from "@mui/icons-material";
 import { getModelTemplatesSync } from '@/lib/client-model-templates';
@@ -96,8 +96,8 @@ const MemoizedModelItem = memo(function ModelItem({
   const displayStatusColor = getStatusColor(displayStatus);
   const displayStatusLabel = getStatusLabel(displayStatus);
 
-  // Memoize start/stop handler
-  const handleStartStop = useCallback(async () => {
+  // Stable start/stop handler using useEffectEvent
+  const handleStartStop = ReactUseEffectEvent(async () => {
     if (loadingModels[model.id]) return;
 
     setLoadingModels((prev: Record<string, boolean>) => ({ ...prev, [model.id]: true }));
@@ -138,18 +138,18 @@ const MemoizedModelItem = memo(function ModelItem({
     } finally {
       setLoadingModels((prev: Record<string, boolean>) => ({ ...prev, [model.id]: false }));
     }
-  }, [loadingModels, model, selectedTemplates, onToggleModel, onToggleModelOptimistic, setLoadingModels]);
+  });
 
-  // Memoize template change handler
-  const handleTemplateChange = useCallback((e: { target: { value: string } }) => {
+  // Stable template change handler using useEffectEvent
+  const handleTemplateChange = ReactUseEffectEvent((e: { target: { value: string } }) => {
     const template = e.target.value as string;
     onSaveTemplate(model.name, template);
-  }, [model.name, onSaveTemplate]);
+  });
 
-  // Memoize save template handler
-  const handleSaveTemplate = useCallback(() => {
+  // Stable save template handler using useEffectEvent
+  const handleSaveTemplate = ReactUseEffectEvent(() => {
     onSaveTemplateToConfig(model.name, currentTemplate);
-  }, [model.name, currentTemplate, onSaveTemplateToConfig]);
+  });
 
   // Compute model type and related properties
   const modelType = detectModelType(model.name);

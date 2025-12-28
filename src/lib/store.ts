@@ -59,9 +59,10 @@ interface AppActions {
   setError: (error: string | null) => void;
   clearError: () => void;
   addChartData: (type: 'cpu' | 'memory' | 'requests' | 'gpuUtil' | 'power', value: number) => void;
-  setChartData: (data: Partial<ChartHistoryData>) => void;
+  setChartData: (data: ChartHistoryData) => void;
   trimChartData: (maxPoints?: number) => void;
   clearChartData: () => void;
+  rebuildChartHistory: (metrics: SystemMetrics) => void;
 }
 
 export type AppStore = AppState & AppActions;
@@ -137,18 +138,11 @@ const useAppStore = create<AppStore>()(
         });
       },
       setChartData: (data) => {
-        set((state) => {
-          // Merge new data with existing chart history, preserving any unspecified keys
-          // This is optimized for batch updates - multiple chart types can be updated in one call
-          const newHistory = { ...state.chartHistory };
-          (Object.keys(data) as Array<keyof ChartHistoryData>).forEach((key) => {
-            if (data[key] !== undefined) {
-              newHistory[key] = data[key]!;
-            }
-          });
-          // Only update chartHistory field to minimize re-renders
-          // Single setState for all chart updates (batching improvement)
-          return { chartHistory: newHistory };
+        set(() => {
+          // Replace entire chart history with provided complete data
+          // This is optimized for batch updates - all 5 chart types updated in one call
+          // Ensures single setState for all chart updates (batching improvement)
+          return { chartHistory: data };
         });
       },
       trimChartData: (maxPoints = 60) => {
@@ -177,15 +171,42 @@ const useAppStore = create<AppStore>()(
           },
         }));
       },
+      rebuildChartHistory: (metrics) =>
+        set(() => {
+          // Create initial chart history from current metrics
+          const now = new Date();
+          const displayTime = now.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          });
+
+          const createDataPoint = (value: number) => ({
+            time: now.toISOString(),
+            displayTime,
+            value,
+          });
+
+          const history: ChartHistory = {
+            cpu: metrics.cpuUsage !== undefined ? [createDataPoint(metrics.cpuUsage)] : [],
+            memory: metrics.memoryUsage !== undefined ? [createDataPoint(metrics.memoryUsage)] : [],
+            requests: metrics.totalRequests !== undefined ? [createDataPoint(metrics.totalRequests)] : [],
+            gpuUtil: metrics.gpuUsage !== undefined ? [createDataPoint(metrics.gpuUsage)] : [],
+            power: metrics.gpuPowerUsage !== undefined ? [createDataPoint(metrics.gpuPowerUsage)] : [],
+          };
+
+          return { chartHistory: history };
+        }),
     }),
     {
-      name: "llama-app-storage-v2",
+      name: "llama-app-storage-v3",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         models: state.models,
         activeModelId: state.activeModelId,
         settings: state.settings,
-        chartHistory: state.chartHistory,
+        // ❌ chartHistory removed from persistence to avoid blocking I/O and 500ms delays on startup
+        // Transient data should be rebuilt from live metrics instead
       }),
     }
   )

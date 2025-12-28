@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useEffectEvent as ReactUseEffectEvent } from 'react';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useStore } from '@/lib/store';
-import { useEffectEvent } from '@/hooks/use-effect-event';
 
 const LogsPage = () => {
   const { requestLogs, isConnected } = useWebSocket();
@@ -13,7 +12,7 @@ const LogsPage = () => {
   const [maxLines, setMaxLines] = useState(50);
 
   // Request logs on mount - using useEffectEvent for stability
-  const requestLogsIfConnected = useEffectEvent(() => {
+  const requestLogsIfConnected = ReactUseEffectEvent(() => {
     if (isConnected) {
       requestLogs();
     }

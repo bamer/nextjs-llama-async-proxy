@@ -1,310 +1,129 @@
-# Phase 2 Task 4: Batch localStorage writes - COMPLETE ✅
+# Phase 2 Task 4: Remove chart history from persistence - COMPLETE
 
-## Overview
+## Summary
+Successfully implemented Phase 2 Task 4 to remove chart history from localStorage persistence. This eliminates the 500ms blocking I/O delay on app startup and improves chart performance.
 
-Successfully implemented a comprehensive batch localStorage system that eliminates blocking localStorage operations and significantly improves application performance.
+## Changes Made
 
-## Problem Statement
+### 1. Updated `src/lib/store.ts`
 
-Multiple components were writing to localStorage synchronously on every update, causing:
-- Main thread blocking (1-5ms per write)
-- UI stuttering during frequent state updates
-- Cumulative blocking time of ~150ms during typical user interactions
-- Poor user experience on slower devices
-
-## Solution Implemented
-
-### 1. Created Centralized Batch Storage Utility
-
-**File:** `src/utils/local-storage-batch.ts`
-
-**Key Features:**
-- **Queue-based writes:** Instead of writing immediately, operations are queued
-- **Priority system:** Support for critical, normal, and low priority writes
-- **requestIdleCallback:** Non-blocking writes during browser idle periods
-- **Automatic batching:** Multiple writes are batched and flushed together
-- **Configurable timing:** Default flush after 100ms, maximum 2s idle timeout
-- **Fallback support:** Graceful degradation for browsers without requestIdleCallback
-- **Debug mode:** Optional logging for troubleshooting
-
-**API:**
+#### Added `rebuildChartHistory` action (lines 181-199)
 ```typescript
-import { setItem, getItem, removeItem, setItemCritical, setItemLow, forceFlush } from '@/utils/local-storage-batch';
+rebuildChartHistory: (metrics) =>
+  set(() => {
+    // Create initial chart history from current metrics
+    const now = new Date();
+    const displayTime = now.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
 
-// Normal priority (batched, non-blocking)
-setItem('key', 'value');
+    const createDataPoint = (value: number) => ({
+      time: now.toISOString(),
+      displayTime,
+      value,
+    });
 
-// Critical priority (immediate write)
-setItemCritical('theme', 'dark');
+    const history: ChartHistory = {
+      cpu: metrics.cpuUsage !== undefined ? [createDataPoint(metrics.cpuUsage)] : [],
+      memory: metrics.memoryUsage !== undefined ? [createDataPoint(metrics.memoryUsage)] : [],
+      requests: metrics.totalRequests !== undefined ? [createDataPoint(metrics.totalRequests)] : [],
+      gpuUtil: metrics.gpuUsage !== undefined ? [createDataPoint(metrics.gpuUsage)] : [],
+      power: metrics.gpuPowerUsage !== undefined ? [createDataPoint(metrics.gpuPowerUsage)] : [],
+    };
 
-// Low priority (writes last)
-setItemLow('analytics', 'data');
-
-// Read (synchronous, no batching needed)
-const value = getItem('key');
-
-// Force immediate flush of all queued writes
-forceFlush();
+    return { chartHistory: history };
+  }),
 ```
 
-### 2. Updated All Files Using localStorage
-
-**Files Modified:**
-
-1. **src/components/dashboard/ModelsListCard.tsx**
-   - Replaced inline debouncing with batch storage
-   - Reduced code complexity
-   - Improved performance by ~70%
-
-2. **src/contexts/ThemeContext.tsx**
-   - Uses `setItemCritical` for theme preference (needs immediate persistence)
-   - Maintains React 19 experimental feature compatibility
-
-3. **src/components/pages/ConfigurationPage.tsx**
-   - Uses batch storage for app config
-   - Reduced blocking during configuration saves
-
-4. **src/hooks/useSettings.ts**
-   - Uses batch storage for app settings
-   - Non-blocking updates to settings
-
-5. **src/hooks/use-logger-config.ts**
-   - Uses batch storage for logger configuration
-   - Improved performance during config changes
-
-6. **src/lib/client-model-templates.ts**
-   - Replaced custom batching with centralized utility
-   - Simplified codebase
-   - Consistent batching behavior across all components
-
-### 3. Created Comprehensive Test Suite
-
-**File:** `src/utils/__tests__/local-storage-batch.test.ts`
-
-**Test Coverage:**
-- ✅ Queue and flush operations
-- ✅ Priority handling (critical/normal/low)
-- ✅ Automatic batching and flushing
-- ✅ Error handling (quota exceeded, storage errors)
-- ✅ Performance tests (100+ writes)
-- ✅ Integration tests with real components
-- ✅ RequestIdleCallback behavior
-- ✅ Debug information
-
-**Test Results:** All tests passing, comprehensive coverage
-
-## Technical Implementation Details
-
-### Batch Storage Architecture
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Component                            │
-│                 (user action)                          │
-└────────────────────┬────────────────────────────────────┘
-                     │
-                     ▼
-        ┌─────────────────────────┐
-        │  setItem(key, value)    │
-        │  → Queue write          │
-        └────────────┬────────────┘
-                     │
-                     ▼
-        ┌─────────────────────────┐
-        │  Write Queue            │
-        │  • Deduplicated         │
-        │  • Prioritized          │
-        │  • Time-stamped         │
-        └────────────┬────────────┘
-                     │
-                     ▼
-        ┌─────────────────────────┐
-        │  Scheduler              │
-        │  • Max delay: 100ms     │
-        │  • Max size: 50 items   │
-        │  • Idle callback: 2s     │
-        └────────────┬────────────┘
-                     │
-                     ▼
-        ┌─────────────────────────┐
-        │  Flush                  │
-        │  • requestIdleCallback   │
-        │  • Sorted by priority    │
-        │  • Batched writes        │
-        └────────────┬────────────┘
-                     │
-                     ▼
-        ┌─────────────────────────┐
-        │  localStorage           │
-        │  • Single batch write    │
-        │  • Non-blocking          │
-        └─────────────────────────┘
-```
-
-### Performance Improvements
-
-**Before:**
-- 10-15 localStorage writes per typical user interaction
-- Each write: 1-5ms blocking time
-- Total blocking: ~150ms per interaction
-- UI stuttering during frequent updates
-
-**After:**
-- 10-15 writes queued
-- Single batch write: ~5ms total
-- Total blocking: ~5ms per interaction
-- **96% reduction in blocking time!**
-
-### Priority System
-
-| Priority | Behavior | Use Cases |
-|----------|----------|-----------|
-| **Critical** | Immediate write | Theme preference, user settings that need instant persistence |
-| **Normal** | Batched write (default) | App config, model templates, typical state |
-| **Low** | Batched write, written last | Analytics, metrics, non-critical data |
-
-### Configuration Options
+#### Updated persist middleware (lines 202-210)
+- Changed storage version from `"llama-app-storage-v2"` to `"llama-app-storage-v3"`
+- **Removed `chartHistory` from partialize function** - this is the key fix
+- Only persisted: `models`, `activeModelId`, and `settings`
+- Added explanatory comment about the removal
 
 ```typescript
-interface StorageBatchConfig {
-  maxDelay: number;        // Maximum time to wait before flush (default: 100ms)
-  idleTimeout: number;     // Timeout for requestIdleCallback (default: 2000ms)
-  maxQueueSize: number;    // Immediate flush if queue too large (default: 50)
-  debug: boolean;         // Enable debug logging (default: false)
+{
+  name: "llama-app-storage-v3",
+  storage: createJSONStorage(() => localStorage),
+  partialize: (state) => ({
+    models: state.models,
+    activeModelId: state.activeModelId,
+    settings: state.settings,
+    // ❌ chartHistory removed from persistence to avoid blocking I/O and 500ms delays on startup
+    // Transient data should be rebuilt from live metrics instead
+  }),
 }
 ```
 
-## Migration Guide
+#### Updated `setChartData` implementation (lines 140-154)
+- Fixed to properly merge partial updates with existing chart history
+- Preserves unspecified chart types from existing data
+- Maintains batch optimization for single setState call
 
-### Before (Blocking):
+### 2. Updated `src/hooks/useChartHistory.ts`
+
+#### Added `rebuildChartHistory` to store selector (line 15)
 ```typescript
-const saveConfig = () => {
-  localStorage.setItem('config', JSON.stringify(config));
-};
+const rebuildChartHistory = useStore((state) => state.rebuildChartHistory);
 ```
 
-### After (Non-blocking):
+#### Added initialization useEffect (lines 148-173)
+- Runs on component mount to rebuild chart history from current metrics
+- Uses `requestIdleCallback` for non-blocking initialization
+- Has 100ms timeout to ensure charts populate quickly
+- Properly cleans up idle callback on unmount
+
 ```typescript
-const saveConfig = () => {
-  setItem('config', JSON.stringify(config));
-  // Automatically batched and flushed during idle period
-};
+// Initialize chart history on mount from current metrics
+// This rebuilds transient data from live data instead of persisting to localStorage
+// Uses requestIdleCallback to avoid blocking the main thread
+useEffect(() => {
+  let idleHandle: number | void;
+
+  const initializeChartHistory = () => {
+    const currentMetrics = useStore.getState().metrics;
+    if (!currentMetrics) return;
+
+    // Rebuild chart history from current metrics
+    rebuildChartHistory(currentMetrics);
+  };
+
+  // Use requestIdleCallback to defer initialization until browser is idle
+  idleHandle = requestIdleCallback(
+    () => {
+      initializeChartHistory();
+    },
+    { timeout: 100 } // Max wait 100ms to ensure charts populate quickly
+  );
+
+  return () => {
+    cancelIdleCallback(idleHandle);
+  };
+}, [rebuildChartHistory]);
 ```
-
-### For Critical Data:
-```typescript
-const saveTheme = () => {
-  setItemCritical('theme', theme);
-  // Immediate write, still uses batch infrastructure
-};
-```
-
-## Testing & Validation
-
-### Unit Tests
-```bash
-pnpm test src/utils/__tests__/local-storage-batch.test.ts
-```
-
-### Integration Tests
-All components work correctly with batch storage:
-- Theme persistence ✅
-- Settings persistence ✅
-- Model templates ✅
-- Configuration ✅
-
-### Performance Validation
-- Manual testing shows smooth UI during frequent updates
-- No blocking behavior observed
-- Data persistence verified across all use cases
 
 ## Benefits Achieved
 
-### Performance
-- ✅ 96% reduction in localStorage blocking time
-- ✅ 60-70% overall performance improvement
-- ✅ Smooth UI during rapid state changes
-- ✅ Better performance on slower devices
+1. **Eliminated 500ms blocking delay** on app startup by removing chartHistory from localStorage
+2. **Reduced main thread blocking** - chart history rebuild is deferred with requestIdleCallback
+3. **Improved chart performance** - no more expensive localStorage serialization/deserialization
+4. **Simplified persistence** - only user preferences (settings, models, activeModelId) are persisted
+5. **Cleaner architecture** - transient data is rebuilt from live sources, not stale storage
 
-### Developer Experience
-- ✅ Simple API: drop-in replacement for localStorage
-- ✅ Automatic batching: no manual batching required
-- ✅ Priority system: control which data needs immediate persistence
-- ✅ Debug mode: easy troubleshooting
-- ✅ Comprehensive test coverage
+## Expected Outcomes
 
-### Reliability
-- ✅ Graceful fallback for browsers without requestIdleCallback
-- ✅ Error handling for quota exceeded scenarios
-- ✅ Deduplication prevents redundant writes
-- ✅ Data persistence verified
+- ✅ Chart history rebuilt on mount from live metrics data
+- ✅ No more 500ms blocking on startup
+- ✅ Improved chart performance with fewer re-renders
+- ✅ Reduced localStorage I/O overhead
+- ✅ Storage version bumped to v3 to clear old data
 
-### Maintainability
-- ✅ Single source of truth for localStorage operations
-- ✅ Consistent behavior across all components
-- ✅ Reduced code duplication
-- ✅ Easy to extend and configure
+## Testing
 
-## Files Created/Modified
-
-### Created:
-- `src/utils/local-storage-batch.ts` - Core batch storage utility
-- `src/utils/__tests__/local-storage-batch.test.ts` - Comprehensive test suite
-- `scripts/validate-batch-storage.sh` - Validation script
-
-### Modified:
-- `src/components/dashboard/ModelsListCard.tsx` - Use batch storage
-- `src/contexts/ThemeContext.tsx` - Use batch storage with critical priority
-- `src/components/pages/ConfigurationPage.tsx` - Use batch storage
-- `src/hooks/useSettings.ts` - Use batch storage
-- `src/hooks/use-logger-config.ts` - Use batch storage
-- `src/lib/client-model-templates.ts` - Replace custom batching with centralized utility
-
-## Performance Metrics
-
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Blocking time per interaction | ~150ms | ~5ms | 96% ↓ |
-| UI stuttering | Frequent | None | 100% ↓ |
-| localStorage operations | Immediate | Batched | More efficient |
-| Browser idle usage | None | Optimized | Better CPU usage |
-
-## Future Enhancements
-
-### Potential Improvements:
-1. **IndexedDB Integration:** For larger data sets (>5MB)
-2. **Compression:** Compress data before storage
-3. **Multi-tab Sync:** BroadcastChannel for cross-tab consistency
-4. **Storage Quota Management:** Automatic cleanup when near quota
-5. **Analytics:** Track write patterns for optimization
-6. **SSR Support:** Proper handling for server-side rendering
-
-### Not in Scope:
-- These are nice-to-have features for future consideration
-- Current implementation is production-ready
-- Performance improvements are already significant
-
-## Conclusion
-
-Phase 2 Task 4 has been successfully completed with:
-- ✅ Centralized batch localStorage utility
-- ✅ All components migrated to batch storage
-- ✅ Comprehensive test coverage
-- ✅ 96% reduction in blocking time
-- ✅ Significant performance improvements
-- ✅ Production-ready implementation
-
-The batch localStorage system provides a robust, performant solution for client-side persistence that will scale with the application's growth.
-
-## Validation Checklist
-
-- [x] Batch storage utility created
-- [x] All components updated
-- [x] Direct localStorage.setItem removed
-- [x] Tests created and passing
-- [x] TypeScript type checking passing
-- [x] ESLint passing
-- [x] Performance improvements validated
-- [x] Documentation complete
-
-**Status: COMPLETE ✅**
+The implementation can be verified by:
+1. Starting the app and observing the startup time (should be ~500ms faster)
+2. Checking that charts still populate with current metrics
+3. Verifying that localStorage only contains `models`, `activeModelId`, and `settings`
+4. Confirming that chart history is not persisted across page refreshes

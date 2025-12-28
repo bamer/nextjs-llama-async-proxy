@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, useCallback, useTransition } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, useTransition, useEffectEvent as ReactUseEffectEvent } from 'react';
 import { Card, CardContent, Typography, Box, Grid } from "@mui/material";
 import { loadModelTemplates, saveModelTemplate, getModelTemplates, getModelTemplatesSync } from '@/lib/client-model-templates';
 import { useStore } from '@/lib/store';
 import { MemoizedModelItem } from './MemoizedModelItem';
 import { detectModelType, getModelTypeTemplates } from './MemoizedModelItem';
 import { setItem, getItem, setItemLow } from '@/utils/local-storage-batch';
-import { useEffectEvent } from '@/hooks/use-effect-event';
 
 interface ModelConfig {
   id: string;
@@ -67,7 +66,7 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
   }, [modelsList]);
 
   // Create stable callbacks for useEffect dependencies
-  const loadTemplatesWhenModelsChange = useEffectEvent(() => {
+  const loadTemplatesWhenModelsChange = ReactUseEffectEvent(() => {
     const currentModelsHash = computeModelsHash(modelsList);
     const shouldLoad = !templatesLoadedRef.current || currentModelsHash !== lastModelsHashRef.current;
 
@@ -82,7 +81,7 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
     }
   });
 
-  const clearOptimisticStatus = useEffectEvent(() => {
+  const clearOptimisticStatus = ReactUseEffectEvent(() => {
     setOptimisticStatus((prev: Record<string, string>) => {
       const updated: Record<string, string> = {};
       Object.keys(prev).forEach(modelId => {

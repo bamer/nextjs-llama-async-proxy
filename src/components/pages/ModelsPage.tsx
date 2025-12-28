@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useEffectEvent as ReactUseEffectEvent } from 'react';
 import { websocketServer } from '@/lib/websocket-client';
 
 interface Model {
@@ -23,47 +23,67 @@ const ModelsPage = () => {
   const [isRescanning, setIsRescanning] = useState(false);
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
 
-  // Load models on mount and subscribe to real-time updates
-  useEffect(() => {
-    // Initial load
-    loadModels();
-    
-    // Connect to WebSocket
-    websocketServer.connect();
-    
-    // Subscribe to model updates from Socket.IO
-    const handleModelsUpdate = (message: unknown) => {
-      if (
-        message &&
-        typeof message === "object" &&
-        "type" in message &&
-        "data" in message &&
-        message.type === "models" &&
-        Array.isArray(message.data)
-      ) {
-        console.log("📡 Models updated from WebSocket:", message.data);
-        setModels(message.data as Model[]);
-      }
-    };
-    
-    websocketServer.on('message', handleModelsUpdate);
-    
-    // Request models on connect
-    const handleConnect = () => {
-      console.log('📡 WebSocket connected, requesting models...');
-      websocketServer.requestModels();
-    };
-    
-    websocketServer.on('connect', handleConnect);
-    
-    // Cleanup
-    return () => {
-      websocketServer.off('message', handleModelsUpdate);
-      websocketServer.off('connect', handleConnect);
-    };
-  }, []);
+  // Use useEffectEvent for stable WebSocket callbacks
+  const handleModelsUpdate = ReactUseEffectEvent((message: unknown) => {
+    if (
+      message &&
+      typeof message === "object" &&
+      "type" in message &&
+      "data" in message &&
+      message.type === "models" &&
+      Array.isArray(message.data)
+    ) {
+      console.log("📡 Models updated from WebSocket:", message.data);
+      setModels(message.data as Model[]);
+    }
+  });
 
-  const loadModels = async () => {
+  const handleConnect = ReactUseEffectEvent(() => {
+    console.log('📡 WebSocket connected, requesting models...');
+    websocketServer.requestModels();
+  });
+
+  const startModel = ReactUseEffectEvent(async (modelName: string) => {
+    setLoadingStates(prev => ({ ...prev, [modelName]: true }));
+    try {
+      const response = await fetch(`/api/models/${modelName}/start`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        // Update model status
+        setModels(prev => prev.map(model =>
+          model.name === modelName ? { ...model, status: 'running' as const } : model
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to start model:', error);
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [modelName]: false }));
+    }
+  });
+
+  const stopModel = ReactUseEffectEvent(async (modelName: string) => {
+    setLoadingStates(prev => ({ ...prev, [modelName]: true }));
+    try {
+      const response = await fetch(`/api/models/${modelName}/stop`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        // Update model status
+        setModels(prev => prev.map(model =>
+          model.name === modelName ? { ...model, status: 'idle' as const } : model
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to stop model:', error);
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [modelName]: false }));
+    }
+  });
+
+  const loadModels = ReactUseEffectEvent(async () => {
     try {
       const response = await fetch('/api/models');
       if (response.ok) {
@@ -73,7 +93,25 @@ const ModelsPage = () => {
     } catch (error) {
       console.error('Failed to load models:', error);
     }
-  };
+  });
+
+  // Load models on mount and subscribe to real-time updates
+  useEffect(() => {
+    // Initial load
+    loadModels();
+
+    // Connect to WebSocket
+    websocketServer.connect();
+
+    websocketServer.on('message', handleModelsUpdate);
+    websocketServer.on('connect', handleConnect);
+
+    // Cleanup
+    return () => {
+      websocketServer.off('message', handleModelsUpdate);
+      websocketServer.off('connect', handleConnect);
+    };
+  }, [loadModels, handleModelsUpdate, handleConnect]);
 
   const discoverModels = async () => {
     setIsDiscovering(true);
@@ -117,48 +155,6 @@ const ModelsPage = () => {
       console.error('Failed to rescan models:', error);
     } finally {
       setIsRescanning(false);
-    }
-  };
- 
- 
-
-  const startModel = async (modelName: string) => {
-    setLoadingStates(prev => ({ ...prev, [modelName]: true }));
-    try {
-      const response = await fetch(`/api/models/${modelName}/start`, {
-        method: 'POST',
-      });
-
-      if (response.ok) {
-        // Update model status
-        setModels(prev => prev.map(model =>
-          model.name === modelName ? { ...model, status: 'running' as const } : model
-        ));
-      }
-    } catch (error) {
-      console.error('Failed to start model:', error);
-    } finally {
-      setLoadingStates(prev => ({ ...prev, [modelName]: false }));
-    }
-  };
-
-  const stopModel = async (modelName: string) => {
-    setLoadingStates(prev => ({ ...prev, [modelName]: true }));
-    try {
-      const response = await fetch(`/api/models/${modelName}/stop`, {
-        method: 'POST',
-      });
-
-      if (response.ok) {
-        // Update model status
-        setModels(prev => prev.map(model =>
-          model.name === modelName ? { ...model, status: 'idle' as const } : model
-        ));
-      }
-    } catch (error) {
-      console.error('Failed to stop model:', error);
-    } finally {
-      setLoadingStates(prev => ({ ...prev, [modelName]: false }));
     }
   };
 

@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useEffectEvent as ReactUseEffectEvent } from "react";
 import { useStore } from "@/lib/store";
-import { useEffectEvent } from "./use-effect-event";
 import { requestIdleCallback, cancelIdleCallback } from "@/utils/request-idle-callback";
 
 const DEBOUNCE_MS = 5000; // 5 seconds minimum between updates
@@ -12,6 +11,7 @@ export function useChartHistory() {
   const metrics = useStore((state) => state.metrics);
   const chartHistory = useStore((state) => state.chartHistory);
   const setChartData = useStore((state) => state.setChartData);
+  const rebuildChartHistory = useStore((state) => state.rebuildChartHistory);
 
   // Track last update time for debouncing
   const lastUpdateRef = useRef<number>(0);
@@ -50,41 +50,29 @@ export function useChartHistory() {
   const flushUpdates = useCallback(() => {
     const updates = accumulatedUpdatesRef.current;
 
-    // Create chart data points from accumulated values
-    const chartDataUpdates: Record<string, Array<{ time: string; displayTime: string; value: number }>> = {};
-
-    if (updates.cpu !== null) {
-      chartDataUpdates.cpu = [createDataPoint(updates.cpu)];
-    }
-    if (updates.memory !== null) {
-      chartDataUpdates.memory = [createDataPoint(updates.memory)];
-    }
-    if (updates.requests !== null) {
-      chartDataUpdates.requests = [createDataPoint(updates.requests)];
-    }
-    if (updates.gpuUtil !== null) {
-      chartDataUpdates.gpuUtil = [createDataPoint(updates.gpuUtil)];
-    }
-    if (updates.power !== null) {
-      chartDataUpdates.power = [createDataPoint(updates.power)];
-    }
-
-    // Merge with existing chart history (limit to 60 points per chart)
-    const mergedData = Object.fromEntries(
-      Object.entries(chartDataUpdates).map(([key, newPoints]) => [
-        key,
-        [
-          ...chartHistory[key as keyof typeof chartHistory],
-          ...newPoints,
-        ].slice(-60),
-      ])
-    );
+    // Create complete ChartHistoryData with all 5 chart types
+    // Always provide complete data structure to setChartData action
+    const completeChartData = {
+      cpu: updates.cpu !== null
+        ? [...chartHistory.cpu, createDataPoint(updates.cpu)].slice(-60)
+        : chartHistory.cpu,
+      memory: updates.memory !== null
+        ? [...chartHistory.memory, createDataPoint(updates.memory)].slice(-60)
+        : chartHistory.memory,
+      requests: updates.requests !== null
+        ? [...chartHistory.requests, createDataPoint(updates.requests)].slice(-60)
+        : chartHistory.requests,
+      gpuUtil: updates.gpuUtil !== null
+        ? [...chartHistory.gpuUtil, createDataPoint(updates.gpuUtil)].slice(-60)
+        : chartHistory.gpuUtil,
+      power: updates.power !== null
+        ? [...chartHistory.power, createDataPoint(updates.power)].slice(-60)
+        : chartHistory.power,
+    };
 
     // Update store with all chart data in one transaction
-    // This is the key batching improvement - single store update instead of 5 separate calls
-    if (Object.keys(mergedData).length > 0) {
-      setChartData(mergedData);
-    }
+    // This is key batching improvement - single store update instead of 5 separate calls
+    setChartData(completeChartData);
 
     // Clear accumulated updates
     accumulatedUpdatesRef.current = {
@@ -98,12 +86,12 @@ export function useChartHistory() {
 
   // Use useEffectEvent for flushUpdates to keep it stable
   // This allows processMetrics to call flushUpdates without recreating it
-  const flushUpdatesStable = useEffectEvent(flushUpdates);
+  const flushUpdatesStable = ReactUseEffectEvent(flushUpdates);
 
   // Accumulate metrics without updating store immediately
   // This avoids calling setState on every metrics change
   // Using useEffectEvent to make this function stable
-  const processMetrics = useEffectEvent(() => {
+  const processMetrics = ReactUseEffectEvent(() => {
     // Access latest metrics from store directly (not from closure)
     const currentMetrics = useStore.getState().metrics;
     if (!currentMetrics) return;
@@ -143,6 +131,33 @@ export function useChartHistory() {
     // Update last update time
     lastUpdateRef.current = now;
   });
+
+  // Initialize chart history on mount from current metrics
+  // This rebuilds transient data from live data instead of persisting to localStorage
+  // Uses requestIdleCallback to avoid blocking the main thread
+  useEffect(() => {
+    let idleHandle: number | void;
+
+    const initializeChartHistory = () => {
+      const currentMetrics = useStore.getState().metrics;
+      if (!currentMetrics) return;
+
+      // Rebuild chart history from current metrics
+      rebuildChartHistory(currentMetrics);
+    };
+
+    // Use requestIdleCallback to defer initialization until browser is idle
+    idleHandle = requestIdleCallback(
+      () => {
+        initializeChartHistory();
+      },
+      { timeout: 100 } // Max wait 100ms to ensure charts populate quickly
+    );
+
+    return () => {
+      cancelIdleCallback(idleHandle);
+    };
+  }, [rebuildChartHistory]);
 
   // Process metrics whenever metrics data changes
   // processMetrics is stable via useEffectEvent, so only metrics is in deps
