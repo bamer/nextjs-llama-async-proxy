@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import { Card, CardContent, Typography, Box, Grid, Button, Divider, CircularProgress } from "@mui/material";
 import { Download, PowerSettingsNew } from "@mui/icons-material";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -11,10 +12,9 @@ interface QuickActionsCardProps {
   onStartServer: () => void;
   serverRunning?: boolean;
   serverLoading?: boolean;
-  downloading?: boolean;
 }
 
-export function QuickActionsCard({
+function QuickActionsCard({
   isDark,
   onDownloadLogs,
   onRestartServer,
@@ -23,42 +23,55 @@ export function QuickActionsCard({
   serverLoading = false,
   downloading = false
 }: QuickActionsCardProps) {
-  const actions: Array<{
+  const actions = useMemo<Array<{
     icon: React.ReactNode;
     label: string;
     description: string;
     color: string;
     onClick: () => void;
     disabled?: boolean;
-  }> = [
-    {
-      icon: downloading ? <CircularProgress size={20} color="inherit" /> : <Download />,
-      label: downloading ? 'Downloading...' : 'Download Logs',
-      description: 'Export system logs',
-      color: 'info',
-      onClick: onDownloadLogs,
-      disabled: downloading,
-    },
-  ];
+  }>>(() => {
+    const baseActions: Array<{
+      icon: React.ReactNode;
+      label: string;
+      description: string;
+      color: string;
+      onClick: () => void;
+      disabled?: boolean;
+    }> = [
+      {
+        icon: downloading ? <CircularProgress size={20} color="inherit" /> : <Download />,
+        label: downloading ? 'Downloading...' : 'Download Logs',
+        description: 'Export system logs',
+        color: 'info',
+        onClick: onDownloadLogs,
+        disabled: downloading,
+      },
+    ];
 
-  if (serverRunning) {
-    actions.push({
-      icon: <PowerSettingsNew />,
-      label: 'Restart Server',
-      description: 'Restart llama-server',
-      color: 'warning',
-      onClick: onRestartServer,
-    });
-  } else {
-    actions.push({
-      icon: <PowerSettingsNew />,
-      label: serverLoading ? 'Starting...' : 'Start Server',
-      description: 'Start llama-server',
-      color: 'success',
-      onClick: onStartServer,
-      disabled: serverLoading,
-    });
-  }
+    if (serverRunning) {
+      baseActions.push({
+        icon: <PowerSettingsNew />,
+        label: 'Restart Server',
+        description: 'Restart llama-server',
+        color: 'warning',
+        onClick: onRestartServer,
+      });
+    } else {
+      baseActions.push({
+        icon: <PowerSettingsNew />,
+        label: serverLoading ? 'Starting...' : 'Start Server',
+        description: 'Start llama-server',
+        color: 'success',
+        onClick: onStartServer,
+        disabled: serverLoading,
+      });
+    }
+
+    return baseActions;
+  }, [downloading, serverRunning, serverLoading, onDownloadLogs, onRestartServer, onStartServer]);
+
+  const lastUpdate = useMemo(() => new Date().toLocaleString(), []);
 
   return (
     <Card sx={{
@@ -116,10 +129,19 @@ export function QuickActionsCard({
             Last Update
           </Typography>
           <Typography variant="body2" fontWeight="medium">
-            {new Date().toLocaleString()}
+            {lastUpdate}
           </Typography>
         </Box>
       </CardContent>
     </Card>
   );
 }
+
+const MemoizedQuickActionsCard = memo(QuickActionsCard, (prev, next) => {
+  return prev.isDark === next.isDark &&
+         prev.downloading === next.downloading &&
+         prev.serverRunning === next.serverRunning &&
+         prev.serverLoading === next.serverLoading;
+});
+
+export default MemoizedQuickActionsCard;

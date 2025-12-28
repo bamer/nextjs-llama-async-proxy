@@ -105,15 +105,20 @@ const MemoizedPerformanceChart = memo(function PerformanceChart({
   xAxisType = 'band',
   showAnimation = true
 }: PerformanceChartProps) {
-  // Check if any dataset has data
-  const hasData = useMemo(() => datasets.some((dataset) => dataset.data.length > 0), [datasets]);
+  // Check if any dataset has data and has valid data points
+  const hasData = useMemo(() => {
+    const hasAnyData = datasets.some((dataset) => dataset.data.length > 0);
 
-  // Return empty state if no data
-  if (!hasData) {
-    return <EmptyStateCard title={title} isDark={isDark} />;
-  }
+    // Additional check: ensure first dataset has at least 2 points for proper rendering
+    if (hasAnyData) {
+      const firstDataset = datasets.find((d) => d.data.length > 0);
+      return firstDataset !== undefined && firstDataset.data.length >= 2;
+    }
 
-  // Memoize expensive data merging operation
+    return false;
+  }, [datasets]);
+
+  // Memoize expensive data merging operation (ALWAYS call this hook before any conditional logic)
   const mergedData = useMemo(() => {
     const firstDataset = datasets.find((d) => d.data.length > 0);
     if (!firstDataset) return [];
@@ -131,7 +136,12 @@ const MemoizedPerformanceChart = memo(function PerformanceChart({
     });
   }, [datasets]);
 
-  // Memoize series configuration
+  // Additional validation: check if merged data has enough points for rendering
+  const hasValidMergedData = useMemo(() => {
+    return mergedData.length >= 2;
+  }, [mergedData]);
+
+  // Memoize series configuration (ALWAYS call this hook before any conditional logic)
   const series = useMemo(() => {
     return datasets.map(s => ({
       dataKey: s.dataKey,
@@ -144,7 +154,7 @@ const MemoizedPerformanceChart = memo(function PerformanceChart({
     }));
   }, [datasets, isDark, showAnimation]);
 
-  // Memoize card styles
+  // Memoize card styles (ALWAYS call this hook before any conditional logic)
   const cardStyles = useMemo(() => ({
     background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
     backdropFilter: 'blur(10px)' as const,
@@ -152,18 +162,30 @@ const MemoizedPerformanceChart = memo(function PerformanceChart({
     height: '100%',
   }), [isDark]);
 
-  // Memoize tick label style
+  // Memoize tick label style (ALWAYS call this hook before any conditional logic)
   const tickLabelStyle = useMemo(() => ({
     fill: isDark ? '#cbd5e1' : '#64748b',
     fontSize: 12
   }), [isDark]);
 
-  // Memoize legend items
+  // Memoize legend items (ALWAYS call this hook before any conditional logic)
   const legendItems = useMemo(() => {
     return datasets.map((dataset) => (
       <LegendItem key={dataset.dataKey} dataset={dataset} isDark={isDark} />
     ));
   }, [datasets, isDark]);
+
+  // Ensure we have valid numeric values in mergedData before rendering (ALWAYS call this hook before any conditional logic)
+  const hasValidValues = useMemo(() => {
+    return datasets.some(dataset =>
+      dataset.data.some(point => typeof point.value === 'number' && !isNaN(point.value))
+    );
+  }, [datasets]);
+
+  // Return empty state if no data or insufficient data points (NOW AFTER ALL HOOKS)
+  if (!hasData || !hasValidMergedData || !hasValidValues) {
+    return <EmptyStateCard title={title} isDark={isDark} />;
+  }
 
   return (
     <Card sx={cardStyles}>
@@ -179,63 +201,47 @@ const MemoizedPerformanceChart = memo(function PerformanceChart({
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 1 }}>
             {legendItems}
           </Box>
-          <LineChart
-            dataset={mergedData}
-            xAxis={[{
-              scaleType: xAxisType,
-              dataKey: 'time',
-              label: 'Time',
-              tickLabelStyle: { fill: isDark ? '#cbd5e1' : '#64748b', fontSize: 11 }
-            }]}
-            yAxis={[{
-              label: 'Value',
-              tickLabelStyle: { fill: isDark ? '#cbd5e1' : '#64748b', fontSize: 11 }
-            }]}
-            series={series}
-            margin={{ top: 10, right: 30, left: 60, bottom: 45 }}
-            height={height - 40}
+          {/* Wrapper Box to ensure proper width calculations */}
+          <Box
+            sx={{
+              width: '100%',
+              minHeight: height - 40,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
           >
-            <ChartsGrid vertical={true} horizontal={true} />
-            <ChartsXAxis label="Time" tickLabelStyle={tickLabelStyle} />
-            <ChartsYAxis tickLabelStyle={tickLabelStyle} />
-            <ChartsTooltip />
-          </LineChart>
+            <LineChart
+              key={`chart-${mergedData.length}-${datasets.length}`}
+              dataset={mergedData}
+              xAxis={[{
+                scaleType: xAxisType,
+                dataKey: 'time',
+                label: 'Time',
+                tickLabelStyle: { fill: isDark ? '#cbd5e1' : '#64748b', fontSize: 11 }
+              }]}
+              yAxis={[{
+                label: 'Value',
+                tickLabelStyle: { fill: isDark ? '#cbd5e1' : '#64748b', fontSize: 11 }
+              }]}
+              series={series}
+              margin={{ top: 10, right: 30, left: 60, bottom: 45 }}
+              height={height - 40}
+              sx={{
+                width: '100%',
+                minHeight: 300
+              }}
+            >
+              <ChartsGrid vertical={true} horizontal={true} />
+              <ChartsXAxis label="Time" tickLabelStyle={tickLabelStyle} />
+              <ChartsYAxis tickLabelStyle={tickLabelStyle} />
+              <ChartsTooltip />
+            </LineChart>
+          </Box>
         </Box>
       </CardContent>
     </Card>
   );
-}, (prevProps, nextProps) => {
-  // Deep comparison for datasets array
-  // Re-render only if critical props change
-  if (prevProps.title !== nextProps.title) return false;
-  if (prevProps.description !== nextProps.description) return false;
-  if (prevProps.isDark !== nextProps.isDark) return false;
-  if (prevProps.height !== nextProps.height) return false;
-  if (prevProps.xAxisType !== nextProps.xAxisType) return false;
-  if (prevProps.showAnimation !== nextProps.showAnimation) return false;
-
-  // Deep compare datasets
-  if (prevProps.datasets.length !== nextProps.datasets.length) return false;
-
-  for (let i = 0; i < prevProps.datasets.length; i++) {
-    const prevDataset = prevProps.datasets[i];
-    const nextDataset = nextProps.datasets[i];
-
-    if (prevDataset.dataKey !== nextDataset.dataKey) return false;
-    if (prevDataset.label !== nextDataset.label) return false;
-    if (prevDataset.colorDark !== nextDataset.colorDark) return false;
-    if (prevDataset.colorLight !== nextDataset.colorLight) return false;
-
-    // Compare data arrays
-    if (prevDataset.data.length !== nextDataset.data.length) return false;
-    for (let j = 0; j < prevDataset.data.length; j++) {
-      if (prevDataset.data[j].value !== nextDataset.data[j].value) return false;
-      if (prevDataset.data[j].time !== nextDataset.data[j].time) return false;
-      if (prevDataset.data[j].displayTime !== nextDataset.data[j].displayTime) return false;
-    }
-  }
-
-  return true;
 });
 
 MemoizedPerformanceChart.displayName = 'PerformanceChart';

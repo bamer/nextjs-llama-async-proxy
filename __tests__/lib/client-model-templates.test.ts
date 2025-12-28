@@ -17,32 +17,10 @@ import {
 const mockFetch = jest.fn();
 global.fetch = mockFetch as unknown as typeof fetch;
 
-// Mock localStorage
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
-      store[key] = value.toString();
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
-  };
-})();
-
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
-});
-
 describe("client-model-templates", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     __resetCache__();
-    localStorageMock.clear();
     mockFetch.mockClear();
   });
 
@@ -138,7 +116,7 @@ describe("client-model-templates", () => {
       expect(result).toHaveProperty("llama2-7b");
     });
 
-    it("should cache templates in localStorage on successful load", async () => {
+    it("should cache templates in memory on successful load", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -153,36 +131,9 @@ describe("client-model-templates", () => {
 
       await loadModelTemplates();
 
-      expect(localStorageMock.getItem('model-templates-cache')).toBeDefined();
-      expect(localStorageMock.getItem('model-templates-timestamp')).toBeDefined();
-    });
-
-    it("should load from localStorage cache when API fails", async () => {
-      const cachedTemplates = {
-        "cached-model": "cached-template",
-      };
-
-      localStorageMock.setItem(
-        'model-templates-cache',
-        JSON.stringify(cachedTemplates)
-      );
-
-      mockFetch.mockRejectedValueOnce(new Error("Network error"));
-
-      const result = await loadModelTemplates();
-
-      expect(result).toHaveProperty("cached-model", "cached-template");
-    });
-
-    it("should handle invalid localStorage cache gracefully", async () => {
-      localStorageMock.setItem('model-templates-cache', 'invalid json');
-
-      mockFetch.mockRejectedValueOnce(new Error("Network error"));
-
-      const result = await loadModelTemplates();
-
-      // Should fall back to defaults
-      expect(result).toHaveProperty("llama2-7b");
+      // Should be in memory cache
+      const cached = getModelTemplatesSync();
+      expect(cached).toHaveProperty("custom-model", "custom-template");
     });
 
     it("should handle malformed JSON in API response", async () => {
@@ -347,7 +298,7 @@ describe("client-model-templates", () => {
       );
     });
 
-    it("should save to localStorage cache after successful save", async () => {
+    it("should update cache after successful save", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -367,8 +318,8 @@ describe("client-model-templates", () => {
 
       await saveModelTemplate("test-model", "test-template");
 
-      expect(localStorageMock.getItem('model-templates-cache')).toBeDefined();
-      expect(localStorageMock.getItem('model-templates-timestamp')).toBeDefined();
+      const cached = getModelTemplatesSync();
+      expect(cached).toHaveProperty("test-model", "test-template");
     });
 
     it("should preserve all templates when adding new one", async () => {
@@ -597,24 +548,8 @@ describe("client-model-templates", () => {
       expect(result).toHaveProperty("llama2-7b");
     });
 
-    it("should load from localStorage if cache not initialized", () => {
-      const cachedTemplates = {
-        "cached-model": "cached-template",
-      };
-
-      localStorageMock.setItem(
-        'model-templates-cache',
-        JSON.stringify(cachedTemplates)
-      );
-
-      const result = getModelTemplatesSync();
-
-      expect(result).toHaveProperty("cached-model", "cached-template");
-    });
-
     it("should return empty object if nothing cached", () => {
       __resetCache__();
-      localStorageMock.clear();
 
       const result = getModelTemplatesSync();
 
@@ -626,15 +561,6 @@ describe("client-model-templates", () => {
 
       expect(mockFetch).not.toHaveBeenCalled();
       expect(result).toBeDefined();
-    });
-
-    it("should handle invalid localStorage cache gracefully", () => {
-      localStorageMock.setItem('model-templates-cache', 'invalid json');
-
-      const result = getModelTemplatesSync();
-
-      expect(result).toBeDefined();
-      expect(typeof result).toBe("object");
     });
   });
 
@@ -661,25 +587,6 @@ describe("client-model-templates", () => {
 
       cached = getModelTemplatesSync();
       expect(cached).toEqual({});
-    });
-
-    it("should clear localStorage", async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: {
-            model_templates: {},
-          },
-        }),
-      });
-
-      await loadModelTemplates();
-
-      __resetCache__();
-
-      expect(localStorageMock.getItem('model-templates-cache')).toBeNull();
-      expect(localStorageMock.getItem('model-templates-timestamp')).toBeNull();
     });
 
     it("should be callable multiple times without errors", () => {
@@ -745,25 +652,8 @@ describe("client-model-templates", () => {
 
       await saveTemplatesFile(templates);
 
-      expect(localStorageMock.getItem('model-templates-cache')).toBeDefined();
-    });
-
-    it("should update timestamp after successful save", async () => {
-      const templates = { "model1": "template1" };
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-        }),
-      });
-
-      await saveTemplatesFile(templates);
-
-      const timestamp = localStorageMock.getItem('model-templates-timestamp');
-      expect(timestamp).toBeDefined();
-      const tsNum = parseInt(timestamp || "0");
-      expect(tsNum).toBeGreaterThan(0);
+      const cached = getModelTemplatesSync();
+      expect(cached).toHaveProperty("model1", "template1");
     });
 
     it("should handle empty templates object", async () => {
@@ -844,33 +734,6 @@ describe("client-model-templates", () => {
       // Reload should use cache
       const updated = await getModelTemplates();
       expect(updated).toHaveProperty("new-model", "new-template");
-    });
-
-    it("should handle localStorage persistence across function calls", async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: {
-            model_templates: {
-              "persistent": "value",
-            },
-          },
-        }),
-      });
-
-      await loadModelTemplates();
-
-      const cache1 = localStorageMock.getItem('model-templates-cache');
-      expect(cache1).toBeDefined();
-
-      // Clear and reload from localStorage
-      __resetCache__();
-      mockFetch.mockRejectedValueOnce(new Error("Network error"));
-
-      const templates = await loadModelTemplates();
-
-      expect(templates).toHaveProperty("persistent", "value");
     });
   });
 

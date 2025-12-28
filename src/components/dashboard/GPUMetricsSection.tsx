@@ -1,8 +1,9 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import { Box, Grid, Card, CardContent, Typography } from "@mui/material";
-import { PerformanceChart } from '@/components/charts/PerformanceChart';
-import { GPUUMetricsCard } from '@/components/charts/GPUUMetricsCard';
+import { PerformanceChart } from "@/components/charts/PerformanceChart";
+import { GPUUMetricsCard } from "@/components/charts/GPUUMetricsCard";
 
 interface GPUMetricsSectionProps {
   metrics: any;
@@ -10,11 +11,14 @@ interface GPUMetricsSectionProps {
   isDark: boolean;
 }
 
-export function GPUMetricsSection({ metrics, chartHistory, isDark }: GPUMetricsSectionProps) {
-  const hasGPUData = 
-    metrics?.gpuUsage !== undefined || 
-    metrics?.gpuPowerUsage !== undefined || 
-    metrics?.gpuMemoryUsed !== undefined;
+const MemoizedGPUMetricsSection = memo(function GPUMetricsSection({ metrics, chartHistory, isDark }: GPUMetricsSectionProps) {
+  const hasGPUData = useMemo(
+    () =>
+      metrics?.gpuUsage !== undefined ||
+      metrics?.gpuPowerUsage !== undefined ||
+      metrics?.gpuMemoryUsed !== undefined,
+    [metrics]
+  );
 
   if (!hasGPUData) {
     return (
@@ -78,4 +82,9 @@ export function GPUMetricsSection({ metrics, chartHistory, isDark }: GPUMetricsS
       </Card>
     </Grid>
   );
-}
+}, (prev, next) => {
+  return prev.isDark === next.isDark &&
+         JSON.stringify(prev.metrics) === JSON.stringify(next.metrics);
+});
+
+export default MemoizedGPUMetricsSection;

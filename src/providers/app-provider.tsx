@@ -8,6 +8,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { MotionLazyContainer } from "@/components/animate/motion-lazy-container";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { WebSocketProvider } from "@/providers/websocket-provider";
 
 // Create query client with optimized defaults
 const queryClient = new QueryClient({
@@ -31,9 +32,11 @@ export function AppProvider({ children }: AppProviderProps) {
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <MotionLazyContainer>
-            <ErrorBoundary>{children}</ErrorBoundary>
-          </MotionLazyContainer>
+          <WebSocketProvider>
+            <MotionLazyContainer>
+              <ErrorBoundary>{children}</ErrorBoundary>
+            </MotionLazyContainer>
+          </WebSocketProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </LocalizationProvider>

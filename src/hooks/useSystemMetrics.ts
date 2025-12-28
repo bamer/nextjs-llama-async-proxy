@@ -37,8 +37,9 @@ export function useSystemMetrics() {
     // Initial fetch
     fetchMetrics();
 
-    // Poll every 2 seconds
-    const interval = setInterval(fetchMetrics, 2000);
+    // Poll every 30 seconds as backup for WebSocket metrics
+    // WebSocket provides real-time updates, this ensures data is available if WebSocket fails
+    const interval = setInterval(fetchMetrics, 30000); // Changed from 2000 to 30000
 
     return () => clearInterval(interval);
   }, []);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useEffectEvent as ReactUseEffectEvent } from 'react';
+import { useState, useEffect, useMemo, useEffectEvent as ReactUseEffectEvent } from 'react';
 import {
   Box,
   Typography,
@@ -33,6 +33,7 @@ const MonitoringPage = () => {
       const data: MonitoringEntry = await response.json();
 
       setMetrics(data);
+      setError(null);
     } catch (err: any) {
       console.error('Failed to fetch monitoring data:', err);
       setError(err.message || 'Unknown error');
@@ -42,10 +43,32 @@ const MonitoringPage = () => {
   });
 
   useEffect(() => {
+    // Check if metrics are already available
+    if (metrics) {
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    // Fetch metrics data
     fetchMonitoringData();
+
+    // Set up polling interval
     const interval = setInterval(fetchMonitoringData, 30000);
-    return () => clearInterval(interval);
-  }, [fetchMonitoringData]);
+
+    // Fallback timeout in case data never arrives
+    const timer = setTimeout(() => {
+      if (loading && !metrics) {
+        setLoading(false);
+        setError("No metrics data available. Please ensure metrics are being collected.");
+      }
+    }, 3000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timer);
+    };
+  }, [metrics, loading, fetchMonitoringData]);
 
   const getLogLevelColor = (level: string) => {
     switch (level) {
@@ -56,6 +79,19 @@ const MonitoringPage = () => {
       default: return 'text-foreground';
     }
   };
+
+  // Memoize model metrics calculations to prevent unnecessary re-renders
+  const modelMetrics = useMemo(() => {
+    const runningModels = metrics.models.filter((m: any) => m.status === 'running');
+    const totalMemory = metrics.models.reduce((sum: number, m: any) => sum + (m.memory as number), 0);
+    const totalRequests = metrics.models.reduce((sum: number, m: any) => sum + (m.requests as number), 0);
+
+    return {
+      runningCount: runningModels.length,
+      totalMemory: totalMemory.toFixed(1),
+      totalRequests: totalRequests.toString()
+    };
+  }, [metrics.models]);
 
   if (loading) {
     return (
@@ -147,15 +183,15 @@ const MonitoringPage = () => {
               <TableBody>
                 <TableRow>
                    <TableCell>Available Models</TableCell>
-                   <TableCell>{metrics.models.filter((m: any) => m.status === 'running').length}</TableCell>
+                   <TableCell>{modelMetrics.runningCount}</TableCell>
                  </TableRow>
                 <TableRow>
                   <TableCell>Total Memory</TableCell>
-                  <TableCell>{`${metrics.models.reduce((sum: number, m: any) => sum + (m.memory as number), 0).toFixed(1)} GB`}</TableCell>
+                  <TableCell>{`${modelMetrics.totalMemory} GB`}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell>Total Requests</TableCell>
-                  <TableCell>{metrics.models.reduce((sum: number, m: any) => sum + (m.requests as number), 0).toString()}</TableCell>
+                  <TableCell>{modelMetrics.totalRequests}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell>Uptime</TableCell>

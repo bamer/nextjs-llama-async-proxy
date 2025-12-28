@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  reactStrictMode: true,
+  // CRITICAL FIX #1: DISABLE EXCESSIVE NEXT.JS LOGGING
+  devIndicators: false, // ↓ DISABLE Next.js debug logging
+
+  // CRITICAL FIX #2: ENABLE REACT STRICT MODE FOR BETTER PERFORMANCE
+  reactStrictMode: true, // ↓ ENABLE STRICT MODE (better error detection & performance)
   compress: true,
   images: {
     remotePatterns: [
@@ -30,12 +34,40 @@ const nextConfig: NextConfig = {
     return [];
   },
   experimental: {
-    optimizeCss: false,
+    optimizeCss: true, // ← CHANGE THIS (was false)
     scrollRestoration: true,
     optimizePackageImports: [
       "@mui/material",
-      "@mui/icons-material",
+      "@mui/material/Box",
+      "@mui/material/Card",
+      "@mui/material/Typography",
+      "@mui/material/Grid",
+      "@mui/material/Button",
+      "@mui/material/IconButton",
+      "@mui/material/Chip",
+      "@mui/material/TextField",
+      "@mui/material/Select",
+      "@mui/material/MenuItem",
+      "@mui/material/Checkbox",
+      "@mui/material/Pagination",
+      "@mui/material/CircularProgress",
+      "@mui/material/LinearProgress",
+      "@mui/material/Divider",
+      "@mui/material/Table",
+      "@mui/material/TableBody",
+      "@mui/material/TableCell",
+      "@mui/material/TableHead",
+      "@mui/material/TableRow",
+      "@mui/material/Paper",
+      "@mui/material/Progress",
+      "@mui/material/Skeleton",
+      "@mui/icons-material/MaterialIcons",
       "@mui/x-charts",
+      "@mui/x-charts/LineChart",
+      "@mui/x-charts/ChartsXAxis",
+      "@mui/x-charts/ChartsYAxis",
+      "@mui/x-charts/ChartsGrid",
+      "@mui/x-charts/ChartsTooltip",
       "lucide-react",
       "framer-motion",
       "@tanstack/react-query",
@@ -45,7 +77,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   staticPageGenerationTimeout: 120,
   output: "standalone",
-  transpilePackages: ["@mui/material", "@mui/icons-material"],
+  transpilePackages: [], // ← CHANGE THIS (was ["@mui/material", "@mui/icons-material"])
   compiler: {
     emotion: true,
     styledComponents: true,

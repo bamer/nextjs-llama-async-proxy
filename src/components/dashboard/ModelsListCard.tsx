@@ -23,8 +23,6 @@ interface ModelsListCardProps {
   onToggleModel: (modelId: string) => void;
 }
 
-const STORAGE_KEY = 'selected-templates';
-
 export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCardProps) {
   const [loadingModels, setLoadingModels] = useState<Record<string, boolean>>({});
   const [optimisticStatus, setOptimisticStatus] = useState<Record<string, string>>({});
@@ -40,16 +38,8 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
     return models.map(m => `${m.name}:${m.availableTemplates?.join(',')}`).join('|');
   }, []);
 
-  // Load saved templates from localStorage using lazy initial state
-  const [selectedTemplates, setSelectedTemplates] = useState<Record<string, string>>(() => {
-    try {
-      const saved = getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : {};
-    } catch (e) {
-      console.error('Failed to load saved templates from localStorage:', e);
-      return {};
-    }
-  });
+  // Selected templates stored in memory only
+  const [selectedTemplates, setSelectedTemplates] = useState<Record<string, string>>({});
 
   // Load model templates when models list changes (after initialization)
   // Skip initial render to avoid hydration issues
@@ -71,7 +61,6 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
     }
   }, [computeModelsHash, startTransition, modelsList]);
 
-  // Debounced localStorage write using batch storage utility
   const saveSelectedTemplate = (modelName: string, template: string | null) => {
     setSelectedTemplates(prev => {
       const updated = { ...prev };
@@ -80,9 +69,6 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
       } else {
         updated[modelName] = template;
       }
-
-      // Batch localStorage write using requestIdleCallback under the hood
-      setItem(STORAGE_KEY, JSON.stringify(updated));
 
       return updated;
     });

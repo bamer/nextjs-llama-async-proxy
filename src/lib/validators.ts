@@ -897,8 +897,15 @@ export const modelTemplateSchema = z
  */
 export const modelTemplatesConfigSchema = z
   .object({
-    model_templates: z.record(z.string(), z.string().min(1)).describe("Record of model templates"),
-    default_model: z.string().nullable().optional().describe("Default model template"),
+    model_templates: z
+      .record(z.string(), z.string().min(1).optional())
+      .optional()
+      .describe("Record of model templates with string template names"),
+    default_model: z
+      .string()
+      .nullable()
+      .optional()
+      .describe("Default model template name"),
   })
   .strict()
   .describe("Model templates configuration");

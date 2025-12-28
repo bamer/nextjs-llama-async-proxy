@@ -1,6 +1,7 @@
 import { Box, Typography, Chip, IconButton, Tooltip, CircularProgress } from "@mui/material";
 import { Refresh, Settings as SettingsIcon, CloudUpload } from "@mui/icons-material";
 import { m } from "framer-motion";
+import { memo, useCallback } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useRouter } from "next/navigation";
 
@@ -18,7 +19,17 @@ interface DashboardHeaderProps {
   refreshing?: boolean;
 }
 
-export function DashboardHeader({
+// Static styles for connection chip animation
+const connectionChipSx = {
+  fontWeight: "bold",
+  "@keyframes pulse": {
+    "0%": { boxShadow: "0 0 0 rgba(255, 82, 82, 0.7)" },
+    "70%": { boxShadow: "0 0 10px rgba(255, 82, 82, 0)" },
+    "100%": { boxShadow: "0 0 0 rgba(255, 82, 82, 0)" },
+  },
+};
+
+function DashboardHeader({
   isConnected,
   connectionState = 'disconnected',
   reconnectionAttempts = 0,
@@ -29,13 +40,13 @@ export function DashboardHeader({
   const { isDark } = useTheme();
   const router = useRouter();
 
-  const formatUptime = (seconds?: number): string => {
+  const formatUptime = useCallback((seconds?: number): string => {
     if (!seconds) return 'N/A';
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     return `${days}d ${hours}h ${mins}m`;
-  };
+  }, []);
 
   return (
     <>
@@ -84,18 +95,13 @@ export function DashboardHeader({
             size="small"
             variant="filled"
             sx={{
-              fontWeight: "bold",
+              ...connectionChipSx,
               animation:
                 !isConnected && connectionState !== 'reconnecting'
                   ? "pulse 2s infinite"
                   : connectionState === 'reconnecting'
                   ? "pulse 1s infinite"
                   : "none",
-              "@keyframes pulse": {
-                "0%": { boxShadow: "0 0 0 rgba(255, 82, 82, 0.7)" },
-                "70%": { boxShadow: "0 0 10px rgba(255, 82, 82, 0)" },
-                "100%": { boxShadow: "0 0 0 rgba(255, 82, 82, 0)" },
-              },
             }}
           />
           <Tooltip title="Refresh Dashboard">
@@ -113,3 +119,14 @@ export function DashboardHeader({
     </>
   );
 }
+
+const MemoizedDashboardHeader = memo(DashboardHeader, (prev, next) => {
+  return prev.isConnected === next.isConnected &&
+         prev.connectionState === next.connectionState &&
+         prev.reconnectionAttempts === next.reconnectionAttempts &&
+         prev.metrics?.uptime === next.metrics?.uptime &&
+         prev.onRefresh === next.onRefresh &&
+         prev.refreshing === next.refreshing;
+});
+
+export default MemoizedDashboardHeader;

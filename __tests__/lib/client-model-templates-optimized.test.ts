@@ -121,7 +121,7 @@ describe("client-model-templates-optimized", () => {
         promise3
       ]);
 
-      // All should return the same result
+      // All should return of same result
       expect(result1).toEqual(result2);
       expect(result2).toEqual(result3);
 
@@ -170,91 +170,6 @@ describe("client-model-templates-optimized", () => {
     });
   });
 
-  describe("loadModelTemplates - Non-blocking localStorage Writes", () => {
-    it("should not block on localStorage writes", async () => {
-      let storageWriteCount = 0;
-      const originalSetItem = localStorage.setItem.bind(localStorage);
-      localStorage.setItem = jest.fn((key: string, value: string) => {
-        storageWriteCount++;
-        // Simulate slow write
-        return new Promise((resolve) =>
-          setTimeout(() => {
-            originalSetItem(key, value);
-            resolve(undefined);
-          }, 1000)
-        );
-      }) as any;
-
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: { model_templates: { "model1": "template1" } }
-        })
-      });
-
-      const startTime = Date.now();
-      const result = await loadModelTemplates();
-      const endTime = Date.now();
-
-      // Result should return immediately, not wait for localStorage
-      expect(endTime - startTime).toBeLessThan(500);
-      expect(result).toBeDefined();
-
-      localStorage.setItem = originalSetItem;
-    });
-
-    it("should write to localStorage asynchronously", (done) => {
-      const setItemSpy = jest.spyOn(Storage.prototype, "setItem");
-
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: { model_templates: { "model1": "template1" } }
-        })
-      });
-
-      loadModelTemplates().then(() => {
-        jest.advanceTimersByTime(1000);
-
-        // Check if localStorage was called after request completes
-        setTimeout(() => {
-          expect(setItemSpy).toHaveBeenCalledWith(
-            "model-templates-cache",
-            expect.any(String)
-          );
-          setItemSpy.mockRestore();
-          done();
-        }, 100);
-      });
-    });
-
-    it("should handle localStorage write errors gracefully", async () => {
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
-      const setItemSpy = jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-        throw new Error("Storage quota exceeded");
-      });
-
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: { model_templates: { "model1": "template1" } }
-        })
-      });
-
-      const result = await loadModelTemplates();
-
-      // Should still return templates even if localStorage fails
-      expect(result).toBeDefined();
-      expect(consoleSpy).toHaveBeenCalled();
-
-      setItemSpy.mockRestore();
-      consoleSpy.mockRestore();
-    });
-  });
-
   describe("loadModelTemplates - Caching Strategies", () => {
     it("should cache templates after successful load", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -273,55 +188,18 @@ describe("client-model-templates-optimized", () => {
       expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
-    it("should fallback to localStorage cache on API failure", async () => {
-      const mockCache = JSON.stringify({ "cached-model": "cached-template" });
-      localStorage.setItem("model-templates-cache", mockCache);
-
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Network error"));
-
-      const result = await loadModelTemplates();
-
-      expect(result).toEqual({ "cached-model": "cached-template" });
-    });
-
-    it("should handle corrupt localStorage cache", async () => {
-      localStorage.setItem("model-templates-cache", "{invalid json}");
-
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Network error"));
-
+    it("should handle network errors gracefully", async () => {
       const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Network error"));
+
       const result = await loadModelTemplates();
 
       // Should fall back to defaults
+      expect(result).toBeDefined();
       expect(Object.keys(result).length).toBeGreaterThan(0);
       expect(consoleSpy).toHaveBeenCalled();
 
       consoleSpy.mockRestore();
-    });
-
-    it("should write timestamp to localStorage", (done) => {
-      const setItemSpy = jest.spyOn(Storage.prototype, "setItem");
-
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: { model_templates: { "model1": "template1" } }
-        })
-      });
-
-      loadModelTemplates().then(() => {
-        jest.advanceTimersByTime(1000);
-
-        setTimeout(() => {
-          expect(setItemSpy).toHaveBeenCalledWith(
-            "model-templates-timestamp",
-            expect.any(String)
-          );
-          setItemSpy.mockRestore();
-          done();
-        }, 100);
-      });
     });
 
     it("should merge API templates with defaults", async () => {
@@ -466,29 +344,23 @@ describe("client-model-templates-optimized", () => {
   });
 
   describe("getModelTemplatesSync", () => {
-    it("should return cached templates if available", () => {
-      const mockCache = JSON.stringify({ "sync-model": "sync-template" });
-      localStorage.setItem("model-templates-cache", mockCache);
-
-      const templates = getModelTemplatesSync();
-      expect(templates).toEqual({ "sync-model": "sync-template" });
-    });
-
     it("should return empty object if no cache", () => {
-      localStorage.removeItem("model-templates-cache");
-
       const templates = getModelTemplatesSync();
       expect(templates).toEqual({});
     });
 
-    it("should handle cache parse errors", () => {
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
-      localStorage.setItem("model-templates-cache", "{invalid}");
+    it("should return cached templates if available", async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: { model_templates: { "sync-model": "sync-template" } }
+        })
+      });
 
+      await loadModelTemplates();
       const templates = getModelTemplatesSync();
-      expect(templates).toEqual({});
-
-      consoleSpy.mockRestore();
+      expect(templates).toEqual({ "sync-model": "sync-template", "llama2-7b": "llama-2-7b", "llama2-13b": "llama-2-13b", "llama3-8b": "llama-3-8b", "llama3-70b": "llama-3-70b", "mistral-7b": "mistral-7b", "mistral-7b-instruct": "mistral-7b-instruct", "mistral-7b-uncensored": "mistral-7b-uncensored" });
     });
   });
 

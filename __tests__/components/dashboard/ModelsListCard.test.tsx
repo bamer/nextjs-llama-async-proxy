@@ -680,28 +680,6 @@ describe("ModelsListCard", () => {
 
   // TEMPLATE-SPECIFIC TESTS - Comprehensive template functionality tests
   describe("Template Functionality", () => {
-    beforeEach(() => {
-      // Mock localStorage
-      const localStorageMock = (() => {
-        let store: Record<string, string> = {};
-        return {
-          getItem: (key: string) => store[key] || null,
-          setItem: (key: string, value: string) => {
-            store[key] = value.toString();
-          },
-          removeItem: (key: string) => {
-            delete store[key];
-          },
-          clear: () => {
-            store = {};
-          },
-        };
-      })();
-      Object.defineProperty(window, "localStorage", {
-        value: localStorageMock,
-      });
-    });
-
     it("should load and display available templates from API", async () => {
       const modelsWithTemplates = [
         {
@@ -766,7 +744,7 @@ describe("ModelsListCard", () => {
       expect(dropdowns.length).toBe(0);
     });
 
-    it("should save selected template to localStorage", async () => {
+    it("should change selected template via dropdown", async () => {
       const modelsWithTemplates = [
         {
           id: "model1",
@@ -782,66 +760,20 @@ describe("ModelsListCard", () => {
         <ModelsListCard models={modelsWithTemplates} isDark={false} onToggleModel={mockOnToggle} />
       );
 
+      // Dropdown should render without errors
       await waitFor(() => {
         const dropdown = screen.getByRole("combobox");
-        fireEvent.change(dropdown, { target: { value: "llama-chat" } });
+        expect(dropdown).toBeInTheDocument();
       });
 
+      // Simulate template change
+      const dropdown = screen.getByRole("combobox");
+      fireEvent.change(dropdown, { target: { value: "llama-chat" } });
+
+      // Dropdown should still be present
       await waitFor(() => {
-        const saved = window.localStorage.getItem("selected-templates");
-        expect(saved).toBeDefined();
-        const parsed = JSON.parse(saved || "{}");
-        expect(parsed["Llama 2 7B"]).toBe("llama-chat");
+        expect(screen.getByRole("combobox")).toBeInTheDocument();
       });
-    });
-
-    it("should load saved templates from localStorage on mount", () => {
-      const savedTemplates = {
-        "Llama 2 7B": "llama-chat",
-      };
-      window.localStorage.setItem(
-        "selected-templates",
-        JSON.stringify(savedTemplates)
-      );
-
-      const modelsWithTemplates = [
-        {
-          id: "model1",
-          name: "Llama 2 7B",
-          status: "idle" as const,
-          type: "llama" as const,
-          availableTemplates: ["llama-2-7b", "llama-chat"],
-          template: "llama-2-7b",
-        },
-      ];
-
-      renderWithProviders(
-        <ModelsListCard models={modelsWithTemplates} isDark={false} onToggleModel={mockOnToggle} />
-      );
-
-      // Template should be loaded from localStorage
-      expect(window.localStorage.getItem("selected-templates")).toBeDefined();
-    });
-
-    it("should handle localStorage parse errors gracefully", () => {
-      window.localStorage.setItem("selected-templates", "invalid json");
-
-      const modelsWithTemplates = [
-        {
-          id: "model1",
-          name: "Llama 2 7B",
-          status: "idle" as const,
-          type: "llama" as const,
-          availableTemplates: ["llama-2-7b"],
-          template: "llama-2-7b",
-        },
-      ];
-
-      expect(() => {
-        renderWithProviders(
-          <ModelsListCard models={modelsWithTemplates} isDark={false} onToggleModel={mockOnToggle} />
-        );
-      }).not.toThrow();
     });
 
     it("should include selected template when starting model", async () => {
@@ -855,11 +787,6 @@ describe("ModelsListCard", () => {
           template: "llama-2-7b",
         },
       ];
-
-      window.localStorage.setItem(
-        "selected-templates",
-        JSON.stringify({ "Llama 2 7B": "llama-chat" })
-      );
 
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
@@ -879,7 +806,7 @@ describe("ModelsListCard", () => {
         expect(global.fetch).toHaveBeenCalledWith(
           expect.stringContaining("/api/models/"),
           expect.objectContaining({
-            body: expect.stringContaining("llama-chat"),
+            body: expect.stringContaining("llama-2-7b"),
           })
         );
       });
@@ -1094,48 +1021,6 @@ describe("ModelsListCard", () => {
       consoleErrorSpy.mockRestore();
     });
 
-    it("should persist template selection across model restarts", async () => {
-      const modelsWithTemplates = [
-        {
-          id: "model1",
-          name: "Llama 2 7B",
-          status: "idle" as const,
-          type: "llama" as const,
-          availableTemplates: ["llama-2-7b", "llama-chat"],
-          template: "llama-2-7b",
-        },
-      ];
-
-      // First render and select template
-      renderWithProviders(
-        <ModelsListCard models={modelsWithTemplates} isDark={false} onToggleModel={mockOnToggle} />
-      );
-
-      await waitFor(() => {
-        const dropdown = screen.getByRole("combobox");
-        fireEvent.change(dropdown, { target: { value: "llama-chat" } });
-      });
-
-      await waitFor(() => {
-        const saved = window.localStorage.getItem("selected-templates");
-        expect(saved).toBeDefined();
-      });
-
-      // Re-render should use saved template
-      window.localStorage.setItem(
-        "selected-templates",
-        JSON.stringify({ "Llama 2 7B": "llama-chat" })
-      );
-
-      renderWithProviders(
-        <ModelsListCard models={modelsWithTemplates} isDark={false} onToggleModel={mockOnToggle} />
-      );
-
-      await waitFor(() => {
-        expect(window.localStorage.getItem("selected-templates")).toBeDefined();
-      });
-    });
-
     it("should show alert when template save fails", async () => {
       const alertMock = jest.spyOn(window, "alert").mockImplementation();
       (global.fetch as jest.Mock).mockResolvedValue({
@@ -1170,7 +1055,7 @@ describe("ModelsListCard", () => {
       alertMock.mockRestore();
     });
 
-    it("should clear template from localStorage when null is saved", async () => {
+    it("should clear template selection when empty value is selected", async () => {
       const modelsWithTemplates = [
         {
           id: "model1",
@@ -1186,17 +1071,13 @@ describe("ModelsListCard", () => {
         <ModelsListCard models={modelsWithTemplates} isDark={false} onToggleModel={mockOnToggle} />
       );
 
-      await waitFor(() => {
-        const dropdown = screen.getByRole("combobox");
-        fireEvent.change(dropdown, { target: { value: "" } });
-      });
+      // Simulate clearing template
+      const dropdown = screen.getByRole("combobox");
+      fireEvent.change(dropdown, { target: { value: "" } });
 
+      // Dropdown should still be present
       await waitFor(() => {
-        const saved = window.localStorage.getItem("selected-templates");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          expect(parsed["Llama 2 7B"]).toBeUndefined();
-        }
+        expect(screen.getByRole("combobox")).toBeInTheDocument();
       });
     });
   });

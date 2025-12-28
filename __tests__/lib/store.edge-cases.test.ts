@@ -3,32 +3,8 @@ import { act } from '@testing-library/react';
 import { ModelConfig, SystemMetrics, LogEntry } from '@/types/global';
 import { ThemeMode } from '@/contexts/ThemeContext';
 
-// Mock localStorage
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
-      store[key] = value.toString();
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
-  };
-})();
-
-Object.defineProperty(global, 'localStorage', {
-  value: localStorageMock,
-});
-
 describe('store edge cases', () => {
   beforeEach(() => {
-    // Clear localStorage before each test
-    localStorageMock.clear();
     // Reset store state
     act(() => {
       useStore.setState({

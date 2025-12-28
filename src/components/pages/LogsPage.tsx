@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useEffectEvent as ReactUseEffectEvent } from 'react';
+import { useState, useEffect, useMemo, useEffectEvent as ReactUseEffectEvent } from 'react';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useStore } from '@/lib/store';
 
@@ -24,15 +24,18 @@ const LogsPage = () => {
 
 
 
-  const filteredLogs = logs.filter((log) => {
-    const source = log.source || (typeof log.context?.source === 'string' ? log.context.source : 'application');
-    const messageText = typeof log.message === 'string' ? log.message : JSON.stringify(log.message);
-    const matchesText =
-      messageText.toLowerCase().includes(filterText.toLowerCase()) ||
-      source.toLowerCase().includes(filterText.toLowerCase());
-    const matchesLevel = selectedLevel === 'all' || log.level === selectedLevel;
-    return matchesText && matchesLevel;
-  }).slice(0, maxLines);
+  const filteredLogs = useMemo(() =>
+    logs.filter((log) => {
+      const source = log.source || (typeof log.context?.source === 'string' ? log.context.source : 'application');
+      const messageText = typeof log.message === 'string' ? log.message : JSON.stringify(log.message);
+      const matchesText =
+        messageText.toLowerCase().includes(filterText.toLowerCase()) ||
+        source.toLowerCase().includes(filterText.toLowerCase());
+      const matchesLevel = selectedLevel === 'all' || log.level === selectedLevel;
+      return matchesText && matchesLevel;
+    }).slice(0, maxLines),
+    [logs, filterText, selectedLevel, maxLines]
+  );
 
   const clearLogs = () => {
     useStore.getState().clearLogs();

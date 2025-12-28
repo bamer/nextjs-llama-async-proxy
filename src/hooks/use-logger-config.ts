@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   loggerSettingsSchema,
   type LoggerSettings,
 } from '@/lib/validators';
-import { setItem as batchSetItem, getItem } from '@/utils/local-storage-batch';
 
 interface LoggerConfig {
   consoleLevel: string;
@@ -19,8 +18,6 @@ interface FieldErrors {
   [key: string]: string;
 }
 
-const STORAGE_KEY = 'logger-config';
-
 const DEFAULT_CONFIG: LoggerConfig = {
   consoleLevel: 'info',
   fileLevel: 'info',
@@ -35,17 +32,6 @@ export function useLoggerConfig() {
   const [config, setConfig] = useState<LoggerConfig>(DEFAULT_CONFIG);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    try {
-      const saved = getItem(STORAGE_KEY);
-      if (saved) {
-        setConfig(JSON.parse(saved));
-      }
-    } catch (error) {
-      console.error('Failed to load logger config:', error);
-    }
-  }, []);
 
   const validateConfig = (configToValidate: Partial<LoggerConfig>): FieldErrors => {
     const newFieldErrors: FieldErrors = {};
@@ -79,11 +65,6 @@ export function useLoggerConfig() {
     setFieldErrors(errors);
 
     setConfig(newConfig);
-    try {
-      batchSetItem(STORAGE_KEY, JSON.stringify(newConfig));
-    } catch (error) {
-      console.error('Failed to save logger config:', error);
-    }
   };
 
   const clearFieldError = (fieldName: string) => {
@@ -96,11 +77,6 @@ export function useLoggerConfig() {
   const resetConfig = () => {
     const newConfig = { ...DEFAULT_CONFIG };
     setConfig(newConfig);
-    try {
-      batchSetItem(STORAGE_KEY, JSON.stringify(newConfig));
-    } catch (error) {
-      console.error('Failed to reset logger config:', error);
-    }
   };
 
   const applyToLogger = () => {

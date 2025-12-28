@@ -57,26 +57,18 @@ const ConfigurationPage = () => {
     setSaveMessage('');
 
     try {
-      // Save to localStorage using batch storage (normal priority)
-      batchSetItem('app-config', JSON.stringify(config));
+      const response = await fetch('/api/config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(config),
+      });
 
-      // Also try to save to API if available
-      try {
-        const response = await fetch('/api/config', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(config),
-        });
-
-        if (response.ok) {
-          setSaveMessage('Configuration saved successfully!');
-        } else {
-          setSaveMessage('Configuration saved locally (API unavailable)');
-        }
-      } catch (apiError) {
-        setSaveMessage('Configuration saved locally (API unavailable)');
+      if (response.ok) {
+        setSaveMessage('Configuration saved successfully!');
+      } else {
+        setSaveMessage('Failed to save configuration');
       }
     } catch (error) {
       setSaveMessage('Failed to save configuration');

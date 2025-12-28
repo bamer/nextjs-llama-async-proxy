@@ -80,7 +80,10 @@ class WebSocketClient extends EventEmitter {
 
       this.socket.on('disconnect', (reason) => {
         this.isConnecting = false;
-        console.log('Socket.IO disconnected:', reason);
+        // Only log important disconnect reasons, not "io client disconnect"
+        if (reason !== 'io client disconnect') {
+          console.log('Socket.IO disconnected:', reason);
+        }
         this.emit('disconnect');
       });
 
@@ -104,7 +107,10 @@ class WebSocketClient extends EventEmitter {
     } else {
       // Queue message if not connected
       this.messageQueue.push({ event, data });
-      console.debug('Message queued (not connected):', event);
+      // Only log if queue is getting too large (> 10 messages)
+      if (this.messageQueue.length > 10) {
+        console.warn(`Message queue size: ${this.messageQueue.length}, some messages may not be sent`);
+      }
     }
   }
 
@@ -113,7 +119,10 @@ class WebSocketClient extends EventEmitter {
       return;
     }
 
-    console.debug(`Flushing ${this.messageQueue.length} queued messages`);
+    // Only log if queue is substantial (> 5 messages)
+    if (this.messageQueue.length > 5) {
+      console.debug(`Flushing ${this.messageQueue.length} queued messages`);
+    }
 
     while (this.messageQueue.length > 0) {
       const queued = this.messageQueue.shift();

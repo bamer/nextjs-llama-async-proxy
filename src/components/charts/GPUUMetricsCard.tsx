@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import { Card, CardContent, Typography, Box, Grid, LinearProgress } from "@mui/material";
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -14,19 +15,19 @@ interface GPUMetricsCardProps {
   isDark: boolean;
 }
 
-export function GPUMetricsCard({ metrics, isDark }: GPUMetricsCardProps) {
-  const cardStyle = {
+function GPUMetricsCard({ metrics, isDark }: GPUMetricsCardProps) {
+  const cardStyle = useMemo(() => ({
     background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
     backdropFilter: 'blur(10px)',
     border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`
-  };
+  }), [isDark]);
 
-  const infoBoxStyle = {
+  const infoBoxStyle = useMemo(() => ({
     p: 2,
     background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
     borderRadius: 2,
     border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`
-  };
+  }), [isDark]);
 
   if (!metrics || (metrics.gpuUsage === undefined && metrics.gpuName === undefined)) {
     return (
@@ -119,6 +120,13 @@ export function GPUMetricsCard({ metrics, isDark }: GPUMetricsCardProps) {
     </Card>
   );
 }
+
+const MemoizedGPUMetricsCard = memo(GPUMetricsCard, (prev, next) => {
+  return prev.isDark === next.isDark &&
+         JSON.stringify(prev.metrics) === JSON.stringify(next.metrics);
+});
+
+export default MemoizedGPUMetricsCard;
 
 export function GPUUMetricsCard({ metrics, isDark }: GPUMetricsCardProps) {
   return <GPUMetricsCard metrics={metrics} isDark={isDark} />;

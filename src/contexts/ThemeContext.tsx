@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode, useEffectEvent as ReactUseEffectEvent } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import { useMediaQuery } from "@mui/material";
 import { CssBaseline } from "@mui/material";
@@ -15,7 +15,6 @@ interface ThemeContextType {
   toggleTheme: () => void;
   isDark: boolean;
   currentTheme: any;
-  requestIdle: <T>(callback: () => T | Promise<T>) => Promise<T>;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -30,43 +29,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setMounted(true);
   }, []);
 
-  // Stable function to update next theme - prevents re-renders
-  const updateNextTheme = ReactUseEffectEvent((themeMode: ThemeMode) => {
-    requestIdleCallbackPromise(() => {
-      setNextTheme(themeMode);
-    });
-  });
-
-  // Stable function to save theme to localStorage - prevents re-renders
-  const saveTheme = ReactUseEffectEvent((themeMode: ThemeMode) => {
-    // Use batch storage with critical priority for theme preference
-    setItemCritical("theme", themeMode);
-    // Update next-themes using requestIdleCallbackPromise
-    requestIdleCallbackPromise(() => {
-      setNextTheme(themeMode);
-    });
-  });
-
-  // Request idle callback wrapper - provided to consumers for non-blocking operations
-  const requestIdle = <T,>(callback: () => T | Promise<T>): Promise<T> => {
-    return requestIdleCallbackPromise(callback);
-  };
-
+  // Update next-themes when mode changes
   useEffect(() => {
-    // Load saved theme from localStorage on mount
-    const savedTheme = getItem("theme") as ThemeMode | null;
-    if (savedTheme) {
-      setModeState(savedTheme);
-      updateNextTheme(savedTheme);
-    }
-  }, []); // No dependencies - runs once on mount
-
-  useEffect(() => {
-    // Save theme to localStorage and update next-themes
-    if (mode) {
-      saveTheme(mode);
-    }
-  }, [mode]); // saveTheme is stable (wrapped in useEffectEvent) - not in deps
+    setNextTheme(mode);
+  }, [mode, setNextTheme]);
 
   const setMode = (newMode: ThemeMode) => {
     setModeState(newMode);
@@ -89,7 +55,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ThemeContext.Provider value={{ mode, setMode, toggleTheme, isDark, currentTheme, requestIdle }}>
+    <ThemeContext.Provider value={{ mode, setMode, toggleTheme, isDark, currentTheme }}>
       <MuiThemeProvider theme={currentTheme}>
         <CssBaseline />
         {children}

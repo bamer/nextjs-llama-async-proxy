@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useEffectEvent as ReactUseEffectEvent } from 'react';
+import { useState, useEffect, useMemo, useEffectEvent as ReactUseEffectEvent } from 'react';
 import { websocketServer } from '@/lib/websocket-client';
 
 interface Model {
@@ -158,8 +158,12 @@ const ModelsPage = () => {
     }
   };
 
-  const filteredModels = models.filter(model =>
-    model.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredModels = useMemo(
+    () =>
+      models.filter(model =>
+        model.name.toLowerCase().includes(searchTerm.toLowerCase())
+      ),
+    [models, searchTerm]
   );
 
   return (

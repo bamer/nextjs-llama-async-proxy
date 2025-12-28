@@ -35,7 +35,7 @@ export async function loadModelTemplates(): Promise<Record<string, string>> {
   // Start new request
   loadingPromise = (async () => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds
 
     try {
       const response = await fetch("/api/model-templates", {
@@ -62,7 +62,7 @@ export async function loadModelTemplates(): Promise<Record<string, string>> {
 
       const errorObj = error as Error;
       if (errorObj.name === 'AbortError') {
-        console.error('loadModelTemplates timed out after 10 seconds');
+        console.error('loadModelTemplates timed out after 30 seconds');
       } else {
         console.error("Failed to load templates from API:", error);
       }
@@ -94,8 +94,6 @@ export async function saveTemplatesFile(templates: Record<string, string>): Prom
     // Update cache
     cachedTemplates = templates;
     isInitialized = true;
-    setItem('model-templates-cache', JSON.stringify(cachedTemplates));
-    setItem('model-templates-timestamp', Date.now().toString());
   } catch (error) {
     console.error('Failed to save templates:', error);
     throw error;
@@ -127,10 +125,6 @@ export async function saveModelTemplate(modelName: string, template: string | nu
     if (!result.success) {
       throw new Error(result.error || 'Failed to save template');
     }
-
-    // Update localStorage cache (non-blocking) using batch utility
-    setItem('model-templates-cache', JSON.stringify(cachedTemplates));
-    setItem('model-templates-timestamp', Date.now().toString());
   } catch (error) {
     console.error('Failed to save model template:', error);
     throw error;
@@ -162,18 +156,6 @@ export async function getModelTemplates(): Promise<Record<string, string>> {
  * Returns cached templates or empty object if not yet loaded
  */
 export function getModelTemplatesSync(): Record<string, string> {
-  if (!isInitialized || Object.keys(cachedTemplates).length === 0) {
-    // Try to load from localStorage cache
-    const cached = getItem('model-templates-cache');
-    if (cached) {
-      try {
-        cachedTemplates = JSON.parse(cached);
-        isInitialized = true;
-      } catch (e) {
-        console.error('Failed to parse cached templates:', e);
-      }
-    }
-  }
   return cachedTemplates;
 }
 
@@ -183,6 +165,4 @@ export function getModelTemplatesSync(): Record<string, string> {
 export function __resetCache__(): void {
   cachedTemplates = {};
   isInitialized = false;
-  removeItem('model-templates-cache');
-  removeItem('model-templates-timestamp');
 }
