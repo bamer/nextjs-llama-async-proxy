@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { setItem as batchSetItem, getItem } from '@/utils/local-storage-batch';
 
 export interface AppSettings {
   theme: 'light' | 'dark' | 'system';
@@ -26,7 +27,7 @@ export function useSettings() {
 
   useEffect(() => {
     // Load from localStorage
-    const saved = localStorage.getItem('app-settings');
+    const saved = getItem('app-settings');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -42,7 +43,7 @@ export function useSettings() {
   const updateSettings = (newSettings: Partial<AppSettings>) => {
     const updated = { ...settings, ...newSettings };
     setSettings(updated);
-    localStorage.setItem('app-settings', JSON.stringify(updated));
+    batchSetItem('app-settings', JSON.stringify(updated));
   };
 
   return {

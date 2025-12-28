@@ -12,6 +12,7 @@ import { GPUUMetricsCard } from '@/components/charts/GPUUMetricsCard';
 import { Loading, SkeletonMetricCard } from '@/components/ui';
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { MonitoringFallback } from "@/components/ui/error-fallbacks";
+import { useEffectEvent } from "@/hooks/use-effect-event";
 
 export default function MonitoringPage() {
   return (
@@ -61,21 +62,23 @@ function MonitoringContent() {
     return `${days}d ${hours}h ${mins}m`;
   };
 
-  const handleRefresh = () => {
+  // Use useEffectEvent to keep handler stable
+  const handleRefresh = useEffectEvent(() => {
     setRefreshing(true);
     console.log('Refreshing monitoring data');
-    if (metrics) {
+    const currentMetrics = useStore.getState().metrics;
+    if (currentMetrics) {
       const updatedMetrics = {
-        ...metrics,
-        cpuUsage: Math.max(5, Math.min(95, metrics.cpuUsage + Math.floor(Math.random() * 10) - 5)),
-        memoryUsage: Math.max(30, Math.min(90, metrics.memoryUsage + Math.floor(Math.random() * 15) - 7)),
-        totalRequests: metrics.totalRequests + Math.floor(Math.random() * 50),
+        ...currentMetrics,
+        cpuUsage: Math.max(5, Math.min(95, currentMetrics.cpuUsage + Math.floor(Math.random() * 10) - 5)),
+        memoryUsage: Math.max(30, Math.min(90, currentMetrics.memoryUsage + Math.floor(Math.random() * 15) - 7)),
+        totalRequests: currentMetrics.totalRequests + Math.floor(Math.random() * 50),
         timestamp: new Date().toISOString()
       };
       useStore.getState().setMetrics(updatedMetrics);
     }
     setTimeout(() => setRefreshing(false), 800);
-  };
+  });
 
   if (!metrics) {
     return (

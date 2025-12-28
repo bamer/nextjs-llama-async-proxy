@@ -4,6 +4,11 @@ declare global {
   interface Window {
     __APP_CONFIG__: typeof APP_CONFIG;
     __REDUX_DEVTOOLS_EXTENSION_COMPOSE__?: typeof compose;
+    requestIdleCallback?: (
+      callback: (deadline: { didTimeout: boolean; timeRemaining: () => number }) => void,
+      options?: { timeout?: number }
+    ) => number;
+    cancelIdleCallback?: (handle: number) => void;
   }
 
   namespace NodeJS {

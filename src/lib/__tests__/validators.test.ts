@@ -2,9 +2,9 @@ import {
   configSchema,
   parameterSchema,
   websocketSchema,
-  ConfigSchema,
-  ParameterSchema,
-  WebSocketSchema,
+  Config,
+  Parameter,
+  LegacyWebSocket,
 } from '@/lib/validators';
 
 describe('validators', () => {
@@ -346,8 +346,8 @@ describe('validators', () => {
   });
 
   describe('type exports', () => {
-    it('should export ConfigSchema type', () => {
-      const config: ConfigSchema = {
+    it('should export Config type', () => {
+      const config: Config = {
         models: [
           {
             id: '550e8400-e29b-41d4-a716-446655440000',
@@ -361,8 +361,8 @@ describe('validators', () => {
       expect(config).toBeDefined();
     });
 
-    it('should export ParameterSchema type', () => {
-      const parameter: ParameterSchema = {
+    it('should export Parameter type', () => {
+      const parameter: Parameter = {
         category: 'test',
         paramName: 'test',
       };
@@ -370,8 +370,8 @@ describe('validators', () => {
       expect(parameter).toBeDefined();
     });
 
-    it('should export WebSocketSchema type', () => {
-      const wsMessage: WebSocketSchema = {
+    it('should export LegacyWebSocket type', () => {
+      const wsMessage: LegacyWebSocket = {
         message: 'test',
         clientId: '550e8400-e29b-41d4-a716-446655440000',
         timestamp: 1234567890,

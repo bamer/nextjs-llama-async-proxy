@@ -1,3 +1,5 @@
+import { setItem, getItem, removeItem } from '@/utils/local-storage-batch';
+
 export interface ModelTemplate {
   name: string;
   template: string;
@@ -16,31 +18,6 @@ const DEFAULT_TEMPLATES: ModelTemplate[] = [
 let cachedTemplates: Record<string, string> = {};
 let isInitialized = false;
 let loadingPromise: Promise<Record<string, string>> | null = null;
-let writeTimeoutRef: NodeJS.Timeout | null = null;
-const writeQueue: Map<string, string> = new Map();
-
-/**
- * Schedule localStorage write using requestIdleCallback (non-blocking)
- */
-function scheduleLocalStorageWrite(key: string, value: string): void {
-  writeQueue.set(key, value);
-
-  if (!writeTimeoutRef) {
-    writeTimeoutRef = setTimeout(() => {
-      requestIdleCallback(() => {
-        writeQueue.forEach((val, k) => {
-          try {
-            localStorage.setItem(k, val);
-          } catch (error) {
-            console.error(`Failed to write ${k} to localStorage:`, error);
-          }
-        });
-        writeQueue.clear();
-        writeTimeoutRef = null;
-      }, { timeout: 2000 });
-    }, 100);
-  }
-}
 
 /**
  * Load model templates from API with timeout and deduplication
@@ -81,9 +58,9 @@ export async function loadModelTemplates(): Promise<Record<string, string>> {
       };
       isInitialized = true;
 
-      // Non-blocking localStorage write
-      scheduleLocalStorageWrite('model-templates-cache', JSON.stringify(cachedTemplates));
-      scheduleLocalStorageWrite('model-templates-timestamp', Date.now().toString());
+      // Non-blocking localStorage write using batch utility
+      setItem('model-templates-cache', JSON.stringify(cachedTemplates));
+      setItem('model-templates-timestamp', Date.now().toString());
 
       return cachedTemplates;
     } catch (error) {
@@ -97,7 +74,7 @@ export async function loadModelTemplates(): Promise<Record<string, string>> {
       }
 
       // Fallback to localStorage cache
-      const cached = localStorage.getItem('model-templates-cache');
+      const cached = getItem('model-templates-cache');
       if (cached) {
         try {
           cachedTemplates = JSON.parse(cached);
@@ -136,8 +113,8 @@ export async function saveTemplatesFile(templates: Record<string, string>): Prom
     // Update cache
     cachedTemplates = templates;
     isInitialized = true;
-    scheduleLocalStorageWrite('model-templates-cache', JSON.stringify(cachedTemplates));
-    scheduleLocalStorageWrite('model-templates-timestamp', Date.now().toString());
+    setItem('model-templates-cache', JSON.stringify(cachedTemplates));
+    setItem('model-templates-timestamp', Date.now().toString());
   } catch (error) {
     console.error('Failed to save templates:', error);
     throw error;
@@ -170,9 +147,9 @@ export async function saveModelTemplate(modelName: string, template: string | nu
       throw new Error(result.error || 'Failed to save template');
     }
 
-    // Update localStorage cache (non-blocking)
-    scheduleLocalStorageWrite('model-templates-cache', JSON.stringify(cachedTemplates));
-    scheduleLocalStorageWrite('model-templates-timestamp', Date.now().toString());
+    // Update localStorage cache (non-blocking) using batch utility
+    setItem('model-templates-cache', JSON.stringify(cachedTemplates));
+    setItem('model-templates-timestamp', Date.now().toString());
   } catch (error) {
     console.error('Failed to save model template:', error);
     throw error;
@@ -206,7 +183,7 @@ export async function getModelTemplates(): Promise<Record<string, string>> {
 export function getModelTemplatesSync(): Record<string, string> {
   if (!isInitialized || Object.keys(cachedTemplates).length === 0) {
     // Try to load from localStorage cache
-    const cached = localStorage.getItem('model-templates-cache');
+    const cached = getItem('model-templates-cache');
     if (cached) {
       try {
         cachedTemplates = JSON.parse(cached);
@@ -225,6 +202,6 @@ export function getModelTemplatesSync(): Record<string, string> {
 export function __resetCache__(): void {
   cachedTemplates = {};
   isInitialized = false;
-  localStorage.removeItem('model-templates-cache');
-  localStorage.removeItem('model-templates-timestamp');
+  removeItem('model-templates-cache');
+  removeItem('model-templates-timestamp');
 }

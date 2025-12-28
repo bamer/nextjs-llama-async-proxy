@@ -12,9 +12,9 @@ import {
   configSchema,
   parameterSchema,
   websocketSchema,
-  ConfigSchema,
-  ParameterSchema,
-  WebSocketSchema,
+  Config,
+  Parameter,
+  LegacyWebSocket,
 } from "@/lib/validators";
 
 describe("configSchema", () => {
@@ -419,11 +419,11 @@ describe("configSchema", () => {
   });
 
   /**
-   * Type Test: Verify inferred ConfigSchema type matches expected structure
+   * Type Test: Verify inferred Config type matches expected structure
    * Expected result: TypeScript should accept properly typed config object
    */
-  it("should correctly infer ConfigSchema type", () => {
-    const typedConfig: ConfigSchema = {
+  it("should correctly infer Config type", () => {
+    const typedConfig: Config = {
       models: [],
       parameters: [],
     };
@@ -601,11 +601,11 @@ describe("parameterSchema", () => {
   });
 
   /**
-   * Type Test: Verify inferred ParameterSchema type matches expected structure
+   * Type Test: Verify inferred Parameter type matches expected structure
    * Expected result: TypeScript should accept properly typed parameter object
    */
-  it("should correctly infer ParameterSchema type", () => {
-    const typedParameter: ParameterSchema = {
+  it("should correctly infer Parameter type", () => {
+    const typedParameter: Parameter = {
       category: "test",
       paramName: "test",
     };
@@ -915,11 +915,11 @@ describe("websocketSchema", () => {
   });
 
   /**
-   * Type Test: Verify inferred WebSocketSchema type matches expected structure
+   * Type Test: Verify inferred LegacyWebSocket type matches expected structure
    * Expected result: TypeScript should accept properly typed WebSocket message object
    */
-  it("should correctly infer WebSocketSchema type", () => {
-    const typedMessage: WebSocketSchema = {
+  it("should correctly infer LegacyWebSocket type", () => {
+    const typedMessage: LegacyWebSocket = {
       message: "test message",
       clientId: "550e8400-e29b-41d4-a716-446655440000",
       timestamp: 1234567890,
@@ -1240,17 +1240,17 @@ describe("Edge Cases and Additional Validation", () => {
    * Expected result: TypeScript should accept all exported types
    */
   it("should use all exported types correctly", () => {
-    const config: ConfigSchema = {
+    const config: Config = {
       models: [],
       parameters: [],
     };
 
-    const parameter: ParameterSchema = {
+    const parameter: Parameter = {
       category: "test",
       paramName: "test",
     };
 
-    const wsMessage: WebSocketSchema = {
+    const wsMessage: LegacyWebSocket = {
       message: "test",
       clientId: "550e8400-e29b-41d4-a716-446655440000",
       timestamp: Date.now(),

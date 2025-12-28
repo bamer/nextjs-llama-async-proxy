@@ -2,7 +2,7 @@
 
 import { MainLayout } from "@/components/layout/main-layout";
 import { useStore } from "@/lib/store";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, Typography, Box, Grid, Chip, LinearProgress, Button, IconButton, CircularProgress } from "@mui/material";
 import { useTheme } from "@/contexts/ThemeContext";
 import { PlayArrow, Stop, Refresh, Add } from "@mui/icons-material";
@@ -10,6 +10,7 @@ import { useWebSocket } from "@/hooks/use-websocket";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { ModelsFallback } from "@/components/ui/error-fallbacks";
 import { SkeletonCard } from "@/components/ui";
+import { useEffectEvent } from "@/hooks/use-effect-event";
 
 export default function ModelsPage() {
   const models = useStore((state) => state.models);
@@ -28,6 +29,7 @@ export default function ModelsPage() {
     return () => clearTimeout(timer);
   }, [requestModels]);
 
+  // Helper functions defined outside component (created once)
   const normalizeStatus = (status: string | { value?: string; args?: unknown; preset?: unknown } | unknown): string => {
     if (typeof status === 'string') {
       return status;
@@ -48,9 +50,10 @@ export default function ModelsPage() {
     }
   };
 
-  const handleStartModel = async (modelId: string) => {
+  // Use useEffectEvent for handlers to keep them stable
+  const handleStartModel = useEffectEvent(async (modelId: string) => {
     // Find the model to get its name
-    const model = models.find((m) => m.id === modelId);
+    const model = useStore.getState().models.find((m) => m.id === modelId);
     if (!model) {
       setError(`Model ${modelId} not found`);
       return;
@@ -58,10 +61,10 @@ export default function ModelsPage() {
 
     setLoading(modelId);
     setError(null);
-    
+
     try {
       useStore.getState().updateModel(modelId, { status: 'loading' });
-      
+
       // Make real API call to load the model in llama-server
       const response = await fetch(`/api/models/${encodeURIComponent(model.name)}/start`, {
         method: 'POST',
@@ -84,11 +87,11 @@ export default function ModelsPage() {
     } finally {
       setLoading(null);
     }
-  };
+  });
 
-  const handleStopModel = async (modelId: string) => {
+  const handleStopModel = useEffectEvent(async (modelId: string) => {
     // Find the model to get its name
-    const model = models.find((m) => m.id === modelId);
+    const model = useStore.getState().models.find((m) => m.id === modelId);
     if (!model) {
       setError(`Model ${modelId} not found`);
       return;
@@ -96,10 +99,10 @@ export default function ModelsPage() {
 
     setLoading(modelId);
     setError(null);
-    
+
     try {
       useStore.getState().updateModel(modelId, { status: 'loading' });
-      
+
       // Make real API call to unload the model from llama-server
       const response = await fetch(`/api/models/${encodeURIComponent(model.name)}/stop`, {
         method: 'POST',
@@ -121,13 +124,13 @@ export default function ModelsPage() {
     } finally {
       setLoading(null);
     }
-  };
+  });
 
-  const handleRefresh = () => {
+  const handleRefresh = useEffectEvent(() => {
     setRefreshing(true);
     requestModels();
     setTimeout(() => setRefreshing(false), 800);
-  };
+  });
 
   // Show skeleton loader during initial load
   if (isInitialLoading && models.length === 0) {

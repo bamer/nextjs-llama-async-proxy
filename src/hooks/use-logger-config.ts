@@ -3,6 +3,7 @@ import {
   loggerSettingsSchema,
   type LoggerSettings,
 } from '@/lib/validators';
+import { setItem as batchSetItem, getItem } from '@/utils/local-storage-batch';
 
 interface LoggerConfig {
   consoleLevel: string;
@@ -37,7 +38,7 @@ export function useLoggerConfig() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = getItem(STORAGE_KEY);
       if (saved) {
         setConfig(JSON.parse(saved));
       }
@@ -79,7 +80,7 @@ export function useLoggerConfig() {
 
     setConfig(newConfig);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newConfig));
+      batchSetItem(STORAGE_KEY, JSON.stringify(newConfig));
     } catch (error) {
       console.error('Failed to save logger config:', error);
     }
@@ -96,7 +97,7 @@ export function useLoggerConfig() {
     const newConfig = { ...DEFAULT_CONFIG };
     setConfig(newConfig);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newConfig));
+      batchSetItem(STORAGE_KEY, JSON.stringify(newConfig));
     } catch (error) {
       console.error('Failed to reset logger config:', error);
     }

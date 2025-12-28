@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useStore } from '@/lib/store';
+import { useEffectEvent } from '@/hooks/use-effect-event';
 
 const LogsPage = () => {
   const { requestLogs, isConnected } = useWebSocket();
@@ -11,12 +12,16 @@ const LogsPage = () => {
   const [selectedLevel, setSelectedLevel] = useState<string>('all');
   const [maxLines, setMaxLines] = useState(50);
 
-  // Request logs on mount
-  useEffect(() => {
+  // Request logs on mount - using useEffectEvent for stability
+  const requestLogsIfConnected = useEffectEvent(() => {
     if (isConnected) {
       requestLogs();
     }
-  }, [isConnected, requestLogs]);
+  });
+
+  useEffect(() => {
+    requestLogsIfConnected();
+  }, [isConnected, requestLogsIfConnected]);
 
 
 

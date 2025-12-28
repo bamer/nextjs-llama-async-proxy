@@ -6,6 +6,8 @@ import { loadModelTemplates, saveModelTemplate, getModelTemplates, getModelTempl
 import { useStore } from '@/lib/store';
 import { MemoizedModelItem } from './MemoizedModelItem';
 import { detectModelType, getModelTypeTemplates } from './MemoizedModelItem';
+import { setItem, getItem, setItemLow } from '@/utils/local-storage-batch';
+import { useEffectEvent } from '@/hooks/use-effect-event';
 
 interface ModelConfig {
   id: string;
@@ -43,7 +45,7 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
 
   // Load saved templates from localStorage (only on mount)
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = getItem(STORAGE_KEY);
     if (saved) {
       try {
         setSelectedTemplates(JSON.parse(saved));
@@ -64,23 +66,23 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
     return result;
   }, [modelsList]);
 
-  // Load templates only when models actually change (not on every render)
-  useEffect(() => {
+  // Create stable callbacks for useEffect dependencies
+  const loadTemplatesWhenModelsChange = useEffectEvent(() => {
     const currentModelsHash = computeModelsHash(modelsList);
     const shouldLoad = !templatesLoadedRef.current || currentModelsHash !== lastModelsHashRef.current;
 
     if (shouldLoad) {
       startTransition(async () => {
         await loadModelTemplates();
+        // Use current value from templatesForModels memo, not in dependency array
         setTemplates(templatesForModels);
         templatesLoadedRef.current = true;
         lastModelsHashRef.current = currentModelsHash;
       });
     }
-  }, [modelsList, templatesForModels]);
+  });
 
-  // Clear optimistic status when models update via WebSocket
-  useEffect(() => {
+  const clearOptimisticStatus = useEffectEvent(() => {
     setOptimisticStatus((prev: Record<string, string>) => {
       const updated: Record<string, string> = {};
       Object.keys(prev).forEach(modelId => {
@@ -94,9 +96,21 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
       });
       return updated;
     });
-  }, [modelsList]);
+  });
 
-  // Debounced localStorage write using requestIdleCallback
+  // Load templates only when models actually change (not on every render)
+  // Using useEffectEvent for callbacks so effect only depends on modelsList
+  useEffect(() => {
+    loadTemplatesWhenModelsChange();
+  }, [modelsList, loadTemplatesWhenModelsChange]);
+
+  // Clear optimistic status when models update via WebSocket
+  // Using useEffectEvent for callbacks so effect only depends on modelsList
+  useEffect(() => {
+    clearOptimisticStatus();
+  }, [modelsList, clearOptimisticStatus]);
+
+  // Debounced localStorage write using batch storage utility
   const saveSelectedTemplate = (modelName: string, template: string | null) => {
     setSelectedTemplates(prev => {
       const updated = { ...prev };
@@ -106,17 +120,8 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
         updated[modelName] = template;
       }
 
-      // Debounced localStorage write
-      if (typeof requestIdleCallback !== 'undefined') {
-        requestIdleCallback(() => {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-        });
-      } else {
-        // Fallback for browsers without requestIdleCallback
-        setTimeout(() => {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-        }, 100);
-      }
+      // Batch localStorage write using requestIdleCallback under the hood
+      setItem(STORAGE_KEY, JSON.stringify(updated));
 
       return updated;
     });

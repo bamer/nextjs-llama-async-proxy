@@ -3,6 +3,7 @@ import '@testing-library/jest-dom';
 import React from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { SettingsSystem } from '@/components/pages/settings/SettingsSystem';
+import type { MotionComponentProps } from '__tests__/types/mock-types';
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -23,7 +24,7 @@ jest.mock('@tanstack/react-query', () => ({
 
 jest.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    div: ({ children, ...props }: MotionComponentProps) => <div {...props}>{children}</div>,
   },
 }));
 

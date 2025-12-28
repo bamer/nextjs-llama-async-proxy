@@ -9,6 +9,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { SkeletonMetricCard } from '@/components/ui';
+import { useEffectEvent } from '@/hooks/use-effect-event';
 
 // Lazy load heavy components
 const PerformanceChart = lazy(() =>
@@ -87,8 +88,8 @@ export default function ModernDashboard() {
     return () => clearTimeout(timer);
   }, [sendMessage, isConnected]);
 
-  // React 19.2: Memoize event handlers with useCallback
-  const handleRefresh = useCallback(async () => {
+  // React 19.2: Use useEffectEvent for stable event handlers
+  const handleRefresh = useEffectEvent(() => {
     setRefreshing(true);
 
     // React 19.2: Use startTransition for non-blocking operations
@@ -99,9 +100,9 @@ export default function ModernDashboard() {
 
     // Simulate brief loading for better UX
     setTimeout(() => setRefreshing(false), 800);
-  }, [sendMessage]);
+  });
 
-  const handleDownloadLogs = useCallback(() => {
+  const handleDownloadLogs = useEffectEvent(() => {
     setDownloading(true);
 
     // React 19.2: Non-blocking download operation
@@ -110,9 +111,9 @@ export default function ModernDashboard() {
     });
 
     setTimeout(() => setDownloading(false), 800);
-  }, [sendMessage]);
+  });
 
-  const handleRestartServer = useCallback(() => {
+  const handleRestartServer = useEffectEvent(() => {
     setServerLoading(true);
 
     // React 19.2: Non-blocking restart operation
@@ -124,9 +125,9 @@ export default function ModernDashboard() {
       setServerRunning(true);
       setServerLoading(false);
     }, 2000);
-  }, [sendMessage]);
+  });
 
-  const handleStartServer = useCallback(() => {
+  const handleStartServer = useEffectEvent(() => {
     setServerLoading(true);
 
     // React 19.2: Non-blocking start operation
@@ -138,14 +139,14 @@ export default function ModernDashboard() {
       setServerRunning(true);
       setServerLoading(false);
     }, 2000);
-  }, [sendMessage]);
+  });
 
-  const handleToggleModel = useCallback((modelId: string) => {
+  const handleToggleModel = useEffectEvent((modelId: string) => {
     // React 19.2: Non-blocking model toggle
     startTransition(() => {
       sendMessage('toggle_model', { modelId });
     });
-  }, [sendMessage]);
+  });
 
   // React 19.2: Memoize expensive computations
   const activeModelsCount = useMemo(() => {

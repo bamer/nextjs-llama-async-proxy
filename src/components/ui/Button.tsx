@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface ButtonProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   className?: string;
   variant?: "default" | "outline" | "ghost" | "primary" | "secondary";
   disabled?: boolean;
@@ -29,13 +29,13 @@ export const Button = ({
   const baseClasses = "px-6 py-3 rounded-xl font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
   
   return (
-    <button 
+    <button
       className={`${baseClasses} ${variants[variant]} ${className}`}
       disabled={disabled}
       onClick={onClick}
       aria-label={ariaLabel}
     >
-      {children}
+      {children || null}
     </button>
   );
 };
@@ -82,7 +82,8 @@ export const ActivityMetricCard = ({
   unit = "",
   icon = "",
   trend,
-  isActive = true
+  isActive = true,
+  className = ""
 }: {
   title: string;
   value: number | string;
@@ -90,12 +91,13 @@ export const ActivityMetricCard = ({
   icon?: string;
   trend?: number;
   isActive?: boolean;
+  className?: string;
 }) => {
   return (
     <div
       className={`bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 text-slate-900 dark:text-slate-100 ${
         isActive ? "" : "opacity-60"
-      }`}
+      } ${className}`}
     >
       <div className="flex items-center gap-3 mb-4">
         <span className="text-xl">{icon}</span>

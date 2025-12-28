@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { setItem as batchSetItem, getItem } from '@/utils/local-storage-batch';
 
 interface Config {
   basePath: string;
@@ -46,7 +47,7 @@ const ConfigurationPage = () => {
 
   // Load config from localStorage on mount
   useEffect(() => {
-    const savedConfig = localStorage.getItem('app-config');
+    const savedConfig = getItem('app-config');
     if (savedConfig) {
       try {
         const parsedConfig = JSON.parse(savedConfig);
@@ -88,8 +89,8 @@ const ConfigurationPage = () => {
     setSaveMessage('');
 
     try {
-      // Save to localStorage
-      localStorage.setItem('app-config', JSON.stringify(config));
+      // Save to localStorage using batch storage (normal priority)
+      batchSetItem('app-config', JSON.stringify(config));
 
       // Also try to save to API if available
       try {

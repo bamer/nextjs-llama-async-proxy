@@ -36,6 +36,14 @@ interface AppState {
   chartHistory: ChartHistory;
 }
 
+interface ChartHistoryData {
+  cpu: ChartDataPoint[];
+  memory: ChartDataPoint[];
+  requests: ChartDataPoint[];
+  gpuUtil: ChartDataPoint[];
+  power: ChartDataPoint[];
+}
+
 interface AppActions {
   setModels: (models: ModelConfig[]) => void;
   addModel: (model: ModelConfig) => void;
@@ -51,6 +59,7 @@ interface AppActions {
   setError: (error: string | null) => void;
   clearError: () => void;
   addChartData: (type: 'cpu' | 'memory' | 'requests' | 'gpuUtil' | 'power', value: number) => void;
+  setChartData: (data: Partial<ChartHistoryData>) => void;
   trimChartData: (maxPoints?: number) => void;
   clearChartData: () => void;
 }
@@ -124,6 +133,21 @@ const useAppStore = create<AppStore>()(
             newHistory[type].shift();
           }
           // Only update chartHistory field to minimize re-renders
+          return { chartHistory: newHistory };
+        });
+      },
+      setChartData: (data) => {
+        set((state) => {
+          // Merge new data with existing chart history, preserving any unspecified keys
+          // This is optimized for batch updates - multiple chart types can be updated in one call
+          const newHistory = { ...state.chartHistory };
+          (Object.keys(data) as Array<keyof ChartHistoryData>).forEach((key) => {
+            if (data[key] !== undefined) {
+              newHistory[key] = data[key]!;
+            }
+          });
+          // Only update chartHistory field to minimize re-renders
+          // Single setState for all chart updates (batching improvement)
           return { chartHistory: newHistory };
         });
       },
