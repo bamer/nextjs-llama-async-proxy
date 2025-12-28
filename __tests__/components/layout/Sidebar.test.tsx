@@ -22,69 +22,78 @@ jest.mock('next/navigation', () => ({
 // Mock MUI components to handle text rendering properly
 jest.mock('@mui/material/ListItemText', () => ({
   __esModule: true,
-  default: ({ primary, ...props }: any) => (
-    <span data-mock-ListItemText {...props}>
-      {primary}
-    </span>
-  ),
+  default: (props: unknown) => {
+    const { primary } = props as { primary?: React.ReactNode };
+    return <span data-mock-ListItemText>{primary}</span>;
+  },
 }));
 
 jest.mock('@mui/material/ListItemButton', () => ({
   __esModule: true,
-  default: ({ children, selected, ...props }: any) => (
-    <button {...props} aria-selected={String(selected)}>
-      {children}
-    </button>
-  ),
+  default: (props: unknown) => {
+    const { children, selected } = props as { children?: React.ReactNode; selected?: boolean };
+    return <button aria-selected={selected}>{children}</button>;
+  },
 }));
 
 jest.mock('@mui/material/ListItemIcon', () => ({
   __esModule: true,
-  default: ({ children, ...props }: any) => (
-    <span {...props}>{children}</span>
-  ),
+  default: (props: unknown) => {
+    const { children } = props as { children?: React.ReactNode };
+    return <span>{children}</span>;
+  },
 }));
 
 jest.mock('@mui/material/List', () => ({
   __esModule: true,
-  default: ({ children, ...props }: any) => <ul {...props}>{children}</ul>,
+  default: (props: unknown) => {
+    const { children } = props as { children?: React.ReactNode };
+    return <ul>{children}</ul>;
+  },
 }));
 
 jest.mock('@mui/material/ListItem', () => ({
   __esModule: true,
-  default: ({ children, disablePadding, ...props }: any) => (
-    <li {...props}>{children}</li>
-  ),
+  default: (props: unknown) => {
+    const { children } = props as { children?: React.ReactNode };
+    return <li>{children}</li>;
+  },
 }));
 
 jest.mock('@mui/material/Drawer', () => ({
   __esModule: true,
-  default: ({ children, open, ...props }: any) => (
-    <div {...props} role="navigation">
-      {open && children}
-    </div>
-  ),
+  default: (props: unknown) => {
+    const { children, open } = props as { children?: React.ReactNode; open?: boolean };
+    return (
+      <div role="navigation">
+        {open && children}
+      </div>
+    );
+  },
 }));
 
 jest.mock('@mui/material/Typography', () => ({
   __esModule: true,
-  default: ({ children, variant, ...props }: any) => (
-    <span {...props}>{children}</span>
-  ),
+  default: (props: unknown) => {
+    const { children } = props as { children?: React.ReactNode };
+    return <span>{children}</span>;
+  },
 }));
 
 jest.mock('@mui/material/Box', () => ({
   __esModule: true,
-  default: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+  default: (props: unknown) => {
+    const { children } = props as { children?: React.ReactNode };
+    return <div>{children}</div>;
+  },
 }));
 
 jest.mock('@mui/material/IconButton', () => ({
   __esModule: true,
-  default: ({ children, onClick, ...props }: any) => (
-    <button {...props} onClick={onClick}>
-      {children}
-    </button>
-  ),
+  default: (props: unknown) => {
+    const { children, onClick } = props as { children?: React.ReactNode; onClick?: () => void };
+    return <button onClick={onClick}>{children}</button>;
+  },
 }));
 
 const theme = createTheme();

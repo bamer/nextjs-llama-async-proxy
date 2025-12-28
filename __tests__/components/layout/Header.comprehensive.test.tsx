@@ -56,9 +56,9 @@ describe('Header - Comprehensive Tests', () => {
 
     // Positive test: Verifies AppBar component is present
     it('renders app bar', () => {
-      const { container } = renderWithTheme(<Header />);
+      renderWithTheme(<Header />);
 
-      const appBar = container.querySelector('[role="banner"]');
+      const appBar = document.querySelector('[role="banner"]');
       expect(appBar).toBeInTheDocument();
     });
 
@@ -87,8 +87,8 @@ describe('Header - Comprehensive Tests', () => {
 
     // Positive test: Verifies logo icon (Rocket) is rendered
     it('renders logo icon', () => {
-      const { container } = renderWithTheme(<Header />);
-      const icons = container.querySelectorAll('svg');
+      renderWithTheme(<Header />);
+      const icons = document.querySelectorAll('svg');
       expect(icons.length).toBeGreaterThan(0);
     });
   });
@@ -122,17 +122,17 @@ describe('Header - Comprehensive Tests', () => {
   describe('Theme Integration', () => {
     // Positive test: Verifies dark mode styling
     it('applies dark mode styles when isDark is true', () => {
-      const { container } = renderWithTheme(<Header />, true);
+      renderWithTheme(<Header />, true);
 
-      const appBar = container.querySelector('[role="banner"]');
+      const appBar = document.querySelector('[role="banner"]');
       expect(appBar).toBeInTheDocument();
     });
 
     // Positive test: Verifies light mode styling
     it('applies light mode styles when isDark is false', () => {
-      const { container } = renderWithTheme(<Header />, false);
+      renderWithTheme(<Header />, false);
 
-      const appBar = container.querySelector('[role="banner"]');
+      const appBar = document.querySelector('[role="banner"]');
       expect(appBar).toBeInTheDocument();
     });
 
@@ -154,17 +154,17 @@ describe('Header - Comprehensive Tests', () => {
   describe('AppBar Configuration', () => {
     // Positive test: Verifies AppBar has fixed position
     it('applies fixed position to AppBar', () => {
-      const { container } = renderWithTheme(<Header />);
+      renderWithTheme(<Header />);
 
-      const appBar = container.querySelector('[role="banner"]');
+      const appBar = document.querySelector('[role="banner"]');
       expect(appBar).toBeInTheDocument();
     });
 
     // Positive test: Verifies AppBar has correct height (exercises sx callback)
     it('applies correct height to AppBar', () => {
-      const { container } = renderWithTheme(<Header />);
+      renderWithTheme(<Header />);
 
-      const appBar = container.querySelector('[role="banner"]');
+      const appBar = document.querySelector('[role="banner"]');
       expect(appBar).toBeInTheDocument();
       expect(appBar).toHaveStyle({ position: 'fixed' });
     });
@@ -193,9 +193,9 @@ describe('Header - Comprehensive Tests', () => {
 
     // Positive test: Verifies role attributes
     it('has correct role attributes', () => {
-      const { container } = renderWithTheme(<Header />);
+      renderWithTheme(<Header />);
 
-      const appBar = container.querySelector('[role="banner"]');
+      const appBar = document.querySelector('[role="banner"]');
       expect(appBar).toBeInTheDocument();
     });
   });
@@ -244,9 +244,9 @@ describe('Header - Comprehensive Tests', () => {
   describe('Component Composition', () => {
     // Positive test: Verifies correct DOM structure
     it('maintains correct DOM structure', () => {
-      const { container } = renderWithTheme(<Header />);
+      renderWithTheme(<Header />);
 
-      const appBar = container.querySelector('[role="banner"]');
+      const appBar = document.querySelector('[role="banner"]');
       expect(appBar).toBeInTheDocument();
       expect(appBar?.children.length).toBeGreaterThan(0);
     });

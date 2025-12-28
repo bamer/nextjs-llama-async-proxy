@@ -7,7 +7,10 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 jest.mock('framer-motion', () => ({
   m: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    div: (props: unknown) => {
+      const { children } = props as { children?: React.ReactNode };
+      return <div>{children}</div>;
+    },
   },
 }));
 
@@ -36,6 +39,7 @@ describe('LlamaServerSettingsTab', () => {
       top_p: 0.9,
     },
   };
+  const defaultFieldErrors: Record<string, string> = {};
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -50,42 +54,42 @@ describe('LlamaServerSettingsTab', () => {
 
   it('renders correctly', () => {
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByText('Llama-Server Settings')).toBeInTheDocument();
   });
 
   it('renders Server Binding section', () => {
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByText('Server Binding')).toBeInTheDocument();
   });
 
   it('renders Basic Options section', () => {
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByText('Basic Options')).toBeInTheDocument();
   });
 
   it('renders GPU Options section', () => {
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByText('GPU Options')).toBeInTheDocument();
   });
 
   it('renders Sampling Parameters section', () => {
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByText('Sampling Parameters')).toBeInTheDocument();
   });
 
   it('renders Host input', () => {
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByLabelText('Host')).toBeInTheDocument();
     expect(screen.getByDisplayValue('127.0.0.1')).toBeInTheDocument();
@@ -93,7 +97,7 @@ describe('LlamaServerSettingsTab', () => {
 
   it('renders Port input', () => {
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByLabelText('Port')).toBeInTheDocument();
     expect(screen.getByDisplayValue('8080')).toBeInTheDocument();
@@ -101,7 +105,7 @@ describe('LlamaServerSettingsTab', () => {
 
   it('renders Context Size input', () => {
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByLabelText('Context Size')).toBeInTheDocument();
     expect(screen.getByDisplayValue('4096')).toBeInTheDocument();
@@ -109,7 +113,7 @@ describe('LlamaServerSettingsTab', () => {
 
   it('renders Batch Size input', () => {
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByLabelText('Batch Size')).toBeInTheDocument();
     expect(screen.getByDisplayValue('2048')).toBeInTheDocument();
@@ -117,7 +121,7 @@ describe('LlamaServerSettingsTab', () => {
 
   it('renders Micro Batch Size input', () => {
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByLabelText('Micro Batch Size')).toBeInTheDocument();
     expect(screen.getByDisplayValue('512')).toBeInTheDocument();
@@ -125,7 +129,7 @@ describe('LlamaServerSettingsTab', () => {
 
   it('renders Threads input', () => {
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByLabelText('Threads')).toBeInTheDocument();
     const threadsInput = screen.getByRole('spinbutton', { name: /threads/i });
@@ -134,7 +138,7 @@ describe('LlamaServerSettingsTab', () => {
 
   it('renders GPU Layers input', () => {
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByLabelText('GPU Layers')).toBeInTheDocument();
     const gpuLayersInput = screen.getByRole('spinbutton', { name: /gpu layers/i });
@@ -143,7 +147,7 @@ describe('LlamaServerSettingsTab', () => {
 
   it('renders Main GPU input', () => {
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByLabelText('Main GPU')).toBeInTheDocument();
     expect(screen.getByDisplayValue('0')).toBeInTheDocument();
@@ -151,7 +155,7 @@ describe('LlamaServerSettingsTab', () => {
 
   it('renders Temperature input', () => {
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByLabelText('Temperature')).toBeInTheDocument();
     expect(screen.getByDisplayValue('0.8')).toBeInTheDocument();
@@ -159,7 +163,7 @@ describe('LlamaServerSettingsTab', () => {
 
   it('renders Top-K input', () => {
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByLabelText('Top-K')).toBeInTheDocument();
     expect(screen.getByDisplayValue('40')).toBeInTheDocument();
@@ -167,7 +171,7 @@ describe('LlamaServerSettingsTab', () => {
 
   it('renders Top-P input', () => {
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByLabelText('Top-P')).toBeInTheDocument();
     expect(screen.getByDisplayValue('0.9')).toBeInTheDocument();
@@ -175,7 +179,7 @@ describe('LlamaServerSettingsTab', () => {
 
   it('calls onLlamaServerChange when Host is changed', () => {
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={defaultFieldErrors} />
     );
     const input = screen.getByLabelText('Host');
     fireEvent.change(input, { target: { name: 'llamaServer.host', value: 'localhost' } });
@@ -184,14 +188,14 @@ describe('LlamaServerSettingsTab', () => {
 
   it('handles empty formConfig', () => {
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={{}} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={{}} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={{}} />
     );
     expect(screen.getByText('Llama-Server Settings')).toBeInTheDocument();
   });
 
   it('displays helper text for inputs', () => {
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByText('Server hostname or IP address')).toBeInTheDocument();
     expect(screen.getByText('Server port number')).toBeInTheDocument();
@@ -208,7 +212,7 @@ describe('LlamaServerSettingsTab', () => {
       currentTheme: theme,
     });
     renderWithTheme(
-      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
+      <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByText('Llama-Server Settings')).toBeInTheDocument();
   });

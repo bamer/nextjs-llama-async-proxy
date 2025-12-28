@@ -1,9 +1,10 @@
-import { render, screen, act, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import React from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { PerformanceChart } from '@/components/charts/PerformanceChart';
+import type { MockChartDataPoint } from '__tests__/types/mock-types';
 
 jest.mock('@mui/x-charts', () => ({
   LineChart: () => <div data-testid="line-chart" />,
@@ -1120,9 +1121,9 @@ describe('PerformanceChart', () => {
 
     it('default formatter handles null values', () => {
       const dataWithNull = [
-        { time: '10:00', displayTime: '10:00', value: null as any },
+        { time: '10:00', displayTime: '10:00', value: null as unknown as number },
         { time: '10:05', displayTime: '10:05', value: 50 },
-      ];
+      ] as MockChartDataPoint[];
 
       renderWithTheme(
         <PerformanceChart
@@ -1226,7 +1227,7 @@ describe('PerformanceChart', () => {
     });
 
     it('handles first dataset empty, second dataset has data', () => {
-      const emptyDataset: any[] = [];
+      const emptyDataset: MockChartDataPoint[] = [];
       const dataDataset = [
         { time: '10:00', displayTime: '10:00', value: 45 },
         { time: '10:05', displayTime: '10:05', value: 50 },
@@ -1490,9 +1491,9 @@ describe('PerformanceChart', () => {
     it('handles null values in dataset', () => {
       const dataWithNulls = [
         { time: '10:00', displayTime: '10:00', value: 45 },
-        { time: '10:05', displayTime: '10:05', value: null as any },
+        { time: '10:05', displayTime: '10:05', value: null as unknown as number },
         { time: '10:10', displayTime: '10:10', value: 55 },
-      ];
+      ] as MockChartDataPoint[];
 
       renderWithTheme(
         <PerformanceChart
@@ -1515,10 +1516,10 @@ describe('PerformanceChart', () => {
 
     it('handles all null values', () => {
       const allNullData = [
-        { time: '10:00', displayTime: '10:00', value: null as any },
-        { time: '10:05', displayTime: '10:05', value: null as any },
-        { time: '10:10', displayTime: '10:10', value: null as any },
-      ];
+        { time: '10:00', displayTime: '10:00', value: null as unknown as number },
+        { time: '10:05', displayTime: '10:05', value: null as unknown as number },
+        { time: '10:10', displayTime: '10:10', value: null as unknown as number },
+      ] as MockChartDataPoint[];
 
       renderWithTheme(
         <PerformanceChart
@@ -1542,13 +1543,13 @@ describe('PerformanceChart', () => {
     it('handles multiple datasets with nulls', () => {
       const dataWithNulls1 = [
         { time: '10:00', displayTime: '10:00', value: 45 },
-        { time: '10:05', displayTime: '10:05', value: null as any },
-      ];
+        { time: '10:05', displayTime: '10:05', value: null as unknown as number },
+      ] as MockChartDataPoint[];
 
       const dataWithNulls2 = [
-        { time: '10:00', displayTime: '10:00', value: null as any },
+        { time: '10:00', displayTime: '10:00', value: null as unknown as number },
         { time: '10:05', displayTime: '10:05', value: 55 },
-      ];
+      ] as MockChartDataPoint[];
 
       renderWithTheme(
         <PerformanceChart

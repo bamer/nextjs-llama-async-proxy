@@ -4,17 +4,28 @@ import React from 'react';
 import { MotionLazyContainer } from '@/components/animate/motion-lazy-container';
 
 jest.mock('framer-motion', () => ({
-  LazyMotion: ({ children, strict }: any) => (
-    <div data-testid="lazy-motion" data-strict={strict}>
-      {children}
-    </div>
-  ),
-  m: {
-    div: ({ children, initial, animate, exit, ...props }: any) => (
-      <div data-testid="motion-div" data-initial={initial} data-animate={animate} data-exit={exit} {...props}>
+  LazyMotion: (props: unknown) => {
+    const { children, strict } = props as { children?: React.ReactNode; strict?: boolean };
+    return (
+      <div data-testid="lazy-motion" data-strict={strict}>
         {children}
       </div>
-    ),
+    );
+  },
+  m: {
+    div: (props: unknown) => {
+      const { children, initial, animate, exit } = props as {
+        children?: React.ReactNode;
+        initial?: unknown;
+        animate?: unknown;
+        exit?: unknown;
+      };
+      return (
+        <div data-testid="motion-div" data-initial={initial} data-animate={animate} data-exit={exit}>
+          {children}
+        </div>
+      );
+    },
   },
   domAnimation: true,
 }));

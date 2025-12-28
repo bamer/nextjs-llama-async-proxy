@@ -1,10 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import Card from "@/components/ui/Card";
+import type { MuiComponentProps } from "__tests__/types/mock-types";
 
 jest.mock("@mui/material/Box", () => ({
   __esModule: true,
-  default: ({ children, ...props }: any) => {
+  default: ({ children, ...props }: MuiComponentProps) => {
     const { sx, ...rest } = props;
     return <div {...rest}>{children}</div>;
   },
@@ -12,7 +13,7 @@ jest.mock("@mui/material/Box", () => ({
 
 jest.mock("@mui/material/Card", () => ({
   __esModule: true,
-  Card: ({ children, ...props }: any) => {
+  Card: ({ children, ...props }: MuiComponentProps) => {
     const { sx, ...rest } = props;
     return (
       <div {...rest} className="MuiCard-root">
@@ -24,7 +25,7 @@ jest.mock("@mui/material/Card", () => ({
 
 jest.mock("@mui/material/CardContent", () => ({
   __esModule: true,
-  default: ({ children, ...props }: any) => {
+  default: ({ children, ...props }: MuiComponentProps) => {
     const { sx, ...rest } = props;
     return (
       <div {...rest} className="MuiCardContent-root">
@@ -36,7 +37,7 @@ jest.mock("@mui/material/CardContent", () => ({
 
 jest.mock("@mui/material/CardActions", () => ({
   __esModule: true,
-  default: ({ children, ...props }: any) => {
+  default: ({ children, ...props }: MuiComponentProps) => {
     const { sx, ...rest } = props;
     return (
       <div {...rest} className="MuiCardActions-root">
@@ -48,7 +49,7 @@ jest.mock("@mui/material/CardActions", () => ({
 
 jest.mock("@mui/material/Button", () => ({
   __esModule: true,
-  default: ({ children, ...props }: any) => {
+  default: ({ children, ...props }: MuiComponentProps) => {
     const { sx, ...rest } = props;
     return <button {...rest}>{children}</button>;
   },
@@ -56,7 +57,7 @@ jest.mock("@mui/material/Button", () => ({
 
 jest.mock("@mui/material/Typography", () => ({
   __esModule: true,
-  default: ({ children, ...props }: any) => {
+  default: ({ children, ...props }: MuiComponentProps) => {
     const { sx, ...rest } = props;
     return <span {...rest}>{children}</span>;
   },

@@ -18,7 +18,19 @@ jest.mock('@/config/monitoring.config', () => ({
 }));
 
 const mockSetChartData = jest.fn();
-let mockMetrics: any = null;
+let mockMetrics = null as {
+  cpuUsage?: number;
+  memoryUsage?: number;
+  totalRequests?: number;
+  uptime?: number;
+  gpuUsage?: number;
+  gpuPowerUsage?: number;
+  gpuMemoryUsed?: number;
+  gpuMemoryTotal?: number;
+  gpuTemperature?: number;
+  gpuName?: string;
+  gpuMemoryUsage?: number;
+} | null | undefined;
 let mockIsConnected = false;
 
 const { useStore } = require('@/lib/store');
@@ -31,7 +43,7 @@ describe('useDashboardMetrics', () => {
     mockMetrics = null;
     mockIsConnected = false;
 
-    useStore.mockImplementation((selector: any) => {
+    useStore.mockImplementation((selector: (state: unknown) => unknown) => {
       const state = {
         metrics: mockMetrics,
         chartHistory: {
@@ -148,10 +160,11 @@ describe('useDashboardMetrics', () => {
 
     // Simulate 25 data points
     timestamps.forEach(() => {
+      const currentMetrics = mockMetrics as { cpuUsage?: number } | null;
       mockMetrics = {
-        ...mockMetrics,
-        cpuUsage: mockMetrics.cpuUsage + 1,
-      };
+        ...mockMetrics as object,
+        cpuUsage: (currentMetrics?.cpuUsage ?? 0) + 1,
+      } as typeof mockMetrics;
     });
 
     const { result } = renderHook(() => useDashboardMetrics());

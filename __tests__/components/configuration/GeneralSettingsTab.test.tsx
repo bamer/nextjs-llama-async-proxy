@@ -7,7 +7,10 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 jest.mock('framer-motion', () => ({
   m: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    div: (props: unknown) => {
+      const { children } = props as { children?: React.ReactNode };
+      return <div>{children}</div>;
+    },
   },
 }));
 
@@ -29,6 +32,7 @@ describe('GeneralSettingsTab', () => {
     notificationsEnabled: false,
     llamaServerPath: '/path/to/llama-server',
   };
+  const defaultFieldErrors: Record<string, string> = {};
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -43,14 +47,14 @@ describe('GeneralSettingsTab', () => {
 
   it('renders correctly', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByText('General Settings')).toBeInTheDocument();
   });
 
   it('renders Base Path input', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByLabelText('Base Path')).toBeInTheDocument();
     expect(screen.getByDisplayValue('/models')).toBeInTheDocument();
@@ -58,14 +62,14 @@ describe('GeneralSettingsTab', () => {
 
   it('renders Log Level select', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByLabelText('Log Level')).toBeInTheDocument();
   });
 
   it('renders Max Concurrent Models input', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByLabelText('Max Concurrent Models')).toBeInTheDocument();
     expect(screen.getByDisplayValue('5')).toBeInTheDocument();
@@ -73,21 +77,21 @@ describe('GeneralSettingsTab', () => {
 
   it('renders Auto Update switch', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByLabelText('Auto Update')).toBeInTheDocument();
   });
 
   it('renders Notifications Enabled switch', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByLabelText('Notifications Enabled')).toBeInTheDocument();
   });
 
   it('renders Llama-Server Path input', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByLabelText('Llama-Server Path')).toBeInTheDocument();
     expect(screen.getByDisplayValue('/path/to/llama-server')).toBeInTheDocument();
@@ -95,7 +99,7 @@ describe('GeneralSettingsTab', () => {
 
   it('calls onInputChange when Base Path is changed', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     const input = screen.getByLabelText('Base Path');
     fireEvent.change(input, { target: { name: 'basePath', value: '/new/path' } });
@@ -104,7 +108,7 @@ describe('GeneralSettingsTab', () => {
 
   it('calls onInputChange when Log Level is changed', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     const select = screen.getByLabelText('Log Level');
     fireEvent.change(select, { target: { name: 'logLevel', value: 'debug' } });
@@ -113,7 +117,7 @@ describe('GeneralSettingsTab', () => {
 
   it('calls onInputChange when Max Concurrent Models is changed', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     const input = screen.getByLabelText('Max Concurrent Models');
     fireEvent.change(input, { target: { name: 'maxConcurrentModels', value: '10' } });
@@ -122,7 +126,7 @@ describe('GeneralSettingsTab', () => {
 
   it('calls onInputChange when Auto Update switch is toggled', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     // Use getByLabelText to find the switch since it's implemented with FormControlLabel
     const checkbox = screen.getByLabelText('Auto Update') as HTMLInputElement;
@@ -132,7 +136,7 @@ describe('GeneralSettingsTab', () => {
 
   it('calls onInputChange when Notifications switch is toggled', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     // Use getByLabelText to find switch
     const checkbox = screen.getByLabelText('Notifications Enabled') as HTMLInputElement;
@@ -142,14 +146,14 @@ describe('GeneralSettingsTab', () => {
 
   it('handles empty formConfig', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={{}} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={{}} onInputChange={mockOnInputChange} fieldErrors={{}} />
     );
     expect(screen.getByText('General Settings')).toBeInTheDocument();
   });
 
   it('displays helper text for inputs', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByText('Path to your models directory')).toBeInTheDocument();
     expect(screen.getByText('Logging verbosity level')).toBeInTheDocument();
@@ -165,7 +169,7 @@ describe('GeneralSettingsTab', () => {
       currentTheme: theme,
     });
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByText('General Settings')).toBeInTheDocument();
   });
@@ -173,7 +177,7 @@ describe('GeneralSettingsTab', () => {
   // Positive test: Verify switch toggle events are properly handled and updateConfig called
   it('calls updateConfig with correct argument when Auto Update is toggled', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     const checkbox = screen.getByLabelText('Auto Update') as HTMLInputElement;
     fireEvent.click(checkbox);
@@ -191,7 +195,7 @@ describe('GeneralSettingsTab', () => {
 
   it('calls updateConfig with correct argument when Notifications is toggled', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     const checkbox = screen.getByLabelText('Notifications Enabled') as HTMLInputElement;
     fireEvent.click(checkbox);
@@ -218,7 +222,7 @@ describe('GeneralSettingsTab', () => {
       llamaServerPath: undefined,
     };
     renderWithTheme(
-      <GeneralSettingsTab formConfig={undefinedConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={undefinedConfig} onInputChange={mockOnInputChange} fieldErrors={{}} />
     );
     expect(screen.getByText('General Settings')).toBeInTheDocument();
     // Should not crash and should render with default/empty values
@@ -227,7 +231,7 @@ describe('GeneralSettingsTab', () => {
   // Positive test: Verify all log level options are rendered
   it('renders all log level options', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     const select = screen.getByLabelText('Log Level');
     fireEvent.mouseDown(select);
@@ -241,7 +245,7 @@ describe('GeneralSettingsTab', () => {
   // Positive test: Verify input constraints (min/max)
   it('renders max concurrent models with constraints', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     const input = screen.getByLabelText('Max Concurrent Models');
     expect(input).toHaveAttribute('type', 'number');
@@ -252,7 +256,7 @@ describe('GeneralSettingsTab', () => {
   // Positive test: Verify description texts are displayed
   it('displays all helper and description texts', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     expect(screen.getByText('Path to your models directory')).toBeInTheDocument();
     expect(screen.getByText('Logging verbosity level')).toBeInTheDocument();
@@ -270,7 +274,7 @@ describe('GeneralSettingsTab', () => {
       notificationsEnabled: true,
     };
     renderWithTheme(
-      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} fieldErrors={{}} />
     );
     const autoUpdateSwitch = screen.getByLabelText('Auto Update') as HTMLInputElement;
     const notificationsSwitch = screen.getByLabelText('Notifications Enabled') as HTMLInputElement;
@@ -282,7 +286,7 @@ describe('GeneralSettingsTab', () => {
   // Negative test: Verify empty values don't crash
   it('handles empty formConfig without crashing', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={undefined as any} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={undefined as any} onInputChange={mockOnInputChange} fieldErrors={{}} />
     );
     expect(screen.getByText('General Settings')).toBeInTheDocument();
   });
@@ -294,7 +298,7 @@ describe('GeneralSettingsTab', () => {
       llamaServerPath: '/custom/path/to/llama-server',
     };
     renderWithTheme(
-      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} fieldErrors={{}} />
     );
     const input = screen.getByLabelText('Llama-Server Path');
     expect(input).toHaveValue('/custom/path/to/llama-server');
@@ -303,7 +307,7 @@ describe('GeneralSettingsTab', () => {
   // Positive test: Verify base path input change
   it('updates base path value when changed', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
     const input = screen.getByLabelText('Base Path');
     fireEvent.change(input, { target: { name: 'basePath', value: '/new/path' } });
@@ -316,7 +320,7 @@ describe('GeneralSettingsTab', () => {
   it('calls onInputChange with correct event when Auto Update is toggled from false to true', () => {
     const config = { ...defaultFormConfig, autoUpdate: false };
     renderWithTheme(
-      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} fieldErrors={{}} />
     );
 
     const checkbox = screen.getByLabelText('Auto Update') as HTMLInputElement;
@@ -336,7 +340,7 @@ describe('GeneralSettingsTab', () => {
   it('calls onInputChange with correct event when Auto Update is toggled from true to false', () => {
     const config = { ...defaultFormConfig, autoUpdate: true };
     renderWithTheme(
-      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} fieldErrors={{}} />
     );
 
     const checkbox = screen.getByLabelText('Auto Update') as HTMLInputElement;
@@ -358,7 +362,7 @@ describe('GeneralSettingsTab', () => {
   it('calls onInputChange with correct event when Notifications is toggled from false to true', () => {
     const config = { ...defaultFormConfig, notificationsEnabled: false };
     renderWithTheme(
-      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} fieldErrors={{}} />
     );
 
     const checkbox = screen.getByLabelText('Notifications Enabled') as HTMLInputElement;
@@ -378,7 +382,7 @@ describe('GeneralSettingsTab', () => {
   it('calls onInputChange with correct event when Notifications is toggled from true to false', () => {
     const config = { ...defaultFormConfig, notificationsEnabled: true };
     renderWithTheme(
-      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} fieldErrors={{}} />
     );
 
     const checkbox = screen.getByLabelText('Notifications Enabled') as HTMLInputElement;
@@ -398,7 +402,7 @@ describe('GeneralSettingsTab', () => {
   // Positive test: Verify direct FormControlLabel onChange events work
   it('handles direct FormControlLabel onChange for Auto Update', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
 
     // Find the FormControlLabel and trigger click on it
@@ -410,7 +414,7 @@ describe('GeneralSettingsTab', () => {
 
   it('handles direct FormControlLabel onChange for Notifications', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
 
     const notificationsLabel = screen.getByText('Notifications Enabled');
@@ -422,7 +426,7 @@ describe('GeneralSettingsTab', () => {
   // Positive test: Test extreme values for number inputs (0, 1, 20, 21)
   it('accepts min value of 1 for Max Concurrent Models', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
 
     const input = screen.getByLabelText('Max Concurrent Models');
@@ -433,7 +437,7 @@ describe('GeneralSettingsTab', () => {
 
   it('accepts max value of 20 for Max Concurrent Models', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
 
     const input = screen.getByLabelText('Max Concurrent Models');
@@ -444,7 +448,7 @@ describe('GeneralSettingsTab', () => {
 
   it('handles boundary value 0 for Max Concurrent Models', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
 
     const input = screen.getByLabelText('Max Concurrent Models');
@@ -455,7 +459,7 @@ describe('GeneralSettingsTab', () => {
 
   it('handles boundary value 21 for Max Concurrent Models', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
 
     const input = screen.getByLabelText('Max Concurrent Models');
@@ -467,7 +471,7 @@ describe('GeneralSettingsTab', () => {
   // Positive test: Test accessibility features (ARIA attributes)
   it('has correct ARIA attributes for Max Concurrent Models input', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
 
     const input = screen.getByLabelText('Max Concurrent Models');
@@ -478,7 +482,7 @@ describe('GeneralSettingsTab', () => {
 
   it('has correct role for Switch components', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
 
     const switches = screen.getAllByRole('switch');
@@ -492,7 +496,7 @@ describe('GeneralSettingsTab', () => {
       autoUpdate: undefined,
     };
     renderWithTheme(
-      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} fieldErrors={{}} />
     );
 
     const checkbox = screen.getByLabelText('Auto Update');
@@ -505,7 +509,7 @@ describe('GeneralSettingsTab', () => {
       notificationsEnabled: undefined,
     };
     renderWithTheme(
-      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={config} onInputChange={mockOnInputChange} fieldErrors={{}} />
     );
 
     const checkbox = screen.getByLabelText('Notifications Enabled');
@@ -515,7 +519,7 @@ describe('GeneralSettingsTab', () => {
   // Positive test: Verify multiple switch toggles work correctly
   it('handles multiple switch toggles in sequence', () => {
     renderWithTheme(
-      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} />
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
     );
 
     const autoUpdateCheckbox = screen.getByLabelText('Auto Update');

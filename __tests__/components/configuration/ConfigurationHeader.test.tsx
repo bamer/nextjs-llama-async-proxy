@@ -5,15 +5,16 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { ConfigurationHeader } from '@/components/configuration/ConfigurationHeader';
 import { ThemeProvider as CustomThemeProvider } from '@/contexts/ThemeContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import type { MotionComponentProps } from '__tests__/types/mock-types';
 
 jest.mock('framer-motion', () => ({
   m: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    div: ({ children, ...props }: MotionComponentProps) => <div {...props}>{children}</div>,
   },
 }));
 
 jest.mock('@/contexts/ThemeContext', () => ({
-  ThemeProvider: ({ children }: any) => <div>{children}</div>,
+  ThemeProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   useTheme: jest.fn(),
 }));
 

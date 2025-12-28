@@ -3,6 +3,7 @@ import '@testing-library/jest-dom';
 import React from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Input, TextArea, Select, Label } from '@/components/ui/Input';
+import type { MotionComponentProps } from '__tests__/types/mock-types';
 
 jest.mock('@tanstack/react-query', () => ({
   useQuery: jest.fn(),
@@ -13,12 +14,12 @@ jest.mock('@tanstack/react-query', () => ({
 
 jest.mock('framer-motion', () => ({
   m: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+    div: ({ children, ...props }: MotionComponentProps) => <div {...props}>{children}</div>,
+    button: ({ children, ...props }: MotionComponentProps) => <button {...props}>{children}</button>,
   },
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+    div: ({ children, ...props }: MotionComponentProps) => <div {...props}>{children}</div>,
+    button: ({ children, ...props }: MotionComponentProps) => <button {...props}>{children}</button>,
   },
 }));
 

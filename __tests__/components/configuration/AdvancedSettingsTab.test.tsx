@@ -7,7 +7,10 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 jest.mock('framer-motion', () => ({
   m: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    div: (props: unknown) => {
+      const { children } = props as { children?: React.ReactNode };
+      return <div>{children}</div>;
+    },
   },
 }));
 

@@ -3,6 +3,7 @@ import "@testing-library/jest-dom";
 import React from "react";
 import { createTheme, ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import { ModelsListCard } from "@/components/dashboard/ModelsListCard";
+import type { MockModelConfig } from "__tests__/types/mock-types";
 
 // Mock fetch globally
 global.fetch = jest.fn();
@@ -258,7 +259,7 @@ describe("ModelsListCard", () => {
 
     it("handles null models", () => {
       renderWithProviders(
-        <ModelsListCard models={null as any} isDark={false} onToggleModel={mockOnToggle} />
+        <ModelsListCard models={null as unknown as MockModelConfig[]} isDark={false} onToggleModel={mockOnToggle} />
       );
 
       expect(screen.getByText("Available Models")).toBeInTheDocument();
@@ -266,7 +267,7 @@ describe("ModelsListCard", () => {
 
     it("handles undefined models", () => {
       renderWithProviders(
-        <ModelsListCard models={undefined as any} isDark={false} onToggleModel={mockOnToggle} />
+        <ModelsListCard models={undefined as unknown as MockModelConfig[]} isDark={false} onToggleModel={mockOnToggle} />
       );
 
       expect(screen.getByText("Available Models")).toBeInTheDocument();

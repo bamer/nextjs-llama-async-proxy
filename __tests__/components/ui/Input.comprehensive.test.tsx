@@ -3,10 +3,11 @@ import '@testing-library/jest-dom';
 import React from 'react';
 
 import { Input, TextArea, Select, Label } from '@/components/ui/Input';
+import type { MotionComponentProps } from '__tests__/types/mock-types';
 
 jest.mock('framer-motion', () => ({
   m: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    div: ({ children, ...props }: MotionComponentProps) => <div {...props}>{children}</div>,
   },
 }));
 

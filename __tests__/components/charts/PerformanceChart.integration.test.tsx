@@ -4,42 +4,46 @@ import React from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { PerformanceChart } from '@/components/charts/PerformanceChart';
+import type { MockChartDataPoint } from '__tests__/types/mock-types';
 
 // Smart mock for @mui/x-charts that actually invokes valueFormatter callback
 // This allows us to cover line 106 branches while avoiding jsdom compatibility issues
 jest.mock('@mui/x-charts', () => {
   const React = require('react');
 
-  const LineChart = React.forwardRef((props: any, _ref: any) => {
-    const { dataset, series } = props;
+  const LineChart = React.forwardRef((props: unknown, _ref: unknown) => {
+    const { dataset, series } = props as {
+      dataset: MockChartDataPoint[];
+      series?: Array<{
+        valueFormatter?: (value: number | null) => string;
+      }>;
+    };
 
     // Simulate what the real LineChart does: invoke valueFormatter for each data point
     if (series && dataset) {
-      series.forEach((s: any) => {
+      series.forEach((s) => {
         if (s.valueFormatter && dataset.length > 0) {
           // Invoke formatter with ALL data from dataset to ensure branches execute
-          dataset.forEach((point: any) => {
-            Object.keys(point).forEach(key => {
-              if (key !== 'time') {
-                const value = point[key];
-                try {
-                  s.valueFormatter(value);
-                  // Verify output format to ensure both branches executed
-                  if (value === null) {
-                    // Should return 'N/A' for null values
-                    const result = s.valueFormatter(value);
-                    expect(result).toBe('N/A');
-                  } else {
-                    // Should return formatted string for non-null values
-                    const result = s.valueFormatter(value);
-                    expect(typeof result).toBe('string');
-                    expect(result).not.toBe('N/A');
-                  }
-                } catch (e) {
-                  // Ignore assertion errors in mock
+          dataset.forEach((point) => {
+            const value = point.value;
+            try {
+              if (s.valueFormatter) {
+                s.valueFormatter(value);
+                // Verify output format to ensure both branches executed
+                if (value === null) {
+                  // Should return 'N/A' for null values
+                  const result = s.valueFormatter(value);
+                  expect(result).toBe('N/A');
+                } else {
+                  // Should return formatted string for non-null values
+                  const result = s.valueFormatter(value);
+                  expect(typeof result).toBe('string');
+                  expect(result).not.toBe('N/A');
                 }
               }
-            });
+            } catch (e) {
+              // Ignore assertion errors in mock
+            }
           });
         }
       });
@@ -88,11 +92,11 @@ describe('PerformanceChart - Integration Tests', () => {
     // The smart mock will invoke formatter with actual values from this data
     const dataWithNulls = [
       { time: '10:00', displayTime: '10:00', value: 45.5 },
-      { time: '10:05', displayTime: '10:05', value: null as any }, // Triggers 'N/A' branch
+      { time: '10:05', displayTime: '10:05', value: null as unknown as number }, // Triggers 'N/A' branch
       { time: '10:10', displayTime: '10:10', value: 55.75 },
-      { time: '10:15', displayTime: '10:15', value: null as any }, // Triggers 'N/A' branch
+      { time: '10:15', displayTime: '10:15', value: null as unknown as number }, // Triggers 'N/A' branch
       { time: '10:20', displayTime: '10:20', value: 60.25 },
-    ];
+    ] as MockChartDataPoint[];
 
     // ACT: Render PerformanceChart without custom valueFormatter
     // This forces use of default formatter from line 106
@@ -127,13 +131,13 @@ describe('PerformanceChart - Integration Tests', () => {
     // ARRANGE: Multiple datasets with different null value patterns
     const dataset1 = [
       { time: '10:00', displayTime: '10:00', value: 45 },
-      { time: '10:05', displayTime: '10:05', value: null as any }, // Triggers 'N/A'
-    ];
+      { time: '10:05', displayTime: '10:05', value: null as unknown as number }, // Triggers 'N/A'
+    ] as MockChartDataPoint[];
 
     const dataset2 = [
-      { time: '10:00', displayTime: '10:00', value: null as any }, // Triggers 'N/A'
+      { time: '10:00', displayTime: '10:00', value: null as unknown as number }, // Triggers 'N/A'
       { time: '10:05', displayTime: '10:05', value: 50 },
-    ];
+    ] as MockChartDataPoint[];
 
     // ACT: Render chart with multiple datasets using default formatters
     renderWithTheme(
@@ -274,14 +278,14 @@ describe('PerformanceChart - Integration Tests', () => {
     // ARRANGE: First dataset empty, second dataset has data
     // This triggers false branch of dataset.data.length > 0 in .some()
     const emptyFirstDataset = [
-      { time: '10:00', displayTime: '10:00', value: null as any },
-      { time: '10:05', displayTime: '10:05', value: null as any },
-    ];
+      { time: '10:00', displayTime: '10:00', value: null as unknown as number },
+      { time: '10:05', displayTime: '10:05', value: null as unknown as number },
+    ] as MockChartDataPoint[];
 
     const validSecondDataset = [
       { time: '10:00', displayTime: '10:00', value: 45 },
       { time: '10:05', displayTime: '10:05', value: 50 },
-    ];
+    ] as MockChartDataPoint[];
 
     // ACT: Render chart with mixed empty/valid datasets
     renderWithTheme(
@@ -319,10 +323,10 @@ describe('PerformanceChart - Integration Tests', () => {
   it('negatively: handles null values and displays chart without crashing', () => {
     // ARRANGE: Data with null values (improper input)
     const nullData = [
-      { time: '10:00', displayTime: '10:00 AM', value: null as any },
-      { time: '10:05', displayTime: '10:05 AM', value: null as any },
-      { time: '10:10', displayTime: '10:10 AM', value: null as any },
-    ];
+      { time: '10:00', displayTime: '10:00 AM', value: null as unknown as number },
+      { time: '10:05', displayTime: '10:05 AM', value: null as unknown as number },
+      { time: '10:10', displayTime: '10:10 AM', value: null as unknown as number },
+    ] as MockChartDataPoint[];
 
     // ACT: Render chart with null values
     renderWithTheme(

@@ -316,6 +316,7 @@ describe('UI Components - Critical Path', () => {
 });
 
 // Mock Box component
-const Box = ({ children, sx }: any) => {
-  return <div style={sx}>{children}</div>;
+const Box = ({ children, sx }: { children?: React.ReactNode; sx?: unknown }) => {
+  const style = typeof sx === 'object' ? sx as React.CSSProperties : undefined;
+  return <div style={style}>{children}</div>;
 };

@@ -101,3 +101,19 @@ export interface MockLogsResponse {
 export type MockAsyncReturnType<T> = T extends (...args: unknown[]) => infer R
   ? R
   : unknown;
+
+// Store selector type
+export type StoreSelector<T = unknown> = (state: unknown) => T;
+
+// Framer Motion mock props type
+export interface MotionComponentProps {
+  children?: React.ReactNode;
+  [key: string]: unknown;
+}
+
+// MUI component mock props type (supports sx prop)
+export interface MuiComponentProps {
+  children?: React.ReactNode;
+  sx?: unknown;
+  [key: string]: unknown;
+}

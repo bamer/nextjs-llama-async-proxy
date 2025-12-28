@@ -4,10 +4,11 @@ import React from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { ConfigurationStatusMessages } from '@/components/configuration/ConfigurationStatusMessages';
 import { useTheme } from '@/contexts/ThemeContext';
+import type { MotionComponentProps } from '__tests__/types/mock-types';
 
 jest.mock('framer-motion', () => ({
   m: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    div: ({ children, ...props }: MotionComponentProps) => <div {...props}>{children}</div>,
   },
 }));
 

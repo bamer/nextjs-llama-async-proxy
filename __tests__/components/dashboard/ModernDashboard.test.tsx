@@ -4,6 +4,7 @@ import React from "react";
 import { createTheme, ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ModernDashboard from "@/components/dashboard/ModernDashboard";
+import type { MockChartDataPoint, MockStoreState, StoreSelector } from "__tests__/types/mock-types";
 
 // Mock ThemeContext
 jest.mock("@/contexts/ThemeContext", () => ({
@@ -41,20 +42,30 @@ jest.mock("next/navigation", () => ({
 
 // Mock chart components to avoid @mui/x-charts issues
 jest.mock("@mui/x-charts", () => ({
-  LineChart: ({ children, ...props }: any) => <div data-testid="line-chart" {...props}>{children}</div>,
-  ChartsXAxis: (props: any) => <div {...props} />,
-  ChartsYAxis: (props: any) => <div {...props} />,
-  ChartsGrid: (props: any) => <div {...props} />,
-  ChartsTooltip: (props: any) => <div {...props} />,
+  LineChart: (props: unknown) => {
+    const { children } = props as { children?: React.ReactNode };
+    return <div data-testid="line-chart">{children}</div>;
+  },
+  ChartsXAxis: () => <div />,
+  ChartsYAxis: () => <div />,
+  ChartsGrid: () => <div />,
+  ChartsTooltip: () => <div />,
 }));
 
 jest.mock("@/components/charts/PerformanceChart", () => {
-  return ({ title, height, datasets }: any) => (
-    <div data-testid={`performance-chart-${title}`} style={{ height }}>
-      <div>{title}</div>
-      {datasets?.map((d: any) => <div key={d.dataKey}>{d.label}</div>)}
-    </div>
-  );
+  return (props: unknown) => {
+    const { title, height, datasets } = props as {
+      title: string;
+      height?: number;
+      datasets?: Array<{ dataKey: string; label: string }>;
+    };
+    return (
+      <div data-testid={`performance-chart-${title}`} style={{ height }}>
+        <div>{title}</div>
+        {datasets?.map((d) => <div key={d.dataKey}>{d.label}</div>)}
+      </div>
+    );
+  };
 });
 
 jest.mock("@/components/charts/GPUUMetricsCard", () => ({
@@ -116,7 +127,7 @@ describe("ModernDashboard", () => {
     jest.clearAllMocks();
     jest.useFakeTimers();
 
-    mockedUseStore.mockImplementation((selector: any) => {
+    mockedUseStore.mockImplementation((selector: (state: typeof mockState) => unknown) => {
       if (typeof selector === "function") {
         return selector(mockState);
       }
@@ -336,7 +347,7 @@ describe("ModernDashboard", () => {
   // NEGATIVE TESTS - Verifying error handling and edge cases
   describe("Negative Tests", () => {
     it("handles empty models array gracefully - Objective: Test edge case with no models", async () => {
-      mockedUseStore.mockImplementation((selector: any) => {
+      mockedUseStore.mockImplementation((selector: StoreSelector) => {
         if (typeof selector === "function") {
           return selector({ ...mockState, models: [] });
         }
@@ -355,7 +366,7 @@ describe("ModernDashboard", () => {
     });
 
     it("handles null metrics gracefully", async () => {
-      mockedUseStore.mockImplementation((selector: any) => {
+      mockedUseStore.mockImplementation((selector: StoreSelector) => {
         if (typeof selector === "function") {
           return selector({ ...mockState, metrics: null });
         }
@@ -375,7 +386,7 @@ describe("ModernDashboard", () => {
     });
 
     it("handles undefined metrics", async () => {
-      mockedUseStore.mockImplementation((selector: any) => {
+      mockedUseStore.mockImplementation((selector: StoreSelector) => {
         if (typeof selector === "function") {
           return selector({ ...mockState, metrics: undefined });
         }
@@ -394,7 +405,7 @@ describe("ModernDashboard", () => {
     });
 
     it("handles zero uptime - Objective: Test boundary condition", async () => {
-      mockedUseStore.mockImplementation((selector: any) => {
+      mockedUseStore.mockImplementation((selector: StoreSelector) => {
         if (typeof selector === "function") {
           return selector({ ...mockState, metrics: { ...mockState.metrics, uptime: 0 } });
         }
@@ -413,7 +424,7 @@ describe("ModernDashboard", () => {
     });
 
     it("handles very large uptime values", async () => {
-      mockedUseStore.mockImplementation((selector: any) => {
+      mockedUseStore.mockImplementation((selector: StoreSelector) => {
         if (typeof selector === "function") {
           return selector({ ...mockState, metrics: { ...mockState.metrics, uptime: 864000 } });
         }
@@ -456,7 +467,7 @@ describe("ModernDashboard", () => {
     });
 
     it("handles no GPU metrics - displays GPU metrics card instead", async () => {
-      mockedUseStore.mockImplementation((selector: any) => {
+      mockedUseStore.mockImplementation((selector: StoreSelector) => {
         if (typeof selector === "function") {
           return selector({
             ...mockState,
@@ -478,7 +489,7 @@ describe("ModernDashboard", () => {
     });
 
     it("handles extreme metric values (100%) - Objective: Test boundary condition", async () => {
-      mockedUseStore.mockImplementation((selector: any) => {
+      mockedUseStore.mockImplementation((selector: StoreSelector) => {
         if (typeof selector === "function") {
           return selector({
             ...mockState,
@@ -500,7 +511,7 @@ describe("ModernDashboard", () => {
     });
 
     it("handles very low metric values (0%)", async () => {
-      mockedUseStore.mockImplementation((selector: any) => {
+      mockedUseStore.mockImplementation((selector: StoreSelector) => {
         if (typeof selector === "function") {
           return selector({
             ...mockState,
@@ -522,7 +533,7 @@ describe("ModernDashboard", () => {
     });
 
     it("handles negative response time gracefully", async () => {
-      mockedUseStore.mockImplementation((selector: any) => {
+      mockedUseStore.mockImplementation((selector: StoreSelector) => {
         if (typeof selector === "function") {
           return selector({
             ...mockState,
@@ -544,7 +555,7 @@ describe("ModernDashboard", () => {
     });
 
     it("handles undefined avg response time", async () => {
-      mockedUseStore.mockImplementation((selector: any) => {
+      mockedUseStore.mockImplementation((selector: StoreSelector) => {
         if (typeof selector === "function") {
           return selector({
             ...mockState,
@@ -566,7 +577,7 @@ describe("ModernDashboard", () => {
     });
 
     it("handles very large request count", async () => {
-      mockedUseStore.mockImplementation((selector: any) => {
+      mockedUseStore.mockImplementation((selector: StoreSelector) => {
         if (typeof selector === "function") {
           return selector({
             ...mockState,
@@ -618,7 +629,7 @@ describe("ModernDashboard", () => {
         type: "llama",
       }));
 
-      mockedUseStore.mockImplementation((selector: any) => {
+      mockedUseStore.mockImplementation((selector: StoreSelector) => {
         if (typeof selector === "function") {
           return selector({ ...mockState, models: manyModels });
         }
@@ -642,7 +653,7 @@ describe("ModernDashboard", () => {
         { id: "model2", name: 'Model with "quotes" & symbols', status: "idle", type: "mistral" },
       ];
 
-      mockedUseStore.mockImplementation((selector: any) => {
+      mockedUseStore.mockImplementation((selector: StoreSelector) => {
         if (typeof selector === "function") {
           return selector({ ...mockState, models: specialModels });
         }
@@ -682,7 +693,7 @@ describe("ModernDashboard", () => {
       ];
 
       for (const testCase of testCases) {
-        mockedUseStore.mockImplementation((selector: any) => {
+      mockedUseStore.mockImplementation((selector: (state: typeof mockState) => unknown) => {
           if (typeof selector === "function") {
             return selector({
               ...mockState,
@@ -725,7 +736,7 @@ describe("ModernDashboard", () => {
       });
 
       // Change to empty state
-      mockedUseStore.mockImplementation((selector: any) => {
+      mockedUseStore.mockImplementation((selector: StoreSelector) => {
         if (typeof selector === "function") {
           return selector({ ...mockState, models: [], metrics: undefined });
         }
@@ -784,7 +795,7 @@ describe("ModernDashboard", () => {
     });
 
     it("handles missing GPU memory metrics", async () => {
-      mockedUseStore.mockImplementation((selector: any) => {
+      mockedUseStore.mockImplementation((selector: StoreSelector) => {
         if (typeof selector === "function") {
           return selector({
             ...mockState,

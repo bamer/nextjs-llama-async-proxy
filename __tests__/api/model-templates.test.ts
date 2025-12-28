@@ -49,7 +49,7 @@ describe("GET /api/model-templates", () => {
 
     expect(response.status).toBe(200);
     expect(json.success).toBe(true);
-    expect(json.data model_templates).toEqual({
+    expect(json.data.model_templates).toEqual({
       "llama2-7b": "llama-2-7b",
       "llama3-8b": "llama-3-8b",
     });
@@ -76,7 +76,7 @@ describe("GET /api/model-templates", () => {
 
     expect(response.status).toBe(200);
     expect(json.success).toBe(true);
-    expect(json.data model_templates).toEqual({});
+    expect(json.data.model_templates).toEqual({});
   });
 
   it("should return 500 when file read fails", async () => {
@@ -170,7 +170,7 @@ describe("POST /api/model-templates", () => {
 
     expect(response.status).toBe(200);
     expect(json.success).toBe(true);
-    expect(json.data model_templates).toEqual({
+    expect(json.data.model_templates).toEqual({
       "custom-model": "custom-template",
     });
     expect(fs.writeFile).toHaveBeenCalled();
@@ -254,7 +254,7 @@ describe("POST /api/model-templates", () => {
 
     expect(response.status).toBe(200);
     expect(json.success).toBe(true);
-    expect(json.data model_templates).toEqual({});
+    expect(json.data.model_templates).toEqual({});
   });
 
   it("should handle large number of templates", async () => {
@@ -294,38 +294,7 @@ describe("POST /api/model-templates", () => {
     const json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(Object.keys(json.data model_templates || {}).length).toBe(100);
-  });
-
-    };
-
-    const mockRequest = {
-      json: jest.fn().mockResolvedValue(requestBody),
-    } as unknown as NextRequest;
-
-    (validationUtils.validateRequestBody as jest.Mock).mockReturnValue({
-      success: true,
-      data: requestBody,
-    });
-
-    (fs.readFile as jest.Mock).mockResolvedValue(
-      JSON.stringify({ model_templates: {}, default_model: null })
-    );
-
-    (validationUtils.validateConfig as jest.Mock).mockReturnValue({
-      success: true,
-      data: {
-        model_templates: requestBody.model_templates,
-        default_model: null,
-      },
-    });
-
-    (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
-
-    const response = await POST(mockRequest);
-
-    expect(response.status).toBe(200);
-    expect(json.success).toBe(true);
+    expect(Object.keys(json.data.model_templates || {}).length).toBe(100);
   });
 
   it("should handle concurrent POST requests", async () => {

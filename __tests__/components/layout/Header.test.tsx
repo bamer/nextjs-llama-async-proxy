@@ -91,7 +91,7 @@ describe('Header', () => {
       currentTheme: theme,
     });
 
-    const { container } = renderWithTheme(<Header />);
+    renderWithTheme(<Header />);
     const appBar = screen.getByTestId('header-appbar');
     expect(appBar).toBeInTheDocument();
   });
@@ -105,7 +105,7 @@ describe('Header', () => {
       currentTheme: theme,
     });
 
-    const { container } = renderWithTheme(<Header />);
+    renderWithTheme(<Header />);
     const appBar = screen.getByTestId('header-appbar');
     expect(appBar).toBeInTheDocument();
   });
@@ -209,7 +209,7 @@ describe('Header', () => {
         },
       }));
 
-      const { container } = renderWithTheme(<Header />);
+      renderWithTheme(<Header />);
       const appBar = screen.getByTestId('header-appbar');
       expect(appBar).toBeInTheDocument();
     });
@@ -227,7 +227,7 @@ describe('Header', () => {
     });
 
     it('handles missing Rocket icon gracefully', () => {
-      const { container } = renderWithTheme(<Header />);
+      renderWithTheme(<Header />);
 
       // Even if icon is missing, component should render
       expect(screen.getByTestId('header-appbar')).toBeInTheDocument();

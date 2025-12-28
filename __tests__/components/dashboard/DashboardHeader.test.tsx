@@ -4,6 +4,7 @@ import React from "react";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { createTheme, ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import type { MotionComponentProps } from "__tests__/types/mock-types";
 
 // Mock next/navigation
 jest.mock("next/navigation", () => ({
@@ -15,7 +16,7 @@ jest.mock("next/navigation", () => ({
 // Mock framer-motion
 jest.mock("framer-motion", () => ({
   m: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    div: ({ children, ...props }: MotionComponentProps) => <div {...props}>{children}</div>,
   },
 }));
 

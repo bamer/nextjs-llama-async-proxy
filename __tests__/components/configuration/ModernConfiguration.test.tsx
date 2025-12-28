@@ -5,12 +5,14 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import ModernConfiguration from '@/components/configuration/ModernConfiguration';
 import * as configHook from '@/components/configuration/hooks/useConfigurationForm';
 import * as loggerHook from '@/hooks/use-logger-config';
-import * as framerMotion from 'framer-motion';
 
 // Mock framer-motion
 jest.mock('framer-motion', () => ({
   m: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    div: (props: unknown) => {
+      const { children } = props as { children?: React.ReactNode };
+      return <div>{children}</div>;
+    },
   },
 }));
 
@@ -20,56 +22,78 @@ jest.mock('@/components/configuration/ConfigurationHeader', () => ({
 }));
 
 jest.mock('@/components/configuration/ConfigurationTabs', () => ({
-  ConfigurationTabs: ({ onChange }: any) => (
-    <div data-testid="configuration-tabs">
-      <button onClick={() => onChange({}, 0)}>General Settings</button>
-      <button onClick={() => onChange({}, 1)}>Llama-Server Settings</button>
-      <button onClick={() => onChange({}, 2)}>Advanced</button>
-      <button onClick={() => onChange({}, 3)}>Logger Settings</button>
-    </div>
-  ),
+  ConfigurationTabs: (props: unknown) => {
+    const { onChange } = props as { onChange: (event: unknown, index: number) => void };
+    return (
+      <div data-testid="configuration-tabs">
+        <button onClick={() => onChange({}, 0)}>General Settings</button>
+        <button onClick={() => onChange({}, 1)}>Llama-Server Settings</button>
+        <button onClick={() => onChange({}, 2)}>Advanced</button>
+        <button onClick={() => onChange({}, 3)}>Logger Settings</button>
+      </div>
+    );
+  },
 }));
 
 jest.mock('@/components/configuration/GeneralSettingsTab', () => ({
-  GeneralSettingsTab: ({ formConfig, onInputChange }: any) => (
-    <div data-testid="general-settings-tab">
-      <h3>General Settings</h3>
-      <input
-        name="basePath"
-        value={formConfig.basePath || ''}
-        onChange={onInputChange}
-        data-testid="basePath-input"
-      />
-    </div>
-  ),
+  GeneralSettingsTab: (props: unknown) => {
+    const { formConfig, onInputChange } = props as {
+      formConfig: { basePath?: string };
+      onInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    };
+    return (
+      <div data-testid="general-settings-tab">
+        <h3>General Settings</h3>
+        <input
+          name="basePath"
+          value={formConfig.basePath || ''}
+          onChange={onInputChange}
+          data-testid="basePath-input"
+        />
+      </div>
+    );
+  },
 }));
 
 jest.mock('@/components/configuration/LlamaServerSettingsTab', () => ({
-  LlamaServerSettingsTab: ({ formConfig, onLlamaServerChange }: any) => (
-    <div data-testid="llama-server-tab">
-      <h3>Llama-Server Settings</h3>
-      <input
-        name="llamaServer.host"
-        value={formConfig.llamaServer?.host || ''}
-        onChange={onLlamaServerChange}
-        data-testid="host-input"
-      />
-    </div>
-  ),
+  LlamaServerSettingsTab: (props: unknown) => {
+    const { formConfig, onLlamaServerChange } = props as {
+      formConfig: { llamaServer?: { host?: string } };
+      onLlamaServerChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    };
+    return (
+      <div data-testid="llama-server-tab">
+        <h3>Llama-Server Settings</h3>
+        <input
+          name="llamaServer.host"
+          value={formConfig.llamaServer?.host || ''}
+          onChange={onLlamaServerChange}
+          data-testid="host-input"
+        />
+      </div>
+    );
+  },
 }));
 
 jest.mock('@/components/configuration/AdvancedSettingsTab', () => ({
-  AdvancedSettingsTab: ({ isSaving, onReset, onSync }: any) => (
-    <div data-testid="advanced-settings-tab">
-      <h3>Advanced Settings</h3>
-      <button onClick={onReset} disabled={isSaving} data-testid="reset-button">
-        Reset to Defaults
-      </button>
-      <button onClick={onSync} disabled={isSaving} data-testid="sync-button">
-        Sync with Backend
-      </button>
-    </div>
-  ),
+  AdvancedSettingsTab: (props: unknown) => {
+    const { isSaving, onReset, onSync } = props as {
+      isSaving: boolean;
+      onReset: () => void;
+      onSync: () => void;
+    };
+    return (
+      <div data-testid="advanced-settings-tab">
+        <h3>Advanced Settings</h3>
+        <button onClick={onReset} disabled={isSaving} data-testid="reset-button">
+          Reset to Defaults
+        </button>
+        <button onClick={onSync} disabled={isSaving} data-testid="sync-button">
+          Sync with Backend
+        </button>
+      </div>
+    );
+  },
 }));
 
 jest.mock('@/components/configuration/LoggerSettingsTab', () => ({
@@ -77,27 +101,39 @@ jest.mock('@/components/configuration/LoggerSettingsTab', () => ({
 }));
 
 jest.mock('@/components/configuration/ConfigurationStatusMessages', () => ({
-  ConfigurationStatusMessages: ({ saveSuccess, validationErrors }: any) => (
-    <div data-testid="status-messages">
-      {saveSuccess && <div data-testid="success-message">Configuration saved successfully!</div>}
-      {validationErrors && validationErrors.length > 0 && (
-        <div data-testid="validation-errors">
-          <h4>Configuration Errors</h4>
-          {validationErrors.map((error: string, i: number) => (
-            <div key={i}>• {error}</div>
-          ))}
-        </div>
-      )}
-    </div>
-  ),
+  ConfigurationStatusMessages: (props: unknown) => {
+    const { saveSuccess, validationErrors } = props as {
+      saveSuccess?: boolean;
+      validationErrors?: string[];
+    };
+    return (
+      <div data-testid="status-messages">
+        {saveSuccess && <div data-testid="success-message">Configuration saved successfully!</div>}
+        {validationErrors && validationErrors.length > 0 && (
+          <div data-testid="validation-errors">
+            <h4>Configuration Errors</h4>
+            {validationErrors.map((error: string, i: number) => (
+              <div key={i}>• {error}</div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  },
 }));
 
 jest.mock('@/components/configuration/ConfigurationActions', () => ({
-  ConfigurationActions: ({ isSaving, onSave }: any) => (
-    <button onClick={onSave} disabled={isSaving} data-testid="save-button">
-      {isSaving ? 'Saving...' : 'Save Configuration'}
-    </button>
-  ),
+  ConfigurationActions: (props: unknown) => {
+    const { isSaving, onSave } = props as {
+      isSaving: boolean;
+      onSave: () => void;
+    };
+    return (
+      <button onClick={onSave} disabled={isSaving} data-testid="save-button">
+        {isSaving ? 'Saving...' : 'Save Configuration'}
+      </button>
+    );
+  },
 }));
 
 jest.mock('@/hooks/use-logger-config', () => ({
