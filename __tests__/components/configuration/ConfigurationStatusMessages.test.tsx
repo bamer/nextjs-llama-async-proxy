@@ -3,6 +3,7 @@ import '@testing-library/jest-dom';
 import React from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { ConfigurationStatusMessages } from '@/components/configuration/ConfigurationStatusMessages';
+import { useTheme } from '@/contexts/ThemeContext';
 
 jest.mock('framer-motion', () => ({
   m: {
@@ -10,9 +11,7 @@ jest.mock('framer-motion', () => ({
   },
 }));
 
-jest.mock('@/contexts/ThemeContext', () => ({
-  useTheme: jest.fn(),
-}));
+jest.mock('@/contexts/ThemeContext');
 
 const theme = createTheme();
 
@@ -22,8 +21,13 @@ function renderWithTheme(component: React.ReactElement) {
 
 describe('ConfigurationStatusMessages', () => {
   beforeEach(() => {
-    const { useTheme } = require('@/contexts/ThemeContext');
-    jest.mocked(useTheme).mockReturnValue({ isDark: false });
+    jest.mocked(useTheme).mockReturnValue({
+      isDark: false,
+      mode: 'light' as const,
+      setMode: jest.fn(),
+      toggleTheme: jest.fn(),
+      currentTheme: theme,
+    });
   });
 
   it('renders nothing when no messages', () => {
@@ -100,9 +104,14 @@ describe('ConfigurationStatusMessages', () => {
   });
 
   it('renders success message with dark theme', () => {
-    const { useTheme } = require('@/contexts/ThemeContext');
     const mockUseTheme = useTheme as jest.MockedFunction<typeof useTheme>;
-    mockUseTheme.mockReturnValue({ isDark: true });
+    mockUseTheme.mockReturnValue({
+      isDark: true,
+      mode: 'dark' as const,
+      setMode: jest.fn(),
+      toggleTheme: jest.fn(),
+      currentTheme: theme,
+    });
     renderWithTheme(
       <ConfigurationStatusMessages saveSuccess={true} validationErrors={[]} />
     );
@@ -110,9 +119,14 @@ describe('ConfigurationStatusMessages', () => {
   });
 
   it('renders validation errors with dark theme', () => {
-    const { useTheme } = require('@/contexts/ThemeContext');
     const mockUseTheme = useTheme as jest.MockedFunction<typeof useTheme>;
-    mockUseTheme.mockReturnValue({ isDark: true });
+    mockUseTheme.mockReturnValue({
+      isDark: true,
+      mode: 'dark' as const,
+      setMode: jest.fn(),
+      toggleTheme: jest.fn(),
+      currentTheme: theme,
+    });
     const errors = ['Test error'];
     renderWithTheme(
       <ConfigurationStatusMessages saveSuccess={false} validationErrors={errors} />

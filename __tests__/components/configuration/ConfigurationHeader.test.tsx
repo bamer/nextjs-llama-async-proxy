@@ -4,6 +4,7 @@ import React from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { ConfigurationHeader } from '@/components/configuration/ConfigurationHeader';
 import { ThemeProvider as CustomThemeProvider } from '@/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 jest.mock('framer-motion', () => ({
   m: {
@@ -24,8 +25,13 @@ function renderWithTheme(component: React.ReactElement) {
 
 describe('ConfigurationHeader', () => {
   beforeEach(() => {
-    const { useTheme } = require('@/contexts/ThemeContext');
-    jest.mocked(useTheme).mockReturnValue({ isDark: false });
+    jest.mocked(useTheme).mockReturnValue({
+      isDark: false,
+      mode: 'light' as const,
+      setMode: jest.fn(),
+      toggleTheme: jest.fn(),
+      currentTheme: theme,
+    });
   });
 
   it('renders correctly', () => {
@@ -52,9 +58,14 @@ describe('ConfigurationHeader', () => {
   });
 
   it('renders with dark theme', () => {
-    const { useTheme } = require('@/contexts/ThemeContext');
     const mockUseTheme = useTheme as jest.MockedFunction<typeof useTheme>;
-    mockUseTheme.mockReturnValue({ isDark: true });
+    mockUseTheme.mockReturnValue({
+      isDark: true,
+      mode: 'dark' as const,
+      setMode: jest.fn(),
+      toggleTheme: jest.fn(),
+      currentTheme: theme,
+    });
     const { container } = renderWithTheme(<ConfigurationHeader />);
     const divider = container.querySelector('.MuiDivider-root');
     expect(divider).toBeInTheDocument();

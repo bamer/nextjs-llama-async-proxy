@@ -4,6 +4,7 @@ import React from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { ThemeProvider as CustomThemeProvider } from '@/contexts/ThemeContext';
 import { MainLayout } from '@/components/layout/main-layout';
+import { useTheme } from '@/contexts/ThemeContext';
 
 jest.mock('@/components/layout/Header', () => ({
   Header: () => <div data-testid="header">Header</div>,
@@ -14,15 +15,14 @@ jest.mock('@/components/layout/Sidebar', () => ({
 }));
 
 jest.mock('@/contexts/ThemeContext', () => ({
-  useTheme: jest.fn(),
+  useTheme: jest.fn().mockImplementation(() => ({ isDark: false, toggleTheme: jest.fn() })),
   ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 const theme = createTheme();
-const { useTheme } = require('@/contexts/ThemeContext');
 
 function renderWithProviders(component: React.ReactElement, isDark = false) {
-  useTheme.mockReturnValue({ isDark, toggleTheme: jest.fn() });
+  (useTheme as jest.Mock).mockReturnValue({ isDark, toggleTheme: jest.fn() });
   return render(
     <ThemeProvider theme={theme}>
       <CustomThemeProvider>

@@ -3,6 +3,7 @@ import '@testing-library/jest-dom';
 import React from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Layout from '@/components/layout/Layout';
+import { useSidebar } from '@/components/layout/SidebarProvider';
 
 jest.mock('@/components/layout/SidebarProvider', () => ({
   SidebarProvider: ({ children }: { children: React.ReactNode }) => (
@@ -22,7 +23,7 @@ jest.mock('@/components/layout/SidebarProvider', () => ({
   SidebarProvider: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="sidebar-provider">{children}</div>
   ),
-  useSidebar: jest.fn(() => ({
+  useSidebar: jest.fn().mockImplementation(() => ({
     isOpen: false,
     toggleSidebar: jest.fn(),
     openSidebar: jest.fn(),
@@ -77,8 +78,7 @@ describe('Layout', () => {
   });
 
   it('applies ml-64 class when sidebar is open', () => {
-    const { useSidebar } = require('@/components/layout/SidebarProvider');
-    useSidebar.mockReturnValue({
+    jest.mocked(useSidebar).mockReturnValue({
       isOpen: true,
       toggleSidebar: jest.fn(),
       openSidebar: jest.fn(),
@@ -95,8 +95,7 @@ describe('Layout', () => {
   });
 
   it('does not apply ml-64 class when sidebar is closed', () => {
-    const { useSidebar } = require('@/components/layout/SidebarProvider');
-    useSidebar.mockReturnValue({
+    jest.mocked(useSidebar).mockReturnValue({
       isOpen: false,
       toggleSidebar: jest.fn(),
       openSidebar: jest.fn(),
@@ -336,11 +335,9 @@ describe('Layout', () => {
     });
 
     it('handles concurrent sidebar state changes', () => {
-      const { useSidebar } = require('@/components/layout/SidebarProvider');
-
       // Test rapid state changes
       for (let i = 0; i < 10; i++) {
-        useSidebar.mockReturnValue({
+        jest.mocked(useSidebar).mockReturnValue({
           isOpen: i % 2 === 0,
           toggleSidebar: jest.fn(),
           openSidebar: jest.fn(),
@@ -541,10 +538,9 @@ describe('Layout', () => {
     });
   });
 
-  describe('Collapsed/Expanded States', ()   => {
+  describe('Collapsed/Expanded States', () => {
     it('handles sidebar closed state correctly', () => {
-      const { useSidebar } = require('@/components/layout/SidebarProvider');
-      useSidebar.mockReturnValue({
+      jest.mocked(useSidebar).mockReturnValue({
         isOpen: false,
         toggleSidebar: jest.fn(),
         openSidebar: jest.fn(),
@@ -562,8 +558,7 @@ describe('Layout', () => {
     });
 
     it('handles sidebar open state correctly', () => {
-      const { useSidebar } = require('@/components/layout/SidebarProvider');
-      useSidebar.mockReturnValue({
+      jest.mocked(useSidebar).mockReturnValue({
         isOpen: true,
         toggleSidebar: jest.fn(),
         openSidebar: jest.fn(),
@@ -581,7 +576,6 @@ describe('Layout', () => {
     });
 
     it('handles state transitions without errors', () => {
-      const { useSidebar } = require('@/components/layout/SidebarProvider');
       const { container, rerender } = renderWithTheme(
         <Layout>
           <div>Test</div>
@@ -589,7 +583,7 @@ describe('Layout', () => {
       );
 
       // Transition to open
-      useSidebar.mockReturnValue({
+      (useSidebar as jest.Mock).mockReturnValue({
         isOpen: true,
         toggleSidebar: jest.fn(),
         openSidebar: jest.fn(),
@@ -605,7 +599,7 @@ describe('Layout', () => {
       );
 
       // Transition to closed
-      useSidebar.mockReturnValue({
+      (useSidebar as jest.Mock).mockReturnValue({
         isOpen: false,
         toggleSidebar: jest.fn(),
         openSidebar: jest.fn(),
@@ -622,10 +616,8 @@ describe('Layout', () => {
     });
 
     it('handles rapid state changes', () => {
-      const { useSidebar } = require('@/components/layout/SidebarProvider');
-
       for (let i = 0; i < 20; i++) {
-        useSidebar.mockReturnValue({
+        (useSidebar as jest.Mock).mockReturnValue({
           isOpen: i % 2 === 0,
           toggleSidebar: jest.fn(),
           openSidebar: jest.fn(),

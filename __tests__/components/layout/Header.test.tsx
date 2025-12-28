@@ -5,14 +5,13 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Header } from '@/components/layout/Header';
 import * as sidebarContext from '@/components/layout/SidebarProvider';
 import * as themeContext from '@/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 jest.mock('@/components/layout/SidebarProvider', () => ({
   useSidebar: jest.fn(),
 }));
 
-jest.mock('@/contexts/ThemeContext', () => ({
-  useTheme: jest.fn(),
-}));
+jest.mock('@/contexts/ThemeContext');
 
 jest.mock('@/components/ui/ThemeToggle', () => ({
   ThemeToggle: () => <button data-testid="theme-toggle">Theme Toggle</button>,
@@ -151,13 +150,11 @@ describe('Header', () => {
     });
 
     it('handles rapid theme toggles without errors', () => {
-      const { useTheme } = require('@/contexts/ThemeContext');
-
       renderWithTheme(<Header />);
 
       // Simulate rapid theme switches
       for (let i = 0; i < 10; i++) {
-        useTheme.mockReturnValue({
+        jest.mocked(useTheme).mockReturnValue({
           isDark: i % 2 === 0,
           mode: i % 2 === 0 ? ('dark' as const) : ('light' as const),
           setMode: jest.fn(),

@@ -3,6 +3,7 @@ import '@testing-library/jest-dom';
 import React from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { LlamaServerSettingsTab } from '@/components/configuration/LlamaServerSettingsTab';
+import { useTheme } from '@/contexts/ThemeContext';
 
 jest.mock('framer-motion', () => ({
   m: {
@@ -10,9 +11,7 @@ jest.mock('framer-motion', () => ({
   },
 }));
 
-jest.mock('@/contexts/ThemeContext', () => ({
-  useTheme: jest.fn(),
-}));
+jest.mock('@/contexts/ThemeContext');
 
 const theme = createTheme();
 
@@ -40,8 +39,13 @@ describe('LlamaServerSettingsTab', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    const { useTheme } = require('@/contexts/ThemeContext');
-    jest.mocked(useTheme).mockReturnValue({ isDark: false });
+    jest.mocked(useTheme).mockReturnValue({
+      isDark: false,
+      mode: 'light' as const,
+      setMode: jest.fn(),
+      toggleTheme: jest.fn(),
+      currentTheme: theme,
+    });
   });
 
   it('renders correctly', () => {
@@ -195,9 +199,14 @@ describe('LlamaServerSettingsTab', () => {
   });
 
   it('renders with dark theme', () => {
-    const { useTheme } = require('@/contexts/ThemeContext');
     const mockUseTheme = useTheme as jest.MockedFunction<typeof useTheme>;
-    mockUseTheme.mockReturnValue({ isDark: true });
+    mockUseTheme.mockReturnValue({
+      isDark: true,
+      mode: 'dark' as const,
+      setMode: jest.fn(),
+      toggleTheme: jest.fn(),
+      currentTheme: theme,
+    });
     renderWithTheme(
       <LlamaServerSettingsTab formConfig={defaultFormConfig} onLlamaServerChange={mockOnLlamaServerChange} />
     );

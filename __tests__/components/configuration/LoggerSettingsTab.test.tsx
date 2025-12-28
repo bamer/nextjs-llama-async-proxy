@@ -4,14 +4,13 @@ import React from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { LoggerSettingsTab } from '@/components/configuration/LoggerSettingsTab';
 import * as loggerHook from '@/hooks/use-logger-config';
+import { useTheme } from '@/contexts/ThemeContext';
 
 jest.mock('@/hooks/use-logger-config', () => ({
   useLoggerConfig: jest.fn(),
 }));
 
-jest.mock('@/contexts/ThemeContext', () => ({
-  useTheme: jest.fn(),
-}));
+jest.mock('@/contexts/ThemeContext');
 
 const theme = createTheme();
 
@@ -33,8 +32,13 @@ describe('LoggerSettingsTab', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    const { useTheme } = require('@/contexts/ThemeContext');
-    jest.mocked(useTheme).mockReturnValue({ isDark: false });
+    jest.mocked(useTheme).mockReturnValue({
+      isDark: false,
+      mode: 'light' as const,
+      setMode: jest.fn(),
+      toggleTheme: jest.fn(),
+      currentTheme: theme,
+    });
     (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
       loggerConfig: defaultLoggerConfig,
       updateConfig: mockUpdateConfig,
@@ -166,9 +170,14 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('renders with dark theme', () => {
-    const { useTheme } = require('@/contexts/ThemeContext');
     const mockUseTheme = useTheme as jest.MockedFunction<typeof useTheme>;
-    mockUseTheme.mockReturnValue({ isDark: true });
+    mockUseTheme.mockReturnValue({
+      isDark: true,
+      mode: 'dark' as const,
+      setMode: jest.fn(),
+      toggleTheme: jest.fn(),
+      currentTheme: theme,
+    });
     renderWithTheme(<LoggerSettingsTab />);
     expect(screen.getByText('Log Levels')).toBeInTheDocument();
   });
