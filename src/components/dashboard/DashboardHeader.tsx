@@ -1,5 +1,5 @@
-import { Box, Typography, Chip, IconButton, Tooltip, CircularProgress } from "@mui/material";
-import { Refresh, Settings as SettingsIcon, CloudUpload } from "@mui/icons-material";
+import { Box, Typography, Chip, IconButton, Tooltip, CircularProgress, Button } from "@mui/material";
+import { Refresh, Settings as SettingsIcon, PowerSettingsNew } from "@mui/icons-material";
 import { m } from "framer-motion";
 import { memo, useCallback } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -17,6 +17,10 @@ interface DashboardHeaderProps {
   } | undefined;
   onRefresh?: () => void;
   refreshing?: boolean;
+  onRestartServer?: () => void;
+  onStartServer?: () => void;
+  serverRunning?: boolean;
+  serverLoading?: boolean;
 }
 
 // Static styles for connection chip animation
@@ -35,8 +39,14 @@ function DashboardHeader({
   reconnectionAttempts = 0,
   metrics,
   onRefresh,
-  refreshing = false
+  refreshing = false,
+  onRestartServer,
+  onStartServer,
+  serverRunning = false,
+  serverLoading = false
 }: DashboardHeaderProps): React.ReactNode {
+  // serverRunning is reserved for future use (e.g., to disable/enable buttons based on server state)
+  void serverRunning;
   const { isDark } = useTheme();
   const router = useRouter();
 
@@ -104,6 +114,46 @@ function DashboardHeader({
                   : "none",
             }}
           />
+          {onRestartServer && (
+            <Tooltip title="Restart Server">
+              <Button
+                size="small"
+                variant="outlined"
+                color="warning"
+                startIcon={<PowerSettingsNew />}
+                onClick={onRestartServer}
+                disabled={serverLoading}
+                sx={{
+                  minWidth: 'auto',
+                  px: 1.5,
+                  py: 0.5,
+                  fontSize: '0.75rem',
+                }}
+              >
+                Restart
+              </Button>
+            </Tooltip>
+          )}
+          {onStartServer && (
+            <Tooltip title="Start Server">
+              <Button
+                size="small"
+                variant="outlined"
+                color="success"
+                startIcon={<PowerSettingsNew />}
+                onClick={onStartServer}
+                disabled={serverLoading}
+                sx={{
+                  minWidth: 'auto',
+                  px: 1.5,
+                  py: 0.5,
+                  fontSize: '0.75rem',
+                }}
+              >
+                {serverLoading ? 'Starting...' : 'Start'}
+              </Button>
+            </Tooltip>
+          )}
           <Tooltip title="Refresh Dashboard">
             <IconButton onClick={onRefresh} color="primary" disabled={refreshing}>
               {refreshing ? <CircularProgress size={20} color="inherit" /> : <Refresh />}
@@ -126,7 +176,11 @@ const MemoizedDashboardHeader = memo(DashboardHeader, (prev, next) => {
          prev.reconnectionAttempts === next.reconnectionAttempts &&
          prev.metrics?.uptime === next.metrics?.uptime &&
          prev.onRefresh === next.onRefresh &&
-         prev.refreshing === next.refreshing;
+         prev.refreshing === next.refreshing &&
+         prev.onRestartServer === next.onRestartServer &&
+         prev.onStartServer === next.onStartServer &&
+         prev.serverRunning === next.serverRunning &&
+         prev.serverLoading === next.serverLoading;
 });
 
 export default MemoizedDashboardHeader;

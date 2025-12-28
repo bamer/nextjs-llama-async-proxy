@@ -28,9 +28,12 @@ const LogsPage = () => {
     logs.filter((log) => {
       const source = log.source || (typeof log.context?.source === 'string' ? log.context.source : 'application');
       const messageText = typeof log.message === 'string' ? log.message : JSON.stringify(log.message);
-      const matchesText =
-        messageText.toLowerCase().includes(filterText.toLowerCase()) ||
-        source.toLowerCase().includes(filterText.toLowerCase());
+      const trimmedFilterText = filterText.trim();
+
+      // If filter is whitespace-only, match all logs
+      const matchesText = trimmedFilterText === '' ||
+        messageText.toLowerCase().includes(trimmedFilterText.toLowerCase()) ||
+        source.toLowerCase().includes(trimmedFilterText.toLowerCase());
       const matchesLevel = selectedLevel === 'all' || log.level === selectedLevel;
       return matchesText && matchesLevel;
     }).slice(0, maxLines),
@@ -47,6 +50,7 @@ const LogsPage = () => {
       case 'warn': return 'bg-yellow-50 border-yellow-200 dark:bg-yellow-950 dark:border-yellow-800';
       case 'info': return 'bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800';
       case 'debug': return 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700';
+      case 'unknown': return 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700';
       default: return 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700';
     }
   };
@@ -57,6 +61,7 @@ const LogsPage = () => {
       case 'warn': return 'text-yellow-700 dark:text-yellow-300';
       case 'info': return 'text-blue-700 dark:text-blue-300';
       case 'debug': return 'text-gray-600 dark:text-gray-400';
+      case 'unknown': return 'text-gray-600 dark:text-gray-400';
       default: return 'text-gray-600 dark:text-gray-400';
     }
   };
@@ -124,21 +129,22 @@ const LogsPage = () => {
                {logs.length === 0 ? 'No logs available' : 'No logs match the selected filters'}
              </div>
            ) : (
-               filteredLogs.map((log, index) => {
-                 const source = log.source || (typeof log.context?.source === 'string' ? log.context.source : 'application');
-                 const messageText = typeof log.message === 'string' ? log.message : JSON.stringify(log.message);
-                 return (
-                   <div key={index} className={`p-3 border rounded-md ${getLogLevelColor(log.level)} transition-all hover:shadow-sm`}>
-                     <div className="flex justify-between items-start">
-                       <span className={`font-mono ${getLogLevelTextColor(log.level)} font-medium`}>
-                         {log.level.toUpperCase()} - {new Date(log.timestamp).toLocaleTimeString()}
-                       </span>
-                       <span className="text-xs opacity-60 ml-2 flex-shrink-0">{source}</span>
-                     </div>
-                     <p className="mt-2 font-mono text-sm leading-relaxed">{messageText}</p>
-                   </div>
-                 );
-               })
+                filteredLogs.map((log, index) => {
+                  const source = log.source || (typeof log.context?.source === 'string' ? log.context.source : 'application');
+                  const messageText = typeof log.message === 'string' ? log.message : JSON.stringify(log.message);
+                  const level = log.level || 'unknown';
+                  return (
+                    <div key={index} className={`p-3 border rounded-md ${getLogLevelColor(level)} transition-all hover:shadow-sm`}>
+                      <div className="flex justify-between items-start">
+                        <span className={`font-mono ${getLogLevelTextColor(level)} font-medium`}>
+                          {level.toUpperCase()} - {new Date(log.timestamp).toLocaleTimeString()}
+                        </span>
+                        <span className="text-xs opacity-60 ml-2 flex-shrink-0">{source}</span>
+                      </div>
+                      <p className="mt-2 font-mono text-sm leading-relaxed">{messageText}</p>
+                    </div>
+                  );
+                })
            )}
          </div>
       </div>

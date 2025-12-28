@@ -96,6 +96,22 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
           if (!modelsThrottleRef.current) {
             modelsThrottleRef.current = setTimeout(processModelsBatch, 1000);
           }
+        } else if (msg.type === 'logs' && msg.data) {
+          // Batch logs with 1000ms debounce
+          const logs = msg.data as LogEntry[];
+          console.log('[WebSocketProvider] Received logs batch:', logs.length, 'entries');
+          logQueueRef.current.push(...logs);
+          if (!logThrottleRef.current) {
+            logThrottleRef.current = setTimeout(processLogQueue, 1000);
+          }
+        } else if (msg.type === 'log' && msg.data) {
+          // Single log with 500ms debounce
+          const log = msg.data as LogEntry;
+          console.log('[WebSocketProvider] Received single log:', log);
+          logQueueRef.current.push(log);
+          if (!logThrottleRef.current) {
+            logThrottleRef.current = setTimeout(processLogQueue, 500);
+          }
         } else if (msg.type === 'modelStopped') {
           // Model was stopped/unloaded from llama-server
           console.log('[WebSocketProvider] Model stopped:', msg.data);
@@ -106,12 +122,6 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         }
       }
     };
-
-    // Unload model from llama-server memory
-    const unloadModel = useCallback((modelId: string) => {
-      console.log('[WebSocketProvider] Unloading model:', modelId);
-      sendMessage('unloadModel', { modelId });
-    }, [sendMessage]);
 
     // Handle disconnect event
     const handleDisconnect = () => {
@@ -184,6 +194,10 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
   const stopModel = useCallback((modelId: string) => {
     websocketServer.stopModel(modelId);
+  }, []);
+
+  const unloadModel = useCallback((modelId: string) => {
+    websocketServer.sendMessage('unloadModel', { modelId });
   }, []);
 
   const value: WebSocketContextType = {

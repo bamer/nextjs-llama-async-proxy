@@ -53,7 +53,18 @@ interface AppActions {
   setActiveModel: (id: string | null) => void;
   setMetrics: (metrics: SystemMetrics) => void;
   addLog: (log: LogEntry) => void;
+  setLogs: (logs: LogEntry[]) => void;
+  clearLogs: () => void;
   setLlamaServerStatus: (status: 'running' | 'stopped' | 'unknown') => void;
+  addChartData: (type: keyof ChartHistory, value: number) => void;
+  setChartData: (data: ChartHistory) => void;
+  trimChartData: (maxPoints?: number) => void;
+  clearChartData: () => void;
+  rebuildChartHistory: (metrics: SystemMetrics) => void;
+  updateSettings: (updates: Partial<AppState['settings']>) => void;
+  setLoading: (isLoading: boolean) => void;
+  setError: (error: string | null) => void;
+  clearError: () => void;
 }
 
 export type AppStore = AppState & AppActions;
@@ -74,6 +85,7 @@ const initialState: AppState = {
   status: {
     isLoading: false,
     error: null,
+    llamaServerStatus: 'unknown',
   },
   chartHistory: {
     cpu: [],
@@ -111,6 +123,10 @@ const useAppStore = create<AppStore>()(
     addLog: (log) => set((state) => ({ logs: [log, ...state.logs].slice(0, 100) })),
     setLogs: (logs) => set({ logs }),
     clearLogs: () => set({ logs: [] }),
+    setLlamaServerStatus: (status) =>
+      set((state) => {
+        state.status = { ...state.status, llamaServerStatus: status };
+      }),
     updateSettings: (updates) =>
       set((state) => {
         state.settings = { ...state.settings, ...updates };

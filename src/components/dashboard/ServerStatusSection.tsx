@@ -1,8 +1,8 @@
 "use client";
 
-import { memo, useMemo } from "react";
-import { Card, CardContent, Typography, Box, Chip, Chip } from "@mui/material";
-import { useLlamaServerStatus } from "@/hooks/use-websocket";
+import { memo } from "react";
+import { Card, CardContent, Typography, Box, Chip } from "@mui/material";
+import { useLlamaServerStatus } from "@/lib/store";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface ServerStatusSectionProps {
@@ -12,37 +12,6 @@ interface ServerStatusSectionProps {
 function ServerStatusSection({ isDark }: ServerStatusSectionProps) {
   const llamaServerStatus = useLlamaServerStatus();
   const { isDark: themeIsDark } = useTheme();
-
-  const statusConfig = useMemo(() => {
-    if (llamaServerStatus === 'running') {
-      return {
-        label: 'RUNNING',
-        color: 'success',
-        bgColor: 'success.main',
-        chipColor: themeIsDark ? 'rgba(76, 175, 80, 0.2)' : 'rgba(25, 135, 84, 0.2)',
-        showStartButton: false,
-        showStopButton: true,
-      };
-    } else if (llamaServerStatus === 'loading') {
-      return {
-        label: 'LOADING',
-        color: 'warning',
-        bgColor: 'warning.main',
-        chipColor: themeIsDark ? 'rgba(251, 146, 60, 0.2)' : 'rgba(234, 179, 8, 0.2)',
-        showStartButton: false,
-        showStopButton: false,
-      };
-    } else {
-      return {
-        label: 'STOPPED',
-        color: 'default',
-        bgColor: 'default',
-        chipColor: themeIsDark ? 'rgba(148, 163, 184, 0.2)' : 'rgba(97, 97, 97, 0.2)',
-        showStartButton: true,
-        showStopButton: false,
-      };
-    }
-  }, [llamaServerStatus, themeIsDark]);
 
   return (
     <Card sx={{
@@ -58,10 +27,12 @@ function ServerStatusSection({ isDark }: ServerStatusSectionProps) {
         </Typography>
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
           <Chip
-            label={statusConfig.label}
-            color={statusConfig.color}
+            label={llamaServerStatus === 'running' ? 'RUNNING' : 'STOPPED'}
+            color={llamaServerStatus === 'running' ? 'success' : 'default'}
             sx={{
-              backgroundColor: statusConfig.chipColor,
+              backgroundColor: llamaServerStatus === 'running'
+                ? themeIsDark ? 'rgba(76, 175, 80, 0.2)' : 'rgba(25, 135, 84, 0.2)'
+                : themeIsDark ? 'rgba(148, 163, 184, 0.2)' : 'rgba(97, 97, 97, 0.2)',
               color: isDark ? '#fff' : '#000',
               fontWeight: 'bold',
               fontSize: '0.75rem',

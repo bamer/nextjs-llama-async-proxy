@@ -6,7 +6,7 @@ import { useWebSocket } from '@/hooks/use-websocket';
 import { useChartHistory } from '@/hooks/useChartHistory';
 import { Box, Grid, Typography, LinearProgress, CircularProgress } from '@mui/material';
 import { useTheme } from '@/contexts/ThemeContext';
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { SkeletonMetricCard } from '@/components/ui';
 
@@ -16,21 +16,19 @@ const PerformanceChart = lazy(() =>
     default: module.PerformanceChart,
   })),
 );
-const GPUMetricsSection = lazy(() =>
-  import('@/components/dashboard/GPUMetricsSection').then(module => ({
-    default: module.GPUMetricsSection,
-  })),
+
+const ServerStatusSection = lazy(() =>
+  import('@/components/dashboard/ServerStatusSection'),
 );
-const QuickActionsCard = lazy(() =>
-  import('@/components/dashboard/QuickActionsCard').then(module => ({
-    default: module.QuickActionsCard,
-  })),
+const GPUMetricsSection = lazy(() =>
+  import('@/components/dashboard/GPUMetricsSection'),
 );
 const ModelsListCard = lazy(() =>
   import('@/components/dashboard/ModelsListCard').then(module => ({
-    default: module.ModelsListCard,
-  })),
+    default: module.ModelsListCard
+  }))
 );
+
 
 // Loading fallback component for charts
 const ChartLoadingFallback = ({ isDark }: { isDark: boolean }) => (
@@ -54,8 +52,10 @@ const ChartLoadingFallback = ({ isDark }: { isDark: boolean }) => (
   </Box>
 );
 
-export default function ModernDashboard() {
-  const { isConnected, connectionState, sendMessage, reconnectionAttempts } = useWebSocket();
+export default function ModernDashboard () {
+  // ✅ Get WebSocket connection state - this is the SINGLE source of truth
+  const { isConnected, connectionState, sendMessage } = useWebSocket();
+  
   // Using optimized shallow selectors - prevents re-renders when data hasn't changed
   // These hooks use shallow comparison from Zustand, so components only re-render
   // when their specific data's reference changes, not when ANY store state changes
@@ -64,9 +64,9 @@ export default function ModernDashboard() {
   const safeMetrics = metrics || undefined;
   const [loading, setLoading] = useState(true);
   const [serverLoading, setServerLoading] = useState(false);
-  const [serverRunning, setServerRunning] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [serverRunning, setServerRunning] = useState(false);
 
   // React 19.2: useTransition for non-blocking operations
   const [isPending, startTransition] = useTransition();
@@ -80,12 +80,11 @@ export default function ModernDashboard() {
   const { isDark } = useTheme();
 
   useEffect(() => {
-    sendMessage('request_metrics', {});
-    sendMessage('request_models', {});
-
+    // Set loading to false after initial load
+    // Data requests are now handled by useWebSocket hook when connection is established
     const timer = setTimeout(() => setLoading(false), 1500);
     return () => clearTimeout(timer);
-  }, [sendMessage, isConnected]);
+  }, []); // No dependencies - only run once on mount
 
   // React 19.2: Use useEffectEvent for stable event handlers
   const handleRefresh = ReactUseEffectEvent(() => {
@@ -220,10 +219,14 @@ export default function ModernDashboard() {
       <DashboardHeader
         isConnected={isConnected}
         connectionState={connectionState}
-        reconnectionAttempts={reconnectionAttempts}
+        reconnectionAttempts={0}
         metrics={safeMetrics}
         onRefresh={handleRefresh}
         refreshing={refreshing}
+        onRestartServer={handleRestartServer}
+        onStartServer={handleStartServer}
+        serverRunning={serverRunning}
+        serverLoading={serverLoading}
       />
 
       {/* React 19.2: Show loading state during transitions */}
@@ -285,7 +288,7 @@ export default function ModernDashboard() {
       </Grid>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid size={{ xs: 12, lg: 8 }}>
+        <Grid size={{ xs: 12, lg: 12 }}>
           <Suspense fallback={<CircularProgress />}>
             {/* React 19.2: Pass deferred models to prevent blocking */}
             <ModelsListCard
@@ -295,45 +298,26 @@ export default function ModernDashboard() {
             />
           </Suspense>
         </Grid>
-        <Grid size={{ xs: 12, lg: 4 }}>
-          <Suspense fallback={<CircularProgress />}>
-            <QuickActionsCard
-              isDark={isDark}
-              onDownloadLogs={handleDownloadLogs}
-              onRestartServer={handleRestartServer}
-              onStartServer={handleStartServer}
-              serverRunning={serverRunning}
-              serverLoading={serverLoading}
-              downloading={downloading}
-            />
-          </Suspense>
-        </Grid>
       </Grid>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Suspense fallback={<ChartLoadingFallback isDark={isDark} />}>
-            {/* React 19.2: Pass memoized chart datasets */}
-            <PerformanceChart
-              title="System Performance"
-              description="CPU, Memory & Requests over time"
-              datasets={chartDatasets}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          {/* Server Status - Display llama-server status at top */}
+          <Grid size={{ xs: 12 }}>
+            <ServerStatusSection
               isDark={isDark}
-              height={350}
             />
-          </Suspense>
+          </Grid>
         </Grid>
 
-        {/* GPU Metrics Section - Reusable component showing both card and chart */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Suspense fallback={<ChartLoadingFallback isDark={isDark} />}>
-            <GPUMetricsSection
-              metrics={safeMetrics}
-              chartHistory={deferredChartHistory}
-              isDark={isDark}
-            />
-          </Suspense>
-        </Grid>
+      <Grid size={{ xs: 12 }}>
+        <Suspense fallback={<ChartLoadingFallback isDark={isDark} />}>
+          <PerformanceChart
+            title="Performance Metrics"
+            description="Real-time CPU, memory, and request metrics"
+            datasets={chartDatasets}
+            isDark={isDark}
+          />
+        </Suspense>
       </Grid>
 
       <Grid size={{ xs: 12 }}>
