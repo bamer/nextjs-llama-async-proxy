@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, lazy, Suspense, useMemo, useCallback, useDeferredValue, useTransition, useEffectEvent as ReactUseEffectEvent } from 'react';
+import { useEffect, useState, lazy, Suspense, useMemo, useDeferredValue, useTransition, useEffectEvent as ReactUseEffectEvent } from 'react';
 import { useModels, useMetrics } from '@/lib/store';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useChartHistory } from '@/hooks/useChartHistory';
@@ -17,12 +17,6 @@ const PerformanceChart = lazy(() =>
   })),
 );
 
-const ServerStatusSection = lazy(() =>
-  import('@/components/dashboard/ServerStatusSection'),
-);
-const GPUMetricsSection = lazy(() =>
-  import('@/components/dashboard/GPUMetricsSection'),
-);
 const ModelsListCard = lazy(() =>
   import('@/components/dashboard/ModelsListCard').then(module => ({
     default: module.ModelsListCard
@@ -285,8 +279,96 @@ export default function ModernDashboard () {
             threshold={10}
           />
         </Grid>
+        {/* GPU Metric Cards */}
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <MetricCard
+            title="GPU Utilization"
+            value={safeMetrics?.gpuUsage || 0}
+            unit="%"
+            icon="🎮"
+            isDark={isDark}
+            threshold={90}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <MetricCard
+            title="GPU Temperature"
+            value={safeMetrics?.gpuTemperature || 0}
+            unit="°C"
+            icon="🌡️"
+            isDark={isDark}
+            threshold={85}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <MetricCard
+            title="GPU Memory Usage"
+            value={(safeMetrics?.gpuMemoryUsed || 0) / (safeMetrics?.gpuMemoryTotal || 1) * 100}
+            unit="%"
+            icon="💿"
+            isDark={isDark}
+            threshold={90}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <MetricCard
+            title="GPU Power"
+            value={safeMetrics?.gpuPowerUsage || 0}
+            unit="W"
+            icon="⚡"
+            isDark={isDark}
+            threshold={300}
+          />
+        </Grid>
       </Grid>
 
+      {/* Middle Section: Performance Chart + GPU Metrics Graph (50% each) */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid size={{ xs: 12, lg: 6 }}>
+          <Suspense fallback={<ChartLoadingFallback isDark={isDark} />}>
+            <PerformanceChart
+              title="Performance Metrics"
+              description="Real-time CPU, memory, and request metrics"
+              datasets={chartDatasets}
+              isDark={isDark}
+            />
+          </Suspense>
+        </Grid>
+        <Grid size={{ xs: 12, lg: 6 }}>
+          <Suspense fallback={<CircularProgress />}>
+            <PerformanceChart
+              title="GPU Utilization & Power"
+              description="GPU percentage and power consumption over time"
+              datasets={[
+                {
+                  dataKey: 'gpuUtil',
+                  label: 'GPU Utilization %',
+                  colorDark: '#f472b6',
+                  colorLight: '#dc2626',
+                  valueFormatter: (value) => value !== null ? `${value.toFixed(1)}%` : 'N/A',
+                  yAxisLabel: '%',
+                  data: deferredChartHistory.gpuUtil,
+                },
+                {
+                  dataKey: 'power',
+                  label: 'Power (W)',
+                  colorDark: '#fb923c',
+                  colorLight: '#f97316',
+                  valueFormatter: (value) => value !== null ? `${value.toFixed(1)}W` : 'N/A',
+                  yAxisLabel: 'W',
+                  data: deferredChartHistory.power,
+                },
+              ]}
+              isDark={isDark}
+              height={350}
+              showAnimation={false}
+              xAxisType="band"
+            />
+          </Suspense>
+        </Grid>
+      </Grid>
+
+      {/* Bottom Section: Models List (full width) */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid size={{ xs: 12, lg: 12 }}>
           <Suspense fallback={<CircularProgress />}>
@@ -298,62 +380,6 @@ export default function ModernDashboard () {
             />
           </Suspense>
         </Grid>
-      </Grid>
-
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {/* Server Status - Display llama-server status at top */}
-          <Grid size={{ xs: 12 }}>
-            <ServerStatusSection
-              isDark={isDark}
-            />
-          </Grid>
-        </Grid>
-
-      <Grid size={{ xs: 12 }}>
-        <Suspense fallback={<ChartLoadingFallback isDark={isDark} />}>
-          <PerformanceChart
-            title="Performance Metrics"
-            description="Real-time CPU, memory, and request metrics"
-            datasets={chartDatasets}
-            isDark={isDark}
-          />
-        </Suspense>
-      </Grid>
-
-      <Grid size={{ xs: 12 }}>
-        <Box
-          sx={{
-            p: 3,
-            background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
-            backdropFilter: 'blur(10px)',
-            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
-            borderRadius: 2,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 4,
-          }}
-        >
-          <Typography variant="body2" color="text.secondary">
-            Uptime
-          </Typography>
-          <Typography variant="h6" fontWeight="bold">
-            {formattedUptime}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Total Requests
-          </Typography>
-          <Typography variant="h6" fontWeight="bold">
-            {safeMetrics?.totalRequests || 0}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Avg Response Time
-          </Typography>
-          <Typography variant="h6" fontWeight="bold">
-            {safeMetrics?.avgResponseTime || 0}ms
-          </Typography>
-        </Box>
       </Grid>
     </Box>
   );

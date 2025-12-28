@@ -45,8 +45,6 @@ function DashboardHeader({
   serverRunning = false,
   serverLoading = false
 }: DashboardHeaderProps): React.ReactNode {
-  // serverRunning is reserved for future use (e.g., to disable/enable buttons based on server state)
-  void serverRunning;
   const { isDark } = useTheme();
   const router = useRouter();
 
@@ -135,11 +133,11 @@ function DashboardHeader({
             </Tooltip>
           )}
           {onStartServer && (
-            <Tooltip title="Start Server">
+            <Tooltip title={serverRunning ? "Stop Server" : "Start Server"}>
               <Button
                 size="small"
                 variant="outlined"
-                color="success"
+                color={serverRunning ? "error" : "success"}
                 startIcon={<PowerSettingsNew />}
                 onClick={onStartServer}
                 disabled={serverLoading}
@@ -150,7 +148,10 @@ function DashboardHeader({
                   fontSize: '0.75rem',
                 }}
               >
-                {serverLoading ? 'Starting...' : 'Start'}
+                {serverLoading
+                  ? (serverRunning ? 'Stopping...' : 'Starting...')
+                  : (serverRunning ? 'Stop' : 'Start')
+                }
               </Button>
             </Tooltip>
           )}
