@@ -1,6 +1,7 @@
 # AGENTS.md - Agent Guidelines for this Repository
 
 This document provides guidelines for agentic coding assistants working in this Next.js 16 + React 19.2 codebase.
+**Critical**: never DELETE this file for whatever reason.
 
 ## Build / Lint / Test Commands
 
@@ -32,7 +33,7 @@ pnpm test <test-file-path>
 
 ### Imports & Formatting
 
-- it's mandatory that you don't make <tool_call> inside  <thinking> block if you do this opencode bug
+- **Critical**:it's mandatory that you don't make <tool_call> inside  <thinking> block if you do this opencode bug
 - Use `"use client";` directive at the top of client-side components (first line)
 - Import order: builtin → external → internal (@/ imports) → parent → sibling → index
 - Group internal imports by path (@/components, @/hooks, @/services, etc.)

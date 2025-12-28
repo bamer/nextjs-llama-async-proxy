@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { setItem as batchSetItem, getItem } from '@/utils/local-storage-batch';
+import React, { useState } from 'react';
 
 interface Config {
   basePath: string;
@@ -44,37 +43,6 @@ const ConfigurationPage = () => {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
-
-  // Load config from localStorage on mount
-  useEffect(() => {
-    const savedConfig = getItem('app-config');
-    if (savedConfig) {
-      try {
-        const parsedConfig = JSON.parse(savedConfig);
-        // Ensure modelDefaults exists with fallback values
-        const safeConfig: Config = {
-          basePath: parsedConfig.basePath || '/home/user/models',
-          logLevel: parsedConfig.logLevel || 'info',
-          maxConcurrentModels: parsedConfig.maxConcurrentModels || 5,
-          autoUpdate: parsedConfig.autoUpdate ?? true,
-          notificationsEnabled: parsedConfig.notificationsEnabled ?? true,
-          modelDefaults: {
-            ctx_size: parsedConfig.modelDefaults?.ctx_size ?? 4096,
-            batch_size: parsedConfig.modelDefaults?.batch_size ?? 2048,
-            temperature: parsedConfig.modelDefaults?.temperature ?? 0.8,
-            top_p: parsedConfig.modelDefaults?.top_p ?? 0.9,
-            top_k: parsedConfig.modelDefaults?.top_k ?? 40,
-            gpu_layers: parsedConfig.modelDefaults?.gpu_layers ?? -1,
-            threads: parsedConfig.modelDefaults?.threads ?? -1,
-          }
-        };
-        setConfig(safeConfig);
-      } catch (error) {
-        console.error('Failed to parse saved config:', error);
-        // Keep default config
-      }
-    }
-  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;

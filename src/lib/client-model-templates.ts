@@ -1,5 +1,3 @@
-import { setItem, getItem, removeItem } from '@/utils/local-storage-batch';
-
 export interface ModelTemplate {
   name: string;
   template: string;
@@ -58,10 +56,6 @@ export async function loadModelTemplates(): Promise<Record<string, string>> {
       };
       isInitialized = true;
 
-      // Non-blocking localStorage write using batch utility
-      setItem('model-templates-cache', JSON.stringify(cachedTemplates));
-      setItem('model-templates-timestamp', Date.now().toString());
-
       return cachedTemplates;
     } catch (error) {
       clearTimeout(timeoutId);
@@ -73,19 +67,6 @@ export async function loadModelTemplates(): Promise<Record<string, string>> {
         console.error("Failed to load templates from API:", error);
       }
 
-      // Fallback to localStorage cache
-      const cached = getItem('model-templates-cache');
-      if (cached) {
-        try {
-          cachedTemplates = JSON.parse(cached);
-          isInitialized = true;
-          return cachedTemplates;
-        } catch (e) {
-          console.error('Failed to parse cached templates:', e);
-        }
-      }
-
-      // Final fallback to defaults
       return DEFAULT_TEMPLATES.reduce((acc, t) => ({ ...acc, [t.name]: t.template }), {});
     } finally {
       loadingPromise = null;

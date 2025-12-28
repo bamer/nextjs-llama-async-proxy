@@ -17,6 +17,8 @@ interface ErrorBoundaryState {
 }
 
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  private loggerAvailable: boolean = false;
+
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
@@ -24,41 +26,154 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       error: null,
       errorInfo: null,
     };
+
+    // Check if client logger module is available
+    if (typeof window !== "undefined") {
+      try {
+        this.loggerAvailable = true;
+      } catch (err) {
+        console.warn("[ErrorBoundary] Failed to initialize logger:", err);
+        this.loggerAvailable = false;
+      }
+    }
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error, errorInfo: null };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // Log to console
-    console.error("ErrorBoundary caught an error:", error, errorInfo);
+  componentDidCatch(error: unknown, errorInfo: ErrorInfo): void {
+    // Normalize error to ensure it's always an Error instance
+    const errorObj = this.normalizeError(error);
 
-    // Log to client-side logger
-    if (typeof window !== "undefined") {
-      try {
-        import("@/lib/client-logger").then(({ getLogger }) => {
-          const logger = getLogger();
-          logger.error("React Error Boundary caught an error", {
-            error: error.message,
-            stack: error.stack,
-            componentStack: errorInfo.componentStack,
-          });
-        }).catch(() => {
-          console.error("React Error Boundary caught an error", error, errorInfo);
-        });
-      } catch (err) {
-        console.error("Error in logger import", err);
-      }
+    // Check if this is a non-critical initialization error
+    if (this.isNonCriticalError(errorObj)) {
+      console.warn("[ErrorBoundary] Ignored non-critical error:", errorObj.message);
+      return;
     }
 
+    // Log to console immediately with full context
+    console.error("[ErrorBoundary] Caught an error:", {
+      name: errorObj.name,
+      message: errorObj.message,
+      stack: errorObj.stack,
+      componentStack: errorInfo.componentStack,
+      error: error
+    });
+
+    // Log to client-side logger (synchronously - already loaded)
+    this.logToClientLogger(errorObj, errorInfo);
+
     // Call custom error handler if provided
-    if (this.props.onError) {
-      this.props.onError(error, errorInfo);
+    if (this.props.onError && errorObj instanceof Error) {
+      this.props.onError(errorObj, errorInfo);
     }
 
     // Store error info in state for display in development
-    this.setState({ errorInfo });
+    this.setState({ error: errorObj, errorInfo });
+  }
+
+  /**
+   * Normalize error to ensure it's always an Error instance
+   * Handles cases where error might be string, object, or unknown type
+   */
+  private normalizeError(error: unknown): Error {
+    if (error instanceof Error) {
+      return error;
+    }
+
+    if (typeof error === "string") {
+      return new Error(error);
+    }
+
+    if (error && typeof error === "object" && "message" in error) {
+      // Handle objects that have a message property
+      const message = String((error as { message: unknown }).message || "Unknown error");
+      const normalizedError = new Error(message);
+      // Attach original object as a property for debugging
+      (normalizedError as Error & { originalError: unknown }).originalError = error;
+      return normalizedError;
+    }
+
+    // Fallback for completely unknown error types
+    return new Error(`Unknown error: ${String(error)}`);
+  }
+
+  /**
+   * Check if error is a non-critical initialization or browser error
+   * These errors are expected in certain scenarios and should be ignored
+   */
+  private isNonCriticalError(error: Error): boolean {
+    const nonCriticalPatterns = [
+      // Browser-specific errors
+      "ResizeObserver loop limit exceeded",
+      "ResizeObserver loop completed with undelivered notifications",
+
+      // React initialization errors (can happen during hydration)
+      "Text content does not match server-rendered HTML",
+      "Hydration failed",
+
+      // Chunk loading errors (can happen during hot reload)
+      "Loading CSS chunk",
+      "ChunkLoadError",
+      "Failed to fetch dynamically imported module",
+
+      // Expected context errors (component will handle these)
+      "useTheme must be used within a ThemeProvider",
+      "useSidebar must be used within a SidebarProvider",
+    ];
+
+    return nonCriticalPatterns.some(pattern =>
+      error.message?.includes(pattern) ||
+      error.name?.includes(pattern)
+    );
+  }
+
+  /**
+   * Log error to client-side logger
+   * Uses dynamic import to avoid blocking on initialization
+   */
+  private logToClientLogger(error: Error, errorInfo: ErrorInfo): void {
+    if (!this.loggerAvailable) {
+      return;
+    }
+
+    // Validate error object before logging to avoid empty objects
+    const hasValidError = error && (
+      error.name ||
+      error.message ||
+      error.stack
+    );
+
+    const hasValidErrorInfo = errorInfo && (
+      errorInfo.componentStack
+    );
+
+    // Skip logging if error is empty or invalid (defensive check)
+    if (!hasValidError && !hasValidErrorInfo) {
+      console.warn("[ErrorBoundary] Skipping log - error object is empty or invalid");
+      return;
+    }
+
+    // Try to log to client logger asynchronously (non-blocking)
+    import("@/lib/client-logger").then(({ getLogger }) => {
+      try {
+        const logger = getLogger();
+        logger.error("React Error Boundary caught an error", {
+          name: error.name || "Unknown",
+          message: error.message || "No message available",
+          stack: error.stack || "No stack available",
+          componentStack: errorInfo?.componentStack || "No component stack available",
+          timestamp: new Date().toISOString(),
+          url: typeof window !== "undefined" ? window.location.href : "server"
+        });
+      } catch (err) {
+        console.error("[ErrorBoundary] Failed to log to client logger:", err);
+      }
+    }).catch(() => {
+      // Silently fail if logger import fails
+      console.debug("[ErrorBoundary] Client logger not available");
+    });
   }
 
   resetError = () => {

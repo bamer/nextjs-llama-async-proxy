@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
 import { shallow } from "zustand/shallow";
 import { APP_CONFIG } from "@/config/app.config";
 import { ThemeMode } from "@/contexts/ThemeContext";
@@ -93,124 +92,110 @@ const initialState: AppState = {
   },
 };
 
-// Create store
-const useAppStore = create<AppStore>()(
-  persist(
-    (set) => ({
-      ...initialState,
+// Create store - No localStorage persistence
+// All data is transient and loaded from API on demand
+const useAppStore = create<AppStore>()((set) => ({
+  ...initialState,
 
-      // Actions - Optimized to only update specific fields to minimize re-renders
-      setModels: (models) => set({ models }),
-      addModel: (model) => set((state) => ({ models: [...state.models, model] })),
-      updateModel: (id, updates) =>
-        set((state) => ({
-          models: state.models.map((model) =>
-            model.id === id ? { ...model, ...updates } : model
-          ),
-        })),
-      removeModel: (id) =>
-        set((state) => ({
-          models: state.models.filter((model) => model.id !== id),
-          activeModelId: state.activeModelId === id ? null : state.activeModelId,
-        })),
-      setActiveModel: (id) => set({ activeModelId: id }),
-      setMetrics: (metrics) => set({ metrics }), // Only updates metrics field
-      addLog: (log) => set((state) => ({ logs: [log, ...state.logs].slice(0, 100) })),
-      setLogs: (logs) => set({ logs }),
-      clearLogs: () => set({ logs: [] }),
-      updateSettings: (updates) =>
-        set((state) => ({ settings: { ...state.settings, ...updates } })),
-      setLoading: (isLoading) => set({ status: { ...initialState.status, isLoading } }),
-      setError: (error) => set({ status: { ...initialState.status, error } }),
-      clearError: () => set({ status: { ...initialState.status, error: null } }),
-      addChartData: (type, value) => {
-        const now = new Date();
-        const displayTime = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-        const newPoint = { time: now.toISOString(), displayTime, value };
-        set((state) => {
-          const newHistory = { ...state.chartHistory };
-          newHistory[type].push(newPoint);
-          if (newHistory[type].length > 60) {
-            newHistory[type].shift();
-          }
-          // Only update chartHistory field to minimize re-renders
-          return { chartHistory: newHistory };
-        });
+  // Actions - Optimized to only update specific fields to minimize re-renders
+  setModels: (models) => set({ models }),
+  addModel: (model) => set((state) => ({ models: [...state.models, model] })),
+  updateModel: (id, updates) =>
+    set((state) => ({
+      models: state.models.map((model) =>
+        model.id === id ? { ...model, ...updates } : model
+      ),
+    })),
+  removeModel: (id) =>
+    set((state) => ({
+      models: state.models.filter((model) => model.id !== id),
+      activeModelId: state.activeModelId === id ? null : state.activeModelId,
+    })),
+  setActiveModel: (id) => set({ activeModelId: id }),
+  setMetrics: (metrics) => set({ metrics }), // Only updates metrics field
+  addLog: (log) => set((state) => ({ logs: [log, ...state.logs].slice(0, 100) })),
+  setLogs: (logs) => set({ logs }),
+  clearLogs: () => set({ logs: [] }),
+  updateSettings: (updates) =>
+    set((state) => ({ settings: { ...state.settings, ...updates } })),
+  setLoading: (isLoading) => set({ status: { ...initialState.status, isLoading } }),
+  setError: (error) => set({ status: { ...initialState.status, error } }),
+  clearError: () => set({ status: { ...initialState.status, error: null } }),
+  addChartData: (type, value) => {
+    const now = new Date();
+    const displayTime = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    const newPoint = { time: now.toISOString(), displayTime, value };
+    set((state) => {
+      const newHistory = { ...state.chartHistory };
+      newHistory[type].push(newPoint);
+      if (newHistory[type].length > 60) {
+        newHistory[type].shift();
+      }
+      // Only update chartHistory field to minimize re-renders
+      return { chartHistory: newHistory };
+    });
+  },
+  setChartData: (data) => {
+    set(() => {
+      // Replace entire chart history with provided complete data
+      // This is optimized for batch updates - all 5 chart types updated in one call
+      // Ensures single setState for all chart updates (batching improvement)
+      return { chartHistory: data };
+    });
+  },
+  trimChartData: (maxPoints = 60) => {
+    set((state) => {
+      const trimmed = { ...state.chartHistory };
+      (Object.keys(trimmed) as Array<keyof ChartHistory>).forEach((key) => {
+        if (maxPoints <= 0) {
+          trimmed[key] = [];
+        } else if (trimmed[key].length > maxPoints) {
+          trimmed[key] = trimmed[key].slice(-maxPoints);
+        }
+      });
+      // Only update chartHistory field
+      return { chartHistory: trimmed };
+    });
+  },
+  clearChartData: () => {
+    set(() => ({
+      // Only update chartHistory field
+      chartHistory: {
+        cpu: [],
+        memory: [],
+        requests: [],
+        gpuUtil: [],
+        power: [],
       },
-      setChartData: (data) => {
-        set(() => {
-          // Replace entire chart history with provided complete data
-          // This is optimized for batch updates - all 5 chart types updated in one call
-          // Ensures single setState for all chart updates (batching improvement)
-          return { chartHistory: data };
-        });
-      },
-      trimChartData: (maxPoints = 60) => {
-        set((state) => {
-          const trimmed = { ...state.chartHistory };
-          (Object.keys(trimmed) as Array<keyof ChartHistory>).forEach((key) => {
-            if (maxPoints <= 0) {
-              trimmed[key] = [];
-            } else if (trimmed[key].length > maxPoints) {
-              trimmed[key] = trimmed[key].slice(-maxPoints);
-            }
-          });
-          // Only update chartHistory field
-          return { chartHistory: trimmed };
-        });
-      },
-      clearChartData: () => {
-        set(() => ({
-          // Only update chartHistory field
-          chartHistory: {
-            cpu: [],
-            memory: [],
-            requests: [],
-            gpuUtil: [],
-            power: [],
-          },
-        }));
-      },
-      rebuildChartHistory: (metrics) =>
-        set(() => {
-          // Create initial chart history from current metrics
-          const now = new Date();
-          const displayTime = now.toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-          });
+    }));
+  },
+  rebuildChartHistory: (metrics) =>
+    set(() => {
+      // Create initial chart history from current metrics
+      const now = new Date();
+      const displayTime = now.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
 
-          const createDataPoint = (value: number) => ({
-            time: now.toISOString(),
-            displayTime,
-            value,
-          });
+      const createDataPoint = (value: number) => ({
+        time: now.toISOString(),
+        displayTime,
+        value,
+      });
 
-          const history: ChartHistory = {
-            cpu: metrics.cpuUsage !== undefined ? [createDataPoint(metrics.cpuUsage)] : [],
-            memory: metrics.memoryUsage !== undefined ? [createDataPoint(metrics.memoryUsage)] : [],
-            requests: metrics.totalRequests !== undefined ? [createDataPoint(metrics.totalRequests)] : [],
-            gpuUtil: metrics.gpuUsage !== undefined ? [createDataPoint(metrics.gpuUsage)] : [],
-            power: metrics.gpuPowerUsage !== undefined ? [createDataPoint(metrics.gpuPowerUsage)] : [],
-          };
+      const history: ChartHistory = {
+        cpu: metrics.cpuUsage !== undefined ? [createDataPoint(metrics.cpuUsage)] : [],
+        memory: metrics.memoryUsage !== undefined ? [createDataPoint(metrics.memoryUsage)] : [],
+        requests: metrics.totalRequests !== undefined ? [createDataPoint(metrics.totalRequests)] : [],
+        gpuUtil: metrics.gpuUsage !== undefined ? [createDataPoint(metrics.gpuUsage)] : [],
+        power: metrics.gpuPowerUsage !== undefined ? [createDataPoint(metrics.gpuPowerUsage)] : [],
+      };
 
-          return { chartHistory: history };
-        }),
+      return { chartHistory: history };
     }),
-    {
-      name: "llama-app-storage-v3",
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        models: state.models,
-        activeModelId: state.activeModelId,
-        settings: state.settings,
-        // ❌ chartHistory removed from persistence to avoid blocking I/O and 500ms delays on startup
-        // Transient data should be rebuilt from live metrics instead
-      }),
-    }
-  )
-);
+}));
 
 export const useStore = useAppStore;
 

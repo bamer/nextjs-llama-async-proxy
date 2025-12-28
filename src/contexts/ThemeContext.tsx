@@ -6,8 +6,6 @@ import { useMediaQuery } from "@mui/material";
 import { CssBaseline } from "@mui/material";
 import { lightTheme, darkTheme } from "@/styles/theme";
 import { useTheme as useNextTheme } from "next-themes";
-import { setItem, getItem, setItemCritical } from "@/utils/local-storage-batch";
-import { requestIdleCallbackPromise } from "@/utils/request-idle-callback";
 
 export type ThemeMode = "light" | "dark" | "system";
 

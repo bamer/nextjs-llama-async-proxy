@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, useCallback, useTransition, useEffectEvent as ReactUseEffectEvent } from 'react';
+import { useState, useEffect, useRef, useCallback, useTransition } from 'react';
 import { Card, CardContent, Typography, Box, Grid } from "@mui/material";
-import { loadModelTemplates, saveModelTemplate, getModelTemplates, getModelTemplatesSync } from '@/lib/client-model-templates';
+import { loadModelTemplates, saveModelTemplate } from '@/lib/client-model-templates';
 import { useStore } from '@/lib/store';
 import { MemoizedModelItem } from './MemoizedModelItem';
 import { detectModelType, getModelTypeTemplates } from './MemoizedModelItem';
-import { setItem, getItem, setItemLow } from '@/utils/local-storage-batch';
 
 interface ModelConfig {
   id: string;
@@ -28,86 +27,49 @@ const STORAGE_KEY = 'selected-templates';
 
 export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCardProps) {
   const [loadingModels, setLoadingModels] = useState<Record<string, boolean>>({});
-  const [selectedTemplates, setSelectedTemplates] = useState<Record<string, string>>({});
-  const [templates, setTemplates] = useState<Record<string, string>>({});
   const [optimisticStatus, setOptimisticStatus] = useState<Record<string, string>>({});
-  const [isPending, startTransition] = useTransition();
+  const startTransition = useTransition()[1];
 
   const modelsList = useStore((state) => state.models);
   const templatesLoadedRef = useRef(false);
   const lastModelsHashRef = useRef('');
+  const isInitializedRef = useRef(false);
 
   // Compute hash of models for change detection
-  const computeModelsHash = (models: ModelConfig[]): string => {
+  const computeModelsHash = useCallback((models: ModelConfig[]): string => {
     return models.map(m => `${m.name}:${m.availableTemplates?.join(',')}`).join('|');
-  };
-
-  // Load saved templates from localStorage (only on mount)
-  useEffect(() => {
-    const saved = getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        setSelectedTemplates(JSON.parse(saved));
-      } catch (e) {
-        console.error('Failed to load saved templates from localStorage:', e);
-      }
-    }
   }, []);
 
-  // Memoize templates for models to avoid unnecessary recalculations
-  const templatesForModels = useMemo(() => {
-    const result: Record<string, string> = {};
-    modelsList.forEach(model => {
-      if (model.availableTemplates && model.availableTemplates.length > 0) {
-        result[model.name] = model.availableTemplates[0];
-      }
-    });
-    return result;
-  }, [modelsList]);
+  // Load saved templates from localStorage using lazy initial state
+  const [selectedTemplates, setSelectedTemplates] = useState<Record<string, string>>(() => {
+    try {
+      const saved = getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      console.error('Failed to load saved templates from localStorage:', e);
+      return {};
+    }
+  });
 
-  // Create stable callbacks for useEffect dependencies
-  const loadTemplatesWhenModelsChange = ReactUseEffectEvent(() => {
+  // Load model templates when models list changes (after initialization)
+  // Skip initial render to avoid hydration issues
+  useEffect(() => {
+    if (!isInitializedRef.current) {
+      isInitializedRef.current = true;
+      return;
+    }
+
     const currentModelsHash = computeModelsHash(modelsList);
-    const shouldLoad = !templatesLoadedRef.current || currentModelsHash !== lastModelsHashRef.current;
+    const shouldLoadTemplates = !templatesLoadedRef.current || currentModelsHash !== lastModelsHashRef.current;
 
-    if (shouldLoad) {
+    if (shouldLoadTemplates) {
       startTransition(async () => {
         await loadModelTemplates();
-        // Use current value from templatesForModels memo, not in dependency array
-        setTemplates(templatesForModels);
         templatesLoadedRef.current = true;
         lastModelsHashRef.current = currentModelsHash;
       });
     }
-  });
-
-  const clearOptimisticStatus = ReactUseEffectEvent(() => {
-    setOptimisticStatus((prev: Record<string, string>) => {
-      const updated: Record<string, string> = {};
-      Object.keys(prev).forEach(modelId => {
-        const model = modelsList.find(m => m.id === modelId);
-        // Keep optimistic status only if model is still loading
-        // Once model reaches terminal state (running/stopped/idle/error), clear optimistic override
-        if (model && model.status === 'loading') {
-          updated[modelId] = prev[modelId];
-        }
-        // If model doesn't exist or is not loading, let actual status show
-      });
-      return updated;
-    });
-  });
-
-  // Load templates only when models actually change (not on every render)
-  // Using useEffectEvent for callbacks so effect only depends on modelsList
-  useEffect(() => {
-    loadTemplatesWhenModelsChange();
-  }, [modelsList, loadTemplatesWhenModelsChange]);
-
-  // Clear optimistic status when models update via WebSocket
-  // Using useEffectEvent for callbacks so effect only depends on modelsList
-  useEffect(() => {
-    clearOptimisticStatus();
-  }, [modelsList, clearOptimisticStatus]);
+  }, [computeModelsHash, startTransition, modelsList]);
 
   // Debounced localStorage write using batch storage utility
   const saveSelectedTemplate = (modelName: string, template: string | null) => {
@@ -129,10 +91,7 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
   const saveTemplateToConfigFile = async (modelName: string, template: string) => {
     try {
       await saveModelTemplate(modelName, template);
-      // Update local cache
-      const currentTemplates = getModelTemplatesSync();
-      currentTemplates[modelName] = template;
-      setTemplates({ ...currentTemplates });
+      // The config is saved to disk, no need for local state cache
     } catch (error) {
       console.error('Failed to save template to config file:', error);
       alert(error instanceof Error ? error.message : 'Failed to save template');
