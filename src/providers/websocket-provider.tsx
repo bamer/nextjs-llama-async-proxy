@@ -155,16 +155,15 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         } else if (msg.type === 'models_loaded') {
           // Models loaded from database (source of truth)
           console.log('[WebSocketProvider] Database models loaded:', msg.data);
-          console.log('[WebSocketProvider] Success?', msg.success);
           console.log('[WebSocketProvider] Data type:', typeof msg.data);
           console.log('[WebSocketProvider] Data array?', Array.isArray(msg.data));
           console.log('[WebSocketProvider] Data length:', msg.data?.length);
-          if (msg.data && msg.data.length > 0) {
-            console.log('[WebSocketProvider] First model name:', msg.data[0]?.name);
-            console.log('[WebSocketProvider] First model id:', msg.data[0]?.id);
+          if (msg.data && (msg.data as ModelConfig[]).length > 0) {
+            console.log('[WebSocketProvider] First model name:', (msg.data as ModelConfig[])[0]?.name);
+            console.log('[WebSocketProvider] First model id:', (msg.data as ModelConfig[])[0]?.id);
           }
-          if (msg.success && msg.data) {
-            useStore.getState().setModels(msg.data);
+          if (msg.data) {
+            useStore.getState().setModels(msg.data as ModelConfig[]);
             console.log('[WebSocketProvider] Called setModels, store now has:', useStore.getState().models.length);
           }
         } else if (msg.type === 'model_saved') {
@@ -189,8 +188,8 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         } else if (msg.type === 'models_imported') {
           // Models imported from llama-server to database
           console.log('[WebSocketProvider] Models imported:', msg.data);
-          if (msg.success && msg.data) {
-            useStore.getState().setModels(msg.data);
+          if (msg.data) {
+            useStore.getState().setModels(msg.data as ModelConfig[]);
           }
         }
       }

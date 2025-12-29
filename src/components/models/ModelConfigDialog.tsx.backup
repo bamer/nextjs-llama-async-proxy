@@ -43,7 +43,6 @@ export interface SamplingConfig {
   mirostat_tau: number;
   mirostat_eta: number;
   seed: number;
-  flash_attn: number;
 }
 
 export interface MemoryConfig {
@@ -52,12 +51,6 @@ export interface MemoryConfig {
   cache_ram: number;
   memory_f16: boolean;
   memory_lock: boolean;
-  mmap: boolean;
-  mlock: boolean;
-  numa: string;
-  defrag_thold: number;
-  cache_type_k: string;
-  cache_type_v: string;
 }
 
 export interface GPUConfig {
@@ -66,12 +59,6 @@ export interface GPUConfig {
   tensor_split: string;
   main_gpu: number;
   mm_lock: boolean;
-  list_devices: boolean;
-  kv_offload: boolean;
-  repack: boolean;
-  no_host: boolean;
-  split_mode: string;
-  device: string;
 }
 
 export interface AdvancedConfig {
@@ -84,17 +71,6 @@ export interface AdvancedConfig {
   yarn_beta_slow: number;
   num_thread: number;
   num_predict: number;
-  swa_full: boolean;
-  override_tensor: string;
-  cpu_moe: boolean;
-  n_cpu_moe: number;
-  kv_unified: boolean;
-  context_shift: boolean;
-  rpc: string;
-  offline: boolean;
-  override_kv: string;
-  op_offload: boolean;
-  check_tensors: boolean;
 }
 
 export interface LoRAConfig {
@@ -108,8 +84,6 @@ export interface MultimodalConfig {
   image_data: string;
   clip_vision_cache: boolean;
   mmproj: string;
-  mmproj_auto: boolean;
-  mmproj_offload: boolean;
 }
 
 export type ConfigType = "sampling" | "memory" | "gpu" | "advanced" | "lora" | "multimodal";
@@ -141,7 +115,6 @@ const DEFAULT_SAMPLING: SamplingConfig = {
   mirostat_tau: 5.0,
   mirostat_eta: 0.1,
   seed: -1,
-  flash_attn: -1,
 };
 
 const DEFAULT_MEMORY: MemoryConfig = {
@@ -150,12 +123,6 @@ const DEFAULT_MEMORY: MemoryConfig = {
   cache_ram: 0,
   memory_f16: true,
   memory_lock: false,
-  mmap: false,
-  mlock: false,
-  numa: "",
-  defrag_thold: -1,
-  cache_type_k: "f16",
-  cache_type_v: "f16",
 };
 
 const DEFAULT_GPU: GPUConfig = {
@@ -164,12 +131,6 @@ const DEFAULT_GPU: GPUConfig = {
   tensor_split: "",
   main_gpu: 0,
   mm_lock: false,
-  list_devices: false,
-  kv_offload: false,
-  repack: false,
-  no_host: false,
-  split_mode: "layer",
-  device: "",
 };
 
 const DEFAULT_ADVANCED: AdvancedConfig = {
@@ -182,17 +143,6 @@ const DEFAULT_ADVANCED: AdvancedConfig = {
   yarn_beta_slow: 1,
   num_thread: 8,
   num_predict: -1,
-  swa_full: false,
-  override_tensor: "",
-  cpu_moe: false,
-  n_cpu_moe: 0,
-  kv_unified: false,
-  context_shift: false,
-  rpc: "",
-  offline: false,
-  override_kv: "",
-  op_offload: false,
-  check_tensors: false,
 };
 
 const DEFAULT_LORA: LoRAConfig = {
@@ -206,8 +156,6 @@ const DEFAULT_MULTIMODAL: MultimodalConfig = {
   image_data: "",
   clip_vision_cache: false,
   mmproj: "",
-  mmproj_auto: false,
-  mmproj_offload: false,
 };
 
 // ============================================================================
@@ -254,7 +202,6 @@ const PARAM_DESCRIPTIONS = {
   image_data: "Image data or path for multimodal input.",
   clip_vision_cache: "Cache CLIP vision model in memory.",
   mmproj: "Path to multimodal projection model.",
-  flash_attn: "Flash attention mode. -1=auto (detect support), 0=off (disabled), 1=on (enabled).",
 };
 
 // ============================================================================
@@ -353,11 +300,6 @@ const SamplingForm = memo(function SamplingForm({ config, onChange }: { config: 
   const handleMirostatChange = useCallback((_event: Event | React.SyntheticEvent<Element, Event>, value: string | unknown) => handleChange("mirostat", parseInt(value as string, 10)), [handleChange]);
   const handleMirostatTauChange = useCallback((v: number) => handleChange("mirostat_tau", v), [handleChange]);
   const handleMirostatEtaChange = useCallback((v: number) => handleChange("mirostat_eta", v), [handleChange]);
-  const handleFlashAttnChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value) || -1;
-    // Clamp to valid range: -1, 0, 1
-    handleChange("flash_attn", Math.max(-1, Math.min(1, value)));
-  }, [handleChange]);
 
   return (
     <Grid container spacing={2}>
@@ -477,20 +419,6 @@ const SamplingForm = memo(function SamplingForm({ config, onChange }: { config: 
           />
         </Tooltip>
       </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title={PARAM_DESCRIPTIONS.flash_attn} arrow>
-          <TextField
-            fullWidth
-            label="Flash Attention"
-            type="number"
-            value={config.flash_attn}
-            onChange={handleFlashAttnChange}
-            InputProps={{ inputProps: { min: -1, max: 1 } }}
-            helperText="-1=auto, 0=off, 1=on"
-            size="small"
-          />
-        </Tooltip>
-      </Grid>
       <Divider sx={{ my: 2 }} />
       <Grid size={{ xs: 12 }}>
         <Typography variant="subtitle2" gutterBottom>
@@ -550,12 +478,6 @@ const MemoryForm = memo(function MemoryForm({ config, onChange }: { config: Memo
   const handleCacheRamChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("cache_ram", parseInt(e.target.value) || 0), [handleChange]);
   const handleMemoryF16Change = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("memory_f16", e.target.checked), [handleChange]);
   const handleMemoryLockChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("memory_lock", e.target.checked), [handleChange]);
-  const handleMmapChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("mmap", e.target.checked), [handleChange]);
-  const handleMlockChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("mlock", e.target.checked), [handleChange]);
-  const handleNumaChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("numa", e.target.value), [handleChange]);
-  const handleDefragTholdChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("defrag_thold", parseFloat(e.target.value) || -1), [handleChange]);
-  const handleCacheTypeKChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("cache_type_k", e.target.value), [handleChange]);
-  const handleCacheTypeVChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("cache_type_v", e.target.value), [handleChange]);
 
   return (
     <Grid container spacing={2}>
@@ -595,7 +517,7 @@ const MemoryForm = memo(function MemoryForm({ config, onChange }: { config: Memo
             value={config.cache_ram}
             onChange={handleCacheRamChange}
             InputProps={{ inputProps: { min: 0 } }}
-            helperText="0 for unlimited MB"
+            helperText="0 for unlimited"
             size="small"
           />
         </Tooltip>
@@ -626,83 +548,6 @@ const MemoryForm = memo(function MemoryForm({ config, onChange }: { config: Memo
           </Tooltip>
         </Box>
       </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-          <Tooltip title="Memory map model file" arrow>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Switch
-                checked={config.mmap}
-                onChange={handleMmapChange}
-              />
-              <Typography variant="body2">mmap</Typography>
-            </Box>
-          </Tooltip>
-        </Box>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-          <Tooltip title="Lock memory in RAM" arrow>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Switch
-                checked={config.mlock}
-                onChange={handleMlockChange}
-              />
-              <Typography variant="body2">mlock</Typography>
-            </Box>
-          </Tooltip>
-        </Box>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title="NUMA policy (e.g., distribute)" arrow>
-          <TextField
-            fullWidth
-            label="numa"
-            value={config.numa}
-            onChange={handleNumaChange}
-            placeholder="distribute"
-            helperText="Empty for default"
-            size="small"
-          />
-        </Tooltip>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title="Defragmentation threshold" arrow>
-          <TextField
-            fullWidth
-            label="defrag_thold"
-            type="number"
-            value={config.defrag_thold}
-            onChange={handleDefragTholdChange}
-            InputProps={{ inputProps: { min: -1, step: 0.1 } }}
-            helperText="-1 for disabled"
-            size="small"
-          />
-        </Tooltip>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title="KV cache type for K" arrow>
-          <TextField
-            fullWidth
-            label="cache_type_k"
-            value={config.cache_type_k}
-            onChange={handleCacheTypeKChange}
-            placeholder="f16"
-            size="small"
-          />
-        </Tooltip>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title="KV cache type for V" arrow>
-          <TextField
-            fullWidth
-            label="cache_type_v"
-            value={config.cache_type_v}
-            onChange={handleCacheTypeVChange}
-            placeholder="f16"
-            size="small"
-          />
-        </Tooltip>
-      </Grid>
     </Grid>
   );
 });
@@ -720,12 +565,6 @@ const GPUForm = memo(function GPUForm({ config, onChange }: { config: GPUConfig;
   const handleTensorSplitChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("tensor_split", e.target.value), [handleChange]);
   const handleMainGpuChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("main_gpu", parseInt(e.target.value) || 0), [handleChange]);
   const handleMmLockChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("mm_lock", e.target.checked), [handleChange]);
-  const handleListDevicesChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("list_devices", e.target.checked), [handleChange]);
-  const handleKvOffloadChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("kv_offload", e.target.checked), [handleChange]);
-  const handleRepackChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("repack", e.target.checked), [handleChange]);
-  const handleNoHostChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("no_host", e.target.checked), [handleChange]);
-  const handleSplitModeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("split_mode", e.target.value), [handleChange]);
-  const handleDeviceChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("device", e.target.value), [handleChange]);
 
   return (
     <Grid container spacing={2}>
@@ -795,89 +634,13 @@ const GPUForm = memo(function GPUForm({ config, onChange }: { config: GPUConfig;
           </Tooltip>
         </Box>
       </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-          <Tooltip title="List available devices" arrow>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Switch
-                checked={config.list_devices}
-                onChange={handleListDevicesChange}
-              />
-              <Typography variant="body2">list_devices</Typography>
-            </Box>
-          </Tooltip>
-        </Box>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-          <Tooltip title="Offload KV cache" arrow>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Switch
-                checked={config.kv_offload}
-                onChange={handleKvOffloadChange}
-              />
-              <Typography variant="body2">kv_offload</Typography>
-            </Box>
-          </Tooltip>
-        </Box>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-          <Tooltip title="Repack tensors" arrow>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Switch
-                checked={config.repack}
-                onChange={handleRepackChange}
-              />
-              <Typography variant="body2">repack</Typography>
-            </Box>
-          </Tooltip>
-        </Box>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-          <Tooltip title="No host offload" arrow>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Switch
-                checked={config.no_host}
-                onChange={handleNoHostChange}
-              />
-              <Typography variant="body2">no_host</Typography>
-            </Box>
-          </Tooltip>
-        </Box>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title="Split mode (layer, row)" arrow>
-          <TextField
-            fullWidth
-            label="split_mode"
-            value={config.split_mode}
-            onChange={handleSplitModeChange}
-            placeholder="layer"
-            size="small"
-          />
-        </Tooltip>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title="Device to use (e.g., cuda:0)" arrow>
-          <TextField
-            fullWidth
-            label="device"
-            value={config.device}
-            onChange={handleDeviceChange}
-            placeholder="cuda:0"
-            size="small"
-          />
-        </Tooltip>
-      </Grid>
     </Grid>
   );
 });
 
 const AdvancedForm = memo(function AdvancedForm({ config, onChange }: { config: AdvancedConfig; onChange: (config: AdvancedConfig) => void }) {
   const handleChange = useCallback(
-    (field: keyof AdvancedConfig, value: number | boolean | string) => {
+    (field: keyof AdvancedConfig, value: number) => {
       onChange({ ...config, [field]: value });
     },
     [config, onChange],
@@ -892,17 +655,6 @@ const AdvancedForm = memo(function AdvancedForm({ config, onChange }: { config: 
   const handleYarnBetaSlowChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("yarn_beta_slow", parseInt(e.target.value) || 1), [handleChange]);
   const handleNumThreadChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("num_thread", parseInt(e.target.value) || 8), [handleChange]);
   const handleNumPredictChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("num_predict", parseInt(e.target.value) || -1), [handleChange]);
-  const handleSwaFullChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("swa_full", e.target.checked), [handleChange]);
-  const handleOverrideTensorChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("override_tensor", e.target.value), [handleChange]);
-  const handleCpuMoeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("cpu_moe", e.target.checked), [handleChange]);
-  const handleNCpuMoeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("n_cpu_moe", parseInt(e.target.value) || 0), [handleChange]);
-  const handleKvUnifiedChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("kv_unified", e.target.checked), [handleChange]);
-  const handleContextShiftChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("context_shift", e.target.checked), [handleChange]);
-  const handleRpcChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("rpc", e.target.value), [handleChange]);
-  const handleOfflineChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("offline", e.target.checked), [handleChange]);
-  const handleOverrideKvChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("override_kv", e.target.value), [handleChange]);
-  const handleOpOffloadChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("op_offload", e.target.checked), [handleChange]);
-  const handleCheckTensorsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("check_tensors", e.target.checked), [handleChange]);
 
   return (
     <Grid container spacing={2}>
@@ -1025,149 +777,6 @@ const AdvancedForm = memo(function AdvancedForm({ config, onChange }: { config: 
           />
         </Tooltip>
       </Grid>
-      <Divider sx={{ my: 2 }} />
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-          <Tooltip title="Sliding window attention full" arrow>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Switch
-                checked={config.swa_full}
-                onChange={handleSwaFullChange}
-              />
-              <Typography variant="body2">swa_full</Typography>
-            </Box>
-          </Tooltip>
-        </Box>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title="Override tensor format" arrow>
-          <TextField
-            fullWidth
-            label="override_tensor"
-            value={config.override_tensor}
-            onChange={handleOverrideTensorChange}
-            placeholder="f16"
-            size="small"
-          />
-        </Tooltip>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-          <Tooltip title="CPU MoE layers" arrow>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Switch
-                checked={config.cpu_moe}
-                onChange={handleCpuMoeChange}
-              />
-              <Typography variant="body2">cpu_moe</Typography>
-            </Box>
-          </Tooltip>
-        </Box>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title="Number of CPU MoE layers" arrow>
-          <TextField
-            fullWidth
-            label="n_cpu_moe"
-            type="number"
-            value={config.n_cpu_moe}
-            onChange={handleNCpuMoeChange}
-            InputProps={{ inputProps: { min: 0 } }}
-            helperText="Number of MoE expert layers"
-            size="small"
-          />
-        </Tooltip>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-          <Tooltip title="Unified KV cache" arrow>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Switch
-                checked={config.kv_unified}
-                onChange={handleKvUnifiedChange}
-              />
-              <Typography variant="body2">kv_unified</Typography>
-            </Box>
-          </Tooltip>
-        </Box>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-          <Tooltip title="Context shift for long contexts" arrow>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Switch
-                checked={config.context_shift}
-                onChange={handleContextShiftChange}
-              />
-              <Typography variant="body2">context_shift</Typography>
-            </Box>
-          </Tooltip>
-        </Box>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title="RPC server address" arrow>
-          <TextField
-            fullWidth
-            label="rpc"
-            value={config.rpc}
-            onChange={handleRpcChange}
-            placeholder="localhost:50051"
-            helperText="RPC server for remote execution"
-            size="small"
-          />
-        </Tooltip>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-          <Tooltip title="Offline mode" arrow>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Switch
-                checked={config.offline}
-                onChange={handleOfflineChange}
-              />
-              <Typography variant="body2">offline</Typography>
-            </Box>
-          </Tooltip>
-        </Box>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title="Override KV cache settings" arrow>
-          <TextField
-            fullWidth
-            label="override_kv"
-            value={config.override_kv}
-            onChange={handleOverrideKvChange}
-            placeholder="f16"
-            size="small"
-          />
-        </Tooltip>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-          <Tooltip title="Operator offload" arrow>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Switch
-                checked={config.op_offload}
-                onChange={handleOpOffloadChange}
-              />
-              <Typography variant="body2">op_offload</Typography>
-            </Box>
-          </Tooltip>
-        </Box>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-          <Tooltip title="Check tensor data" arrow>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Switch
-                checked={config.check_tensors}
-                onChange={handleCheckTensorsChange}
-              />
-              <Typography variant="body2">check_tensors</Typography>
-            </Box>
-          </Tooltip>
-        </Box>
-      </Grid>
     </Grid>
   );
 });
@@ -1254,8 +863,6 @@ const MultimodalForm = memo(function MultimodalForm({ config, onChange }: { conf
   const handleImageDataChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("image_data", e.target.value), [handleChange]);
   const handleClipVisionCacheChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("clip_vision_cache", e.target.checked), [handleChange]);
   const handleMmprojChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("mmproj", e.target.value), [handleChange]);
-  const handleMmprojAutoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("mmproj_auto", e.target.checked), [handleChange]);
-  const handleMmprojOffloadChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("mmproj_offload", e.target.checked), [handleChange]);
 
   return (
     <Grid container spacing={2}>
@@ -1299,32 +906,6 @@ const MultimodalForm = memo(function MultimodalForm({ config, onChange }: { conf
             size="small"
           />
         </Tooltip>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-          <Tooltip title="Auto-detect mmproj model" arrow>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Switch
-                checked={config.mmproj_auto}
-                onChange={handleMmprojAutoChange}
-              />
-              <Typography variant="body2">mmproj_auto</Typography>
-            </Box>
-          </Tooltip>
-        </Box>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-          <Tooltip title="Offload mmproj to GPU" arrow>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Switch
-                checked={config.mmproj_offload}
-                onChange={handleMmprojOffloadChange}
-              />
-              <Typography variant="body2">mmproj_offload</Typography>
-            </Box>
-          </Tooltip>
-        </Box>
       </Grid>
     </Grid>
   );

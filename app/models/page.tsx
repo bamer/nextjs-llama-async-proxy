@@ -3,7 +3,7 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { useStore } from "@/lib/store";
 import { useState, useEffect } from "react";
-import { Card, CardContent, Typography, Box, Grid, Chip, LinearProgress, Button, IconButton, CircularProgress, Menu, MenuItem, Badge, Tooltip } from "@mui/material";
+import { Card, CardContent, Typography, Box, Grid, Chip, LinearProgress, Button, IconButton, CircularProgress, Menu, MenuItem, Badge, Tooltip, Snackbar, Alert } from "@mui/material";
 import { useTheme } from "@/contexts/ThemeContext";
 import { PlayArrow, Stop, Refresh, Add, MoreVert, Delete, Check, Science, Storage } from "@mui/icons-material";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -289,6 +289,11 @@ export default function ModelsPage() {
   const [analyzingModelId, setAnalyzingModelId] = useState<string | null>(null);
   const [fitParamsDialogOpen, setFitParamsDialogOpen] = useState(false);
   const [currentFitParams, setCurrentFitParams] = useState<FitParamsData | null>(null);
+
+  // Snackbar state for user feedback
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('success');
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   // Fit params hook for the selected model (uses model name, not ID)
   const fitParamsHook = useFitParams(analyzingModelId);
@@ -656,12 +661,35 @@ export default function ModelsPage() {
     setCurrentFitParams(null);
     setFitParamsDialogOpen(true);
 
-    // Trigger analysis
-    await fitParamsHook.analyze();
+    try {
+      // Trigger analysis
+      await fitParamsHook.analyze();
 
-    // Get results
-    if (fitParamsHook.data) {
-      setCurrentFitParams(fitParamsHook.data);
+      // Check for errors from hook
+      if (fitParamsHook.error) {
+        setError(`Analyse échouée : ${fitParamsHook.error}`);
+        setSnackbarMessage(`Erreur : ${fitParamsHook.error}`);
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+      }
+
+      // Get results
+      if (fitParamsHook.data) {
+        setCurrentFitParams(fitParamsHook.data);
+        setSnackbarMessage('Analyse terminée avec succès !');
+        setSnackbarSeverity('success');
+        setSnackbarOpen(true);
+      } else if (!fitParamsHook.error) {
+        setSnackbarMessage('Analyse terminée mais aucune donnée disponible');
+        setSnackbarSeverity('info');
+        setSnackbarOpen(true);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erreur inconnue';
+      setError(`Erreur d'analyse : ${message}`);
+      setSnackbarMessage(message);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
 
     setAnalyzingModelId(null);
@@ -1060,6 +1088,22 @@ export default function ModelsPage() {
 
         {/* Fit-Params Analysis Result Dialog */}
         {/* Note: Fit-params dialog would show detailed analysis results here */}
+
+        {/* Snackbar for user feedback */}
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={6000}
+          onClose={() => setSnackbarOpen(false)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert
+            onClose={() => setSnackbarOpen(false)}
+            severity={snackbarSeverity}
+            sx={{ width: '100%' }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
 
         {/* Empty state */}
         {models.length === 0 && (

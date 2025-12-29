@@ -22,8 +22,11 @@ export async function POST(
 
     const body = await request.json().catch(() => ({}));
 
+    // Add model name from params to body before validation
+    const bodyWithModel = { model: name, ...body };
+
     // Validate request body with Zod
-    const validation = validateRequestBody(startModelRequestSchema, body);
+    const validation = validateRequestBody(startModelRequestSchema, bodyWithModel);
     if (!validation.success) {
       return NextResponse.json(
         {
