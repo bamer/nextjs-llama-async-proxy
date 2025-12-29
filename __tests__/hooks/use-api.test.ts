@@ -177,7 +177,7 @@ describe('useApi', () => {
     expect(result.current.queryClient).toBeInstanceOf(QueryClient);
   });
 
-  it('should refetch models every 30 seconds', async () => {
+  it('should not automatically refetch models (WebSocket provides updates)', async () => {
     jest.useFakeTimers();
     const { result } = renderHook(() => useApi(), { wrapper });
 
@@ -195,12 +195,13 @@ describe('useApi', () => {
       expect(result.current.models.isSuccess).toBe(true);
     });
 
-    expect(apiService.getModels).toHaveBeenCalledTimes(initialCallCount + 1);
+    // Models should not automatically refetch - WebSocket provides real-time updates
+    expect(apiService.getModels).toHaveBeenCalledTimes(initialCallCount);
 
     jest.useRealTimers();
   });
 
-  it('should refetch metrics every 10 seconds', async () => {
+  it('should not automatically refetch metrics (WebSocket provides updates)', async () => {
     jest.useFakeTimers();
     const { result } = renderHook(() => useApi(), { wrapper });
 
@@ -218,12 +219,13 @@ describe('useApi', () => {
       expect(result.current.metrics.isSuccess).toBe(true);
     });
 
-    expect(apiService.getMetrics).toHaveBeenCalledTimes(initialCallCount + 1);
+    // Metrics should not automatically refetch - WebSocket provides real-time updates
+    expect(apiService.getMetrics).toHaveBeenCalledTimes(initialCallCount);
 
     jest.useRealTimers();
   });
 
-  it('should refetch logs every 15 seconds', async () => {
+  it('should not automatically refetch logs (WebSocket provides updates)', async () => {
     jest.useFakeTimers();
     const { result } = renderHook(() => useApi(), { wrapper });
 
@@ -241,7 +243,8 @@ describe('useApi', () => {
       expect(result.current.logs.isSuccess).toBe(true);
     });
 
-    expect(apiService.getLogs).toHaveBeenCalledTimes(initialCallCount + 1);
+    // Logs should not automatically refetch - WebSocket provides real-time updates
+    expect(apiService.getLogs).toHaveBeenCalledTimes(initialCallCount);
 
     jest.useRealTimers();
   });

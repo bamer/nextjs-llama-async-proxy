@@ -30,6 +30,8 @@ describe('LoggerSettingsTab', () => {
     maxFiles: '30d',
   };
 
+  const mockClearFieldError = jest.fn();
+
   beforeEach(() => {
     jest.clearAllMocks();
     jest.mocked(useTheme).mockReturnValue({
@@ -43,6 +45,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: defaultLoggerConfig,
       updateConfig: mockUpdateConfig,
       loading: false,
+      clearFieldError: mockClearFieldError,
     });
   });
 
@@ -131,6 +134,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: config,
       updateConfig: mockUpdateConfig,
       loading: false,
+      clearFieldError: mockClearFieldError,
     });
     renderWithTheme(<LoggerSettingsTab />);
     const selectContainer = screen.getByText('Console Level').nextElementSibling;
@@ -143,6 +147,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: config,
       updateConfig: mockUpdateConfig,
       loading: false,
+      clearFieldError: mockClearFieldError,
     });
     renderWithTheme(<LoggerSettingsTab />);
     const fileSelect = screen.getByText('File Level (application.log)').nextElementSibling;
@@ -154,6 +159,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: null,
       updateConfig: mockUpdateConfig,
       loading: true,
+      clearFieldError: mockClearFieldError,
     });
     renderWithTheme(<LoggerSettingsTab />);
     expect(screen.getByText('Log Levels')).toBeInTheDocument();
@@ -164,6 +170,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: null,
       updateConfig: mockUpdateConfig,
       loading: false,
+      clearFieldError: mockClearFieldError,
     });
     renderWithTheme(<LoggerSettingsTab />);
     expect(screen.getByText('Log Levels')).toBeInTheDocument();
@@ -211,6 +218,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: config,
       updateConfig: mockUpdateConfig,
       loading: false,
+      clearFieldError: mockClearFieldError,
     });
     renderWithTheme(<LoggerSettingsTab />);
 
@@ -224,6 +232,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: config,
       updateConfig: mockUpdateConfig,
       loading: false,
+      clearFieldError: mockClearFieldError,
     });
     renderWithTheme(<LoggerSettingsTab />);
 
@@ -237,6 +246,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: config,
       updateConfig: mockUpdateConfig,
       loading: false,
+      clearFieldError: mockClearFieldError,
     });
     renderWithTheme(<LoggerSettingsTab />);
 
@@ -250,6 +260,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: config,
       updateConfig: mockUpdateConfig,
       loading: false,
+      clearFieldError: mockClearFieldError,
     });
     renderWithTheme(<LoggerSettingsTab />);
 
@@ -269,6 +280,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: undefined,
       updateConfig: mockUpdateConfig,
       loading: false,
+      clearFieldError: mockClearFieldError,
     });
     renderWithTheme(<LoggerSettingsTab />);
 
@@ -284,6 +296,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: null,
       updateConfig: mockUpdateConfig,
       loading: false,
+      clearFieldError: mockClearFieldError,
     });
     expect(() => {
       renderWithTheme(<LoggerSettingsTab />);
@@ -295,6 +308,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: undefined,
       updateConfig: mockUpdateConfig,
       loading: false,
+      clearFieldError: mockClearFieldError,
     });
     expect(() => {
       renderWithTheme(<LoggerSettingsTab />);
@@ -306,6 +320,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: null,
       updateConfig: mockUpdateConfig,
       loading: true,
+      clearFieldError: mockClearFieldError,
     });
     expect(() => {
       renderWithTheme(<LoggerSettingsTab />);
@@ -326,6 +341,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: customConfig,
       updateConfig: mockUpdateConfig,
       loading: false,
+      clearFieldError: mockClearFieldError,
     });
     expect(() => {
       renderWithTheme(<LoggerSettingsTab />);
@@ -337,6 +353,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: null,
       updateConfig: mockUpdateConfig,
       loading: true,
+      clearFieldError: mockClearFieldError,
     });
     renderWithTheme(<LoggerSettingsTab />);
 
@@ -351,6 +368,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: config,
       updateConfig: mockUpdateConfig,
       loading: false,
+      clearFieldError: mockClearFieldError,
     });
     renderWithTheme(<LoggerSettingsTab />);
 
@@ -566,6 +584,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: config,
       updateConfig: mockUpdateConfig,
       loading: false,
+      clearFieldError: mockClearFieldError,
     });
     renderWithTheme(<LoggerSettingsTab />);
 
@@ -582,6 +601,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: config,
       updateConfig: mockUpdateConfig,
       loading: false,
+      clearFieldError: mockClearFieldError,
     });
     renderWithTheme(<LoggerSettingsTab />);
 
@@ -599,6 +619,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: config,
       updateConfig: mockUpdateConfig,
       loading: false,
+      clearFieldError: mockClearFieldError,
     });
     renderWithTheme(<LoggerSettingsTab />);
 
@@ -614,6 +635,7 @@ describe('LoggerSettingsTab', () => {
       loggerConfig: config,
       updateConfig: mockUpdateConfig,
       loading: false,
+      clearFieldError: mockClearFieldError,
     });
     renderWithTheme(<LoggerSettingsTab />);
 

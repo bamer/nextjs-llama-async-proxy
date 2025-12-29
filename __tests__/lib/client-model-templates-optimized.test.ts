@@ -13,12 +13,7 @@ describe("client-model-templates-optimized", () => {
     // Reset cache before each test
     __resetCache__();
     jest.clearAllMocks();
-    jest.useFakeTimers();
     global.fetch = jest.fn();
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
   });
 
   describe("loadModelTemplates - Timeout (10s)", () => {
@@ -40,7 +35,9 @@ describe("client-model-templates-optimized", () => {
       );
 
       const loadPromise = loadModelTemplates();
-      jest.advanceTimersByTime(10000); // Advance to timeout
+      
+      // Wait for timeout to occur (simulate 10 seconds)
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Wait for promise to settle
       const result = await loadPromise;
@@ -89,7 +86,9 @@ describe("client-model-templates-optimized", () => {
       );
 
       const loadPromise = loadModelTemplates();
-      jest.advanceTimersByTime(10000);
+      
+      // Wait for timeout to occur
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       await loadPromise;
 

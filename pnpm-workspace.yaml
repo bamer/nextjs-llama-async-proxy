@@ -1,6 +1,7 @@
 onlyBuiltDependencies:
   - '@sentry/cli'
   - better-sqlite3
+  - esbuild
   - puppeteer
   - sharp
   - unrs-resolver

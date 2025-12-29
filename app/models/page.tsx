@@ -2,84 +2,232 @@
 
 import { MainLayout } from "@/components/layout/main-layout";
 import { useStore } from "@/lib/store";
-import { useState, useEffect, useCallback } from "react";
-import { Card, CardContent, Typography, Box, Grid, Chip, LinearProgress, Button, IconButton, CircularProgress, Menu, MenuItem } from "@mui/material";
+import { useState, useEffect } from "react";
+import { Card, CardContent, Typography, Box, Grid, Chip, LinearProgress, Button, IconButton, CircularProgress, Menu, MenuItem, Badge } from "@mui/material";
 import { useTheme } from "@/contexts/ThemeContext";
-import { PlayArrow, Stop, Refresh, Add, MoreVert, Delete } from "@mui/icons-material";
+import { PlayArrow, Stop, Refresh, Add, MoreVert, Delete, Check } from "@mui/icons-material";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { ModelsFallback } from "@/components/ui/error-fallbacks";
 import { SkeletonCard } from "@/components/ui";
 import { useEffectEvent } from "@/hooks/use-effect-event";
-import { getModels, saveModel, updateModel, deleteModel } from "@/lib/database";
-import type { ModelConfig as DatabaseModelConfig } from "@/lib/database";
+import { loadModelConfig, saveModelConfig } from "@/actions/config-actions";
+import ModelConfigDialog, { ConfigType } from "@/components/ui/ModelConfigDialog";
 
-// Helper function to convert database model to store model format
-function databaseToStoreModel(dbModel: DatabaseModelConfig): import('@/types').ModelConfig {
-  // Map database type to store type
-  const typeMap: Record<string, "llama" | "mistral" | "other"> = {
-    llama: "llama",
-    gpt: "other",
-    mistrall: "mistral", // Note: database has typo 'mistrall'
-    custom: "other",
-  };
+// Local type definitions (matching database types)
+interface ModelConfig {
+  id?: number;
+  name: string;
+  type: "llama" | "gpt" | "mistrall" | "custom";
+  status: "running" | "stopped" | "loading" | "error";
+  model_path?: string;
+  model_url?: string;
+  docker_repo?: string;
+  hf_repo?: string;
+  hf_repo_draft?: string;
+  hf_file?: string;
+  hf_file_v?: string;
+  hf_token?: string;
+  ctx_size?: number;
+  predict?: number;
+  batch_size?: number;
+  ubatch_size?: number;
+  n_parallel?: number;
+  cont_batching?: number;
+  threads?: number;
+  threads_batch?: number;
+  cpu_mask?: string;
+  cpu_range?: string;
+  cpu_strict?: number;
+  cpu_mask_batch?: string;
+  cpu_range_batch?: string;
+  cpu_strict_batch?: number;
+  priority?: number;
+  priority_batch?: number;
+  created_at?: number;
+  updated_at?: number;
+}
 
-  const result: import('@/types').ModelConfig = {
-    id: dbModel.id?.toString() || '',
-    name: dbModel.name,
-    type: typeMap[dbModel.type] || 'other',
-    parameters: {
-      ctx_size: dbModel.ctx_size,
-      batch_size: dbModel.batch_size,
-      threads: dbModel.threads,
-      gpu_layers: dbModel.gpu_layers,
-      temperature: dbModel.temperature,
-      top_k: dbModel.top_k,
-      top_p: dbModel.top_p,
-      model_path: dbModel.model_path,
-      model_url: dbModel.model_url,
-    } as Record<string, unknown>,
-    status: dbModel.status === 'running' || dbModel.status === 'loading' || dbModel.status === 'error'
-      ? dbModel.status
-      : 'idle',
-    createdAt: dbModel.created_at ? new Date(dbModel.created_at).toISOString() : new Date().toISOString(),
-    updatedAt: dbModel.updated_at ? new Date(dbModel.updated_at).toISOString() : new Date().toISOString(),
-  };
+interface ModelSamplingConfig {
+  id?: number;
+  model_id?: number;
+  temperature?: number;
+  top_k?: number;
+  top_p?: number;
+  min_p?: number;
+  top_nsigma?: number;
+  xtc_probability?: number;
+  xtc_threshold?: number;
+  typical_p?: number;
+  repeat_last_n?: number;
+  repeat_penalty?: number;
+  presence_penalty?: number;
+  frequency_penalty?: number;
+  dry_multiplier?: number;
+  dry_base?: number;
+  dry_allowed_length?: number;
+  dry_penalty_last_n?: number;
+  dry_sequence_breaker?: string;
+  dynatemp_range?: number;
+  dynatemp_exp?: number;
+  mirostat?: number;
+  mirostat_lr?: number;
+  mirostat_ent?: number;
+  samplers?: string;
+  sampler_seq?: string;
+  seed?: number;
+  grammar?: string;
+  grammar_file?: string;
+  json_schema?: string;
+  json_schema_file?: string;
+  ignore_eos?: number;
+  escape?: boolean;
+  rope_scaling_type?: string;
+  rope_scale?: number;
+  rope_freq_base?: number;
+  rope_freq_scale?: number;
+  yarn_orig_ctx?: number;
+  yarn_ext_factor?: number;
+  yarn_attn_factor?: number;
+  yarn_beta_slow?: number;
+  yarn_beta_fast?: number;
+  flash_attn?: string;
+  logit_bias?: string;
+  created_at?: number;
+  updated_at?: number;
+}
 
-  // Only add optional fields if they exist
-  if (dbModel.chat_template) {
-    result.template = dbModel.chat_template;
+interface ModelMemoryConfig {
+  id?: number;
+  model_id?: number;
+  cache_ram?: number;
+  cache_type_k?: string;
+  cache_type_v?: string;
+  mmap?: number;
+  mlock?: number;
+  numa?: string;
+  defrag_thold?: number;
+  created_at?: number;
+  updated_at?: number;
+}
+
+interface ModelGpuConfig {
+  id?: number;
+  model_id?: number;
+  device?: string;
+  list_devices?: number;
+  gpu_layers?: number;
+  split_mode?: string;
+  tensor_split?: string;
+  main_gpu?: number;
+  kv_offload?: number;
+  repack?: number;
+  no_host?: number;
+  created_at?: number;
+  updated_at?: number;
+}
+
+interface ModelAdvancedConfig {
+  id?: number;
+  model_id?: number;
+  swa_full?: number;
+  override_tensor?: string;
+  cpu_moe?: number;
+  n_cpu_moe?: number;
+  kv_unified?: number;
+  pooling?: string;
+  context_shift?: number;
+  rpc?: string;
+  offline?: number;
+  override_kv?: string;
+  op_offload?: number;
+  fit?: string;
+  fit_target?: number;
+  fit_ctx?: number;
+  check_tensors?: number;
+  sleep_idle_seconds?: number;
+  polling?: string;
+  polling_batch?: string;
+  reasoning_format?: string;
+  reasoning_budget?: number;
+  custom_params?: string;
+  created_at?: number;
+  updated_at?: number;
+}
+
+interface ModelLoraConfig {
+  id?: number;
+  model_id?: number;
+  lora?: string;
+  lora_scaled?: string;
+  control_vector?: string;
+  control_vector_scaled?: string;
+  control_vector_layer_range?: string;
+  model_draft?: string;
+  model_url_draft?: string;
+  ctx_size_draft?: number;
+  threads_draft?: number;
+  threads_batch_draft?: number;
+  draft_max?: number;
+  draft_min?: number;
+  draft_p_min?: number;
+  cache_type_k_draft?: string;
+  cache_type_v_draft?: string;
+  cpu_moe_draft?: number;
+  n_cpu_moe_draft?: number;
+  n_gpu_layers_draft?: number;
+  device_draft?: string;
+  spec_replace?: string;
+  created_at?: number;
+  updated_at?: number;
+}
+
+interface ModelMultimodalConfig {
+  id?: number;
+  model_id?: number;
+  mmproj?: string;
+  mmproj_url?: string;
+  mmproj_auto?: number;
+  mmproj_offload?: number;
+  image_min_tokens?: number;
+  image_max_tokens?: number;
+  created_at?: number;
+  updated_at?: number;
+}
+
+  // Helper type for model with lazy-loaded configs
+  interface ModelData extends ModelConfig {
+    sampling?: ModelSamplingConfig;
+    memory?: ModelMemoryConfig;
+    gpu?: ModelGpuConfig;
+    advanced?: ModelAdvancedConfig;
+    lora?: ModelLoraConfig;
+    multimodal?: ModelMultimodalConfig;
+    _configsLoading?: Set<string>;
   }
 
-  return result;
-}
+  // Helper function to convert store model to database model format
+  function storeToDatabaseModel(storeModel: import('@/types').ModelConfig): Omit<ModelConfig, 'id' | 'created_at' | 'updated_at'> {
+    // Map store type to database type
+    const typeMap: Record<"llama" | "mistral" | "other", "llama" | "gpt" | "mistrall" | "custom"> = {
+      llama: "llama",
+      mistral: "mistrall",
+      other: "custom",
+    };
 
-// Helper function to convert store model to database model format
-function storeToDatabaseModel(storeModel: import('@/types').ModelConfig): Omit<DatabaseModelConfig, 'id' | 'created_at' | 'updated_at'> {
-  // Map store type to database type
-  const typeMap: Record<"llama" | "mistral" | "other", "llama" | "gpt" | "mistrall" | "custom"> = {
-    llama: "llama",
-    mistral: "mistrall",
-    other: "custom",
-  };
-
-  return {
-    name: storeModel.name,
-    type: typeMap[storeModel.type] || 'llama',
-    status: storeModel.status === 'running' || storeModel.status === 'loading' || storeModel.status === 'error'
-      ? storeModel.status
-      : 'stopped',
-    ctx_size: (storeModel.parameters?.ctx_size as number) ?? 0,
-    batch_size: (storeModel.parameters?.batch_size as number) ?? 2048,
-    threads: (storeModel.parameters?.threads as number) ?? -1,
-    gpu_layers: (storeModel.parameters?.gpu_layers as number) ?? -1,
-    temperature: (storeModel.parameters?.temperature as number) ?? 0.8,
-    top_k: (storeModel.parameters?.top_k as number) ?? 40,
-    top_p: (storeModel.parameters?.top_p as number) ?? 0.9,
-    model_path: (storeModel.parameters?.model_path as string) ?? undefined,
-    model_url: (storeModel.parameters?.model_url as string) ?? undefined,
-  };
-}
+    return {
+      name: storeModel.name,
+      type: typeMap[storeModel.type] || 'llama',
+      status: storeModel.status === 'running' || storeModel.status === 'loading' || storeModel.status === 'error'
+        ? storeModel.status
+        : 'stopped',
+      ctx_size: (storeModel.parameters?.ctx_size as number) ?? 0,
+      batch_size: (storeModel.parameters?.batch_size as number) ?? 2048,
+      threads: (storeModel.parameters?.threads as number) ?? -1,
+      model_path: (storeModel.parameters?.model_path as string) ?? undefined,
+      model_url: (storeModel.parameters?.model_url as string) ?? undefined,
+    };
+  }
 
 export default function ModelsPage() {
   const models = useStore((state) => state.models);
@@ -90,29 +238,164 @@ export default function ModelsPage() {
   const [error, setError] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
-  const { requestModels } = useWebSocket();
+  const [modelsData, setModelsData] = useState<Map<number, ModelData>>(new Map());
+  const { requestModels, sendMessage } = useWebSocket();
   const setModels = useStore((state) => state.setModels);
   const updateStoreModel = useStore((state) => state.updateModel);
 
-  useEffect(() => {
-    // Load all models from database on mount
-    try {
-      const dbModels = getModels();
-      const storeModels = dbModels.map(databaseToStoreModel);
-      if (storeModels.length > 0) {
-        setModels(storeModels);
-        console.log('[ModelsPage] Loaded models from database:', storeModels.length, 'models');
-      }
-    } catch (err) {
-      console.error('[ModelsPage] Failed to load models from database:', err);
-    }
+  // Dialog state for configuration
+  const [configDialogOpen, setConfigDialogOpen] = useState(false);
+  const [editingConfigType, setEditingConfigType] = useState<ConfigType | null>(null);
+  const [currentConfig, setCurrentConfig] = useState<any>(null);
+  const [selectedModel, setSelectedModel] = useState<ModelData | null>(null);
 
-    // Request models from WebSocket to get latest state
-    requestModels();
+  useEffect(() => {
+    // Load models from database as source of truth
+    sendMessage('load_models', {});
+    console.log("[ModelsPage] Loading models from database");
     // Set initial loading to false after a brief delay
-    const timer = setTimeout(() => setIsInitialLoading(false), 1000);
-    return () => clearTimeout(timer);
-  }, [requestModels, setModels]);
+    setTimeout(() => setIsInitialLoading(false), 1000);
+  }, [sendMessage]);
+
+  // Handle WebSocket responses for database operations
+  useEffect(() => {
+    // Register custom event listener for WebSocket messages
+    const handleWebSocketMessage = (event: MessageEvent) => {
+      try {
+        const message = JSON.parse(event.data);
+        console.log("[ModelsPage] Received WebSocket message:", message.type);
+
+        if (message.type === 'models_loaded') {
+          if (message.success) {
+            console.log("[ModelsPage] Models loaded from database:", message.data);
+            // Update the store with database models (they have proper IDs for configuration)
+            setModels(message.data);
+            // Clear initial loading state
+            setIsInitialLoading(false);
+          } else {
+            console.error("[ModelsPage] Failed to load models from database:", message.error);
+            setError(`Failed to load models: ${message.error?.message || 'Unknown error'}`);
+            setIsInitialLoading(false);
+          }
+        }
+
+        if (message.type === 'model_saved') {
+          if (message.success) {
+            console.log("[ModelsPage] Model saved successfully:", message.data);
+            // Model will be synced via the regular 'models' message from WebSocket
+            // No need to manually update state here
+          } else {
+            console.error("[ModelsPage] Failed to save model:", message.error);
+            setError(`Failed to save model: ${message.error?.message || 'Unknown error'}`);
+          }
+        }
+
+        if (message.type === 'model_updated') {
+          if (message.success) {
+            console.log("[ModelsPage] Model updated successfully:", message.data);
+            // Model will be synced via the regular 'models' message from WebSocket
+          } else {
+            console.error("[ModelsPage] Failed to update model:", message.error);
+            setError(`Failed to update model: ${message.error?.message || 'Unknown error'}`);
+          }
+        }
+
+        if (message.type === 'model_deleted') {
+          if (message.success) {
+            console.log("[ModelsPage] Model deleted successfully:", message.data);
+            // Remove model from store
+            const dbId = message.data.id;
+            useStore.getState().removeModel(dbId.toString());
+            // Remove from models data map
+            setModelsData((prev) => {
+              const newMap = new Map(prev);
+              newMap.delete(dbId);
+              return newMap;
+            });
+          } else {
+            console.error("[ModelsPage] Failed to delete model:", message.error);
+            setError(`Failed to delete model: ${message.error?.message || 'Unknown error'}`);
+          }
+        }
+
+        if (message.type === 'config_loaded') {
+          if (message.success) {
+            console.log("[ModelsPage] Config loaded successfully:", message.data);
+            const { id, type, config } = message.data;
+
+            // Store config and open dialog if this type was requested
+            let shouldOpenDialog = false;
+            setModelsData((prev) => {
+              const newMap = new Map(prev);
+              const modelData = newMap.get(id);
+              if (modelData) {
+                const newLoading = new Set(modelData._configsLoading || []);
+                newLoading.delete(type);
+                
+                // Check if this is the config type we're waiting for
+                if (type === editingConfigType && id === selectedModel?.id) {
+                  shouldOpenDialog = true;
+                }
+                
+                newMap.set(id, {
+                  ...modelData,
+                  [type]: config as any,
+                  _configsLoading: newLoading
+                });
+              }
+              return newMap;
+            });
+
+            // Open dialog if this config type was being edited
+            if (shouldOpenDialog) {
+              setCurrentConfig(config);
+              setConfigDialogOpen(true);
+            }
+          } else {
+            console.error("[ModelsPage] Failed to load config:", message.error);
+            // Remove from loading set even on error
+            const { id, type } = message.data || {};
+            if (id !== undefined && type) {
+              setModelsData((prev) => {
+                const newMap = new Map(prev);
+                const modelData = newMap.get(id);
+                if (modelData) {
+                  const newLoading = new Set(modelData._configsLoading || []);
+                  newLoading.delete(type);
+                  newMap.set(id, {
+                    ...modelData,
+                    _configsLoading: newLoading
+                  });
+                }
+                return newMap;
+              });
+            }
+          }
+        }
+
+        if (message.type === 'config_saved') {
+          if (message.success) {
+            console.log("[ModelsPage] Config saved successfully:", message.data);
+            // Close dialog on successful save
+            setConfigDialogOpen(false);
+            setError(null); // Clear any errors
+          } else {
+            console.error("[ModelsPage] Failed to save config:", message.error);
+            setError(`Failed to save config: ${message.error?.message || 'Unknown error'}`);
+          }
+        }
+      } catch (err) {
+        console.error("[ModelsPage] Error parsing WebSocket message:", err);
+      }
+    };
+
+    // Listen to the window message event for WebSocket messages
+    window.addEventListener('message', handleWebSocketMessage);
+
+    return () => {
+      window.removeEventListener('message', handleWebSocketMessage);
+    };
+  }, [editingConfigType, selectedModel]);
 
   // Helper functions defined outside component (created once)
   const normalizeStatus = (status: string | { value?: string; args?: unknown; preset?: unknown } | unknown): string => {
@@ -135,6 +418,84 @@ export default function ModelsPage() {
     }
   };
 
+  // Open configuration dialog for a specific model and config type
+  const handleConfigure = useEffectEvent(async (model: ModelData, configType: ConfigType) => {
+    if (!model.id) return;
+
+    // Set editing state
+    setSelectedModel(model);
+    setEditingConfigType(configType);
+    setError(null);
+
+    // Check if config is already loaded
+    if (model[configType]) {
+      // Config already loaded, open dialog immediately
+      setCurrentConfig(model[configType]);
+      setConfigDialogOpen(true);
+      console.log(`[ModelsPage] Opening dialog with loaded ${configType} config for model ${model.name}`);
+    } else {
+      // Mark as loading
+      setModelsData((prev) => {
+        const newMap = new Map(prev);
+        const modelData = newMap.get(model.id!);
+        if (modelData) {
+          newMap.set(model.id!, {
+            ...modelData,
+            _configsLoading: new Set(modelData._configsLoading || []).add(configType)
+          });
+        }
+        return newMap;
+      });
+
+      // Send WebSocket message to load config
+      sendMessage('load_config', { id: model.id, type: configType });
+      console.log(`[ModelsPage] Requested ${configType} config for model ${model.name}`);
+    }
+  });
+
+  // Lazy-load config for a specific model using WebSocket (kept for compatibility)
+  const handleLoadConfig = useEffectEvent(async (model: ModelData, configType: ConfigType) => {
+    handleConfigure(model, configType);
+  });
+
+  // Save config for a specific model using WebSocket
+  const handleSaveConfig = useEffectEvent(async (model: ModelData, configType: 'sampling' | 'memory' | 'gpu' | 'advanced' | 'lora' | 'multimodal') => {
+    if (!model.id) return;
+
+    try {
+      let config: any;
+      switch (configType) {
+        case "sampling":
+          config = model.sampling;
+          break;
+        case "memory":
+          config = model.memory;
+          break;
+        case "gpu":
+          config = model.gpu;
+          break;
+        case "advanced":
+          config = model.advanced;
+          break;
+        case "lora":
+          config = model.lora;
+          break;
+        case "multimodal":
+          config = model.multimodal;
+          break;
+      }
+
+      if (config) {
+        // Send WebSocket message to save config
+        sendMessage('save_config', { id: model.id, type: configType, config });
+        console.log(`[ModelsPage] Saving ${configType} config for model ${model.name}`);
+      }
+    } catch (err) {
+      console.error(`[ModelsPage] Failed to save ${configType} config for model ${model.name}:`, err);
+      setError(`Failed to save ${configType} config: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  });
+
   // Use useEffectEvent for handlers to keep them stable
   const handleStartModel = useEffectEvent(async (modelId: string) => {
     // Find the model to get its name and database ID
@@ -148,13 +509,12 @@ export default function ModelsPage() {
     setError(null);
 
     try {
-      updateStoreModel(modelId, { status: 'loading' });
+      updateStoreModel(modelId, { status: "loading" });
 
-      // Update status in database (non-blocking)
-      try {
-        updateModel(parseInt(modelId, 10), { status: 'loading' });
-      } catch (dbErr) {
-        console.error('[ModelsPage] Failed to update model status in database:', dbErr);
+      // Update status in database via WebSocket (non-blocking)
+      const dbId = parseInt(modelId, 10);
+      if (!isNaN(dbId)) {
+        sendMessage('update_model', { id: dbId, updates: { status: "loading" } });
       }
 
       // Make real API call to load the model in llama-server
@@ -171,24 +531,21 @@ export default function ModelsPage() {
       }
 
       // Only update to running after actual confirmation from llama-server
-      updateStoreModel(modelId, { status: 'running' });
+      updateStoreModel(modelId, { status: "running" });
 
-      // Update status in database (non-blocking)
-      try {
-        updateModel(parseInt(modelId, 10), { status: 'running' });
-      } catch (dbErr) {
-        console.error('[ModelsPage] Failed to update model status in database:', dbErr);
+      // Update status in database via WebSocket (non-blocking)
+      if (!isNaN(dbId)) {
+        sendMessage('update_model', { id: dbId, updates: { status: "running" } });
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
-      updateStoreModel(modelId, { status: 'idle' });
+      updateStoreModel(modelId, { status: "idle" });
 
-      // Update status in database (non-blocking)
-      try {
-        updateModel(parseInt(modelId, 10), { status: 'stopped' });
-      } catch (dbErr) {
-        console.error('[ModelsPage] Failed to update model status in database:', dbErr);
+      // Update status in database via WebSocket (non-blocking)
+      const dbId = parseInt(modelId, 10);
+      if (!isNaN(dbId)) {
+        sendMessage('update_model', { id: dbId, updates: { status: "stopped" } });
       }
     } finally {
       setLoading(null);
@@ -207,19 +564,18 @@ export default function ModelsPage() {
     setError(null);
 
     try {
-      updateStoreModel(modelId, { status: 'loading' });
+      updateStoreModel(modelId, { status: "loading" });
 
-      // Update status in database (non-blocking)
-      try {
-        updateModel(parseInt(modelId, 10), { status: 'loading' });
-      } catch (dbErr) {
-        console.error('[ModelsPage] Failed to update model status in database:', dbErr);
+      // Update status in database via WebSocket (non-blocking)
+      const dbId = parseInt(modelId, 10);
+      if (!isNaN(dbId)) {
+        sendMessage('update_model', { id: dbId, updates: { status: "loading" } });
       }
 
       // Make real API call to unload the model from llama-server
       const response = await fetch(`/api/models/${encodeURIComponent(model.name)}/stop`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
       });
 
       const data = await response.json();
@@ -229,24 +585,21 @@ export default function ModelsPage() {
       }
 
       // Only update to idle after actual confirmation from llama-server
-      updateStoreModel(modelId, { status: 'idle' });
+      updateStoreModel(modelId, { status: "idle" });
 
-      // Update status in database (non-blocking)
-      try {
-        updateModel(parseInt(modelId, 10), { status: 'stopped' });
-      } catch (dbErr) {
-        console.error('[ModelsPage] Failed to update model status in database:', dbErr);
+      // Update status in database via WebSocket (non-blocking)
+      if (!isNaN(dbId)) {
+        sendMessage('update_model', { id: dbId, updates: { status: "stopped" } });
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
-      updateStoreModel(modelId, { status: 'running' });
+      updateStoreModel(modelId, { status: "running" });
 
-      // Update status in database (non-blocking)
-      try {
-        updateModel(parseInt(modelId, 10), { status: 'running' });
-      } catch (dbErr) {
-        console.error('[ModelsPage] Failed to update model status in database:', dbErr);
+      // Update status in database via WebSocket (non-blocking)
+      const dbId = parseInt(modelId, 10);
+      if (!isNaN(dbId)) {
+        sendMessage('update_model', { id: dbId, updates: { status: "running" } });
       }
     } finally {
       setLoading(null);
@@ -259,8 +612,8 @@ export default function ModelsPage() {
     setTimeout(() => setRefreshing(false), 800);
   });
 
-  // Handler for saving a model configuration (can be used by add/edit model dialogs)
-  const handleSaveModel = useEffectEvent((config: Partial<import('@/types').ModelConfig>) => {
+  // Handler for saving a model configuration (can be used by add/edit model dialogs) using WebSocket
+  const handleSaveModel = useEffectEvent(async (config: Partial<import("@/types").ModelConfig>) => {
     const allModels = useStore.getState().models;
     const existing = allModels.find((m) => m.name === config.name);
 
@@ -269,56 +622,68 @@ export default function ModelsPage() {
       const updatedModel = { ...existing, ...config };
       updateStoreModel(existing.id, config);
 
-      // Update in database (non-blocking)
-      try {
-        updateModel(parseInt(existing.id, 10), storeToDatabaseModel(updatedModel));
-      } catch (dbErr) {
-        console.error('[ModelsPage] Failed to update model in database:', dbErr);
+      // Update in database via WebSocket (non-blocking)
+      const dbId = parseInt(existing.id, 10);
+      if (!isNaN(dbId)) {
+        sendMessage('update_model', {
+          id: dbId,
+          updates: storeToDatabaseModel(updatedModel)
+        });
+        console.log("[ModelsPage] Updating model in database:", existing.name);
       }
     } else if (config.name) {
       // Create new model
-      const newModel: import('@/types').ModelConfig = {
+      const newModel: import("@/types").ModelConfig = {
         id: Date.now().toString(), // Temporary ID, will be replaced by database
         name: config.name,
-        type: config.type || 'llama',
+        type: config.type || "llama",
         parameters: config.parameters || {},
-        status: 'idle', // Store uses 'idle' instead of 'stopped'
+        status: "idle", // Store uses "idle" instead of "stopped"
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
-      // Save to database to get real ID
-      let dbId: number | undefined;
-      try {
-        dbId = saveModel(storeToDatabaseModel(newModel));
-        newModel.id = dbId.toString();
-        useStore.getState().addModel(newModel);
-        console.log('[ModelsPage] Created new model with ID:', dbId);
-      } catch (dbErr) {
-        console.error('[ModelsPage] Failed to save model to database:', dbErr);
-        // Still add to store even if database save fails
-        useStore.getState().addModel(newModel);
-      }
+      // Send WebSocket message to save model
+      sendMessage('save_model', {
+        name: newModel.name,
+        type: newModel.type === "mistral" ? "mistrall" : newModel.type === "other" ? "custom" : newModel.type,
+        status: "stopped",
+        ctx_size: (newModel.parameters?.ctx_size as number) ?? 0,
+        batch_size: (newModel.parameters?.batch_size as number) ?? 2048,
+        threads: (newModel.parameters?.threads as number) ?? -1,
+        model_path: (newModel.parameters?.model_path as string) ?? undefined,
+        model_url: (newModel.parameters?.model_url as string) ?? undefined,
+      });
+      console.log("[ModelsPage] Creating new model:", newModel.name);
+
+      // Add to store with temporary ID (will be updated when response comes back)
+      useStore.getState().addModel(newModel);
     }
   });
 
-  // Handler for deleting a model
-  const handleDeleteModel = useEffectEvent((modelId: string) => {
+  // Handler for deleting a model using WebSocket
+  const handleDeleteModel = useEffectEvent(async (modelId: string) => {
     const model = useStore.getState().models.find((m) => m.id === modelId);
     if (!model) {
-      console.error('[ModelsPage] Model not found:', modelId);
+      console.error("[ModelsPage] Model not found:", modelId);
       return;
     }
 
     // Remove from store
     useStore.getState().removeModel(modelId);
 
-    // Remove from database (non-blocking)
-    try {
-      deleteModel(parseInt(modelId, 10));
-      console.log('[ModelsPage] Deleted model from database:', modelId);
-    } catch (dbErr) {
-      console.error('[ModelsPage] Failed to delete model from database:', dbErr);
+    // Send WebSocket message to delete from database (non-blocking)
+    const dbId = parseInt(modelId, 10);
+    if (!isNaN(dbId)) {
+      sendMessage('delete_model', { id: dbId });
+      console.log("[ModelsPage] Deleting model from database:", modelId);
+
+      // Remove from models data map immediately
+      setModelsData((prev) => {
+        const newMap = new Map(prev);
+        newMap.delete(dbId);
+        return newMap;
+      });
     }
 
     // Close menu
@@ -405,9 +770,9 @@ export default function ModelsPage() {
             </Typography>
           </div>
           <Box>
-            <Button 
-              variant="contained" 
-              color="primary" 
+            <Button
+              variant="contained"
+              color="primary"
               startIcon={<Add />}
               sx={{ mr: 2 }}
               onClick={() => console.log('Add new model')}
@@ -432,89 +797,255 @@ export default function ModelsPage() {
 
         {/* Models Grid */}
         <Grid container spacing={3}>
-          {models.map((model) => (
-            <Grid key={model.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-              <Card
-                sx={{
-                  height: '100%',
-                  background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
-                  backdropFilter: 'blur(10px)',
-                  border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`,
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: isDark ? '0 12px 24px rgba(0, 0, 0, 0.2)' : '0 12px 24px rgba(0, 0, 0, 0.1)'
-                  }
-                }}
-              >
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="subtitle1" fontWeight="medium">
-                      {model.name}
+          {models.map((model) => {
+            const modelData = modelsData.get(parseInt(model.id, 10));
+            const configsLoading = modelData?._configsLoading || new Set<string>();
+
+            return (
+              <Grid key={model.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                <Card
+                  sx={{
+                    height: '100%',
+                    background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(248, 250, 252, 0.8)',
+                    backdropFilter: 'blur(10px)',
+                    border: `1px solid ${isDark ? 'rgba(255,255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`,
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: isDark ? '0 12px 24px rgba(0, 0, 0, 0.2)' : '0 12px 24px rgba(0, 0, 0, 0.1)'
+                    }
+                  }}
+                >
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Typography variant="subtitle1" fontWeight="medium">
+                        {model.name}
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Chip
+                          label={normalizeStatus(model.status)}
+                          color={getStatusColor(model.status) as 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'}
+                          size="small"
+                          variant="filled"
+                        />
+                        <IconButton
+                          size="small"
+                          onClick={(e) => handleMenuClick(e, model.id)}
+                          sx={{
+                            '&:hover': {
+                              background: isDark ? 'rgba(255,255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'
+                            }
+                          }}
+                        >
+                          <MoreVert fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" mb={2}>
+                      {model.type}
                     </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Chip
-                        label={normalizeStatus(model.status)}
-                        color={getStatusColor(model.status) as 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'}
-                        size="small"
-                        variant="filled"
-                      />
-                      <IconButton
-                        size="small"
-                        onClick={(e) => handleMenuClick(e, model.id)}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        Created: {new Date(model.createdAt).toLocaleDateString()}
+                      </Typography>
+                    </Box>
+
+                    {/* Config loaded indicators */}
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
+                      <Badge
+                        color={modelData?.sampling ? 'success' : 'default'}
+                        overlap="circular"
+                        badgeContent={configsLoading.has('sampling') ? <CircularProgress size={12} /> : (modelData?.sampling ? <Check sx={{ fontSize: 10 }} /> : null)}
                         sx={{
-                          '&:hover': {
-                            background: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'
+                          '& .MuiBadge-badge': {
+                            width: 14,
+                            height: 14,
+                            minWidth: 14,
+                            borderRadius: 7
                           }
                         }}
                       >
-                        <MoreVert fontSize="small" />
-                      </IconButton>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          disabled={configsLoading.has('sampling')}
+                          onClick={() => {
+                            if (modelData && modelData.id !== undefined) {
+                              handleConfigure(modelData, 'sampling');
+                            }
+                          }}
+                        >
+                          Sampling
+                        </Button>
+                      </Badge>
+                      <Badge
+                        color={modelData?.memory ? 'success' : 'default'}
+                        overlap="circular"
+                        badgeContent={configsLoading.has('memory') ? <CircularProgress size={12} /> : (modelData?.memory ? <Check sx={{ fontSize: 10 }} /> : null)}
+                        sx={{
+                          '& .MuiBadge-badge': {
+                            width: 14,
+                            height: 14,
+                            minWidth: 14,
+                            borderRadius: 7
+                          }
+                        }}
+                      >
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          disabled={configsLoading.has('memory')}
+                          onClick={() => {
+                            if (modelData && modelData.id !== undefined) {
+                              handleConfigure(modelData, 'memory');
+                            }
+                          }}
+                        >
+                          Memory
+                        </Button>
+                      </Badge>
+                      <Badge
+                        color={modelData?.gpu ? 'success' : 'default'}
+                        overlap="circular"
+                        badgeContent={configsLoading.has('gpu') ? <CircularProgress size={12} /> : (modelData?.gpu ? <Check sx={{ fontSize: 10 }} /> : null)}
+                        sx={{
+                          '& .MuiBadge-badge': {
+                            width: 14,
+                            height: 14,
+                            minWidth: 14,
+                            borderRadius: 7
+                          }
+                        }}
+                      >
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          disabled={configsLoading.has('gpu')}
+                          onClick={() => {
+                            if (modelData && modelData.id !== undefined) {
+                              handleConfigure(modelData, 'gpu');
+                            }
+                          }}
+                        >
+                          GPU
+                        </Button>
+                      </Badge>
+                      <Badge
+                        color={modelData?.advanced ? 'success' : 'default'}
+                        overlap="circular"
+                        badgeContent={configsLoading.has('advanced') ? <CircularProgress size={12} /> : (modelData?.advanced ? <Check sx={{ fontSize: 10 }} /> : null)}
+                        sx={{
+                          '& .MuiBadge-badge': {
+                            width: 14,
+                            height: 14,
+                            minWidth: 14,
+                            borderRadius: 7
+                          }
+                        }}
+                      >
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          disabled={configsLoading.has('advanced')}
+                          onClick={() => {
+                            if (modelData && modelData.id !== undefined) {
+                              handleConfigure(modelData, 'advanced');
+                            }
+                          }}
+                        >
+                          Advanced
+                        </Button>
+                      </Badge>
+                      <Badge
+                        color={modelData?.lora ? 'success' : 'default'}
+                        overlap="circular"
+                        badgeContent={configsLoading.has('lora') ? <CircularProgress size={12} /> : (modelData?.lora ? <Check sx={{ fontSize: 10 }} /> : null)}
+                        sx={{
+                          '& .MuiBadge-badge': {
+                            width: 14,
+                            height: 14,
+                            minWidth: 14,
+                            borderRadius: 7
+                          }
+                        }}
+                      >
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          disabled={configsLoading.has('lora')}
+                          onClick={() => {
+                            if (modelData && modelData.id !== undefined) {
+                              handleConfigure(modelData, 'lora');
+                            }
+                          }}
+                        >
+                          LoRA
+                        </Button>
+                      </Badge>
+                      <Badge
+                        color={modelData?.multimodal ? 'success' : 'default'}
+                        overlap="circular"
+                        badgeContent={configsLoading.has('multimodal') ? <CircularProgress size={12} /> : (modelData?.multimodal ? <Check sx={{ fontSize: 10 }} /> : null)}
+                        sx={{
+                          '& .MuiBadge-badge': {
+                            width: 14,
+                            height: 14,
+                            minWidth: 14,
+                            borderRadius: 7
+                          }
+                        }}
+                      >
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          disabled={configsLoading.has('multimodal')}
+                          onClick={() => {
+                            if (modelData && modelData.id !== undefined) {
+                              handleConfigure(modelData, 'multimodal');
+                            }
+                          }}
+                        >
+                          Multi
+                        </Button>
+                      </Badge>
                     </Box>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" mb={2}>
-                    {model.type}
-                  </Typography>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Created: {new Date(model.createdAt).toLocaleDateString()}
-                    </Typography>
-                  </Box>
-                  <LinearProgress
-                    variant="determinate"
-                    value={normalizeStatus(model.status) === 'running' ? 100 : normalizeStatus(model.status) === 'loading' ? 50 : 0}
-                    color={getStatusColor(model.status) as 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' | 'inherit'}
-                    sx={{ height: '4px', borderRadius: '2px', mb: 2 }}
-                  />
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-                    {normalizeStatus(model.status) === 'running' ? (
-                      <Button 
-                        variant="outlined"
-                        color="error"
-                        startIcon={<Stop />}
-                        size="small"
-                        disabled={loading === model.id}
-                        onClick={() => handleStopModel(model.id)}
-                      >
-                        {loading === model.id ? 'Stopping...' : 'Stop'}
-                      </Button>
-                    ) : (
-                      <Button 
-                        variant="contained"
-                        color="primary"
-                        startIcon={<PlayArrow />}
-                        size="small"
-                        disabled={loading === model.id}
-                        onClick={() => handleStartModel(model.id)}
-                      >
-                        {loading === model.id ? 'Starting...' : 'Start'}
-                      </Button>
-                    )}
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
+
+                    <LinearProgress
+                      variant="determinate"
+                      value={normalizeStatus(model.status) === 'running' ? 100 : normalizeStatus(model.status) === 'loading' ? 50 : 0}
+                      color={getStatusColor(model.status) as 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' | 'inherit'}
+                      sx={{ height: '4px', borderRadius: '2px', mb: 2 }}
+                    />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                      {normalizeStatus(model.status) === 'running' ? (
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          startIcon={<Stop />}
+                          size="small"
+                          disabled={loading === model.id}
+                          onClick={() => handleStopModel(model.id)}
+                        >
+                          {loading === model.id ? 'Stopping...' : 'Stop'}
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          startIcon={<PlayArrow />}
+                          size="small"
+                          disabled={loading === model.id}
+                          onClick={() => handleStartModel(model.id)}
+                        >
+                          {loading === model.id ? 'Starting...' : 'Start'}
+                        </Button>
+                      )}
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
         </Grid>
 
         {/* Context menu for model actions */}
@@ -530,13 +1061,33 @@ export default function ModelsPage() {
             Delete Model
           </MenuItem>
         </Menu>
-        
+
+        {/* Model Configuration Dialog */}
+        <ModelConfigDialog
+          open={configDialogOpen}
+          modelId={selectedModel?.id}
+          configType={editingConfigType}
+          config={currentConfig}
+          onClose={() => setConfigDialogOpen(false)}
+          onSave={(config) => {
+            if (selectedModel && editingConfigType) {
+              // Send WebSocket message to save config
+              sendMessage('save_config', {
+                id: selectedModel.id,
+                type: editingConfigType,
+                config
+              });
+              console.log(`[ModelsPage] Saving ${editingConfigType} config for model ${selectedModel.name}`);
+            }
+          }}
+        />
+
         {/* Empty state */}
         {models.length === 0 && (
-          <Box sx={{ 
-            textAlign: 'center', 
-            py: 8, 
-            border: `2px dashed ${isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)'}`,
+          <Box sx={{
+            textAlign: 'center',
+            py: 8,
+            border: `2px dashed ${isDark ? 'rgba(255,255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)'}`,
             borderRadius: '8px',
             mt: 4
           }}>
@@ -546,7 +1097,7 @@ export default function ModelsPage() {
             <Typography variant="body2" color="text.secondary">
               Add your first AI model to get started
             </Typography>
-            <Button 
+            <Button
               variant="contained"
               color="primary"
               startIcon={<Add />}

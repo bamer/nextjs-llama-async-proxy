@@ -41,20 +41,20 @@ describe('ConfigurationPage', () => {
   it('renders tabs correctly', () => {
     render(<ConfigurationPage />);
 
-    // Assert: Tab buttons should be visible
-    expect(screen.getByText('General Settings')).toBeInTheDocument();
-    expect(screen.getByText('Model Default Parameters')).toBeInTheDocument();
+    // Assert: Tab buttons should be visible (use getAllByText since text appears in tab and heading)
+    expect(screen.getAllByText('General Settings').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Model Default Parameters').length).toBeGreaterThan(0);
   });
 
   it('switches between tabs', () => {
     render(<ConfigurationPage />);
 
-    // Act: Click on model defaults tab
-    const modelDefaultsTab = screen.getByText('Model Default Parameters');
-    fireEvent.click(modelDefaultsTab);
+    // Act: Click on model defaults tab (get the first one which is the button)
+    const modelDefaultsTabs = screen.getAllByText('Model Default Parameters');
+    fireEvent.click(modelDefaultsTabs[0]);
 
-    // Assert: Tab content should be visible
-    expect(screen.getByText('Model Default Parameters')).toBeInTheDocument();
+    // Assert: Tab content should be visible (now there should be 2 - button and heading)
+    expect(screen.getAllByText('Model Default Parameters').length).toBe(2);
   });
 
   it('updates input fields', () => {
@@ -224,8 +224,8 @@ describe('ConfigurationPage', () => {
     render(<ConfigurationPage />);
 
     // Act: Switch to model defaults tab
-    const modelDefaultsTab = screen.getByText('Model Default Parameters');
-    fireEvent.click(modelDefaultsTab);
+    const modelDefaultsTabs = screen.getAllByText('Model Default Parameters');
+    fireEvent.click(modelDefaultsTabs[0]);
 
     // Assert: Model default inputs are visible
     expect(screen.getByDisplayValue('4096')).toBeInTheDocument();
@@ -239,8 +239,8 @@ describe('ConfigurationPage', () => {
     render(<ConfigurationPage />);
 
     // Act: Switch to model defaults tab
-    const modelDefaultsTab = screen.getByText('Model Default Parameters');
-    fireEvent.click(modelDefaultsTab);
+    const modelDefaultsTabs = screen.getAllByText('Model Default Parameters');
+    fireEvent.click(modelDefaultsTabs[0]);
 
     // Act: Change ctx_size input
     const ctxSizeInput = screen.getByDisplayValue('4096');

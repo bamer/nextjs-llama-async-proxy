@@ -7,6 +7,28 @@ import { getWebSocketTransport, getLogger } from "../../lib/logger";
 const logger = getLogger();
 const execAsync = promisify(exec);
 
+// Import database functions
+import {
+  initDatabase,
+  getModels,
+  getModelById,
+  saveModel,
+  updateModel,
+  deleteModel,
+  saveModelSamplingConfig,
+  getModelSamplingConfig,
+  saveModelMemoryConfig,
+  getModelMemoryConfig,
+  saveModelGpuConfig,
+  getModelGpuConfig,
+  saveModelAdvancedConfig,
+  getModelAdvancedConfig,
+  saveModelLoraConfig,
+  getModelLoraConfig,
+  saveModelMultimodalConfig,
+  getModelMultimodalConfig,
+} from "../../lib/database";
+
 export interface SystemMetrics {
   cpuUsage: number;
   memoryUsage: number;
@@ -638,6 +660,187 @@ export class LlamaServerIntegration {
       } catch (error) {
         logger.error("[WS] ❌ Failed to download logs:", error);
         socket.emit("error", { message: "Failed to download logs" });
+      }
+    });
+
+    // Database configuration handlers
+    socket.on("load_config", async (data: { id: number; type: string }) => {
+      try {
+        logger.info(`[WS] Loading ${data.type} config for model ${data.id}`);
+        
+        // Ensure database is initialized
+        await initDatabase();
+        
+        let config: any;
+        switch (data.type) {
+          case "sampling":
+            config = await getModelSamplingConfig(data.id);
+            break;
+          case "memory":
+            config = await getModelMemoryConfig(data.id);
+            break;
+          case "gpu":
+            config = await getModelGpuConfig(data.id);
+            break;
+          case "advanced":
+            config = await getModelAdvancedConfig(data.id);
+            break;
+          case "lora":
+            config = await getModelLoraConfig(data.id);
+            break;
+          case "multimodal":
+            config = await getModelMultimodalConfig(data.id);
+            break;
+          default:
+            throw new Error(`Invalid config type: ${data.type}`);
+        }
+        
+        if (config) {
+          socket.emit("config_loaded", {
+            success: true,
+            data: { id: data.id, type: data.type, config },
+            timestamp: Date.now(),
+          });
+          logger.info(`[WS] ✅ Config loaded successfully: ${data.type}`);
+        } else {
+          socket.emit("config_loaded", {
+            success: true,
+            data: { id: data.id, type: data.type, config: {} },
+            timestamp: Date.now(),
+          });
+          logger.info(`[WS] ℹ️  No existing config found, returning empty config`);
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        logger.error(`[WS] ❌ Failed to load config: ${message}`);
+        socket.emit("config_loaded", {
+          success: false,
+          error: { code: "LOAD_CONFIG_FAILED", message },
+          timestamp: Date.now(),
+        });
+      }
+    });
+
+    socket.on("save_config", async (data: { id: number; type: string; config: any }) => {
+      try {
+        logger.info(`[WS] Saving ${data.type} config for model ${data.id}`);
+        
+        // Ensure database is initialized
+        await initDatabase();
+        
+        let result: any;
+        switch (data.type) {
+          case "sampling":
+            result = await saveModelSamplingConfig(data.id, data.config);
+            break;
+          case "memory":
+            result = await saveModelMemoryConfig(data.id, data.config);
+            break;
+          case "gpu":
+            result = await saveModelGpuConfig(data.id, data.config);
+            break;
+          case "advanced":
+            result = await saveModelAdvancedConfig(data.id, data.config);
+            break;
+          case "lora":
+            result = await saveModelLoraConfig(data.id, data.config);
+            break;
+          case "multimodal":
+            result = await saveModelMultimodalConfig(data.id, data.config);
+            break;
+          default:
+            throw new Error(`Invalid config type: ${data.type}`);
+        }
+        
+        socket.emit("config_saved", {
+          success: true,
+          data: { id: data.id, type: data.type, config: result },
+          timestamp: Date.now(),
+        });
+        logger.info(`[WS] ✅ Config saved successfully: ${data.type}`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        logger.error(`[WS] ❌ Failed to save config: ${message}`);
+        socket.emit("config_saved", {
+          success: false,
+          error: { code: "SAVE_CONFIG_FAILED", message },
+          timestamp: Date.now(),
+        });
+      }
+    });
+
+    socket.on("save_model", async (data: any) => {
+      try {
+        logger.info(`[WS] Saving model: ${data.name}`);
+        
+        // Ensure database is initialized
+        await initDatabase();
+        
+        const model = await saveModel(data);
+        socket.emit("model_saved", {
+          success: true,
+          data: model,
+          timestamp: Date.now(),
+        });
+        logger.info(`[WS] ✅ Model saved successfully: ${data.name}`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        logger.error(`[WS] ❌ Failed to save model: ${message}`);
+        socket.emit("model_saved", {
+          success: false,
+          error: { code: "SAVE_MODEL_FAILED", message },
+          timestamp: Date.now(),
+        });
+      }
+    });
+
+    socket.on("update_model", async (data: { id: number; updates: any }) => {
+      try {
+        logger.info(`[WS] Updating model ${data.id}`);
+        
+        // Ensure database is initialized
+        await initDatabase();
+        
+        const model = await updateModel(data.id, data.updates);
+        socket.emit("model_updated", {
+          success: true,
+          data: model,
+          timestamp: Date.now(),
+        });
+        logger.info(`[WS] ✅ Model updated successfully: ${data.id}`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        logger.error(`[WS] ❌ Failed to update model: ${message}`);
+        socket.emit("model_updated", {
+          success: false,
+          error: { code: "UPDATE_MODEL_FAILED", message },
+          timestamp: Date.now(),
+        });
+      }
+    });
+
+    socket.on("delete_model", async (data: { id: number }) => {
+      try {
+        logger.info(`[WS] Deleting model ${data.id}`);
+        
+        // Ensure database is initialized
+        await initDatabase();
+        
+        await deleteModel(data.id);
+        socket.emit("model_deleted", {
+          success: true,
+          data: { id: data.id },
+          timestamp: Date.now(),
+        });
+        logger.info(`[WS] ✅ Model deleted successfully: ${data.id}`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        logger.error(`[WS] ❌ Failed to delete model: ${message}`);
+        socket.emit("model_deleted", {
+          success: false,
+          error: { code: "DELETE_MODEL_FAILED", message },
+          timestamp: Date.now(),
+        });
       }
     });
   }

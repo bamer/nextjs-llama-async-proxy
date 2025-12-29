@@ -12,11 +12,18 @@ describe("useConfigurationForm", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    global.fetch = jest.fn();
+    // Default mock for fetch - returns empty config
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({}),
+    });
 
     (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
       applyToLogger: mockApplyToLogger,
     });
+
+    // Suppress console.error for expected test cases
+    jest.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {

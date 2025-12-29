@@ -67,7 +67,7 @@ function createTables(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_metrics_created_at ON metrics_history(created_at);
   `);
 
-  // Models Table
+  // Core models table
   db.exec(`
     CREATE TABLE IF NOT EXISTS models (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -98,27 +98,21 @@ function createTables(db: Database.Database): void {
       cpu_strict_batch INTEGER DEFAULT 0,
       priority INTEGER DEFAULT 0,
       priority_batch INTEGER,
-      cache_ram INTEGER DEFAULT -1,
-      cache_type_k TEXT,
-      cache_type_v TEXT,
-      mmap INTEGER DEFAULT 0,
-      mlock INTEGER DEFAULT 0,
-      numa TEXT,
-      defrag_thold INTEGER,
-      device TEXT,
-      list_devices INTEGER DEFAULT 0,
-      gpu_layers INTEGER DEFAULT -1,
-      split_mode TEXT,
-      tensor_split TEXT,
-      main_gpu INTEGER,
-      kv_offload INTEGER DEFAULT 0,
-      repack INTEGER DEFAULT 0,
-      no_host INTEGER DEFAULT 0,
-      swa_full INTEGER DEFAULT 0,
-      override_tensor TEXT,
-      cpu_moe INTEGER DEFAULT 0,
-      n_cpu_moe INTEGER DEFAULT 0,
-      kv_unified INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_models_name ON models(name);
+    CREATE INDEX IF NOT EXISTS idx_models_status ON models(status);
+    CREATE INDEX IF NOT EXISTS idx_models_type ON models(type);
+    CREATE INDEX IF NOT EXISTS idx_models_created ON models(created_at);
+  `);
+
+  // Model Sampling Configuration
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS model_sampling_config (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      model_id INTEGER NOT NULL,
       temperature REAL DEFAULT 0.8,
       top_k INTEGER DEFAULT 40,
       top_p REAL DEFAULT 0.9,
@@ -160,12 +154,96 @@ function createTables(db: Database.Database): void {
       yarn_beta_slow REAL DEFAULT -1.0,
       yarn_beta_fast REAL DEFAULT -1.0,
       flash_attn TEXT DEFAULT 'auto',
-      mmproj TEXT,
-      mmproj_url TEXT,
-      mmproj_auto INTEGER DEFAULT 0,
-      mmproj_offload INTEGER DEFAULT 0,
-      image_min_tokens INTEGER,
-      image_max_tokens INTEGER,
+      logit_bias TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_sampling_model_id ON model_sampling_config(model_id);
+  `);
+
+  // Model Memory Configuration
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS model_memory_config (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      model_id INTEGER NOT NULL,
+      cache_ram INTEGER DEFAULT -1,
+      cache_type_k TEXT,
+      cache_type_v TEXT,
+      mmap INTEGER DEFAULT 0,
+      mlock INTEGER DEFAULT 0,
+      numa TEXT,
+      defrag_thold INTEGER,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_memory_model_id ON model_memory_config(model_id);
+  `);
+
+  // Model GPU Configuration
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS model_gpu_config (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      model_id INTEGER NOT NULL,
+      device TEXT,
+      list_devices INTEGER DEFAULT 0,
+      gpu_layers INTEGER DEFAULT -1,
+      split_mode TEXT,
+      tensor_split TEXT,
+      main_gpu INTEGER,
+      kv_offload INTEGER DEFAULT 0,
+      repack INTEGER DEFAULT 0,
+      no_host INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_gpu_model_id ON model_gpu_config(model_id);
+  `);
+
+  // Model Advanced Configuration
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS model_advanced_config (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      model_id INTEGER NOT NULL,
+      swa_full INTEGER DEFAULT 0,
+      override_tensor TEXT,
+      cpu_moe INTEGER DEFAULT 0,
+      n_cpu_moe INTEGER DEFAULT 0,
+      kv_unified INTEGER DEFAULT 0,
+      pooling TEXT,
+      context_shift INTEGER DEFAULT 0,
+      rpc TEXT,
+      offline INTEGER DEFAULT 0,
+      override_kv TEXT,
+      op_offload INTEGER DEFAULT 0,
+      fit TEXT,
+      fit_target INTEGER DEFAULT 1024,
+      fit_ctx INTEGER DEFAULT 4096,
+      check_tensors INTEGER DEFAULT 0,
+      sleep_idle_seconds INTEGER DEFAULT -1,
+      polling TEXT,
+      polling_batch TEXT,
+      reasoning_format TEXT,
+      reasoning_budget INTEGER DEFAULT -1,
+      custom_params TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_advanced_model_id ON model_advanced_config(model_id);
+  `);
+
+  // Model LoRA Configuration
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS model_lora_config (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      model_id INTEGER NOT NULL,
       lora TEXT,
       lora_scaled TEXT,
       control_vector TEXT,
@@ -186,13 +264,37 @@ function createTables(db: Database.Database): void {
       n_gpu_layers_draft INTEGER,
       device_draft TEXT,
       spec_replace TEXT,
-      log_disable INTEGER,
-      log_file TEXT,
-      log_colors TEXT,
-      log_verbose INTEGER DEFAULT 0,
-      log_prefix INTEGER DEFAULT 0,
-      log_timestamps INTEGER DEFAULT 0,
-      logit_bias TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_lora_model_id ON model_lora_config(model_id);
+  `);
+
+  // Model Multimodal Configuration
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS model_multimodal_config (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      model_id INTEGER NOT NULL,
+      mmproj TEXT,
+      mmproj_url TEXT,
+      mmproj_auto INTEGER DEFAULT 0,
+      mmproj_offload INTEGER DEFAULT 0,
+      image_min_tokens INTEGER,
+      image_max_tokens INTEGER,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_multimodal_model_id ON model_multimodal_config(model_id);
+  `);
+
+  // Model Server Configuration (global defaults - NO FK to models!)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS model_server_config (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       host TEXT DEFAULT '127.0.0.1',
       port INTEGER DEFAULT 8080,
       api_prefix TEXT,
@@ -227,30 +329,15 @@ function createTables(db: Database.Database): void {
       verbose_prompt INTEGER DEFAULT 0,
       warmup INTEGER DEFAULT 0,
       spm_infill INTEGER DEFAULT 0,
-      pooling TEXT,
-      context_shift INTEGER DEFAULT 0,
-      rpc TEXT,
-      offline INTEGER DEFAULT 0,
-      override_kv TEXT,
-      op_offload INTEGER DEFAULT 0,
-      fit TEXT,
-      fit_target INTEGER DEFAULT 1024,
-      fit_ctx INTEGER DEFAULT 4096,
-      check_tensors INTEGER DEFAULT 0,
-      sleep_idle_seconds INTEGER DEFAULT -1,
-      polling TEXT,
-      polling_batch TEXT,
-      reasoning_format TEXT,
-      reasoning_budget INTEGER DEFAULT -1,
-      custom_params TEXT,
+      log_disable INTEGER,
+      log_file TEXT,
+      log_colors TEXT,
+      log_verbose INTEGER DEFAULT 0,
+      log_prefix INTEGER DEFAULT 0,
+      log_timestamps INTEGER DEFAULT 0,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
-
-    CREATE INDEX IF NOT EXISTS idx_models_name ON models(name);
-    CREATE INDEX IF NOT EXISTS idx_models_status ON models(status);
-    CREATE INDEX IF NOT EXISTS idx_models_type ON models(type);
-    CREATE INDEX IF NOT EXISTS idx_models_created ON models(created_at);
   `);
 
   // Metadata Table
@@ -262,7 +349,7 @@ function createTables(db: Database.Database): void {
     );
 
     INSERT OR IGNORE INTO metadata (key, value, updated_at)
-    VALUES ('db_version', '1.0', ${Date.now()});
+    VALUES ('db_version', '2.0', ${Date.now()});
   `);
 }
 
@@ -426,34 +513,14 @@ export interface ModelConfig {
   priority?: number;
   priority_batch?: number;
 
-  // Memory & Performance
-  cache_ram?: number;
-  cache_type_k?: string;
-  cache_type_v?: string;
-  mmap?: number;
-  mlock?: number;
-  numa?: string;
-  defrag_thold?: number;
+  created_at?: number;
+  updated_at?: number;
+}
 
-  // GPU Offloading
-  device?: string;
-  list_devices?: number;
-  gpu_layers?: number;
-  split_mode?: string;
-  tensor_split?: string;
-  main_gpu?: number;
-  kv_offload?: number;
-  repack?: number;
-  no_host?: number;
-
-  // Advanced Memory
-  swa_full?: number;
-  override_tensor?: string;
-  cpu_moe?: number;
-  n_cpu_moe?: number;
-  kv_unified?: number;
-
-  // Sampling Parameters
+// Sampling Configuration
+export interface ModelSamplingConfig {
+  id?: number;
+  model_id?: number;
   temperature?: number;
   top_k?: number;
   top_p?: number;
@@ -479,16 +546,12 @@ export interface ModelConfig {
   samplers?: string;
   sampler_seq?: string;
   seed?: number;
-
-  // Grammar & Constraints
   grammar?: string;
   grammar_file?: string;
   json_schema?: string;
   json_schema_file?: string;
   ignore_eos?: number;
   escape?: boolean;
-
-  // RoPE & Attention
   rope_scaling_type?: string;
   rope_scale?: number;
   rope_freq_base?: number;
@@ -499,23 +562,81 @@ export interface ModelConfig {
   yarn_beta_slow?: number;
   yarn_beta_fast?: number;
   flash_attn?: string;
+  logit_bias?: string;
+  created_at?: number;
+  updated_at?: number;
+}
 
-  // Multi-modal
-  mmproj?: string;
-  mmproj_url?: string;
-  mmproj_auto?: number;
-  mmproj_offload?: number;
-  image_min_tokens?: number;
-  image_max_tokens?: number;
+// Memory Configuration
+export interface ModelMemoryConfig {
+  id?: number;
+  model_id?: number;
+  cache_ram?: number;
+  cache_type_k?: string;
+  cache_type_v?: string;
+  mmap?: number;
+  mlock?: number;
+  numa?: string;
+  defrag_thold?: number;
+  created_at?: number;
+  updated_at?: number;
+}
 
-  // LoRA & Control Vectors
+// GPU Configuration
+export interface ModelGpuConfig {
+  id?: number;
+  model_id?: number;
+  device?: string;
+  list_devices?: number;
+  gpu_layers?: number;
+  split_mode?: string;
+  tensor_split?: string;
+  main_gpu?: number;
+  kv_offload?: number;
+  repack?: number;
+  no_host?: number;
+  created_at?: number;
+  updated_at?: number;
+}
+
+// Advanced Configuration
+export interface ModelAdvancedConfig {
+  id?: number;
+  model_id?: number;
+  swa_full?: number;
+  override_tensor?: string;
+  cpu_moe?: number;
+  n_cpu_moe?: number;
+  kv_unified?: number;
+  pooling?: string;
+  context_shift?: number;
+  rpc?: string;
+  offline?: number;
+  override_kv?: string;
+  op_offload?: number;
+  fit?: string;
+  fit_target?: number;
+  fit_ctx?: number;
+  check_tensors?: number;
+  sleep_idle_seconds?: number;
+  polling?: string;
+  polling_batch?: string;
+  reasoning_format?: string;
+  reasoning_budget?: number;
+  custom_params?: string;
+  created_at?: number;
+  updated_at?: number;
+}
+
+// LoRA Configuration
+export interface ModelLoraConfig {
+  id?: number;
+  model_id?: number;
   lora?: string;
   lora_scaled?: string;
   control_vector?: string;
   control_vector_scaled?: string;
   control_vector_layer_range?: string;
-
-  // Draft Model (Speculative Decoding)
   model_draft?: string;
   model_url_draft?: string;
   ctx_size_draft?: number;
@@ -531,17 +652,27 @@ export interface ModelConfig {
   n_gpu_layers_draft?: number;
   device_draft?: string;
   spec_replace?: string;
+  created_at?: number;
+  updated_at?: number;
+}
 
-  // Logging
-  log_disable?: number;
-  log_file?: string;
-  log_colors?: string;
-  log_verbose?: number;
-  log_prefix?: number;
-  log_timestamps?: number;
-  logit_bias?: string;
+// Multimodal Configuration
+export interface ModelMultimodalConfig {
+  id?: number;
+  model_id?: number;
+  mmproj?: string;
+  mmproj_url?: string;
+  mmproj_auto?: number;
+  mmproj_offload?: number;
+  image_min_tokens?: number;
+  image_max_tokens?: number;
+  created_at?: number;
+  updated_at?: number;
+}
 
-  // Server Configuration
+// Server Configuration (global defaults)
+export interface ModelServerConfig {
+  id?: number;
   host?: string;
   port?: number;
   api_prefix?: string;
@@ -572,39 +703,22 @@ export interface ModelConfig {
   chat_template_file?: string;
   chat_template_kwargs?: string;
   prefill_assistant?: number;
-
-  // Example-Specific
   ctx_checkpoints?: number;
-
-  // Advanced
   verbose_prompt?: number;
   warmup?: number;
   spm_infill?: number;
-  pooling?: string;
-  context_shift?: number;
-  rpc?: string;
-  offline?: number;
-  override_kv?: string;
-  op_offload?: number;
-  fit?: string;
-  fit_target?: number;
-  fit_ctx?: number;
-  check_tensors?: number;
-  sleep_idle_seconds?: number;
-  polling?: string;
-  polling_batch?: string;
-  reasoning_format?: string;
-  reasoning_budget?: number;
-
-  // Flexible parameters
-  custom_params?: string;
-
+  log_disable?: number;
+  log_file?: string;
+  log_colors?: string;
+  log_verbose?: number;
+  log_prefix?: number;
+  log_timestamps?: number;
   created_at?: number;
   updated_at?: number;
 }
 
 /**
- * Save a new model configuration to database
+ * Save a new model configuration to database (core model only)
  * @param config - Model configuration (without id, created_at, updated_at)
  * @returns The ID of the newly created model
  */
@@ -622,35 +736,8 @@ export function saveModel(
         ctx_size, predict, batch_size, ubatch_size, n_parallel, cont_batching,
         threads, threads_batch, cpu_mask, cpu_range, cpu_strict, cpu_mask_batch,
         cpu_range_batch, cpu_strict_batch, priority, priority_batch,
-        cache_ram, cache_type_k, cache_type_v, mmap, mlock, numa, defrag_thold,
-        device, list_devices, gpu_layers, split_mode, tensor_split, main_gpu,
-        kv_offload, repack, no_host, swa_full, override_tensor,
-        cpu_moe, n_cpu_moe, kv_unified,
-        temperature, top_k, top_p, min_p, top_nsigma, xtc_probability, xtc_threshold, typical_p,
-        repeat_last_n, repeat_penalty, presence_penalty, frequency_penalty,
-        dry_multiplier, dry_base, dry_allowed_length, dry_penalty_last_n, dry_sequence_breaker,
-        dynatemp_range, dynatemp_exp, mirostat, mirostat_lr, mirostat_ent,
-        samplers, sampler_seq, seed,
-        grammar, grammar_file, json_schema, json_schema_file, ignore_eos, "escape",
-        rope_scaling_type, rope_scale, rope_freq_base, rope_freq_scale,
-        yarn_orig_ctx, yarn_ext_factor, yarn_attn_factor, yarn_beta_slow, yarn_beta_fast, flash_attn,
-        mmproj, mmproj_url, mmproj_auto, mmproj_offload, image_min_tokens, image_max_tokens,
-        lora, lora_scaled, control_vector, control_vector_scaled, control_vector_layer_range,
-        model_draft, model_url_draft, ctx_size_draft, threads_draft, threads_batch_draft,
-        draft_max, draft_min, draft_p_min, cache_type_k_draft, cache_type_v_draft,
-        cpu_moe_draft, n_cpu_moe_draft, n_gpu_layers_draft, device_draft, spec_replace,
-        log_disable, log_file, log_colors, log_verbose, log_prefix, log_timestamps, logit_bias,
-        host, port, api_prefix, path, webui, webui_config_file, no_webui, embeddings,
-        reranking, api_key, api_key_file, ssl_key_file, ssl_cert_file,
-        timeout, threads_http, cache_reuse, metrics_enabled, props_enabled,
-        slots_enabled, slot_save_path, media_path, models_dir, models_preset,
-        models_max, models_autoload, jinja, chat_template, chat_template_file, chat_template_kwargs,
-        prefill_assistant, ctx_checkpoints, verbose_prompt, warmup, spm_infill,
-        pooling, context_shift, rpc, offline, override_kv, op_offload,
-        fit, fit_target, fit_ctx, check_tensors, sleep_idle_seconds,
-        polling, polling_batch, reasoning_format, reasoning_budget, custom_params,
         created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = stmt.run(
@@ -681,27 +768,46 @@ export function saveModel(
       config.cpu_strict_batch ?? 0,
       config.priority ?? 0,
       config.priority_batch ?? null,
-      config.cache_ram ?? -1,
-      config.cache_type_k ?? null,
-      config.cache_type_v ?? null,
-      config.mmap ?? 0,
-      config.mlock ?? 0,
-      config.numa ?? null,
-      config.defrag_thold ?? null,
-      config.device ?? null,
-      config.list_devices ?? 0,
-      config.gpu_layers ?? -1,
-      config.split_mode ?? null,
-      config.tensor_split ?? null,
-      config.main_gpu ?? null,
-      config.kv_offload ?? 0,
-      config.repack ?? 0,
-      config.no_host ?? 0,
-      config.swa_full ?? 0,
-      config.override_tensor ?? null,
-      config.cpu_moe ?? 0,
-      config.n_cpu_moe ?? 0,
-      config.kv_unified ?? 0,
+      now,
+      now
+    );
+
+    return result.lastInsertRowid as number;
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Save sampling configuration for a model
+ * @param modelId - Model ID
+ * @param config - Sampling configuration
+ * @returns The ID of the newly created configuration
+ */
+export function saveModelSamplingConfig(
+  modelId: number,
+  config: Omit<ModelSamplingConfig, "id" | "model_id" | "created_at" | "updated_at">
+): number {
+  const db = initDatabase();
+  const now = Date.now();
+
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO model_sampling_config (
+        model_id, temperature, top_k, top_p, min_p, top_nsigma, xtc_probability, xtc_threshold,
+        typical_p, repeat_last_n, repeat_penalty, presence_penalty, frequency_penalty,
+        dry_multiplier, dry_base, dry_allowed_length, dry_penalty_last_n, dry_sequence_breaker,
+        dynatemp_range, dynatemp_exp, mirostat, mirostat_lr, mirostat_ent,
+        samplers, sampler_seq, seed,
+        grammar, grammar_file, json_schema, json_schema_file, ignore_eos, "escape",
+        rope_scaling_type, rope_scale, rope_freq_base, rope_freq_scale,
+        yarn_orig_ctx, yarn_ext_factor, yarn_attn_factor, yarn_beta_slow, yarn_beta_fast, flash_attn,
+        logit_bias, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const result = stmt.run(
+      modelId,
       config.temperature ?? 0.8,
       config.top_k ?? 40,
       config.top_p ?? 0.9,
@@ -743,73 +849,130 @@ export function saveModel(
       config.yarn_beta_slow ?? -1.0,
       config.yarn_beta_fast ?? -1.0,
       config.flash_attn ?? "auto",
-      config.mmproj ?? null,
-      config.mmproj_url ?? null,
-      config.mmproj_auto ?? 0,
-      config.mmproj_offload ?? 0,
-      config.image_min_tokens ?? null,
-      config.image_max_tokens ?? null,
-      config.lora ?? null,
-      config.lora_scaled ?? null,
-      config.control_vector ?? null,
-      config.control_vector_scaled ?? null,
-      config.control_vector_layer_range ?? null,
-      config.model_draft ?? null,
-      config.model_url_draft ?? null,
-      config.ctx_size_draft ?? null,
-      config.threads_draft ?? null,
-      config.threads_batch_draft ?? null,
-      config.draft_max ?? 16,
-      config.draft_min ?? 0,
-      config.draft_p_min ?? 0.8,
-      config.cache_type_k_draft ?? null,
-      config.cache_type_v_draft ?? null,
-      config.cpu_moe_draft ?? 0,
-      config.n_cpu_moe_draft ?? 0,
-      config.n_gpu_layers_draft ?? null,
-      config.device_draft ?? null,
-      config.spec_replace ?? null,
-      config.log_disable ?? null,
-      config.log_file ?? null,
-      config.log_colors ?? null,
-      config.log_verbose ?? 0,
-      config.log_prefix ?? 0,
-      config.log_timestamps ?? 0,
       config.logit_bias ?? null,
-      config.host ?? "127.0.0.1",
-      config.port ?? 8080,
-      config.api_prefix ?? null,
-      config.path ?? null,
-      config.webui ?? null,
-      config.webui_config_file ?? null,
-      config.no_webui ?? 0,
-      config.embeddings ?? 0,
-      config.reranking ?? 0,
-      config.api_key ?? null,
-      config.api_key_file ?? null,
-      config.ssl_key_file ?? null,
-      config.ssl_cert_file ?? null,
-      config.timeout ?? 600,
-      config.threads_http ?? null,
-      config.cache_reuse ?? null,
-      config.metrics_enabled ?? 1,
-      config.props_enabled ?? 0,
-      config.slots_enabled ?? 0,
-      config.slot_save_path ?? null,
-      config.media_path ?? null,
-      config.models_dir ?? null,
-      config.models_preset ?? null,
-      config.models_max ?? 4,
-      config.models_autoload ?? 0,
-      config.jinja ?? 0,
-      config.chat_template ?? null,
-      config.chat_template_file ?? null,
-      config.chat_template_kwargs ?? null,
-      config.prefill_assistant ?? 0,
-      config.ctx_checkpoints ?? 8,
-      config.verbose_prompt ?? 0,
-      config.warmup ?? 0,
-      config.spm_infill ?? 0,
+      now,
+      now
+    );
+
+    return result.lastInsertRowid as number;
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Save memory configuration for a model
+ * @param modelId - Model ID
+ * @param config - Memory configuration
+ * @returns The ID of the newly created configuration
+ */
+export function saveModelMemoryConfig(
+  modelId: number,
+  config: Omit<ModelMemoryConfig, "id" | "model_id" | "created_at" | "updated_at">
+): number {
+  const db = initDatabase();
+  const now = Date.now();
+
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO model_memory_config (
+        model_id, cache_ram, cache_type_k, cache_type_v, mmap, mlock, numa, defrag_thold,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const result = stmt.run(
+      modelId,
+      config.cache_ram ?? -1,
+      config.cache_type_k ?? null,
+      config.cache_type_v ?? null,
+      config.mmap ?? 0,
+      config.mlock ?? 0,
+      config.numa ?? null,
+      config.defrag_thold ?? null,
+      now,
+      now
+    );
+
+    return result.lastInsertRowid as number;
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Save GPU configuration for a model
+ * @param modelId - Model ID
+ * @param config - GPU configuration
+ * @returns The ID of the newly created configuration
+ */
+export function saveModelGpuConfig(
+  modelId: number,
+  config: Omit<ModelGpuConfig, "id" | "model_id" | "created_at" | "updated_at">
+): number {
+  const db = initDatabase();
+  const now = Date.now();
+
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO model_gpu_config (
+        model_id, device, list_devices, gpu_layers, split_mode, tensor_split,
+        main_gpu, kv_offload, repack, no_host, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const result = stmt.run(
+      modelId,
+      config.device ?? null,
+      config.list_devices ?? 0,
+      config.gpu_layers ?? -1,
+      config.split_mode ?? null,
+      config.tensor_split ?? null,
+      config.main_gpu ?? null,
+      config.kv_offload ?? 0,
+      config.repack ?? 0,
+      config.no_host ?? 0,
+      now,
+      now
+    );
+
+    return result.lastInsertRowid as number;
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Save advanced configuration for a model
+ * @param modelId - Model ID
+ * @param config - Advanced configuration
+ * @returns The ID of the newly created configuration
+ */
+export function saveModelAdvancedConfig(
+  modelId: number,
+  config: Omit<ModelAdvancedConfig, "id" | "model_id" | "created_at" | "updated_at">
+): number {
+  const db = initDatabase();
+  const now = Date.now();
+
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO model_advanced_config (
+        model_id, swa_full, override_tensor, cpu_moe, n_cpu_moe, kv_unified,
+        pooling, context_shift, rpc, offline, override_kv, op_offload,
+        fit, fit_target, fit_ctx, check_tensors, sleep_idle_seconds,
+        polling, polling_batch, reasoning_format, reasoning_budget, custom_params,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const result = stmt.run(
+      modelId,
+      config.swa_full ?? 0,
+      config.override_tensor ?? null,
+      config.cpu_moe ?? 0,
+      config.n_cpu_moe ?? 0,
+      config.kv_unified ?? 0,
       config.pooling ?? null,
       config.context_shift ?? 0,
       config.rpc ?? null,
@@ -837,7 +1000,247 @@ export function saveModel(
 }
 
 /**
- * Get all models with optional filters
+ * Save LoRA configuration for a model
+ * @param modelId - Model ID
+ * @param config - LoRA configuration
+ * @returns The ID of the newly created configuration
+ */
+export function saveModelLoraConfig(
+  modelId: number,
+  config: Omit<ModelLoraConfig, "id" | "model_id" | "created_at" | "updated_at">
+): number {
+  const db = initDatabase();
+  const now = Date.now();
+
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO model_lora_config (
+        model_id, lora, lora_scaled, control_vector, control_vector_scaled,
+        control_vector_layer_range, model_draft, model_url_draft, ctx_size_draft,
+        threads_draft, threads_batch_draft, draft_max, draft_min, draft_p_min,
+        cache_type_k_draft, cache_type_v_draft, cpu_moe_draft, n_cpu_moe_draft,
+        n_gpu_layers_draft, device_draft, spec_replace, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const result = stmt.run(
+      modelId,
+      config.lora ?? null,
+      config.lora_scaled ?? null,
+      config.control_vector ?? null,
+      config.control_vector_scaled ?? null,
+      config.control_vector_layer_range ?? null,
+      config.model_draft ?? null,
+      config.model_url_draft ?? null,
+      config.ctx_size_draft ?? null,
+      config.threads_draft ?? null,
+      config.threads_batch_draft ?? null,
+      config.draft_max ?? 16,
+      config.draft_min ?? 0,
+      config.draft_p_min ?? 0.8,
+      config.cache_type_k_draft ?? null,
+      config.cache_type_v_draft ?? null,
+      config.cpu_moe_draft ?? 0,
+      config.n_cpu_moe_draft ?? 0,
+      config.n_gpu_layers_draft ?? null,
+      config.device_draft ?? null,
+      config.spec_replace ?? null,
+      now,
+      now
+    );
+
+    return result.lastInsertRowid as number;
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Save multimodal configuration for a model
+ * @param modelId - Model ID
+ * @param config - Multimodal configuration
+ * @returns The ID of the newly created configuration
+ */
+export function saveModelMultimodalConfig(
+  modelId: number,
+  config: Omit<ModelMultimodalConfig, "id" | "model_id" | "created_at" | "updated_at">
+): number {
+  const db = initDatabase();
+  const now = Date.now();
+
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO model_multimodal_config (
+        model_id, mmproj, mmproj_url, mmproj_auto, mmproj_offload,
+        image_min_tokens, image_max_tokens, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const result = stmt.run(
+      modelId,
+      config.mmproj ?? null,
+      config.mmproj_url ?? null,
+      config.mmproj_auto ?? 0,
+      config.mmproj_offload ?? 0,
+      config.image_min_tokens ?? null,
+      config.image_max_tokens ?? null,
+      now,
+      now
+    );
+
+    return result.lastInsertRowid as number;
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Save or update server configuration (global defaults)
+ * @param config - Server configuration
+ * @returns The ID of the created/updated configuration
+ */
+export function saveServerConfig(
+  config: Omit<ModelServerConfig, "id" | "created_at" | "updated_at">
+): number {
+  const db = initDatabase();
+  const now = Date.now();
+
+  try {
+    // Check if a server config already exists
+    const existing = db.prepare("SELECT id FROM model_server_config").get() as { id: number } | undefined;
+
+    if (existing) {
+      // Update existing
+      const stmt = db.prepare(`
+        UPDATE model_server_config SET
+          host = ?, port = ?, api_prefix = ?, path = ?, webui = ?, webui_config_file = ?,
+          no_webui = ?, embeddings = ?, reranking = ?, api_key = ?, api_key_file = ?,
+          ssl_key_file = ?, ssl_cert_file = ?, timeout = ?, threads_http = ?, cache_reuse = ?,
+          metrics_enabled = ?, props_enabled = ?, slots_enabled = ?, slot_save_path = ?,
+          media_path = ?, models_dir = ?, models_preset = ?, models_max = ?,
+          models_autoload = ?, jinja = ?, chat_template = ?, chat_template_file = ?,
+          chat_template_kwargs = ?, prefill_assistant = ?, ctx_checkpoints = ?,
+          verbose_prompt = ?, warmup = ?, spm_infill = ?, log_disable = ?,
+          log_file = ?, log_colors = ?, log_verbose = ?, log_prefix = ?, log_timestamps = ?,
+          updated_at = ?
+        WHERE id = ?
+      `);
+
+      stmt.run(
+        config.host ?? "127.0.0.1",
+        config.port ?? 8080,
+        config.api_prefix ?? null,
+        config.path ?? null,
+        config.webui ?? null,
+        config.webui_config_file ?? null,
+        config.no_webui ?? 0,
+        config.embeddings ?? 0,
+        config.reranking ?? 0,
+        config.api_key ?? null,
+        config.api_key_file ?? null,
+        config.ssl_key_file ?? null,
+        config.ssl_cert_file ?? null,
+        config.timeout ?? 600,
+        config.threads_http ?? null,
+        config.cache_reuse ?? null,
+        config.metrics_enabled ?? 1,
+        config.props_enabled ?? 0,
+        config.slots_enabled ?? 0,
+        config.slot_save_path ?? null,
+        config.media_path ?? null,
+        config.models_dir ?? null,
+        config.models_preset ?? null,
+        config.models_max ?? 4,
+        config.models_autoload ?? 0,
+        config.jinja ?? 0,
+        config.chat_template ?? null,
+        config.chat_template_file ?? null,
+        config.chat_template_kwargs ?? null,
+        config.prefill_assistant ?? 0,
+        config.ctx_checkpoints ?? 8,
+        config.verbose_prompt ?? 0,
+        config.warmup ?? 0,
+        config.spm_infill ?? 0,
+        config.log_disable ?? null,
+        config.log_file ?? null,
+        config.log_colors ?? null,
+        config.log_verbose ?? 0,
+        config.log_prefix ?? 0,
+        config.log_timestamps ?? 0,
+        now,
+        existing.id
+      );
+
+      return existing.id;
+    } else {
+      // Insert new
+      const stmt = db.prepare(`
+        INSERT INTO model_server_config (
+          host, port, api_prefix, path, webui, webui_config_file, no_webui,
+          embeddings, reranking, api_key, api_key_file, ssl_key_file, ssl_cert_file,
+          timeout, threads_http, cache_reuse, metrics_enabled, props_enabled,
+          slots_enabled, slot_save_path, media_path, models_dir, models_preset,
+          models_max, models_autoload, jinja, chat_template, chat_template_file,
+          chat_template_kwargs, prefill_assistant, ctx_checkpoints, verbose_prompt,
+          warmup, spm_infill, log_disable, log_file, log_colors, log_verbose,
+          log_prefix, log_timestamps, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      const result = stmt.run(
+        config.host ?? "127.0.0.1",
+        config.port ?? 8080,
+        config.api_prefix ?? null,
+        config.path ?? null,
+        config.webui ?? null,
+        config.webui_config_file ?? null,
+        config.no_webui ?? 0,
+        config.embeddings ?? 0,
+        config.reranking ?? 0,
+        config.api_key ?? null,
+        config.api_key_file ?? null,
+        config.ssl_key_file ?? null,
+        config.ssl_cert_file ?? null,
+        config.timeout ?? 600,
+        config.threads_http ?? null,
+        config.cache_reuse ?? null,
+        config.metrics_enabled ?? 1,
+        config.props_enabled ?? 0,
+        config.slots_enabled ?? 0,
+        config.slot_save_path ?? null,
+        config.media_path ?? null,
+        config.models_dir ?? null,
+        config.models_preset ?? null,
+        config.models_max ?? 4,
+        config.models_autoload ?? 0,
+        config.jinja ?? 0,
+        config.chat_template ?? null,
+        config.chat_template_file ?? null,
+        config.chat_template_kwargs ?? null,
+        config.prefill_assistant ?? 0,
+        config.ctx_checkpoints ?? 8,
+        config.verbose_prompt ?? 0,
+        config.warmup ?? 0,
+        config.spm_infill ?? 0,
+        config.log_disable ?? null,
+        config.log_file ?? null,
+        config.log_colors ?? null,
+        config.log_verbose ?? 0,
+        config.log_prefix ?? 0,
+        config.log_timestamps ?? 0,
+        now,
+        now
+      );
+
+      return result.lastInsertRowid as number;
+    }
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Get all models with optional filters (core model data only)
  * @param filters - Optional filters for status, type, or name
  * @returns Array of model configurations
  */
@@ -881,7 +1284,7 @@ export function getModels(
 }
 
 /**
- * Get a single model by ID
+ * Get a single model by ID (core model data only)
  * @param id - Model ID
  * @returns Model configuration or null if not found
  */
@@ -899,7 +1302,7 @@ export function getModelById(id: number): ModelConfig | null {
 }
 
 /**
- * Get a model by name
+ * Get a model by name (core model data only)
  * @param name - Model name
  * @returns Model configuration or null if not found
  */
@@ -914,6 +1317,177 @@ export function getModelByName(name: string): ModelConfig | null {
   } finally {
     closeDatabase(db);
   }
+}
+
+/**
+ * Get sampling configuration for a model
+ * @param modelId - Model ID
+ * @returns Sampling configuration or null if not found
+ */
+export function getModelSamplingConfig(modelId: number): ModelSamplingConfig | null {
+  const db = initDatabase();
+
+  try {
+    const row = db.prepare("SELECT * FROM model_sampling_config WHERE model_id = ?").get(modelId);
+
+    if (!row) return null;
+    return row as ModelSamplingConfig;
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Get memory configuration for a model
+ * @param modelId - Model ID
+ * @returns Memory configuration or null if not found
+ */
+export function getModelMemoryConfig(modelId: number): ModelMemoryConfig | null {
+  const db = initDatabase();
+
+  try {
+    const row = db.prepare("SELECT * FROM model_memory_config WHERE model_id = ?").get(modelId);
+
+    if (!row) return null;
+    return row as ModelMemoryConfig;
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Get GPU configuration for a model
+ * @param modelId - Model ID
+ * @returns GPU configuration or null if not found
+ */
+export function getModelGpuConfig(modelId: number): ModelGpuConfig | null {
+  const db = initDatabase();
+
+  try {
+    const row = db.prepare("SELECT * FROM model_gpu_config WHERE model_id = ?").get(modelId);
+
+    if (!row) return null;
+    return row as ModelGpuConfig;
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Get advanced configuration for a model
+ * @param modelId - Model ID
+ * @returns Advanced configuration or null if not found
+ */
+export function getModelAdvancedConfig(modelId: number): ModelAdvancedConfig | null {
+  const db = initDatabase();
+
+  try {
+    const row = db.prepare("SELECT * FROM model_advanced_config WHERE model_id = ?").get(modelId);
+
+    if (!row) return null;
+    return row as ModelAdvancedConfig;
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Get LoRA configuration for a model
+ * @param modelId - Model ID
+ * @returns LoRA configuration or null if not found
+ */
+export function getModelLoraConfig(modelId: number): ModelLoraConfig | null {
+  const db = initDatabase();
+
+  try {
+    const row = db.prepare("SELECT * FROM model_lora_config WHERE model_id = ?").get(modelId);
+
+    if (!row) return null;
+    return row as ModelLoraConfig;
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Get multimodal configuration for a model
+ * @param modelId - Model ID
+ * @returns Multimodal configuration or null if not found
+ */
+export function getModelMultimodalConfig(modelId: number): ModelMultimodalConfig | null {
+  const db = initDatabase();
+
+  try {
+    const row = db.prepare("SELECT * FROM model_multimodal_config WHERE model_id = ?").get(modelId);
+
+    if (!row) return null;
+    return row as ModelMultimodalConfig;
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Get server configuration (global defaults)
+ * @returns Server configuration or null if not found
+ */
+export function getServerConfig(): ModelServerConfig | null {
+  const db = initDatabase();
+
+  try {
+    const row = db.prepare("SELECT * FROM model_server_config LIMIT 1").get();
+
+    if (!row) return null;
+    return row as ModelServerConfig;
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Get complete model configuration with all related configs
+ * @param modelId - Model ID
+ * @returns Complete model configuration or null if not found
+ */
+export function getCompleteModelConfig(modelId: number): {
+  model: ModelConfig;
+  sampling?: ModelSamplingConfig;
+  memory?: ModelMemoryConfig;
+  gpu?: ModelGpuConfig;
+  advanced?: ModelAdvancedConfig;
+  lora?: ModelLoraConfig;
+  multimodal?: ModelMultimodalConfig;
+} | null {
+  const model = getModelById(modelId);
+  if (!model) return null;
+
+  const sampling = getModelSamplingConfig(modelId);
+  const memory = getModelMemoryConfig(modelId);
+  const gpu = getModelGpuConfig(modelId);
+  const advanced = getModelAdvancedConfig(modelId);
+  const lora = getModelLoraConfig(modelId);
+  const multimodal = getModelMultimodalConfig(modelId);
+
+  const result: {
+    model: ModelConfig;
+    sampling?: ModelSamplingConfig;
+    memory?: ModelMemoryConfig;
+    gpu?: ModelGpuConfig;
+    advanced?: ModelAdvancedConfig;
+    lora?: ModelLoraConfig;
+    multimodal?: ModelMultimodalConfig;
+  } = {
+    model,
+  };
+
+  if (sampling) result.sampling = sampling;
+  if (memory) result.memory = memory;
+  if (gpu) result.gpu = gpu;
+  if (advanced) result.advanced = advanced;
+  if (lora) result.lora = lora;
+  if (multimodal) result.multimodal = multimodal;
+
+  return result;
 }
 
 /**
@@ -946,7 +1520,36 @@ export function updateModel(
 }
 
 /**
- * Delete a model by ID
+ * Update sampling configuration for a model
+ * @param modelId - Model ID
+ * @param updates - Partial updates to apply
+ */
+export function updateModelSamplingConfig(
+  modelId: number,
+  updates: Partial<Omit<ModelSamplingConfig, "id" | "model_id" | "created_at">>
+): void {
+  const db = initDatabase();
+
+  try {
+    const fields = Object.keys(updates)
+      .map((key) => `${key} = ?`)
+      .join(", ");
+    const values = Object.values(updates);
+
+    const stmt = db.prepare(`
+      UPDATE model_sampling_config
+      SET ${fields}, updated_at = ?
+      WHERE model_id = ?
+    `);
+
+    stmt.run(...values, Date.now(), modelId);
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Delete a model by ID (cascades to all related configs)
  * @param id - Model ID to delete
  */
 export function deleteModel(id: number): void {
@@ -961,7 +1564,7 @@ export function deleteModel(id: number): void {
 }
 
 /**
- * Delete all models from database
+ * Delete all models from database (cascades to all related configs)
  */
 export function deleteAllModels(): void {
   const db = initDatabase();
@@ -1072,6 +1675,11 @@ export function importDatabase(filePath: string): void {
   const db = initDatabase();
 
   try {
+    if (!fs.existsSync(filePath)) {
+      console.warn(`Import file does not exist: ${filePath}`);
+      return;
+    }
+
     db.exec(`ATTACH DATABASE '${filePath}' AS backup`);
     db.exec(`
       INSERT INTO main.metrics_history
@@ -1086,9 +1694,47 @@ export function importDatabase(filePath: string): void {
         SELECT 1 FROM main.models WHERE main.models.id = backup.models.id
       );
 
-      INSERT INTO main.metadata
-      SELECT * FROM backup.metadata
-      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at;
+      INSERT INTO main.model_sampling_config
+      SELECT * FROM backup.model_sampling_config
+      WHERE NOT EXISTS (
+        SELECT 1 FROM main.model_sampling_config WHERE main.model_sampling_config.id = backup.model_sampling_config.id
+      );
+
+      INSERT INTO main.model_memory_config
+      SELECT * FROM backup.model_memory_config
+      WHERE NOT EXISTS (
+        SELECT 1 FROM main.model_memory_config WHERE main.model_memory_config.id = backup.model_memory_config.id
+      );
+
+      INSERT INTO main.model_gpu_config
+      SELECT * FROM backup.model_gpu_config
+      WHERE NOT EXISTS (
+        SELECT 1 FROM main.model_gpu_config WHERE main.model_gpu_config.id = backup.model_gpu_config.id
+      );
+
+      INSERT INTO main.model_advanced_config
+      SELECT * FROM backup.model_advanced_config
+      WHERE NOT EXISTS (
+        SELECT 1 FROM main.model_advanced_config WHERE main.model_advanced_config.id = backup.model_advanced_config.id
+      );
+
+      INSERT INTO main.model_lora_config
+      SELECT * FROM backup.model_lora_config
+      WHERE NOT EXISTS (
+        SELECT 1 FROM main.model_lora_config WHERE main.model_lora_config.id = backup.model_lora_config.id
+      );
+
+      INSERT INTO main.model_multimodal_config
+      SELECT * FROM backup.model_multimodal_config
+      WHERE NOT EXISTS (
+        SELECT 1 FROM main.model_multimodal_config WHERE main.model_multimodal_config.id = backup.model_multimodal_config.id
+      );
+
+      INSERT OR REPLACE INTO main.model_server_config
+      SELECT * FROM backup.model_server_config;
+
+      INSERT OR REPLACE INTO main.metadata
+      SELECT * FROM backup.metadata;
 
       DETACH DATABASE backup;
     `);

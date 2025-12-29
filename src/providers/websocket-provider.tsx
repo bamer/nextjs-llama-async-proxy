@@ -3,9 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { websocketServer } from "@/lib/websocket-client";
 import { useStore } from "@/lib/store";
-import { saveMetrics, getMetricsHistory, getModels, saveModel, updateModel, getModelByName } from "@/lib/database";
 import type { SystemMetrics, ModelConfig, LogEntry } from "@/types";
-import type { ModelConfig as DatabaseModelConfig } from "@/lib/database";
 
 interface WebSocketContextType {
   isConnected: boolean;
@@ -39,114 +37,9 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       const latestMetrics = metricsBatchRef.current[metricsBatchRef.current.length - 1];
       useStore.getState().setMetrics(latestMetrics);
 
-      // Save to database for persistence (non-blocking)
-      try {
-        const metricsData: Record<string, number | undefined> = {
-          cpu_usage: latestMetrics.cpuUsage,
-          memory_usage: latestMetrics.memoryUsage,
-          disk_usage: latestMetrics.diskUsage,
-          active_models: latestMetrics.activeModels,
-          uptime: latestMetrics.uptime
-        };
-
-        // Add optional GPU metrics if available
-        if (latestMetrics.gpuUsage !== undefined) {
-          metricsData.gpu_usage = latestMetrics.gpuUsage;
-        }
-        if (latestMetrics.gpuTemperature !== undefined) {
-          metricsData.gpu_temperature = latestMetrics.gpuTemperature;
-        }
-        if (latestMetrics.gpuMemoryUsed !== undefined) {
-          metricsData.gpu_memory_used = latestMetrics.gpuMemoryUsed;
-        }
-        if (latestMetrics.gpuMemoryTotal !== undefined) {
-          metricsData.gpu_memory_total = latestMetrics.gpuMemoryTotal;
-        }
-        if (latestMetrics.gpuPowerUsage !== undefined) {
-          metricsData.gpu_power_usage = latestMetrics.gpuPowerUsage;
-        }
-
-        saveMetrics(metricsData);
-      } catch (error) {
-        console.error('[WebSocketProvider] Failed to save metrics to database:', error);
-      }
-
       metricsBatchRef.current = [];
     }
     metricsThrottleRef.current = null;
-  }, []);
-
-  // Helper function to convert store model to database model format
-  const storeToDatabaseModel = useCallback((storeModel: ModelConfig): Omit<DatabaseModelConfig, 'id' | 'created_at' | 'updated_at'> => {
-    // Map store type to database type
-    const typeMap: Record<"llama" | "mistral" | "other", "llama" | "gpt" | "mistrall" | "custom"> = {
-      llama: "llama",
-      mistral: "mistrall",
-      other: "custom",
-    };
-
-    const result: Omit<DatabaseModelConfig, 'id' | 'created_at' | 'updated_at'> = {
-      name: storeModel.name,
-      type: typeMap[storeModel.type] || 'llama',
-      status: storeModel.status === 'running' || storeModel.status === 'loading' || storeModel.status === 'error'
-        ? storeModel.status
-        : 'stopped',
-      ctx_size: (storeModel.parameters?.ctx_size as number) ?? 0,
-      batch_size: (storeModel.parameters?.batch_size as number) ?? 2048,
-      threads: (storeModel.parameters?.threads as number) ?? -1,
-      gpu_layers: (storeModel.parameters?.gpu_layers as number) ?? -1,
-      temperature: (storeModel.parameters?.temperature as number) ?? 0.8,
-      top_k: (storeModel.parameters?.top_k as number) ?? 40,
-      top_p: (storeModel.parameters?.top_p as number) ?? 0.9,
-      model_path: (storeModel.parameters?.model_path as string) ?? undefined,
-      model_url: (storeModel.parameters?.model_url as string) ?? undefined,
-    };
-
-    // Only add optional field if it has a value
-    if (storeModel.template) {
-      (result as any).chat_template = storeModel.template;
-    }
-
-    return result;
-  }, []);
-
-  // Helper function to convert database model to store model format
-  const databaseToStoreModel = useCallback((dbModel: DatabaseModelConfig): ModelConfig => {
-    // Map database type to store type
-    const typeMap: Record<string, "llama" | "mistral" | "other"> = {
-      llama: "llama",
-      gpt: "other",
-      mistrall: "mistral",
-      custom: "other",
-    };
-
-    const result: ModelConfig = {
-      id: dbModel.id?.toString() || '',
-      name: dbModel.name,
-      type: typeMap[dbModel.type] || 'other',
-      parameters: {
-        ctx_size: dbModel.ctx_size,
-        batch_size: dbModel.batch_size,
-        threads: dbModel.threads,
-        gpu_layers: dbModel.gpu_layers,
-        temperature: dbModel.temperature,
-        top_k: dbModel.top_k,
-        top_p: dbModel.top_p,
-        model_path: dbModel.model_path,
-        model_url: dbModel.model_url,
-      } as Record<string, unknown>,
-      status: dbModel.status === 'running' || dbModel.status === 'loading' || dbModel.status === 'error'
-        ? dbModel.status
-        : 'idle',
-      createdAt: dbModel.created_at ? new Date(dbModel.created_at).toISOString() : new Date().toISOString(),
-      updatedAt: dbModel.updated_at ? new Date(dbModel.updated_at).toISOString() : new Date().toISOString(),
-    };
-
-    if (dbModel.chat_template) {
-      result.template = dbModel.chat_template;
-    }
-
-    return result;
   }, []);
 
   // Process models batch
@@ -155,39 +48,10 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       const latestModels = modelsBatchRef.current[modelsBatchRef.current.length - 1];
       useStore.getState().setModels(latestModels);
 
-      // Sync models to database (non-blocking)
-      try {
-        // Get all existing models from database
-        const existingDbModels = getModels();
-        const existingModelNames = new Set(existingDbModels.map((m) => m.name));
-
-        for (const model of latestModels) {
-          const existingModel = existingDbModels.find((m) => m.name === model.name);
-
-          if (existingModel && existingModel.id) {
-            // Update existing model in database
-            try {
-              updateModel(existingModel.id, storeToDatabaseModel(model));
-            } catch (err) {
-              console.error('[WebSocketProvider] Failed to update model in database:', model.name, err);
-            }
-          } else if (!existingModelNames.has(model.name)) {
-            // Create new model in database
-            try {
-              saveModel(storeToDatabaseModel(model));
-            } catch (err) {
-              console.error('[WebSocketProvider] Failed to save model to database:', model.name, err);
-            }
-          }
-        }
-      } catch (dbErr) {
-        console.error('[WebSocketProvider] Failed to sync models to database:', dbErr);
-      }
-
       modelsBatchRef.current = [];
     }
     modelsThrottleRef.current = null;
-  }, [storeToDatabaseModel]);
+  }, []);
 
   // Process log queue
   const processLogQueue = useCallback(() => {
@@ -211,47 +75,11 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       setIsConnected(true);
       setConnectionState('connected');
 
-      // Load metrics history from database (last 10 minutes)
-      try {
-        const metricsHistory = getMetricsHistory(10);
-        console.log('[WebSocketProvider] Loaded metrics history:', metricsHistory.length, 'records');
+      // TODO: Load models from backend via WebSocket if needed
+      // Backend should send initial 'models' message on connection
 
-        // Set the most recent historical metrics as initial state
-        if (metricsHistory.length > 0) {
-          const mostRecentMetrics = metricsHistory[metricsHistory.length - 1];
-          const initialMetrics: SystemMetrics = {
-            cpuUsage: mostRecentMetrics.cpu_usage || 0,
-            memoryUsage: mostRecentMetrics.memory_usage || 0,
-            diskUsage: mostRecentMetrics.disk_usage || 0,
-            activeModels: mostRecentMetrics.active_models || 0,
-            totalRequests: 0,
-            avgResponseTime: 0,
-            uptime: mostRecentMetrics.uptime || 0,
-            timestamp: new Date().toISOString()
-          };
-
-          // Add optional GPU metrics if available
-          if (mostRecentMetrics.gpu_usage !== undefined) {
-            initialMetrics.gpuUsage = mostRecentMetrics.gpu_usage;
-          }
-          if (mostRecentMetrics.gpu_temperature !== undefined) {
-            initialMetrics.gpuTemperature = mostRecentMetrics.gpu_temperature;
-          }
-          if (mostRecentMetrics.gpu_memory_used !== undefined) {
-            initialMetrics.gpuMemoryUsed = mostRecentMetrics.gpu_memory_used;
-          }
-          if (mostRecentMetrics.gpu_memory_total !== undefined) {
-            initialMetrics.gpuMemoryTotal = mostRecentMetrics.gpu_memory_total;
-          }
-          if (mostRecentMetrics.gpu_power_usage !== undefined) {
-            initialMetrics.gpuPowerUsage = mostRecentMetrics.gpu_power_usage;
-          }
-
-          useStore.getState().setMetrics(initialMetrics);
-        }
-      } catch (error) {
-        console.error('[WebSocketProvider] Failed to load metrics history:', error);
-      }
+      // TODO: Load metrics history from backend via WebSocket if needed
+      // Backend should send initial 'metrics' message on connection
 
       // Request initial data after connection
       websocketServer.requestMetrics();
@@ -299,6 +127,21 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
           // LlamaServer status update
           console.log('[WebSocketProvider] LlamaServer status:', msg.data);
           useStore.getState().setLlamaServerStatus(msg.data as any);
+        } else if (msg.type === 'save_model') {
+          // TODO: Forward to backend API route to save model
+          console.warn('[WebSocketProvider] save_model message requires backend API endpoint');
+        } else if (msg.type === 'update_model') {
+          // TODO: Forward to backend API route to update model
+          console.warn('[WebSocketProvider] update_model message requires backend API endpoint');
+        } else if (msg.type === 'delete_model') {
+          // TODO: Forward to backend API route to delete model
+          console.warn('[WebSocketProvider] delete_model message requires backend API endpoint');
+        } else if (msg.type === 'load_config') {
+          // TODO: Forward to backend API route to load model config
+          console.warn('[WebSocketProvider] load_config message requires backend API endpoint');
+        } else if (msg.type === 'save_config') {
+          // TODO: Forward to backend API route to save model config
+          console.warn('[WebSocketProvider] save_config message requires backend API endpoint');
         }
       }
     };

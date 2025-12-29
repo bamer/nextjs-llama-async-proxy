@@ -6,6 +6,25 @@ import LlamaServerIntegration from './src/server/services/LlamaServerIntegration
 import { registry } from './src/server/ServiceRegistry.ts';
 import { loadConfig } from './src/lib/server-config.ts';
 import { setSocketIOInstance, getLogger } from './src/lib/logger.ts';
+import {
+  getModels,
+  saveModel,
+  getModelById,
+  updateModel,
+  deleteModel,
+  getModelSamplingConfig,
+  saveModelSamplingConfig,
+  getModelMemoryConfig,
+  saveModelMemoryConfig,
+  getModelGpuConfig,
+  saveModelGpuConfig,
+  getModelAdvancedConfig,
+  saveModelAdvancedConfig,
+  getModelLoraConfig,
+  saveModelLoraConfig,
+  getModelMultimodalConfig,
+  saveModelMultimodalConfig,
+} from './src/lib/database.js';
 
 const logger = getLogger();
 
@@ -68,12 +87,272 @@ app.prepare().then(() => {
 
     llamaIntegration.setupWebSocketHandlers(socket);
 
-    socket.on('message', (data) => {
+    // Load models from database as source of truth
+    socket.on('load_models', async () => {
       try {
-        logger.info(`💬 [SOCKET.IO] Message received: ${data.type || 'unknown'}`);
-        socket.broadcast.emit('message', data);
+        logger.info('📚 [SOCKET.IO] Loading models from database...');
+        const dbModels = getModels();
+
+        // Transform database models to store format
+        const storeModels = dbModels.map(model => ({
+          id: model.id.toString(),
+          name: model.name,
+          type: model.type === 'mistrall' ? 'mistral' : model.type === 'custom' ? 'other' : 'llama',
+          status: 'idle', // Database doesn't store runtime status
+          createdAt: model.created_at,
+          updatedAt: model.updated_at,
+          parameters: {
+            ctx_size: model.ctx_size,
+            batch_size: model.batch_size,
+            threads: model.threads,
+            model_path: model.model_path,
+            model_url: model.model_url,
+            gpu_layers: model.gpu_layers,
+            main_gpu: model.main_gpu,
+            n_parallel: model.n_parallel,
+            n_ctx: model.n_ctx,
+            rope_freq_base: model.rope_freq_base,
+            rope_freq_scale: model.rope_freq_scale,
+            model: model.name,
+          },
+        }));
+
+        socket.emit('models_loaded', {
+          success: true,
+          data: storeModels,
+          timestamp: new Date().toISOString(),
+        });
+
+        logger.info(`✅ [SOCKET.IO] Loaded ${storeModels.length} models from database`);
       } catch (error) {
-        logger.error(`❌ [SOCKET.IO] Error processing message: ${error.message}`);
+        logger.error(`❌ [SOCKET.IO] Error loading models from database: ${error.message}`);
+        socket.emit('models_loaded', {
+          success: false,
+          error: { code: 'LOAD_MODELS_FAILED', message: error.message },
+          timestamp: new Date().toISOString(),
+        });
+      }
+    });
+
+    // Handle load_config messages
+    socket.on('load_config', async (data) => {
+      try {
+        logger.info(`📝 [SOCKET.IO] Loading config for model ${data.id}, type: ${data.type}`);
+        
+        let config;
+        const configMap = {
+          sampling: getModelSamplingConfig,
+          memory: getModelMemoryConfig,
+          gpu: getModelGpuConfig,
+          advanced: getModelAdvancedConfig,
+          lora: getModelLoraConfig,
+          multimodal: getModelMultimodalConfig,
+        };
+        
+        const getFunc = configMap[data.type];
+        if (!getFunc) {
+          throw new Error(`Invalid config type: ${data.type}`);
+        }
+        
+        config = getFunc(data.id);
+        
+        socket.emit('config_loaded', {
+          success: true,
+          data: { id: data.id, type: data.type, config },
+          timestamp: new Date().toISOString(),
+        });
+        
+        logger.info(`✅ [SOCKET.IO] Config loaded: ${data.type} for model ${data.id}`);
+      } catch (error) {
+        logger.error(`❌ [SOCKET.IO] Error loading config: ${error.message}`);
+        socket.emit('config_loaded', {
+          success: false,
+          error: { code: 'LOAD_CONFIG_FAILED', message: error.message },
+          timestamp: new Date().toISOString(),
+        });
+      }
+    });
+
+    // Handle save_config messages
+    socket.on('save_config', async (data) => {
+      try {
+        logger.info(`💾 [SOCKET.IO] Saving config for model ${data.id}, type: ${data.type}`);
+        
+        let result;
+        const configMap = {
+          sampling: saveModelSamplingConfig,
+          memory: saveModelMemoryConfig,
+          gpu: saveModelGpuConfig,
+          advanced: saveModelAdvancedConfig,
+          lora: saveModelLoraConfig,
+          multimodal: saveModelMultimodalConfig,
+        };
+        
+        const saveFunc = configMap[data.type];
+        if (!saveFunc) {
+          throw new Error(`Invalid config type: ${data.type}`);
+        }
+        
+        result = saveFunc(data.id, data.config);
+        
+        socket.emit('config_saved', {
+          success: true,
+          data: { id: data.id, type: data.type, config: result },
+          timestamp: new Date().toISOString(),
+        });
+        
+        logger.info(`✅ [SOCKET.IO] Config saved: ${data.type} for model ${data.id}`);
+      } catch (error) {
+        logger.error(`❌ [SOCKET.IO] Error saving config: ${error.message}`);
+        socket.emit('config_saved', {
+          success: false,
+          error: { code: 'SAVE_CONFIG_FAILED', message: error.message },
+          timestamp: new Date().toISOString(),
+        });
+      }
+    });
+
+    // Handle save_model messages
+    socket.on('save_model', async (data) => {
+      try {
+        logger.info(`💾 [SOCKET.IO] Saving model: ${data.name}`);
+        
+        const model = saveModel(data);
+        
+        socket.emit('model_saved', {
+          success: true,
+          data: model,
+          timestamp: new Date().toISOString(),
+        });
+        
+        logger.info(`✅ [SOCKET.IO] Model saved: ${model.name} (ID: ${model.id})`);
+      } catch (error) {
+        logger.error(`❌ [SOCKET.IO] Error saving model: ${error.message}`);
+        socket.emit('model_saved', {
+          success: false,
+          error: { code: 'SAVE_MODEL_FAILED', message: error.message },
+          timestamp: new Date().toISOString(),
+        });
+      }
+    });
+
+    // Handle update_model messages
+    socket.on('update_model', async (data) => {
+      try {
+        logger.info(`✏️  [SOCKET.IO] Updating model ${data.id}`);
+        
+        const updated = updateModel(data.id, data.updates);
+        
+        socket.emit('model_updated', {
+          success: true,
+          data: updated,
+          timestamp: new Date().toISOString(),
+        });
+        
+        logger.info(`✅ [SOCKET.IO] Model updated: ${updated.id}`);
+      } catch (error) {
+        logger.error(`❌ [SOCKET.IO] Error updating model: ${error.message}`);
+        socket.emit('model_updated', {
+          success: false,
+          error: { code: 'UPDATE_MODEL_FAILED', message: error.message },
+          timestamp: new Date().toISOString(),
+        });
+      }
+    });
+
+    // Handle delete_model messages
+    socket.on('delete_model', async (data) => {
+      try {
+        logger.info(`🗑️ [SOCKET.IO] Deleting model: ${data.id}`);
+        
+        // Delete model from database
+        deleteModel(data.id);
+        
+        socket.emit('model_deleted', {
+          success: true,
+          data: { id: data.id },
+          timestamp: new Date().toISOString(),
+        });
+        
+        logger.info(`✅ [SOCKET.IO] Model deleted: ${data.id}`);
+      } catch (error) {
+        logger.error(`❌ [SOCKET.IO] Error deleting model: ${error.message}`);
+        socket.emit('model_deleted', {
+          success: false,
+          error: { code: 'DELETE_MODEL_FAILED', message: error.message },
+          timestamp: new Date().toISOString(),
+        });
+      }
+    });
+
+    socket.on('import_models_from_llama', async () => {
+      try {
+        logger.info(`📥 [SOCKET.IO] Importing models from llama-server into database...`);
+        
+        // Get all models from llama-server
+        const llamaModels = await llamaIntegration.getModels();
+        logger.info(`[SOCKET.IO] Found ${llamaModels.length} models in llama-server`);
+        
+        // Get existing models from database
+        const existingModels = getModels();
+        logger.info(`[SOCKET.IO] Found ${existingModels.length} models in database`);
+        
+        let importedCount = 0;
+        let skippedCount = 0;
+        const importedModels = [];
+        
+        // Import each model if it doesn't already exist
+        for (const llamaModel of llamaModels) {
+          // Check if model already exists in database (by name)
+          const existingModel = existingModels.find((m) => m.name === llamaModel.name);
+          
+          if (existingModel) {
+            logger.info(`[SOCKET.IO] Skipping existing model: ${llamaModel.name}`);
+            skippedCount++;
+            continue;
+          }
+          
+          // Create model record for database
+          const modelRecord = {
+            name: llamaModel.name,
+            type: llamaModel.type === 'mistral' ? 'mistral' : 'llama', // Normalize type
+            status: 'idle',
+            model_path: llamaModel.parameters?.model_path || llamaModel.name,
+            model_url: llamaModel.parameters?.model_url || '',
+            ctx_size: llamaModel.parameters?.ctx_size || 2048,
+            batch_size: llamaModel.parameters?.batch_size || 512,
+            threads: llamaModel.parameters?.threads || 4,
+            created_at: Math.floor(Date.now() / 1000),
+            updated_at: Math.floor(Date.now() / 1000)
+          };
+          
+          // Save to database
+          const dbId = saveModel(modelRecord);
+          logger.info(`[SOCKET.IO] Imported model: ${llamaModel.name} (DB ID: ${dbId})`);
+          importedCount++;
+          importedModels.push({ ...modelRecord, id: dbId });
+        }
+        
+        socket.emit('models_imported', {
+          success: true,
+          data: {
+            totalFound: llamaModels.length,
+            imported: importedCount,
+            skipped: skippedCount,
+            models: importedModels
+          },
+          message: `Successfully imported ${importedCount} models from llama-server (${skippedCount} already existed)`,
+          timestamp: new Date().toISOString()
+        });
+        
+        logger.info(`✅ [SOCKET.IO] Models import complete: ${importedCount} imported, ${skippedCount} skipped`);
+      } catch (error) {
+        logger.error(`❌ [SOCKET.IO] Error importing models: ${error.message}`);
+        socket.emit('models_imported', {
+          success: false,
+          error: { code: 'IMPORT_MODELS_FAILED', message: error.message },
+          timestamp: new Date().toISOString()
+        });
       }
     });
 
