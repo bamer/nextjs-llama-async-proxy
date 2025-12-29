@@ -3,9 +3,9 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { useStore } from "@/lib/store";
 import { useState, useEffect } from "react";
-import { Card, CardContent, Typography, Box, Grid, Chip, LinearProgress, Button, IconButton, CircularProgress, Menu, MenuItem, Badge } from "@mui/material";
+import { Card, CardContent, Typography, Box, Grid, Chip, LinearProgress, Button, IconButton, CircularProgress, Menu, MenuItem, Badge, Tooltip } from "@mui/material";
 import { useTheme } from "@/contexts/ThemeContext";
-import { PlayArrow, Stop, Refresh, Add, MoreVert, Delete, Check } from "@mui/icons-material";
+import { PlayArrow, Stop, Refresh, Add, MoreVert, Delete, Check, Science, Storage } from "@mui/icons-material";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { ModelsFallback } from "@/components/ui/error-fallbacks";
@@ -13,6 +13,7 @@ import { SkeletonCard } from "@/components/ui";
 import { useEffectEvent } from "@/hooks/use-effect-event";
 import { loadModelConfig, saveModelConfig } from "@/actions/config-actions";
 import ModelConfigDialog, { ConfigType } from "@/components/ui/ModelConfigDialog";
+import { useFitParams, FitParamsData } from "@/hooks/use-fit-params";
 
 // Local type definitions (matching database types)
 interface ModelConfig {
@@ -229,6 +230,42 @@ interface ModelMultimodalConfig {
     };
   }
 
+  // Helper function to convert store model to ModelData format
+  function storeToModelData(storeModel: import('@/types').ModelConfig): ModelData {
+    const typeMap: Record<"llama" | "mistral" | "other", "llama" | "gpt" | "mistrall" | "custom"> = {
+      llama: "llama",
+      mistral: "mistrall",
+      other: "custom",
+    };
+
+    return {
+      id: parseInt(storeModel.id, 10),
+      name: storeModel.name,
+      type: typeMap[storeModel.type] || 'llama',
+      status: storeModel.status === 'running' || storeModel.status === 'loading' || storeModel.status === 'error'
+        ? storeModel.status
+        : 'stopped',
+      ctx_size: (storeModel.parameters?.ctx_size as number) ?? 0,
+      batch_size: (storeModel.parameters?.batch_size as number) ?? 2048,
+      threads: (storeModel.parameters?.threads as number) ?? -1,
+      model_path: (storeModel.parameters?.model_path as string) ?? undefined,
+      model_url: (storeModel.parameters?.model_url as string) ?? undefined,
+    };
+  }
+
+  // Helper function to format file size
+  function formatFileSize(bytes: number | undefined | null): string {
+    if (!bytes) return "Unknown";
+    const units = ["B", "KB", "MB", "GB", "TB"];
+    let size = bytes;
+    let unitIndex = 0;
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+    return `${size.toFixed(2)} ${units[unitIndex]}`;
+  }
+
 export default function ModelsPage() {
   const models = useStore((state) => state.models);
   const { isDark } = useTheme();
@@ -238,8 +275,7 @@ export default function ModelsPage() {
   const [error, setError] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
-  const [modelsData, setModelsData] = useState<Map<number, ModelData>>(new Map());
-  const { requestModels, sendMessage } = useWebSocket();
+  const { requestModels, sendMessage, on, off } = useWebSocket();
   const setModels = useStore((state) => state.setModels);
   const updateStoreModel = useStore((state) => state.updateModel);
 
@@ -249,6 +285,14 @@ export default function ModelsPage() {
   const [currentConfig, setCurrentConfig] = useState<any>(null);
   const [selectedModel, setSelectedModel] = useState<ModelData | null>(null);
 
+  // Fit params state for selected model (for analysis dialog)
+  const [analyzingModelId, setAnalyzingModelId] = useState<number | null>(null);
+  const [fitParamsDialogOpen, setFitParamsDialogOpen] = useState(false);
+  const [currentFitParams, setCurrentFitParams] = useState<FitParamsData | null>(null);
+
+  // Fit params hook for the selected model
+  const fitParamsHook = useFitParams(analyzingModelId);
+
   useEffect(() => {
     // Load models from database as source of truth
     sendMessage('load_models', {});
@@ -257,7 +301,7 @@ export default function ModelsPage() {
     setTimeout(() => setIsInitialLoading(false), 1000);
   }, [sendMessage]);
 
-  // Handle WebSocket responses for database operations
+    // Handle WebSocket responses for database operations
   useEffect(() => {
     // Listen for WebSocket messages via websocket-client
     const handleConfigLoaded = (data: any) => {
@@ -265,53 +309,13 @@ export default function ModelsPage() {
         console.log("[ModelsPage] Config loaded successfully:", data.data);
         const { id, type, config } = data.data;
 
-        // Store config and open dialog if this type was requested
-        let shouldOpenDialog = false;
-        setModelsData((prev) => {
-          const newMap = new Map(prev);
-          const modelData = newMap.get(id);
-          if (modelData) {
-            const newLoading = new Set(modelData._configsLoading || []);
-            newLoading.delete(type);
-            
-            // Check if this is the config type we're waiting for
-            if (type === editingConfigType && id === selectedModel?.id) {
-              shouldOpenDialog = true;
-            }
-            
-            newMap.set(id, {
-              ...modelData,
-              [type]: config as any,
-              _configsLoading: newLoading
-            });
-          }
-          return newMap;
-        });
-
         // Open dialog if this config type was being edited
-        if (shouldOpenDialog) {
+        if (type === editingConfigType && id === selectedModel?.id) {
           setCurrentConfig(config);
           setConfigDialogOpen(true);
         }
       } else {
         console.error("[ModelsPage] Failed to load config:", data.error);
-        // Remove from loading set even on error
-        const { id, type } = data.data || {};
-        if (id !== undefined && type) {
-          setModelsData((prev) => {
-            const newMap = new Map(prev);
-            const modelData = newMap.get(id);
-            if (modelData) {
-              const newLoading = new Set(modelData._configsLoading || []);
-              newLoading.delete(type);
-              newMap.set(id, {
-                ...modelData,
-                _configsLoading: newLoading
-              });
-            }
-            return newMap;
-          });
-        }
       }
     };
 
@@ -333,12 +337,6 @@ export default function ModelsPage() {
         // Remove model from store
         const dbId = data.data.id;
         useStore.getState().removeModel(dbId.toString());
-        // Remove from models data map
-        setModelsData((prev) => {
-          const newMap = new Map(prev);
-          newMap.delete(dbId);
-          return newMap;
-        });
       } else {
         console.error("[ModelsPage] Failed to delete model:", data.error);
         setError(`Failed to delete model: ${data.error?.message || 'Unknown error'}`);
@@ -346,19 +344,17 @@ export default function ModelsPage() {
     };
 
     // Register listeners for database events
-    const { on } = useWebSocket();
     on('config_loaded', handleConfigLoaded);
     on('config_saved', handleConfigSaved);
     on('model_deleted', handleModelDeleted);
 
     return () => {
       // Remove listeners
-      const { off } = useWebSocket();
       off('config_loaded', handleConfigLoaded);
       off('config_saved', handleConfigSaved);
       off('model_deleted', handleModelDeleted);
     };
-  }, [editingConfigType, selectedModel]);
+  }, [editingConfigType, selectedModel, on, off]);
 
   // Helper functions defined outside component (created once)
   const normalizeStatus = (status: string | { value?: string; args?: unknown; preset?: unknown } | unknown): string => {
@@ -392,28 +388,17 @@ export default function ModelsPage() {
 
     // Check if config is already loaded
     if (model[configType]) {
-      // Config already loaded, open dialog immediately
+      // Config already loaded, use it immediately
       setCurrentConfig(model[configType]);
-      setConfigDialogOpen(true);
       console.log(`[ModelsPage] Opening dialog with loaded ${configType} config for model ${model.name}`);
     } else {
-      // Mark as loading
-      setModelsData((prev) => {
-        const newMap = new Map(prev);
-        const modelData = newMap.get(model.id!);
-        if (modelData) {
-          newMap.set(model.id!, {
-            ...modelData,
-            _configsLoading: new Set(modelData._configsLoading || []).add(configType)
-          });
-        }
-        return newMap;
-      });
-
       // Send WebSocket message to load config
       sendMessage('load_config', { id: model.id, type: configType });
       console.log(`[ModelsPage] Requested ${configType} config for model ${model.name}`);
     }
+
+    // Always open dialog - config will populate via WebSocket if not already loaded
+    setConfigDialogOpen(true);
   });
 
   // Lazy-load config for a specific model using WebSocket (kept for compatibility)
@@ -640,13 +625,6 @@ export default function ModelsPage() {
     if (!isNaN(dbId)) {
       sendMessage('delete_model', { id: dbId });
       console.log("[ModelsPage] Deleting model from database:", modelId);
-
-      // Remove from models data map immediately
-      setModelsData((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(dbId);
-        return newMap;
-      });
     }
 
     // Close menu
@@ -670,6 +648,23 @@ export default function ModelsPage() {
       handleDeleteModel(selectedModelId);
     }
   };
+
+  // Handle fit-params analysis
+  const handleAnalyze = useEffectEvent(async (modelId: number) => {
+    setAnalyzingModelId(modelId);
+    setCurrentFitParams(null);
+    setFitParamsDialogOpen(true);
+
+    // Trigger analysis
+    await fitParamsHook.analyze();
+
+    // Get results
+    if (fitParamsHook.data) {
+      setCurrentFitParams(fitParamsHook.data);
+    }
+
+    setAnalyzingModelId(null);
+  });
 
   // Show skeleton loader during initial load
   if (isInitialLoading && models.length === 0) {
@@ -761,9 +756,6 @@ export default function ModelsPage() {
         {/* Models Grid */}
         <Grid container spacing={3}>
           {models.map((model) => {
-            const modelData = modelsData.get(parseInt(model.id, 10));
-            const configsLoading = modelData?._configsLoading || new Set<string>();
-
             return (
               <Grid key={model.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                 <Card
@@ -807,18 +799,68 @@ export default function ModelsPage() {
                     <Typography variant="body2" color="text.secondary" mb={2}>
                       {model.type}
                     </Typography>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                       <Typography variant="caption" color="text.secondary">
                         Created: {new Date(model.createdAt).toLocaleDateString()}
                       </Typography>
+                      <Tooltip title="Analyze model with llama-fit-params">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleAnalyze(parseInt(model.id, 10))}
+                          disabled={analyzingModelId === parseInt(model.id, 10)}
+                          sx={{
+                            background: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(13, 158, 248, 0.1)',
+                            '&:hover': {
+                              background: isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(13, 158, 248, 0.2)'
+                            }
+                          }}
+                        >
+                          {analyzingModelId === parseInt(model.id, 10) ? <CircularProgress size={16} /> : <Science fontSize="small" />}
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+
+                    {/* Model metadata from fit-params */}
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
+                      {(model.parameters?.fit_params_available) ? (
+                        <Chip
+                          icon={<Check sx={{ fontSize: 12 }} />}
+                          label="Fit-Params Analyzed"
+                          size="small"
+                          color="success"
+                          variant="outlined"
+                        />
+                      ) : null}
+                      {(model.parameters?.file_size_bytes) ? (
+                        <Chip
+                          icon={<Storage sx={{ fontSize: 12 }} />}
+                          label={formatFileSize(model.parameters.file_size_bytes as number)}
+                          size="small"
+                          variant="outlined"
+                        />
+                      ) : null}
+                      {(model.parameters?.quantization_type) ? (
+                        <Chip
+                          label={`${model.parameters.quantization_type}`}
+                          size="small"
+                          variant="outlined"
+                        />
+                      ) : null}
+                      {(model.parameters?.parameter_count) ? (
+                        <Chip
+                          label={`${model.parameters.parameter_count}B`}
+                          size="small"
+                          variant="outlined"
+                        />
+                      ) : null}
                     </Box>
 
                     {/* Config loaded indicators */}
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
                       <Badge
-                        color={modelData?.sampling ? 'success' : 'default'}
+                        color={storeToModelData(model).sampling ? 'success' : 'default'}
                         overlap="circular"
-                        badgeContent={configsLoading.has('sampling') ? <CircularProgress size={12} /> : (modelData?.sampling ? <Check sx={{ fontSize: 10 }} /> : null)}
+                        badgeContent={storeToModelData(model).sampling ? <Check sx={{ fontSize: 10 }} /> : null}
                         sx={{
                           '& .MuiBadge-badge': {
                             width: 14,
@@ -831,20 +873,15 @@ export default function ModelsPage() {
                         <Button
                           size="small"
                           variant="outlined"
-                          disabled={configsLoading.has('sampling')}
-                          onClick={() => {
-                            if (modelData && modelData.id !== undefined) {
-                              handleConfigure(modelData, 'sampling');
-                            }
-                          }}
+                          onClick={() => handleConfigure(storeToModelData(model), 'sampling')}
                         >
                           Sampling
                         </Button>
                       </Badge>
                       <Badge
-                        color={modelData?.memory ? 'success' : 'default'}
+                        color={storeToModelData(model).memory ? 'success' : 'default'}
                         overlap="circular"
-                        badgeContent={configsLoading.has('memory') ? <CircularProgress size={12} /> : (modelData?.memory ? <Check sx={{ fontSize: 10 }} /> : null)}
+                        badgeContent={storeToModelData(model).memory ? <Check sx={{ fontSize: 10 }} /> : null}
                         sx={{
                           '& .MuiBadge-badge': {
                             width: 14,
@@ -857,20 +894,15 @@ export default function ModelsPage() {
                         <Button
                           size="small"
                           variant="outlined"
-                          disabled={configsLoading.has('memory')}
-                          onClick={() => {
-                            if (modelData && modelData.id !== undefined) {
-                              handleConfigure(modelData, 'memory');
-                            }
-                          }}
+                          onClick={() => handleConfigure(storeToModelData(model), 'memory')}
                         >
                           Memory
                         </Button>
                       </Badge>
                       <Badge
-                        color={modelData?.gpu ? 'success' : 'default'}
+                        color={storeToModelData(model).gpu ? 'success' : 'default'}
                         overlap="circular"
-                        badgeContent={configsLoading.has('gpu') ? <CircularProgress size={12} /> : (modelData?.gpu ? <Check sx={{ fontSize: 10 }} /> : null)}
+                        badgeContent={storeToModelData(model).gpu ? <Check sx={{ fontSize: 10 }} /> : null}
                         sx={{
                           '& .MuiBadge-badge': {
                             width: 14,
@@ -883,20 +915,15 @@ export default function ModelsPage() {
                         <Button
                           size="small"
                           variant="outlined"
-                          disabled={configsLoading.has('gpu')}
-                          onClick={() => {
-                            if (modelData && modelData.id !== undefined) {
-                              handleConfigure(modelData, 'gpu');
-                            }
-                          }}
+                          onClick={() => handleConfigure(storeToModelData(model), 'gpu')}
                         >
                           GPU
                         </Button>
                       </Badge>
                       <Badge
-                        color={modelData?.advanced ? 'success' : 'default'}
+                        color={storeToModelData(model).advanced ? 'success' : 'default'}
                         overlap="circular"
-                        badgeContent={configsLoading.has('advanced') ? <CircularProgress size={12} /> : (modelData?.advanced ? <Check sx={{ fontSize: 10 }} /> : null)}
+                        badgeContent={storeToModelData(model).advanced ? <Check sx={{ fontSize: 10 }} /> : null}
                         sx={{
                           '& .MuiBadge-badge': {
                             width: 14,
@@ -909,20 +936,15 @@ export default function ModelsPage() {
                         <Button
                           size="small"
                           variant="outlined"
-                          disabled={configsLoading.has('advanced')}
-                          onClick={() => {
-                            if (modelData && modelData.id !== undefined) {
-                              handleConfigure(modelData, 'advanced');
-                            }
-                          }}
+                          onClick={() => handleConfigure(storeToModelData(model), 'advanced')}
                         >
                           Advanced
                         </Button>
                       </Badge>
                       <Badge
-                        color={modelData?.lora ? 'success' : 'default'}
+                        color={storeToModelData(model).lora ? 'success' : 'default'}
                         overlap="circular"
-                        badgeContent={configsLoading.has('lora') ? <CircularProgress size={12} /> : (modelData?.lora ? <Check sx={{ fontSize: 10 }} /> : null)}
+                        badgeContent={storeToModelData(model).lora ? <Check sx={{ fontSize: 10 }} /> : null}
                         sx={{
                           '& .MuiBadge-badge': {
                             width: 14,
@@ -935,20 +957,15 @@ export default function ModelsPage() {
                         <Button
                           size="small"
                           variant="outlined"
-                          disabled={configsLoading.has('lora')}
-                          onClick={() => {
-                            if (modelData && modelData.id !== undefined) {
-                              handleConfigure(modelData, 'lora');
-                            }
-                          }}
+                          onClick={() => handleConfigure(storeToModelData(model), 'lora')}
                         >
                           LoRA
                         </Button>
                       </Badge>
                       <Badge
-                        color={modelData?.multimodal ? 'success' : 'default'}
+                        color={storeToModelData(model).multimodal ? 'success' : 'default'}
                         overlap="circular"
-                        badgeContent={configsLoading.has('multimodal') ? <CircularProgress size={12} /> : (modelData?.multimodal ? <Check sx={{ fontSize: 10 }} /> : null)}
+                        badgeContent={storeToModelData(model).multimodal ? <Check sx={{ fontSize: 10 }} /> : null}
                         sx={{
                           '& .MuiBadge-badge': {
                             width: 14,
@@ -961,12 +978,7 @@ export default function ModelsPage() {
                         <Button
                           size="small"
                           variant="outlined"
-                          disabled={configsLoading.has('multimodal')}
-                          onClick={() => {
-                            if (modelData && modelData.id !== undefined) {
-                              handleConfigure(modelData, 'multimodal');
-                            }
-                          }}
+                          onClick={() => handleConfigure(storeToModelData(model), 'multimodal')}
                         >
                           Multi
                         </Button>
@@ -1044,6 +1056,9 @@ export default function ModelsPage() {
             }
           }}
         />
+
+        {/* Fit-Params Analysis Result Dialog */}
+        {/* Note: Fit-params dialog would show detailed analysis results here */}
 
         {/* Empty state */}
         {models.length === 0 && (

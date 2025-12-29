@@ -75,30 +75,37 @@ class WebSocketClient extends EventEmitter {
       // Database-related events (emit as 'message' events with type field)
       this.socket.on('models_loaded', (data) => {
         this.emit('message', { type: 'models_loaded', ...data });
+        this.emit('models_loaded', data);
       });
 
       this.socket.on('model_saved', (data) => {
         this.emit('message', { type: 'model_saved', ...data });
+        this.emit('model_saved', data);
       });
 
       this.socket.on('model_updated', (data) => {
         this.emit('message', { type: 'model_updated', ...data });
+        this.emit('model_updated', data);
       });
 
       this.socket.on('model_deleted', (data) => {
         this.emit('message', { type: 'model_deleted', ...data });
+        this.emit('model_deleted', data);
       });
 
       this.socket.on('config_loaded', (data) => {
         this.emit('message', { type: 'config_loaded', ...data });
+        this.emit('config_loaded', data);
       });
 
       this.socket.on('config_saved', (data) => {
         this.emit('message', { type: 'config_saved', ...data });
+        this.emit('config_saved', data);
       });
 
       this.socket.on('models_imported', (data) => {
         this.emit('message', { type: 'models_imported', ...data });
+        this.emit('models_imported', data);
       });
 
       this.socket.on('connect_error', (error) => {

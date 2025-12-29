@@ -98,6 +98,9 @@ function createTables(db: Database.Database): void {
       cpu_strict_batch INTEGER DEFAULT 0,
       priority INTEGER DEFAULT 0,
       priority_batch INTEGER,
+      file_size_bytes INTEGER,
+      fit_params_available INTEGER DEFAULT 0,
+      last_fit_params_check INTEGER,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
@@ -108,11 +111,47 @@ function createTables(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_models_created ON models(created_at);
   `);
 
+  // Model Fit Params Table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS model_fit_params (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      model_id INTEGER NOT NULL UNIQUE,
+
+      -- Fit-params results
+      recommended_ctx_size INTEGER,
+      recommended_gpu_layers INTEGER,
+      recommended_tensor_split TEXT,
+
+      -- Model metadata
+      file_size_bytes INTEGER,
+      quantization_type TEXT,
+      parameter_count INTEGER,
+      architecture TEXT,
+      context_window INTEGER,
+
+      -- Analysis metadata
+      fit_params_analyzed_at INTEGER,
+      fit_params_success INTEGER DEFAULT 0,
+      fit_params_error TEXT,
+      fit_params_raw_output TEXT,
+
+      -- Memory projections
+      projected_cpu_memory_mb REAL,
+      projected_gpu_memory_mb REAL,
+
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_fit_params_model_id ON model_fit_params(model_id);
+  `);
+
   // Model Sampling Configuration
   db.exec(`
     CREATE TABLE IF NOT EXISTS model_sampling_config (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      model_id INTEGER NOT NULL,
+      model_id INTEGER NOT NULL UNIQUE,
       temperature REAL DEFAULT 0.8,
       top_k INTEGER DEFAULT 40,
       top_p REAL DEFAULT 0.9,
@@ -167,7 +206,7 @@ function createTables(db: Database.Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS model_memory_config (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      model_id INTEGER NOT NULL,
+      model_id INTEGER NOT NULL UNIQUE,
       cache_ram INTEGER DEFAULT -1,
       cache_type_k TEXT,
       cache_type_v TEXT,
@@ -187,7 +226,7 @@ function createTables(db: Database.Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS model_gpu_config (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      model_id INTEGER NOT NULL,
+      model_id INTEGER NOT NULL UNIQUE,
       device TEXT,
       list_devices INTEGER DEFAULT 0,
       gpu_layers INTEGER DEFAULT -1,
@@ -209,7 +248,7 @@ function createTables(db: Database.Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS model_advanced_config (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      model_id INTEGER NOT NULL,
+      model_id INTEGER NOT NULL UNIQUE,
       swa_full INTEGER DEFAULT 0,
       override_tensor TEXT,
       cpu_moe INTEGER DEFAULT 0,
@@ -243,7 +282,7 @@ function createTables(db: Database.Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS model_lora_config (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      model_id INTEGER NOT NULL,
+      model_id INTEGER NOT NULL UNIQUE,
       lora TEXT,
       lora_scaled TEXT,
       control_vector TEXT,
@@ -276,7 +315,7 @@ function createTables(db: Database.Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS model_multimodal_config (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      model_id INTEGER NOT NULL,
+      model_id INTEGER NOT NULL UNIQUE,
       mmproj TEXT,
       mmproj_url TEXT,
       mmproj_auto INTEGER DEFAULT 0,
@@ -670,6 +709,28 @@ export interface ModelMultimodalConfig {
   updated_at?: number;
 }
 
+// Model Fit Params Configuration
+export interface ModelFitParams {
+  id?: number;
+  model_id?: number;
+  recommended_ctx_size?: number | null;
+  recommended_gpu_layers?: number | null;
+  recommended_tensor_split?: string | null;
+  file_size_bytes?: number | null;
+  quantization_type?: string | null;
+  parameter_count?: number | null;
+  architecture?: string | null;
+  context_window?: number | null;
+  fit_params_analyzed_at?: number | null;
+  fit_params_success?: number | null;
+  fit_params_error?: string | null;
+  fit_params_raw_output?: string | null;
+  projected_cpu_memory_mb?: number | null;
+  projected_gpu_memory_mb?: number | null;
+  created_at?: number;
+  updated_at?: number;
+}
+
 // Server Configuration (global defaults)
 export interface ModelServerConfig {
   id?: number;
@@ -793,7 +854,7 @@ export function saveModelSamplingConfig(
 
   try {
     const stmt = db.prepare(`
-      INSERT INTO model_sampling_config (
+      INSERT OR REPLACE INTO model_sampling_config (
         model_id, temperature, top_k, top_p, min_p, top_nsigma, xtc_probability, xtc_threshold,
         typical_p, repeat_last_n, repeat_penalty, presence_penalty, frequency_penalty,
         dry_multiplier, dry_base, dry_allowed_length, dry_penalty_last_n, dry_sequence_breaker,
@@ -803,7 +864,7 @@ export function saveModelSamplingConfig(
         rope_scaling_type, rope_scale, rope_freq_base, rope_freq_scale,
         yarn_orig_ctx, yarn_ext_factor, yarn_attn_factor, yarn_beta_slow, yarn_beta_fast, flash_attn,
         logit_bias, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = stmt.run(
@@ -875,7 +936,7 @@ export function saveModelMemoryConfig(
 
   try {
     const stmt = db.prepare(`
-      INSERT INTO model_memory_config (
+      INSERT OR REPLACE INTO model_memory_config (
         model_id, cache_ram, cache_type_k, cache_type_v, mmap, mlock, numa, defrag_thold,
         created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -915,7 +976,7 @@ export function saveModelGpuConfig(
 
   try {
     const stmt = db.prepare(`
-      INSERT INTO model_gpu_config (
+      INSERT OR REPLACE INTO model_gpu_config (
         model_id, device, list_devices, gpu_layers, split_mode, tensor_split,
         main_gpu, kv_offload, repack, no_host, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -957,7 +1018,7 @@ export function saveModelAdvancedConfig(
 
   try {
     const stmt = db.prepare(`
-      INSERT INTO model_advanced_config (
+      INSERT OR REPLACE INTO model_advanced_config (
         model_id, swa_full, override_tensor, cpu_moe, n_cpu_moe, kv_unified,
         pooling, context_shift, rpc, offline, override_kv, op_offload,
         fit, fit_target, fit_ctx, check_tensors, sleep_idle_seconds,
@@ -1014,7 +1075,7 @@ export function saveModelLoraConfig(
 
   try {
     const stmt = db.prepare(`
-      INSERT INTO model_lora_config (
+      INSERT OR REPLACE INTO model_lora_config (
         model_id, lora, lora_scaled, control_vector, control_vector_scaled,
         control_vector_layer_range, model_draft, model_url_draft, ctx_size_draft,
         threads_draft, threads_batch_draft, draft_max, draft_min, draft_p_min,
@@ -1070,7 +1131,7 @@ export function saveModelMultimodalConfig(
 
   try {
     const stmt = db.prepare(`
-      INSERT INTO model_multimodal_config (
+      INSERT OR REPLACE INTO model_multimodal_config (
         model_id, mmproj, mmproj_url, mmproj_auto, mmproj_offload,
         image_min_tokens, image_max_tokens, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -1089,6 +1150,105 @@ export function saveModelMultimodalConfig(
     );
 
     return result.lastInsertRowid as number;
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Save fit-params analysis for a model
+ * @param modelId - Model ID
+ * @param fitParams - Fit-params analysis data
+ * @returns The ID of the newly created fit-params record
+ */
+export function saveModelFitParams(
+  modelId: number,
+  fitParams: Omit<ModelFitParams, "id" | "model_id" | "created_at" | "updated_at">
+): number {
+  const db = initDatabase();
+  const now = Date.now();
+
+  try {
+    const stmt = db.prepare(`
+      INSERT OR REPLACE INTO model_fit_params (
+        model_id, recommended_ctx_size, recommended_gpu_layers, recommended_tensor_split,
+        file_size_bytes, quantization_type, parameter_count, architecture, context_window,
+        fit_params_analyzed_at, fit_params_success, fit_params_error, fit_params_raw_output,
+        projected_cpu_memory_mb, projected_gpu_memory_mb, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const result = stmt.run(
+      modelId,
+      fitParams.recommended_ctx_size ?? null,
+      fitParams.recommended_gpu_layers ?? null,
+      fitParams.recommended_tensor_split ?? null,
+      fitParams.file_size_bytes ?? null,
+      fitParams.quantization_type ?? null,
+      fitParams.parameter_count ?? null,
+      fitParams.architecture ?? null,
+      fitParams.context_window ?? null,
+      fitParams.fit_params_analyzed_at ?? now,
+      fitParams.fit_params_success ?? 0,
+      fitParams.fit_params_error ?? null,
+      fitParams.fit_params_raw_output ?? null,
+      fitParams.projected_cpu_memory_mb ?? null,
+      fitParams.projected_gpu_memory_mb ?? null,
+      now,
+      now
+    );
+
+    return result.lastInsertRowid as number;
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Get fit-params analysis for a model
+ * @param modelId - Model ID
+ * @returns Fit-params data or null if not found
+ */
+export function getModelFitParams(modelId: number): ModelFitParams | null {
+  const db = initDatabase();
+
+  try {
+    const row = db.prepare("SELECT * FROM model_fit_params WHERE model_id = ?").get(modelId);
+
+    if (!row) return null;
+    return row as ModelFitParams;
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Check if fit-params analysis should be re-run
+ * @param modelId - Model ID
+ * @returns True if re-analysis is needed
+ */
+export function shouldReanalyzeFitParams(modelId: number, modelPath: string): boolean {
+  const db = initDatabase();
+
+  try {
+    // Check if model exists
+    const model = db.prepare("SELECT last_fit_params_check FROM models WHERE id = ?").get(modelId) as {
+      last_fit_params_check: number | null;
+    } | undefined;
+
+    if (!model || !model.last_fit_params_check) {
+      return true;
+    }
+
+    // Check if file has been modified
+    if (!fs.existsSync(modelPath)) {
+      return false;
+    }
+
+    const stats = fs.statSync(modelPath);
+    const fileModifiedTime = stats.mtimeMs;
+
+    return fileModifiedTime > model.last_fit_params_check;
   } finally {
     closeDatabase(db);
   }

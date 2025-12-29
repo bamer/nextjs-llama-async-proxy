@@ -155,8 +155,17 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         } else if (msg.type === 'models_loaded') {
           // Models loaded from database (source of truth)
           console.log('[WebSocketProvider] Database models loaded:', msg.data);
+          console.log('[WebSocketProvider] Success?', msg.success);
+          console.log('[WebSocketProvider] Data type:', typeof msg.data);
+          console.log('[WebSocketProvider] Data array?', Array.isArray(msg.data));
+          console.log('[WebSocketProvider] Data length:', msg.data?.length);
+          if (msg.data && msg.data.length > 0) {
+            console.log('[WebSocketProvider] First model name:', msg.data[0]?.name);
+            console.log('[WebSocketProvider] First model id:', msg.data[0]?.id);
+          }
           if (msg.success && msg.data) {
             useStore.getState().setModels(msg.data);
+            console.log('[WebSocketProvider] Called setModels, store now has:', useStore.getState().models.length);
           }
         } else if (msg.type === 'model_saved') {
           // Model saved to database
@@ -172,7 +181,11 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
           console.log('[WebSocketProvider] Config loaded:', msg.data);
         } else if (msg.type === 'config_saved') {
           // Config saved to database
-          console.log('[WebSocketProvider] Config saved:', msg.data);
+          if (msg.success) {
+            console.log('[WebSocketProvider] Config saved successfully:', msg.data);
+          } else {
+            console.error('[WebSocketProvider] Config save failed:', msg.error);
+          }
         } else if (msg.type === 'models_imported') {
           // Models imported from llama-server to database
           console.log('[WebSocketProvider] Models imported:', msg.data);
