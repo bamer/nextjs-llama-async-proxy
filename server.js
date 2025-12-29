@@ -91,14 +91,51 @@ app.prepare().then(() => {
     socket.on('load_models', async () => {
       try {
         logger.info('📚 [SOCKET.IO] Loading models from database...');
-        const dbModels = getModels();
+        let dbModels = getModels();
+
+        // Auto-import from llama-server if database is empty
+        if (dbModels.length === 0) {
+          logger.info('📥 [SOCKET.IO] Database is empty, auto-importing models from llama-server...');
+          try {
+            const llamaService = llamaIntegration.getLlamaService?.();
+            const state = llamaService?.getState?.();
+            const llamaModels = state?.models || [];
+            logger.info(`[SOCKET.IO] Found ${llamaModels.length} models in llama-server`);
+
+            for (const llamaModel of llamaModels) {
+              // Create model record for database
+              const modelRecord = {
+                name: llamaModel.name,
+                type: llamaModel.type === 'mistral' ? 'mistral' : llamaModel.type === 'custom' ? 'other' : 'llama',
+                status: 'stopped', // Use 'stopped' instead of 'idle' to match database constraint
+                model_path: llamaModel.parameters?.model_path || llamaModel.name,
+                model_url: llamaModel.parameters?.model_url || '',
+                ctx_size: llamaModel.parameters?.ctx_size || 2048,
+                batch_size: llamaModel.parameters?.batch_size || 512,
+                threads: llamaModel.parameters?.threads || 4,
+                created_at: Math.floor(Date.now() / 1000),
+                updated_at: Math.floor(Date.now() / 1000)
+              };
+
+              // Save to database
+              const dbId = saveModel(modelRecord);
+              logger.info(`[SOCKET.IO] Auto-imported model: ${llamaModel.name} (DB ID: ${dbId})`);
+            }
+
+            // Reload models after import
+            dbModels = getModels();
+            logger.info(`✅ [SOCKET.IO] Auto-imported ${llamaModels.length} models from llama-server`);
+          } catch (importError) {
+            logger.error(`❌ [SOCKET.IO] Error auto-importing models: ${importError.message}`);
+          }
+        }
 
         // Transform database models to store format
         const storeModels = dbModels.map(model => ({
           id: model.id.toString(),
           name: model.name,
           type: model.type === 'mistrall' ? 'mistral' : model.type === 'custom' ? 'other' : 'llama',
-          status: 'idle', // Database doesn't store runtime status
+          status: model.status === 'stopped' ? 'idle' : model.status, // Map 'stopped' to 'idle' for display
           createdAt: model.created_at,
           updatedAt: model.updated_at,
           parameters: {

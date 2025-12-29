@@ -9,7 +9,7 @@ import { useWebSocketContext } from '@/providers/websocket-provider';
  * This hook just provides convenient methods for components
  */
 export function useWebSocket() {
-  const { isConnected, connectionState, sendMessage, requestMetrics, requestLogs, requestModels, startModel, stopModel } = useWebSocketContext();
+  const { isConnected, connectionState, sendMessage, requestMetrics, requestLogs, requestModels, startModel, stopModel, on, off } = useWebSocketContext();
 
   return {
     isConnected,
@@ -20,5 +20,7 @@ export function useWebSocket() {
     requestModels,
     startModel,
     stopModel,
+    on,
+    off,
   };
 }

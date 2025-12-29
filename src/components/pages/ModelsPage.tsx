@@ -101,15 +101,23 @@ const ModelsPage = () => {
     loadModels();
 
     // Connect to WebSocket
-    websocketServer.connect();
+    try {
+      websocketServer.connect();
 
-    websocketServer.on('message', handleModelsUpdate);
-    websocketServer.on('connect', handleConnect);
+      websocketServer.on('message', handleModelsUpdate);
+      websocketServer.on('connect', handleConnect);
+    } catch (error) {
+      console.error('WebSocket connection error:', error);
+    }
 
     // Cleanup
     return () => {
-      websocketServer.off('message', handleModelsUpdate);
-      websocketServer.off('connect', handleConnect);
+      try {
+        websocketServer.off('message', handleModelsUpdate);
+        websocketServer.off('connect', handleConnect);
+      } catch (error) {
+        // Ignore cleanup errors
+      }
     };
   }, [loadModels, handleModelsUpdate, handleConnect]);
 

@@ -1,6 +1,6 @@
 "use server";
 
-import { LlamaServerIntegration } from "@/lib/llama-service";
+import { LlamaServerIntegration } from "@/server/services/LlamaServerIntegration";
 import { getModels, saveModel } from "@/lib/database";
 import type { ModelConfig } from "@/types";
 
@@ -27,7 +27,7 @@ export async function importModelsFromLlamaServer() {
     console.log(`[ImportModels] Found ${llamaModels.length} models in llama-server`);
 
     // Get existing models from database
-    const existingModels = getModels();
+    const existingModels = await getModels();
     console.log(`[ImportModels] Found ${existingModels.length} models in database`);
 
     let importedCount = 0;
@@ -62,7 +62,7 @@ export async function importModelsFromLlamaServer() {
       };
 
       // Save to database
-      const dbModel = saveModel(modelRecord);
+      const dbModel = await saveModel(modelRecord);
       console.log(`[ImportModels] Imported model: ${llamaModel.name} (DB ID: ${dbModel.id})`);
       importedCount++;
     }

@@ -259,141 +259,104 @@ export default function ModelsPage() {
 
   // Handle WebSocket responses for database operations
   useEffect(() => {
-    // Register custom event listener for WebSocket messages
-    const handleWebSocketMessage = (event: MessageEvent) => {
-      try {
-        const message = JSON.parse(event.data);
-        console.log("[ModelsPage] Received WebSocket message:", message.type);
+    // Listen for WebSocket messages via websocket-client
+    const handleConfigLoaded = (data: any) => {
+      if (data.success) {
+        console.log("[ModelsPage] Config loaded successfully:", data.data);
+        const { id, type, config } = data.data;
 
-        if (message.type === 'models_loaded') {
-          if (message.success) {
-            console.log("[ModelsPage] Models loaded from database:", message.data);
-            // Update the store with database models (they have proper IDs for configuration)
-            setModels(message.data);
-            // Clear initial loading state
-            setIsInitialLoading(false);
-          } else {
-            console.error("[ModelsPage] Failed to load models from database:", message.error);
-            setError(`Failed to load models: ${message.error?.message || 'Unknown error'}`);
-            setIsInitialLoading(false);
-          }
-        }
-
-        if (message.type === 'model_saved') {
-          if (message.success) {
-            console.log("[ModelsPage] Model saved successfully:", message.data);
-            // Model will be synced via the regular 'models' message from WebSocket
-            // No need to manually update state here
-          } else {
-            console.error("[ModelsPage] Failed to save model:", message.error);
-            setError(`Failed to save model: ${message.error?.message || 'Unknown error'}`);
-          }
-        }
-
-        if (message.type === 'model_updated') {
-          if (message.success) {
-            console.log("[ModelsPage] Model updated successfully:", message.data);
-            // Model will be synced via the regular 'models' message from WebSocket
-          } else {
-            console.error("[ModelsPage] Failed to update model:", message.error);
-            setError(`Failed to update model: ${message.error?.message || 'Unknown error'}`);
-          }
-        }
-
-        if (message.type === 'model_deleted') {
-          if (message.success) {
-            console.log("[ModelsPage] Model deleted successfully:", message.data);
-            // Remove model from store
-            const dbId = message.data.id;
-            useStore.getState().removeModel(dbId.toString());
-            // Remove from models data map
-            setModelsData((prev) => {
-              const newMap = new Map(prev);
-              newMap.delete(dbId);
-              return newMap;
-            });
-          } else {
-            console.error("[ModelsPage] Failed to delete model:", message.error);
-            setError(`Failed to delete model: ${message.error?.message || 'Unknown error'}`);
-          }
-        }
-
-        if (message.type === 'config_loaded') {
-          if (message.success) {
-            console.log("[ModelsPage] Config loaded successfully:", message.data);
-            const { id, type, config } = message.data;
-
-            // Store config and open dialog if this type was requested
-            let shouldOpenDialog = false;
-            setModelsData((prev) => {
-              const newMap = new Map(prev);
-              const modelData = newMap.get(id);
-              if (modelData) {
-                const newLoading = new Set(modelData._configsLoading || []);
-                newLoading.delete(type);
-                
-                // Check if this is the config type we're waiting for
-                if (type === editingConfigType && id === selectedModel?.id) {
-                  shouldOpenDialog = true;
-                }
-                
-                newMap.set(id, {
-                  ...modelData,
-                  [type]: config as any,
-                  _configsLoading: newLoading
-                });
-              }
-              return newMap;
-            });
-
-            // Open dialog if this config type was being edited
-            if (shouldOpenDialog) {
-              setCurrentConfig(config);
-              setConfigDialogOpen(true);
+        // Store config and open dialog if this type was requested
+        let shouldOpenDialog = false;
+        setModelsData((prev) => {
+          const newMap = new Map(prev);
+          const modelData = newMap.get(id);
+          if (modelData) {
+            const newLoading = new Set(modelData._configsLoading || []);
+            newLoading.delete(type);
+            
+            // Check if this is the config type we're waiting for
+            if (type === editingConfigType && id === selectedModel?.id) {
+              shouldOpenDialog = true;
             }
-          } else {
-            console.error("[ModelsPage] Failed to load config:", message.error);
-            // Remove from loading set even on error
-            const { id, type } = message.data || {};
-            if (id !== undefined && type) {
-              setModelsData((prev) => {
-                const newMap = new Map(prev);
-                const modelData = newMap.get(id);
-                if (modelData) {
-                  const newLoading = new Set(modelData._configsLoading || []);
-                  newLoading.delete(type);
-                  newMap.set(id, {
-                    ...modelData,
-                    _configsLoading: newLoading
-                  });
-                }
-                return newMap;
+            
+            newMap.set(id, {
+              ...modelData,
+              [type]: config as any,
+              _configsLoading: newLoading
+            });
+          }
+          return newMap;
+        });
+
+        // Open dialog if this config type was being edited
+        if (shouldOpenDialog) {
+          setCurrentConfig(config);
+          setConfigDialogOpen(true);
+        }
+      } else {
+        console.error("[ModelsPage] Failed to load config:", data.error);
+        // Remove from loading set even on error
+        const { id, type } = data.data || {};
+        if (id !== undefined && type) {
+          setModelsData((prev) => {
+            const newMap = new Map(prev);
+            const modelData = newMap.get(id);
+            if (modelData) {
+              const newLoading = new Set(modelData._configsLoading || []);
+              newLoading.delete(type);
+              newMap.set(id, {
+                ...modelData,
+                _configsLoading: newLoading
               });
             }
-          }
+            return newMap;
+          });
         }
-
-        if (message.type === 'config_saved') {
-          if (message.success) {
-            console.log("[ModelsPage] Config saved successfully:", message.data);
-            // Close dialog on successful save
-            setConfigDialogOpen(false);
-            setError(null); // Clear any errors
-          } else {
-            console.error("[ModelsPage] Failed to save config:", message.error);
-            setError(`Failed to save config: ${message.error?.message || 'Unknown error'}`);
-          }
-        }
-      } catch (err) {
-        console.error("[ModelsPage] Error parsing WebSocket message:", err);
       }
     };
 
-    // Listen to the window message event for WebSocket messages
-    window.addEventListener('message', handleWebSocketMessage);
+    const handleConfigSaved = (data: any) => {
+      if (data.success) {
+        console.log("[ModelsPage] Config saved successfully:", data.data);
+        // Close dialog on successful save
+        setConfigDialogOpen(false);
+        setError(null); // Clear any errors
+      } else {
+        console.error("[ModelsPage] Failed to save config:", data.error);
+        setError(`Failed to save config: ${data.error?.message || 'Unknown error'}`);
+      }
+    };
+
+    const handleModelDeleted = (data: any) => {
+      if (data.success) {
+        console.log("[ModelsPage] Model deleted successfully:", data.data);
+        // Remove model from store
+        const dbId = data.data.id;
+        useStore.getState().removeModel(dbId.toString());
+        // Remove from models data map
+        setModelsData((prev) => {
+          const newMap = new Map(prev);
+          newMap.delete(dbId);
+          return newMap;
+        });
+      } else {
+        console.error("[ModelsPage] Failed to delete model:", data.error);
+        setError(`Failed to delete model: ${data.error?.message || 'Unknown error'}`);
+      }
+    };
+
+    // Register listeners for database events
+    const { on } = useWebSocket();
+    on('config_loaded', handleConfigLoaded);
+    on('config_saved', handleConfigSaved);
+    on('model_deleted', handleModelDeleted);
 
     return () => {
-      window.removeEventListener('message', handleWebSocketMessage);
+      // Remove listeners
+      const { off } = useWebSocket();
+      off('config_loaded', handleConfigLoaded);
+      off('config_saved', handleConfigSaved);
+      off('model_deleted', handleModelDeleted);
     };
   }, [editingConfigType, selectedModel]);
 

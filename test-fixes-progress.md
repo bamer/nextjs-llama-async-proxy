@@ -1,43 +1,30 @@
-# Test Fixes Progress
+# Test Fixes Progress - First 20 Tests
 
-## Phase 1: Critical Timeout Fixes
-- [x] Create comprehensive plan for test fixes
-- [ ] Fix timeout issues in client-model-templates-optimized tests  
-- [ ] Fix timeout issues in use-api tests
-- [x] Identify specific failing test patterns in use-api
-- [ ] Fix use-api test expectations to match actual implementation
-- [ ] Fix timeout issues in websocket-client tests
-- [ ] Fix timeout issues in performance tests
-- [ ] Fix timeout issues in hook tests
+## Task Progress
+- [x] Explore __tests__ directory structure
+- [x] Run tests to identify failing tests  
+- [ ] Fix first 20 failing tests
+- [ ] Verify fixes work
+- [ ] Update progress
 
-## Phase 2: Component Test Fixes
-- [ ] Fix LoggerSettingsTab tests
-- [ ] Fix ModelsPage tests  
-- [ ] Fix ConfigurationPage tests
-- [ ] Fix Sidebar tests (comprehensive, basic, coverage)
-- [ ] Fix GeneralSettingsTab tests
-- [ ] Fix LlamaServerSettingsTab tests
-- [ ] Fix checkbox-filters tests
-- [ ] Fix logs page tests
-
-## Phase 3: Context and Hook Test Fixes
-- [ ] Fix ThemeContext tests
-- [ ] Fix useConfigurationForm tests
-- [ ] Fix useSettings edge-case tests
-- [ ] Fix use-websocket edge-case tests
-
-## Phase 4: Server and Integration Test Fixes
-- [ ] Fix LlamaService tests
-- [ ] Fix API tests
-- [ ] Fix integration tests
-- [ ] Fix server tests
-
-## Phase 5: Performance and Stress Test Fixes  
-- [ ] Fix state-performance tests
-- [ ] Fix api-performance tests
-- [ ] Fix load-testing tests
-
-## Phase 6: Validation and Final Checks
-- [ ] Run full test suite to verify fixes
-- [ ] Ensure test coverage remains above 70%
-- [ ] Generate final test fix report
+## First 20 Failing Tests Found:
+1. __tests__/lib/database-normalized.test.ts
+2. __tests__/performance/api-performance.test.ts
+3. __tests__/components/layout/Sidebar.test.tsx
+4. __tests__/lib/database.test.ts
+5. __tests__/components/layout/Sidebar.comprehensive.test.tsx
+6. __tests__/components/charts/PerformanceChart.test.tsx
+7. __tests__/components/layout/Sidebar.coverage.test.tsx
+8. __tests__/hooks/useConfigurationForm.test.ts
+9. src/hooks/__tests__/useSettings.edge-case.test.ts
+10. __tests__/app/logs/checkbox-filters.test.tsx
+11. __tests__/components/configuration/GeneralSettingsTab.test.tsx
+12. __tests__/contexts/ThemeContext.test.tsx
+13. __tests__/components/configuration/ModernConfiguration.test.tsx
+14. __tests__/components/pages/MonitoringPage.test.tsx
+15. __tests__/components/animate/motion-lazy-container.test.tsx
+16. __tests__/api/models-start.test.ts
+17. src/hooks/__tests__/useSystemMetrics.edge-case.test.ts
+18. __tests__/components/dashboard/QuickActionsCard.test.tsx
+19. __tests__/lib/store.edge-cases.test.ts
+20. __tests__/components/configuration/LlamaServerSettingsTab.test.tsx

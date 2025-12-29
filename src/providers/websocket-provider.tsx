@@ -15,6 +15,8 @@ interface WebSocketContextType {
   startModel: (modelId: string) => void;
   stopModel: (modelId: string) => void;
   unloadModel: (modelId: string) => void;
+  on: (event: string, callback: (data: any) => void) => void;
+  off: (event: string, callback: (data: any) => void) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -75,15 +77,10 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       setIsConnected(true);
       setConnectionState('connected');
 
-      // TODO: Load models from backend via WebSocket if needed
-      // Backend should send initial 'models' message on connection
-
-      // TODO: Load metrics history from backend via WebSocket if needed
-      // Backend should send initial 'metrics' message on connection
-
       // Request initial data after connection
       websocketServer.requestMetrics();
-      websocketServer.requestModels();
+      // Models are loaded via 'load_models' message from models page (database as source of truth)
+      // Do NOT call requestModels() here to avoid overwriting database models with llama-server models
       websocketServer.requestLogs();
     };
 
@@ -99,11 +96,10 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             metricsThrottleRef.current = setTimeout(processMetricsBatch, 500);
           }
         } else if (msg.type === 'models' && msg.data) {
-          // Batch models with 1000ms debounce
-          modelsBatchRef.current.push(msg.data as ModelConfig[]);
-          if (!modelsThrottleRef.current) {
-            modelsThrottleRef.current = setTimeout(processModelsBatch, 1000);
-          }
+          // Do NOT process 'models' messages from llama-server
+          // Models are loaded from database via 'load_models' message
+          // Llama-server models don't have database IDs needed for configuration
+          console.log('[WebSocketProvider] Ignoring models message from llama-server (use database models via load_models)');
         } else if (msg.type === 'logs' && msg.data) {
           // Batch logs with 1000ms debounce
           const logs = msg.data as LogEntry[];
@@ -119,6 +115,20 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
           logQueueRef.current.push(log);
           if (!logThrottleRef.current) {
             logThrottleRef.current = setTimeout(processLogQueue, 500);
+          }
+        } else if (msg.type === 'status' && msg.data) {
+          // Llama-server status update with model runtime states
+          console.log('[WebSocketProvider] Received llama-server status:', msg.data);
+          // Update model statuses in store without replacing models
+          const statusData = msg.data as { models?: ModelConfig[]; status?: string };
+          if (statusData.models && Array.isArray(statusData.models)) {
+            const llamaModels = statusData.models;
+            useStore.getState().models.forEach((dbModel) => {
+              const llamaModel = llamaModels.find((lm) => lm.name === dbModel.name);
+              if (llamaModel && llamaModel.status) {
+                useStore.getState().updateModel(dbModel.id, { status: llamaModel.status });
+              }
+            });
           }
         } else if (msg.type === 'modelStopped') {
           // Model was stopped/unloaded from llama-server
@@ -140,8 +150,35 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
           // TODO: Forward to backend API route to load model config
           console.warn('[WebSocketProvider] load_config message requires backend API endpoint');
         } else if (msg.type === 'save_config') {
-          // TODO: Forward to backend API route to save model config
-          console.warn('[WebSocketProvider] save_config message requires backend API endpoint');
+          // Config saved in database (handled by backend)
+          console.log('[WebSocketProvider] Config saved:', msg.data);
+        } else if (msg.type === 'models_loaded') {
+          // Models loaded from database (source of truth)
+          console.log('[WebSocketProvider] Database models loaded:', msg.data);
+          if (msg.success && msg.data) {
+            useStore.getState().setModels(msg.data);
+          }
+        } else if (msg.type === 'model_saved') {
+          // Model saved to database
+          console.log('[WebSocketProvider] Model saved to database:', msg.data);
+        } else if (msg.type === 'model_updated') {
+          // Model updated in database
+          console.log('[WebSocketProvider] Model updated in database:', msg.data);
+        } else if (msg.type === 'model_deleted') {
+          // Model deleted from database
+          console.log('[WebSocketProvider] Model deleted from database:', msg.data);
+        } else if (msg.type === 'config_loaded') {
+          // Config loaded from database
+          console.log('[WebSocketProvider] Config loaded:', msg.data);
+        } else if (msg.type === 'config_saved') {
+          // Config saved to database
+          console.log('[WebSocketProvider] Config saved:', msg.data);
+        } else if (msg.type === 'models_imported') {
+          // Models imported from llama-server to database
+          console.log('[WebSocketProvider] Models imported:', msg.data);
+          if (msg.success && msg.data) {
+            useStore.getState().setModels(msg.data);
+          }
         }
       }
     };
@@ -223,6 +260,14 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     websocketServer.sendMessage('unloadModel', { modelId });
   }, []);
 
+  const on = useCallback((event: string, callback: (data: any) => void) => {
+    websocketServer.on(event, callback);
+  }, []);
+
+  const off = useCallback((event: string, callback: (data: any) => void) => {
+    websocketServer.off(event, callback);
+  }, []);
+
   const value: WebSocketContextType = {
     isConnected,
     connectionState,
@@ -233,6 +278,8 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     startModel,
     stopModel,
     unloadModel,
+    on,
+    off,
   };
 
   return (
