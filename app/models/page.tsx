@@ -286,11 +286,11 @@ export default function ModelsPage() {
   const [selectedModel, setSelectedModel] = useState<ModelData | null>(null);
 
   // Fit params state for selected model (for analysis dialog)
-  const [analyzingModelId, setAnalyzingModelId] = useState<number | null>(null);
+  const [analyzingModelId, setAnalyzingModelId] = useState<string | null>(null);
   const [fitParamsDialogOpen, setFitParamsDialogOpen] = useState(false);
   const [currentFitParams, setCurrentFitParams] = useState<FitParamsData | null>(null);
 
-  // Fit params hook for the selected model
+  // Fit params hook for the selected model (uses model name, not ID)
   const fitParamsHook = useFitParams(analyzingModelId);
 
   useEffect(() => {
@@ -556,8 +556,9 @@ export default function ModelsPage() {
 
   const handleRefresh = useEffectEvent(() => {
     setRefreshing(true);
-    requestModels();
-    setTimeout(() => setRefreshing(false), 800);
+    // Trigger WebSocket rescan to reload models from filesystem and database
+    sendMessage('rescanModels', {});
+    setTimeout(() => setRefreshing(false), 1500);
   });
 
   // Handler for saving a model configuration (can be used by add/edit model dialogs) using WebSocket
@@ -650,8 +651,8 @@ export default function ModelsPage() {
   };
 
   // Handle fit-params analysis
-  const handleAnalyze = useEffectEvent(async (modelId: number) => {
-    setAnalyzingModelId(modelId);
+  const handleAnalyze = useEffectEvent(async (modelName: string) => {
+    setAnalyzingModelId(modelName);
     setCurrentFitParams(null);
     setFitParamsDialogOpen(true);
 
@@ -806,8 +807,8 @@ export default function ModelsPage() {
                       <Tooltip title="Analyze model with llama-fit-params">
                         <IconButton
                           size="small"
-                          onClick={() => handleAnalyze(parseInt(model.id, 10))}
-                          disabled={analyzingModelId === parseInt(model.id, 10)}
+                          onClick={() => handleAnalyze(model.name)}
+                          disabled={analyzingModelId === model.name}
                           sx={{
                             background: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(13, 158, 248, 0.1)',
                             '&:hover': {
@@ -815,7 +816,7 @@ export default function ModelsPage() {
                             }
                           }}
                         >
-                          {analyzingModelId === parseInt(model.id, 10) ? <CircularProgress size={16} /> : <Science fontSize="small" />}
+                          {analyzingModelId === model.name ? <CircularProgress size={16} /> : <Science fontSize="small" />}
                         </IconButton>
                       </Tooltip>
                     </Box>

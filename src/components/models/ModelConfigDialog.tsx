@@ -4,7 +4,7 @@
 // We intentionally call setState in useEffect to sync local state with props when dialog opens.
 // This is a valid React pattern for initializing component state from props.
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -218,7 +218,14 @@ interface SliderFieldProps {
   description?: string;
 }
 
-const SliderField = ({ label, value, onChange, min, max, step, description }: SliderFieldProps) => {
+const SliderField = memo(function SliderField({ label, value, onChange, min, max, step, description }: SliderFieldProps) {
+  const handleSliderChange = useCallback(
+    (_event: Event | React.SyntheticEvent<Element, Event>, newValue: number | number[]) => {
+      onChange(newValue as number);
+    },
+    [onChange],
+  );
+
   const input = (
     <Box sx={{ mb: 2 }}>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
@@ -232,7 +239,7 @@ const SliderField = ({ label, value, onChange, min, max, step, description }: Sl
       {step >= 1 ? (
         <Slider
           value={value}
-          onChange={(_event, newValue) => onChange(newValue as number)}
+          onChange={handleSliderChange}
           min={min}
           max={max}
           step={step}
@@ -250,7 +257,7 @@ const SliderField = ({ label, value, onChange, min, max, step, description }: Sl
       ) : (
         <Slider
           value={value}
-          onChange={(_event, newValue) => onChange(newValue as number)}
+          onChange={handleSliderChange}
           min={min}
           max={max}
           step={step}
@@ -266,16 +273,33 @@ const SliderField = ({ label, value, onChange, min, max, step, description }: Sl
   );
 
   return description ? <Tooltip title={description} arrow placement="top">{input}</Tooltip> : input;
-};
+});
 
 // ============================================================================
 // Form Components for Each Config Type
 // ============================================================================
 
-const SamplingForm = ({ config, onChange }: { config: SamplingConfig; onChange: (config: SamplingConfig) => void }) => {
-  const handleChange = (field: keyof SamplingConfig, value: number) => {
-    onChange({ ...config, [field]: value });
-  };
+const SamplingForm = memo(function SamplingForm({ config, onChange }: { config: SamplingConfig; onChange: (config: SamplingConfig) => void }) {
+  const handleChange = useCallback(
+    (field: keyof SamplingConfig, value: number) => {
+      onChange({ ...config, [field]: value });
+    },
+    [config, onChange],
+  );
+
+  const handleTemperatureChange = useCallback((v: number) => handleChange("temperature", v), [handleChange]);
+  const handleTopPChange = useCallback((v: number) => handleChange("top_p", v), [handleChange]);
+  const handleTopKChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("top_k", parseInt(e.target.value) || 0), [handleChange]);
+  const handleMinPChange = useCallback((v: number) => handleChange("min_p", v), [handleChange]);
+  const handleTypicalPChange = useCallback((v: number) => handleChange("typical_p", v), [handleChange]);
+  const handleRepeatPenaltyChange = useCallback((v: number) => handleChange("repeat_penalty", v), [handleChange]);
+  const handleRepeatLastNChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("repeat_last_n", parseInt(e.target.value) || 0), [handleChange]);
+  const handleFrequencyPenaltyChange = useCallback((v: number) => handleChange("frequency_penalty", v), [handleChange]);
+  const handlePresencePenaltyChange = useCallback((v: number) => handleChange("presence_penalty", v), [handleChange]);
+  const handleSeedChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("seed", parseInt(e.target.value) || -1), [handleChange]);
+  const handleMirostatChange = useCallback((_event: Event | React.SyntheticEvent<Element, Event>, value: string | unknown) => handleChange("mirostat", parseInt(value as string, 10)), [handleChange]);
+  const handleMirostatTauChange = useCallback((v: number) => handleChange("mirostat_tau", v), [handleChange]);
+  const handleMirostatEtaChange = useCallback((v: number) => handleChange("mirostat_eta", v), [handleChange]);
 
   return (
     <Grid container spacing={2}>
@@ -283,7 +307,7 @@ const SamplingForm = ({ config, onChange }: { config: SamplingConfig; onChange: 
         <SliderField
           label="Temperature"
           value={config.temperature}
-          onChange={(v) => handleChange("temperature", v)}
+          onChange={handleTemperatureChange}
           min={0}
           max={2}
           step={0.1}
@@ -294,7 +318,7 @@ const SamplingForm = ({ config, onChange }: { config: SamplingConfig; onChange: 
         <SliderField
           label="Top P"
           value={config.top_p}
-          onChange={(v) => handleChange("top_p", v)}
+          onChange={handleTopPChange}
           min={0}
           max={1}
           step={0.05}
@@ -308,7 +332,7 @@ const SamplingForm = ({ config, onChange }: { config: SamplingConfig; onChange: 
             label="Top K"
             type="number"
             value={config.top_k}
-            onChange={(e) => handleChange("top_k", parseInt(e.target.value) || 0)}
+            onChange={handleTopKChange}
             InputProps={{ inputProps: { min: 0 } }}
             size="small"
           />
@@ -318,7 +342,7 @@ const SamplingForm = ({ config, onChange }: { config: SamplingConfig; onChange: 
         <SliderField
           label="Min P"
           value={config.min_p}
-          onChange={(v) => handleChange("min_p", v)}
+          onChange={handleMinPChange}
           min={0}
           max={1}
           step={0.05}
@@ -329,7 +353,7 @@ const SamplingForm = ({ config, onChange }: { config: SamplingConfig; onChange: 
         <SliderField
           label="Typical P"
           value={config.typical_p}
-          onChange={(v) => handleChange("typical_p", v)}
+          onChange={handleTypicalPChange}
           min={0}
           max={1}
           step={0.05}
@@ -340,7 +364,7 @@ const SamplingForm = ({ config, onChange }: { config: SamplingConfig; onChange: 
         <SliderField
           label="Repeat Penalty"
           value={config.repeat_penalty}
-          onChange={(v) => handleChange("repeat_penalty", v)}
+          onChange={handleRepeatPenaltyChange}
           min={0}
           max={2}
           step={0.1}
@@ -354,7 +378,7 @@ const SamplingForm = ({ config, onChange }: { config: SamplingConfig; onChange: 
             label="Repeat Last N"
             type="number"
             value={config.repeat_last_n}
-            onChange={(e) => handleChange("repeat_last_n", parseInt(e.target.value) || 0)}
+            onChange={handleRepeatLastNChange}
             InputProps={{ inputProps: { min: 0 } }}
             size="small"
           />
@@ -364,7 +388,7 @@ const SamplingForm = ({ config, onChange }: { config: SamplingConfig; onChange: 
         <SliderField
           label="Frequency Penalty"
           value={config.frequency_penalty}
-          onChange={(v) => handleChange("frequency_penalty", v)}
+          onChange={handleFrequencyPenaltyChange}
           min={0}
           max={2}
           step={0.1}
@@ -375,7 +399,7 @@ const SamplingForm = ({ config, onChange }: { config: SamplingConfig; onChange: 
         <SliderField
           label="Presence Penalty"
           value={config.presence_penalty}
-          onChange={(v) => handleChange("presence_penalty", v)}
+          onChange={handlePresencePenaltyChange}
           min={0}
           max={2}
           step={0.1}
@@ -389,7 +413,7 @@ const SamplingForm = ({ config, onChange }: { config: SamplingConfig; onChange: 
             label="Seed"
             type="number"
             value={config.seed}
-            onChange={(e) => handleChange("seed", parseInt(e.target.value) || -1)}
+            onChange={handleSeedChange}
             helperText="-1 for random"
             size="small"
           />
@@ -406,7 +430,7 @@ const SamplingForm = ({ config, onChange }: { config: SamplingConfig; onChange: 
           <InputLabel>Mirostat Mode</InputLabel>
           <Select
             value={config.mirostat}
-            onChange={(_event, value) => handleChange("mirostat", parseInt(value as string, 10))}
+            onChange={handleMirostatChange}
             label="Mirostat Mode"
           >
             <MenuItem value={0}>Disabled</MenuItem>
@@ -419,7 +443,7 @@ const SamplingForm = ({ config, onChange }: { config: SamplingConfig; onChange: 
         <SliderField
           label="Mirostat Tau"
           value={config.mirostat_tau}
-          onChange={(v) => handleChange("mirostat_tau", v)}
+          onChange={handleMirostatTauChange}
           min={0}
           max={10}
           step={0.1}
@@ -430,7 +454,7 @@ const SamplingForm = ({ config, onChange }: { config: SamplingConfig; onChange: 
         <SliderField
           label="Mirostat Eta"
           value={config.mirostat_eta}
-          onChange={(v) => handleChange("mirostat_eta", v)}
+          onChange={handleMirostatEtaChange}
           min={0}
           max={1}
           step={0.01}
@@ -439,12 +463,21 @@ const SamplingForm = ({ config, onChange }: { config: SamplingConfig; onChange: 
       </Grid>
     </Grid>
   );
-};
+});
 
-const MemoryForm = ({ config, onChange }: { config: MemoryConfig; onChange: (config: MemoryConfig) => void }) => {
-  const handleChange = (field: keyof MemoryConfig, value: number | boolean | string) => {
-    onChange({ ...config, [field]: value });
-  };
+const MemoryForm = memo(function MemoryForm({ config, onChange }: { config: MemoryConfig; onChange: (config: MemoryConfig) => void }) {
+  const handleChange = useCallback(
+    (field: keyof MemoryConfig, value: number | boolean | string) => {
+      onChange({ ...config, [field]: value });
+    },
+    [config, onChange],
+  );
+
+  const handleNumCtxChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("num_ctx", parseInt(e.target.value) || 0), [handleChange]);
+  const handleNumBatchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("num_batch", parseInt(e.target.value) || 0), [handleChange]);
+  const handleCacheRamChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("cache_ram", parseInt(e.target.value) || 0), [handleChange]);
+  const handleMemoryF16Change = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("memory_f16", e.target.checked), [handleChange]);
+  const handleMemoryLockChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("memory_lock", e.target.checked), [handleChange]);
 
   return (
     <Grid container spacing={2}>
@@ -455,7 +488,7 @@ const MemoryForm = ({ config, onChange }: { config: MemoryConfig; onChange: (con
             label="Context Size"
             type="number"
             value={config.num_ctx}
-            onChange={(e) => handleChange("num_ctx", parseInt(e.target.value) || 0)}
+            onChange={handleNumCtxChange}
             InputProps={{ inputProps: { min: 1 } }}
             helperText="Number of tokens"
             size="small"
@@ -469,7 +502,7 @@ const MemoryForm = ({ config, onChange }: { config: MemoryConfig; onChange: (con
             label="Batch Size"
             type="number"
             value={config.num_batch}
-            onChange={(e) => handleChange("num_batch", parseInt(e.target.value) || 0)}
+            onChange={handleNumBatchChange}
             InputProps={{ inputProps: { min: 1 } }}
             size="small"
           />
@@ -482,7 +515,7 @@ const MemoryForm = ({ config, onChange }: { config: MemoryConfig; onChange: (con
             label="Cache RAM (MB)"
             type="number"
             value={config.cache_ram}
-            onChange={(e) => handleChange("cache_ram", parseInt(e.target.value) || 0)}
+            onChange={handleCacheRamChange}
             InputProps={{ inputProps: { min: 0 } }}
             helperText="0 for unlimited"
             size="small"
@@ -495,7 +528,7 @@ const MemoryForm = ({ config, onChange }: { config: MemoryConfig; onChange: (con
             <Box sx={{ display: "flex", alignItems: "center" }}>
               <Switch
                 checked={config.memory_f16}
-                onChange={(e) => handleChange("memory_f16", e.target.checked)}
+                onChange={handleMemoryF16Change}
               />
               <Typography variant="body2">Use F16 Memory</Typography>
             </Box>
@@ -508,7 +541,7 @@ const MemoryForm = ({ config, onChange }: { config: MemoryConfig; onChange: (con
             <Box sx={{ display: "flex", alignItems: "center" }}>
               <Switch
                 checked={config.memory_lock}
-                onChange={(e) => handleChange("memory_lock", e.target.checked)}
+                onChange={handleMemoryLockChange}
               />
               <Typography variant="body2">Lock Memory</Typography>
             </Box>
@@ -517,12 +550,21 @@ const MemoryForm = ({ config, onChange }: { config: MemoryConfig; onChange: (con
       </Grid>
     </Grid>
   );
-};
+});
 
-const GPUForm = ({ config, onChange }: { config: GPUConfig; onChange: (config: GPUConfig) => void }) => {
-  const handleChange = (field: keyof GPUConfig, value: number | boolean | string) => {
-    onChange({ ...config, [field]: value });
-  };
+const GPUForm = memo(function GPUForm({ config, onChange }: { config: GPUConfig; onChange: (config: GPUConfig) => void }) {
+  const handleChange = useCallback(
+    (field: keyof GPUConfig, value: number | boolean | string) => {
+      onChange({ ...config, [field]: value });
+    },
+    [config, onChange],
+  );
+
+  const handleNpuLayersChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("n_gpu_layers", parseInt(e.target.value) || 0), [handleChange]);
+  const handleNpuChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("n_gpu", parseInt(e.target.value) || 1), [handleChange]);
+  const handleTensorSplitChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("tensor_split", e.target.value), [handleChange]);
+  const handleMainGpuChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("main_gpu", parseInt(e.target.value) || 0), [handleChange]);
+  const handleMmLockChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("mm_lock", e.target.checked), [handleChange]);
 
   return (
     <Grid container spacing={2}>
@@ -533,7 +575,7 @@ const GPUForm = ({ config, onChange }: { config: GPUConfig; onChange: (config: G
             label="GPU Layers"
             type="number"
             value={config.n_gpu_layers}
-            onChange={(e) => handleChange("n_gpu_layers", parseInt(e.target.value) || 0)}
+            onChange={handleNpuLayersChange}
             InputProps={{ inputProps: { min: -1 } }}
             helperText="-1 for all layers"
             size="small"
@@ -547,7 +589,7 @@ const GPUForm = ({ config, onChange }: { config: GPUConfig; onChange: (config: G
             label="Number of GPUs"
             type="number"
             value={config.n_gpu}
-            onChange={(e) => handleChange("n_gpu", parseInt(e.target.value) || 1)}
+            onChange={handleNpuChange}
             InputProps={{ inputProps: { min: 1 } }}
             size="small"
           />
@@ -559,7 +601,7 @@ const GPUForm = ({ config, onChange }: { config: GPUConfig; onChange: (config: G
             fullWidth
             label="Tensor Split"
             value={config.tensor_split}
-            onChange={(e) => handleChange("tensor_split", e.target.value)}
+            onChange={handleTensorSplitChange}
             helperText="Comma-separated values (e.g., 16,8)"
             placeholder="e.g., 16,8"
             size="small"
@@ -573,7 +615,7 @@ const GPUForm = ({ config, onChange }: { config: GPUConfig; onChange: (config: G
             label="Main GPU"
             type="number"
             value={config.main_gpu}
-            onChange={(e) => handleChange("main_gpu", parseInt(e.target.value) || 0)}
+            onChange={handleMainGpuChange}
             InputProps={{ inputProps: { min: 0 } }}
             size="small"
           />
@@ -585,7 +627,7 @@ const GPUForm = ({ config, onChange }: { config: GPUConfig; onChange: (config: G
             <Box sx={{ display: "flex", alignItems: "center" }}>
               <Switch
                 checked={config.mm_lock}
-                onChange={(e) => handleChange("mm_lock", e.target.checked)}
+                onChange={handleMmLockChange}
               />
               <Typography variant="body2">Lock MM Tensors</Typography>
             </Box>
@@ -594,12 +636,25 @@ const GPUForm = ({ config, onChange }: { config: GPUConfig; onChange: (config: G
       </Grid>
     </Grid>
   );
-};
+});
 
-const AdvancedForm = ({ config, onChange }: { config: AdvancedConfig; onChange: (config: AdvancedConfig) => void }) => {
-  const handleChange = (field: keyof AdvancedConfig, value: number) => {
-    onChange({ ...config, [field]: value });
-  };
+const AdvancedForm = memo(function AdvancedForm({ config, onChange }: { config: AdvancedConfig; onChange: (config: AdvancedConfig) => void }) {
+  const handleChange = useCallback(
+    (field: keyof AdvancedConfig, value: number) => {
+      onChange({ ...config, [field]: value });
+    },
+    [config, onChange],
+  );
+
+  const handleRopeFrequencyChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("rope_frequency", parseFloat(e.target.value) || 10000), [handleChange]);
+  const handleRopeScaleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("rope_scale", parseFloat(e.target.value) || 1.0), [handleChange]);
+  const handleYarnExtFactorChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("yarn_ext_factor", parseFloat(e.target.value) || -1), [handleChange]);
+  const handleYarnOrigCtxChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("yarn_orig_ctx", parseInt(e.target.value) || 0), [handleChange]);
+  const handleYarnAttnFactorChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("yarn_attn_factor", parseFloat(e.target.value) || 1.0), [handleChange]);
+  const handleYarnBetaFastChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("yarn_beta_fast", parseInt(e.target.value) || 32), [handleChange]);
+  const handleYarnBetaSlowChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("yarn_beta_slow", parseInt(e.target.value) || 1), [handleChange]);
+  const handleNumThreadChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("num_thread", parseInt(e.target.value) || 8), [handleChange]);
+  const handleNumPredictChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("num_predict", parseInt(e.target.value) || -1), [handleChange]);
 
   return (
     <Grid container spacing={2}>
@@ -610,7 +665,7 @@ const AdvancedForm = ({ config, onChange }: { config: AdvancedConfig; onChange: 
             label="RoPE Frequency"
             type="number"
             value={config.rope_frequency}
-            onChange={(e) => handleChange("rope_frequency", parseFloat(e.target.value) || 10000)}
+            onChange={handleRopeFrequencyChange}
             InputProps={{ inputProps: { min: 1, step: 0.1 } }}
             size="small"
           />
@@ -623,7 +678,7 @@ const AdvancedForm = ({ config, onChange }: { config: AdvancedConfig; onChange: 
             label="RoPE Scale"
             type="number"
             value={config.rope_scale}
-            onChange={(e) => handleChange("rope_scale", parseFloat(e.target.value) || 1.0)}
+            onChange={handleRopeScaleChange}
             InputProps={{ inputProps: { min: 0, step: 0.1 } }}
             size="small"
           />
@@ -636,7 +691,7 @@ const AdvancedForm = ({ config, onChange }: { config: AdvancedConfig; onChange: 
             label="YaRN Ext Factor"
             type="number"
             value={config.yarn_ext_factor}
-            onChange={(e) => handleChange("yarn_ext_factor", parseFloat(e.target.value) || -1)}
+            onChange={handleYarnExtFactorChange}
             InputProps={{ inputProps: { min: -1, step: 0.1 } }}
             helperText="-1 for disabled"
             size="small"
@@ -650,7 +705,7 @@ const AdvancedForm = ({ config, onChange }: { config: AdvancedConfig; onChange: 
             label="YaRN Original Ctx"
             type="number"
             value={config.yarn_orig_ctx}
-            onChange={(e) => handleChange("yarn_orig_ctx", parseInt(e.target.value) || 0)}
+            onChange={handleYarnOrigCtxChange}
             InputProps={{ inputProps: { min: 0 } }}
             size="small"
           />
@@ -663,7 +718,7 @@ const AdvancedForm = ({ config, onChange }: { config: AdvancedConfig; onChange: 
             label="YaRN Attn Factor"
             type="number"
             value={config.yarn_attn_factor}
-            onChange={(e) => handleChange("yarn_attn_factor", parseFloat(e.target.value) || 1.0)}
+            onChange={handleYarnAttnFactorChange}
             InputProps={{ inputProps: { min: 0, step: 0.1 } }}
             size="small"
           />
@@ -676,7 +731,7 @@ const AdvancedForm = ({ config, onChange }: { config: AdvancedConfig; onChange: 
             label="YaRN Beta Fast"
             type="number"
             value={config.yarn_beta_fast}
-            onChange={(e) => handleChange("yarn_beta_fast", parseInt(e.target.value) || 32)}
+            onChange={handleYarnBetaFastChange}
             InputProps={{ inputProps: { min: 1 } }}
             size="small"
           />
@@ -689,7 +744,7 @@ const AdvancedForm = ({ config, onChange }: { config: AdvancedConfig; onChange: 
             label="YaRN Beta Slow"
             type="number"
             value={config.yarn_beta_slow}
-            onChange={(e) => handleChange("yarn_beta_slow", parseInt(e.target.value) || 1)}
+            onChange={handleYarnBetaSlowChange}
             InputProps={{ inputProps: { min: 1 } }}
             size="small"
           />
@@ -702,7 +757,7 @@ const AdvancedForm = ({ config, onChange }: { config: AdvancedConfig; onChange: 
             label="Number of Threads"
             type="number"
             value={config.num_thread}
-            onChange={(e) => handleChange("num_thread", parseInt(e.target.value) || 8)}
+            onChange={handleNumThreadChange}
             InputProps={{ inputProps: { min: 1 } }}
             size="small"
           />
@@ -715,7 +770,7 @@ const AdvancedForm = ({ config, onChange }: { config: AdvancedConfig; onChange: 
             label="Max Predict Tokens"
             type="number"
             value={config.num_predict}
-            onChange={(e) => handleChange("num_predict", parseInt(e.target.value) || -1)}
+            onChange={handleNumPredictChange}
             InputProps={{ inputProps: { min: -1 } }}
             helperText="-1 for unlimited"
             size="small"
@@ -724,12 +779,20 @@ const AdvancedForm = ({ config, onChange }: { config: AdvancedConfig; onChange: 
       </Grid>
     </Grid>
   );
-};
+});
 
-const LoRAForm = ({ config, onChange }: { config: LoRAConfig; onChange: (config: LoRAConfig) => void }) => {
-  const handleChange = (field: keyof LoRAConfig, value: number | string) => {
-    onChange({ ...config, [field]: value });
-  };
+const LoRAForm = memo(function LoRAForm({ config, onChange }: { config: LoRAConfig; onChange: (config: LoRAConfig) => void }) {
+  const handleChange = useCallback(
+    (field: keyof LoRAConfig, value: number | string) => {
+      onChange({ ...config, [field]: value });
+    },
+    [config, onChange],
+  );
+
+  const handleLoraAdapterChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("lora_adapter", e.target.value), [handleChange]);
+  const handleLoraBaseChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("lora_base", e.target.value), [handleChange]);
+  const handleLoraScaleChange = useCallback((v: number) => handleChange("lora_scale", v), [handleChange]);
+  const handleControlVectorsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("control_vectors", e.target.value), [handleChange]);
 
   return (
     <Grid container spacing={2}>
@@ -739,7 +802,7 @@ const LoRAForm = ({ config, onChange }: { config: LoRAConfig; onChange: (config:
             fullWidth
             label="LoRA Adapter Path"
             value={config.lora_adapter}
-            onChange={(e) => handleChange("lora_adapter", e.target.value)}
+            onChange={handleLoraAdapterChange}
             placeholder="/path/to/lora/adapter.bin"
             helperText="Path to LoRA adapter file"
             size="small"
@@ -752,7 +815,7 @@ const LoRAForm = ({ config, onChange }: { config: LoRAConfig; onChange: (config:
             fullWidth
             label="LoRA Base Model"
             value={config.lora_base}
-            onChange={(e) => handleChange("lora_base", e.target.value)}
+            onChange={handleLoraBaseChange}
             placeholder="/path/to/base/model"
             helperText="Base model path for LoRA adapter"
             size="small"
@@ -763,7 +826,7 @@ const LoRAForm = ({ config, onChange }: { config: LoRAConfig; onChange: (config:
         <SliderField
           label="LoRA Scale"
           value={config.lora_scale}
-          onChange={(v) => handleChange("lora_scale", v)}
+          onChange={handleLoraScaleChange}
           min={0}
           max={1}
           step={0.1}
@@ -776,7 +839,7 @@ const LoRAForm = ({ config, onChange }: { config: LoRAConfig; onChange: (config:
             fullWidth
             label="Control Vectors"
             value={config.control_vectors}
-            onChange={(e) => handleChange("control_vectors", e.target.value)}
+            onChange={handleControlVectorsChange}
             placeholder="/path/to/vector1.bin,/path/to/vector2.bin"
             helperText="Comma-separated paths to control vector files"
             size="small"
@@ -787,12 +850,19 @@ const LoRAForm = ({ config, onChange }: { config: LoRAConfig; onChange: (config:
       </Grid>
     </Grid>
   );
-};
+});
 
-const MultimodalForm = ({ config, onChange }: { config: MultimodalConfig; onChange: (config: MultimodalConfig) => void }) => {
-  const handleChange = (field: keyof MultimodalConfig, value: boolean | string) => {
-    onChange({ ...config, [field]: value });
-  };
+const MultimodalForm = memo(function MultimodalForm({ config, onChange }: { config: MultimodalConfig; onChange: (config: MultimodalConfig) => void }) {
+  const handleChange = useCallback(
+    (field: keyof MultimodalConfig, value: boolean | string) => {
+      onChange({ ...config, [field]: value });
+    },
+    [config, onChange],
+  );
+
+  const handleImageDataChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("image_data", e.target.value), [handleChange]);
+  const handleClipVisionCacheChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("clip_vision_cache", e.target.checked), [handleChange]);
+  const handleMmprojChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("mmproj", e.target.value), [handleChange]);
 
   return (
     <Grid container spacing={2}>
@@ -802,7 +872,7 @@ const MultimodalForm = ({ config, onChange }: { config: MultimodalConfig; onChan
             fullWidth
             label="Image Data"
             value={config.image_data}
-            onChange={(e) => handleChange("image_data", e.target.value)}
+            onChange={handleImageDataChange}
             placeholder="Image data or path"
             helperText="Image data for multimodal input"
             size="small"
@@ -817,7 +887,7 @@ const MultimodalForm = ({ config, onChange }: { config: MultimodalConfig; onChan
             <Box sx={{ display: "flex", alignItems: "center" }}>
               <Switch
                 checked={config.clip_vision_cache}
-                onChange={(e) => handleChange("clip_vision_cache", e.target.checked)}
+                onChange={handleClipVisionCacheChange}
               />
               <Typography variant="body2">Cache CLIP Vision Model</Typography>
             </Box>
@@ -830,7 +900,7 @@ const MultimodalForm = ({ config, onChange }: { config: MultimodalConfig; onChan
             fullWidth
             label="MMProj Model Path"
             value={config.mmproj}
-            onChange={(e) => handleChange("mmproj", e.target.value)}
+            onChange={handleMmprojChange}
             placeholder="/path/to/mmproj.bin"
             helperText="Path to multimodal projection model"
             size="small"
@@ -839,7 +909,7 @@ const MultimodalForm = ({ config, onChange }: { config: MultimodalConfig; onChan
       </Grid>
     </Grid>
   );
-};
+});
 
 // ============================================================================
 // Main Dialog Component
@@ -894,8 +964,8 @@ export function ModelConfigDialog({
   // Validation is always true for this component
   const isValid = true;
 
-  // Get title for dialog based on config type
-  const getDialogTitle = (): string => {
+  // Get title for dialog based on config type (memoized)
+  const getDialogTitle = useCallback((): string => {
     const titles: Record<ConfigType, string> = {
       sampling: "Sampling Configuration",
       memory: "Memory Configuration",
@@ -905,25 +975,28 @@ export function ModelConfigDialog({
       multimodal: "Multimodal Configuration",
     };
     return titles[configType];
-  };
+  }, [configType]);
 
-  // Handle form change
-  const handleConfigChange = (
-    newConfig: SamplingConfig | MemoryConfig | GPUConfig | AdvancedConfig | LoRAConfig | MultimodalConfig
-  ) => {
-    setLocalConfig(newConfig);
-  };
+  // Handle form change (memoized)
+  const handleConfigChange = useCallback(
+    (
+      newConfig: SamplingConfig | MemoryConfig | GPUConfig | AdvancedConfig | LoRAConfig | MultimodalConfig
+    ) => {
+      setLocalConfig(newConfig);
+    },
+    [],
+  );
 
-  // Handle save
-  const handleSave = () => {
+  // Handle save (memoized)
+  const handleSave = useCallback(() => {
     if (localConfig) {
       onSave(localConfig);
       onClose();
     }
-  };
+  }, [localConfig, onSave, onClose]);
 
-  // Render appropriate form based on config type
-  const renderForm = () => {
+  // Render appropriate form based on config type (memoized)
+  const renderForm = useCallback(() => {
     switch (configType) {
       case "sampling":
         return <SamplingForm config={localConfig as SamplingConfig} onChange={handleConfigChange} />;
@@ -940,7 +1013,7 @@ export function ModelConfigDialog({
       default:
         return null;
     }
-  };
+  }, [configType, localConfig, handleConfigChange]);
 
   return (
     <Dialog

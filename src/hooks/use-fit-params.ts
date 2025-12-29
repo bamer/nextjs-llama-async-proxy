@@ -41,13 +41,13 @@ export interface ApiResponse<T = unknown> {
   timestamp: number;
 }
 
-export function useFitParams(modelId: number | null) {
+export function useFitParams(modelName: string | null) {
   const [data, setData] = useState<FitParamsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async (): Promise<void> => {
-    if (!modelId) {
+    if (!modelName) {
       return;
     }
 
@@ -55,7 +55,7 @@ export function useFitParams(modelId: number | null) {
     setError(null);
 
     try {
-      const response = await fetch(`/api/models/${modelId}/analyze`);
+      const response = await fetch(`/api/models/${encodeURIComponent(modelName)}/analyze`);
       const result: ApiResponse<{ model: unknown; fitParams: FitParamsData | null }> = await response.json();
 
       if (!response.ok) {
@@ -74,10 +74,10 @@ export function useFitParams(modelId: number | null) {
     } finally {
       setLoading(false);
     }
-  }, [modelId]);
+  }, [modelName]);
 
   const analyze = useCallback(async (): Promise<void> => {
-    if (!modelId) {
+    if (!modelName) {
       return;
     }
 
@@ -85,7 +85,7 @@ export function useFitParams(modelId: number | null) {
     setError(null);
 
     try {
-      const response = await fetch(`/api/models/${modelId}/analyze`, {
+      const response = await fetch(`/api/models/${encodeURIComponent(modelName)}/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
@@ -106,13 +106,13 @@ export function useFitParams(modelId: number | null) {
     } finally {
       setLoading(false);
     }
-  }, [modelId]);
+  }, [modelName]);
 
   useEffect(() => {
-    if (modelId) {
+    if (modelName) {
       refresh();
     }
-  }, [modelId, refresh]);
+  }, [modelName, refresh]);
 
   return { data, loading, error, analyze, refresh };
 }

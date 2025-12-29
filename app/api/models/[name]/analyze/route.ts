@@ -75,7 +75,7 @@ export async function GET(
  * Run fit-params analysis on a specific model by name
  */
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ name: string }> }
 ): Promise<NextResponse> {
   try {
