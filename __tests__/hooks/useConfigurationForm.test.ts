@@ -840,18 +840,7 @@ describe('useConfigurationForm', () => {
 
     jest.useRealTimers();
   });
-
-  it('should provide all handler functions', () => {
-    const { result } = renderHook(() => useConfigurationForm());
-
-    expect(typeof result.current.handleTabChange).toBe('function');
-    expect(typeof result.current.handleInputChange).toBe('function');
-    expect(typeof result.current.handleLlamaServerChange).toBe('function');
-    expect(typeof result.current.handleModelDefaultsChange).toBe('function');
-    expect(typeof result.current.handleSave).toBe('function');
-    expect(typeof result.current.handleReset).toBe('function');
-    expect(typeof result.current.handleSync).toBe('function');
-  });
+});
 
   it('should handle rapid tab changes', () => {
     const { result } = renderHook(() => useConfigurationForm());

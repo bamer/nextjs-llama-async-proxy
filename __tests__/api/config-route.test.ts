@@ -1,4 +1,4 @@
-import { GET, POST } from "../../app/api/config/route";
+import { GET, POST } from "../app/api/config/route";
 import { NextRequest } from "next/server";
 import { loadConfig, saveConfig, loadAppConfig, saveAppConfig } from "@/lib/server-config";
 import { validateRequestBody } from "@/lib/validation-utils";

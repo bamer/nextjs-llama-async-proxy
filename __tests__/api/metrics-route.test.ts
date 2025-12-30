@@ -1,4 +1,4 @@
-import { GET } from "../../app/api/metrics/route";
+import { GET } from "../app/api/metrics/route";
 
 jest.mock("next/server", () => ({
   NextResponse: {

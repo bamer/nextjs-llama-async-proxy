@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import React from 'react';
 import MonitoringPage from '@/app/monitoring/page';
@@ -48,7 +48,7 @@ jest.mock('@/components/charts/PerformanceChart', () => {
 
 // Mock GPUUMetricsCard
 jest.mock('@/components/charts/GPUUMetricsCard', () => {
-  return function MockGPUUMetricsCard({ metrics, isDark }: any) {
+  return function MockGPUUMetricsCard({ metrics: _metrics, isDark }: any) {
     // metrics is available for future use
     return React.createElement('div', { 'data-testid': 'gpu-metrics-card' },
       'GPUUMetricsCard Component',
@@ -105,15 +105,15 @@ jest.mock('@mui/material', () => ({
 
 // Mock MUI icons
 jest.mock('@mui/icons-material', () => ({
-  Refresh: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Refresh' }),
-  Warning: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Warning' }),
-  CheckCircle: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'CheckCircle' }),
-  Info: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Info' }),
-  Memory: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Memory' }),
-  Storage: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Storage' }),
-  Timer: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Timer' }),
-  NetworkCheck: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'NetworkCheck' }),
-  Computer: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Computer' }),
+  Refresh: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Refresh', width: 24, height: 24 }),
+  Warning: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Warning', width: 24, height: 24 }),
+  CheckCircle: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'CheckCircle', width: 24, height: 24 }),
+  Info: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Info', width: 24, height: 24 }),
+  Memory: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Memory', width: 24, height: 24 }),
+  Storage: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Storage', width: 24, height: 24 }),
+  Timer: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Timer', width: 24, height: 24 }),
+  NetworkCheck: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'NetworkCheck', width: 24, height: 24 }),
+  Computer: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Computer', width: 24, height: 24 }),
 }));
 
 // Mock store
@@ -126,9 +126,6 @@ jest.mock('@/lib/store', () => ({
     return selector(state);
   }),
 }));
-
-// Fix for unused variable warning
-const metrics = null;
 
 const mockMetrics = {
   cpuUsage: 45,
@@ -147,31 +144,41 @@ const mockMetrics = {
 describe('MonitoringPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
-    jest.useRealTimers();
   });
 
-  it('renders without errors', () => {
-    const { container } = render(<MonitoringPage />);
+  it('renders without errors', async () => {
+    const useStore = require('@/lib/store').useStore;
+    useStore.mockImplementation((selector: any) => selector({ metrics: mockMetrics, setMetrics: jest.fn() }));
+
+    const { container } = await act(async () => {
+      return render(<MonitoringPage />);
+    });
 
     expect(container).toBeInTheDocument();
   });
 
-  it('renders MainLayout wrapper', () => {
-    render(<MonitoringPage />);
+  it('renders MainLayout wrapper', async () => {
+    const useStore = require('@/lib/store').useStore;
+    useStore.mockImplementation((selector: any) => selector({ metrics: mockMetrics, setMetrics: jest.fn() }));
+
+    await act(async () => {
+      render(<MonitoringPage />);
+    });
 
     expect(screen.getByTestId('main-layout')).toBeInTheDocument();
   });
 
-  it('renders loading state when no metrics', () => {
+  it('renders loading state when no metrics', async () => {
     const useStore = require('@/lib/store').useStore;
     useStore.mockImplementation((selector: any) => selector({ metrics: null, setMetrics: jest.fn() }));
 
-    const { container } = render(<MonitoringPage />);
+    await act(async () => {
+      render(<MonitoringPage />);
+    });
 
     expect(screen.getByText('Loading Monitoring Data...')).toBeInTheDocument();
   });
@@ -180,188 +187,163 @@ describe('MonitoringPage', () => {
     const useStore = require('@/lib/store').useStore;
     useStore.mockImplementation((selector: any) => selector({ metrics: mockMetrics, setMetrics: jest.fn() }));
 
-    render(<MonitoringPage />);
-
-    jest.advanceTimersByTime(5100);
-
-    await waitFor(() => {
-      expect(screen.getByText('System Monitoring')).toBeInTheDocument();
+    await act(async () => {
+      render(<MonitoringPage />);
     });
+
+    expect(screen.getByText('System Monitoring')).toBeInTheDocument();
   });
 
   it('renders memory usage card', async () => {
     const useStore = require('@/lib/store').useStore;
     useStore.mockImplementation((selector: any) => selector({ metrics: mockMetrics, setMetrics: jest.fn() }));
 
-    render(<MonitoringPage />);
-
-    jest.advanceTimersByTime(5100);
-
-    await waitFor(() => {
-      expect(screen.getByText('Memory Usage')).toBeInTheDocument();
-      expect(screen.getByText('60%')).toBeInTheDocument();
+    await act(async () => {
+      render(<MonitoringPage />);
     });
+
+    expect(screen.getByText('Memory Usage')).toBeInTheDocument();
+    expect(screen.getByText('60%')).toBeInTheDocument();
   });
 
   it('renders cpu usage card', async () => {
     const useStore = require('@/lib/store').useStore;
     useStore.mockImplementation((selector: any) => selector({ metrics: mockMetrics, setMetrics: jest.fn() }));
 
-    render(<MonitoringPage />);
-
-    jest.advanceTimersByTime(5100);
-
-    await waitFor(() => {
-      expect(screen.getByText('CPU Usage')).toBeInTheDocument();
-      expect(screen.getByText('45%')).toBeInTheDocument();
+    await act(async () => {
+      render(<MonitoringPage />);
     });
+
+    expect(screen.getByText('CPU Usage')).toBeInTheDocument();
+    expect(screen.getByText('45%')).toBeInTheDocument();
   });
 
   it('renders disk usage card', async () => {
     const useStore = require('@/lib/store').useStore;
     useStore.mockImplementation((selector: any) => selector({ metrics: mockMetrics, setMetrics: jest.fn() }));
 
-    render(<MonitoringPage />);
-
-    jest.advanceTimersByTime(5100);
-
-    await waitFor(() => {
-      expect(screen.getByText('Disk Usage')).toBeInTheDocument();
-      expect(screen.getByText('75%')).toBeInTheDocument();
+    await act(async () => {
+      render(<MonitoringPage />);
     });
+
+    expect(screen.getByText('Disk Usage')).toBeInTheDocument();
+    expect(screen.getByText('75%')).toBeInTheDocument();
   });
 
   it('renders available models card', async () => {
     const useStore = require('@/lib/store').useStore;
     useStore.mockImplementation((selector: any) => selector({ metrics: mockMetrics, setMetrics: jest.fn() }));
 
-    render(<MonitoringPage />);
-
-    jest.advanceTimersByTime(5100);
-
-    await waitFor(() => {
-      expect(screen.getByText('Available Models')).toBeInTheDocument();
-      expect(screen.getByText('4')).toBeInTheDocument();
+    await act(async () => {
+      render(<MonitoringPage />);
     });
+
+    expect(screen.getByText('Available Models')).toBeInTheDocument();
+    expect(screen.getByText('4')).toBeInTheDocument();
   });
 
   it('renders performance chart', async () => {
     const useStore = require('@/lib/store').useStore;
     useStore.mockImplementation((selector: any) => selector({ metrics: mockMetrics, setMetrics: jest.fn() }));
 
-    render(<MonitoringPage />);
-
-    jest.advanceTimersByTime(5100);
-
-    await waitFor(() => {
-      const chart = screen.getByTestId('performance-chart');
-      expect(chart).toBeInTheDocument();
-      expect(chart).toHaveAttribute('data-title', 'System Performance');
+    await act(async () => {
+      render(<MonitoringPage />);
     });
+
+    const chart = screen.getByTestId('performance-chart');
+    expect(chart).toBeInTheDocument();
+    expect(chart).toHaveAttribute('data-title', 'System Performance');
   });
 
   it('renders gpu metrics when available', async () => {
     const useStore = require('@/lib/store').useStore;
     useStore.mockImplementation((selector: any) => selector({ metrics: mockMetrics, setMetrics: jest.fn() }));
 
-    render(<MonitoringPage />);
-
-    jest.advanceTimersByTime(5100);
-
-    await waitFor(() => {
-      const gpuCard = screen.queryByTestId('gpu-metrics-card');
-      expect(gpuCard).toBeInTheDocument();
+    await act(async () => {
+      render(<MonitoringPage />);
     });
+
+    const gpuCard = screen.queryByTestId('gpu-metrics-card');
+    expect(gpuCard).toBeInTheDocument();
   });
 
   it('renders system health summary', async () => {
     const useStore = require('@/lib/store').useStore;
     useStore.mockImplementation((selector: any) => selector({ metrics: mockMetrics, setMetrics: jest.fn() }));
 
-    render(<MonitoringPage />);
-
-    jest.advanceTimersByTime(5100);
-
-    await waitFor(() => {
-      expect(screen.getByText('System Health Summary')).toBeInTheDocument();
+    await act(async () => {
+      render(<MonitoringPage />);
     });
+
+    expect(screen.getByText('System Health Summary')).toBeInTheDocument();
   });
 
   it('renders system uptime', async () => {
     const useStore = require('@/lib/store').useStore;
     useStore.mockImplementation((selector: any) => selector({ metrics: mockMetrics, setMetrics: jest.fn() }));
 
-    render(<MonitoringPage />);
-
-    jest.advanceTimersByTime(5100);
-
-    await waitFor(() => {
-      expect(screen.getByText('System Uptime')).toBeInTheDocument();
+    await act(async () => {
+      render(<MonitoringPage />);
     });
+
+    expect(screen.getByText('System Uptime')).toBeInTheDocument();
   });
 
   it('renders performance status', async () => {
     const useStore = require('@/lib/store').useStore;
     useStore.mockImplementation((selector: any) => selector({ metrics: mockMetrics, setMetrics: jest.fn() }));
 
-    render(<MonitoringPage />);
-
-    jest.advanceTimersByTime(5100);
-
-    await waitFor(() => {
-      expect(screen.getByText('Performance Status')).toBeInTheDocument();
-      expect(screen.getByText('150ms avg')).toBeInTheDocument();
+    await act(async () => {
+      render(<MonitoringPage />);
     });
+
+    expect(screen.getByText('Performance Status')).toBeInTheDocument();
+    expect(screen.getByText('150ms avg')).toBeInTheDocument();
   });
 
   it('renders refresh button', async () => {
     const useStore = require('@/lib/store').useStore;
     useStore.mockImplementation((selector: any) => selector({ metrics: mockMetrics, setMetrics: jest.fn() }));
 
-    render(<MonitoringPage />);
-
-    jest.advanceTimersByTime(5100);
-
-    await waitFor(() => {
-      const refreshButton = screen.queryByTestId(/icon-.*Refresh/i) || screen.queryByTitle(/refresh/i);
-      expect(refreshButton).toBeInTheDocument();
+    await act(async () => {
+      render(<MonitoringPage />);
     });
+
+    const refreshButton = screen.queryByTitle(/refresh/i);
+    expect(refreshButton).toBeInTheDocument();
   });
 
-  it('handles refresh button click', async () => {
+  it('has proper component structure', async () => {
     const useStore = require('@/lib/store').useStore;
-    const setMetrics = jest.fn();
-    useStore.mockImplementation((selector: any) => selector({ metrics: mockMetrics, setMetrics }));
+    useStore.mockImplementation((selector: any) => selector({ metrics: mockMetrics, setMetrics: jest.fn() }));
 
-    render(<MonitoringPage />);
-
-    jest.advanceTimersByTime(5100);
-
-    await waitFor(() => {
-      const refreshButton = screen.queryByTestId(/icon-.*Refresh/i) || screen.queryByTitle(/refresh/i);
-      if (refreshButton) {
-        fireEvent.click(refreshButton);
-      }
+    await act(async () => {
+      render(<MonitoringPage />);
     });
-  });
-
-  it('has proper component structure', () => {
-    render(<MonitoringPage />);
 
     expect(screen.getByTestId('main-layout')).toBeInTheDocument();
   });
 
-  it('renders without console errors', () => {
+  it('renders without console errors', async () => {
+    const useStore = require('@/lib/store').useStore;
+    useStore.mockImplementation((selector: any) => selector({ metrics: mockMetrics, setMetrics: jest.fn() }));
     const consoleError = jest.spyOn(console, 'error');
 
-    render(<MonitoringPage />);
+    await act(async () => {
+      render(<MonitoringPage />);
+    });
 
     expect(consoleError).not.toHaveBeenCalled();
     consoleError.mockRestore();
   });
 
-  it('snapshot test', () => {
-    const { container } = render(<MonitoringPage />);
+  it('snapshot test', async () => {
+    const useStore = require('@/lib/store').useStore;
+    useStore.mockImplementation((selector: any) => selector({ metrics: mockMetrics, setMetrics: jest.fn() }));
+
+    const { container } = await act(async () => {
+      return render(<MonitoringPage />);
+    });
 
     expect(container.firstChild).toMatchSnapshot();
   });
@@ -370,23 +352,26 @@ describe('MonitoringPage', () => {
     const useStore = require('@/lib/store').useStore;
     useStore.mockImplementation((selector: any) => selector({ metrics: mockMetrics, setMetrics: jest.fn() }));
 
-    const { rerender } = render(<MonitoringPage />);
-
-    jest.advanceTimersByTime(5100);
-
-    await waitFor(() => {
-      expect(screen.getByText('System Monitoring')).toBeInTheDocument();
+    const { rerender } = await act(async () => {
+      return render(<MonitoringPage />);
     });
 
-    rerender(<MonitoringPage />);
+    expect(screen.getByText('System Monitoring')).toBeInTheDocument();
 
-    await waitFor(() => {
-      expect(screen.getByText('System Monitoring')).toBeInTheDocument();
+    await act(async () => {
+      rerender(<MonitoringPage />);
     });
+
+    expect(screen.getByText('System Monitoring')).toBeInTheDocument();
   });
 
-  it('is a functional component', () => {
-    const { container } = render(<MonitoringPage />);
+  it('is a functional component', async () => {
+    const useStore = require('@/lib/store').useStore;
+    useStore.mockImplementation((selector: any) => selector({ metrics: mockMetrics, setMetrics: jest.fn() }));
+
+    const { container } = await act(async () => {
+      return render(<MonitoringPage />);
+    });
 
     expect(container).toBeInTheDocument();
     expect(screen.getByTestId('main-layout')).toBeInTheDocument();

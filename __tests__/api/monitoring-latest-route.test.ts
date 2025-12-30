@@ -1,4 +1,4 @@
-import { GET } from "../../../app/api/monitoring/latest/route";
+import { GET } from "../../app/api/monitoring/latest/route";
 import { MonitoringEntry } from "@/types/monitoring";
 
 jest.mock("next/server", () => ({

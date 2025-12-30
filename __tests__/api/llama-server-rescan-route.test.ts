@@ -1,4 +1,4 @@
-import { POST } from "../../app/api/llama-server/rescan/route";
+import { POST } from "../app/api/llama-server/rescan/route";
 import { NextRequest } from "next/server";
 import { validateRequestBody } from "@/lib/validation-utils";
 import { rescanRequestSchema } from "@/lib/validators";

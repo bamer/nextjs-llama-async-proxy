@@ -1,5 +1,5 @@
-import { GET } from "../../../app/api/models/[name]/analyze/route";
-import { POST } from "../../../app/api/models/[name]/analyze/route";
+import { GET } from "../../app/api/models/[name]/analyze/route";
+import { POST } from "../../app/api/models/[name]/analyze/route";
 import { NextRequest } from "next/server";
 import { initDatabase, getModels, getModelFitParams, saveModelFitParams } from "@/lib/database";
 import { analyzeModel } from "@/server/services/fit-params-service";

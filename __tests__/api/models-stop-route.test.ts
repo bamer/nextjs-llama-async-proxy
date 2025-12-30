@@ -1,4 +1,4 @@
-import { POST } from "../../../app/api/models/[name]/stop/route";
+import { POST } from "../../app/api/models/[name]/stop/route";
 import { NextRequest } from "next/server";
 import { validateRequestBody } from "@/lib/validation-utils";
 import { stopModelRequestSchema } from "@/lib/validators";

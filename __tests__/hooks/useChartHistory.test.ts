@@ -426,3 +426,218 @@ describe('useChartHistory', () => {
     expect(callArg.cpu[1].value).toBe(75);
   });
 });
+
+  describe('debounce behavior (line 103 coverage)', () => {
+    it('should skip updates when less than 5 seconds have passed', () => {
+      let metricsCallCount = 0;
+
+      useStore.mockImplementation((selector: any) => {
+        metricsCallCount++;
+        const state = {
+          metrics: { cpuUsage: 75, memoryUsage: 50, totalRequests: 100 },
+          chartHistory: {
+            cpu: [],
+            memory: [],
+            requests: [],
+            gpuUtil: [],
+            power: [],
+          },
+          setChartData: mockSetChartData,
+        };
+        return selector(state);
+      });
+
+      renderHook(() => useChartHistory());
+
+      expect(mockSetChartData).toHaveBeenCalledTimes(1);
+
+      act(() => {
+        jest.advanceTimersByTime(3000); // Less than 5000ms
+      });
+
+      // Should not have made a second call due to debounce
+      expect(mockSetChartData).toHaveBeenCalledTimes(1);
+    });
+
+    it('should trigger updates when exactly 5 seconds have passed', () => {
+      let metricsCallCount = 0;
+
+      useStore.mockImplementation((selector: any) => {
+        metricsCallCount++;
+        const state = {
+          metrics: { cpuUsage: 80, memoryUsage: 60, totalRequests: 150 },
+          chartHistory: {
+            cpu: [],
+            memory: [],
+            requests: [],
+            gpuUtil: [],
+            power: [],
+          },
+          setChartData: mockSetChartData,
+        };
+        return selector(state);
+      });
+
+      renderHook(() => useChartHistory());
+
+      expect(mockSetChartData).toHaveBeenCalledTimes(1);
+
+      act(() => {
+        jest.advanceTimersByTime(5000); // Exactly 5000ms
+      });
+
+      // Should have made a second call
+      expect(mockSetChartData).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('null metrics handling (line 97 coverage)', () => {
+    it('should return early when metrics is null', () => {
+      useStore.mockImplementation((selector: any) => {
+        const state = {
+          metrics: null, // This is the key - metrics is null
+          chartHistory: {
+            cpu: [],
+            memory: [],
+            requests: [],
+            gpuUtil: [],
+            power: [],
+          },
+          setChartData: mockSetChartData,
+        };
+        return selector(state);
+      });
+
+      const { result } = renderHook(() => useChartHistory());
+
+      expect(result.current).toEqual({
+        cpu: [],
+        memory: [],
+        requests: [],
+        gpuUtil: [],
+        power: [],
+      });
+
+      // setChartData should only be called once for initialization
+      expect(mockSetChartData).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('null value handling for chart updates (lines 56-70 coverage)', () => {
+    it('should handle null values for all chart types in flushUpdates', () => {
+      const existingHistory = {
+        cpu: [{ time: '2024-01-01', displayTime: '10:00:00', value: 50 }],
+        memory: [],
+        requests: [],
+        gpuUtil: [],
+        power: [],
+      };
+
+      useStore.mockImplementation((selector: any) => {
+        const state = {
+          metrics: { cpuUsage: 75, memoryUsage: 50, totalRequests: 100 },
+          chartHistory: existingHistory,
+          setChartData: mockSetChartData,
+        };
+        return selector(state);
+      });
+
+      const { result } = renderHook(() => useChartHistory());
+
+      act(() => {
+        jest.advanceTimersByTime(5000);
+      });
+
+      const callArg = mockSetChartData.mock.calls[1][0];
+
+      expect(callArg.cpu).toHaveLength(2); // Existing + new
+      expect(callArg.memory).toHaveLength(1); // Only new value added
+    });
+  });
+
+  describe('GPU metrics optional handling (lines 113, 117 coverage)', () => {
+    it('should handle when gpuUsage is undefined', () => {
+      useStore.mockImplementation((selector: any) => {
+        const state = {
+          metrics: {
+            cpuUsage: 75,
+            memoryUsage: 50,
+            totalRequests: 100,
+            gpuUsage: undefined, // GPU usage not available
+          },
+          chartHistory: {
+            cpu: [],
+            memory: [],
+            requests: [],
+            gpuUtil: [],
+            power: [],
+          },
+          setChartData: mockSetChartData,
+        };
+        return selector(state);
+      });
+
+      const { result } = renderHook(() => useChartHistory());
+
+      expect(mockSetChartData).toHaveBeenCalled();
+    });
+
+    it('should handle when gpuPowerUsage is undefined', () => {
+      useStore.mockImplementation((selector: any) => {
+        const state = {
+          metrics: {
+            cpuUsage: 75,
+            memoryUsage: 50,
+            totalRequests: 100,
+            gpuUsage: 80,
+            gpuPowerUsage: undefined, // GPU power not available
+          },
+          chartHistory: {
+            cpu: [],
+            memory: [],
+            requests: [],
+            gpuUtil: [],
+            power: [],
+          },
+          setChartData: mockSetChartData,
+        };
+        return selector(state);
+      });
+
+      const { result } = renderHook(() => useChartHistory());
+
+      expect(mockSetChartData).toHaveBeenCalled();
+    });
+
+    it('should handle when both GPU metrics are defined', () => {
+      useStore.mockImplementation((selector: any) => {
+        const state = {
+          metrics: {
+            cpuUsage: 75,
+            memoryUsage: 50,
+            totalRequests: 100,
+            gpuUsage: 85,
+            gpuPowerUsage: 250,
+          },
+          chartHistory: {
+            cpu: [],
+            memory: [],
+            requests: [],
+            gpuUtil: [],
+            power: [],
+          },
+          setChartData: mockSetChartData,
+        };
+        return selector(state);
+      });
+
+      const { result } = renderHook(() => useChartHistory());
+
+      const callArg = mockSetChartData.mock.calls[0][0];
+
+      expect(callArg.gpuUtil).toHaveLength(1);
+      expect(callArg.power).toHaveLength(1);
+      expect(callArg.gpuUtil[0].value).toBe(85);
+      expect(callArg.power[0].value).toBe(250);
+    });
+  });

@@ -449,3 +449,110 @@ describe('useLoggerConfig', () => {
     expect(Object.keys(result.current.fieldErrors).length).toBeGreaterThan(0);
   });
 });
+
+  describe('validateConfig error handling (lines 40-46)', () => {
+    it('should handle missing consoleLevel', () => {
+      const { result } = renderHook(() => useLoggerConfig());
+
+      act(() => {
+        result.current.updateConfig({
+          consoleLevel: undefined as any,
+        });
+      });
+
+      expect(result.current.fieldErrors).toHaveProperty('consoleLevel');
+      expect(result.current.fieldErrors.consoleLevel).toBeTruthy();
+    });
+
+    it('should handle missing fileLevel', () => {
+      const { result } = renderHook(() => useLoggerConfig());
+
+      act(() => {
+        result.current.updateConfig({
+          fileLevel: undefined as any,
+        });
+      });
+
+      expect(result.current.fieldErrors).toHaveProperty('fileLevel');
+    });
+
+    it('should handle missing errorLevel', () => {
+      const { result } = renderHook(() => useLoggerConfig());
+
+      act(() => {
+        result.current.updateConfig({
+          errorLevel: undefined as any,
+        });
+      });
+
+      expect(result.current.fieldErrors).toHaveProperty('errorLevel');
+    });
+
+    it('should handle missing maxFileSize', () => {
+      const { result } = renderHook(() => useLoggerConfig());
+
+      act(() => {
+        result.current.updateConfig({
+          maxFileSize: undefined as any,
+        });
+      });
+
+      expect(result.current.fieldErrors).toHaveProperty('maxFileSize');
+    });
+
+    it('should handle missing maxFiles', () => {
+      const { result } = renderHook(() => useLoggerConfig());
+
+      act(() => {
+        result.current.updateConfig({
+          maxFiles: undefined as any,
+        });
+      });
+
+      expect(result.current.fieldErrors).toHaveProperty('maxFiles');
+    });
+
+    it('should use defaults when enableFileLogging is undefined', () => {
+      const { result } = renderHook(() => useLoggerConfig());
+
+      act(() => {
+        result.current.updateConfig({
+          enableFileLogging: undefined as any,
+        });
+      });
+
+      // Should use default value of true
+      expect(result.current.loggerConfig.enableFileLogging).toBe(true);
+    });
+
+    it('should use defaults when enableConsoleLogging is undefined', () => {
+      const { result } = renderHook(() => useLoggerConfig());
+
+      act(() => {
+        result.current.updateConfig({
+          enableConsoleLogging: undefined as any,
+        });
+      });
+
+      // Should use default value of true
+      expect(result.current.loggerConfig.enableConsoleLogging).toBe(true);
+    });
+
+    it('should have no errors when all values are valid', () => {
+      const { result } = renderHook(() => useLoggerConfig());
+
+      act(() => {
+        result.current.updateConfig({
+          consoleLevel: 'info',
+          fileLevel: 'info',
+          errorLevel: 'error',
+          maxFileSize: '20m',
+          maxFiles: '30d',
+          enableFileLogging: true,
+          enableConsoleLogging: true,
+        });
+      });
+
+      expect(result.current.fieldErrors).toEqual({});
+    });
+  });

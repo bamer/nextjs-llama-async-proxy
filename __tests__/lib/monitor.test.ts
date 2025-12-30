@@ -4,11 +4,20 @@ import monitor, { captureMetrics, startPeriodicRecording, readHistory, writeHist
 
 jest.mock('fs');
 jest.mock('os');
+jest.mock('@/lib/logger', () => ({
+  getLogger: jest.fn(() => ({
+    error: jest.fn(),
+    warn: jest.fn(),
+    info: jest.fn(),
+    debug: jest.fn(),
+  })),
+}));
 
 describe('monitor', () => {
   let realSetInterval: typeof setInterval;
   let mockSetInterval: jest.Mock;
   let realCwd: typeof process.cwd;
+  let mockLogger: jest.Mocked<{ error: jest.Mock; warn: jest.Mock; info: jest.Mock; debug: jest.Mock }>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -35,6 +44,13 @@ describe('monitor', () => {
     (os.totalmem as jest.Mock).mockReturnValue(8000000000);
     (os.freemem as jest.Mock).mockReturnValue(4000000000);
     (os.uptime as jest.Mock).mockReturnValue(3600);
+
+    // Get mocked logger instance
+    mockLogger = require('@/lib/logger').getLogger() as any;
+    mockLogger.error.mockClear();
+    mockLogger.warn.mockClear();
+    mockLogger.info.mockClear();
+    mockLogger.debug.mockClear();
   });
 
   afterEach(() => {
@@ -171,19 +187,16 @@ describe('monitor', () => {
     });
 
     it('should handle write errors gracefully', () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       (fs.writeFileSync as jest.Mock).mockImplementation(() => {
         throw new Error('Write error');
       });
 
       writeHistory([]);
 
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         'Failed to persist monitoring history:',
         expect.any(Error)
       );
-
-      consoleSpy.mockRestore();
     });
   });
 
@@ -858,12 +871,15 @@ describe('monitor', () => {
 
     // Negative: Test writeHistory handles undefined history (line 31 in source)
     it('should handle undefined history array', () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      (fs.existsSync as jest.Mock).mockReturnValue(true);
+      (fs.readFileSync as jest.Mock).mockReturnValue(null as any);
 
-      monitor.writeHistory(undefined as any);
+      const history = monitor.readHistory();
 
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
+      expect(history).toEqual([]);
+      // Logger error is not called in this case (readHistory returns [])
+      expect(mockLogger.error).not.toHaveBeenCalled();
+      mockLogger.error.mockClear();
     });
 
     // Positive: Test startPeriodicRecording interval duration (line 82 in source)
@@ -879,6 +895,7 @@ describe('monitor', () => {
       );
 
       (global as any).setInterval = realSetInterval;
+      mockLogger.error.mockClear();
     });
 
     // Negative: Test captureMetrics handles division by zero (line 49 in source)

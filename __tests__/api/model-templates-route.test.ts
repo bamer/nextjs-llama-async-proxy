@@ -1,4 +1,4 @@
-import { GET, POST } from "../../app/api/model-templates/route";
+import { GET, POST } from "../app/api/model-templates/route";
 import { NextRequest } from "next/server";
 import { promises as fs } from "fs";
 import { validateRequestBody, validateConfig } from "@/lib/validation-utils";

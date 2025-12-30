@@ -559,3 +559,86 @@ describe('useFitParams', () => {
     });
   });
 });
+  describe('analyze error branch coverage (line 96)', () => {
+    it('should handle analyze HTTP error responses', async () => {
+      fetchMock.mockResolvedValue({
+        ok: false,
+        json: () => Promise.resolve({
+          success: false,
+          error: {
+            code: 'ANALYSIS_FAILED',
+            message: 'Model analysis failed',
+          },
+          timestamp: Date.now(),
+        }),
+      });
+
+      const { result } = renderHook(() => useFitParams('test-model'));
+
+      await act(async () => {
+        await result.current.analyze();
+      });
+
+      expect(result.current.error).toBe('Model analysis failed');
+      expect(result.current.loading).toBe(false);
+    });
+
+    it('should handle analyze network errors', async () => {
+      fetchMock.mockRejectedValue(new Error('Network failure'));
+
+      const { result } = renderHook(() => useFitParams('test-model'));
+
+      await act(async () => {
+        await result.current.analyze();
+      });
+
+      expect(result.current.error).toBe('Network failure');
+      expect(result.current.loading).toBe(false);
+    });
+  });
+
+  describe('success/fitParams null handling (line 99)', () => {
+    it('should set null when success is false', async () => {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          success: false,
+          data: {
+            model: { id: 123, name: 'test-model' },
+            fitParams: null, // Explicitly null
+          },
+          timestamp: Date.now(),
+        }),
+      });
+
+      const { result } = renderHook(() => useFitParams('test-model'));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.data).toBeNull();
+    });
+
+    it('should set null when fitParams is undefined', async () => {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          success: true,
+          data: {
+            model: { id: 123, name: 'test-model' },
+            // fitParams property missing
+          },
+          timestamp: Date.now(),
+        }),
+      });
+
+      const { result } = renderHook(() => useFitParams('test-model'));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.data).toBeNull();
+    });
+  });

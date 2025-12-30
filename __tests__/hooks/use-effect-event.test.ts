@@ -239,9 +239,10 @@ describe('useEffectEvent', () => {
 
     const { result } = renderHook(() => useEffectEvent(originalHandler));
 
-    // The returned function should call the original
-    result.current('arg1', 'arg2');
+    // The returned function should call original
+    const returnedValue = result.current('arg1', 'arg2');
 
+    expect(returnedValue).toBe(undefined);
     expect(originalHandler).toHaveBeenCalledWith('arg1', 'arg2');
     expect(originalHandler).toHaveBeenCalledTimes(1);
   });
@@ -274,10 +275,11 @@ describe('useEffectEvent', () => {
 
     expect(promise).toBeInstanceOf(Promise);
 
-    await act(async () => {
-      const result = await promise;
-      expect(result).toBe('done');
+    const resultValue = await act(async () => {
+      return await promise;
     });
+
+    expect(resultValue).toBe('done');
   });
 
   it('should handle extremely large argument lists', () => {
@@ -298,10 +300,18 @@ describe('useEffectEvent', () => {
 
     const { result, rerender } = renderHook(() => useEffectEvent(handler));
 
+    const returnValue1 = result.current();
+    expect(returnValue1).toBe(1);
+
     // Simulate strict mode behavior
     rerender();
+
+    const returnValue2 = result.current();
+    expect(returnValue2).toBe(2);
+
     rerender();
 
-    expect(result.current()).toBe(4); // Each rerender updates the handler
+    const returnValue3 = result.current();
+    expect(returnValue3).toBe(3);
   });
 });

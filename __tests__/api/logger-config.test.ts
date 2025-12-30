@@ -1,4 +1,4 @@
-import { POST } from "../../app/api/logger/config/route";
+import { POST } from "../app/api/logger/config/route";
 import { NextRequest } from "next/server";
 
 jest.mock("next/server", () => ({

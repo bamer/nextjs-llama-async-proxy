@@ -1,4 +1,4 @@
-import { POST } from "../../../app/api/models/[name]/start/route";
+import { POST } from "../../app/api/models/[name]/start/route";
 import { NextRequest } from "next/server";
 import { loadAppConfig } from "@/lib/server-config";
 import { validateRequestBody } from "@/lib/validation-utils";
@@ -148,6 +148,11 @@ describe("POST /api/models/:name/start", () => {
     const mockRequest = {
       json: jest.fn().mockResolvedValue({}),
     } as unknown as NextRequest;
+
+    (validateRequestBody as jest.Mock).mockReturnValue({
+      success: true,
+      data: { model: "llama-2-7b" },
+    });
 
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
     const response = await POST(mockRequest, { params: mockParams });
