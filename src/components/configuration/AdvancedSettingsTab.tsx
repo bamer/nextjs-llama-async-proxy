@@ -1,9 +1,11 @@
-'use client';
+"use client";
 
-import { Card, CardContent, Typography, Box, Button } from "@mui/material";
+import React from "react";
+import { Typography, Box, Button } from "@mui/material";
+import { Tune as AdvancedIcon, Restore, Sync } from "@mui/icons-material";
 import { m } from "framer-motion";
+import { FormSection } from "@/components/ui/FormSection";
 import { useTheme } from "@/contexts/ThemeContext";
-import { Save, Restore, Sync } from "@mui/icons-material";
 
 interface AdvancedSettingsTabProps {
   isSaving: boolean;
@@ -24,27 +26,13 @@ export function AdvancedSettingsTab({
       animate={{ opacity: 1 }}
       transition={{ delay: 0.2, duration: 0.5 }}
     >
-      <Card
-        sx={{
-          mb: 4,
-          background: isDark
-            ? "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)"
-            : "linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)",
-          boxShadow: isDark
-            ? "0 8px 30px rgba(0, 0, 0, 0.3)"
-            : "0 8px 30px rgba(0, 0, 0, 0.1)",
-        }}
-      >
-        <CardContent>
-          <Typography variant="h5" fontWeight="bold" mb={4}>
-            Advanced Settings
-          </Typography>
-
+      <FormSection title="Advanced Settings" icon={<AdvancedIcon />} divider={false}>
+        <Box>
           <Typography variant="body1" color="text.secondary" mb={3}>
             Advanced configuration options for power users.
           </Typography>
 
-          <Box sx={{ display: "flex", gap: 2, mb: 4 }}>
+          <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
             <Button
               variant="outlined"
               startIcon={<Restore />}
@@ -63,11 +51,11 @@ export function AdvancedSettingsTab({
             </Button>
           </Box>
 
-          <Typography variant="body2" color="text.secondary" mb={2}>
+          <Typography variant="body2" color="text.secondary">
             Current configuration version: 2.0
           </Typography>
-        </CardContent>
-      </Card>
+        </Box>
+      </FormSection>
     </m.div>
   );
 }
