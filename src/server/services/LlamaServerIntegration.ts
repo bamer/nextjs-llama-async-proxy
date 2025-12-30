@@ -27,6 +27,7 @@ import {
   getModelLoraConfig,
   saveModelMultimodalConfig,
   getModelMultimodalConfig,
+  saveMetrics as saveMetricsToDb,
 } from "../../lib/database";
 
 export interface SystemMetrics {
@@ -135,6 +136,32 @@ export class LlamaServerIntegration {
     this.metricsInterval = setInterval(async () => {
       const metrics = await this.collectMetrics();
       this.io.emit("metrics", { type: "metrics", data: metrics, timestamp: Date.now() });
+
+      // Also persist metrics to database for chart history
+      try {
+        logger.debug('[METRICS] Saving to database:', {
+          cpu: metrics.cpuUsage,
+          memory: metrics.memoryUsage,
+          gpu: metrics.gpuUsage,
+          requests: metrics.totalRequests
+        });
+        saveMetricsToDb({
+          cpu_usage: metrics.cpuUsage,
+          memory_usage: metrics.memoryUsage,
+          disk_usage: metrics.diskUsage,
+          gpu_usage: metrics.gpuUsage || 0,
+          gpu_temperature: metrics.gpuTemperature || 0,
+          gpu_memory_used: metrics.gpuMemoryUsed || 0,
+          gpu_memory_total: metrics.gpuMemoryTotal || 0,
+          gpu_power_usage: metrics.gpuPowerUsage || 0,
+          active_models: metrics.activeModels || 0,
+          uptime: metrics.uptime || 0,
+          requests_per_minute: Math.round((metrics.totalRequests || 0) / 10),
+        });
+        logger.debug('✅ Metrics saved to database successfully');
+      } catch (error) {
+        logger.error('❌ Failed to save metrics to database:', error);
+      }
     }, 3000);
 
     logger.info("📊 Metrics broadcasting started (every 3s)");

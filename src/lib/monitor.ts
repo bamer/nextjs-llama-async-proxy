@@ -1,13 +1,14 @@
 /**
  * Real‑time monitoring utilities for the Next.js server.
  * - Captures CPU / memory usage every 30 seconds.
- * - Persists the data to `data/monitoring-history.json`.
+ * - Persists the data to both `data/monitoring-history.json` and database.
  * - Starts automatically when the module is first imported (server‑only).
  */
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { getLogger } from './logger';
+import { saveMetrics as saveMetricsToDb } from './database';
 
 const logger = getLogger();
 
@@ -92,6 +93,26 @@ export function startPeriodicRecording() {
     const history = readHistory();
     history.push({ ...metrics, id: Date.now() });
     writeHistory(history);
+
+    // Also save to database for chart persistence
+    try {
+      saveMetricsToDb({
+        cpu_usage: metrics.cpuUsage,
+        memory_usage: metrics.memoryUsage,
+        disk_usage: 0, // monitor.ts doesn't capture disk usage yet
+        gpu_usage: 0, // GPU metrics come from WebSocket, not os module
+        gpu_temperature: 0,
+        gpu_memory_used: 0,
+        gpu_memory_total: 0,
+        gpu_power_usage: 0,
+        active_models: 0, // This comes from WebSocket/state
+        uptime: metrics.uptimeSeconds,
+        requests_per_minute: 0, // This comes from WebSocket/state
+      });
+      logger.debug('Metrics saved to database');
+    } catch (error) {
+      logger.error('Failed to save metrics to database:', error);
+    }
   }, RECORDING_INTERVAL_MS);
 }
 

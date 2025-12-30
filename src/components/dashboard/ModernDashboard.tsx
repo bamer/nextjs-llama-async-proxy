@@ -78,7 +78,15 @@ export default function ModernDashboard () {
     // Data requests are now handled by useWebSocket hook when connection is established
     const timer = setTimeout(() => setLoading(false), 1500);
     return () => clearTimeout(timer);
-  }, []); // No dependencies - only run once on mount
+  }, []);
+
+  // FIX: Load models from database if store is empty on mount
+  useEffect(() => {
+    if (models.length === 0 && isConnected) {
+      console.log('[Dashboard] Models store is empty, requesting load from database...');
+      sendMessage('load_models', {});
+    }
+  }, [models.length, isConnected, sendMessage]); // No dependencies - only run once on mount
 
   // React 19.2: Use useEffectEvent for stable event handlers
   const handleRefresh = ReactUseEffectEvent(() => {
