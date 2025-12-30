@@ -27,15 +27,7 @@ describe('useConfigurationForm - Basic Functionality', () => {
     global.fetch = jest.fn(() =>
       Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({
-          serverConfig: DEFAULT_SERVER_CONFIG,
-          appConfig: {
-            logLevel: "info",
-            maxConcurrentModels: 1,
-            autoUpdate: false,
-            notificationsEnabled: true,
-          }
-        }),
+        json: () => Promise.resolve(DEFAULT_SERVER_CONFIG),
       } as Response)
     ) as jest.Mock;
 
@@ -100,6 +92,10 @@ describe('useConfigurationForm - Basic Functionality', () => {
 
     await waitFor(() => {
       expect(result.current.isLoadingConfig).toBe(false);
+    });
+
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
     });
 
     expect(result.current.formConfig).toEqual({

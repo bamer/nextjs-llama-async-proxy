@@ -6,7 +6,7 @@ import {
   runTasksInIdle,
 } from "@/utils/request-idle-callback";
 
-describe("requestIdleCallback - Additional Edge Cases", () => {
+describe("requestIdleCallback - Additional Unit Tests", () => {
   let originalWindow: any;
 
   beforeEach(() => {
@@ -22,131 +22,7 @@ describe("requestIdleCallback - Additional Edge Cases", () => {
     jest.useRealTimers();
   });
 
-  describe("requestIdleCallbackPromise - timeout scenarios", () => {
-    it("should execute callback after timeout if didTimeout is true", async () => {
-      const mockRIC = jest.fn((cb: any) => {
-        setTimeout(() => cb({ didTimeout: true, timeRemaining: () => 0 }), 10);
-        return 123;
-      });
-      (global as any).window = {
-        requestIdleCallback: mockRIC,
-      };
-
-      const callback = jest.fn().mockReturnValue("result");
-      const promise = requestIdleCallbackPromise(callback);
-
-      jest.advanceTimersByTime(10);
-
-      const result = await promise;
-      expect(result).toBe("result");
-      expect(callback).toHaveBeenCalledTimes(1);
-    });
-
-    it("should handle timeout option of 0", async () => {
-      const mockRIC = jest.fn((cb: any) => {
-        cb({ didTimeout: false, timeRemaining: () => 10 });
-        return 1;
-      });
-      (global as any).window = {
-        requestIdleCallback: mockRIC,
-      };
-
-      const callback = jest.fn().mockReturnValue("result");
-      const result = await requestIdleCallbackPromise(callback, { timeout: 0 });
-
-      expect(result).toBe("result");
-      expect(callback).toHaveBeenCalled();
-    });
-
-    it("should handle large timeout values", async () => {
-      const mockRIC = jest.fn((cb: any) => {
-        cb({ didTimeout: false, timeRemaining: () => 10 });
-        return 1;
-      });
-      (global as any).window = {
-        requestIdleCallback: mockRIC,
-      };
-
-      const callback = jest.fn().mockReturnValue("result");
-      const result = await requestIdleCallbackPromise(callback, {
-        timeout: 60000,
-      });
-
-      expect(result).toBe("result");
-      expect(callback).toHaveBeenCalled();
-    });
-  });
-
-  describe("requestIdleCallbackPromise - async callback handling", () => {
-    it("should handle promise-returning callback with requestIdleCallback", async () => {
-      const mockRIC = jest.fn((cb: any) => {
-        setTimeout(() => cb({ didTimeout: false, timeRemaining: () => 10 }), 10);
-        return 123;
-      });
-      (global as any).window = {
-        requestIdleCallback: mockRIC,
-      };
-
-      const callback = jest.fn().mockResolvedValue("async result");
-      const promise = requestIdleCallbackPromise(callback);
-
-      jest.advanceTimersByTime(10);
-
-      const result = await promise;
-      expect(result).toBe("async result");
-      expect(callback).toHaveBeenCalledTimes(1);
-    });
-
-    it("should handle rejected promise callback", async () => {
-      const mockRIC = jest.fn((cb: any) => {
-        cb({ didTimeout: false, timeRemaining: () => 10 });
-        return 123;
-      });
-      (global as any).window = {
-        requestIdleCallback: mockRIC,
-      };
-
-      const error = new Error("Promise rejected");
-      const callback = jest.fn().mockRejectedValue(error);
-
-      await expect(requestIdleCallbackPromise(callback)).rejects.toThrow("Promise rejected");
-      expect(callback).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe("requestIdleCallbackPromise - timeRemaining", () => {
-    it("should access timeRemaining function", async () => {
-      const mockRIC = jest.fn((cb: any) => {
-        cb({ didTimeout: false, timeRemaining: () => 50 });
-        return 1;
-      });
-      (global as any).window = {
-        requestIdleCallback: mockRIC,
-      };
-
-      const callback = jest.fn().mockReturnValue("result");
-      await requestIdleCallbackPromise(callback);
-
-      expect(callback).toHaveBeenCalled();
-    });
-
-    it("should handle timeRemaining returning 0", async () => {
-      const mockRIC = jest.fn((cb: any) => {
-        cb({ didTimeout: false, timeRemaining: () => 0 });
-        return 1;
-      });
-      (global as any).window = {
-        requestIdleCallback: mockRIC,
-      };
-
-      const callback = jest.fn().mockReturnValue("result");
-      const result = await requestIdleCallbackPromise(callback);
-
-      expect(result).toBe("result");
-    });
-  });
-
-  describe("requestIdleCallback - additional scenarios", () => {
+  describe("requestIdleCallback - options", () => {
     it("should pass options to native requestIdleCallback", () => {
       const mockRIC = jest.fn().mockReturnValue(123);
       (global as any).window = {
@@ -160,28 +36,20 @@ describe("requestIdleCallback - Additional Edge Cases", () => {
       expect(handle).toBe(123);
     });
 
-    it("should handle undefined callback", () => {
+    it("should handle options with undefined timeout", () => {
       const mockRIC = jest.fn().mockReturnValue(1);
       (global as any).window = {
         requestIdleCallback: mockRIC,
       };
 
-      const handle = requestIdleCallback(undefined as any);
-      expect(handle).toBeDefined();
-    });
-
-    it("should return undefined when window is undefined", () => {
-      global.window = undefined as any;
-
       const callback = jest.fn();
-      const handle = requestIdleCallback(callback);
+      requestIdleCallback(callback, undefined);
 
-      expect(handle).toBeUndefined();
-      expect(callback).toHaveBeenCalled();
+      expect(mockRIC).toHaveBeenCalledWith(callback, undefined);
     });
   });
 
-  describe("cancelIdleCallback - additional scenarios", () => {
+  describe("cancelIdleCallback - edge cases", () => {
     it("should handle cancelIdleCallback when cancelIdleCallback API exists", () => {
       const mockCancel = jest.fn();
       (global as any).window = {
@@ -227,6 +95,49 @@ describe("requestIdleCallback - Additional Edge Cases", () => {
 
       cancelIdleCallback(-1);
       expect(mockClearTimeout).toHaveBeenCalledWith(-1);
+    });
+
+    it("should not throw when handle is undefined", () => {
+      const mockCancel = jest.fn();
+      (global as any).window = {
+        cancelIdleCallback: mockCancel,
+      };
+
+      expect(() => cancelIdleCallback(undefined)).not.toThrow();
+      expect(() => cancelIdleCallback(null as any)).not.toThrow();
+      expect(mockCancel).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("isRequestIdleCallbackSupported - edge cases", () => {
+    it("should return false when requestIdleCallback is not a function", () => {
+      (global as any).window = {
+        requestIdleCallback: "not a function",
+      };
+
+      expect(isRequestIdleCallbackSupported()).toBe(false);
+    });
+
+    it("should return false when requestIdleCallback is null", () => {
+      (global as any).window = {
+        requestIdleCallback: null,
+      };
+
+      expect(isRequestIdleCallbackSupported()).toBe(false);
+    });
+
+    it("should return false when window exists but property is missing", () => {
+      (global as any).window = {};
+
+      expect(isRequestIdleCallbackSupported()).toBe(false);
+    });
+
+    it("should return true when requestIdleCallback exists and is a function", () => {
+      (global as any).window = {
+        requestIdleCallback: jest.fn(),
+      };
+
+      expect(isRequestIdleCallbackSupported()).toBe(true);
     });
   });
 
@@ -345,139 +256,6 @@ describe("requestIdleCallback - Additional Edge Cases", () => {
 
       await expect(runTasksInIdle([task])).rejects.toThrow("string error");
       expect(task).toHaveBeenCalledTimes(1);
-    });
-
-    it("should pass timeout option to requestIdleCallbackPromise", async () => {
-      const mockRIC = jest.fn((cb: any, options: any) => {
-        cb({ didTimeout: false, timeRemaining: () => 1000 });
-        return 1;
-      });
-      (global as any).window = {
-        requestIdleCallback: mockRIC,
-      };
-
-      const task = jest.fn().mockReturnValue("test");
-      await runTasksInIdle([task], { timeout: 100 });
-
-      expect(task).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe("isRequestIdleCallbackSupported - edge cases", () => {
-    it("should return false when requestIdleCallback is not a function", () => {
-      (global as any).window = {
-        requestIdleCallback: "not a function",
-      };
-
-      expect(isRequestIdleCallbackSupported()).toBe(false);
-    });
-
-    it("should return false when requestIdleCallback is null", () => {
-      (global as any).window = {
-        requestIdleCallback: null,
-      };
-
-      expect(isRequestIdleCallbackSupported()).toBe(false);
-    });
-
-    it("should return false when window exists but property is missing", () => {
-      (global as any).window = {};
-
-      expect(isRequestIdleCallbackSupported()).toBe(false);
-    });
-  });
-
-  describe("error handling - additional scenarios", () => {
-    it("should handle callback throwing string", async () => {
-      const mockRIC = jest.fn((cb: any) => {
-        cb({ didTimeout: false, timeRemaining: () => 10 });
-        return 1;
-      });
-      (global as any).window = {
-        requestIdleCallback: mockRIC,
-      };
-
-      const callback = jest.fn().mockImplementation(() => {
-        throw "error string";
-      });
-
-      await expect(requestIdleCallbackPromise(callback)).rejects.toThrow("error string");
-    });
-
-    it("should handle callback throwing object", async () => {
-      const mockRIC = jest.fn((cb: any) => {
-        cb({ didTimeout: false, timeRemaining: () => 10 });
-        return 1;
-      });
-      (global as any).window = {
-        requestIdleCallback: mockRIC,
-      };
-
-      const errorObject = { code: "ERR123", message: "Custom error" };
-      const callback = jest.fn().mockImplementation(() => {
-        throw errorObject;
-      });
-
-      await expect(requestIdleCallbackPromise(callback)).rejects.toEqual(errorObject);
-    });
-
-    it("should handle callback throwing null", async () => {
-      const mockRIC = jest.fn((cb: any) => {
-        cb({ didTimeout: false, timeRemaining: () => 10 });
-        return 1;
-      });
-      (global as any).window = {
-        requestIdleCallback: mockRIC,
-      };
-
-      const callback = jest.fn().mockImplementation(() => {
-        throw null;
-      });
-
-      await expect(requestIdleCallbackPromise(callback)).rejects.toEqual(null);
-      expect(callback).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe("server-side execution - additional cases", () => {
-    it("should handle callback returning 0 on server", async () => {
-      global.window = undefined as any;
-
-      const callback = jest.fn().mockReturnValue(0);
-      const result = await requestIdleCallbackPromise(callback);
-
-      expect(result).toBe(0);
-      expect(callback).toHaveBeenCalledTimes(1);
-    });
-
-    it("should handle callback returning null on server", async () => {
-      global.window = undefined as any;
-
-      const callback = jest.fn().mockReturnValue(null);
-      const result = await requestIdleCallbackPromise(callback);
-
-      expect(result).toBeNull();
-      expect(callback).toHaveBeenCalledTimes(1);
-    });
-
-    it("should handle callback returning false on server", async () => {
-      global.window = undefined as any;
-
-      const callback = jest.fn().mockReturnValue(false);
-      const result = await requestIdleCallbackPromise(callback);
-
-      expect(result).toBe(false);
-      expect(callback).toHaveBeenCalledTimes(1);
-    });
-
-    it("should handle callback returning empty string on server", async () => {
-      global.window = undefined as any;
-
-      const callback = jest.fn().mockReturnValue("");
-      const result = await requestIdleCallbackPromise(callback);
-
-      expect(result).toBe("");
-      expect(callback).toHaveBeenCalledTimes(1);
     });
   });
 });

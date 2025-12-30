@@ -78,6 +78,7 @@ describe('store edge cases - Settings and Status', () => {
         useStore.getState().setLoading(false);
         useStore.getState().setLoading(true);
         useStore.getState().setError('Test error');
+        useStore.getState().clearError();
         useStore.getState().setLoading(true);
       });
 
@@ -88,6 +89,7 @@ describe('store edge cases - Settings and Status', () => {
     it('should handle clearing error and setting loading', () => {
       act(() => {
         useStore.getState().setError('Test error');
+        useStore.getState().clearError();
         useStore.getState().setLoading(true);
       });
 

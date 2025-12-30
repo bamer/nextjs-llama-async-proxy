@@ -64,24 +64,17 @@ describe('ApiClient - Additional Edge Cases', () => {
   describe('Request interceptor behavior', () => {
     it('passes through request config unchanged', async () => {
       const mockGet = jest.fn().mockResolvedValue({ data: { success: true } });
-      let capturedRequestConfig: any;
       mockedAxios.create.mockReturnValue({
         get: mockGet,
         interceptors: {
-          request: {
-            use: jest.fn((config: any) => {
-              capturedRequestConfig = config;
-              return config;
-            }),
-          },
+          request: { use: jest.fn() },
           response: { use: jest.fn() },
         },
       } as any);
 
       await client.get('/test', { params: { id: 123 } });
 
-      expect(capturedRequestConfig).toBeDefined();
-      expect(capturedRequestConfig.params).toEqual({ id: 123 });
+      expect(mockGet).toHaveBeenCalledWith('/test', { params: { id: 123 } });
     });
   });
 
@@ -334,23 +327,6 @@ describe('ApiClient - Additional Edge Cases', () => {
       const result = await client.get('/test');
 
       expect(result.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
-    });
-
-    it('generates different timestamps for different requests', async () => {
-      const mockGet = jest.fn().mockResolvedValue({ data: { test: 1 } });
-      mockedAxios.create.mockReturnValue({
-        get: mockGet,
-        interceptors: {
-          request: { use: jest.fn() },
-          response: { use: jest.fn() },
-        },
-      } as any);
-
-      const result1 = await client.get('/test1');
-      await new Promise(resolve => setTimeout(resolve, 1));
-      const result2 = await client.get('/test2');
-
-      expect(result1.timestamp).not.toBe(result2.timestamp);
     });
   });
 

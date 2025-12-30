@@ -1,4 +1,4 @@
-import { GET, POST } from "../app/api/model-templates/route";
+import { GET, POST } from "../../app/api/model-templates/route";
 import { NextRequest } from "next/server";
 import { promises as fs } from "fs";
 import { validateRequestBody, validateConfig } from "@/lib/validation-utils";
@@ -19,6 +19,8 @@ jest.mock("next/server", () => ({
 }));
 
 jest.mock("fs", () => ({
+  readFileSync: jest.fn(),
+  writeFileSync: jest.fn(),
   promises: {
     readFile: jest.fn(),
   },
@@ -26,10 +28,18 @@ jest.mock("fs", () => ({
 
 jest.mock("@/lib/validation-utils");
 jest.mock("@/lib/model-templates-config");
+jest.mock("@/lib/logger", () => ({
+  getLogger: jest.fn(() => ({
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+  })),
+}));
 
 describe("GET /api/model-templates", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (getModelTemplatesConfig as jest.Mock).mockReturnValue(null);
   });
 
   // Positive test: Return cached config successfully
@@ -184,6 +194,7 @@ describe("GET /api/model-templates", () => {
 describe("POST /api/model-templates", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (getModelTemplatesConfig as jest.Mock).mockReturnValue(null);
   });
 
   // Positive test: Save model templates successfully

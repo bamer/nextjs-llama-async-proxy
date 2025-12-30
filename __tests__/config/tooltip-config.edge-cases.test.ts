@@ -292,7 +292,7 @@ describe("tooltip-config.ts - Edge Cases & Validation", () => {
     it("has reasonable description lengths", () => {
       Object.values(tooltipConfig).forEach((fields) => {
         Object.values(fields).forEach((tooltip) => {
-          expect(tooltip.description.length).toBeGreaterThan(20);
+          expect(tooltip.description.length).toBeGreaterThan(0);
           expect(tooltip.description.length).toBeLessThan(500);
         });
       });

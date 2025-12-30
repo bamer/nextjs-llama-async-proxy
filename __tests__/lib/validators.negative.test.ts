@@ -59,7 +59,7 @@ describe("configSchema - Negative Validation", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues[0].path).toContain("paramName");
+      expect(result.error.issues[0].path).toContain("name");
       expect(result.error.issues[0].message).toMatch(/>=1 characters/);
     }
   });
@@ -340,7 +340,79 @@ describe("parameterSchema - Negative Validation", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.issues[0].path).toContain("paramName");
+    }
+  });
+
+  it("should reject wrong type for category (not string)", () => {
+    const invalidParameter = {
+      category: 123 as any,
+      paramName: "temperature",
+    };
+
+    const result = parameterSchema.safeParse(invalidParameter);
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].path).toContain("category");
+      expect(result.error.issues[0].message).toContain("string");
+    }
+  });
+
+  it("should reject wrong type for paramName (not string)", () => {
+    const invalidParameter = {
+      category: "generation",
+      paramName: null as any,
+    };
+
+    const result = parameterSchema.safeParse(invalidParameter);
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].path).toContain("paramName");
+      expect(result.error.issues[0].message).toContain("string");
+    }
+  });
+});
+
+  it("should reject empty paramName", () => {
+    const invalidParameter = {
+      category: "generation",
+      paramName: "",
+    };
+
+    const result = parameterSchema.safeParse(invalidParameter);
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].path).toContain("paramName");
       expect(result.error.issues[0].message).toMatch(/>=1 characters/);
+    }
+  });
+
+  it("should reject missing category field", () => {
+    const invalidParameter = {
+      paramName: "temperature",
+    };
+
+    const result = parameterSchema.safeParse(invalidParameter);
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].path).toContain("category");
+    }
+  });
+
+  it("should reject missing paramName field", () => {
+    const invalidParameter = {
+      category: "generation",
+    };
+
+    const result = parameterSchema.safeParse(invalidParameter);
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].path).toContain("paramName");
+      expect(result.error.issues[0].message).toContain("string");
     }
   });
 
