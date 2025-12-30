@@ -10,11 +10,11 @@ exports[`Configuration Snapshots AdvancedSettingsTab Component should match snap
     class="MuiCard-root"
   >
     <div>
-      <span
+      <h5
         font-weight="bold"
       >
         Advanced Settings
-      </span>
+      </h5>
       <span>
         Advanced configuration options for power users.
       </span>
@@ -44,11 +44,11 @@ exports[`Configuration Snapshots AdvancedSettingsTab Component should match snap
     class="MuiCard-root"
   >
     <div>
-      <span
+      <h5
         font-weight="bold"
       >
         Advanced Settings
-      </span>
+      </h5>
       <span>
         Advanced configuration options for power users.
       </span>
@@ -78,11 +78,11 @@ exports[`Configuration Snapshots AdvancedSettingsTab Component should match snap
     class="MuiCard-root"
   >
     <div>
-      <span
+      <h5
         font-weight="bold"
       >
         Advanced Settings
-      </span>
+      </h5>
       <span>
         Advanced configuration options for power users.
       </span>
@@ -1033,11 +1033,11 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
     class="MuiCard-root"
   >
     <div>
-      <span
+      <h5
         font-weight="bold"
       >
         Llama-Server Settings
-      </span>
+      </h5>
       <div
         data-testid="grid"
       >
@@ -1180,11 +1180,11 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
     class="MuiCard-root"
   >
     <div>
-      <span
+      <h5
         font-weight="bold"
       >
         Llama-Server Settings
-      </span>
+      </h5>
       <div
         data-testid="grid"
       >
@@ -1327,11 +1327,11 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
     class="MuiCard-root"
   >
     <div>
-      <span
+      <h5
         font-weight="bold"
       >
         Llama-Server Settings
-      </span>
+      </h5>
       <div
         data-testid="grid"
       >
@@ -1834,11 +1834,11 @@ exports[`Configuration Snapshots ModernConfiguration Component should match snap
       class="MuiCard-root"
     >
       <div>
-        <span
+        <h5
           font-weight="bold"
         >
           Advanced Settings
-        </span>
+        </h5>
         <span>
           Advanced configuration options for power users.
         </span>
@@ -1984,11 +1984,11 @@ exports[`Configuration Snapshots ModernConfiguration Component should match snap
       class="MuiCard-root"
     >
       <div>
-        <span
+        <h5
           font-weight="bold"
         >
           Llama-Server Settings
-        </span>
+        </h5>
         <div
           data-testid="grid"
         >

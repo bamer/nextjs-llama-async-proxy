@@ -129,33 +129,32 @@ describe('store edge cases - Concurrent Updates and Integration', () => {
     });
 
     it('should handle logging and metrics update workflow', () => {
-        const metrics: SystemMetrics = {
-          cpuUsage: 50,
-          memoryUsage: 60,
-          diskUsage: 70,
-          activeModels: 2,
-          totalRequests: 100,
-          avgResponseTime: 200,
-          uptime: 1800,
+      const metrics: SystemMetrics = {
+        cpuUsage: 50,
+        memoryUsage: 60,
+        diskUsage: 70,
+        activeModels: 2,
+        totalRequests: 100,
+        avgResponseTime: 200,
+        uptime: 1800,
+        timestamp: '2024-12-27T00:00:00Z',
+      };
+
+      act(() => {
+        useStore.getState().setLoading(true);
+        useStore.getState().setMetrics(metrics);
+        useStore.getState().addLog({
+          id: 'log-1',
+          level: 'info',
+          message: 'Metrics updated',
           timestamp: '2024-12-27T00:00:00Z',
-        };
-
-        act(() => {
-          useStore.getState().setLoading(true);
-          useStore.getState().setMetrics(metrics);
-          useStore.getState().addLog({
-            id: 'log-1',
-            level: 'info',
-            message: 'Metrics updated',
-            timestamp: '2024-12-27T00:00:00Z',
-          });
-          useStore.getState().setLoading(false);
         });
-
-        expect(useStore.getState().metrics).toEqual(metrics);
-        expect(useStore.getState().logs).toHaveLength(1);
-        expect(useStore.getState().status.isLoading).toBe(false);
+        useStore.getState().setLoading(false);
       });
+
+      expect(useStore.getState().metrics).toEqual(metrics);
+      expect(useStore.getState().logs).toHaveLength(1);
+      expect(useStore.getState().status.isLoading).toBe(false);
     });
 
     it('should handle chart data tracking workflow', () => {

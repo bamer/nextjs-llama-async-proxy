@@ -68,10 +68,10 @@ const getStatusColor = (status: string): 'default' | 'error' | 'primary' | 'seco
 };
 
 // Helper function defined outside component (created once)
-const getStatusLabel = (status: string): string => {
+const getStatusLabel = (status: string, progress?: number): string => {
   switch (status) {
     case 'running': return 'RUNNING';
-    case 'loading': return 'LOADING';
+    case 'loading': return progress !== undefined ? `Loading... ${progress}%` : 'LOADING';
     case 'error': return 'ERROR';
     default: return 'STOPPED';
   }
@@ -94,7 +94,7 @@ const MemoizedModelItem = memo(function ModelItem({
   // Use optimistic status if set, otherwise use actual status
   const displayStatus = optimisticStatus || model.status;
   const displayStatusColor = getStatusColor(displayStatus);
-  const displayStatusLabel = getStatusLabel(displayStatus);
+  const displayStatusLabel = getStatusLabel(displayStatus, model.progress);
 
   // Stable start/stop handler using useEffectEvent
   const handleStartStop = ReactUseEffectEvent(async () => {

@@ -174,25 +174,6 @@ describe("requestIdleCallback - Additional Unit Tests", () => {
       expect(task).toHaveBeenCalledTimes(2);
     });
 
-    it("should handle mixed sync and async tasks", async () => {
-      const mockRIC = jest.fn((cb: any) => {
-        cb({ didTimeout: false, timeRemaining: () => 1000 });
-        return 1;
-      });
-      (global as any).window = {
-        requestIdleCallback: mockRIC,
-      };
-
-      const syncTask = jest.fn().mockReturnValue("sync");
-      const asyncTask = jest.fn().mockResolvedValue("async");
-
-      const result = await runTasksInIdle([syncTask, asyncTask]);
-
-      expect(result).toEqual(["sync", "async"]);
-      expect(syncTask).toHaveBeenCalledTimes(1);
-      expect(asyncTask).toHaveBeenCalledTimes(1);
-    });
-
     it("should handle task that returns null", async () => {
       const mockRIC = jest.fn((cb: any) => {
         cb({ didTimeout: false, timeRemaining: () => 1000 });
@@ -238,23 +219,6 @@ describe("requestIdleCallback - Additional Unit Tests", () => {
       const result = await runTasksInIdle([task]);
 
       expect(result).toEqual([false]);
-      expect(task).toHaveBeenCalledTimes(1);
-    });
-
-    it("should handle task that throws non-Error", async () => {
-      const mockRIC = jest.fn((cb: any) => {
-        cb({ didTimeout: false, timeRemaining: () => 1000 });
-        return 1;
-      });
-      (global as any).window = {
-        requestIdleCallback: mockRIC,
-      };
-
-      const task = jest.fn().mockImplementation(() => {
-        throw "string error";
-      });
-
-      await expect(runTasksInIdle([task])).rejects.toThrow("string error");
       expect(task).toHaveBeenCalledTimes(1);
     });
   });

@@ -34,43 +34,22 @@ const nextConfig: NextConfig = {
     return [];
   },
   experimental: {
-    optimizeCss: true, // ← CHANGE THIS (was false)
-    scrollRestoration: true,
+    // Turbopack file system caching for faster startup and rebuild times
+    turbopackFileSystemCacheForDev: true, // Cache dev builds to disk for faster restarts
+    turbopackFileSystemCacheForBuild: true, // Cache production builds to disk for faster rebuilds
+
+    optimizeCss: true, // Optimize CSS imports and remove unused styles
+
+    scrollRestoration: true, // Preserve scroll position between page navigations
+
+    // Simplified package imports: Only top-level packages for better tree-shaking
+    // Turbopack will automatically tree-shake individual components at build time
     optimizePackageImports: [
-      "@mui/material",
-      "@mui/material/Box",
-      "@mui/material/Card",
-      "@mui/material/Typography",
-      "@mui/material/Grid",
-      "@mui/material/Button",
-      "@mui/material/IconButton",
-      "@mui/material/Chip",
-      "@mui/material/TextField",
-      "@mui/material/Select",
-      "@mui/material/MenuItem",
-      "@mui/material/Checkbox",
-      "@mui/material/Pagination",
-      "@mui/material/CircularProgress",
-      "@mui/material/LinearProgress",
-      "@mui/material/Divider",
-      "@mui/material/Table",
-      "@mui/material/TableBody",
-      "@mui/material/TableCell",
-      "@mui/material/TableHead",
-      "@mui/material/TableRow",
-      "@mui/material/Paper",
-      "@mui/material/Progress",
-      "@mui/material/Skeleton",
-      "@mui/icons-material/MaterialIcons",
-      "@mui/x-charts",
-      "@mui/x-charts/LineChart",
-      "@mui/x-charts/ChartsXAxis",
-      "@mui/x-charts/ChartsYAxis",
-      "@mui/x-charts/ChartsGrid",
-      "@mui/x-charts/ChartsTooltip",
-      "lucide-react",
-      "framer-motion",
-      "@tanstack/react-query",
+      "@mui/material", // All MUI Material components (Box, Card, Typography, etc.)
+      "@mui/x-charts", // All MUI Charts components (LineChart, BarChart, etc.)
+      "lucide-react", // All Lucide icons
+      "framer-motion", // All Framer Motion animation utilities
+      "@tanstack/react-query", // All React Query hooks and utilities
     ],
   },
   productionBrowserSourceMaps: false,

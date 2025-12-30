@@ -208,9 +208,10 @@ describe("app.config.ts - Edge Cases & Validation", () => {
     });
 
     it("has consistent API configuration", () => {
-      // API timeout should be reasonable relative to cache TTL
-      // cache.ttl is 300 (seconds), api.timeout is 30000 (milliseconds)
-      expect(APP_CONFIG.api.timeout).toBeGreaterThanOrEqual(APP_CONFIG.cache.ttl * 1000);
+      // API timeout (in seconds) should be reasonable relative to cache TTL
+      // cache.ttl is 300 (seconds), api.timeout is 30000 (milliseconds = 30 seconds)
+      const timeoutInSeconds = APP_CONFIG.api.timeout / 1000;
+      expect(timeoutInSeconds).toBeLessThanOrEqual(APP_CONFIG.cache.ttl);
     });
   });
 

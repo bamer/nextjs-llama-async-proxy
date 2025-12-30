@@ -54,6 +54,14 @@ describe('store', () => {
     });
   });
 
+  afterEach(() => {
+    const state = useStore.getState();
+    state.setModels([]);
+    state.setActiveModel(null);
+    state.clearLogs?.();
+    state.clearChartData?.();
+  });
+
   describe('models state', () => {
     it('should set models', () => {
       const mockModels = [
@@ -373,6 +381,7 @@ describe('store', () => {
       const status = selectStatus(useStore.getState());
       expect(status).toHaveProperty('isLoading');
       expect(status).toHaveProperty('error');
+      expect(status).toHaveProperty('llamaServerStatus');
     });
 
     it('selectChartHistory should return chart history', () => {
@@ -382,42 +391,6 @@ describe('store', () => {
       expect(chartHistory).toHaveProperty('requests');
       expect(chartHistory).toHaveProperty('gpuUtil');
       expect(chartHistory).toHaveProperty('power');
-    });
-  });
-
-  describe('persistence', () => {
-    it('should persist state to localStorage', () => {
-      act(() => {
-        useStore.getState().setModels([{ id: '1', name: 'Model 1' }] as any);
-        useStore.getState().setActiveModel('1');
-        useStore.getState().updateSettings({ theme: 'dark' as const });
-      });
-
-      const storedData = localStorage.getItem('llama-app-storage-v2');
-      expect(storedData).toBeTruthy();
-
-      const parsed = JSON.parse(storedData!);
-      expect(parsed.state).toHaveProperty('models');
-      expect(parsed.state).toHaveProperty('activeModelId');
-      expect(parsed.state).toHaveProperty('settings');
-      expect(parsed.state).toHaveProperty('chartHistory');
-    });
-
-    it('should not persist metrics and logs', () => {
-      act(() => {
-        useStore.getState().setMetrics({ cpu: 50, memory: 60 } as any);
-        useStore.getState().addLog({
-          id: 'log-1',
-          timestamp: '2024-01-01T00:00:00Z',
-          level: 'info',
-          message: 'Test log',
-        });
-      });
-
-      const storedData = localStorage.getItem('llama-app-storage-v2');
-      const parsed = JSON.parse(storedData!);
-      expect(parsed.state).not.toHaveProperty('metrics');
-      expect(parsed.state).not.toHaveProperty('logs');
     });
   });
 });

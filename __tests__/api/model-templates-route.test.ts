@@ -37,9 +37,37 @@ jest.mock("@/lib/logger", () => ({
 }));
 
 describe("GET /api/model-templates", () => {
+  let mockConfigCache: any = null;
+
   beforeEach(() => {
+    jest.resetModules();
     jest.clearAllMocks();
-    (getModelTemplatesConfig as jest.Mock).mockReturnValue(null);
+    mockConfigCache = null;
+
+    // Mock getModelTemplatesConfig to return the mock cache
+    (getModelTemplatesConfig as jest.Mock).mockImplementation(() => mockConfigCache);
+
+    // Mock updateModelTemplatesConfig to update the mock cache
+    (updateModelTemplatesConfig as jest.Mock).mockImplementation((updates: any) => {
+      if (mockConfigCache) {
+        mockConfigCache = { ...mockConfigCache, ...updates };
+      } else {
+        mockConfigCache = updates;
+      }
+    });
+
+    // Mock invalidateModelTemplatesCache to clear the mock cache
+    (invalidateModelTemplatesCache as jest.Mock).mockImplementation(() => {
+      mockConfigCache = null;
+    });
+
+    (fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify({}));
+    (validateRequestBody as jest.Mock).mockReturnValue({ success: true, data: {} });
+    (validateConfig as jest.Mock).mockReturnValue({ success: true, data: {} });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   // Positive test: Return cached config successfully
@@ -54,7 +82,7 @@ describe("GET /api/model-templates", () => {
       default_model: "llama-2-7b",
     };
 
-    (getModelTemplatesConfig as jest.Mock).mockReturnValue(mockCachedConfig);
+    mockConfigCache = mockCachedConfig;
 
     const response = await GET();
     const json = await response.json();
@@ -77,7 +105,7 @@ describe("GET /api/model-templates", () => {
       default_model: "mistral-7b",
     };
 
-    (getModelTemplatesConfig as jest.Mock).mockReturnValue(null);
+    mockConfigCache = null;
     (fs.readFile as jest.Mock).mockResolvedValue(
       JSON.stringify(mockFileContent)
     );
@@ -102,7 +130,7 @@ describe("GET /api/model-templates", () => {
       default_model: null,
     };
 
-    (getModelTemplatesConfig as jest.Mock).mockReturnValue(mockCachedConfig);
+    mockConfigCache = mockCachedConfig;
 
     const response = await GET();
     const json = await response.json();
@@ -118,7 +146,7 @@ describe("GET /api/model-templates", () => {
       invalid: "data",
     };
 
-    (getModelTemplatesConfig as jest.Mock).mockReturnValue(null);
+    mockConfigCache = null;
     (fs.readFile as jest.Mock).mockResolvedValue(
       JSON.stringify(mockFileContent)
     );
@@ -138,7 +166,7 @@ describe("GET /api/model-templates", () => {
 
   // Negative test: Return 500 on file read error
   it("should return 500 error when file read fails", async () => {
-    (getModelTemplatesConfig as jest.Mock).mockReturnValue(null);
+    mockConfigCache = null;
     (fs.readFile as jest.Mock).mockRejectedValue(
       new Error("File not found")
     );
@@ -158,7 +186,7 @@ describe("GET /api/model-templates", () => {
       default_model: null,
     };
 
-    (getModelTemplatesConfig as jest.Mock).mockReturnValue(mockCachedConfig);
+    mockConfigCache = mockCachedConfig;
 
     const responses = await Promise.all([GET(), GET(), GET()]);
 
@@ -181,7 +209,7 @@ describe("GET /api/model-templates", () => {
       default_model: "model-0",
     };
 
-    (getModelTemplatesConfig as jest.Mock).mockReturnValue(mockCachedConfig);
+    mockConfigCache = mockCachedConfig;
 
     const response = await GET();
     const json = await response.json();
@@ -192,9 +220,47 @@ describe("GET /api/model-templates", () => {
 });
 
 describe("POST /api/model-templates", () => {
+  let mockConfigCache: any = null;
+  let mockDiskConfig: any = null;
+
   beforeEach(() => {
+    jest.resetModules();
     jest.clearAllMocks();
-    (getModelTemplatesConfig as jest.Mock).mockReturnValue(null);
+    mockConfigCache = null;
+    mockDiskConfig = null;
+
+    // Mock getModelTemplatesConfig to return the mock cache
+    // If cache is null, load from mock disk
+    (getModelTemplatesConfig as jest.Mock).mockImplementation(() => {
+      if (!mockConfigCache) {
+        mockConfigCache = mockDiskConfig;
+      }
+      return mockConfigCache;
+    });
+
+    // Mock updateModelTemplatesConfig to update both mock cache and mock disk
+    (updateModelTemplatesConfig as jest.Mock).mockImplementation((updates: any) => {
+      if (mockConfigCache) {
+        mockConfigCache = { ...mockConfigCache, ...updates };
+      } else {
+        mockConfigCache = updates;
+      }
+      // Also persist to mock disk
+      mockDiskConfig = mockConfigCache;
+    });
+
+    // Mock invalidateModelTemplatesCache to clear the mock cache (but not disk)
+    (invalidateModelTemplatesCache as jest.Mock).mockImplementation(() => {
+      mockConfigCache = null;
+    });
+
+    (fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify({}));
+    (validateRequestBody as jest.Mock).mockReturnValue({ success: true, data: {} });
+    (validateConfig as jest.Mock).mockReturnValue({ success: true, data: {} });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   // Positive test: Save model templates successfully
@@ -216,10 +282,10 @@ describe("POST /api/model-templates", () => {
       success: true,
       data: requestBody,
     });
-    (getModelTemplatesConfig as jest.Mock).mockReturnValue({
+    mockConfigCache = {
       model_templates: requestBody.model_templates,
       default_model: null,
-    });
+    };
 
     const response = await POST(mockRequest);
     const json = await response.json();
