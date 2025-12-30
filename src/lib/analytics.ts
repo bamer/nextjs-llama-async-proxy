@@ -14,6 +14,7 @@ export interface AnalyticsData {
   uptime: number;
   bandwidthUsage: number;
   storageUsed: number;
+  totalRequests: number;
   timestamp: string;
 }
 
@@ -99,6 +100,7 @@ class AnalyticsEngine {
       uptime: (process.uptime() / (24 * 60 * 60)) * 100, // Uptime percentage
       bandwidthUsage: metrics.memoryUsage * 10, // Rough estimate
       storageUsed,
+      totalRequests: this.totalRequests,
       timestamp: new Date().toISOString(),
     };
   }

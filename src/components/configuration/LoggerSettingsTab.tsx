@@ -100,123 +100,123 @@ export function LoggerSettingsTab({ fieldErrors }: LoggerSettingsTabProps = {}) 
           />
         </Box>
 
-        <Grid container spacing={3}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                File Level (application.log)
-              </Typography>
-              <Select
-                fullWidth
-                value={loggerConfig?.fileLevel ?? "info"}
-                onChange={(e) => {
-                  updateConfig({ fileLevel: e.target.value });
-                  clearFieldError("fileLevel");
-                }}
-                size="small"
-                disabled={!loggerConfig?.enableFileLogging}
-                error={!!fieldErrors?.fileLevel}
-              >
-                <MenuItem value="error">Error</MenuItem>
-                <MenuItem value="warn">Warning</MenuItem>
-                <MenuItem value="info">Info</MenuItem>
-                <MenuItem value="debug">Debug</MenuItem>
-              </Select>
-              {fieldErrors?.fileLevel && (
-                <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
-                  {fieldErrors.fileLevel}
-                </Typography>
-              )}
-            </Box>
-          </Grid>
+         <Grid container spacing={3}>
+           <Grid size={{ xs: 12, md: 6 }}>
+             <Box sx={{ mb: 2 }}>
+               <Typography variant="body2" color="text.secondary" gutterBottom>
+                 File Level (application.log)
+               </Typography>
+               <Select
+                 fullWidth
+                 value={loggerConfig?.fileLevel ?? "info"}
+                 onChange={(e) => {
+                   updateConfig({ fileLevel: e.target.value });
+                   clearFieldError("fileLevel");
+                 }}
+                 size="small"
+                 disabled={!loggerConfig?.enableFileLogging}
+                 error={!!fieldErrors?.fileLevel}
+               >
+                 <MenuItem value="error">Error</MenuItem>
+                 <MenuItem value="warn">Warning</MenuItem>
+                 <MenuItem value="info">Info</MenuItem>
+                 <MenuItem value="debug">Debug</MenuItem>
+               </Select>
+               {fieldErrors?.fileLevel && (
+                 <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                   {fieldErrors.fileLevel}
+                 </Typography>
+               )}
+             </Box>
+           </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Error File Level (errors.log)
-              </Typography>
-              <Select
-                fullWidth
-                value={loggerConfig?.errorLevel ?? "error"}
-                onChange={(e) => {
-                  updateConfig({ errorLevel: e.target.value });
-                  clearFieldError("errorLevel");
-                }}
-                size="small"
-                disabled={!loggerConfig?.enableFileLogging}
-                error={!!fieldErrors?.errorLevel}
-              >
-                <MenuItem value="error">Error Only</MenuItem>
-                <MenuItem value="warn">Error + Warning</MenuItem>
-              </Select>
-              {fieldErrors?.errorLevel && (
-                <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
-                  {fieldErrors.errorLevel}
-                </Typography>
-              )}
-            </Box>
-          </Grid>
+           <Grid size={{ xs: 12, md: 6 }}>
+             <Box sx={{ mb: 2 }}>
+               <Typography variant="body2" color="text.secondary" gutterBottom>
+                 Error File Level (errors.log)
+               </Typography>
+               <Select
+                 fullWidth
+                 value={loggerConfig?.errorLevel ?? "error"}
+                 onChange={(e) => {
+                   updateConfig({ errorLevel: e.target.value });
+                   clearFieldError("errorLevel");
+                 }}
+                 size="small"
+                 disabled={!loggerConfig?.enableFileLogging}
+                 error={!!fieldErrors?.errorLevel}
+               >
+                 <MenuItem value="error">Error Only</MenuItem>
+                 <MenuItem value="warn">Error + Warning</MenuItem>
+               </Select>
+               {fieldErrors?.errorLevel && (
+                 <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                   {fieldErrors.errorLevel}
+                 </Typography>
+               )}
+             </Box>
+           </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Max File Size
-                </Typography>
-                <Select
-                  fullWidth
-                  value={loggerConfig?.maxFileSize ?? "20m"}
-                  onChange={(e) => {
-                    updateConfig({ maxFileSize: e.target.value });
-                    clearFieldError("maxFileSize");
-                  }}
-                  size="small"
-                  disabled={!loggerConfig?.enableFileLogging}
-                  error={!!fieldErrors?.maxFileSize}
-                >
-                  <MenuItem value="10m">10 MB</MenuItem>
-                  <MenuItem value="20m">20 MB</MenuItem>
-                  <MenuItem value="50m">50 MB</MenuItem>
-                  <MenuItem value="100m">100 MB</MenuItem>
-                  <MenuItem value="500m">500 MB</MenuItem>
-                </Select>
-                {fieldErrors?.maxFileSize && (
-                  <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
-                    {fieldErrors.maxFileSize}
-                  </Typography>
-                )}
-              </Box>
-            </Grid>
+             <Grid size={{ xs: 12, md: 6 }}>
+               <Box sx={{ mb: 2 }}>
+                 <Typography variant="body2" color="text.secondary" gutterBottom>
+                   Max File Size
+                 </Typography>
+                 <Select
+                   fullWidth
+                   value={loggerConfig?.maxFileSize ?? "20m"}
+                   onChange={(e) => {
+                     updateConfig({ maxFileSize: e.target.value });
+                     clearFieldError("maxFileSize");
+                   }}
+                   size="small"
+                   disabled={!loggerConfig?.enableFileLogging}
+                   error={!!fieldErrors?.maxFileSize}
+                 >
+                   <MenuItem value="10m">10 MB</MenuItem>
+                   <MenuItem value="20m">20 MB</MenuItem>
+                   <MenuItem value="50m">50 MB</MenuItem>
+                   <MenuItem value="100m">100 MB</MenuItem>
+                   <MenuItem value="500m">500 MB</MenuItem>
+                 </Select>
+                 {fieldErrors?.maxFileSize && (
+                   <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                     {fieldErrors.maxFileSize}
+                   </Typography>
+                 )}
+               </Box>
+             </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  File Retention Period
-                </Typography>
-                <Select
-                  fullWidth
-                  value={loggerConfig?.maxFiles ?? "30d"}
-                  onChange={(e) => {
-                    updateConfig({ maxFiles: e.target.value });
-                    clearFieldError("maxFiles");
-                  }}
-                  size="small"
-                  disabled={!loggerConfig?.enableFileLogging}
-                  error={!!fieldErrors?.maxFiles}
-                >
-                  <MenuItem value="7d">7 Days</MenuItem>
-                  <MenuItem value="14d">14 Days</MenuItem>
-                  <MenuItem value="30d">30 Days</MenuItem>
-                  <MenuItem value="60d">60 Days</MenuItem>
-                  <MenuItem value="90d">90 Days</MenuItem>
-                </Select>
-                {fieldErrors?.maxFiles && (
-                  <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
-                    {fieldErrors.maxFiles}
-                  </Typography>
-                )}
-              </Box>
-            </Grid>
-        </Grid>
+             <Grid size={{ xs: 12, md: 6 }}>
+               <Box sx={{ mb: 2 }}>
+                 <Typography variant="body2" color="text.secondary" gutterBottom>
+                   File Retention Period
+                 </Typography>
+                 <Select
+                   fullWidth
+                   value={loggerConfig?.maxFiles ?? "30d"}
+                   onChange={(e) => {
+                     updateConfig({ maxFiles: e.target.value });
+                     clearFieldError("maxFiles");
+                   }}
+                   size="small"
+                   disabled={!loggerConfig?.enableFileLogging}
+                   error={!!fieldErrors?.maxFiles}
+                 >
+                   <MenuItem value="7d">7 Days</MenuItem>
+                   <MenuItem value="14d">14 Days</MenuItem>
+                   <MenuItem value="30d">30 Days</MenuItem>
+                   <MenuItem value="60d">60 Days</MenuItem>
+                   <MenuItem value="90d">90 Days</MenuItem>
+                 </Select>
+                 {fieldErrors?.maxFiles && (
+                   <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                     {fieldErrors.maxFiles}
+                   </Typography>
+                 )}
+               </Box>
+             </Grid>
+         </Grid>
       </CardContent>
     </Card>
   );

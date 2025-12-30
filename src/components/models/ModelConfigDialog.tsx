@@ -43,11 +43,11 @@ export interface SamplingConfig {
   mirostat_tau: number;
   mirostat_eta: number;
   seed: number;
-  flash_attn: number;
+  flash_attn: "auto" | "on" | "off";
 }
 
 export interface MemoryConfig {
-  num_ctx: number;
+  ctx_size: number;
   num_batch: number;
   cache_ram: number;
   memory_f16: boolean;
@@ -141,11 +141,11 @@ const DEFAULT_SAMPLING: SamplingConfig = {
   mirostat_tau: 5.0,
   mirostat_eta: 0.1,
   seed: -1,
-  flash_attn: -1,
+  flash_attn: "auto",
 };
 
 const DEFAULT_MEMORY: MemoryConfig = {
-  num_ctx: 2048,
+  ctx_size: 2048,
   num_batch: 512,
   cache_ram: 0,
   memory_f16: true,
@@ -228,7 +228,7 @@ const PARAM_DESCRIPTIONS = {
   mirostat_tau: "Mirostat target entropy (surprise). Lower values produce less random output.",
   mirostat_eta: "Mirostat learning rate. Controls how quickly the algorithm adapts.",
   seed: "Random seed for generation. -1 uses random seed.",
-  num_ctx: "Context window size. Number of tokens the model can consider.",
+  ctx_size: "Context window size. Number of tokens the model can consider.",
   num_batch: "Batch size for prompt processing. Larger values can improve performance.",
   cache_ram: "Cache RAM limit in MB. 0 means unlimited.",
   memory_f16: "Use 16-bit floating point for memory. Reduces memory usage.",
@@ -254,7 +254,7 @@ const PARAM_DESCRIPTIONS = {
   image_data: "Image data or path for multimodal input.",
   clip_vision_cache: "Cache CLIP vision model in memory.",
   mmproj: "Path to multimodal projection model.",
-  flash_attn: "Flash attention mode. -1=auto (detect support), 0=off (disabled), 1=on (enabled).",
+  flash_attn: "Flash attention mode. Auto detects support, On/Off forces mode.",
 };
 
 // ============================================================================
@@ -334,7 +334,7 @@ const SliderField = memo(function SliderField({ label, value, onChange, min, max
 
 const SamplingForm = memo(function SamplingForm({ config, onChange }: { config: SamplingConfig; onChange: (config: SamplingConfig) => void }) {
   const handleChange = useCallback(
-    (field: keyof SamplingConfig, value: number) => {
+    (field: keyof SamplingConfig, value: number | "auto" | "on" | "off") => {
       onChange({ ...config, [field]: value });
     },
     [config, onChange],
@@ -353,11 +353,6 @@ const SamplingForm = memo(function SamplingForm({ config, onChange }: { config: 
   const handleMirostatChange = useCallback((_event: Event | React.SyntheticEvent<Element, Event>, value: string | unknown) => handleChange("mirostat", parseInt(value as string, 10)), [handleChange]);
   const handleMirostatTauChange = useCallback((v: number) => handleChange("mirostat_tau", v), [handleChange]);
   const handleMirostatEtaChange = useCallback((v: number) => handleChange("mirostat_eta", v), [handleChange]);
-  const handleFlashAttnChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value) || -1;
-    // Clamp to valid range: -1, 0, 1
-    handleChange("flash_attn", Math.max(-1, Math.min(1, value)));
-  }, [handleChange]);
 
   return (
     <Grid container spacing={2}>
@@ -479,16 +474,18 @@ const SamplingForm = memo(function SamplingForm({ config, onChange }: { config: 
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
         <Tooltip title={PARAM_DESCRIPTIONS.flash_attn} arrow>
-          <TextField
-            fullWidth
-            label="Flash Attention"
-            type="number"
-            value={config.flash_attn}
-            onChange={handleFlashAttnChange}
-            InputProps={{ inputProps: { min: -1, max: 1 } }}
-            helperText="-1=auto, 0=off, 1=on"
-            size="small"
-          />
+          <FormControl fullWidth size="small">
+            <InputLabel>flash_attn</InputLabel>
+            <Select
+              value={config.flash_attn}
+              onChange={(_event, value) => handleChange("flash_attn", value as "auto" | "on" | "off")}
+              label="flash_attn"
+            >
+              <MenuItem value="auto">auto</MenuItem>
+              <MenuItem value="on">on</MenuItem>
+              <MenuItem value="off">off</MenuItem>
+            </Select>
+          </FormControl>
         </Tooltip>
       </Grid>
       <Divider sx={{ my: 2 }} />
@@ -545,7 +542,7 @@ const MemoryForm = memo(function MemoryForm({ config, onChange }: { config: Memo
     [config, onChange],
   );
 
-  const handleNumCtxChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("num_ctx", parseInt(e.target.value) || 0), [handleChange]);
+  const handleCtxSizeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("ctx_size", parseInt(e.target.value) || 0), [handleChange]);
   const handleNumBatchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("num_batch", parseInt(e.target.value) || 0), [handleChange]);
   const handleCacheRamChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("cache_ram", parseInt(e.target.value) || 0), [handleChange]);
   const handleMemoryF16Change = useCallback((e: React.ChangeEvent<HTMLInputElement>) => handleChange("memory_f16", e.target.checked), [handleChange]);
@@ -560,13 +557,13 @@ const MemoryForm = memo(function MemoryForm({ config, onChange }: { config: Memo
   return (
     <Grid container spacing={2}>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title={PARAM_DESCRIPTIONS.num_ctx} arrow>
+        <Tooltip title={PARAM_DESCRIPTIONS.ctx_size} arrow>
           <TextField
             fullWidth
-            label="Context Size"
+            label="ctx_size"
             type="number"
-            value={config.num_ctx}
-            onChange={handleNumCtxChange}
+            value={config.ctx_size}
+            onChange={handleCtxSizeChange}
             InputProps={{ inputProps: { min: 1 } }}
             helperText="Number of tokens"
             size="small"

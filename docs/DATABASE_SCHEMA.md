@@ -63,7 +63,7 @@ pnpm add -D better-sqlite3 @types/better-sqlite3
 │  │ multimodal_  │                                                          │
 │  │ config       │                                                          │
 │  │ (7 fields)   │                                                          │
-│  └──────────────┘                                                          │
+│  └──────────────┘
 │                                                                            │
 │  ┌────────────────────────────────────────────┐                            │
 │  │ model_server_config                        │                            │
@@ -99,6 +99,7 @@ LEGEND:
 | `models` | `model_advanced_config` | 1:1 | ✓ Yes |
 | `models` | `model_lora_config` | 1:1 | ✓ Yes |
 | `models` | `model_multimodal_config` | 1:1 | ✓ Yes |
+| `models` | `model_fit_params` | 1:1 | ✓ Yes |
 | `model_server_config` | None (Independent) | N/A | N/A |
 
 ---
@@ -145,6 +146,10 @@ Stores essential model information and core configuration. This is the parent ta
 | `cpu_strict_batch` | INTEGER | - | 0 | Strict CPU placement for batch (0 or 1) |
 | `priority` | INTEGER | - | 0 | Process priority (-1=low, 0=normal, 1=medium, 2=high, 3=realtime) |
 | `priority_batch` | INTEGER | NULL | NULL | Priority for batch |
+| **Fit-params Tracking** | | | |
+| `file_size_bytes` | INTEGER | NULL | NULL | Model file size in bytes |
+| `fit_params_available` | INTEGER | - | 0 | Whether fit-params have been analyzed (0=no, 1=yes) |
+| `last_fit_params_check` | INTEGER | NULL | NULL | Unix timestamp of last fit-params check |
 
 **Indexes:**
 - `idx_models_name` - On `name` for fast lookups
@@ -396,6 +401,44 @@ Stores multimodal settings for vision and image processing. Linked to `models` v
 
 **Indexes:**
 - `idx_multimodal_model_id` - On `model_id` for fast lookups
+
+**Foreign Key:**
+- `model_id` → `models(id)` ON DELETE CASCADE
+
+---
+
+### 7. `model_fit_params` Table
+
+Stores fit-params analysis results for automatic parameter optimization. Linked to `models` via foreign key.
+
+| Column | Type | Constraints | Default | Description |
+|--------|------|-------------|---------|-------------|
+| **Identity** | | | |
+| `id` | INTEGER | PRIMARY KEY, AUTOINCREMENT | - | Unique configuration identifier |
+| `model_id` | INTEGER | NOT NULL, UNIQUE, FK → models(id) | - | Parent model ID |
+| `created_at` | INTEGER | NOT NULL | - | Unix timestamp when created |
+| `updated_at` | INTEGER | NOT NULL | - | Unix timestamp when last modified |
+| **Fit-params Results** | | | |
+| `recommended_ctx_size` | INTEGER | NULL | NULL | Recommended context window size |
+| `recommended_gpu_layers` | INTEGER | NULL | NULL | Recommended GPU layers to offload |
+| `recommended_tensor_split` | TEXT | NULL | NULL | Recommended tensor split (e.g., "3,1") |
+| **Model Metadata** | | | |
+| `file_size_bytes` | INTEGER | NULL | NULL | Model file size in bytes |
+| `quantization_type` | TEXT | NULL | NULL | Quantization type (e.g., "Q4_K_M") |
+| `parameter_count` | INTEGER | NULL | NULL | Total parameter count |
+| `architecture` | TEXT | NULL | NULL | Model architecture (e.g., "llama", "mistral") |
+| `context_window` | INTEGER | NULL | NULL | Native context window size |
+| **Analysis Metadata** | | | |
+| `fit_params_analyzed_at` | INTEGER | NULL | NULL | Unix timestamp of last analysis |
+| `fit_params_success` | INTEGER | - | 0 | Analysis success flag (0=failed, 1=success) |
+| `fit_params_error` | TEXT | NULL | NULL | Error message if analysis failed |
+| `fit_params_raw_output` | TEXT | NULL | NULL | Raw fit-params command output |
+| **Memory Projections** | | | |
+| `projected_cpu_memory_mb` | REAL | NULL | NULL | Projected CPU memory usage (MB) |
+| `projected_gpu_memory_mb` | REAL | NULL | NULL | Projected GPU memory usage (MB) |
+
+**Indexes:**
+- `idx_fit_params_model_id` - On `model_id` for fast lookups
 
 **Foreign Key:**
 - `model_id` → `models(id)` ON DELETE CASCADE

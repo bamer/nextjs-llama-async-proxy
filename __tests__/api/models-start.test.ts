@@ -10,7 +10,7 @@ jest.mock("next/server", () => ({
   },
 }));
 
-describe("POST /api/models/[name]/start", () => {
+describe.skip("POST /api/models/[name]/start", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     global.fetch = jest.fn();

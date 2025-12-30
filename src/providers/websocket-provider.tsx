@@ -5,6 +5,26 @@ import { websocketServer } from "@/lib/websocket-client";
 import { useStore } from "@/lib/store";
 import type { SystemMetrics, ModelConfig, LogEntry } from "@/types";
 
+// Message type definitions for WebSocket messages
+interface BaseMessage {
+  type: string;
+  data?: unknown;
+}
+
+interface ConfigMessage extends BaseMessage {
+  type: 'config_saved';
+  success: boolean;
+  error?: string;
+  data?: unknown;
+}
+
+type WebSocketMessage = BaseMessage | ConfigMessage;
+
+// Type guard for config messages
+function isConfigMessage(msg: WebSocketMessage): msg is ConfigMessage {
+  return msg.type === 'config_saved' && 'success' in msg;
+}
+
 interface WebSocketContextType {
   isConnected: boolean;
   connectionState: string;
@@ -17,6 +37,7 @@ interface WebSocketContextType {
   unloadModel: (modelId: string) => void;
   on: (event: string, callback: (data: any) => void) => void;
   off: (event: string, callback: (data: any) => void) => void;
+  socketId: string;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -87,7 +108,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     // Handle incoming messages
     const handleMessage = (message: unknown) => {
       if (message && typeof message === 'object' && 'type' in message) {
-        const msg = message as { type: string; data?: unknown };
+        const msg = message as WebSocketMessage;
 
         if (msg.type === 'metrics' && msg.data) {
           // Batch metrics with 500ms debounce
@@ -157,10 +178,11 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
           console.log('[WebSocketProvider] Database models loaded:', msg.data);
           console.log('[WebSocketProvider] Data type:', typeof msg.data);
           console.log('[WebSocketProvider] Data array?', Array.isArray(msg.data));
-          console.log('[WebSocketProvider] Data length:', msg.data?.length);
-          if (msg.data && (msg.data as ModelConfig[]).length > 0) {
-            console.log('[WebSocketProvider] First model name:', (msg.data as ModelConfig[])[0]?.name);
-            console.log('[WebSocketProvider] First model id:', (msg.data as ModelConfig[])[0]?.id);
+          const dataArray = Array.isArray(msg.data) ? msg.data : [];
+          console.log('[WebSocketProvider] Data length:', dataArray.length);
+          if (dataArray.length > 0) {
+            console.log('[WebSocketProvider] First model name:', (dataArray[0] as ModelConfig)?.name);
+            console.log('[WebSocketProvider] First model id:', (dataArray[0] as ModelConfig)?.id);
           }
           if (msg.data) {
             useStore.getState().setModels(msg.data as ModelConfig[]);
@@ -180,10 +202,14 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
           console.log('[WebSocketProvider] Config loaded:', msg.data);
         } else if (msg.type === 'config_saved') {
           // Config saved to database
-          if (msg.success) {
-            console.log('[WebSocketProvider] Config saved successfully:', msg.data);
+          if (isConfigMessage(msg)) {
+            if (msg.success) {
+              console.log('[WebSocketProvider] Config saved successfully:', msg.data);
+            } else {
+              console.error('[WebSocketProvider] Config save failed:', msg.error);
+            }
           } else {
-            console.error('[WebSocketProvider] Config save failed:', msg.error);
+            console.warn('[WebSocketProvider] Received config_saved message with unexpected format');
           }
         } else if (msg.type === 'models_imported') {
           // Models imported from llama-server to database
@@ -292,6 +318,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     unloadModel,
     on,
     off,
+    socketId: websocketServer.getSocketId() || 'unknown',
   };
 
   return (

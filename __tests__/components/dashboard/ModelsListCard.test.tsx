@@ -1,20 +1,40 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
-import { createTheme, ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import { ModelsListCard } from "@/components/dashboard/ModelsListCard";
 import type { MockModelConfig } from "__tests__/types/mock-types";
+
+// Mock MUI components
+jest.mock("@mui/material", () => ({
+  Card: ({ children, ...props }: any) => React.createElement("div", { ...props, "data-testid": "card" }, children),
+  CardContent: ({ children, ...props }: any) => React.createElement("div", { ...props }, children),
+  Typography: ({ children, ...props }: any) => React.createElement("span", props, children),
+  Box: ({ children, ...props }: any) => React.createElement("div", props, children),
+  Chip: ({ label, ...props }: any) => React.createElement("span", { ...props, "data-testid": "chip" }, label),
+  Button: React.forwardRef(({ children, ...props }: any, ref) =>
+    React.createElement("button", { ...props, ref }, children)
+  ),
+  Grid: ({ children, ...props }: any) => React.createElement("div", { ...props, "data-testid": "grid" }, children),
+  LinearProgress: ({ ...props }: any) => React.createElement("div", { ...props, "data-testid": "linear-progress" }),
+  MenuItem: ({ children, ...props }: any) => React.createElement("option", props, children),
+  Select: React.forwardRef(({ children, ...props }: any, ref) =>
+    React.createElement("select", { ...props, ref }, children)
+  ),
+  InputLabel: ({ children, ...props }: any) => React.createElement("label", props, children),
+  FormControl: ({ children, ...props }: any) => React.createElement("div", props, children),
+  Tooltip: ({ children, ...props }: any) => React.createElement("div", props, children),
+}));
+
+jest.mock("@mui/icons-material", () => ({
+  PlayArrow: () => null,
+  Stop: () => null,
+}));
 
 // Mock fetch globally
 global.fetch = jest.fn();
 
-const theme = createTheme();
-
 function renderWithProviders(component: React.ReactElement) {
-  const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <MuiThemeProvider theme={theme}>{children}</MuiThemeProvider>
-  );
-  return render(component, { wrapper });
+  return render(component);
 }
 
 describe("ModelsListCard", () => {
@@ -68,8 +88,8 @@ describe("ModelsListCard", () => {
         <ModelsListCard models={mockModels} isDark={false} onToggleModel={mockOnToggle} />
       );
 
-      expect(screen.getByText("llama")).toBeInTheDocument();
-      expect(screen.getByText("mistral")).toBeInTheDocument();
+      expect(screen.getByText("LLAMA")).toBeInTheDocument();
+      expect(screen.getByText("MISTRAL")).toBeInTheDocument();
     });
 
     it("displays correct status labels - Objective: Test status display", () => {
@@ -151,7 +171,9 @@ describe("ModelsListCard", () => {
       );
 
       expect(screen.getByText("LOADING")).toBeInTheDocument();
-      expect(screen.getByText("Loading... 45%")).toBeInTheDocument();
+      const progressBar = screen.getByTestId("linear-progress");
+      expect(progressBar).toBeInTheDocument();
+      expect(progressBar).toHaveAttribute("value", "45");
     });
 
     it("displays ERROR status for error model", () => {
@@ -571,9 +593,7 @@ describe("ModelsListCard", () => {
       expect(screen.getByText("Available Models")).toBeInTheDocument();
 
       rerender(
-        <MuiThemeProvider theme={theme}>
-          <ModelsListCard models={mockModels} isDark={true} onToggleModel={mockOnToggle} />
-        </MuiThemeProvider>
+        <ModelsListCard models={mockModels} isDark={true} onToggleModel={mockOnToggle} />
       );
 
       expect(screen.getByText("Available Models")).toBeInTheDocument();
@@ -588,9 +608,7 @@ describe("ModelsListCard", () => {
       expect(stopButton).toBeInTheDocument();
 
       rerender(
-        <MuiThemeProvider theme={theme}>
-          <ModelsListCard models={mockModels} isDark={false} onToggleModel={mockOnToggle} />
-        </MuiThemeProvider>
+        <ModelsListCard models={mockModels} isDark={false} onToggleModel={mockOnToggle} />
       );
 
       expect(screen.getByText("Stop")).toBeInTheDocument();

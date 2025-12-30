@@ -285,11 +285,69 @@ Add to `.vscode/settings.json`:
 }
 ```
 
+#### MUI v7 Grid Component Pattern
+
+**CRITICAL**: MUI v7 deprecated the `item` prop on Grid components. Always use `size` prop instead:
+
+```tsx
+// ❌ WRONG (MUI v6 syntax - deprecated)
+<Grid item xs={12} sm={6} md={4}>
+
+// ✅ CORRECT (MUI v7 syntax)
+<Grid size={{ xs: 12, sm: 6, md: 4 }}>
+```
+
+**Migration Benefits:**
+- Improved TypeScript support and type inference
+- Better performance with smaller bundle size
+- Cleaner, more intuitive component API
+- Enhanced theming system
+- Long-term support with active development
+
+**All Grid components** throughout the codebase have been updated to use the `size` prop.
+
 ## Testing
 
 ### Test Coverage
 
-This project has comprehensive test coverage achieving **70%+** threshold.
+This project has comprehensive test coverage with **187 test files** and **5,757 tests**.
+
+**Current Coverage: 67.47% lines** (Target: 98%)
+
+| Metric | Current | Target | Gap |
+|--------|---------|--------|-----|
+| **Lines** | 67.47% | 98% | -30.53% |
+| **Branches** | 54.63% | 98% | -43.37% |
+| **Functions** | 58.43% | 98% | -39.57% |
+| **Statements** | ~67.47% | 98% | -31% |
+
+### Coverage Achievements
+
+**High-Achievement Components:**
+- ✅ WebSocket provider: 98% coverage (target met)
+- ✅ fit-params-service: 97.97% coverage (near target)
+- ✅ Button component: 100% coverage (perfect)
+- ✅ Hooks & Contexts: 95%+ coverage
+- ✅ Lib & Services: 97%+ coverage
+- ✅ Server Code: 97%+ coverage
+
+**Areas for Improvement:**
+- ⚠️ Dashboard & Charts: ~55% coverage (needs +43%)
+- ⚠️ Pages & Config: ~80% coverage (needs +18%)
+- ⚠️ Layout & UI: 80-100% coverage (needs +18%)
+
+### Testing Documentation
+
+For detailed testing information:
+- **[TESTING.md](TESTING.md)** - Comprehensive testing guide with patterns and best practices
+- **[COVERAGE.md](COVERAGE.md)** - Coverage metrics, reporting, and improvement strategies
+
+### Test Infrastructure
+
+- **Jest 30.2.0** - Test runner with TypeScript support
+- **React Testing Library** - Component testing utilities
+- **MUI v7 Mocks** - Complete MUI component mocking
+- **Proper Mocking** - axios, socket.io-client, Winston, Next.js utilities
 
 ### 1. Unit Tests
 
@@ -594,7 +652,7 @@ git commit -m "refactor: simplify config management"
 
 ### 4. Code Review Checklist
 
-- [ ] Tests pass (70%+ coverage)
+- [ ] Tests pass (98%+ coverage)
 - [ ] Code is linted
 - [ ] TypeScript types are correct
 - [ ] Documentation is updated

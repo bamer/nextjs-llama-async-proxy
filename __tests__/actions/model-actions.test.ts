@@ -214,6 +214,15 @@ describe("model-actions", () => {
       expect(result).toBe(1);
       expect(db.saveModel).toHaveBeenCalledWith(modelConfig);
     });
+
+    it("should return new model ID", async () => {
+      const modelConfig = { name: "test", type: "llama", status: "idle" };
+      (db.saveModel as jest.Mock).mockResolvedValue(42);
+
+      const result = await saveModelAction(modelConfig);
+
+      expect(result).toBe(42);
+    });
   });
 
   describe("updateModelAction", () => {
@@ -243,6 +252,12 @@ describe("model-actions", () => {
       await deleteModelAction(1);
 
       expect(db.deleteModel).toHaveBeenCalledWith(1);
+    });
+
+    it("should handle deletion of non-existent model", async () => {
+      (db.deleteModel as jest.Mock).mockResolvedValue(undefined);
+
+      await expect(deleteModelAction(999)).resolves.not.toThrow();
     });
   });
 });

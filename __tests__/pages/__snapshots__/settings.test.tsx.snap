@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`SettingsPage snapshot test 1`] = `
+<div
+  data-testid="settings-page"
+>
+  <div
+    data-testid="settings-content"
+  >
+    Settings Content
+  </div>
+</div>
+`;

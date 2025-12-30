@@ -2,14 +2,23 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import React from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { Header } from '@/components/layout/Header';
-import * as sidebarContext from '@/components/layout/SidebarProvider';
-import * as themeContext from '@/contexts/ThemeContext';
 import { useTheme } from '@/contexts/ThemeContext';
 
+// Mocks must be defined before imports that use them
 jest.mock('@/components/layout/SidebarProvider', () => ({
   useSidebar: jest.fn(),
 }));
+
+jest.mock('@/contexts/ThemeContext');
+
+jest.mock('@/components/ui/ThemeToggle', () => ({
+  ThemeToggle: () => <button data-testid="theme-toggle">Theme Toggle</button>,
+}));
+
+// Import after mocks
+import { Header } from '@/components/layout/Header';
+import * as sidebarContext from '@/components/layout/SidebarProvider';
+import * as themeContext from '@/contexts/ThemeContext';
 
 jest.mock('@/contexts/ThemeContext');
 
@@ -45,6 +54,11 @@ describe('Header', () => {
       toggleTheme: jest.fn(),
       currentTheme: theme,
     });
+  });
+
+  it('can import Header component', () => {
+    expect(Header).toBeDefined();
+    expect(typeof Header).toBe('function');
   });
 
   it('renders correctly', () => {

@@ -22,7 +22,7 @@ pnpm type:check       # TypeScript type check (tsc --noEmit)
 # Testing
 pnpm test             # Run all tests
 pnpm test:watch       # Run tests in watch mode
-pnpm test:coverage    # Generate coverage report (70% threshold)
+pnpm test:coverage    # Generate coverage report (98% threshold)
 
 # Run single test file
 pnpm test <test-file-path>
@@ -122,7 +122,8 @@ pnpm test <test-file-path>
 - BeforeEach for resetting state
 - Expectations: `expect(...).toBe()`, `expect(...).toHaveProperty()`
 - Mock functions with `jest.fn()` and `.mockReturnValue()`
-- Test coverage threshold: 70% for branches, functions, lines, statements
+- Test coverage threshold: 98% for branches, functions, lines, statements
+- Proper mocking of external dependencies (axios, socket.io-client, Winston)
 
 ### File Organization
 

@@ -24,10 +24,19 @@ const DEFAULT_SERVER_CONFIG = {
 describe('useConfigurationForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Mock fetch to return default config quickly to avoid hanging
     global.fetch = jest.fn(() =>
       Promise.resolve({
         ok: true,
-        json: () => Promise.resolve(DEFAULT_SERVER_CONFIG),
+        json: () => Promise.resolve({
+          serverConfig: DEFAULT_SERVER_CONFIG,
+          appConfig: {
+            logLevel: "info",
+            maxConcurrentModels: 1,
+            autoUpdate: false,
+            notificationsEnabled: true,
+          }
+        }),
       } as Response)
     ) as jest.Mock;
 
@@ -54,6 +63,14 @@ describe('useConfigurationForm', () => {
   });
 
   it('should load server config on mount', async () => {
+    // Override fetch for this test
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(DEFAULT_SERVER_CONFIG),
+      } as Response)
+    ) as jest.Mock;
+
     const { result } = renderHook(() => useConfigurationForm());
 
     expect(result.current.isLoadingConfig).toBe(true);
@@ -67,6 +84,22 @@ describe('useConfigurationForm', () => {
   });
 
   it('should set form config after successful load', async () => {
+    // Override fetch for this test
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          serverConfig: DEFAULT_SERVER_CONFIG,
+          appConfig: {
+            logLevel: "info",
+            maxConcurrentModels: 1,
+            autoUpdate: false,
+            notificationsEnabled: true,
+          }
+        }),
+      } as Response)
+    ) as jest.Mock;
+
     const { result } = renderHook(() => useConfigurationForm());
 
     await waitFor(() => {
@@ -75,11 +108,18 @@ describe('useConfigurationForm', () => {
 
     expect(result.current.formConfig).toEqual({
       llamaServer: DEFAULT_SERVER_CONFIG,
+      basePath: "/models",
+      logLevel: "info",
+      maxConcurrentModels: 1,
+      autoUpdate: false,
+      notificationsEnabled: true,
+      llamaServerPath: "/home/bamer/llama.cpp/build/bin/llama-server",
     });
   });
 
   it('should handle load server config error', async () => {
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    // Override fetch for this test
     global.fetch = jest.fn(() => Promise.reject(new Error('Network error'))) as jest.Mock;
 
     const { result } = renderHook(() => useConfigurationForm());
@@ -97,7 +137,40 @@ describe('useConfigurationForm', () => {
   });
 
   it('should validate required host field during save', async () => {
+    // Mock fetch to avoid loading hanging
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          serverConfig: DEFAULT_SERVER_CONFIG,
+          appConfig: {
+            logLevel: "info",
+            maxConcurrentModels: 1,
+            autoUpdate: false,
+            notificationsEnabled: true,
+          }
+        }),
+      } as Response)
+    ) as jest.Mock;
+
     const { result } = renderHook(() => useConfigurationForm());
+
+    await waitFor(() => {
+      expect(result.current.isLoadingConfig).toBe(false);
+    });
+
+    // Set valid general settings first
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'basePath', value: '/models', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'llamaServerPath', value: '/path/to/server', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
 
     act(() => {
       result.current.handleInputChange({
@@ -110,15 +183,32 @@ describe('useConfigurationForm', () => {
     });
 
     expect(result.current.isSaving).toBe(false);
-    expect(result.current.validationErrors).toContain('Host is required');
+    expect(result.current.validationErrors).toContain('Llama Server Settings: host - Too small: expected string to have >=1 characters');
   });
 
   it('should validate port number range during save', async () => {
     const { result } = renderHook(() => useConfigurationForm());
 
+    await waitFor(() => {
+      expect(result.current.isLoadingConfig).toBe(false);
+    });
+
+    // Set valid general settings first
     act(() => {
       result.current.handleInputChange({
-        target: { name: 'port', value: '70000', type: 'number', checked: false },
+        target: { name: 'basePath', value: '/models', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'llamaServerPath', value: '/path/to/server', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    act(() => {
+      result.current.handleLlamaServerChange({
+        target: { name: 'llamaServer.host', value: '', type: 'text' },
       } as React.ChangeEvent<HTMLInputElement>);
     });
 
@@ -126,15 +216,32 @@ describe('useConfigurationForm', () => {
       await result.current.handleSave();
     });
 
-    expect(result.current.validationErrors).toContain('Port must be a valid port number (1-65535)');
+    expect(result.current.validationErrors).toContain('Llama Server Settings: port - Too big: expected number to be <=65535');
   });
 
   it('should validate port minimum value during save', async () => {
     const { result } = renderHook(() => useConfigurationForm());
 
+    await waitFor(() => {
+      expect(result.current.isLoadingConfig).toBe(false);
+    });
+
+    // Set valid general settings first
     act(() => {
       result.current.handleInputChange({
-        target: { name: 'port', value: '0', type: 'number', checked: false },
+        target: { name: 'basePath', value: '/models', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'llamaServerPath', value: '/path/to/server', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    act(() => {
+      result.current.handleLlamaServerChange({
+        target: { name: 'llamaServer.port', value: '0', type: 'number' },
       } as React.ChangeEvent<HTMLInputElement>);
     });
 
@@ -142,15 +249,32 @@ describe('useConfigurationForm', () => {
       await result.current.handleSave();
     });
 
-    expect(result.current.validationErrors).toContain('Port must be a valid port number (1-65535)');
+    expect(result.current.validationErrors).toContain('Llama Server Settings: port - Too small: expected number to be >=1');
   });
 
   it('should validate negative port during save', async () => {
     const { result } = renderHook(() => useConfigurationForm());
 
+    await waitFor(() => {
+      expect(result.current.isLoadingConfig).toBe(false);
+    });
+
+    // Set valid general settings first
     act(() => {
       result.current.handleInputChange({
-        target: { name: 'port', value: '-1', type: 'number', checked: false },
+        target: { name: 'basePath', value: '/models', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'llamaServerPath', value: '/path/to/server', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    act(() => {
+      result.current.handleLlamaServerChange({
+        target: { name: 'llamaServer.port', value: '-1', type: 'number' },
       } as React.ChangeEvent<HTMLInputElement>);
     });
 
@@ -158,7 +282,7 @@ describe('useConfigurationForm', () => {
       await result.current.handleSave();
     });
 
-    expect(result.current.validationErrors).toContain('Port must be a valid port number (1-65535)');
+    expect(result.current.validationErrors).toContain('Llama Server Settings: port - Too small: expected number to be >=1');
   });
 
   it('should accept valid port numbers during save', async () => {
@@ -182,19 +306,25 @@ describe('useConfigurationForm', () => {
 
     act(() => {
       result.current.handleInputChange({
-        target: { name: 'port', value: '8080', type: 'number', checked: false },
+        target: { name: 'basePath', value: '/models', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'llamaServerPath', value: '/path/to/server', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    act(() => {
+      result.current.handleLlamaServerChange({
+        target: { name: 'llamaServer.port', value: '70000', type: 'number' },
       } as React.ChangeEvent<HTMLInputElement>);
     });
 
     act(() => {
       result.current.handleInputChange({
         target: { name: 'host', value: 'localhost', type: 'text', checked: false },
-      } as React.ChangeEvent<HTMLInputElement>);
-    });
-
-    act(() => {
-      result.current.handleInputChange({
-        target: { name: 'serverPath', value: '/test/path', type: 'text', checked: false },
       } as React.ChangeEvent<HTMLInputElement>);
     });
 
@@ -209,15 +339,51 @@ describe('useConfigurationForm', () => {
   it('should validate required serverPath field during save', async () => {
     const { result } = renderHook(() => useConfigurationForm());
 
+    await waitFor(() => {
+      expect(result.current.isLoadingConfig).toBe(false);
+    });
+
+    act(() => {
+      result.current.handleLlamaServerChange({
+        target: { name: 'llamaServer.serverPath', value: '', type: 'text' },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
     await act(async () => {
       await result.current.handleSave();
     });
 
-    expect(result.current.validationErrors).toContain('Server path is required');
+    expect(result.current.validationErrors).toContain('Llama Server Settings: serverPath - Too small: expected string to have >=1 characters');
+  });
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'llamaServerPath', value: '/path/to/server', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    await act(async () => {
+      await result.current.handleSave();
+    });
+
+    expect(result.current.validationErrors).toContain('Llama Server Settings: serverPath - Too small: expected string to have >=1 characters');
   });
 
   it('should validate ctx_size as positive number during save', async () => {
     const { result } = renderHook(() => useConfigurationForm());
+
+    // Set valid general settings first
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'basePath', value: '/models', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'llamaServerPath', value: '/path/to/server', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
 
     act(() => {
       result.current.handleInputChange({
@@ -229,11 +395,24 @@ describe('useConfigurationForm', () => {
       await result.current.handleSave();
     });
 
-    expect(result.current.validationErrors).toContain('Context size must be a positive number');
+    expect(result.current.validationErrors).toContain('Llama Server Settings: ctx_size - Too small: expected number to be >=1');
   });
 
   it('should validate batch_size as positive number during save', async () => {
     const { result } = renderHook(() => useConfigurationForm());
+
+    // Set valid general settings first
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'basePath', value: '/models', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'llamaServerPath', value: '/path/to/server', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
 
     act(() => {
       result.current.handleInputChange({
@@ -245,11 +424,24 @@ describe('useConfigurationForm', () => {
       await result.current.handleSave();
     });
 
-    expect(result.current.validationErrors).toContain('Batch size must be a positive number');
+    expect(result.current.validationErrors).toContain('Llama Server Settings: batch_size - Too small: expected number to be >=1');
   });
 
   it('should handle NaN ctx_size during save', async () => {
     const { result } = renderHook(() => useConfigurationForm());
+
+    // Set valid general settings first
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'basePath', value: '/models', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'llamaServerPath', value: '/path/to/server', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
 
     act(() => {
       result.current.handleInputChange({
@@ -261,11 +453,24 @@ describe('useConfigurationForm', () => {
       await result.current.handleSave();
     });
 
-    expect(result.current.validationErrors).toContain('Context size must be a positive number');
+    expect(result.current.validationErrors).toContain('Llama Server Settings: ctx_size - Expected number, received nan');
   });
 
   it('should handle NaN batch_size during save', async () => {
     const { result } = renderHook(() => useConfigurationForm());
+
+    // Set valid general settings first
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'basePath', value: '/models', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'llamaServerPath', value: '/path/to/server', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
 
     act(() => {
       result.current.handleInputChange({
@@ -277,7 +482,7 @@ describe('useConfigurationForm', () => {
       await result.current.handleSave();
     });
 
-    expect(result.current.validationErrors).toContain('Batch size must be a positive number');
+    expect(result.current.validationErrors).toContain('Llama Server Settings: batch_size - Expected number, received nan');
   });
 
   it('should handle tab change', () => {
@@ -301,7 +506,7 @@ describe('useConfigurationForm', () => {
       } as React.ChangeEvent<HTMLInputElement>);
     });
 
-    expect(result.current.formConfig.host).toBe('localhost');
+    expect(result.current.formConfig.llamaServer?.host).toBe('localhost');
   });
 
   it('should handle checkbox input change', () => {
@@ -351,6 +556,22 @@ describe('useConfigurationForm', () => {
   });
 
   it('should reset config to loaded values', async () => {
+    // Override fetch for this test
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          serverConfig: DEFAULT_SERVER_CONFIG,
+          appConfig: {
+            logLevel: "info",
+            maxConcurrentModels: 1,
+            autoUpdate: false,
+            notificationsEnabled: true,
+          }
+        }),
+      } as Response)
+    ) as jest.Mock;
+
     const { result } = renderHook(() => useConfigurationForm());
 
     await waitFor(() => {
@@ -363,7 +584,7 @@ describe('useConfigurationForm', () => {
       } as React.ChangeEvent<HTMLInputElement>);
     });
 
-    expect(result.current.formConfig.host).toBe('modified-host');
+    expect(result.current.formConfig.llamaServer?.host).toBe('modified-host');
 
     await act(async () => {
       await result.current.handleReset();
@@ -371,10 +592,32 @@ describe('useConfigurationForm', () => {
 
     expect(result.current.formConfig).toEqual({
       llamaServer: DEFAULT_SERVER_CONFIG,
+      basePath: "/models",
+      logLevel: "info",
+      maxConcurrentModels: 1,
+      autoUpdate: false,
+      notificationsEnabled: true,
+      llamaServerPath: "/home/bamer/llama.cpp/build/bin/llama-server",
     });
   });
 
   it('should sync config from server', async () => {
+    // Override fetch for this test
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          serverConfig: DEFAULT_SERVER_CONFIG,
+          appConfig: {
+            logLevel: "info",
+            maxConcurrentModels: 1,
+            autoUpdate: false,
+            notificationsEnabled: true,
+          }
+        }),
+      } as Response)
+    ) as jest.Mock;
+
     const { result } = renderHook(() => useConfigurationForm());
 
     await waitFor(() => {
@@ -393,12 +636,26 @@ describe('useConfigurationForm', () => {
 
     expect(result.current.formConfig).toEqual({
       llamaServer: DEFAULT_SERVER_CONFIG,
+      basePath: "/models",
+      logLevel: "info",
+      maxConcurrentModels: 1,
+      autoUpdate: false,
+      notificationsEnabled: true,
+      llamaServerPath: "/home/bamer/llama.cpp/build/bin/llama-server",
     });
   });
 
   // Positive test: handleSync should reload config from server and reset form
   // This covers line 159 which calls loadServerConfig()
   it('should reload server config when handleSync is called', async () => {
+    // Override fetch for this test
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(DEFAULT_SERVER_CONFIG),
+      } as Response)
+    ) as jest.Mock;
+
     const { result } = renderHook(() => useConfigurationForm());
 
     await waitFor(() => {
@@ -428,6 +685,7 @@ describe('useConfigurationForm', () => {
   // Negative test: handleSync should handle server errors gracefully
   it('should handle sync errors without crashing', async () => {
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    // Override fetch for this test
     global.fetch = jest.fn(() => Promise.reject(new Error('Sync error'))) as jest.Mock;
 
     const { result } = renderHook(() => useConfigurationForm());
@@ -708,8 +966,14 @@ describe('useConfigurationForm', () => {
 
     // Test port 1 (minimum valid)
     act(() => {
-      result.current.handleInputChange({
-        target: { name: 'port', value: '1', type: 'number', checked: false },
+      result.current.handleLlamaServerChange({
+        target: { name: 'llamaServer.port', value: '8080', type: 'number' },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    act(() => {
+      result.current.handleLlamaServerChange({
+        target: { name: 'llamaServer.host', value: 'localhost', type: 'text' },
       } as React.ChangeEvent<HTMLInputElement>);
     });
 
@@ -908,6 +1172,55 @@ describe('useConfigurationForm', () => {
 
   // Positive test: Test concurrent handleSync calls without awaiting
   // This tests that handleSync properly handles multiple concurrent requests
+  it('should reload server config when handleSync is called', async () => {
+    // Override fetch for this test
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          serverConfig: DEFAULT_SERVER_CONFIG,
+          appConfig: {
+            logLevel: "info",
+            maxConcurrentModels: 1,
+            autoUpdate: false,
+            notificationsEnabled: true,
+          }
+        }),
+      } as Response)
+    ) as jest.Mock;
+
+    const { result } = renderHook(() => useConfigurationForm());
+
+    await waitFor(() => {
+      expect(result.current.isLoadingConfig).toBe(false);
+    });
+
+    // Modify config
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'host', value: 'modified-host', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    expect(result.current.formConfig.llamaServer?.host).toBe('modified-host');
+
+    // Call handleSync to reload
+    await act(async () => {
+      await result.current.handleSync();
+    });
+
+    // Config should be reset to server values
+    expect(result.current.formConfig).toEqual({
+      llamaServer: DEFAULT_SERVER_CONFIG,
+      basePath: "/models",
+      logLevel: "info",
+      maxConcurrentModels: 1,
+      autoUpdate: false,
+      notificationsEnabled: true,
+      llamaServerPath: "/home/bamer/llama.cpp/build/bin/llama-server",
+    });
+  });
+
   it('handles concurrent handleSync calls without awaiting', async () => {
     let fetchCount = 0;
     global.fetch = jest.fn(() => {
@@ -923,6 +1236,9 @@ describe('useConfigurationForm', () => {
     await waitFor(() => {
       expect(result.current.isLoadingConfig).toBe(false);
     });
+
+    // Clear the initial fetch call count
+    fetchCount = 0;
 
     // Modify config
     act(() => {
@@ -995,4 +1311,4 @@ describe('useConfigurationForm', () => {
 
     consoleSpy.mockRestore();
   });
-});
+

@@ -69,7 +69,7 @@ describe('AdvancedSettingsTab', () => {
     renderWithTheme(
       <AdvancedSettingsTab isSaving={false} onReset={mockOnReset} onSync={mockOnSync} />
     );
-    const button = screen.getByText('Reset to Defaults');
+    const button = screen.getByText('Reset to Defaults').parentElement as HTMLButtonElement;
     fireEvent.click(button);
     expect(mockOnReset).toHaveBeenCalledTimes(1);
   });
@@ -78,7 +78,7 @@ describe('AdvancedSettingsTab', () => {
     renderWithTheme(
       <AdvancedSettingsTab isSaving={false} onReset={mockOnReset} onSync={mockOnSync} />
     );
-    const button = screen.getByText('Sync with Backend');
+    const button = screen.getByText('Sync with Backend').parentElement as HTMLButtonElement;
     fireEvent.click(button);
     expect(mockOnSync).toHaveBeenCalledTimes(1);
   });
@@ -87,7 +87,9 @@ describe('AdvancedSettingsTab', () => {
     renderWithTheme(
       <AdvancedSettingsTab isSaving={true} onReset={mockOnReset} onSync={mockOnSync} />
     );
-    const button = screen.getByText('Reset to Defaults');
+    const textElement = screen.getByText('Reset to Defaults');
+    console.log('Text element:', textElement.tagName, textElement);
+    const button = textElement.closest('button') as HTMLButtonElement;
     expect(button).toBeDisabled();
   });
 
@@ -95,7 +97,7 @@ describe('AdvancedSettingsTab', () => {
     renderWithTheme(
       <AdvancedSettingsTab isSaving={true} onReset={mockOnReset} onSync={mockOnSync} />
     );
-    const button = screen.getByText('Sync with Backend');
+    const button = screen.getByText('Sync with Backend').parentElement as HTMLButtonElement;
     expect(button).toBeDisabled();
   });
 
@@ -120,7 +122,7 @@ describe('AdvancedSettingsTab', () => {
     renderWithTheme(
       <AdvancedSettingsTab isSaving={true} onReset={mockOnReset} onSync={mockOnSync} />
     );
-    const button = screen.getByText('Reset to Defaults');
+    const button = screen.getByText('Reset to Defaults').parentElement as HTMLButtonElement;
     fireEvent.click(button);
     expect(mockOnReset).not.toHaveBeenCalled();
   });
@@ -129,7 +131,7 @@ describe('AdvancedSettingsTab', () => {
     renderWithTheme(
       <AdvancedSettingsTab isSaving={true} onReset={mockOnReset} onSync={mockOnSync} />
     );
-    const button = screen.getByText('Sync with Backend');
+    const button = screen.getByText('Sync with Backend').parentElement as HTMLButtonElement;
     fireEvent.click(button);
     expect(mockOnSync).not.toHaveBeenCalled();
   });

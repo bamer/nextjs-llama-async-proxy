@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useEffectEvent as ReactUseEffectEvent } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { getLoggerConfig, updateLoggerConfig, LoggerConfig } from '@/lib/client-logger';
@@ -23,11 +23,11 @@ export default function LoggingSettings() {
     setLoading(false);
   }, []);
 
-  const handleConfigChange = ReactUseEffectEvent((key: keyof LoggerConfig, value: any) => {
+  const handleConfigChange = (key: keyof LoggerConfig, value: any) => {
     setConfig(prev => ({ ...prev, [key]: value }));
-  });
+  };
 
-  const handleSaveConfig = ReactUseEffectEvent(() => {
+  const handleSaveConfig = () => {
     try {
       updateLoggerConfig(config);
 
@@ -44,9 +44,9 @@ export default function LoggingSettings() {
       console.error('Failed to update logging configuration:', error);
       useStore.getState().setError('Failed to update logging configuration');
     }
-  });
+  };
 
-  const handleResetConfig = ReactUseEffectEvent(() => {
+  const handleResetConfig = () => {
     const defaultConfig: LoggerConfig = {
       consoleLevel: 'debug',
       fileLevel: 'info',
@@ -60,7 +60,7 @@ export default function LoggingSettings() {
     setConfig(defaultConfig);
     updateLoggerConfig(defaultConfig);
     sendMessage('updateLoggerConfig', defaultConfig);
-  });
+  };
 
   const getLogLevelValue = (level: string) => {
     const levels = ['error', 'warn', 'info', 'debug', 'verbose'];

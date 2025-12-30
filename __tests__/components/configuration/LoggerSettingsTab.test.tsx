@@ -1,10 +1,18 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import React from 'react';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { LoggerSettingsTab } from '@/components/configuration/LoggerSettingsTab';
+import { LoggerSettingsTab } from '../../../src/components/configuration/LoggerSettingsTab';
 import * as loggerHook from '@/hooks/use-logger-config';
 import { useTheme } from '@/contexts/ThemeContext';
+
+jest.mock('framer-motion', () => ({
+  m: {
+    div: (props: unknown) => {
+      const { children } = props as { children?: React.ReactNode };
+      return <div>{children}</div>;
+    },
+  },
+}));
 
 jest.mock('@/hooks/use-logger-config', () => ({
   useLoggerConfig: jest.fn(),
@@ -12,10 +20,8 @@ jest.mock('@/hooks/use-logger-config', () => ({
 
 jest.mock('@/contexts/ThemeContext');
 
-const theme = createTheme();
-
-function renderWithTheme(component: React.ReactElement) {
-  return render(<ThemeProvider theme={theme}>{component}</ThemeProvider>);
+function renderComponent(component: React.ReactElement) {
+  return render(component);
 }
 
 describe('LoggerSettingsTab', () => {
@@ -39,7 +45,7 @@ describe('LoggerSettingsTab', () => {
       mode: 'light' as const,
       setMode: jest.fn(),
       toggleTheme: jest.fn(),
-      currentTheme: theme,
+      currentTheme: {},
     });
     (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
       loggerConfig: defaultLoggerConfig,
@@ -50,81 +56,81 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('renders correctly', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     expect(screen.getByText('Log Levels')).toBeInTheDocument();
   });
 
   it('renders Console Logging switch', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     expect(screen.getByRole('switch', { name: /enable console logging/i })).toBeInTheDocument();
   });
 
   it('renders Console Level select', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     expect(screen.getByText('Console Level')).toBeInTheDocument();
   });
 
   it('renders File Logging switch', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     expect(screen.getByRole('switch', { name: /enable file logging/i })).toBeInTheDocument();
   });
 
   it('renders File Level select', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     expect(screen.getByText('File Level (application.log)')).toBeInTheDocument();
   });
 
   it('renders Error File Level select', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     expect(screen.getByText('Error File Level (errors.log)')).toBeInTheDocument();
   });
 
   it('renders Max File Size select', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     expect(screen.getByText('Max File Size')).toBeInTheDocument();
   });
 
   it('renders File Retention Period select', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     expect(screen.getByText('File Retention Period')).toBeInTheDocument();
   });
 
   it('calls updateConfig when Console Logging switch is toggled', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const checkbox = screen.getByRole('switch', { name: /enable console logging/i });
     fireEvent.click(checkbox);
     expect(mockUpdateConfig).toHaveBeenCalledWith({ enableConsoleLogging: false });
   });
 
   it('renders Console Level select with all options', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     expect(screen.getByText('Console Level')).toBeInTheDocument();
   });
 
   it('calls updateConfig when File Logging switch is toggled', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const checkbox = screen.getByRole('switch', { name: /enable file logging/i });
     fireEvent.click(checkbox);
     expect(mockUpdateConfig).toHaveBeenCalledWith({ enableFileLogging: false });
   });
 
   it('renders File Level select with all options', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     expect(screen.getByText('File Level (application.log)')).toBeInTheDocument();
   });
 
   it('renders Error Level select with all options', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     expect(screen.getByText('Error File Level (errors.log)')).toBeInTheDocument();
   });
 
   it('renders Max File Size select with all options', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     expect(screen.getByText('Max File Size')).toBeInTheDocument();
   });
 
   it('renders File Retention Period select with all options', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     expect(screen.getByText('File Retention Period')).toBeInTheDocument();
   });
 
@@ -136,7 +142,7 @@ describe('LoggerSettingsTab', () => {
       loading: false,
       clearFieldError: mockClearFieldError,
     });
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     expect(screen.getByText('Console Level')).toBeInTheDocument();
   });
 
@@ -148,7 +154,7 @@ describe('LoggerSettingsTab', () => {
       loading: false,
       clearFieldError: mockClearFieldError,
     });
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     expect(screen.getByText('File Level (application.log)')).toBeInTheDocument();
   });
 
@@ -159,7 +165,7 @@ describe('LoggerSettingsTab', () => {
       loading: true,
       clearFieldError: mockClearFieldError,
     });
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     expect(screen.getByText('Log Levels')).toBeInTheDocument();
   });
 
@@ -170,7 +176,7 @@ describe('LoggerSettingsTab', () => {
       loading: false,
       clearFieldError: mockClearFieldError,
     });
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     expect(screen.getByText('Log Levels')).toBeInTheDocument();
   });
 
@@ -181,23 +187,23 @@ describe('LoggerSettingsTab', () => {
       mode: 'dark' as const,
       setMode: jest.fn(),
       toggleTheme: jest.fn(),
-      currentTheme: theme,
+      currentTheme: {},
     });
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     expect(screen.getByText('Log Levels')).toBeInTheDocument();
   });
 
   // Additional tests for better coverage
 
   it('toggles Console Logging switch exists', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
 
     const switchElement = screen.getByRole('switch', { name: /enable console logging/i });
     expect(switchElement).toBeInTheDocument();
   });
 
   it('toggles File Logging switch exists', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
 
     const switchElement = screen.getByRole('switch', { name: /enable file logging/i });
     expect(switchElement).toBeInTheDocument();
@@ -211,7 +217,7 @@ describe('LoggerSettingsTab', () => {
       loading: false,
       clearFieldError: mockClearFieldError,
     });
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
 
     const checkbox = screen.getByRole('switch', { name: /enable console logging/i }) as HTMLInputElement;
     expect(checkbox.checked).toBe(false);
@@ -225,7 +231,7 @@ describe('LoggerSettingsTab', () => {
       loading: false,
       clearFieldError: mockClearFieldError,
     });
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
 
     const checkbox = screen.getByRole('switch', { name: /enable file logging/i }) as HTMLInputElement;
     expect(checkbox.checked).toBe(false);
@@ -239,7 +245,7 @@ describe('LoggerSettingsTab', () => {
       loading: false,
       clearFieldError: mockClearFieldError,
     });
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
 
     const checkbox = screen.getByRole('switch', { name: /enable console logging/i }) as HTMLInputElement;
     expect(checkbox.checked).toBe(true);
@@ -253,14 +259,14 @@ describe('LoggerSettingsTab', () => {
       loading: false,
       clearFieldError: mockClearFieldError,
     });
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
 
     const checkbox = screen.getByRole('switch', { name: /enable file logging/i }) as HTMLInputElement;
     expect(checkbox.checked).toBe(true);
   });
 
   it('renders all select components', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
 
     const selects = screen.getAllByRole('combobox');
     expect(selects).toHaveLength(5);
@@ -273,7 +279,7 @@ describe('LoggerSettingsTab', () => {
       loading: false,
       clearFieldError: mockClearFieldError,
     });
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
 
     const checkbox1 = screen.getByRole('switch', { name: /enable console logging/i }) as HTMLInputElement;
     const checkbox2 = screen.getByRole('switch', { name: /enable file logging/i }) as HTMLInputElement;
@@ -290,7 +296,7 @@ describe('LoggerSettingsTab', () => {
       clearFieldError: mockClearFieldError,
     });
     expect(() => {
-      renderWithTheme(<LoggerSettingsTab />);
+      renderComponent(<LoggerSettingsTab />);
     }).not.toThrow();
   });
 
@@ -302,7 +308,7 @@ describe('LoggerSettingsTab', () => {
       clearFieldError: mockClearFieldError,
     });
     expect(() => {
-      renderWithTheme(<LoggerSettingsTab />);
+      renderComponent(<LoggerSettingsTab />);
     }).not.toThrow();
   });
 
@@ -314,7 +320,7 @@ describe('LoggerSettingsTab', () => {
       clearFieldError: mockClearFieldError,
     });
     expect(() => {
-      renderWithTheme(<LoggerSettingsTab />);
+      renderComponent(<LoggerSettingsTab />);
     }).not.toThrow();
   });
 
@@ -335,7 +341,7 @@ describe('LoggerSettingsTab', () => {
       clearFieldError: mockClearFieldError,
     });
     expect(() => {
-      renderWithTheme(<LoggerSettingsTab />);
+      renderComponent(<LoggerSettingsTab />);
     }).not.toThrow();
   });
 
@@ -346,7 +352,7 @@ describe('LoggerSettingsTab', () => {
       loading: true,
       clearFieldError: mockClearFieldError,
     });
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
 
     expect(screen.getByText('Log Levels')).toBeInTheDocument();
     expect(screen.getByText('Console Level')).toBeInTheDocument();
@@ -361,7 +367,7 @@ describe('LoggerSettingsTab', () => {
       loading: false,
       clearFieldError: mockClearFieldError,
     });
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
 
     const checkbox1 = screen.getByRole('switch', { name: /enable console logging/i }) as HTMLInputElement;
     const checkbox2 = screen.getByRole('switch', { name: /enable file logging/i }) as HTMLInputElement;
@@ -371,7 +377,7 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('renders all UI elements correctly', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
 
     expect(screen.getByText('Log Levels')).toBeInTheDocument();
     expect(screen.getByText('Console Level')).toBeInTheDocument();
@@ -382,7 +388,7 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('handles all switches rendered', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
 
     // Check for switch labels instead of counting checkboxes
     expect(screen.getByText('Enable Console Logging')).toBeInTheDocument();
@@ -390,7 +396,7 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('handles all selects rendered', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
 
     const selects = screen.getAllByRole('combobox');
     expect(selects).toHaveLength(5);
@@ -401,7 +407,7 @@ describe('LoggerSettingsTab', () => {
   // Positive test: Verify Console Level select onChange works for all options
   // This covers line 61: onChange={(e) => updateConfig({ consoleLevel: e.target.value })}
   it('calls updateConfig when Console Level is changed to error', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[0]; // Console Level is first select
     fireEvent.change(select, { target: { value: 'error' } });
@@ -409,7 +415,7 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('calls updateConfig when Console Level is changed to warn', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[0];
     fireEvent.change(select, { target: { value: 'warn' } });
@@ -417,7 +423,7 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('calls updateConfig when Console Level is changed to info', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[0];
     fireEvent.change(select, { target: { value: 'info' } });
@@ -425,7 +431,7 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('calls updateConfig when Console Level is changed to debug', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[0];
     fireEvent.change(select, { target: { value: 'debug' } });
@@ -435,7 +441,7 @@ describe('LoggerSettingsTab', () => {
   // Positive test: Verify File Level select onChange works for all options
   // This covers line 98: onChange={(e) => updateConfig({ fileLevel: e.target.value })}
   it('calls updateConfig when File Level is changed to error', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[1]; // File Level is second select
     fireEvent.change(select, { target: { value: 'error' } });
@@ -443,7 +449,7 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('calls updateConfig when File Level is changed to warn', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[1];
     fireEvent.change(select, { target: { value: 'warn' } });
@@ -451,7 +457,7 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('calls updateConfig when File Level is changed to info', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[1];
     fireEvent.change(select, { target: { value: 'info' } });
@@ -459,7 +465,7 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('calls updateConfig when File Level is changed to debug', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[1];
     fireEvent.change(select, { target: { value: 'debug' } });
@@ -469,7 +475,7 @@ describe('LoggerSettingsTab', () => {
   // Positive test: Verify Error Level select onChange works for all options
   // This covers line 118: onChange={(e) => updateConfig({ errorLevel: e.target.value })}
   it('calls updateConfig when Error Level is changed to error', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[2]; // Error Level is third select
     fireEvent.change(select, { target: { value: 'error' } });
@@ -477,7 +483,7 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('calls updateConfig when Error Level is changed to warn', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[2];
     fireEvent.change(select, { target: { value: 'warn' } });
@@ -487,7 +493,7 @@ describe('LoggerSettingsTab', () => {
   // Positive test: Verify Max File Size select onChange works for all options
   // This covers line 136: onChange={(e) => updateConfig({ maxFileSize: e.target.value })}
   it('calls updateConfig when Max File Size is changed to 10m', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[3]; // Max File Size is fourth select
     fireEvent.change(select, { target: { value: '10m' } });
@@ -495,7 +501,7 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('calls updateConfig when Max File Size is changed to 20m', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[3];
     fireEvent.change(select, { target: { value: '20m' } });
@@ -503,7 +509,7 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('calls updateConfig when Max File Size is changed to 50m', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[3];
     fireEvent.change(select, { target: { value: '50m' } });
@@ -511,7 +517,7 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('calls updateConfig when Max File Size is changed to 100m', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[3];
     fireEvent.change(select, { target: { value: '100m' } });
@@ -519,7 +525,7 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('calls updateConfig when Max File Size is changed to 500m', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[3];
     fireEvent.change(select, { target: { value: '500m' } });
@@ -529,7 +535,7 @@ describe('LoggerSettingsTab', () => {
   // Positive test: Verify File Retention Period select onChange works for all options
   // This covers line 157: onChange={(e) => updateConfig({ maxFiles: e.target.value })}
   it('calls updateConfig when File Retention is changed to 7d', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[4]; // File Retention is fifth select
     fireEvent.change(select, { target: { value: '7d' } });
@@ -537,7 +543,7 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('calls updateConfig when File Retention is changed to 14d', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[4];
     fireEvent.change(select, { target: { value: '14d' } });
@@ -545,7 +551,7 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('calls updateConfig when File Retention is changed to 30d', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[4];
     fireEvent.change(select, { target: { value: '30d' } });
@@ -553,7 +559,7 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('calls updateConfig when File Retention is changed to 60d', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[4];
     fireEvent.change(select, { target: { value: '60d' } });
@@ -561,7 +567,7 @@ describe('LoggerSettingsTab', () => {
   });
 
   it('calls updateConfig when File Retention is changed to 90d', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
     const selects = screen.getAllByRole('combobox');
     const select = selects[4];
     fireEvent.change(select, { target: { value: '90d' } });
@@ -577,7 +583,7 @@ describe('LoggerSettingsTab', () => {
       loading: false,
       clearFieldError: mockClearFieldError,
     });
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
 
     // Verify the component rendered (basic test)
     expect(screen.getByText('Console Level')).toBeInTheDocument();
@@ -591,7 +597,7 @@ describe('LoggerSettingsTab', () => {
       loading: false,
       clearFieldError: mockClearFieldError,
     });
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
 
     // Verify the component still renders - file logging can be set before enabling
     const selects = screen.getAllByRole('combobox');
@@ -607,7 +613,7 @@ describe('LoggerSettingsTab', () => {
       loading: false,
       clearFieldError: mockClearFieldError,
     });
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
 
     const checkbox = screen.getByRole('switch', { name: /enable console logging/i });
     fireEvent.click(checkbox);
@@ -623,7 +629,7 @@ describe('LoggerSettingsTab', () => {
       loading: false,
       clearFieldError: mockClearFieldError,
     });
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
 
     const checkbox = screen.getByRole('switch', { name: /enable file logging/i });
     fireEvent.click(checkbox);
@@ -633,7 +639,7 @@ describe('LoggerSettingsTab', () => {
 
   // Positive test: Verify multiple select changes work correctly
   it('handles multiple sequential select changes', () => {
-    renderWithTheme(<LoggerSettingsTab />);
+    renderComponent(<LoggerSettingsTab />);
 
     const selects = screen.getAllByRole('combobox');
     const consoleSelect = selects[0];

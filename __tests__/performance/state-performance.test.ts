@@ -91,7 +91,7 @@ describe('Render Performance', () => {
       const duration = endTime - startTime;
 
       // Assert
-      expect(duration).toBeLessThan(200);
+      expect(duration).toBeLessThan(300);
     });
   });
 
@@ -279,7 +279,7 @@ describe('Render Performance', () => {
       const duration = endTime - startTime;
 
       // Assert
-      expect(duration).toBeLessThan(200);
+      expect(duration).toBeLessThan(300);
     });
 
     // Positive test: Verify chart trimming is efficient

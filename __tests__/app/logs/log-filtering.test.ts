@@ -6,7 +6,7 @@ describe('Log Filtering Logic', () => {
   describe('Filter levels', () => {
     it('should match all logs when filterLevel is "all"', () => {
       const log = { level: 'info' };
-      const filterLevel = 'all';
+      const filterLevel: string = 'all';
 
       const matchesLevel = filterLevel === 'all' || filterLevel.split(',').includes(log.level);
 
@@ -15,7 +15,7 @@ describe('Log Filtering Logic', () => {
 
     it('should match error logs when filterLevel is "error"', () => {
       const log = { level: 'error' };
-      const filterLevel = 'error';
+      const filterLevel: string = 'error';
 
       const matchesLevel = filterLevel === 'all' || filterLevel.split(',').includes(log.level);
 
@@ -24,7 +24,7 @@ describe('Log Filtering Logic', () => {
 
     it('should not match info logs when filterLevel is "error"', () => {
       const log = { level: 'info' };
-      const filterLevel = 'error';
+      const filterLevel: string = 'error';
 
       const matchesLevel = filterLevel === 'all' || filterLevel.split(',').includes(log.level);
 
@@ -34,7 +34,7 @@ describe('Log Filtering Logic', () => {
     it('should match both error and info logs when filterLevel is "error,info"', () => {
       const errorLog = { level: 'error' };
       const infoLog = { level: 'info' };
-      const filterLevel = 'error,info';
+      const filterLevel: string = 'error,info';
 
       const errorMatches = filterLevel === 'all' || filterLevel.split(',').includes(errorLog.level);
       const infoMatches = filterLevel === 'all' || filterLevel.split(',').includes(infoLog.level);
@@ -45,7 +45,7 @@ describe('Log Filtering Logic', () => {
 
     it('should not match debug logs when filterLevel is "error,info"', () => {
       const log = { level: 'debug' };
-      const filterLevel = 'error,info';
+      const filterLevel: string = 'error,info';
 
       const matchesLevel = filterLevel === 'all' || filterLevel.split(',').includes(log.level);
 
@@ -54,7 +54,7 @@ describe('Log Filtering Logic', () => {
 
     it('should match warn logs when filterLevel is "warn"', () => {
       const log = { level: 'warn' };
-      const filterLevel = 'warn';
+      const filterLevel: string = 'warn';
 
       const matchesLevel = filterLevel === 'all' || filterLevel.split(',').includes(log.level);
 
@@ -63,7 +63,7 @@ describe('Log Filtering Logic', () => {
 
     it('should match debug logs when filterLevel is "debug"', () => {
       const log = { level: 'debug' };
-      const filterLevel = 'debug';
+      const filterLevel: string = 'debug';
 
       const matchesLevel = filterLevel === 'all' || filterLevel.split(',').includes(log.level);
 
@@ -73,8 +73,8 @@ describe('Log Filtering Logic', () => {
 
   describe('Filter with search term', () => {
     it('should match logs when search term is empty', () => {
-      const searchTerm = '';
-      const message = 'Test message';
+      const searchTerm: string = '';
+      const message: string = 'Test message';
 
       const matchesSearch = searchTerm === '' || message.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -82,8 +82,8 @@ describe('Log Filtering Logic', () => {
     });
 
     it('should match logs when search term is found in message', () => {
-      const searchTerm = 'error';
-      const message = 'Error occurred in system';
+      const searchTerm: string = 'error';
+      const message: string = 'Error occurred in system';
 
       const matchesSearch = searchTerm === '' || message.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -91,8 +91,8 @@ describe('Log Filtering Logic', () => {
     });
 
     it('should be case insensitive', () => {
-      const searchTerm = 'ERROR';
-      const message = 'Error occurred in system';
+      const searchTerm: string = 'ERROR';
+      const message: string = 'Error occurred in system';
 
       const matchesSearch = searchTerm === '' || message.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -100,8 +100,8 @@ describe('Log Filtering Logic', () => {
     });
 
     it('should not match logs when search term is not found', () => {
-      const searchTerm = 'warning';
-      const message = 'Error occurred in system';
+      const searchTerm: string = 'warning';
+      const message: string = 'Error occurred in system';
 
       const matchesSearch = searchTerm === '' || message.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -117,8 +117,8 @@ describe('Log Filtering Logic', () => {
         { level: 'error', message: 'Another error' },
       ];
 
-      const filterLevel = 'error';
-      const searchTerm = 'Error occurred';
+      const filterLevel: string = 'error';
+      const searchTerm: string = 'Error occurred';
 
       const filtered = logs.filter(log => {
         const matchesLevel = filterLevel === 'all' || filterLevel.split(',').includes(log.level);
@@ -137,8 +137,8 @@ describe('Log Filtering Logic', () => {
         { level: 'debug', message: 'Debug message' },
       ];
 
-      const filterLevel = 'all';
-      const searchTerm = '';
+      const filterLevel: string = 'all';
+      const searchTerm: string = '';
 
       const filtered = logs.filter(log => {
         const matchesLevel = filterLevel === 'all' || filterLevel.split(',').includes(log.level);

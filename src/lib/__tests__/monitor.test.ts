@@ -427,7 +427,7 @@ describe('monitor', () => {
       jest.advanceTimersByTime(30000);
 
       const writeCall = mockedFs.writeFileSync.mock.calls[0][1];
-      const history = JSON.parse(writeCall);
+      const history = JSON.parse(writeCall as string);
 
       expect(history[0]).toHaveProperty('id');
       expect(typeof history[0].id).toBe('number');
@@ -443,7 +443,7 @@ describe('monitor', () => {
       jest.advanceTimersByTime(30000);
 
       const writeCall = mockedFs.writeFileSync.mock.calls[0][1];
-      const history = JSON.parse(writeCall);
+      const history = JSON.parse(writeCall as string);
 
       expect(history[0].id).toBeGreaterThan(0);
     });
@@ -474,7 +474,7 @@ describe('monitor', () => {
       jest.advanceTimersByTime(30000);
 
       const writeCall = mockedFs.writeFileSync.mock.calls[0][1];
-      const history = JSON.parse(writeCall);
+      const history = JSON.parse(writeCall as string);
 
       expect(history).toHaveLength(2);
       expect(history[0]).toEqual(existingHistory[0]);
@@ -585,7 +585,7 @@ describe('monitor', () => {
 
       jest.advanceTimersByTime(30000);
 
-      const recordedMetrics = JSON.parse(mockedFs.writeFileSync.mock.calls[0][1])[0];
+      const recordedMetrics = JSON.parse(mockedFs.writeFileSync.mock.calls[0][1] as string)[0];
 
       expect(recordedMetrics).toBeDefined();
     });

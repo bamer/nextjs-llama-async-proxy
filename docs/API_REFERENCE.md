@@ -428,21 +428,28 @@ export interface ErrorMessage extends WebSocketMessage {
 
 #### GET `/api/config`
 
-Retrieves the current llama-server configuration from `llama-server-config.json`.
+Retrieves both llama-server configuration and app configuration.
 
 **Response:**
 ```json
 {
   "success": true,
   "data": {
-    "host": "localhost",
-    "port": 8134,
-    "basePath": "/path/to/models",
-    "serverPath": "/home/bamer/llama.cpp/build/bin/llama-server",
-    "ctx_size": 8192,
-    "batch_size": 512,
-    "threads": -1,
-    "gpu_layers": -1
+    "serverConfig": {
+      "host": "localhost",
+      "port": 8134,
+      "basePath": "/path/to/models",
+      "serverPath": "/home/bamer/llama.cpp/build/bin/llama-server",
+      "ctx_size": 8192,
+      "batch_size": 512,
+      "threads": -1,
+      "gpu_layers": -1
+    },
+    "appConfig": {
+      "theme": "dark",
+      "language": "en",
+      "autoRefresh": true
+    }
   },
   "timestamp": "2024-12-27T10:00:00Z"
 }
@@ -450,7 +457,10 @@ Retrieves the current llama-server configuration from `llama-server-config.json`
 
 **Type:**
 ```typescript
-ApiResponse<LlamaServerConfig>
+ApiResponse<{
+  serverConfig: LlamaServerConfig;
+  appConfig: AppConfig;
+}>
 ```
 
 **Status Codes:**
@@ -459,33 +469,12 @@ ApiResponse<LlamaServerConfig>
 
 #### POST `/api/config`
 
-Updates and saves the llama-server configuration to `llama-server-config.json`.
+Updates and saves configuration. Can update llama-server configuration, app configuration, or both.
 
 **Request Body:**
 ```json
 {
-  "host": "localhost",
-  "port": 8134,
-  "basePath": "/path/to/models",
-  "serverPath": "/home/bamer/llama.cpp/build/bin/llama-server",
-  "ctx_size": 8192,
-  "batch_size": 512,
-  "threads": -1,
-  "gpu_layers": -1
-}
-```
-
-**Type:**
-```typescript
-LlamaServerConfig
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Configuration updated successfully",
-  "data": {
+  "serverConfig": {
     "host": "localhost",
     "port": 8134,
     "basePath": "/path/to/models",
@@ -495,13 +484,46 @@ LlamaServerConfig
     "threads": -1,
     "gpu_layers": -1
   },
-  "timestamp": "2024-12-27T10:00:00Z"
+  "appConfig": {
+    "theme": "dark",
+    "language": "en",
+    "autoRefresh": false
+  }
 }
 ```
 
 **Type:**
 ```typescript
-ApiResponse<LlamaServerConfig>
+{
+  serverConfig?: Partial<LlamaServerConfig>;
+  appConfig?: Partial<AppConfig>;
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Configuration saved successfully",
+  "data": {
+    "serverConfig": {
+      "host": "localhost",
+      "port": 8134,
+      "basePath": "/path/to/models",
+      "serverPath": "/home/bamer/llama.cpp/build/bin/llama-server",
+      "ctx_size": 8192,
+      "batch_size": 512,
+      "threads": -1,
+      "gpu_layers": -1
+    },
+    "appConfig": {
+      "theme": "dark",
+      "language": "en",
+      "autoRefresh": false
+    }
+  },
+  "timestamp": "2024-12-27T10:00:00Z"
+}
 ```
 
 **Status Codes:**
@@ -513,29 +535,22 @@ ApiResponse<LlamaServerConfig>
 
 #### GET `/api/models`
 
-Retrieves the list of registered models and their current status.
+Retrieves list of registered models with current status.
 
 **Response:**
 ```json
 {
   "success": true,
   "data": {
-    "count": 3,
     "models": [
       {
         "id": "llama-2-7b-chat",
         "name": "llama-2-7b-chat",
-        "description": "Chat model for Llama 2",
-        "status": "running",
-        "version": "2.0",
-        "path": "/path/to/model.gguf",
+        "type": "llama",
+        "available": true,
         "size": 3758096384,
-        "family": "llama",
-        "contextSize": 4096,
-        "format": "gguf",
-        "quantization": "Q4_K_M",
-        "loadedAt": "2024-12-27T10:00:00Z",
-        "lastUsed": "2024-12-27T10:30:00Z"
+        "createdAt": "2024-12-27T10:00:00Z",
+        "updatedAt": "2024-12-27T10:00:00Z"
       }
     ]
   },
@@ -545,12 +560,23 @@ Retrieves the list of registered models and their current status.
 
 **Type:**
 ```typescript
-ApiResponse<ModelsResponse>
+ApiResponse<{
+  models: Array<{
+    id?: string;
+    name: string;
+    type?: string;
+    size?: number;
+    available: boolean;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+}>
 ```
 
 **Status Codes:**
 - `200` - Success
-- `500` - Internal server error
+- `500` - Llama service not initialized
+- `503` - Service unavailable
 
 #### POST `/api/models`
 
@@ -681,6 +707,332 @@ ApiResponse<{ modelId: string }>
 - `200` - Success
 - `404` - Model not found
 - `409` - Model is currently in use
+
+#### POST `/api/models/discover`
+
+Automatically discovers models from configured directories.
+
+**Request Body:**
+```json
+{
+  "paths": ["/path/to/models", "/another/path"],
+  "recursive": true,
+  "includePatterns": ["*.gguf", "*.bin"],
+  "excludePatterns": ["*.tmp", "*.bak"]
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "discovered": [
+      {
+        "name": "llama-3-8b-instruct",
+        "description": "Llama 3 Base model",
+        "version": "3.0",
+        "path": "/path/to/models/llama-3-8b-instruct.gguf",
+        "family": "llama",
+        "size": 8540000000,
+        "format": "gguf",
+        "quantization": "Q4_K_M",
+        "contextSize": 8192
+      }
+    ],
+    "scannedPaths": ["/path/to/models", "/another/path"],
+    "totalFound": 1
+  },
+  "timestamp": "2024-12-27T10:00:00Z"
+}
+```
+
+**Type:**
+```typescript
+ApiResponse<{
+  discovered: Model[];
+  scannedPaths: string[];
+  totalFound: number;
+}>
+```
+
+**Status Codes:**
+- `200` - Success
+- `400` - Invalid paths
+- `500` - File system error
+
+#### DELETE `/api/models/:id`
+
+Removes a model from the registry.
+
+**Path Parameters:**
+- `id` (string) - Model identifier
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Model removed successfully",
+  "data": {
+    "modelId": "llama-2-7b-chat"
+  },
+  "timestamp": "2024-12-27T10:00:00Z"
+}
+```
+
+**Type:**
+```typescript
+ApiResponse<{ modelId: string }>
+```
+
+**Status Codes:**
+- `200` - Success
+- `404` - Model not found
+- `409` - Model is currently in use
+
+### Model Control Endpoints
+
+#### POST `/api/models/[name]/start`
+
+Start a specific model by name.
+
+**Path Parameters:**
+- `name` (string) - Model name
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Model started successfully",
+  "data": {
+    "name": "llama-2-7b-chat",
+    "status": "running"
+  },
+  "timestamp": "2024-12-27T10:00:00Z"
+}
+```
+
+**Status Codes:**
+- `200` - Success
+- `404` - Model not found
+- `409` - Model already running
+- `500` - Failed to start model
+
+#### POST `/api/models/[name]/stop`
+
+Stop a specific model by name.
+
+**Path Parameters:**
+- `name` (string) - Model name
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Model stopped successfully",
+  "data": {
+    "name": "llama-2-7b-chat",
+    "status": "stopped"
+  },
+  "timestamp": "2024-12-27T10:00:00Z"
+}
+```
+
+**Status Codes:**
+- `200` - Success
+- `404` - Model not found
+- `409` - Model not running
+- `500` - Failed to stop model
+
+#### POST `/api/models/[name]/analyze`
+
+Analyze a model file to determine optimal fit parameters.
+
+**Path Parameters:**
+- `name` (string) - Model name
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Analysis completed",
+  "data": {
+    "recommended_ctx_size": 8192,
+    "recommended_gpu_layers": 35,
+    "recommended_tensor_split": "3,1",
+    "file_size_bytes": 4379464916,
+    "quantization_type": "Q4_K_M",
+    "parameter_count": 7000000000,
+    "architecture": "llama",
+    "context_window": 8192,
+    "projected_cpu_memory_mb": 8192,
+    "projected_gpu_memory_mb": 6144
+  },
+  "timestamp": "2024-12-27T10:00:00Z"
+}
+```
+
+**Status Codes:**
+- `200` - Success
+- `404` - Model not found
+- `500` - Analysis failed
+
+#### GET `/api/monitoring/latest`
+
+Retrieves the latest monitoring metrics snapshot.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "timestamp": "2024-12-27T10:00:00Z",
+    "cpu_usage": 45.2,
+    "memory_usage": 67.8,
+    "disk_usage": 46.9,
+    "gpu_usage": 85.5,
+    "gpu_temperature": 72,
+    "gpu_memory_used": 8192,
+    "gpu_memory_total": 16384,
+    "gpu_power_usage": 250,
+    "active_models": 3,
+    "uptime": 3600,
+    "requests_per_minute": 42
+  },
+  "timestamp": "2024-12-27T10:00:00Z"
+}
+```
+
+**Type:**
+```typescript
+ApiResponse<SystemMetrics>
+```
+
+**Status Codes:**
+- `200` - Success
+- `404` - No metrics available
+- `500` - Failed to retrieve metrics
+
+### Model Templates Endpoints
+
+#### GET `/api/model-templates`
+
+Retrieves model templates configuration.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "default_model": null,
+    "model_templates": {
+      "llama2-7b": "llama-2-7b",
+      "mistral-7b": "mistral-7b",
+      "custom-model": "custom-template"
+    }
+  },
+  "timestamp": "2024-12-27T10:00:00Z"
+}
+```
+
+**Type:**
+```typescript
+ApiResponse<{
+  default_model: string | null;
+  model_templates: Record<string, string>;
+}>
+```
+
+**Status Codes:**
+- `200` - Success
+- `500` - Failed to load templates
+
+#### POST `/api/model-templates`
+
+Saves model templates configuration.
+
+**Request Body:**
+```json
+{
+  "default_model": "llama-2-7b",
+  "model_templates": {
+    "llama2-7b": "llama-2-7b",
+    "mistral-7b": "mistral-7b"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Templates saved successfully",
+  "data": {
+    "default_model": "llama-2-7b",
+    "model_templates": {
+      "llama2-7b": "llama-2-7b",
+      "mistral-7b": "mistral-7b"
+    }
+  },
+  "timestamp": "2024-12-27T10:00:00Z"
+}
+```
+
+**Status Codes:**
+- `200` - Success
+- `400` - Invalid request data
+- `500` - Failed to save templates
+
+### Logger Endpoints
+
+#### POST `/api/logger/config`
+
+Updates logger configuration.
+
+**Request Body:**
+```json
+{
+  "level": "info",
+  "format": "json"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Logger configuration updated",
+  "timestamp": "2024-12-27T10:00:00Z"
+}
+```
+
+**Status Codes:**
+- `200` - Success
+- `400` - Invalid configuration
+- `500` - Failed to update logger
+
+### Server Control Endpoints
+
+#### POST `/api/llama-server/rescan`
+
+Rescans for available models.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Rescan completed",
+  "data": {
+    "modelsFound": 3,
+    "newModels": ["llama-3-8b-instruct"]
+  },
+  "timestamp": "2024-12-27T10:00:00Z"
+}
+```
+
+**Status Codes:**
+- `200` - Success
+- `500` - Rescan failed
 
 ### Health Endpoints
 

@@ -1,0 +1,22 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`NotFound Page snapshot test 1`] = `
+<div
+  class="min-h-screen flex items-center justify-center bg-background"
+>
+  <div
+    class="text-center"
+  >
+    <h1
+      class="text-4xl font-bold text-foreground mb-4"
+    >
+      404
+    </h1>
+    <p
+      class="text-muted-foreground"
+    >
+      Page not found
+    </p>
+  </div>
+</div>
+`;

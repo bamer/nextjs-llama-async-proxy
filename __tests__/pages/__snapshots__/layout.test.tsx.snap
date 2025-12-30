@@ -1,0 +1,16 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`RootLayout snapshot test 1`] = `
+<div
+  class="mock-layout"
+  data-testid="root-layout"
+>
+  <div
+    data-testid="layout-content"
+  >
+    <div>
+      Test
+    </div>
+  </div>
+</div>
+`;

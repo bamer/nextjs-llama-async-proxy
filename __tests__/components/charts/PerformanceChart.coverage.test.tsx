@@ -5,24 +5,40 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { PerformanceChart } from '@/components/charts/PerformanceChart';
 
-// Default mock for most tests
+// Mock @mui/x-charts v8 components
 jest.mock('@mui/x-charts', () => ({
-  LineChart: () => <div data-testid="line-chart" />,
-  ChartsXAxis: () => null,
-  ChartsYAxis: () => null,
-  ChartsGrid: () => null,
-  ChartsTooltip: () => null,
+  LineChart: React.forwardRef((props: any, ref: any) => {
+    const { children, ...domProps } = props;
+    // Filter out props that shouldn't go to DOM
+    const safeProps = Object.keys(domProps).reduce((acc, key) => {
+      if (!['xAxis', 'yAxis', 'series', 'dataset', 'margin', 'height', 'width', 'sx'].includes(key)) {
+        acc[key] = domProps[key];
+      }
+      return acc;
+    }, {} as any);
+    return React.createElement('div', { ...safeProps, ref, 'data-testid': 'line-chart' }, children);
+  }),
+  ChartsXAxis: React.forwardRef((props: any, ref: any) => {
+    const { label, tickLabelStyle, ...domProps } = props;
+    return React.createElement('div', { ...domProps, ref, 'data-testid': 'charts-x-axis' });
+  }),
+  ChartsYAxis: React.forwardRef((props: any, ref: any) => {
+    const { label, tickLabelStyle, ...domProps } = props;
+    return React.createElement('div', { ...domProps, ref, 'data-testid': 'charts-y-axis' });
+  }),
+  ChartsGrid: React.forwardRef((props: any, ref: any) => {
+    const { vertical, horizontal, ...domProps } = props;
+    return React.createElement('div', { ...domProps, ref, 'data-testid': 'charts-grid' });
+  }),
+  ChartsTooltip: React.forwardRef((props: any, ref: any) =>
+    React.createElement('div', { ...props, ref, 'data-testid': 'charts-tooltip' })
+  ),
 }));
 
 const theme = createTheme();
 
 function renderWithTheme(component: React.ReactElement) {
-  return render(
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      {component}
-    </ThemeProvider>
-  );
+  return render(component);
 }
 
 describe('PerformanceChart - Coverage Enhancement', () => {
@@ -60,6 +76,7 @@ describe('PerformanceChart - Coverage Enhancement', () => {
 
     it('default formatter handles non-null values', () => {
       // Test the positive branch of: value !== null ? `${value.toFixed(1)}` : 'N/A'
+      // Note: Component requires at least 2 data points to render chart
       renderWithTheme(
         <PerformanceChart
           title="Non-null Values"
@@ -70,7 +87,10 @@ describe('PerformanceChart - Coverage Enhancement', () => {
             colorDark: '#60a5fa',
             colorLight: '#2563eb',
             // No valueFormatter - default should handle non-null
-            data: [{ time: '10:00', displayTime: '10:00', value: 45.567 }],
+            data: [
+              { time: '10:00', displayTime: '10:00', value: 45.567 },
+              { time: '10:05', displayTime: '10:05', value: 50.123 },
+            ],
           }]}
           isDark={false}
         />
@@ -92,7 +112,10 @@ describe('PerformanceChart - Coverage Enhancement', () => {
             colorDark: '#60a5fa',
             colorLight: '#2563eb',
             // No valueFormatter - default should return 'N/A' for null
-            data: [{ time: '10:00', displayTime: '10:00', value: null as any }],
+            data: [
+              { time: '10:00', displayTime: '10:00', value: null as any },
+              { time: '10:05', displayTime: '10:05', value: 50 },
+            ],
           }]}
           isDark={false}
         />
@@ -258,7 +281,7 @@ describe('PerformanceChart - Coverage Enhancement', () => {
   // Test objective: Verify component handles edge cases in data structure
   describe('Data Structure Edge Cases', () => {
     it('handles single data point', () => {
-      // Test with minimal data
+      // Test with minimal data - component requires 2+ points for chart rendering
       const singleData = [
         { time: '10:00', displayTime: '10:00', value: 45 },
       ];
@@ -278,7 +301,7 @@ describe('PerformanceChart - Coverage Enhancement', () => {
         />
       );
 
-      expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+      expect(screen.getByText('No data available')).toBeInTheDocument();
     });
 
     it('handles two data points', () => {
@@ -310,6 +333,7 @@ describe('PerformanceChart - Coverage Enhancement', () => {
       // Test edge case where displayTime might be missing
       const dataWithUndefined = [
         { time: '10:00', displayTime: undefined as any, value: 45 },
+        { time: '10:05', displayTime: '10:05', value: 50 },
       ];
 
       renderWithTheme(

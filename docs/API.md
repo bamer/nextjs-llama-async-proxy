@@ -103,38 +103,186 @@ Updates and saves the llama-server configuration to `llama-server-config.json`.
 
 ## Models Management
 
-#### GET `/api/models`
+### Model Templates
 
-Retrieves the list of registered models and their current status.
+#### GET `/api/model-templates`
+
+Retrieves the model templates configuration.
 
 **Response:**
 ```json
 {
   "success": true,
   "data": {
-    "count": 3,
-    "models": [
-      {
-        "id": "llama-2-7b-chat",
-        "name": "llama-2-7b-chat",
-        "description": "Chat model for Llama 2",
-        "status": "running",
-        "version": "2.0",
-        "path": "/path/to/model.gguf",
-        "size": 3758096384,
-        "family": "llama",
-        "contextSize": 4096,
-        "loadedAt": "2024-12-27T10:00:00Z",
-        "lastUsed": "2024-12-27T10:30:00Z"
-      }
-    ]
+    "model_templates": {
+      "llama2-7b": "llama-2-7b-chat",
+      "mistral-7b": "mistral-7b-instruct",
+      "custom-model": "custom-template"
+    },
+    "default_model": null
+  },
+  "timestamp": "2024-12-27T10:00:00Z"
+}
+```
+
+**Response Structure:**
+- `model_templates`: Object mapping model names to template names
+- `default_model`: Default template to use (null if none)
+
+**Features:**
+- In-memory caching for instant responses (0ms disk I/O)
+- Automatic cache invalidation on save
+- Zod validation for data integrity
+
+**Status Codes:**
+- `200` - Success
+- `500` - Internal server error
+
+#### POST `/api/model-templates`
+
+Saves model templates configuration.
+
+**Request Body:**
+```json
+{
+  "model_templates": {
+    "llama2-7b": "llama-2-7b-chat",
+    "mistral-7b": "mistral-7b-instruct"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "model_templates": {
+      "llama2-7b": "llama-2-7b-chat",
+      "mistral-7b": "mistral-7b-instruct"
+    }
   },
   "timestamp": "2024-12-27T10:00:00Z"
 }
 ```
 
 **Status Codes:**
+- `200` - Configuration saved successfully
+- `400` - Invalid request data
+- `500` - Internal server error
+
+### Models List
+
+#### GET `/api/models`
+
+Retrieves the list of registered models and their current status from LlamaService.
+
+**Response:**
+```json
+{
+  "models": [
+    {
+      "id": "llama-2-7b-chat",
+      "name": "llama-2-7b-chat",
+      "type": "llama",
+      "available": true,
+      "size": 3758096384,
+      "createdAt": "2024-12-27T10:00:00Z",
+      "updatedAt": "2024-12-27T10:30:00Z"
+    }
+  ]
+}
+```
+
+**Status Codes:**
 - `200` - Success
+- `503` - Llama service not initialized
+- `500` - Internal server error
+
+### Model Control
+
+#### POST `/api/models/[name]/start`
+
+Starts a specific model by name.
+
+**Path Parameters:**
+- `name` (string) - Model name to start
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Model started successfully",
+  "data": {
+    "name": "llama-2-7b-chat",
+    "status": "running",
+    "startedAt": "2024-12-27T10:00:00Z"
+  },
+  "timestamp": "2024-12-27T10:00:00Z"
+}
+```
+
+**Status Codes:**
+- `200` - Model started successfully
+- `404` - Model not found
+- `500` - Internal server error
+
+#### POST `/api/models/[name]/stop`
+
+Stops a specific model by name.
+
+**Path Parameters:**
+- `name` (string) - Model name to stop
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Model stopped successfully",
+  "data": {
+    "name": "llama-2-7b-chat",
+    "status": "stopped",
+    "stoppedAt": "2024-12-27T10:00:00Z"
+  },
+  "timestamp": "2024-12-27T10:00:00Z"
+}
+```
+
+**Status Codes:**
+- `200` - Model stopped successfully
+- `404` - Model not found
+- `500` - Internal server error
+
+#### POST `/api/models/[name]/analyze`
+
+Analyzes a model's metadata and configuration.
+
+**Path Parameters:**
+- `name` (string) - Model name to analyze
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "name": "llama-2-7b-chat",
+    "family": "llama",
+    "quantization": "Q4_K_M",
+    "contextSize": 4096,
+    "parameters": "7B",
+    "architecture": {
+      "layers": 32,
+      "heads": 32,
+      "dimensions": 4096
+    }
+  },
+  "timestamp": "2024-12-27T10:00:00Z"
+}
+```
+
+**Status Codes:**
+- `200` - Analysis completed successfully
+- `404` - Model not found
 - `500` - Internal server error
 
 #### POST `/api/models`
@@ -248,6 +396,31 @@ Removes a model from the registry.
 - `404` - Model not found
 - `409` - Model is currently in use
 
+## Logger Configuration
+
+#### GET `/api/logger/config`
+
+Retrieves current logger configuration.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "level": "info",
+    "colors": true,
+    "verbose": false,
+    "dailyRotation": true,
+    "maxFiles": "30d"
+  },
+  "timestamp": "2024-12-27T10:00:00Z"
+}
+```
+
+**Status Codes:**
+- `200` - Success
+- `500` - Internal server error
+
 ## Health and Status
 
 ### Health Checks
@@ -290,6 +463,33 @@ Retrieves the health status of the proxy and connected services.
 **Status Codes:**
 - `200` - All services healthy
 - `503` - One or more services unhealthy
+
+### Llama Server Control
+
+#### POST `/api/llama-server/rescan`
+
+Triggers a rescan of models directory to discover new models.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Model rescan completed",
+  "data": {
+    "found": 3,
+    "models": [
+      "llama-2-7b-chat.gguf",
+      "mistral-7b-instruct.gguf",
+      "codellama-7b.gguf"
+    ]
+  },
+  "timestamp": "2024-12-27T10:00:00Z"
+}
+```
+
+**Status Codes:**
+- `200` - Rescan completed successfully
+- `500` - Internal server error
 
 #### GET `/api/status`
 
@@ -340,11 +540,70 @@ Retrieves detailed system and application status.
 
 ## Monitoring and Metrics
 
-### Performance Metrics
+### System Metrics
 
-#### GET `/api/monitoring`
+#### GET `/api/metrics`
 
-Retrieves current system performance metrics.
+Retrieves current system metrics with mock data (can be replaced with real monitoring).
+
+**Response:**
+```json
+{
+  "metrics": {
+    "cpuUsage": 45.2,
+    "memoryUsage": 67.8,
+    "diskUsage": 46.9,
+    "activeModels": 3,
+    "totalRequests": 5000,
+    "avgResponseTime": 120,
+    "uptime": 3600,
+    "timestamp": "2024-12-27T10:00:00Z",
+    "gpuUsage": 75.5,
+    "gpuMemoryUsage": 60.2,
+    "gpuMemoryTotal": 25769803776,
+    "gpuMemoryUsed": 15521884262,
+    "gpuPowerUsage": 200,
+    "gpuPowerLimit": 300,
+    "gpuTemperature": 72,
+    "gpuName": "NVIDIA RTX 4090"
+  },
+  "timestamp": "2024-12-27T10:00:00Z"
+}
+```
+
+**Status Codes:**
+- `200` - Success
+- `500` - Internal server error
+
+### Latest Metrics
+
+#### GET `/api/monitoring/latest`
+
+Retrieves the latest metrics snapshot (real-time data point).
+
+**Response:**
+```json
+{
+  "metrics": {
+    "cpu_usage": 45.2,
+    "memory_usage": 67.8,
+    "disk_usage": 46.9,
+    "gpu_usage": 75.5,
+    "gpu_temperature": 72,
+    "gpu_memory_used": 8192,
+    "gpu_memory_total": 16384,
+    "gpu_power_usage": 200,
+    "active_models": 3,
+    "uptime": 3600,
+    "requests_per_minute": 42
+  },
+  "timestamp": "2024-12-27T10:00:00Z"
+}
+```
+
+**Status Codes:**
+- `200` - Success
+- `500` - Internal server error
 
 **Response:**
 ```json
@@ -480,6 +739,44 @@ const socket = io("http://localhost:3000", {
 - **Path**: `/llamaproxws`
 - **Host**: `localhost:3000` (default, configurable via PORT env var)
 - **Transport**: WebSocket with HTTP polling fallback
+
+### Automatic Reconnection
+
+The WebSocket client implements robust automatic reconnection:
+
+- **Exponential Backoff**: 1s → 2s → 4s → 8s → 16s (max 30s)
+- **Maximum Retries**: 5 retry attempts
+- **Automatic Resubscription**: Re-subscribes to all active subscriptions on reconnect
+- **Page Visibility Handling**: Pauses reconnection when tab is hidden, resumes when visible
+- **Connection State Tracking**: Exposes connection status (connected, connecting, disconnected)
+
+**Example:**
+```javascript
+const socket = io("http://localhost:3000", {
+  path: "/llamaproxws",
+  reconnection: true,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 30000,
+  reconnectionAttempts: 5
+});
+
+// Listen for reconnection events
+socket.on("reconnect", (attemptNumber) => {
+  console.log(`Reconnected after ${attemptNumber} attempts`);
+});
+
+socket.on("reconnect_attempt", (attemptNumber) => {
+  console.log(`Reconnection attempt ${attemptNumber}`);
+});
+
+socket.on("reconnect_failed", () => {
+  console.error("Failed to reconnect after maximum attempts");
+});
+
+socket.on("connect_error", (error) => {
+  console.error("Connection error:", error.message);
+});
+```
 
 ### Message Format
 

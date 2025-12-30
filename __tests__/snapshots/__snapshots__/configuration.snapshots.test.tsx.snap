@@ -1,0 +1,1108 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Configuration Snapshots AdvancedSettingsTab Component should match snapshot in dark mode: advanced-settings-dark 1`] = `
+<div
+  animate="[object Object]"
+  initial="[object Object]"
+  transition="[object Object]"
+>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <span
+        font-weight="bold"
+      >
+        Advanced Settings
+      </span>
+      <span>
+        Advanced configuration options for power users.
+      </span>
+      <div>
+        <button>
+          Reset to Defaults
+        </button>
+        <button>
+          Sync with Backend
+        </button>
+      </div>
+      <span>
+        Current configuration version: 2.0
+      </span>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots AdvancedSettingsTab Component should match snapshot in light mode: advanced-settings-light 1`] = `
+<div
+  animate="[object Object]"
+  initial="[object Object]"
+  transition="[object Object]"
+>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <span
+        font-weight="bold"
+      >
+        Advanced Settings
+      </span>
+      <span>
+        Advanced configuration options for power users.
+      </span>
+      <div>
+        <button>
+          Reset to Defaults
+        </button>
+        <button>
+          Sync with Backend
+        </button>
+      </div>
+      <span>
+        Current configuration version: 2.0
+      </span>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots AdvancedSettingsTab Component should match snapshot while saving: advanced-settings-saving 1`] = `
+<div
+  animate="[object Object]"
+  initial="[object Object]"
+  transition="[object Object]"
+>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <span
+        font-weight="bold"
+      >
+        Advanced Settings
+      </span>
+      <span>
+        Advanced configuration options for power users.
+      </span>
+      <div>
+        <button>
+          Reset to Defaults
+        </button>
+        <button>
+          Sync with Backend
+        </button>
+      </div>
+      <span>
+        Current configuration version: 2.0
+      </span>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots ConfigurationActions Component should match snapshot in normal state: actions-normal 1`] = `
+<div>
+  <button>
+    Save Configuration
+  </button>
+</div>
+`;
+
+exports[`Configuration Snapshots ConfigurationActions Component should match snapshot in saving state: actions-saving 1`] = `
+<div>
+  <button>
+    Saving...
+  </button>
+</div>
+`;
+
+exports[`Configuration Snapshots ConfigurationHeader Component should match snapshot header: config-header 1`] = `
+<div>
+  <div
+    animate="[object Object]"
+    initial="[object Object]"
+    transition="[object Object]"
+  >
+    <h1
+      font-weight="bold"
+    >
+      Configuration Center
+    </h1>
+    <span>
+      Manage your application settings and preferences
+    </span>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots ConfigurationStatusMessages Component should match snapshot with error message: status-error 1`] = `null`;
+
+exports[`Configuration Snapshots ConfigurationStatusMessages Component should match snapshot with no messages: status-none 1`] = `null`;
+
+exports[`Configuration Snapshots ConfigurationStatusMessages Component should match snapshot with success message: status-success 1`] = `
+<div
+  animate="[object Object]"
+  initial="[object Object]"
+  transition="[object Object]"
+>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <div>
+        <svg
+          color="success"
+          data-icon="CheckCircle"
+        />
+        <span>
+          Configuration saved successfully!
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots ConfigurationStatusMessages Component should match snapshot with validation errors: status-validation-errors 1`] = `
+<div
+  animate="[object Object]"
+  initial="[object Object]"
+  transition="[object Object]"
+>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <div>
+        <svg
+          color="error"
+          data-icon="ErrorOutline"
+        />
+        <span
+          font-weight="medium"
+        >
+          Configuration Errors
+        </span>
+      </div>
+      <div>
+        <span>
+          • 
+          Port must be between 1-65535
+        </span>
+        <span>
+          • 
+          Context length must be positive
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots ConfigurationTabs Component should match snapshot with Advanced tab active: tabs-advanced 1`] = `
+<div
+  class="MuiCard-root"
+>
+  <div>
+    <button />
+    <button />
+    <button />
+    <button />
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots ConfigurationTabs Component should match snapshot with General tab active: tabs-general 1`] = `
+<div
+  class="MuiCard-root"
+>
+  <div>
+    <button />
+    <button />
+    <button />
+    <button />
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots ConfigurationTabs Component should match snapshot with LlamaServer tab active: tabs-llama-server 1`] = `
+<div
+  class="MuiCard-root"
+>
+  <div>
+    <button />
+    <button />
+    <button />
+    <button />
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots ConfigurationTabs Component should match snapshot with Logger tab active: tabs-logger 1`] = `
+<div
+  class="MuiCard-root"
+>
+  <div>
+    <button />
+    <button />
+    <button />
+    <button />
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots LlamaServerSettingsTab Component should match snapshot in dark mode: llama-server-dark 1`] = `
+<div
+  animate="[object Object]"
+  initial="[object Object]"
+  transition="[object Object]"
+>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <span
+        font-weight="bold"
+      >
+        Llama-Server Settings
+      </span>
+      <div
+        data-testid="grid"
+      >
+        <div
+          data-testid="grid"
+        >
+          <span
+            font-weight="bold"
+          >
+            Server Binding
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.host"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.port"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <span
+            font-weight="bold"
+          >
+            Basic Options
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.ctx_size"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.batch_size"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.ubatch_size"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.threads"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <span
+            font-weight="bold"
+          >
+            GPU Options
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.gpu_layers"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.main_gpu"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <span
+            font-weight="bold"
+          >
+            Sampling Parameters
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.temperature"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.top_k"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.top_p"
+            type="number"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots LlamaServerSettingsTab Component should match snapshot in light mode: llama-server-light 1`] = `
+<div
+  animate="[object Object]"
+  initial="[object Object]"
+  transition="[object Object]"
+>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <span
+        font-weight="bold"
+      >
+        Llama-Server Settings
+      </span>
+      <div
+        data-testid="grid"
+      >
+        <div
+          data-testid="grid"
+        >
+          <span
+            font-weight="bold"
+          >
+            Server Binding
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.host"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.port"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <span
+            font-weight="bold"
+          >
+            Basic Options
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.ctx_size"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.batch_size"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.ubatch_size"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.threads"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <span
+            font-weight="bold"
+          >
+            GPU Options
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.gpu_layers"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.main_gpu"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <span
+            font-weight="bold"
+          >
+            Sampling Parameters
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.temperature"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.top_k"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.top_p"
+            type="number"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots LlamaServerSettingsTab Component should match snapshot with invalid config: llama-server-invalid 1`] = `
+<div
+  animate="[object Object]"
+  initial="[object Object]"
+  transition="[object Object]"
+>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <span
+        font-weight="bold"
+      >
+        Llama-Server Settings
+      </span>
+      <div
+        data-testid="grid"
+      >
+        <div
+          data-testid="grid"
+        >
+          <span
+            font-weight="bold"
+          >
+            Server Binding
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.host"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.port"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <span
+            font-weight="bold"
+          >
+            Basic Options
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.ctx_size"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.batch_size"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.ubatch_size"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.threads"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <span
+            font-weight="bold"
+          >
+            GPU Options
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.gpu_layers"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.main_gpu"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <span
+            font-weight="bold"
+          >
+            Sampling Parameters
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.temperature"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.top_k"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServer.top_p"
+            type="number"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots ModernConfiguration Component should match snapshot with Advanced tab active: config-advanced-tab 1`] = `
+<div>
+  <div>
+    <div
+      animate="[object Object]"
+      initial="[object Object]"
+      transition="[object Object]"
+    >
+      <h1
+        font-weight="bold"
+      >
+        Configuration Center
+      </h1>
+      <span>
+        Manage your application settings and preferences
+      </span>
+    </div>
+  </div>
+  <hr />
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <button />
+      <button />
+      <button />
+      <button />
+    </div>
+  </div>
+  <div
+    animate="[object Object]"
+    initial="[object Object]"
+    transition="[object Object]"
+  >
+    <div
+      class="MuiCard-root"
+    >
+      <div>
+        <span
+          font-weight="bold"
+        >
+          Advanced Settings
+        </span>
+        <span>
+          Advanced configuration options for power users.
+        </span>
+        <div>
+          <button>
+            Reset to Defaults
+          </button>
+          <button>
+            Sync with Backend
+          </button>
+        </div>
+        <span>
+          Current configuration version: 2.0
+        </span>
+      </div>
+    </div>
+  </div>
+  <div>
+    <button>
+      Save Configuration
+    </button>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots ModernConfiguration Component should match snapshot with General tab active: config-general-tab 1`] = `
+<div>
+  <div>
+    <div
+      data-testid="skeleton"
+    />
+    <div>
+      <div
+        data-testid="skeleton"
+      />
+      <div
+        data-testid="skeleton"
+      />
+    </div>
+    <div>
+      <div
+        data-testid="skeleton"
+      />
+      <div
+        data-testid="skeleton"
+      />
+    </div>
+    <div>
+      <div
+        data-testid="skeleton"
+      />
+      <div
+        data-testid="skeleton"
+      />
+    </div>
+    <div>
+      <div
+        data-testid="skeleton"
+      />
+      <div
+        data-testid="skeleton"
+      />
+    </div>
+    <div>
+      <div
+        data-testid="skeleton"
+      />
+      <div
+        data-testid="skeleton"
+      />
+    </div>
+    <div>
+      <div
+        data-testid="skeleton"
+      />
+      <div
+        data-testid="skeleton"
+      />
+    </div>
+    <div>
+      <div
+        data-testid="skeleton"
+      />
+      <div
+        data-testid="skeleton"
+      />
+    </div>
+    <div>
+      <div
+        data-testid="skeleton"
+      />
+      <div
+        data-testid="skeleton"
+      />
+    </div>
+    <div>
+      <div
+        data-testid="skeleton"
+      />
+      <div
+        data-testid="skeleton"
+      />
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots ModernConfiguration Component should match snapshot with LlamaServer tab active: config-llama-server-tab 1`] = `
+<div>
+  <div>
+    <div
+      animate="[object Object]"
+      initial="[object Object]"
+      transition="[object Object]"
+    >
+      <h1
+        font-weight="bold"
+      >
+        Configuration Center
+      </h1>
+      <span>
+        Manage your application settings and preferences
+      </span>
+    </div>
+  </div>
+  <hr />
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <button />
+      <button />
+      <button />
+      <button />
+    </div>
+  </div>
+  <div
+    animate="[object Object]"
+    initial="[object Object]"
+    transition="[object Object]"
+  >
+    <div
+      class="MuiCard-root"
+    >
+      <div>
+        <span
+          font-weight="bold"
+        >
+          Llama-Server Settings
+        </span>
+        <div
+          data-testid="grid"
+        >
+          <div
+            data-testid="grid"
+          >
+            <span
+              font-weight="bold"
+            >
+              Server Binding
+            </span>
+          </div>
+          <div
+            data-testid="grid"
+          >
+            <div
+              name="llamaServer.host"
+            />
+          </div>
+          <div
+            data-testid="grid"
+          >
+            <div
+              name="llamaServer.port"
+              type="number"
+            />
+          </div>
+          <div
+            data-testid="grid"
+          >
+            <span
+              font-weight="bold"
+            >
+              Basic Options
+            </span>
+          </div>
+          <div
+            data-testid="grid"
+          >
+            <div
+              name="llamaServer.ctx_size"
+              type="number"
+            />
+          </div>
+          <div
+            data-testid="grid"
+          >
+            <div
+              name="llamaServer.batch_size"
+              type="number"
+            />
+          </div>
+          <div
+            data-testid="grid"
+          >
+            <div
+              name="llamaServer.ubatch_size"
+              type="number"
+            />
+          </div>
+          <div
+            data-testid="grid"
+          >
+            <div
+              name="llamaServer.threads"
+              type="number"
+            />
+          </div>
+          <div
+            data-testid="grid"
+          >
+            <span
+              font-weight="bold"
+            >
+              GPU Options
+            </span>
+          </div>
+          <div
+            data-testid="grid"
+          >
+            <div
+              name="llamaServer.gpu_layers"
+              type="number"
+            />
+          </div>
+          <div
+            data-testid="grid"
+          >
+            <div
+              name="llamaServer.main_gpu"
+              type="number"
+            />
+          </div>
+          <div
+            data-testid="grid"
+          >
+            <span
+              font-weight="bold"
+            >
+              Sampling Parameters
+            </span>
+          </div>
+          <div
+            data-testid="grid"
+          >
+            <div
+              name="llamaServer.temperature"
+              type="number"
+            />
+          </div>
+          <div
+            data-testid="grid"
+          >
+            <div
+              name="llamaServer.top_k"
+              type="number"
+            />
+          </div>
+          <div
+            data-testid="grid"
+          >
+            <div
+              name="llamaServer.top_p"
+              type="number"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <button>
+      Save Configuration
+    </button>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots ModernConfiguration Component should match snapshot with loading state: config-loading 1`] = `
+<div>
+  <div>
+    <div
+      data-testid="skeleton"
+    />
+    <div>
+      <div
+        data-testid="skeleton"
+      />
+      <div
+        data-testid="skeleton"
+      />
+    </div>
+    <div>
+      <div
+        data-testid="skeleton"
+      />
+      <div
+        data-testid="skeleton"
+      />
+    </div>
+    <div>
+      <div
+        data-testid="skeleton"
+      />
+      <div
+        data-testid="skeleton"
+      />
+    </div>
+    <div>
+      <div
+        data-testid="skeleton"
+      />
+      <div
+        data-testid="skeleton"
+      />
+    </div>
+    <div>
+      <div
+        data-testid="skeleton"
+      />
+      <div
+        data-testid="skeleton"
+      />
+    </div>
+    <div>
+      <div
+        data-testid="skeleton"
+      />
+      <div
+        data-testid="skeleton"
+      />
+    </div>
+    <div>
+      <div
+        data-testid="skeleton"
+      />
+      <div
+        data-testid="skeleton"
+      />
+    </div>
+    <div>
+      <div
+        data-testid="skeleton"
+      />
+      <div
+        data-testid="skeleton"
+      />
+    </div>
+    <div>
+      <div
+        data-testid="skeleton"
+      />
+      <div
+        data-testid="skeleton"
+      />
+    </div>
+  </div>
+</div>
+`;

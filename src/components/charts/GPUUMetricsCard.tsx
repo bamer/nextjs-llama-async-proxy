@@ -123,11 +123,8 @@ function GPUMetricsCard({ metrics, isDark }: GPUMetricsCardProps) {
 
 const MemoizedGPUMetricsCard = memo(GPUMetricsCard, (prev, next) => {
   return prev.isDark === next.isDark &&
-         JSON.stringify(prev.metrics) === JSON.stringify(next.metrics);
+          JSON.stringify(prev.metrics) === JSON.stringify(next.metrics);
 });
 
 export default MemoizedGPUMetricsCard;
-
-export function GPUUMetricsCard({ metrics, isDark }: GPUMetricsCardProps) {
-  return <GPUMetricsCard metrics={metrics} isDark={isDark} />;
-}
+export { MemoizedGPUMetricsCard as GPUUMetricsCard };

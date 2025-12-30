@@ -46,6 +46,11 @@ interface FormConfig {
   modelDefaults?: ModelDefaultsConfig;
   general?: GeneralSettingsConfig;
   // Legacy support for direct properties
+  host?: string;
+  port?: number;
+  serverPath?: string;
+  ctx_size?: number;
+  batch_size?: number;
   basePath?: string;
   logLevel?: string;
   maxConcurrentModels?: number;
@@ -236,7 +241,7 @@ export function useConfigurationForm() {
       const validation = validateConfig(formConfig);
       if (!validation.valid) {
         setValidationErrors(validation.errors || []);
-        throw new Error("Validation failed");
+        return; // Don't proceed with save if validation fails
       }
 
       const llamaServer = formConfig.llamaServer || {};

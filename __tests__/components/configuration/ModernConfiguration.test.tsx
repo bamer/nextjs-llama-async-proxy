@@ -1,347 +1,308 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import React from 'react';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import ModernConfiguration from '@/components/configuration/ModernConfiguration';
-import * as configHook from '@/components/configuration/hooks/useConfigurationForm';
-import * as loggerHook from '@/hooks/use-logger-config';
+import { render, screen } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import React from "react";
+import ModernConfiguration from "@/components/configuration/ModernConfiguration";
 
-// Mock framer-motion
-jest.mock('framer-motion', () => ({
-  m: {
-    div: (props: unknown) => {
-      const { children } = props as { children?: React.ReactNode };
-      return <div>{children}</div>;
-    },
-  },
+// Mock the custom hook
+const mockUseConfigurationForm = jest.fn();
+jest.mock("@/components/configuration/hooks/useConfigurationForm", () => ({
+  useConfigurationForm: () => mockUseConfigurationForm(),
 }));
 
-// Mock child components to avoid nested dependency issues
-jest.mock('@/components/configuration/ConfigurationHeader', () => ({
-  ConfigurationHeader: () => <div data-testid="configuration-header">Configuration Center</div>,
+// Mock child components
+jest.mock("@/components/configuration/ConfigurationHeader", () => ({
+  ConfigurationHeader: () => <div data-testid="configuration-header">Header</div>,
 }));
 
-jest.mock('@/components/configuration/ConfigurationTabs', () => ({
-  ConfigurationTabs: (props: unknown) => {
-    const { onChange } = props as { onChange: (event: unknown, index: number) => void };
-    return (
-      <div data-testid="configuration-tabs">
-        <button onClick={() => onChange({}, 0)}>General Settings</button>
-        <button onClick={() => onChange({}, 1)}>Llama-Server Settings</button>
-        <button onClick={() => onChange({}, 2)}>Advanced</button>
-        <button onClick={() => onChange({}, 3)}>Logger Settings</button>
-      </div>
-    );
-  },
+jest.mock("@/components/configuration/ConfigurationTabs", () => ({
+  ConfigurationTabs: ({ activeTab, onChange }: any) => (
+    <div data-testid="configuration-tabs" data-active-tab={activeTab}>
+      Tabs
+    </div>
+  ),
 }));
 
-jest.mock('@/components/configuration/GeneralSettingsTab', () => ({
-  GeneralSettingsTab: (props: unknown) => {
-    const { formConfig, onInputChange } = props as {
-      formConfig: { basePath?: string };
-      onInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-    };
-    return (
-      <div data-testid="general-settings-tab">
-        <h3>General Settings</h3>
-        <input
-          name="basePath"
-          value={formConfig.basePath || ''}
-          onChange={onInputChange}
-          data-testid="basePath-input"
-        />
-      </div>
-    );
-  },
+jest.mock("@/components/configuration/ConfigurationStatusMessages", () => ({
+  ConfigurationStatusMessages: () => <div data-testid="configuration-status-messages">Status Messages</div>,
 }));
 
-jest.mock('@/components/configuration/LlamaServerSettingsTab', () => ({
-  LlamaServerSettingsTab: (props: unknown) => {
-    const { formConfig, onLlamaServerChange } = props as {
-      formConfig: { llamaServer?: { host?: string } };
-      onLlamaServerChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-    };
-    return (
-      <div data-testid="llama-server-tab">
-        <h3>Llama-Server Settings</h3>
-        <input
-          name="llamaServer.host"
-          value={formConfig.llamaServer?.host || ''}
-          onChange={onLlamaServerChange}
-          data-testid="host-input"
-        />
-      </div>
-    );
-  },
+jest.mock("@/components/configuration/GeneralSettingsTab", () => ({
+  GeneralSettingsTab: () => <div data-testid="general-settings-tab">General Settings</div>,
 }));
 
-jest.mock('@/components/configuration/AdvancedSettingsTab', () => ({
-  AdvancedSettingsTab: (props: unknown) => {
-    const { isSaving, onReset, onSync } = props as {
-      isSaving: boolean;
-      onReset: () => void;
-      onSync: () => void;
-    };
-    return (
-      <div data-testid="advanced-settings-tab">
-        <h3>Advanced Settings</h3>
-        <button onClick={onReset} disabled={isSaving} data-testid="reset-button">
-          Reset to Defaults
-        </button>
-        <button onClick={onSync} disabled={isSaving} data-testid="sync-button">
-          Sync with Backend
-        </button>
-      </div>
-    );
-  },
+jest.mock("@/components/configuration/LlamaServerSettingsTab", () => ({
+  LlamaServerSettingsTab: () => <div data-testid="llama-server-settings-tab">Llama Server Settings</div>,
 }));
 
-jest.mock('@/components/configuration/LoggerSettingsTab', () => ({
-  LoggerSettingsTab: () => <div data-testid="logger-settings-tab"><h3>Log Levels</h3></div>,
+jest.mock("@/components/configuration/AdvancedSettingsTab", () => ({
+  AdvancedSettingsTab: () => <div data-testid="advanced-settings-tab">Advanced Settings</div>,
 }));
 
-jest.mock('@/components/configuration/ConfigurationStatusMessages', () => ({
-  ConfigurationStatusMessages: (props: unknown) => {
-    const { saveSuccess, validationErrors } = props as {
-      saveSuccess?: boolean;
-      validationErrors?: string[];
-    };
-    return (
-      <div data-testid="status-messages">
-        {saveSuccess && <div data-testid="success-message">Configuration saved successfully!</div>}
-        {validationErrors && validationErrors.length > 0 && (
-          <div data-testid="validation-errors">
-            <h4>Configuration Errors</h4>
-            {validationErrors.map((error: string, i: number) => (
-              <div key={i}>• {error}</div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  },
+jest.mock("@/components/configuration/LoggerSettingsTab", () => ({
+  LoggerSettingsTab: () => <div data-testid="logger-settings-tab">Logger Settings</div>,
 }));
 
-jest.mock('@/components/configuration/ConfigurationActions', () => ({
-  ConfigurationActions: (props: unknown) => {
-    const { isSaving, onSave } = props as {
-      isSaving: boolean;
-      onSave: () => void;
-    };
-    return (
-      <button onClick={onSave} disabled={isSaving} data-testid="save-button">
-        {isSaving ? 'Saving...' : 'Save Configuration'}
-      </button>
-    );
-  },
+jest.mock("@/components/configuration/ConfigurationActions", () => ({
+  ConfigurationActions: () => <div data-testid="configuration-actions">Actions</div>,
 }));
 
-jest.mock('@/hooks/use-logger-config', () => ({
-  useLoggerConfig: jest.fn(),
+jest.mock("@/components/ui", () => ({
+  SkeletonSettingsForm: ({ fields }: any) => <div data-testid="skeleton-settings-form" data-fields={fields}>Skeleton</div>,
 }));
 
-jest.mock('@/contexts/ThemeContext', () => ({
-  useTheme: () => ({ isDark: false }),
+// Mock MUI components
+jest.mock("@mui/material", () => ({
+  Box: ({ children, ...props }: any) => <div data-testid="mui-box" {...props}>{children}</div>,
+  LinearProgress: () => <div data-testid="linear-progress">Progress</div>,
+  Typography: ({ children }: any) => <span>{children}</span>,
 }));
 
-jest.mock('@/components/configuration/hooks/useConfigurationForm', () => ({
-  useConfigurationForm: jest.fn(),
-}));
-
-const theme = createTheme();
-
-function renderWithTheme(component: React.ReactElement) {
-  return render(<ThemeProvider theme={theme}>{component}</ThemeProvider>);
-}
-
-describe('ModernConfiguration', () => {
-  const mockHandleTabChange = jest.fn();
-  const mockHandleInputChange = jest.fn();
-  const mockHandleLlamaServerChange = jest.fn();
-  const mockHandleSave = jest.fn();
-  const mockHandleReset = jest.fn();
-  const mockHandleSync = jest.fn();
-  const mockApplyToLogger = jest.fn();
-
-  const defaultConfig: Record<string, unknown> = {
-    loading: false,
-    activeTab: 0,
-    formConfig: {
-      basePath: '/models',
-      logLevel: 'info',
-      maxConcurrentModels: 5,
-    },
-    validationErrors: [],
-    isSaving: false,
-    saveSuccess: false,
-    handleTabChange: mockHandleTabChange,
-    handleInputChange: mockHandleInputChange,
-    handleLlamaServerChange: mockHandleLlamaServerChange,
-    handleSave: mockHandleSave,
-    handleReset: mockHandleReset,
-    handleSync: mockHandleSync,
-  };
-
+describe("ModernConfiguration", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (configHook.useConfigurationForm as jest.Mock).mockReturnValue(defaultConfig);
-    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
-      loggerConfig: { enableConsoleLogging: true },
-      updateConfig: jest.fn(),
-      applyToLogger: mockApplyToLogger,
+  });
+
+  describe("Loading State", () => {
+    it("renders skeleton when loading", () => {
+      mockUseConfigurationForm.mockReturnValue({
+        loading: true,
+        config: {},
+        activeTab: 0,
+        formConfig: {},
+        validationErrors: [],
+        fieldErrors: {},
+        isSaving: false,
+        saveSuccess: false,
+        handleTabChange: jest.fn(),
+        handleInputChange: jest.fn(),
+        handleLlamaServerChange: jest.fn(),
+        handleSave: jest.fn(),
+        handleReset: jest.fn(),
+        handleSync: jest.fn(),
+      });
+
+      render(<ModernConfiguration />);
+
+      expect(screen.getByTestId("skeleton-settings-form")).toBeInTheDocument();
+      expect(screen.getByTestId("skeleton-settings-form")).toHaveAttribute("data-fields", "8");
+    });
+
+    it("does not render main content when loading", () => {
+      mockUseConfigurationForm.mockReturnValue({
+        loading: true,
+        config: {},
+        activeTab: 0,
+        formConfig: {},
+        validationErrors: [],
+        fieldErrors: {},
+        isSaving: false,
+        saveSuccess: false,
+        handleTabChange: jest.fn(),
+        handleInputChange: jest.fn(),
+        handleLlamaServerChange: jest.fn(),
+        handleSave: jest.fn(),
+        handleReset: jest.fn(),
+        handleSync: jest.fn(),
+      });
+
+      render(<ModernConfiguration />);
+
+      expect(screen.queryByTestId("configuration-header")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("configuration-tabs")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Loaded State", () => {
+    const defaultMockReturn = {
       loading: false,
+      config: { someConfig: "value" },
+      activeTab: 0,
+      formConfig: { general: {}, llamaServer: {} },
+      validationErrors: [],
+      fieldErrors: { general: {}, llamaServer: {} },
+      isSaving: false,
+      saveSuccess: false,
+      handleTabChange: jest.fn(),
+      handleInputChange: jest.fn(),
+      handleLlamaServerChange: jest.fn(),
+      handleSave: jest.fn(),
+      handleReset: jest.fn(),
+      handleSync: jest.fn(),
+    };
+
+    beforeEach(() => {
+      mockUseConfigurationForm.mockReturnValue(defaultMockReturn);
+    });
+
+    it("renders main configuration layout when not loading", () => {
+      render(<ModernConfiguration />);
+
+      expect(screen.getByTestId("configuration-header")).toBeInTheDocument();
+      expect(screen.getByTestId("configuration-tabs")).toBeInTheDocument();
+      expect(screen.getByTestId("configuration-status-messages")).toBeInTheDocument();
+      expect(screen.getByTestId("configuration-actions")).toBeInTheDocument();
+    });
+
+    it("renders GeneralSettingsTab when activeTab is 0", () => {
+      render(<ModernConfiguration />);
+
+      expect(screen.getByTestId("general-settings-tab")).toBeInTheDocument();
+      expect(screen.queryByTestId("llama-server-settings-tab")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("advanced-settings-tab")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("logger-settings-tab")).not.toBeInTheDocument();
+    });
+
+    it("renders LlamaServerSettingsTab when activeTab is 1", () => {
+      mockUseConfigurationForm.mockReturnValue({
+        ...defaultMockReturn,
+        activeTab: 1,
+      });
+
+      render(<ModernConfiguration />);
+
+      expect(screen.queryByTestId("general-settings-tab")).not.toBeInTheDocument();
+      expect(screen.getByTestId("llama-server-settings-tab")).toBeInTheDocument();
+      expect(screen.queryByTestId("advanced-settings-tab")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("logger-settings-tab")).not.toBeInTheDocument();
+    });
+
+    it("renders AdvancedSettingsTab when activeTab is 2", () => {
+      mockUseConfigurationForm.mockReturnValue({
+        ...defaultMockReturn,
+        activeTab: 2,
+      });
+
+      render(<ModernConfiguration />);
+
+      expect(screen.queryByTestId("general-settings-tab")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("llama-server-settings-tab")).not.toBeInTheDocument();
+      expect(screen.getByTestId("advanced-settings-tab")).toBeInTheDocument();
+      expect(screen.queryByTestId("logger-settings-tab")).not.toBeInTheDocument();
+    });
+
+    it("renders LoggerSettingsTab when activeTab is 3", () => {
+      mockUseConfigurationForm.mockReturnValue({
+        ...defaultMockReturn,
+        activeTab: 3,
+      });
+
+      render(<ModernConfiguration />);
+
+      expect(screen.queryByTestId("general-settings-tab")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("llama-server-settings-tab")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("advanced-settings-tab")).not.toBeInTheDocument();
+      expect(screen.getByTestId("logger-settings-tab")).toBeInTheDocument();
+    });
+
+    it("passes correct props to ConfigurationTabs", () => {
+      const mockHandleTabChange = jest.fn();
+      mockUseConfigurationForm.mockReturnValue({
+        ...defaultMockReturn,
+        activeTab: 2,
+        handleTabChange: mockHandleTabChange,
+      });
+
+      render(<ModernConfiguration />);
+
+      const tabs = screen.getByTestId("configuration-tabs");
+      expect(tabs).toHaveAttribute("data-active-tab", "2");
+    });
+
+    it("passes correct props to ConfigurationStatusMessages", () => {
+      mockUseConfigurationForm.mockReturnValue({
+        ...defaultMockReturn,
+        saveSuccess: true,
+        validationErrors: ["Error 1"],
+      });
+
+      render(<ModernConfiguration />);
+
+      expect(screen.getByTestId("configuration-status-messages")).toBeInTheDocument();
+    });
+
+    it("passes correct props to ConfigurationActions", () => {
+      mockUseConfigurationForm.mockReturnValue({
+        ...defaultMockReturn,
+        isSaving: true,
+        handleSave: jest.fn(),
+      });
+
+      render(<ModernConfiguration />);
+
+      expect(screen.getByTestId("configuration-actions")).toBeInTheDocument();
+    });
+
+    it("passes correct props to GeneralSettingsTab", () => {
+      const mockFormConfig = { general: { setting: "value" } };
+      const mockFieldErrors = { general: { field: "error" } };
+      const mockHandleInputChange = jest.fn();
+
+      mockUseConfigurationForm.mockReturnValue({
+        ...defaultMockReturn,
+        formConfig: mockFormConfig,
+        fieldErrors: mockFieldErrors,
+        handleInputChange: mockHandleInputChange,
+      });
+
+      render(<ModernConfiguration />);
+
+      expect(screen.getByTestId("general-settings-tab")).toBeInTheDocument();
+    });
+
+    it("passes correct props to LlamaServerSettingsTab", () => {
+      const mockHandleLlamaServerChange = jest.fn();
+
+      mockUseConfigurationForm.mockReturnValue({
+        ...defaultMockReturn,
+        activeTab: 1,
+        handleLlamaServerChange: mockHandleLlamaServerChange,
+      });
+
+      render(<ModernConfiguration />);
+
+      expect(screen.getByTestId("llama-server-settings-tab")).toBeInTheDocument();
+    });
+
+    it("passes correct props to AdvancedSettingsTab", () => {
+      const mockHandleReset = jest.fn();
+      const mockHandleSync = jest.fn();
+
+      mockUseConfigurationForm.mockReturnValue({
+        ...defaultMockReturn,
+        activeTab: 2,
+        isSaving: true,
+        handleReset: mockHandleReset,
+        handleSync: mockHandleSync,
+      });
+
+      render(<ModernConfiguration />);
+
+      expect(screen.getByTestId("advanced-settings-tab")).toBeInTheDocument();
     });
   });
 
-  it('renders loading state when loading is true', () => {
-    (configHook.useConfigurationForm as jest.Mock).mockReturnValue({
-      ...defaultConfig,
-      loading: true,
-    });
-    renderWithTheme(<ModernConfiguration />);
-    expect(screen.getByText('Loading Configuration...')).toBeInTheDocument();
-  });
+  describe("Component Structure", () => {
+    it("wraps content in Box component", () => {
+      mockUseConfigurationForm.mockReturnValue({
+        loading: false,
+        config: {},
+        activeTab: 0,
+        formConfig: {},
+        validationErrors: [],
+        fieldErrors: {},
+        isSaving: false,
+        saveSuccess: false,
+        handleTabChange: jest.fn(),
+        handleInputChange: jest.fn(),
+        handleLlamaServerChange: jest.fn(),
+        handleSave: jest.fn(),
+        handleReset: jest.fn(),
+        handleSync: jest.fn(),
+      });
 
-  it('renders configuration header', async () => {
-    renderWithTheme(<ModernConfiguration />);
-    await waitFor(() => {
-      expect(screen.getByText('Configuration Center')).toBeInTheDocument();
-    });
-  });
+      render(<ModernConfiguration />);
 
-  it('renders configuration tabs', async () => {
-    renderWithTheme(<ModernConfiguration />);
-    await waitFor(() => {
-      const tabs = screen.getAllByText('General Settings');
-      expect(tabs).toHaveLength(2);
-      expect(screen.getByText('Llama-Server Settings')).toBeInTheDocument();
-      expect(screen.getByText('Advanced')).toBeInTheDocument();
-      expect(screen.getByText('Logger Settings')).toBeInTheDocument();
-    });
-  });
-
-  it('renders General Settings tab when activeTab is 0', async () => {
-    renderWithTheme(<ModernConfiguration />);
-    await waitFor(() => {
-      const headings = screen.getAllByText('General Settings');
-      expect(headings).toHaveLength(2);
-    });
-  });
-
-  it('renders Llama-Server Settings tab when activeTab is 1', async () => {
-    (configHook.useConfigurationForm as jest.Mock).mockReturnValue({
-      ...defaultConfig,
-      activeTab: 1,
-    });
-    renderWithTheme(<ModernConfiguration />);
-    await waitFor(() => {
-      const headings = screen.getAllByText('Llama-Server Settings');
-      expect(headings).toHaveLength(2);
-    });
-  });
-
-  it('renders Save Configuration button', async () => {
-    renderWithTheme(<ModernConfiguration />);
-    await waitFor(() => {
-      expect(screen.getByText('Save Configuration')).toBeInTheDocument();
-    });
-  });
-
-  it('renders General Settings tab when activeTab is 0', async () => {
-    renderWithTheme(<ModernConfiguration />);
-    await waitFor(() => {
-      const elements = screen.getAllByText('General Settings');
-      expect(elements).toHaveLength(2);
-    });
-  });
-
-  it('renders Llama-Server Settings tab when activeTab is 1', async () => {
-    (configHook.useConfigurationForm as jest.Mock).mockReturnValue({
-      ...defaultConfig,
-      activeTab: 1,
-    });
-    renderWithTheme(<ModernConfiguration />);
-    await waitFor(() => {
-      const elements = screen.getAllByText('Llama-Server Settings');
-      expect(elements).toHaveLength(2);
-    });
-  });
-
-  it('renders Advanced Settings tab when activeTab is 2', async () => {
-    (configHook.useConfigurationForm as jest.Mock).mockReturnValue({
-      ...defaultConfig,
-      activeTab: 2,
-    });
-    renderWithTheme(<ModernConfiguration />);
-    await waitFor(() => {
-      expect(screen.getByText('Advanced Settings')).toBeInTheDocument();
-    });
-  });
-
-  it('renders Logger Settings tab when activeTab is 3', async () => {
-    (configHook.useConfigurationForm as jest.Mock).mockReturnValue({
-      ...defaultConfig,
-      activeTab: 3,
-    });
-    renderWithTheme(<ModernConfiguration />);
-    await waitFor(() => {
-      expect(screen.getByText('Log Levels')).toBeInTheDocument();
-    });
-  });
-
-  it('renders success message when saveSuccess is true', async () => {
-    (configHook.useConfigurationForm as jest.Mock).mockReturnValue({
-      ...defaultConfig,
-      saveSuccess: true,
-    });
-    renderWithTheme(<ModernConfiguration />);
-    await waitFor(() => {
-      expect(screen.getByText('Configuration saved successfully!')).toBeInTheDocument();
-    });
-  });
-
-  it('renders validation errors when errors exist', async () => {
-    (configHook.useConfigurationForm as jest.Mock).mockReturnValue({
-      ...defaultConfig,
-      validationErrors: ['Host is required'],
-    });
-    renderWithTheme(<ModernConfiguration />);
-    await waitFor(() => {
-      expect(screen.getByText('Configuration Errors')).toBeInTheDocument();
-      expect(screen.getByText('• Host is required')).toBeInTheDocument();
-    });
-  });
-
-  it('disables Save button when isSaving is true', async () => {
-    (configHook.useConfigurationForm as jest.Mock).mockReturnValue({
-      ...defaultConfig,
-      isSaving: true,
-    });
-    renderWithTheme(<ModernConfiguration />);
-    await waitFor(() => {
-      const button = screen.getByRole('button');
-      expect(button).toBeDisabled();
-      expect(screen.getByText('Saving...')).toBeInTheDocument();
-    });
-  });
-
-  it('enables Save button when isSaving is false', async () => {
-    renderWithTheme(<ModernConfiguration />);
-    await waitFor(() => {
-      const button = screen.getByRole('button');
-      expect(button).not.toBeDisabled();
-    });
-  });
-
-  it('uses useConfigurationForm hook', () => {
-    renderWithTheme(<ModernConfiguration />);
-    expect(configHook.useConfigurationForm).toHaveBeenCalled();
-  });
-
-  it('renders without crashing', async () => {
-    renderWithTheme(<ModernConfiguration />);
-    await waitFor(() => {
-      expect(screen.getByText('Configuration Center')).toBeInTheDocument();
+      expect(screen.getByTestId("mui-box")).toBeInTheDocument();
     });
   });
 });

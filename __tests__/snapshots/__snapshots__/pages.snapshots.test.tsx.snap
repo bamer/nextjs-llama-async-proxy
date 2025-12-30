@@ -1,0 +1,614 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Pages Snapshots ConfigurationPage Component should match snapshot in dark mode: config-page-dark 1`] = `
+<div
+  class="max-w-6xl mx-auto p-6"
+>
+  <h1
+    class="text-3xl font-bold mb-8 text-foreground"
+  >
+    Configuration
+  </h1>
+  <div
+    class="mb-8"
+  >
+    <div
+      class="border-b border-border"
+    >
+      <nav
+        class="flex space-x-8"
+      >
+        <button
+          class="py-4 px-1 border-b-2 font-medium text-sm transition-colors border-primary text-primary"
+        >
+          <span
+            class="mr-2"
+          >
+            ⚙️
+          </span>
+          General Settings
+        </button>
+        <button
+          class="py-4 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+        >
+          <span
+            class="mr-2"
+          >
+            🤖
+          </span>
+          Model Default Parameters
+        </button>
+      </nav>
+    </div>
+  </div>
+  <div
+    class="bg-card border border-border rounded-lg p-6 mb-8"
+  >
+    <h2
+      class="text-xl font-semibold mb-6 text-foreground"
+    >
+      General Settings
+    </h2>
+    <form>
+      <div
+        class="mb-4"
+      >
+        <input
+          class="border border-border rounded-md px-4 py-2 w-full bg-background text-foreground"
+          name="basePath"
+          placeholder="Base path for models"
+          type="text"
+          value="/home/user/models"
+        />
+      </div>
+      <div
+        class="mb-4"
+      >
+        <input
+          class="border border-border rounded-md px-4 py-2 w-full bg-background text-foreground"
+          name="logLevel"
+          placeholder="Log level (info, debug, error)"
+          type="text"
+          value="info"
+        />
+      </div>
+      <div
+        class="mb-4"
+      >
+        <input
+          class="border border-border rounded-md px-4 py-2 w-full bg-background text-foreground"
+          name="maxConcurrentModels"
+          placeholder="Maximum concurrent models"
+          type="number"
+          value="5"
+        />
+      </div>
+      <div
+        class="mb-4"
+      >
+        <div
+          class="flex items-center gap-2"
+        >
+          <input
+            checked=""
+            class="mr-2"
+            name="autoUpdate"
+            type="checkbox"
+          />
+          <span
+            class="text-foreground"
+          >
+            Auto Update
+          </span>
+        </div>
+      </div>
+      <div
+        class="mb-4"
+      >
+        <div
+          class="flex items-center gap-2"
+        >
+          <input
+            checked=""
+            class="mr-2"
+            name="notificationsEnabled"
+            type="checkbox"
+          />
+          <span
+            class="text-foreground"
+          >
+            Notifications Enabled
+          </span>
+        </div>
+      </div>
+      <button
+        class="bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50 px-4 py-2 rounded-md transition-colors"
+      >
+        Save Configuration
+      </button>
+    </form>
+  </div>
+</div>
+`;
+
+exports[`Pages Snapshots ConfigurationPage Component should match snapshot in light mode: config-page-light 1`] = `
+<div
+  class="max-w-6xl mx-auto p-6"
+>
+  <h1
+    class="text-3xl font-bold mb-8 text-foreground"
+  >
+    Configuration
+  </h1>
+  <div
+    class="mb-8"
+  >
+    <div
+      class="border-b border-border"
+    >
+      <nav
+        class="flex space-x-8"
+      >
+        <button
+          class="py-4 px-1 border-b-2 font-medium text-sm transition-colors border-primary text-primary"
+        >
+          <span
+            class="mr-2"
+          >
+            ⚙️
+          </span>
+          General Settings
+        </button>
+        <button
+          class="py-4 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+        >
+          <span
+            class="mr-2"
+          >
+            🤖
+          </span>
+          Model Default Parameters
+        </button>
+      </nav>
+    </div>
+  </div>
+  <div
+    class="bg-card border border-border rounded-lg p-6 mb-8"
+  >
+    <h2
+      class="text-xl font-semibold mb-6 text-foreground"
+    >
+      General Settings
+    </h2>
+    <form>
+      <div
+        class="mb-4"
+      >
+        <input
+          class="border border-border rounded-md px-4 py-2 w-full bg-background text-foreground"
+          name="basePath"
+          placeholder="Base path for models"
+          type="text"
+          value="/home/user/models"
+        />
+      </div>
+      <div
+        class="mb-4"
+      >
+        <input
+          class="border border-border rounded-md px-4 py-2 w-full bg-background text-foreground"
+          name="logLevel"
+          placeholder="Log level (info, debug, error)"
+          type="text"
+          value="info"
+        />
+      </div>
+      <div
+        class="mb-4"
+      >
+        <input
+          class="border border-border rounded-md px-4 py-2 w-full bg-background text-foreground"
+          name="maxConcurrentModels"
+          placeholder="Maximum concurrent models"
+          type="number"
+          value="5"
+        />
+      </div>
+      <div
+        class="mb-4"
+      >
+        <div
+          class="flex items-center gap-2"
+        >
+          <input
+            checked=""
+            class="mr-2"
+            name="autoUpdate"
+            type="checkbox"
+          />
+          <span
+            class="text-foreground"
+          >
+            Auto Update
+          </span>
+        </div>
+      </div>
+      <div
+        class="mb-4"
+      >
+        <div
+          class="flex items-center gap-2"
+        >
+          <input
+            checked=""
+            class="mr-2"
+            name="notificationsEnabled"
+            type="checkbox"
+          />
+          <span
+            class="text-foreground"
+          >
+            Notifications Enabled
+          </span>
+        </div>
+      </div>
+      <button
+        class="bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50 px-4 py-2 rounded-md transition-colors"
+      >
+        Save Configuration
+      </button>
+    </form>
+  </div>
+</div>
+`;
+
+exports[`Pages Snapshots Data-Loaded States should match snapshot with many models: models-page-many-models 1`] = `
+<div
+  class="models-page"
+>
+  <h1
+    class="text-3xl font-bold mb-8 text-foreground"
+  >
+    Models
+  </h1>
+  <div
+    class="flex justify-between items-center mb-8"
+  >
+    <input
+      class="border border-border rounded-lg px-4 py-3 w-64 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+      placeholder="Search models..."
+      type="text"
+      value=""
+    />
+    <div
+      class="flex gap-3"
+    >
+      <button
+        class="bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+      >
+        Discover Models
+      </button>
+      <button
+        class="bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+      >
+        Rescan Models
+      </button>
+    </div>
+  </div>
+  <div
+    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+  />
+</div>
+`;
+
+exports[`Pages Snapshots ModelsPage Component should match snapshot in dark mode: models-page-dark 1`] = `
+<div
+  class="models-page"
+>
+  <h1
+    class="text-3xl font-bold mb-8 text-foreground"
+  >
+    Models
+  </h1>
+  <div
+    class="flex justify-between items-center mb-8"
+  >
+    <input
+      class="border border-border rounded-lg px-4 py-3 w-64 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+      placeholder="Search models..."
+      type="text"
+      value=""
+    />
+    <div
+      class="flex gap-3"
+    >
+      <button
+        class="bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+      >
+        Discover Models
+      </button>
+      <button
+        class="bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+      >
+        Rescan Models
+      </button>
+    </div>
+  </div>
+  <div
+    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+  />
+</div>
+`;
+
+exports[`Pages Snapshots ModelsPage Component should match snapshot in light mode: models-page-light 1`] = `
+<div
+  class="models-page"
+>
+  <h1
+    class="text-3xl font-bold mb-8 text-foreground"
+  >
+    Models
+  </h1>
+  <div
+    class="flex justify-between items-center mb-8"
+  >
+    <input
+      class="border border-border rounded-lg px-4 py-3 w-64 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+      placeholder="Search models..."
+      type="text"
+      value=""
+    />
+    <div
+      class="flex gap-3"
+    >
+      <button
+        class="bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+      >
+        Discover Models
+      </button>
+      <button
+        class="bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+      >
+        Rescan Models
+      </button>
+    </div>
+  </div>
+  <div
+    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+  />
+</div>
+`;
+
+exports[`Pages Snapshots ModelsPage Component should match snapshot with empty models: models-page-empty 1`] = `
+<div
+  class="models-page"
+>
+  <h1
+    class="text-3xl font-bold mb-8 text-foreground"
+  >
+    Models
+  </h1>
+  <div
+    class="flex justify-between items-center mb-8"
+  >
+    <input
+      class="border border-border rounded-lg px-4 py-3 w-64 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+      placeholder="Search models..."
+      type="text"
+      value=""
+    />
+    <div
+      class="flex gap-3"
+    >
+      <button
+        class="bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+      >
+        Discover Models
+      </button>
+      <button
+        class="bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+      >
+        Rescan Models
+      </button>
+    </div>
+  </div>
+  <div
+    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+  />
+</div>
+`;
+
+exports[`Pages Snapshots ModelsPage Component should match snapshot with loaded models: models-page-with-models 1`] = `
+<div
+  class="models-page"
+>
+  <h1
+    class="text-3xl font-bold mb-8 text-foreground"
+  >
+    Models
+  </h1>
+  <div
+    class="flex justify-between items-center mb-8"
+  >
+    <input
+      class="border border-border rounded-lg px-4 py-3 w-64 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+      placeholder="Search models..."
+      type="text"
+      value=""
+    />
+    <div
+      class="flex gap-3"
+    >
+      <button
+        class="bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+      >
+        Discover Models
+      </button>
+      <button
+        class="bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+      >
+        Rescan Models
+      </button>
+    </div>
+  </div>
+  <div
+    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+  />
+</div>
+`;
+
+exports[`Pages Snapshots Page States should match snapshot with empty state: page-empty 1`] = `
+<div
+  class="models-page"
+>
+  <h1
+    class="text-3xl font-bold mb-8 text-foreground"
+  >
+    Models
+  </h1>
+  <div
+    class="flex justify-between items-center mb-8"
+  >
+    <input
+      class="border border-border rounded-lg px-4 py-3 w-64 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+      placeholder="Search models..."
+      type="text"
+      value=""
+    />
+    <div
+      class="flex gap-3"
+    >
+      <button
+        class="bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+      >
+        Discover Models
+      </button>
+      <button
+        class="bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+      >
+        Rescan Models
+      </button>
+    </div>
+  </div>
+  <div
+    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+  />
+</div>
+`;
+
+exports[`Pages Snapshots Page States should match snapshot with loading state: page-loading 1`] = `
+<div
+  class="models-page"
+>
+  <h1
+    class="text-3xl font-bold mb-8 text-foreground"
+  >
+    Models
+  </h1>
+  <div
+    class="flex justify-between items-center mb-8"
+  >
+    <input
+      class="border border-border rounded-lg px-4 py-3 w-64 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+      placeholder="Search models..."
+      type="text"
+      value=""
+    />
+    <div
+      class="flex gap-3"
+    >
+      <button
+        class="bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+      >
+        Discover Models
+      </button>
+      <button
+        class="bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+      >
+        Rescan Models
+      </button>
+    </div>
+  </div>
+  <div
+    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+  />
+</div>
+`;
+
+exports[`Pages Snapshots Responsive Page Layouts should match ModelsPage at mobile width (375px): models-page-mobile 1`] = `
+<div
+  class="models-page"
+>
+  <h1
+    class="text-3xl font-bold mb-8 text-foreground"
+  >
+    Models
+  </h1>
+  <div
+    class="flex justify-between items-center mb-8"
+  >
+    <input
+      class="border border-border rounded-lg px-4 py-3 w-64 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+      placeholder="Search models..."
+      type="text"
+      value=""
+    />
+    <div
+      class="flex gap-3"
+    >
+      <button
+        class="bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+      >
+        Discover Models
+      </button>
+      <button
+        class="bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+      >
+        Rescan Models
+      </button>
+    </div>
+  </div>
+  <div
+    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+  />
+</div>
+`;
+
+exports[`Pages Snapshots Responsive Page Layouts should match ModelsPage at tablet width (768px): models-page-tablet 1`] = `
+<div
+  class="models-page"
+>
+  <h1
+    class="text-3xl font-bold mb-8 text-foreground"
+  >
+    Models
+  </h1>
+  <div
+    class="flex justify-between items-center mb-8"
+  >
+    <input
+      class="border border-border rounded-lg px-4 py-3 w-64 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+      placeholder="Search models..."
+      type="text"
+      value=""
+    />
+    <div
+      class="flex gap-3"
+    >
+      <button
+        class="bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+      >
+        Discover Models
+      </button>
+      <button
+        class="bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
+      >
+        Rescan Models
+      </button>
+    </div>
+  </div>
+  <div
+    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+  />
+</div>
+`;

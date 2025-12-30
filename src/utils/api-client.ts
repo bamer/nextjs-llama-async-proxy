@@ -25,6 +25,11 @@ class ApiClient {
     return this._instance;
   }
 
+  // For testing: Reset the instance to allow mocking
+  public resetInstance(): void {
+    this._instance = null;
+  }
+
   private initializeInterceptors(): void {
     if (!this._instance) return;
 

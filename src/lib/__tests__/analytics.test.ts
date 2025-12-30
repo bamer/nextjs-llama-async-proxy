@@ -4,7 +4,13 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 
 jest.mock('@/lib/monitor');
-jest.mock('fs');
+jest.mock('fs', () => ({
+  promises: {
+    access: jest.fn(),
+    readdir: jest.fn(),
+    stat: jest.fn(),
+  },
+}));
 jest.mock('path');
 
 const mockedCaptureMetrics = captureMetrics as jest.MockedFunction<typeof captureMetrics>;
@@ -20,6 +26,11 @@ describe('AnalyticsEngine', () => {
     analyticsEngine['errorCount'] = 0;
     analyticsEngine['totalRequests'] = 0;
     analyticsEngine['responseTimes'] = [];
+
+    // Setup default fs mocks
+    (mockedFs.access as jest.Mock).mockResolvedValue(undefined);
+    (mockedFs.readdir as jest.Mock).mockResolvedValue([]);
+    (mockedFs.stat as jest.Mock).mockResolvedValue({ size: 0 });
 
     mockedCaptureMetrics.mockReturnValue({
       cpuUsage: 45,
@@ -304,11 +315,11 @@ describe('AnalyticsEngine', () => {
 
     describe('storage calculation', () => {
       it('calculates storage from logs directory', async () => {
-        mockedFs.access.mockResolvedValue(undefined);
-        mockedFs.readdir.mockResolvedValue(['log1.log', 'log2.log']);
-        mockedFs.stat.mockImplementation((path) => Promise.resolve({
-          size: path.includes('log1') ? 1024 : 2048,
-        } as any));
+        (mockedFs.access as jest.Mock).mockResolvedValue(undefined);
+        (mockedFs.readdir as jest.Mock).mockResolvedValue(['log1.log', 'log2.log']);
+        (mockedFs.stat as jest.Mock).mockImplementation((path) => Promise.resolve({
+          size: (path as string).includes('log1') ? 1024 : 2048,
+        }));
 
         const analytics = await analyticsEngine.getAnalytics();
 
@@ -316,7 +327,7 @@ describe('AnalyticsEngine', () => {
       });
 
       it('handles storage calculation errors gracefully', async () => {
-        mockedFs.access.mockRejectedValue(new Error('Access denied'));
+        (mockedFs.access as jest.Mock).mockRejectedValue(new Error('Access denied'));
 
         const analytics = await analyticsEngine.getAnalytics();
 
@@ -324,8 +335,8 @@ describe('AnalyticsEngine', () => {
       });
 
       it('handles readdir errors gracefully', async () => {
-        mockedFs.access.mockResolvedValue(undefined);
-        mockedFs.readdir.mockRejectedValue(new Error('Read failed'));
+        (mockedFs.access as jest.Mock).mockResolvedValue(undefined);
+        (mockedFs.readdir as jest.Mock).mockRejectedValue(new Error('Read failed'));
 
         const analytics = await analyticsEngine.getAnalytics();
 
@@ -333,8 +344,8 @@ describe('AnalyticsEngine', () => {
       });
 
       it('handles empty logs directory', async () => {
-        mockedFs.access.mockResolvedValue(undefined);
-        mockedFs.readdir.mockResolvedValue([]);
+        (mockedFs.access as jest.Mock).mockResolvedValue(undefined);
+        (mockedFs.readdir as jest.Mock).mockResolvedValue([]);
 
         const analytics = await analyticsEngine.getAnalytics();
 
@@ -342,9 +353,9 @@ describe('AnalyticsEngine', () => {
       });
 
       it('handles stat errors gracefully', async () => {
-        mockedFs.access.mockResolvedValue(undefined);
-        mockedFs.readdir.mockResolvedValue(['log1.log']);
-        mockedFs.stat.mockRejectedValue(new Error('Stat failed'));
+        (mockedFs.access as jest.Mock).mockResolvedValue(undefined);
+        (mockedFs.readdir as jest.Mock).mockResolvedValue(['log1.log']);
+        (mockedFs.stat as jest.Mock).mockRejectedValue(new Error('Stat failed'));
 
         const analytics = await analyticsEngine.getAnalytics();
 
@@ -352,9 +363,9 @@ describe('AnalyticsEngine', () => {
       });
 
       it('converts bytes to megabytes', async () => {
-        mockedFs.access.mockResolvedValue(undefined);
-        mockedFs.readdir.mockResolvedValue(['log1.log']);
-        mockedFs.stat.mockResolvedValue({ size: 1024 * 1024 * 10 } as any);
+        (mockedFs.access as jest.Mock).mockResolvedValue(undefined);
+        (mockedFs.readdir as jest.Mock).mockResolvedValue(['log1.log']);
+        (mockedFs.stat as jest.Mock).mockResolvedValue({ size: 1024 * 1024 * 10 });
 
         const analytics = await analyticsEngine.getAnalytics();
 

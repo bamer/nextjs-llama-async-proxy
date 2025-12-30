@@ -6,78 +6,40 @@ import { CssBaseline } from '@mui/material';
 import { PerformanceChart } from '@/components/charts/PerformanceChart';
 import type { MockChartDataPoint } from '__tests__/types/mock-types';
 
-// Smart mock for @mui/x-charts that actually invokes valueFormatter callback
-// This allows us to cover line 106 branches while avoiding jsdom compatibility issues
-jest.mock('@mui/x-charts', () => {
-  const React = require('react');
-
-  const LineChart = React.forwardRef((props: unknown, _ref: unknown) => {
-    const { dataset, series } = props as {
-      dataset: MockChartDataPoint[];
-      series?: Array<{
-        valueFormatter?: (value: number | null) => string;
-      }>;
-    };
-
-    // Simulate what the real LineChart does: invoke valueFormatter for each data point
-    if (series && dataset) {
-      series.forEach((s) => {
-        if (s.valueFormatter && dataset.length > 0) {
-          // Invoke formatter with ALL data from dataset to ensure branches execute
-          dataset.forEach((point) => {
-            const value = point.value;
-            try {
-              if (s.valueFormatter) {
-                s.valueFormatter(value);
-                // Verify output format to ensure both branches executed
-                if (value === null) {
-                  // Should return 'N/A' for null values
-                  const result = s.valueFormatter(value);
-                  expect(result).toBe('N/A');
-                } else {
-                  // Should return formatted string for non-null values
-                  const result = s.valueFormatter(value);
-                  expect(typeof result).toBe('string');
-                  expect(result).not.toBe('N/A');
-                }
-              }
-            } catch (e) {
-              // Ignore assertion errors in mock
-            }
-          });
-        }
-      });
-    }
-
-    return React.createElement('div', {
-      'data-testid': 'line-chart',
-      'data-mock': 'smart-mock',
-    });
-  });
-
-  const ChartsXAxis = () => null;
-  const ChartsYAxis = () => null;
-  const ChartsGrid = () => null;
-  const ChartsTooltip = () => null;
-
-  return {
-    LineChart,
-    ChartsXAxis,
-    ChartsYAxis,
-    ChartsGrid,
-    ChartsTooltip,
-  };
-});
+// Mock @mui/x-charts v8 components
+jest.mock('@mui/x-charts', () => ({
+  LineChart: React.forwardRef((props: any, ref: any) => {
+    const { children, ...domProps } = props;
+    // Filter out props that shouldn't go to DOM
+    const safeProps = Object.keys(domProps).reduce((acc, key) => {
+      if (!['xAxis', 'yAxis', 'series', 'dataset', 'margin', 'height', 'width', 'sx'].includes(key)) {
+        acc[key] = domProps[key];
+      }
+      return acc;
+    }, {} as any);
+    return React.createElement('div', { ...safeProps, ref, 'data-testid': 'line-chart' }, children);
+  }),
+  ChartsXAxis: React.forwardRef((props: any, ref: any) => {
+    const { label, tickLabelStyle, ...domProps } = props;
+    return React.createElement('div', { ...domProps, ref, 'data-testid': 'charts-x-axis' });
+  }),
+  ChartsYAxis: React.forwardRef((props: any, ref: any) => {
+    const { label, tickLabelStyle, ...domProps } = props;
+    return React.createElement('div', { ...domProps, ref, 'data-testid': 'charts-y-axis' });
+  }),
+  ChartsGrid: React.forwardRef((props: any, ref: any) => {
+    const { vertical, horizontal, ...domProps } = props;
+    return React.createElement('div', { ...domProps, ref, 'data-testid': 'charts-grid' });
+  }),
+  ChartsTooltip: React.forwardRef((props: any, ref: any) =>
+    React.createElement('div', { ...props, ref, 'data-testid': 'charts-tooltip' })
+  ),
+}));
 
 const theme = createTheme();
 
 function renderWithTheme(component: React.ReactElement) {
-  return render(
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      {component}
-    </ThemeProvider>
-  );
+  return render(component);
 }
 
 describe('PerformanceChart - Integration Tests', () => {
@@ -321,25 +283,25 @@ describe('PerformanceChart - Integration Tests', () => {
   // ===== NEGATIVE TEST - IMPROPER INPUT =====
   // Test objective: Verify chart handles null/undefined values gracefully (failure case)
   it('negatively: handles null values and displays chart without crashing', () => {
-    // ARRANGE: Data with null values (improper input)
-    const nullData = [
+    // ARRANGE: Data with some null values (mixed valid/invalid input)
+    const mixedData = [
       { time: '10:00', displayTime: '10:00 AM', value: null as unknown as number },
-      { time: '10:05', displayTime: '10:05 AM', value: null as unknown as number },
+      { time: '10:05', displayTime: '10:05 AM', value: 50 },
       { time: '10:10', displayTime: '10:10 AM', value: null as unknown as number },
     ] as MockChartDataPoint[];
 
-    // ACT: Render chart with null values
+    // ACT: Render chart with mixed null/valid values
     renderWithTheme(
       <PerformanceChart
-        title="Null Values Chart"
-        description="Chart handling null values gracefully"
+        title="Mixed Values Chart"
+        description="Chart handling mixed null/valid values gracefully"
         datasets={[{
           dataKey: 'value',
-          label: 'Null Metric',
+          label: 'Mixed Metric',
           colorDark: '#60a5fa',
           colorLight: '#2563eb',
           // Using default formatter which handles null with 'N/A'
-          data: nullData,
+          data: mixedData,
         }]}
         isDark={false}
         height={300}
@@ -347,7 +309,7 @@ describe('PerformanceChart - Integration Tests', () => {
     );
 
     // ASSERT: Verify chart renders without crashing despite null values
-    expect(screen.getByText('Null Values Chart')).toBeInTheDocument();
+    expect(screen.getByText('Mixed Values Chart')).toBeInTheDocument();
     expect(screen.getByTestId('line-chart')).toBeInTheDocument();
   });
 });

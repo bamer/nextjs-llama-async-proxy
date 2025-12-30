@@ -22,5 +22,6 @@ export function useWebSocket() {
     stopModel,
     on,
     off,
+    socketId: 'socket-123', // TODO: Get from websocket client
   };
 }

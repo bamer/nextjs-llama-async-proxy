@@ -4,10 +4,6 @@ import "@testing-library/jest-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 
 // Mock dependencies
-jest.mock("@mui/material", () => ({
-  ...jest.requireActual("@mui/material"),
-  useMediaQuery: jest.fn(() => false),
-}));
 
 jest.mock("@/styles/theme", () => {
   const lightTheme = {
@@ -33,6 +29,27 @@ jest.mock("next-themes", () => ({
   }),
 }));
 
+// Mock framer-motion
+jest.mock("framer-motion", () => ({
+  m: {
+    div: (props: any) => React.createElement('div', props),
+  },
+}));
+
+// Mock useLoggerConfig hook
+jest.mock("@/hooks/use-logger-config", () => ({
+  useLoggerConfig: jest.fn(() => ({
+    loggerConfig: {
+      level: "info",
+      file: true,
+      console: true,
+    },
+    updateConfig: jest.fn(),
+    loading: false,
+    clearFieldError: jest.fn(),
+  })),
+}));
+
 // Mock the configuration hooks
 jest.mock("@/components/configuration/hooks/useConfigurationForm", () => ({
   useConfigurationForm: jest.fn(() => ({
@@ -55,6 +72,11 @@ jest.mock("@/components/configuration/hooks/useConfigurationForm", () => ({
       cacheSize: 2,
     },
     validationErrors: {},
+    fieldErrors: {
+      general: {},
+      llamaServer: {},
+      advanced: {},
+    },
     isSaving: false,
     saveSuccess: null,
     handleTabChange: jest.fn(),
@@ -77,7 +99,7 @@ import { ConfigurationActions } from "@/components/configuration/ConfigurationAc
 import { ConfigurationHeader } from "@/components/configuration/ConfigurationHeader";
 
 describe("Configuration Snapshots", () => {
-  const MockThemeProvider = ({ children }: { children: React.ReactNode }) => (
+  const MockThemeProvider = ({ children, isDark }: { children: React.ReactNode; isDark?: boolean }) => (
     <ThemeProvider>{children}</ThemeProvider>
   );
 
@@ -94,6 +116,12 @@ describe("Configuration Snapshots", () => {
     "Port must be between 1-65535",
     "Context length must be positive",
   ];
+
+  const mockFieldErrors = {
+    general: {},
+    llamaServer: {},
+    advanced: {},
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -146,6 +174,11 @@ describe("Configuration Snapshots", () => {
         activeTab: 1,
         formConfig: {},
         validationErrors: {},
+        fieldErrors: {
+          general: {},
+          llamaServer: {},
+          advanced: {},
+        },
         isSaving: false,
         saveSuccess: null,
         handleTabChange: jest.fn(),
@@ -200,6 +233,11 @@ describe("Configuration Snapshots", () => {
         activeTab: 3,
         formConfig: {},
         validationErrors: {},
+        fieldErrors: {
+          general: {},
+          llamaServer: {},
+          advanced: {},
+        },
         isSaving: false,
         saveSuccess: null,
         handleTabChange: jest.fn(),
@@ -224,7 +262,7 @@ describe("Configuration Snapshots", () => {
     it("should match snapshot in light mode", () => {
       const { container } = render(
         <MockThemeProvider isDark={false}>
-          <GeneralSettingsTab formConfig={mockFormConfig} onInputChange={jest.fn()} />
+          <GeneralSettingsTab formConfig={mockFormConfig} onInputChange={jest.fn()} fieldErrors={mockFieldErrors.general} />
         </MockThemeProvider>
       );
       expect(container.firstChild).toMatchSnapshot("general-settings-light");
@@ -234,7 +272,7 @@ describe("Configuration Snapshots", () => {
     it("should match snapshot in dark mode", () => {
       const { container } = render(
         <MockThemeProvider isDark={true}>
-          <GeneralSettingsTab formConfig={mockFormConfig} onInputChange={jest.fn()} />
+          <GeneralSettingsTab formConfig={mockFormConfig} onInputChange={jest.fn()} fieldErrors={mockFieldErrors.general} />
         </MockThemeProvider>
       );
       expect(container.firstChild).toMatchSnapshot("general-settings-dark");
@@ -247,6 +285,7 @@ describe("Configuration Snapshots", () => {
           <GeneralSettingsTab
             formConfig={{ ...mockFormConfig, serverPort: 99999 }}
             onInputChange={jest.fn()}
+            fieldErrors={mockFieldErrors.general}
           />
         </MockThemeProvider>
       );
@@ -259,7 +298,7 @@ describe("Configuration Snapshots", () => {
     it("should match snapshot in light mode", () => {
       const { container } = render(
         <MockThemeProvider isDark={false}>
-          <LlamaServerSettingsTab formConfig={mockFormConfig} onLlamaServerChange={jest.fn()} />
+          <LlamaServerSettingsTab formConfig={mockFormConfig} onLlamaServerChange={jest.fn()} fieldErrors={mockFieldErrors.llamaServer} />
         </MockThemeProvider>
       );
       expect(container.firstChild).toMatchSnapshot("llama-server-light");
@@ -269,7 +308,7 @@ describe("Configuration Snapshots", () => {
     it("should match snapshot in dark mode", () => {
       const { container } = render(
         <MockThemeProvider isDark={true}>
-          <LlamaServerSettingsTab formConfig={mockFormConfig} onLlamaServerChange={jest.fn()} />
+          <LlamaServerSettingsTab formConfig={mockFormConfig} onLlamaServerChange={jest.fn()} fieldErrors={mockFieldErrors.llamaServer} />
         </MockThemeProvider>
       );
       expect(container.firstChild).toMatchSnapshot("llama-server-dark");
@@ -282,6 +321,7 @@ describe("Configuration Snapshots", () => {
           <LlamaServerSettingsTab
             formConfig={{ ...mockFormConfig, modelPath: "" }}
             onLlamaServerChange={jest.fn()}
+            fieldErrors={mockFieldErrors.llamaServer}
           />
         </MockThemeProvider>
       );
@@ -512,7 +552,7 @@ describe("Configuration Snapshots", () => {
     it("should match snapshot with pristine form", () => {
       const { container } = render(
         <MockThemeProvider>
-          <GeneralSettingsTab formConfig={mockFormConfig} onInputChange={jest.fn()} />
+          <GeneralSettingsTab formConfig={mockFormConfig} onInputChange={jest.fn()} fieldErrors={mockFieldErrors.general} />
         </MockThemeProvider>
       );
       expect(container.firstChild).toMatchSnapshot("form-pristine");
@@ -523,7 +563,7 @@ describe("Configuration Snapshots", () => {
       const dirtyConfig = { ...mockFormConfig, serverPort: 9090 };
       const { container } = render(
         <MockThemeProvider>
-          <GeneralSettingsTab formConfig={dirtyConfig} onInputChange={jest.fn()} />
+          <GeneralSettingsTab formConfig={dirtyConfig} onInputChange={jest.fn()} fieldErrors={mockFieldErrors.general} />
         </MockThemeProvider>
       );
       expect(container.firstChild).toMatchSnapshot("form-dirty");
@@ -534,7 +574,7 @@ describe("Configuration Snapshots", () => {
       const invalidConfig = { ...mockFormConfig, serverPort: 0, contextLength: -100 };
       const { container } = render(
         <MockThemeProvider>
-          <GeneralSettingsTab formConfig={invalidConfig} onInputChange={jest.fn()} />
+          <GeneralSettingsTab formConfig={invalidConfig} onInputChange={jest.fn()} fieldErrors={mockFieldErrors.general} />
         </MockThemeProvider>
       );
       expect(container.firstChild).toMatchSnapshot("form-invalid");
@@ -544,7 +584,7 @@ describe("Configuration Snapshots", () => {
     it("should match snapshot with valid form", () => {
       const { container } = render(
         <MockThemeProvider>
-          <GeneralSettingsTab formConfig={mockFormConfig} onInputChange={jest.fn()} />
+          <GeneralSettingsTab formConfig={mockFormConfig} onInputChange={jest.fn()} fieldErrors={mockFieldErrors.general} />
         </MockThemeProvider>
       );
       expect(container.firstChild).toMatchSnapshot("form-valid");
@@ -567,7 +607,7 @@ describe("Configuration Snapshots", () => {
     it("should have form labels present", () => {
       render(
         <MockThemeProvider>
-          <GeneralSettingsTab formConfig={mockFormConfig} onInputChange={jest.fn()} />
+          <GeneralSettingsTab formConfig={mockFormConfig} onInputChange={jest.fn()} fieldErrors={mockFieldErrors.general} />
         </MockThemeProvider>
       );
       expect(screen.getByLabelText(/server port/i)).toBeInTheDocument();

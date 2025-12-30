@@ -165,4 +165,5 @@ export function getModelTemplatesSync(): Record<string, string> {
 export function __resetCache__(): void {
   cachedTemplates = {};
   isInitialized = false;
+  loadingPromise = null;
 }

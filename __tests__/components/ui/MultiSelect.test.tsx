@@ -5,7 +5,7 @@
 import React from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { MultiSelect, MultiSelectOption } from '../../../src/components/ui/MultiSelect';
+import { MultiSelect, MultiSelectOption } from '@/components/ui';
 
 describe('MultiSelect Component', () => {
   const defaultOptions: MultiSelectOption[] = [

@@ -5,9 +5,9 @@ const jestConfig: Config = {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'], // Temporarily removed mui-mocks.tsx due to module resolution issues
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '^@/app/(.*)$': '<rootDir>/app/$1',
-  },
+      '^@/app/(.*)$': '<rootDir>/app/$1',
+      '^@/(.*)$': '<rootDir>/src/$1',
+    },
   snapshotSerializers: ['@emotion/jest/serializer'],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
