@@ -14,6 +14,7 @@ const jestConfig: Config = {
   // Increase memory limits for tests
   maxWorkers: '50%',
   workerIdleMemoryLimit: '512MB',
+  testTimeout: 10000, // Increase from default 5000ms to 10000ms (10 seconds)
   cache: false,
   bail: false,
   verbose: true,

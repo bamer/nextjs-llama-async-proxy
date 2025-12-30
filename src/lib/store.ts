@@ -214,6 +214,9 @@ const useAppStore = create<AppStore>()(
 
 export const useStore = useAppStore;
 
+// Export getState for direct access to store state
+export const getState = useAppStore.getState;
+
 // Selectors for fine-grained state access
 export const selectModels = (state: AppStore) => state.models;
 export const selectActiveModel = (state: AppStore) =>

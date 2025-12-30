@@ -16,7 +16,9 @@ jest.mock("next/navigation", () => ({
 // Mock framer-motion
 jest.mock("framer-motion", () => ({
   m: {
-    div: ({ children, ...props }: MotionComponentProps) => <div {...props}>{children}</div>,
+    div: ({ children, initial, animate, transition, ...props }: MotionComponentProps) => (
+      <div {...props}>{children}</div>
+    ),
   },
 }));
 

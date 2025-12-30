@@ -206,10 +206,18 @@ exports[`Configuration Snapshots ConfigurationTabs Component should match snapsh
   class="MuiCard-root"
 >
   <div>
-    <button />
-    <button />
-    <button />
-    <button />
+    <button
+      label="General Settings"
+    />
+    <button
+      label="Llama-Server Settings"
+    />
+    <button
+      label="Advanced"
+    />
+    <button
+      label="Logger Settings"
+    />
   </div>
 </div>
 `;
@@ -219,10 +227,18 @@ exports[`Configuration Snapshots ConfigurationTabs Component should match snapsh
   class="MuiCard-root"
 >
   <div>
-    <button />
-    <button />
-    <button />
-    <button />
+    <button
+      label="General Settings"
+    />
+    <button
+      label="Llama-Server Settings"
+    />
+    <button
+      label="Advanced"
+    />
+    <button
+      label="Logger Settings"
+    />
   </div>
 </div>
 `;
@@ -232,10 +248,18 @@ exports[`Configuration Snapshots ConfigurationTabs Component should match snapsh
   class="MuiCard-root"
 >
   <div>
-    <button />
-    <button />
-    <button />
-    <button />
+    <button
+      label="General Settings"
+    />
+    <button
+      label="Llama-Server Settings"
+    />
+    <button
+      label="Advanced"
+    />
+    <button
+      label="Logger Settings"
+    />
   </div>
 </div>
 `;
@@ -245,10 +269,18 @@ exports[`Configuration Snapshots ConfigurationTabs Component should match snapsh
   class="MuiCard-root"
 >
   <div>
-    <button />
-    <button />
-    <button />
-    <button />
+    <button
+      label="General Settings"
+    />
+    <button
+      label="Llama-Server Settings"
+    />
+    <button
+      label="Advanced"
+    />
+    <button
+      label="Logger Settings"
+    />
   </div>
 </div>
 `;
@@ -275,6 +307,7 @@ exports[`Configuration Snapshots Form States should match snapshot with dirty fo
           data-testid="grid"
         >
           <div
+            label="Base Path"
             name="basePath"
           />
         </div>
@@ -282,6 +315,7 @@ exports[`Configuration Snapshots Form States should match snapshot with dirty fo
           data-testid="grid"
         >
           <div
+            label="Log Level"
             name="logLevel"
           >
             <option
@@ -310,6 +344,7 @@ exports[`Configuration Snapshots Form States should match snapshot with dirty fo
           data-testid="grid"
         >
           <div
+            label="Max Concurrent Models"
             name="maxConcurrentModels"
             type="number"
           />
@@ -354,6 +389,7 @@ exports[`Configuration Snapshots Form States should match snapshot with dirty fo
           data-testid="grid"
         >
           <div
+            label="Llama-Server Path"
             name="llamaServerPath"
           />
         </div>
@@ -385,6 +421,7 @@ exports[`Configuration Snapshots Form States should match snapshot with invalid 
           data-testid="grid"
         >
           <div
+            label="Base Path"
             name="basePath"
           />
         </div>
@@ -392,6 +429,7 @@ exports[`Configuration Snapshots Form States should match snapshot with invalid 
           data-testid="grid"
         >
           <div
+            label="Log Level"
             name="logLevel"
           >
             <option
@@ -420,6 +458,7 @@ exports[`Configuration Snapshots Form States should match snapshot with invalid 
           data-testid="grid"
         >
           <div
+            label="Max Concurrent Models"
             name="maxConcurrentModels"
             type="number"
           />
@@ -464,6 +503,7 @@ exports[`Configuration Snapshots Form States should match snapshot with invalid 
           data-testid="grid"
         >
           <div
+            label="Llama-Server Path"
             name="llamaServerPath"
           />
         </div>
@@ -495,6 +535,7 @@ exports[`Configuration Snapshots Form States should match snapshot with pristine
           data-testid="grid"
         >
           <div
+            label="Base Path"
             name="basePath"
           />
         </div>
@@ -502,6 +543,7 @@ exports[`Configuration Snapshots Form States should match snapshot with pristine
           data-testid="grid"
         >
           <div
+            label="Log Level"
             name="logLevel"
           >
             <option
@@ -530,6 +572,7 @@ exports[`Configuration Snapshots Form States should match snapshot with pristine
           data-testid="grid"
         >
           <div
+            label="Max Concurrent Models"
             name="maxConcurrentModels"
             type="number"
           />
@@ -574,6 +617,7 @@ exports[`Configuration Snapshots Form States should match snapshot with pristine
           data-testid="grid"
         >
           <div
+            label="Llama-Server Path"
             name="llamaServerPath"
           />
         </div>
@@ -605,6 +649,7 @@ exports[`Configuration Snapshots Form States should match snapshot with valid fo
           data-testid="grid"
         >
           <div
+            label="Base Path"
             name="basePath"
           />
         </div>
@@ -612,6 +657,7 @@ exports[`Configuration Snapshots Form States should match snapshot with valid fo
           data-testid="grid"
         >
           <div
+            label="Log Level"
             name="logLevel"
           >
             <option
@@ -640,6 +686,7 @@ exports[`Configuration Snapshots Form States should match snapshot with valid fo
           data-testid="grid"
         >
           <div
+            label="Max Concurrent Models"
             name="maxConcurrentModels"
             type="number"
           />
@@ -684,6 +731,7 @@ exports[`Configuration Snapshots Form States should match snapshot with valid fo
           data-testid="grid"
         >
           <div
+            label="Llama-Server Path"
             name="llamaServerPath"
           />
         </div>
@@ -715,6 +763,7 @@ exports[`Configuration Snapshots GeneralSettingsTab Component should match snaps
           data-testid="grid"
         >
           <div
+            label="Base Path"
             name="basePath"
           />
         </div>
@@ -722,6 +771,7 @@ exports[`Configuration Snapshots GeneralSettingsTab Component should match snaps
           data-testid="grid"
         >
           <div
+            label="Log Level"
             name="logLevel"
           >
             <option
@@ -750,6 +800,7 @@ exports[`Configuration Snapshots GeneralSettingsTab Component should match snaps
           data-testid="grid"
         >
           <div
+            label="Max Concurrent Models"
             name="maxConcurrentModels"
             type="number"
           />
@@ -794,6 +845,7 @@ exports[`Configuration Snapshots GeneralSettingsTab Component should match snaps
           data-testid="grid"
         >
           <div
+            label="Llama-Server Path"
             name="llamaServerPath"
           />
         </div>
@@ -825,6 +877,7 @@ exports[`Configuration Snapshots GeneralSettingsTab Component should match snaps
           data-testid="grid"
         >
           <div
+            label="Base Path"
             name="basePath"
           />
         </div>
@@ -832,6 +885,7 @@ exports[`Configuration Snapshots GeneralSettingsTab Component should match snaps
           data-testid="grid"
         >
           <div
+            label="Log Level"
             name="logLevel"
           >
             <option
@@ -860,6 +914,7 @@ exports[`Configuration Snapshots GeneralSettingsTab Component should match snaps
           data-testid="grid"
         >
           <div
+            label="Max Concurrent Models"
             name="maxConcurrentModels"
             type="number"
           />
@@ -904,6 +959,7 @@ exports[`Configuration Snapshots GeneralSettingsTab Component should match snaps
           data-testid="grid"
         >
           <div
+            label="Llama-Server Path"
             name="llamaServerPath"
           />
         </div>
@@ -935,6 +991,7 @@ exports[`Configuration Snapshots GeneralSettingsTab Component should match snaps
           data-testid="grid"
         >
           <div
+            label="Base Path"
             name="basePath"
           />
         </div>
@@ -942,6 +999,7 @@ exports[`Configuration Snapshots GeneralSettingsTab Component should match snaps
           data-testid="grid"
         >
           <div
+            label="Log Level"
             name="logLevel"
           >
             <option
@@ -970,6 +1028,7 @@ exports[`Configuration Snapshots GeneralSettingsTab Component should match snaps
           data-testid="grid"
         >
           <div
+            label="Max Concurrent Models"
             name="maxConcurrentModels"
             type="number"
           />
@@ -1014,6 +1073,7 @@ exports[`Configuration Snapshots GeneralSettingsTab Component should match snaps
           data-testid="grid"
         >
           <div
+            label="Llama-Server Path"
             name="llamaServerPath"
           />
         </div>
@@ -1054,6 +1114,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Host"
             name="llamaServer.host"
           />
         </div>
@@ -1061,6 +1122,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Port"
             name="llamaServer.port"
             type="number"
           />
@@ -1078,6 +1140,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Context Size"
             name="llamaServer.ctx_size"
             type="number"
           />
@@ -1086,6 +1149,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Batch Size"
             name="llamaServer.batch_size"
             type="number"
           />
@@ -1094,6 +1158,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Micro Batch Size"
             name="llamaServer.ubatch_size"
             type="number"
           />
@@ -1102,6 +1167,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Threads"
             name="llamaServer.threads"
             type="number"
           />
@@ -1119,6 +1185,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="GPU Layers"
             name="llamaServer.gpu_layers"
             type="number"
           />
@@ -1127,6 +1194,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Main GPU"
             name="llamaServer.main_gpu"
             type="number"
           />
@@ -1144,6 +1212,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Temperature"
             name="llamaServer.temperature"
             type="number"
           />
@@ -1152,6 +1221,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Top-K"
             name="llamaServer.top_k"
             type="number"
           />
@@ -1160,6 +1230,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Top-P"
             name="llamaServer.top_p"
             type="number"
           />
@@ -1201,6 +1272,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Host"
             name="llamaServer.host"
           />
         </div>
@@ -1208,6 +1280,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Port"
             name="llamaServer.port"
             type="number"
           />
@@ -1225,6 +1298,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Context Size"
             name="llamaServer.ctx_size"
             type="number"
           />
@@ -1233,6 +1307,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Batch Size"
             name="llamaServer.batch_size"
             type="number"
           />
@@ -1241,6 +1316,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Micro Batch Size"
             name="llamaServer.ubatch_size"
             type="number"
           />
@@ -1249,6 +1325,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Threads"
             name="llamaServer.threads"
             type="number"
           />
@@ -1266,6 +1343,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="GPU Layers"
             name="llamaServer.gpu_layers"
             type="number"
           />
@@ -1274,6 +1352,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Main GPU"
             name="llamaServer.main_gpu"
             type="number"
           />
@@ -1291,6 +1370,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Temperature"
             name="llamaServer.temperature"
             type="number"
           />
@@ -1299,6 +1379,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Top-K"
             name="llamaServer.top_k"
             type="number"
           />
@@ -1307,6 +1388,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Top-P"
             name="llamaServer.top_p"
             type="number"
           />
@@ -1348,6 +1430,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Host"
             name="llamaServer.host"
           />
         </div>
@@ -1355,6 +1438,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Port"
             name="llamaServer.port"
             type="number"
           />
@@ -1372,6 +1456,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Context Size"
             name="llamaServer.ctx_size"
             type="number"
           />
@@ -1380,6 +1465,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Batch Size"
             name="llamaServer.batch_size"
             type="number"
           />
@@ -1388,6 +1474,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Micro Batch Size"
             name="llamaServer.ubatch_size"
             type="number"
           />
@@ -1396,6 +1483,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Threads"
             name="llamaServer.threads"
             type="number"
           />
@@ -1413,6 +1501,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="GPU Layers"
             name="llamaServer.gpu_layers"
             type="number"
           />
@@ -1421,6 +1510,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Main GPU"
             name="llamaServer.main_gpu"
             type="number"
           />
@@ -1438,6 +1528,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Temperature"
             name="llamaServer.temperature"
             type="number"
           />
@@ -1446,6 +1537,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Top-K"
             name="llamaServer.top_k"
             type="number"
           />
@@ -1454,6 +1546,7 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
           data-testid="grid"
         >
           <div
+            label="Top-P"
             name="llamaServer.top_p"
             type="number"
           />
@@ -1819,10 +1912,18 @@ exports[`Configuration Snapshots ModernConfiguration Component should match snap
     class="MuiCard-root"
   >
     <div>
-      <button />
-      <button />
-      <button />
-      <button />
+      <button
+        label="General Settings"
+      />
+      <button
+        label="Llama-Server Settings"
+      />
+      <button
+        label="Advanced"
+      />
+      <button
+        label="Logger Settings"
+      />
     </div>
   </div>
   <div
@@ -1969,10 +2070,18 @@ exports[`Configuration Snapshots ModernConfiguration Component should match snap
     class="MuiCard-root"
   >
     <div>
-      <button />
-      <button />
-      <button />
-      <button />
+      <button
+        label="General Settings"
+      />
+      <button
+        label="Llama-Server Settings"
+      />
+      <button
+        label="Advanced"
+      />
+      <button
+        label="Logger Settings"
+      />
     </div>
   </div>
   <div
@@ -2005,6 +2114,7 @@ exports[`Configuration Snapshots ModernConfiguration Component should match snap
             data-testid="grid"
           >
             <div
+              label="Host"
               name="llamaServer.host"
             />
           </div>
@@ -2012,6 +2122,7 @@ exports[`Configuration Snapshots ModernConfiguration Component should match snap
             data-testid="grid"
           >
             <div
+              label="Port"
               name="llamaServer.port"
               type="number"
             />
@@ -2029,6 +2140,7 @@ exports[`Configuration Snapshots ModernConfiguration Component should match snap
             data-testid="grid"
           >
             <div
+              label="Context Size"
               name="llamaServer.ctx_size"
               type="number"
             />
@@ -2037,6 +2149,7 @@ exports[`Configuration Snapshots ModernConfiguration Component should match snap
             data-testid="grid"
           >
             <div
+              label="Batch Size"
               name="llamaServer.batch_size"
               type="number"
             />
@@ -2045,6 +2158,7 @@ exports[`Configuration Snapshots ModernConfiguration Component should match snap
             data-testid="grid"
           >
             <div
+              label="Micro Batch Size"
               name="llamaServer.ubatch_size"
               type="number"
             />
@@ -2053,6 +2167,7 @@ exports[`Configuration Snapshots ModernConfiguration Component should match snap
             data-testid="grid"
           >
             <div
+              label="Threads"
               name="llamaServer.threads"
               type="number"
             />
@@ -2070,6 +2185,7 @@ exports[`Configuration Snapshots ModernConfiguration Component should match snap
             data-testid="grid"
           >
             <div
+              label="GPU Layers"
               name="llamaServer.gpu_layers"
               type="number"
             />
@@ -2078,6 +2194,7 @@ exports[`Configuration Snapshots ModernConfiguration Component should match snap
             data-testid="grid"
           >
             <div
+              label="Main GPU"
               name="llamaServer.main_gpu"
               type="number"
             />
@@ -2095,6 +2212,7 @@ exports[`Configuration Snapshots ModernConfiguration Component should match snap
             data-testid="grid"
           >
             <div
+              label="Temperature"
               name="llamaServer.temperature"
               type="number"
             />
@@ -2103,6 +2221,7 @@ exports[`Configuration Snapshots ModernConfiguration Component should match snap
             data-testid="grid"
           >
             <div
+              label="Top-K"
               name="llamaServer.top_k"
               type="number"
             />
@@ -2111,6 +2230,7 @@ exports[`Configuration Snapshots ModernConfiguration Component should match snap
             data-testid="grid"
           >
             <div
+              label="Top-P"
               name="llamaServer.top_p"
               type="number"
             />
@@ -2150,10 +2270,18 @@ exports[`Configuration Snapshots ModernConfiguration Component should match snap
     class="MuiCard-root"
   >
     <div>
-      <button />
-      <button />
-      <button />
-      <button />
+      <button
+        label="General Settings"
+      />
+      <button
+        label="Llama-Server Settings"
+      />
+      <button
+        label="Advanced"
+      />
+      <button
+        label="Logger Settings"
+      />
     </div>
   </div>
   <div
@@ -2432,10 +2560,18 @@ exports[`Configuration Snapshots Responsive Configuration Layouts should match s
     class="MuiCard-root"
   >
     <div>
-      <button />
-      <button />
-      <button />
-      <button />
+      <button
+        label="General Settings"
+      />
+      <button
+        label="Llama-Server Settings"
+      />
+      <button
+        label="Advanced"
+      />
+      <button
+        label="Logger Settings"
+      />
     </div>
   </div>
   <div
@@ -2632,10 +2768,18 @@ exports[`Configuration Snapshots Responsive Configuration Layouts should match s
     class="MuiCard-root"
   >
     <div>
-      <button />
-      <button />
-      <button />
-      <button />
+      <button
+        label="General Settings"
+      />
+      <button
+        label="Llama-Server Settings"
+      />
+      <button
+        label="Advanced"
+      />
+      <button
+        label="Logger Settings"
+      />
     </div>
   </div>
   <div
@@ -2832,10 +2976,18 @@ exports[`Configuration Snapshots Responsive Configuration Layouts should match s
     class="MuiCard-root"
   >
     <div>
-      <button />
-      <button />
-      <button />
-      <button />
+      <button
+        label="General Settings"
+      />
+      <button
+        label="Llama-Server Settings"
+      />
+      <button
+        label="Advanced"
+      />
+      <button
+        label="Logger Settings"
+      />
     </div>
   </div>
   <div
@@ -3032,10 +3184,18 @@ exports[`Configuration Snapshots Responsive Configuration Layouts should match s
     class="MuiCard-root"
   >
     <div>
-      <button />
-      <button />
-      <button />
-      <button />
+      <button
+        label="General Settings"
+      />
+      <button
+        label="Llama-Server Settings"
+      />
+      <button
+        label="Advanced"
+      />
+      <button
+        label="Logger Settings"
+      />
     </div>
   </div>
   <div

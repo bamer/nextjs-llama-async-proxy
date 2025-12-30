@@ -10,9 +10,9 @@ export const muiProps = [
   'dense', 'component', 'href', 'to', 'noWrap', 'align', 'elevation', 'square', 'spacing',
   'direction', 'container', 'item', 'xs', 'sm', 'md', 'lg', 'xl', 'onClose', 'open',
   'anchorEl', 'anchorOrigin', 'transformOrigin', 'getContentAnchorEl', 'PaperProps',
-  'MenuListProps', 'onClick', 'primary', 'secondary', 'error', 'warning', 'info', 'success',
+  'MenuListProps', 'primary', 'secondary', 'error', 'warning', 'info', 'success',
   'severity', 'icon', 'onExited', 'in', 'timeout', 'unmountOnExit', 'appear', 'startIcon',
-  'endIcon', 'orientation', 'value', 'onChange', 'label',
+  'endIcon', 'orientation', 'value', 'onChange',
   'overlap', 'badgeContent',
   // Form-specific props
   'helperText', 'SelectProps', 'inputProps', 'InputProps', 'select', 'checked', 'defaultChecked', 'readOnly',
@@ -104,7 +104,7 @@ export const muiMocks = {
    TextField: (props: any) => React.createElement('div', filterMUIProps(props), props.children),
   Button: (props: any) => React.createElement('button', filterMUIProps(props), props.children),
   IconButton: (props: any) => React.createElement('button', filterMUIProps(props), props.children),
-  Chip: (props: any) => React.createElement('div', filterMUIProps(props), props.children),
+   Chip: (props: any) => React.createElement('div', filterMUIProps(props), props.label || props.children),
 
    // Typography
    Typography: (props: any) => {

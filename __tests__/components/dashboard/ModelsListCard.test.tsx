@@ -6,7 +6,7 @@ import type { MockModelConfig } from "__tests__/types/mock-types";
 
 // Mock MUI components
 jest.mock("@mui/material", () => ({
-  Card: ({ children, ...props }: any) => React.createElement("div", { ...props, "data-testid": "card" }, children),
+  Card: ({ children, ...props }: any) => React.createElement("div", { ...props, "data-testid": "card", className: "MuiCard-root" }, children),
   CardContent: ({ children, ...props }: any) => React.createElement("div", { ...props }, children),
   Typography: ({ children, ...props }: any) => React.createElement("span", props, children),
   Box: ({ children, ...props }: any) => React.createElement("div", props, children),
@@ -170,7 +170,7 @@ describe("ModelsListCard", () => {
         <ModelsListCard models={loadingModels} isDark={false} onToggleModel={mockOnToggle} />
       );
 
-      expect(screen.getByText("LOADING")).toBeInTheDocument();
+      expect(screen.getByText("Loading... 45%")).toBeInTheDocument();
       const progressBar = screen.getByTestId("linear-progress");
       expect(progressBar).toBeInTheDocument();
       expect(progressBar).toHaveAttribute("value", "45");
@@ -225,20 +225,17 @@ describe("ModelsListCard", () => {
 
       expect(screen.getByText("RUNNING")).toBeInTheDocument();
       expect(screen.getByText("STOPPED")).toBeInTheDocument();
-      expect(screen.getByText("LOADING")).toBeInTheDocument();
+      expect(screen.getByText("Loading... 50%")).toBeInTheDocument();
       expect(screen.getByText("ERROR")).toBeInTheDocument();
     });
 
-    it("displays more buttons for each model", () => {
+    it("displays Start and Stop buttons for each model", () => {
       renderWithProviders(
         <ModelsListCard models={mockModels} isDark={false} onToggleModel={mockOnToggle} />
       );
 
-      const moreButtons = screen.getAllByRole("button").filter(
-        (btn) => !btn.textContent?.includes("Start") && !btn.textContent?.includes("Stop")
-      );
-
-      expect(moreButtons.length).toBe(2); // One more button for each model
+      const buttons = screen.getAllByRole("button");
+      expect(buttons.length).toBe(2); // One Start button and one Stop button
     });
 
     it("updates loading state during model toggle", async () => {
@@ -259,12 +256,15 @@ describe("ModelsListCard", () => {
       const stopButton = screen.getByText("Stop");
       fireEvent.click(stopButton);
 
-      // Button text should change
-      expect(screen.getByText("Stopping...")).toBeInTheDocument();
+      // Button should be disabled during loading
+      await waitFor(() => {
+        expect(stopButton).toBeDisabled();
+      });
 
       resolveFetch!();
       await waitFor(() => {
         expect(mockOnToggle).toHaveBeenCalled();
+        expect(stopButton).not.toBeDisabled();
       });
     });
   });
@@ -547,8 +547,10 @@ describe("ModelsListCard", () => {
       const stopButton = screen.getByText("Stop");
       fireEvent.click(stopButton);
 
-      // Check for loading state
-      expect(screen.getByText("Stopping...")).toBeInTheDocument();
+      // Check for loading state - button should be disabled
+      await waitFor(() => {
+        expect(stopButton).toBeDisabled();
+      });
 
       resolveFetch!();
     });
@@ -564,9 +566,9 @@ describe("ModelsListCard", () => {
         <ModelsListCard models={allTypeModels} isDark={false} onToggleModel={mockOnToggle} />
       );
 
-      expect(screen.getByText("llama")).toBeInTheDocument();
-      expect(screen.getByText("mistral")).toBeInTheDocument();
-      expect(screen.getByText("other")).toBeInTheDocument();
+      expect(screen.getByText("LLAMA")).toBeInTheDocument();
+      expect(screen.getByText("MISTRAL")).toBeInTheDocument();
+      expect(screen.getByText("OTHER")).toBeInTheDocument();
     });
 
     it("applies correct status colors", () => {
@@ -581,7 +583,7 @@ describe("ModelsListCard", () => {
       );
 
       expect(screen.getByText("RUNNING")).toBeInTheDocument();
-      expect(screen.getByText("LOADING")).toBeInTheDocument();
+      expect(screen.getByText("Loading... 50%")).toBeInTheDocument();
       expect(screen.getByText("ERROR")).toBeInTheDocument();
     });
 

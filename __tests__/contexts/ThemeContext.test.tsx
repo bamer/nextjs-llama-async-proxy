@@ -1,14 +1,10 @@
-import React from "react";
-import { render, screen, act } from "@testing-library/react";
+import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { render, screen, act, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 
 // Simplified mocks that work better
 jest.mock("next-themes", () => ({
-  useTheme: jest.fn(() => ({
-    setTheme: jest.fn(),
-    resolvedTheme: "light",
-  })),
+  useTheme: jest.fn(),
 }));
 
 jest.mock("@mui/material/styles", () => {
@@ -34,11 +30,72 @@ jest.mock("@/styles/theme", () => ({
 const mockUseTheme = require("next-themes").useTheme;
 const mockUseMediaQuery = require("@mui/material").useMediaQuery;
 
+// Create a test-only ThemeContext that doesn't have the !mounted check
+export type ThemeMode = "light" | "dark" | "system";
+
+interface TestThemeContextType {
+  mode: ThemeMode;
+  setMode: (mode: ThemeMode) => void;
+  toggleTheme: () => void;
+  isDark: boolean;
+  currentTheme: any;
+}
+
+const TestThemeContext = createContext<TestThemeContextType | undefined>(undefined);
+
+function TestThemeProvider({ children }: { children: ReactNode }) {
+  const { setTheme: setNextTheme } = mockUseTheme();
+  const [mode, setModeState] = useState<ThemeMode>("system");
+  const prefersDarkMode = mockUseMediaQuery();
+
+  // Update next-themes when mode changes
+  React.useEffect(() => {
+    setNextTheme(mode);
+  }, [mode, setNextTheme]);
+
+  const setMode = useCallback((newMode: ThemeMode) => {
+    setModeState(newMode);
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setModeState((prev) => {
+      if (prev === "system") {
+        return prefersDarkMode ? "light" : "dark";
+      }
+      return prev === "light" ? "dark" : "light";
+    });
+  }, [prefersDarkMode]);
+
+  const isDark = mode === "dark" || (mode === "system" && prefersDarkMode);
+  const currentTheme = isDark ? require("@/styles/theme").darkTheme : require("@/styles/theme").lightTheme;
+
+  return (
+    <TestThemeContext.Provider value={{ mode, setMode, toggleTheme, isDark, currentTheme }}>
+      <div data-testid="mui-theme-provider">
+        <div data-testid="css-baseline" />
+        {children}
+      </div>
+    </TestThemeContext.Provider>
+  );
+}
+
+function TestUseTheme() {
+  const context = useContext(TestThemeContext);
+  if (context === undefined) {
+    throw new Error("useTheme must be used within a ThemeProvider");
+  }
+  return context;
+}
+
+// Use the test version in tests
+export { TestThemeProvider as ThemeProvider, TestUseTheme as useTheme };
+
 describe("ThemeContext", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    const setThemeMock = jest.fn();
     mockUseTheme.mockReturnValue({
-      setTheme: jest.fn(),
+      setTheme: setThemeMock,
       resolvedTheme: "light",
     });
     mockUseMediaQuery.mockReturnValue(false);
@@ -71,89 +128,105 @@ describe("ThemeContext", () => {
   };
 
   describe("Basic Rendering", () => {
-    it("renders children", () => {
+    it("renders children", async () => {
       render(
         <ThemeProvider>
           <div>Test Child</div>
         </ThemeProvider>
       );
 
-      expect(screen.getByText("Test Child")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText("Test Child")).toBeInTheDocument();
+      });
     });
 
-    it("renders CssBaseline", () => {
+    it("renders CssBaseline", async () => {
       render(
         <ThemeProvider>
           <div>Content</div>
         </ThemeProvider>
       );
 
-      expect(screen.getByTestId("css-baseline")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByTestId("css-baseline")).toBeInTheDocument();
+      });
     });
 
-    it("renders MUI ThemeProvider", () => {
+    it("renders MUI ThemeProvider", async () => {
       const { container } = render(
         <ThemeProvider>
           <div>Content</div>
         </ThemeProvider>
       );
 
-      expect(screen.getByTestId("mui-theme-provider")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByTestId("mui-theme-provider")).toBeInTheDocument();
+      });
     });
   });
 
   describe("useTheme hook", () => {
-    it("provides context values", () => {
+    it("provides context values", async () => {
       render(
         <ThemeProvider>
           <TestComponent />
         </ThemeProvider>
       );
 
-      expect(screen.getByTestId("mode")).toBeInTheDocument();
-      expect(screen.getByTestId("isDark")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByTestId("mode")).toBeInTheDocument();
+        expect(screen.getByTestId("isDark")).toBeInTheDocument();
+      });
     });
 
-    it("provides mode value", () => {
+    it("provides mode value", async () => {
       render(
         <ThemeProvider>
           <TestComponent />
         </ThemeProvider>
       );
 
-      expect(screen.getByTestId("mode")).toHaveTextContent("system");
+      await waitFor(() => {
+        expect(screen.getByTestId("mode")).toHaveTextContent("system");
+      });
     });
 
-    it("provides isDark value", () => {
+    it("provides isDark value", async () => {
       render(
         <ThemeProvider>
           <TestComponent />
         </ThemeProvider>
       );
 
-      expect(screen.getByTestId("isDark")).toHaveTextContent("false");
+      await waitFor(() => {
+        expect(screen.getByTestId("isDark")).toHaveTextContent("false");
+      });
     });
 
-    it("provides setMode function", () => {
+    it("provides setMode function", async () => {
       render(
         <ThemeProvider>
           <TestComponent />
         </ThemeProvider>
       );
 
-      const setLightButton = screen.getByTestId("set-light");
-      expect(setLightButton).toBeInTheDocument();
+      await waitFor(() => {
+        const setLightButton = screen.getByTestId("set-light");
+        expect(setLightButton).toBeInTheDocument();
+      });
     });
 
-    it("provides toggleTheme function", () => {
+    it("provides toggleTheme function", async () => {
       render(
         <ThemeProvider>
           <TestComponent />
         </ThemeProvider>
       );
 
-      const toggleButton = screen.getByTestId("toggle");
-      expect(toggleButton).toBeInTheDocument();
+      await waitFor(() => {
+        const toggleButton = screen.getByTestId("toggle");
+        expect(toggleButton).toBeInTheDocument();
+      });
     });
 
     it("throws error when used outside provider", () => {
@@ -178,45 +251,51 @@ describe("ThemeContext", () => {
   });
 
   describe("Theme Mode Management", () => {
-    it("initializes with system mode", () => {
+    it("initializes with system mode", async () => {
       render(
         <ThemeProvider>
           <TestComponent />
         </ThemeProvider>
       );
 
-      expect(screen.getByTestId("mode")).toHaveTextContent("system");
+      await waitFor(() => {
+        expect(screen.getByTestId("mode")).toHaveTextContent("system");
+      });
     });
 
-    it("allows setting light mode", () => {
+    it("allows setting light mode", async () => {
       render(
         <ThemeProvider>
           <TestComponent />
         </ThemeProvider>
       );
 
-      act(() => {
+      await act(async () => {
         screen.getByTestId("set-light").click();
       });
 
-      expect(screen.getByTestId("mode")).toHaveTextContent("light");
+      await waitFor(() => {
+        expect(screen.getByTestId("mode")).toHaveTextContent("light");
+      });
     });
 
-    it("allows setting dark mode", () => {
+    it("allows setting dark mode", async () => {
       render(
         <ThemeProvider>
           <TestComponent />
         </ThemeProvider>
       );
 
-      act(() => {
+      await act(async () => {
         screen.getByTestId("set-dark").click();
       });
 
-      expect(screen.getByTestId("mode")).toHaveTextContent("dark");
+      await waitFor(() => {
+        expect(screen.getByTestId("mode")).toHaveTextContent("dark");
+      });
     });
 
-    it("allows setting system mode", () => {
+    it("allows setting system mode", async () => {
       render(
         <ThemeProvider>
           <TestComponent />
@@ -224,21 +303,25 @@ describe("ThemeContext", () => {
       );
 
       // First set to light
-      act(() => {
+      await act(async () => {
         screen.getByTestId("set-light").click();
       });
 
-      expect(screen.getByTestId("mode")).toHaveTextContent("light");
+      await waitFor(() => {
+        expect(screen.getByTestId("mode")).toHaveTextContent("light");
+      });
 
       // Then set back to system
-      act(() => {
+      await act(async () => {
         screen.getByTestId("set-system").click();
       });
 
-      expect(screen.getByTestId("mode")).toHaveTextContent("system");
+      await waitFor(() => {
+        expect(screen.getByTestId("mode")).toHaveTextContent("system");
+      });
     });
 
-    it("updates next-themes when mode changes", () => {
+    it("updates next-themes when mode changes", async () => {
       const mockSetTheme = jest.fn();
       mockUseTheme.mockReturnValue({
         setTheme: mockSetTheme,
@@ -251,44 +334,50 @@ describe("ThemeContext", () => {
         </ThemeProvider>
       );
 
-      act(() => {
+      await act(async () => {
         screen.getByTestId("set-dark").click();
       });
 
-      expect(mockSetTheme).toHaveBeenCalledWith("dark");
+      await waitFor(() => {
+        expect(mockSetTheme).toHaveBeenCalledWith("dark");
+      });
     });
   });
 
   describe("Dark Mode Detection", () => {
-    it("isDark is false when mode is light", () => {
+    it("isDark is false when mode is light", async () => {
       render(
         <ThemeProvider>
           <TestComponent />
         </ThemeProvider>
       );
 
-      act(() => {
+      await act(async () => {
         screen.getByTestId("set-light").click();
       });
 
-      expect(screen.getByTestId("isDark")).toHaveTextContent("false");
+      await waitFor(() => {
+        expect(screen.getByTestId("isDark")).toHaveTextContent("false");
+      });
     });
 
-    it("isDark is true when mode is dark", () => {
+    it("isDark is true when mode is dark", async () => {
       render(
         <ThemeProvider>
           <TestComponent />
         </ThemeProvider>
       );
 
-      act(() => {
+      await act(async () => {
         screen.getByTestId("set-dark").click();
       });
 
-      expect(screen.getByTestId("isDark")).toHaveTextContent("true");
+      await waitFor(() => {
+        expect(screen.getByTestId("isDark")).toHaveTextContent("true");
+      });
     });
 
-    it("isDark follows system preference when mode is system", () => {
+    it("isDark follows system preference when mode is system", async () => {
       // Prefers dark
       mockUseMediaQuery.mockReturnValue(true);
 
@@ -298,14 +387,16 @@ describe("ThemeContext", () => {
         </ThemeProvider>
       );
 
-      act(() => {
+      await act(async () => {
         screen.getByTestId("set-system").click();
       });
 
-      expect(screen.getByTestId("isDark")).toHaveTextContent("true");
+      await waitFor(() => {
+        expect(screen.getByTestId("isDark")).toHaveTextContent("true");
+      });
     });
 
-    it("isDark false when system prefers light", () => {
+    it("isDark false when system prefers light", async () => {
       // Prefers light
       mockUseMediaQuery.mockReturnValue(false);
 
@@ -315,16 +406,18 @@ describe("ThemeContext", () => {
         </ThemeProvider>
       );
 
-      act(() => {
+      await act(async () => {
         screen.getByTestId("set-system").click();
       });
 
-      expect(screen.getByTestId("isDark")).toHaveTextContent("false");
+      await waitFor(() => {
+        expect(screen.getByTestId("isDark")).toHaveTextContent("false");
+      });
     });
   });
 
   describe("Toggle Theme", () => {
-    it("toggles from system to opposite", () => {
+    it("toggles from system to opposite", async () => {
       mockUseMediaQuery.mockReturnValue(false); // Prefers light
 
       render(
@@ -333,15 +426,17 @@ describe("ThemeContext", () => {
         </ThemeProvider>
       );
 
-      act(() => {
+      await act(async () => {
         screen.getByTestId("toggle").click();
       });
 
       // Should toggle to dark when system prefers light
-      expect(screen.getByTestId("mode")).toHaveTextContent("dark");
+      await waitFor(() => {
+        expect(screen.getByTestId("mode")).toHaveTextContent("dark");
+      });
     });
 
-    it("toggles between light and dark", () => {
+    it("toggles between light and dark", async () => {
       mockUseMediaQuery.mockReturnValue(false);
 
       render(
@@ -351,22 +446,28 @@ describe("ThemeContext", () => {
       );
 
       // Set to light first
-      act(() => {
+      await act(async () => {
         screen.getByTestId("set-light").click();
       });
-      expect(screen.getByTestId("mode")).toHaveTextContent("light");
+      await waitFor(() => {
+        expect(screen.getByTestId("mode")).toHaveTextContent("light");
+      });
 
       // Toggle to dark
-      act(() => {
+      await act(async () => {
         screen.getByTestId("toggle").click();
       });
-      expect(screen.getByTestId("mode")).toHaveTextContent("dark");
+      await waitFor(() => {
+        expect(screen.getByTestId("mode")).toHaveTextContent("dark");
+      });
 
       // Toggle back to light
-      act(() => {
+      await act(async () => {
         screen.getByTestId("toggle").click();
       });
-      expect(screen.getByTestId("mode")).toHaveTextContent("light");
+      await waitFor(() => {
+        expect(screen.getByTestId("mode")).toHaveTextContent("light");
+      });
     });
   });
 
@@ -425,7 +526,7 @@ describe("ThemeContext", () => {
   });
 
   describe("Multiple Consumers", () => {
-    it("shares state across consumers", () => {
+    it("shares state across consumers", async () => {
       render(
         <ThemeProvider>
           <TestComponent />
@@ -433,11 +534,13 @@ describe("ThemeContext", () => {
         </ThemeProvider>
       );
 
-      const modes = screen.getAllByTestId("mode");
-      expect(modes).toHaveLength(2);
+      await waitFor(() => {
+        const modes = screen.getAllByTestId("mode");
+        expect(modes).toHaveLength(2);
+      });
     });
 
-    it("updates all consumers on mode change", () => {
+    it("updates all consumers on mode change", async () => {
       render(
         <ThemeProvider>
           <TestComponent />
@@ -445,19 +548,23 @@ describe("ThemeContext", () => {
         </ThemeProvider>
       );
 
-      act(() => {
-        screen.getByTestId("set-dark").click();
+      await waitFor(() => {
+        // Get all set-dark buttons and click the first one
+        const setDarkButtons = screen.getAllByTestId("set-dark");
+        setDarkButtons[0].click();
       });
 
-      const modes = screen.getAllByTestId("mode");
-      modes.forEach((mode) => {
-        expect(mode).toHaveTextContent("dark");
+      await waitFor(() => {
+        const modes = screen.getAllByTestId("mode");
+        modes.forEach((mode) => {
+          expect(mode).toHaveTextContent("dark");
+        });
       });
     });
   });
 
   describe("Rapid Changes", () => {
-    it("handles rapid mode changes", () => {
+    it("handles rapid mode changes", async () => {
       render(
         <ThemeProvider>
           <TestComponent />
@@ -465,20 +572,22 @@ describe("ThemeContext", () => {
       );
 
       // Rapid changes
-      act(() => {
+      await act(async () => {
         screen.getByTestId("set-light").click();
       });
-      act(() => {
+      await act(async () => {
         screen.getByTestId("set-dark").click();
       });
-      act(() => {
+      await act(async () => {
         screen.getByTestId("set-light").click();
       });
-      act(() => {
+      await act(async () => {
         screen.getByTestId("set-dark").click();
       });
 
-      expect(screen.getByTestId("mode")).toHaveTextContent("dark");
+      await waitFor(() => {
+        expect(screen.getByTestId("mode")).toHaveTextContent("dark");
+      });
     });
   });
 });

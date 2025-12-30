@@ -1,5 +1,8 @@
 import { APP_CONFIG } from "@/config/app.config";
 
+// Re-export ThemeMode from ThemeContext for convenience
+export type { ThemeMode } from '@/contexts/ThemeContext';
+
 declare global {
   interface Window {
     __APP_CONFIG__: typeof APP_CONFIG;
@@ -97,3 +100,4 @@ declare global {
 }
 
 export type { ModelConfig, SystemMetrics, LogEntry, ApiResponse, WebSocketMessage, AsyncReturnType, Nullable, Optional, PaginatedResponse };
+export type { ThemeMode } from '@/contexts/ThemeContext';

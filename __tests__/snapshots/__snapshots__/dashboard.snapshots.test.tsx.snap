@@ -15,8 +15,16 @@ exports[`Dashboard Snapshots DashboardHeader Component should match snapshot in 
     </span>
   </div>
   <div>
-    <div />
-    <div />
+    <div
+      label="Uptime: 1d 0h 0m"
+    >
+      Uptime: 1d 0h 0m
+    </div>
+    <div
+      label="CONNECTED"
+    >
+      CONNECTED
+    </div>
     <button>
       <svg
         data-icon="Refresh"
@@ -46,8 +54,16 @@ exports[`Dashboard Snapshots DashboardHeader Component should match snapshot wit
     </span>
   </div>
   <div>
-    <div />
-    <div />
+    <div
+      label="Uptime: 1d 0h 0m"
+    >
+      Uptime: 1d 0h 0m
+    </div>
+    <div
+      label="CONNECTED"
+    >
+      CONNECTED
+    </div>
     <button>
       <svg
         data-icon="Refresh"
@@ -77,8 +93,16 @@ exports[`Dashboard Snapshots DashboardHeader Component should match snapshot wit
     </span>
   </div>
   <div>
-    <div />
-    <div />
+    <div
+      label="Uptime: 1d 0h 0m"
+    >
+      Uptime: 1d 0h 0m
+    </div>
+    <div
+      label="DISCONNECTED"
+    >
+      DISCONNECTED
+    </div>
     <button>
       <svg
         data-icon="Refresh"
@@ -108,7 +132,11 @@ exports[`Dashboard Snapshots DashboardHeader Component should match snapshot wit
     </span>
   </div>
   <div>
-    <div />
+    <div
+      label="CONNECTED"
+    >
+      CONNECTED
+    </div>
     <button>
       <svg
         data-icon="Refresh"
@@ -152,7 +180,11 @@ exports[`Dashboard Snapshots MetricCard Component should match snapshot in dark 
       Loading... 45%
     </div>
     <div>
-      <div />
+      <div
+        label="Normal"
+      >
+        Normal
+      </div>
     </div>
   </div>
 </div>
@@ -187,7 +219,11 @@ exports[`Dashboard Snapshots MetricCard Component should match snapshot in light
       Loading... 45%
     </div>
     <div>
-      <div />
+      <div
+        label="Normal"
+      >
+        Normal
+      </div>
     </div>
   </div>
 </div>
@@ -222,7 +258,11 @@ exports[`Dashboard Snapshots MetricCard Component should match snapshot with cri
       Loading... 95%
     </div>
     <div>
-      <div />
+      <div
+        label="High"
+      >
+        High
+      </div>
     </div>
   </div>
 </div>
@@ -249,7 +289,11 @@ exports[`Dashboard Snapshots MetricCard Component should match snapshot with neg
           </h4>
         </div>
       </div>
-      <div />
+      <div
+        label="-5%"
+      >
+        -5%
+      </div>
     </div>
     <div
       data-testid="linear-progress"
@@ -258,7 +302,11 @@ exports[`Dashboard Snapshots MetricCard Component should match snapshot with neg
       Loading... 100%
     </div>
     <div>
-      <div />
+      <div
+        label="High"
+      >
+        High
+      </div>
     </div>
   </div>
 </div>
@@ -285,7 +333,11 @@ exports[`Dashboard Snapshots MetricCard Component should match snapshot with tre
           </h4>
         </div>
       </div>
-      <div />
+      <div
+        label="+15%"
+      >
+        +15%
+      </div>
     </div>
     <div
       data-testid="linear-progress"
@@ -294,7 +346,11 @@ exports[`Dashboard Snapshots MetricCard Component should match snapshot with tre
       Loading... 3%
     </div>
     <div>
-      <div />
+      <div
+        label="Normal"
+      >
+        Normal
+      </div>
     </div>
   </div>
 </div>
@@ -329,7 +385,11 @@ exports[`Dashboard Snapshots MetricCard Component should match snapshot with war
       Loading... 70%
     </div>
     <div>
-      <div />
+      <div
+        label="Medium"
+      >
+        Medium
+      </div>
     </div>
   </div>
 </div>
@@ -361,7 +421,11 @@ exports[`Dashboard Snapshots MetricCard Component should match snapshot without 
       Loading... 50%
     </div>
     <div>
-      <div />
+      <div
+        label="Normal"
+      >
+        Normal
+      </div>
     </div>
   </div>
 </div>
@@ -392,14 +456,22 @@ exports[`Dashboard Snapshots ModelsListCard Component should match snapshot in d
         <div>
           <div>
             <div>
-              <div />
+              <div
+                label="LLAMA"
+              >
+                LLAMA
+              </div>
               <span
                 font-weight="bold"
               >
                 Llama-2-7B
               </span>
             </div>
-            <div />
+            <div
+              label="RUNNING"
+            >
+              RUNNING
+            </div>
           </div>
           <div>
             <button>
@@ -414,14 +486,22 @@ exports[`Dashboard Snapshots ModelsListCard Component should match snapshot in d
         <div>
           <div>
             <div>
-              <div />
+              <div
+                label="LLAMA"
+              >
+                LLAMA
+              </div>
               <span
                 font-weight="bold"
               >
                 Llama-2-13B
               </span>
             </div>
-            <div />
+            <div
+              label="STOPPED"
+            >
+              STOPPED
+            </div>
           </div>
           <div>
             <button>
@@ -436,14 +516,22 @@ exports[`Dashboard Snapshots ModelsListCard Component should match snapshot in d
         <div>
           <div>
             <div>
-              <div />
+              <div
+                label="MISTRAL"
+              >
+                MISTRAL
+              </div>
               <span
                 font-weight="bold"
               >
                 Mistral-7B
               </span>
             </div>
-            <div />
+            <div
+              label="RUNNING"
+            >
+              RUNNING
+            </div>
           </div>
           <div>
             <button>
@@ -505,14 +593,22 @@ exports[`Dashboard Snapshots ModelsListCard Component should match snapshot with
         <div>
           <div>
             <div>
-              <div />
+              <div
+                label="LLAMA"
+              >
+                LLAMA
+              </div>
               <span
                 font-weight="bold"
               >
                 Llama-2-7B
               </span>
             </div>
-            <div />
+            <div
+              label="RUNNING"
+            >
+              RUNNING
+            </div>
           </div>
           <div>
             <button>
@@ -527,14 +623,22 @@ exports[`Dashboard Snapshots ModelsListCard Component should match snapshot with
         <div>
           <div>
             <div>
-              <div />
+              <div
+                label="LLAMA"
+              >
+                LLAMA
+              </div>
               <span
                 font-weight="bold"
               >
                 Llama-2-13B
               </span>
             </div>
-            <div />
+            <div
+              label="STOPPED"
+            >
+              STOPPED
+            </div>
           </div>
           <div>
             <button>
@@ -549,14 +653,22 @@ exports[`Dashboard Snapshots ModelsListCard Component should match snapshot with
         <div>
           <div>
             <div>
-              <div />
+              <div
+                label="MISTRAL"
+              >
+                MISTRAL
+              </div>
               <span
                 font-weight="bold"
               >
                 Mistral-7B
               </span>
             </div>
-            <div />
+            <div
+              label="RUNNING"
+            >
+              RUNNING
+            </div>
           </div>
           <div>
             <button>
@@ -588,8 +700,16 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot in 
       </span>
     </div>
     <div>
-      <div />
-      <div />
+      <div
+        label="Uptime: 1d 0h 0m"
+      >
+        Uptime: 1d 0h 0m
+      </div>
+      <div
+        label="CONNECTED"
+      >
+        CONNECTED
+      </div>
       <button>
         Restart
       </button>
@@ -939,14 +1059,22 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot in 
               <div>
                 <div>
                   <div>
-                    <div />
+                    <div
+                      label="LLAMA"
+                    >
+                      LLAMA
+                    </div>
                     <span
                       font-weight="bold"
                     >
                       Llama-2-7B
                     </span>
                   </div>
-                  <div />
+                  <div
+                    label="RUNNING"
+                  >
+                    RUNNING
+                  </div>
                 </div>
                 <div>
                   <button>
@@ -961,14 +1089,22 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot in 
               <div>
                 <div>
                   <div>
-                    <div />
+                    <div
+                      label="LLAMA"
+                    >
+                      LLAMA
+                    </div>
                     <span
                       font-weight="bold"
                     >
                       Llama-2-13B
                     </span>
                   </div>
-                  <div />
+                  <div
+                    label="STOPPED"
+                  >
+                    STOPPED
+                  </div>
                 </div>
                 <div>
                   <button>
@@ -983,14 +1119,22 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot in 
               <div>
                 <div>
                   <div>
-                    <div />
+                    <div
+                      label="MISTRAL"
+                    >
+                      MISTRAL
+                    </div>
                     <span
                       font-weight="bold"
                     >
                       Mistral-7B
                     </span>
                   </div>
-                  <div />
+                  <div
+                    label="RUNNING"
+                  >
+                    RUNNING
+                  </div>
                 </div>
                 <div>
                   <button>
@@ -1025,8 +1169,16 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot in 
       </span>
     </div>
     <div>
-      <div />
-      <div />
+      <div
+        label="Uptime: 1d 0h 0m"
+      >
+        Uptime: 1d 0h 0m
+      </div>
+      <div
+        label="CONNECTED"
+      >
+        CONNECTED
+      </div>
       <button>
         Restart
       </button>
@@ -1857,8 +2009,16 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at desktop
       </span>
     </div>
     <div>
-      <div />
-      <div />
+      <div
+        label="Uptime: 1d 0h 0m"
+      >
+        Uptime: 1d 0h 0m
+      </div>
+      <div
+        label="CONNECTED"
+      >
+        CONNECTED
+      </div>
       <button>
         Restart
       </button>
@@ -2208,14 +2368,22 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at desktop
               <div>
                 <div>
                   <div>
-                    <div />
+                    <div
+                      label="LLAMA"
+                    >
+                      LLAMA
+                    </div>
                     <span
                       font-weight="bold"
                     >
                       Llama-2-7B
                     </span>
                   </div>
-                  <div />
+                  <div
+                    label="RUNNING"
+                  >
+                    RUNNING
+                  </div>
                 </div>
                 <div>
                   <button>
@@ -2230,14 +2398,22 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at desktop
               <div>
                 <div>
                   <div>
-                    <div />
+                    <div
+                      label="LLAMA"
+                    >
+                      LLAMA
+                    </div>
                     <span
                       font-weight="bold"
                     >
                       Llama-2-13B
                     </span>
                   </div>
-                  <div />
+                  <div
+                    label="STOPPED"
+                  >
+                    STOPPED
+                  </div>
                 </div>
                 <div>
                   <button>
@@ -2252,14 +2428,22 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at desktop
               <div>
                 <div>
                   <div>
-                    <div />
+                    <div
+                      label="MISTRAL"
+                    >
+                      MISTRAL
+                    </div>
                     <span
                       font-weight="bold"
                     >
                       Mistral-7B
                     </span>
                   </div>
-                  <div />
+                  <div
+                    label="RUNNING"
+                  >
+                    RUNNING
+                  </div>
                 </div>
                 <div>
                   <button>
@@ -2294,8 +2478,16 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at large d
       </span>
     </div>
     <div>
-      <div />
-      <div />
+      <div
+        label="Uptime: 1d 0h 0m"
+      >
+        Uptime: 1d 0h 0m
+      </div>
+      <div
+        label="CONNECTED"
+      >
+        CONNECTED
+      </div>
       <button>
         Restart
       </button>
@@ -2645,14 +2837,22 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at large d
               <div>
                 <div>
                   <div>
-                    <div />
+                    <div
+                      label="LLAMA"
+                    >
+                      LLAMA
+                    </div>
                     <span
                       font-weight="bold"
                     >
                       Llama-2-7B
                     </span>
                   </div>
-                  <div />
+                  <div
+                    label="RUNNING"
+                  >
+                    RUNNING
+                  </div>
                 </div>
                 <div>
                   <button>
@@ -2667,14 +2867,22 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at large d
               <div>
                 <div>
                   <div>
-                    <div />
+                    <div
+                      label="LLAMA"
+                    >
+                      LLAMA
+                    </div>
                     <span
                       font-weight="bold"
                     >
                       Llama-2-13B
                     </span>
                   </div>
-                  <div />
+                  <div
+                    label="STOPPED"
+                  >
+                    STOPPED
+                  </div>
                 </div>
                 <div>
                   <button>
@@ -2689,14 +2897,22 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at large d
               <div>
                 <div>
                   <div>
-                    <div />
+                    <div
+                      label="MISTRAL"
+                    >
+                      MISTRAL
+                    </div>
                     <span
                       font-weight="bold"
                     >
                       Mistral-7B
                     </span>
                   </div>
-                  <div />
+                  <div
+                    label="RUNNING"
+                  >
+                    RUNNING
+                  </div>
                 </div>
                 <div>
                   <button>
@@ -2731,8 +2947,16 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at mobile 
       </span>
     </div>
     <div>
-      <div />
-      <div />
+      <div
+        label="Uptime: 1d 0h 0m"
+      >
+        Uptime: 1d 0h 0m
+      </div>
+      <div
+        label="CONNECTED"
+      >
+        CONNECTED
+      </div>
       <button>
         Restart
       </button>
@@ -3082,14 +3306,22 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at mobile 
               <div>
                 <div>
                   <div>
-                    <div />
+                    <div
+                      label="LLAMA"
+                    >
+                      LLAMA
+                    </div>
                     <span
                       font-weight="bold"
                     >
                       Llama-2-7B
                     </span>
                   </div>
-                  <div />
+                  <div
+                    label="RUNNING"
+                  >
+                    RUNNING
+                  </div>
                 </div>
                 <div>
                   <button>
@@ -3104,14 +3336,22 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at mobile 
               <div>
                 <div>
                   <div>
-                    <div />
+                    <div
+                      label="LLAMA"
+                    >
+                      LLAMA
+                    </div>
                     <span
                       font-weight="bold"
                     >
                       Llama-2-13B
                     </span>
                   </div>
-                  <div />
+                  <div
+                    label="STOPPED"
+                  >
+                    STOPPED
+                  </div>
                 </div>
                 <div>
                   <button>
@@ -3126,14 +3366,22 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at mobile 
               <div>
                 <div>
                   <div>
-                    <div />
+                    <div
+                      label="MISTRAL"
+                    >
+                      MISTRAL
+                    </div>
                     <span
                       font-weight="bold"
                     >
                       Mistral-7B
                     </span>
                   </div>
-                  <div />
+                  <div
+                    label="RUNNING"
+                  >
+                    RUNNING
+                  </div>
                 </div>
                 <div>
                   <button>
@@ -3168,8 +3416,16 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at tablet 
       </span>
     </div>
     <div>
-      <div />
-      <div />
+      <div
+        label="Uptime: 1d 0h 0m"
+      >
+        Uptime: 1d 0h 0m
+      </div>
+      <div
+        label="CONNECTED"
+      >
+        CONNECTED
+      </div>
       <button>
         Restart
       </button>
@@ -3519,14 +3775,22 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at tablet 
               <div>
                 <div>
                   <div>
-                    <div />
+                    <div
+                      label="LLAMA"
+                    >
+                      LLAMA
+                    </div>
                     <span
                       font-weight="bold"
                     >
                       Llama-2-7B
                     </span>
                   </div>
-                  <div />
+                  <div
+                    label="RUNNING"
+                  >
+                    RUNNING
+                  </div>
                 </div>
                 <div>
                   <button>
@@ -3541,14 +3805,22 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at tablet 
               <div>
                 <div>
                   <div>
-                    <div />
+                    <div
+                      label="LLAMA"
+                    >
+                      LLAMA
+                    </div>
                     <span
                       font-weight="bold"
                     >
                       Llama-2-13B
                     </span>
                   </div>
-                  <div />
+                  <div
+                    label="STOPPED"
+                  >
+                    STOPPED
+                  </div>
                 </div>
                 <div>
                   <button>
@@ -3563,14 +3835,22 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at tablet 
               <div>
                 <div>
                   <div>
-                    <div />
+                    <div
+                      label="MISTRAL"
+                    >
+                      MISTRAL
+                    </div>
                     <span
                       font-weight="bold"
                     >
                       Mistral-7B
                     </span>
                   </div>
-                  <div />
+                  <div
+                    label="RUNNING"
+                  >
+                    RUNNING
+                  </div>
                 </div>
                 <div>
                   <button>

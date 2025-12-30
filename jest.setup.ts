@@ -3,6 +3,20 @@
  * This resolves with `ReferenceError: Request is not defined` errors seen in tests
  * that import from `next/server`.
  */
+
+// Mock winston-daily-rotate-file BEFORE any imports
+jest.mock('winston-daily-rotate-file', () => ({
+  __esModule: true,
+  default: jest.fn().mockImplementation(() => ({
+    on: jest.fn(),
+    log: jest.fn((_info, callback) => {
+      if (typeof callback === 'function') {
+        callback();
+      }
+    }),
+  })),
+}));
+
 import React from 'react';
 import '@testing-library/jest-dom';
 
@@ -136,28 +150,51 @@ jest.mock('lucide-react', () => {
     return filtered;
   };
 
+  const IconComponent = (props: any) => React.createElement('svg', { ...filterProps(props), role: 'img' });
+
   return {
-    Monitor: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'Monitor', role: 'img' }),
-    Bot: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'Bot', role: 'img' }),
-    FileText: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'FileText', role: 'img' }),
-    Settings: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'Settings', role: 'img' }),
-    X: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'X', role: 'img' }),
-    Home: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'Home', role: 'img' }),
-    Rocket: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'Rocket', role: 'img' }),
-    Dashboard: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'Dashboard', role: 'img' }),
-    ModelTraining: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'ModelTraining', role: 'img' }),
-    Menu: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'Menu', role: 'img' }),
-    ChevronLeft: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'ChevronLeft', role: 'img' }),
-    ChevronRight: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'ChevronRight', role: 'img' }),
-    Sun: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'Sun', role: 'img' }),
-    Moon: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'Moon', role: 'img' }),
+    __esModule: true,
+    default: {
+      Monitor: IconComponent,
+      Bot: IconComponent,
+      FileText: IconComponent,
+      Settings: IconComponent,
+      X: IconComponent,
+      Home: IconComponent,
+      Rocket: IconComponent,
+      Dashboard: IconComponent,
+      ModelTraining: IconComponent,
+      Menu: IconComponent,
+      ChevronLeft: IconComponent,
+      ChevronRight: IconComponent,
+      Sun: IconComponent,
+      Moon: IconComponent,
+    },
+    Monitor: IconComponent,
+    Bot: IconComponent,
+    FileText: IconComponent,
+    Settings: IconComponent,
+    X: IconComponent,
+    Home: IconComponent,
+    Rocket: IconComponent,
+    Dashboard: IconComponent,
+    ModelTraining: IconComponent,
+    Menu: IconComponent,
+    ChevronLeft: IconComponent,
+    ChevronRight: IconComponent,
+    Sun: IconComponent,
+    Moon: IconComponent,
   };
 });
 
 
 // Mock MUI styles
 jest.mock('@mui/material/styles', () => {
-  return require('./jest-mocks.ts').muiStyles;
+  const muiStyles = require('./jest-mocks.ts').muiStyles;
+  return {
+    ...muiStyles,
+    default: muiStyles,
+  };
 });
 
 
