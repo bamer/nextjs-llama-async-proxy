@@ -102,8 +102,14 @@ export const muiMocks = {
      ].filter(Boolean));
    },
 
-   // Form components
-   TextField: (props: any) => React.createElement('div', filterMUIProps(props), props.children),
+    // Form components
+    TextField: (props: any) => {
+      const { helperText, error, ...otherProps } = props;
+      return React.createElement('div', filterMUIProps(otherProps), [
+        React.createElement('input', { ...filterMUIProps(otherProps), type: 'text', value: props.value || '', 'data-testid': props.name, label: props.label, name: props.name }),
+        (helperText || error) && React.createElement('span', { 'data-testid': `${props.name}-helper-text`, className: error ? 'Mui-error' : '' }, helperText || error)
+      ]);
+    },
   Button: (props: any) => React.createElement('button', filterMUIProps(props), props.children),
   IconButton: (props: any) => React.createElement('button', filterMUIProps(props), props.children),
    Chip: (props: any) => React.createElement('div', filterMUIProps(props), props.label || props.children),
@@ -118,7 +124,7 @@ export const muiMocks = {
      CircularProgress: (props: any) => React.createElement('div', { ...filterMUIProps(props), 'data-testid': 'circular-progress' }),
      LinearProgress: (props: any) => React.createElement('div', { ...filterMUIProps(props), 'data-testid': 'linear-progress', role: 'progressbar' }, `Loading... ${props.value}%`),
     Skeleton: (props: any) => React.createElement('div', { ...filterMUIProps(props), 'data-testid': 'skeleton' }),
-    Alert: (props: any) => React.createElement('div', { ...filterMUIProps(props), 'data-testid': 'alert' }, props.children),
+     Alert: (props: any) => React.createElement('div', { ...filterMUIProps(props), 'data-testid': 'alert', role: 'alert' }, props.children),
 
   // Dialog components
   Dialog: (props: any) => React.createElement('div', { ...filterMUIProps(props), 'data-testid': 'dialog' }, props.children),
@@ -211,7 +217,7 @@ export const muiMocks = {
    Portal: ({ children, ...props }: any) => React.createElement(React.Fragment, filterMUIProps(props), children),
    useMediaQuery: (_query: string) => false, // Mock always returns false
 
-   // MUI v7 specific components
+   // MUI v8 specific components
    Accordion: (props: any) => React.createElement('div', { ...filterMUIProps(props), 'data-testid': 'accordion' }, props.children),
    AccordionSummary: (props: any) => React.createElement('div', { ...filterMUIProps(props), 'data-testid': 'accordion-summary' }, props.children),
    AccordionDetails: (props: any) => React.createElement('div', { ...filterMUIProps(props), 'data-testid': 'accordion-details' }, props.children),

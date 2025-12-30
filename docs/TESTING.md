@@ -66,7 +66,7 @@ This project uses **Jest 30.2.0** with **React Testing Library** for testing Rea
 #### jest.setup.ts
 Provides global mocks and setup:
 - **Request/Response classes** for Next.js API routes
-- **MUI v7 component mocks** (Box, Grid, Card, etc.)
+- **MUI v8 component mocks** (Box, Grid, Card, etc.)
 - **Lucide React icon mocks**
 - **Next.js router mocks**
 - **TanStack Query mocks**
@@ -76,7 +76,7 @@ Provides global mocks and setup:
 
 ### Mocking Strategy
 
-#### MUI v7 Mocks
+#### MUI v8 Mocks
 All MUI components are mocked in `jest-mocks.ts`:
 ```typescript
 // Simplified component rendering to test props and children

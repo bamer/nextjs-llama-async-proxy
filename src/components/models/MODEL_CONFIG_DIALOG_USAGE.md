@@ -324,7 +324,7 @@ export async function GET(
 
 ## Styling
 
-The component uses Material-UI v7 with dark/light mode support. The dialog is responsive and works on mobile devices. All form fields have tooltips explaining each parameter.
+The component uses Material-UI v8 with dark/light mode support. The dialog is responsive and works on mobile devices. All form fields have tooltips explaining each parameter.
 
 ## TypeScript Types
 

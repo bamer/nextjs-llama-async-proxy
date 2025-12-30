@@ -83,8 +83,6 @@ jest.mock('@mui/material/Typography', () => (props: any) =>
     : 'p', require('./jest-mocks.ts').filterMUIProps(props), props.children));
 jest.mock('@mui/material/Button', () => (props: any) =>
   React.createElement('button', { ...require('./jest-mocks.ts').filterMUIProps(props), 'data-testid': 'button' }, props.children));
-jest.mock('@mui/material/TextField', () => (props: any) =>
-  React.createElement('input', { ...require('./jest-mocks.ts').filterMUIProps(props), 'data-testid': 'text-field', type: 'text', value: props.value || '' }));
 jest.mock('@mui/material/InputAdornment', () => (props: any) =>
   React.createElement('span', { ...require('./jest-mocks.ts').filterMUIProps(props) }, props.children));
 jest.mock('@mui/material/IconButton', () => (props: any) =>

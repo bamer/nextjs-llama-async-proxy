@@ -23,11 +23,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const { setTheme: setNextTheme } = useNextTheme();
   const [mode, setModeState] = useState<ThemeMode>("system");
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Update next-themes when mode changes
   useEffect(() => {
@@ -49,10 +44,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const isDark = mode === "dark" || (mode === "system" && prefersDarkMode);
   const currentTheme = isDark ? darkTheme : lightTheme;
-
-  if (!mounted) {
-    return null; // Avoid SSR mismatch
-  }
 
   return (
     <ThemeContext.Provider value={{ mode, setMode, toggleTheme, isDark, currentTheme }}>

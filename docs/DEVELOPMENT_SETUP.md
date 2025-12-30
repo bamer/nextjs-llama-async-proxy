@@ -285,15 +285,15 @@ Add to `.vscode/settings.json`:
 }
 ```
 
-#### MUI v7 Grid Component Pattern
+#### MUI v8 Grid Component Pattern
 
-**CRITICAL**: MUI v7 deprecated the `item` prop on Grid components. Always use `size` prop instead:
+**CRITICAL**: MUI v8 deprecated the `item` prop on Grid components. Always use `size` prop instead:
 
 ```tsx
 // ❌ WRONG (MUI v6 syntax - deprecated)
 <Grid item xs={12} sm={6} md={4}>
 
-// ✅ CORRECT (MUI v7 syntax)
+// ✅ CORRECT (MUI v8 syntax)
 <Grid size={{ xs: 12, sm: 6, md: 4 }}>
 ```
 
@@ -346,7 +346,7 @@ For detailed testing information:
 
 - **Jest 30.2.0** - Test runner with TypeScript support
 - **React Testing Library** - Component testing utilities
-- **MUI v7 Mocks** - Complete MUI component mocking
+- **MUI v8 Mocks** - Complete MUI component mocking
 - **Proper Mocking** - axios, socket.io-client, Winston, Next.js utilities
 
 ### 1. Unit Tests

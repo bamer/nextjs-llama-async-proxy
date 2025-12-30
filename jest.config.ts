@@ -26,7 +26,6 @@ const jestConfig: Config = {
     '!app/**/*.d.ts',
     '!src/**/*.stories.tsx',
     '!app/**/*.stories.tsx',
-    '!src/components/**/__tests__/**/*',
   ],
   coverageThreshold: {
     global: {

@@ -8,7 +8,7 @@
 
 ## Overview
 
-This document summarizes all updates made to developer-facing documentation files to reflect the current state of the Next.js Llama Async Proxy codebase, including MUI v7 migration, testing coverage improvements (98% target), new features, performance optimizations, and architectural decisions.
+This document summarizes all updates made to developer-facing documentation files to reflect the current state of the Next.js Llama Async Proxy codebase, including MUI v8 migration, testing coverage improvements (98% target), new features, performance optimizations, and architectural decisions.
 
 ---
 
@@ -168,7 +168,7 @@ This document summarizes all updates made to developer-facing documentation file
 4. **Code Standards**
    - TypeScript & Types (interfaces, proper typing, no `any`)
    - React Components (functional only, hooks usage, client directive)
-   - MUI v7 Components (Grid size prop, sx styling)
+   - MUI v8 Components (Grid size prop, sx styling)
    - API Routes (NextResponse, error handling, logging)
    - State Management (Zustand, React Query)
    - Imports & Formatting (order, quotes, semicolons)
@@ -199,7 +199,7 @@ This document summarizes all updates made to developer-facing documentation file
 
 - **TypeScript**: Use interfaces, proper types, no `any`
 - **React**: Functional components, hooks, `"use client"` directive
-- **MUI v7**: `size` prop (not `item`), `sx` for styling
+- **MUI v8**: `size` prop (not `item`), `sx` for styling
 - **Testing**: 98% coverage target, proper mocking, descriptive tests
 - **Commits**: Conventional commits format (feat:, fix:, docs:, etc.)
 
@@ -318,7 +318,7 @@ Already documented in `docs/DATABASE_SCHEMA.md`:
 - Independent server configuration
 - Lazy loading performance
 
-### 4. **MUI v7 Migration**
+### 4. **MUI v8 Migration**
 
 **Key Changes:**
 - `size` prop instead of `item` on Grid components
@@ -374,9 +374,9 @@ Already documented in `docs/DATABASE_SCHEMA.md`:
 - Functional components only
 - `"use client";` directive at top
 - Hooks for state and side effects
-- MUI v7 component patterns
+- MUI v8 component patterns
 
-### MUI v7:
+### MUI v8:
 - Use `size` prop instead of `item`
 - Use `sx` prop for styling
 - Use @mui/material-nextjs for integration
@@ -432,7 +432,7 @@ Already documented in `docs/DATABASE_SCHEMA.md`:
 2. **Accurate API Reference** - All endpoints documented with current responses
 3. **Performance Knowledge** - Understanding of optimizations and best practices
 4. **Testing Standards** - 98% coverage target with examples
-5. **MUI v7 Patterns** - Correct component usage examples
+5. **MUI v8 Patterns** - Correct component usage examples
 6. **Architecture Understanding** - Current state of the codebase
 7. **Feature Documentation** - New features fully explained
 8. **WebSocket Reconnection** - Robust connection handling documented
@@ -475,7 +475,7 @@ Already documented in `docs/DATABASE_SCHEMA.md`:
 
 All developer-facing documentation has been updated to reflect the current state of the Next.js Llama Async Proxy codebase. The documentation now accurately represents:
 
-- ✅ MUI v7 migration and component patterns
+- ✅ MUI v8 migration and component patterns
 - ✅ Testing coverage improvements (98% target)
 - ✅ New features (WebSocket reconnection, model templates, logging)
 - ✅ Performance optimizations and architectural decisions

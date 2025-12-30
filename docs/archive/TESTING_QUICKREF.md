@@ -169,7 +169,7 @@ docs/
 ### Testing Infrastructure
 - ✅ Jest 30.2.0 configuration
 - ✅ React Testing Library setup
-- ✅ MUI v7 mock strategy
+- ✅ MUI v8 mock strategy
 - ✅ External dependency mocking
 
 ### Test Patterns

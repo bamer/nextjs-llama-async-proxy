@@ -29,7 +29,7 @@ See **[docs/FEATURES.md](docs/FEATURES.md)** for comprehensive feature documenta
 - Winston logging system with daily rotation
 - Performance optimizations (50-97% faster)
 - Database v2.0 normalized schema
-- MUI v7 migration and benefits
+- MUI v8 migration and benefits
 - All recent architectural changes
 
 ## 📚 Documentation
@@ -63,14 +63,14 @@ See **[docs/FEATURES.md](docs/FEATURES.md)** for comprehensive feature documenta
 - **Next.js 16.1.0** - App Router with Server Components
 - **React 19.2.3** - Latest React features
 - **TypeScript 5.9.3** - Strict mode enabled
-- **MUI v7.3.6** - UI components with `size` prop pattern (not deprecated `item`)
+- **MUI v8.3.6** - UI components with `size` prop pattern (not deprecated `item`)
 - **@mui/x-charts v8.23.0** - Charts and data visualization
 - **Tailwind CSS v4** - Utility-first styling
 - **Framer Motion** - Animation library with LazyMotion optimization
 - **Zustand v5.0.9** - Client state management
 - **@tanstack/react-query v5** - Server state management
 - **Socket.IO Client v4.8.3** - Real-time communication with auto-reconnection
-- **React Hook Form v7.69.0** - Form handling
+- **React Hook Form v8.69.0** - Form handling
 - **Zod v4.2.1** - Runtime validation with comprehensive schemas
 
 #### Backend/Server
@@ -227,7 +227,7 @@ See **[USER_GUIDE.md](docs/USER_GUIDE.md)** for complete user manual.
 
 ### Key Features
 
-- **Dark/Light Mode**: Automatic theme switching with MUI v7
+- **Dark/Light Mode**: Automatic theme switching with MUI v8
 - **Real-time Updates**: Live metrics via WebSocket
 - **Responsive Design**: Mobile-first approach
 - **Smooth Animations**: Framer Motion with LazyMotion
@@ -466,7 +466,7 @@ nextjs-llama-async-proxy/
 │   │   ├── models/           # Model management UI
 │   │   ├── configuration/    # Settings components
 │   │   ├── layout/           # Layout components (Header, Sidebar)
-│   │   └── ui/              # Reusable UI components (MUI v7)
+│   │   └── ui/              # Reusable UI components (MUI v8)
 │   ├── hooks/                # Custom React hooks
 │   │   ├── use-api.ts       # React Query integration
 │   │   ├── use-websocket.ts  # WebSocket hook with reconnection
@@ -529,16 +529,16 @@ See [AGENTS.md](AGENTS.md) for detailed coding guidelines.
 - **Linting**: ESLint with auto-fix support
 - **React**: Functional components with hooks only
 - **Testing**: Jest + React Testing Library, 67%+ coverage (target: 98%)
-- **MUI v7**: Use `size` prop instead of deprecated `item` prop on Grid
+- **MUI v8**: Use `size` prop instead of deprecated `item` prop on Grid
 
-### MUI v7 Migration
-**Critical**: MUI v7 deprecated the `item` prop on Grid components. Always use `size` prop instead:
+### MUI v8 Migration
+**Critical**: MUI v8 deprecated the `item` prop on Grid components. Always use `size` prop instead:
 
 ```tsx
 // ❌ WRONG (MUI v6 syntax)
 <Grid item xs={12} sm={6} md={4}>
 
-// ✅ CORRECT (MUI v7 syntax)
+// ✅ CORRECT (MUI v8 syntax)
 <Grid size={{ xs: 12, sm: 6, md: 4 }}>
 ```
 
@@ -589,7 +589,7 @@ import { logger } from "@/lib/logger";
 - [TypeScript Handbook](https://www.typescriptlang.org/docs)
 - [Tailwind CSS v4](https://tailwindcss.com)
 - [Socket.IO Documentation](https://socket.io/docs)
-- [MUI v7 Documentation](https://mui.com/)
+- [MUI v8 Documentation](https://mui.com/)
 - [Zod Validation](https://zod.dev)
 - [Zustand State Management](https://github.com/pmndrs/zustand)
 - [pnpm Package Manager](https://pnpm.io)
@@ -637,7 +637,7 @@ For issues, questions, or contributions:
 - ✅ Separate error logs for easier debugging
 
 ### Architecture
-- ✅ MUI v7.3.6 migration with `size` prop pattern
+- ✅ MUI v8.3.6 migration with `size` prop pattern
 - ✅ TypeScript ESM migration for server-config
 - ✅ Removed client-side fs operations (security improvement)
 - ✅ API-based configuration management (not localStorage)
@@ -653,7 +653,7 @@ For issues, questions, or contributions:
 - ✅ 97%+ coverage for Lib & Services
 
 ### UI/UX
-- ✅ MUI v7.3.6 with @mui/material-nextjs for Next.js 16
+- ✅ MUI v8.3.6 with @mui/material-nextjs for Next.js 16
 - ✅ ModelConfigDialog improvements with sliders and accordions
 - ✅ Enhanced tooltip system with comprehensive coverage
 - ✅ Improved validation and error handling

@@ -68,7 +68,7 @@ The application supports both light and dark themes:
 - Click the theme toggle button in the header
 - Theme preference is automatically saved
 - Supports system theme detection
-- Uses MUI v7 theme system
+- Uses MUI v8 theme system
 
 ### Responsive Design
 

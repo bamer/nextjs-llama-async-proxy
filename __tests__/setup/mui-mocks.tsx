@@ -1,6 +1,6 @@
 /**
  * MUI & Emotion test setup
- * Provides proper mocks and configuration for testing MUI v7 components with Emotion
+ * Provides proper mocks and configuration for testing MUI v8 components with Emotion
  */
 
 import '@testing-library/jest-dom';

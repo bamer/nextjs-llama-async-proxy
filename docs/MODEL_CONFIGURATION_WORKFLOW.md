@@ -237,7 +237,7 @@ The dialog automatically detects changes:
 - Full TypeScript typing for all parameters
 - Proper validation on inputs
 - Default values from database schema
-- MUI v7 patterns (using `size` prop)
+- MUI v8 patterns (using `size` prop)
 
 ---
 

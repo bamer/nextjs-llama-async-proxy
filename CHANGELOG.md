@@ -97,7 +97,7 @@ All notable changes to the Next.js Llama Async Proxy project.
 
 #### Components
 - ✅ Button component at 100% test coverage
-- ✅ Modern MUI v7 `size` prop pattern (not deprecated `item`)
+- ✅ Modern MUI v8 `size` prop pattern (not deprecated `item`)
 - ✅ Enhanced tooltip system with context-aware help
 - ✅ Improved responsive design for all screen sizes
 
@@ -140,7 +140,7 @@ All notable changes to the Next.js Llama Async Proxy project.
 - ✅ `README.md` - Updated with all new features and improvements
 - ✅ `docs/ARCHITECTURE.md` - Added logging, database, templates sections
 - ✅ `docs/USER_GUIDE.md` - Latest workflows and features
-- ✅ `AGENTS.md` - MUI v7 guidelines and project standards
+- ✅ `AGENTS.md` - MUI v8 guidelines and project standards
 
 ### API Changes
 
@@ -205,12 +205,12 @@ All changes are backward compatible. No breaking changes in this release.
 4. Database migration to v2.0 is automatic
 
 #### For Developers
-1. **MUI v7 Migration**:
+1. **MUI v8 Migration**:
    ```tsx
    // ❌ OLD (MUI v6)
    <Grid item xs={12} sm={6} md={4}>
 
-   // ✅ NEW (MUI v7)
+   // ✅ NEW (MUI v8)
    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
    ```
 
@@ -284,7 +284,7 @@ All changes are backward compatible. No breaking changes in this release.
 ### Initial Release
 
 - ✅ Next.js 16 + React 19.2 application
-- ✅ MUI v7.3.6 UI components
+- ✅ MUI v8.3.6 UI components
 - ✅ Real-time dashboard with metrics
 - ✅ Model management and loading
 - ✅ Winston logging system

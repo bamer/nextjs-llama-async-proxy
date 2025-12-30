@@ -21,7 +21,7 @@ Comprehensive update to all user-facing documentation to reflect the current sta
 - Updated Technology Stack:
   - Socket.IO Client v4.8.3 (latest version)
   - Added better-sqlite3 to backend
-  - Emphasized MUI v7 `size` prop pattern
+  - Emphasized MUI v8 `size` prop pattern
 
 - Updated Testing section:
   - Current coverage: 67.47% (up from ~0.12%)
@@ -42,7 +42,7 @@ Comprehensive update to all user-facing documentation to reflect the current sta
   - Updated to reflect new organization
 
 - Updated Project Standards:
-  - MUI v7 migration guide with before/after code examples
+  - MUI v8 migration guide with before/after code examples
   - Emphasized `size` prop over deprecated `item` prop
 
 - Updated version to 0.2.0
@@ -140,7 +140,7 @@ Comprehensive update to all user-facing documentation to reflect the current sta
 - Breaking changes: None
 - Migration guide for:
   - Users
-  - Developers (MUI v7, logging, templates, database)
+  - Developers (MUI v8, logging, templates, database)
 
 - Deprecations (files removed)
 - Known issues (test environment, coverage gaps)
@@ -150,7 +150,7 @@ Comprehensive update to all user-facing documentation to reflect the current sta
 
 ## Key Highlights of Updates
 
-### MUI v7 Architecture
+### MUI v8 Architecture
 - ✅ Clearly documented `size` prop pattern
 - ✅ Before/after code examples
 - ✅ Migration guide for developers
@@ -286,7 +286,7 @@ Comprehensive update to all user-facing documentation to reflect the current sta
 
 All user-facing documentation has been comprehensively updated to reflect:
 
-- ✅ Current MUI v7 architecture
+- ✅ Current MUI v8 architecture
 - ✅ New components and features added
 - ✅ Testing coverage (67% current, 98% target)
 - ✅ Performance optimizations (50-97% faster)

@@ -31,13 +31,13 @@ The Next.js Llama Async Proxy is a sophisticated web-based management interface 
 - **Next.js 16.1.0** - React framework with App Router and Turbopack
 - **React 19.2.3** - UI library with concurrent features and Server Components
 - **TypeScript 5.9.3** - Type-safe development with strict mode
-- **MUI v7.3.6** - Material-UI components (@mui/material-nextjs for Next.js 16)
+- **MUI v8.3.6** - Material-UI components (@mui/material-nextjs for Next.js 16)
 - **@mui/x-charts v8.23.0** - Charts and data visualization
 - **Tailwind CSS v4** - Utility-first styling with PostCSS
 - **Framer Motion** - Animation library with LazyMotion optimization
 - **Zustand v5.0.9** - Lightweight client state management
 - **@tanstack/react-query v5** - Server state management with caching
-- **React Hook Form v7.69.0** - Form handling with validation
+- **React Hook Form v8.69.0** - Form handling with validation
 - **Zod v4.2.1** - Runtime validation and schema definition
 - **Socket.IO Client v4.8.1** - Real-time bidirectional communication
 
@@ -164,7 +164,7 @@ nextjs-llama-async-proxy/
 #### Key Components
 - **Layout Components**: Header, Sidebar, Navigation
 - **Page Components**: Dashboard, Models, Monitoring, Logs, Settings
-- **UI Components**: Buttons, Cards, Charts, Tables, Forms (MUI v7)
+- **UI Components**: Buttons, Cards, Charts, Tables, Forms (MUI v8)
 - **Animation Components**: Motion wrappers with LazyMotion optimization
 
 ### 2. Backend Server (Express + Socket.IO)

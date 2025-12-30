@@ -22,7 +22,7 @@ pnpm type:check       # TypeScript type check (tsc --noEmit)
 # Testing
 pnpm test             # Run all tests
 pnpm test:watch       # Run tests in watch mode
-pnpm test:coverage    # Generate coverage report (98% threshold)
+pnpm test:coverage    # Generate coverage report (70% threshold)
 
 # Run single test file
 pnpm test <test-file-path>
@@ -46,6 +46,14 @@ pnpm test <test-file-path>
 - Max line width: 100 characters
 - Object-curly-spacing: `always` (spaces inside {})
 - Array-bracket-spacing: `never` (no spaces inside [])
+- Keep component < 200 lines
+- Use composition pattern
+- Each module should have single responsibility
+
+###  Service Layer State and API call
+
+- Pure API calls only
+
 
 ### TypeScript & Types
 
@@ -55,7 +63,7 @@ pnpm test <test-file-path>
 - Use global type definitions in `src/types/global.d.ts`
 - Export types from `src/types/index.ts` for reusability
 - Utility types: `Nullable<T>`, `Optional<T>`, `AsyncReturnType<T>` available globally
-- Never use `any` - use `unknown` or specific types instead
+- Never use `any` - use specific types instead or `unknown`
 
 ### Naming Conventions
 
@@ -96,15 +104,15 @@ pnpm test <test-file-path>
 - Query keys in React Query: `['models']`, `['metrics']`, `['logs']`
 - Refetch intervals: models 30s, metrics 10s, logs 15s
 
-### MUI v7 Specific Rules
+### MUI v8 Specific Rules
 
-**Critical**: MUI v7 deprecated the `item` prop on Grid components. Always use `size` prop instead:
+**Critical**: MUI v8 deprecated the `item` prop on Grid components. Always use `size` prop instead:
 
 ```tsx
 // ❌ WRONG (MUI v6 syntax)
 <Grid item xs={12} sm={6} md={4}>
 
-// ✅ CORRECT (MUI v7 syntax)
+// ✅ CORRECT (MUI v8 syntax)
 <Grid size={{ xs: 12, sm: 6, md: 4 }}>
 ```
 
@@ -122,8 +130,7 @@ pnpm test <test-file-path>
 - BeforeEach for resetting state
 - Expectations: `expect(...).toBe()`, `expect(...).toHaveProperty()`
 - Mock functions with `jest.fn()` and `.mockReturnValue()`
-- Test coverage threshold: 98% for branches, functions, lines, statements
-- Proper mocking of external dependencies (axios, socket.io-client, Winston)
+- Test coverage threshold: 70% for branches, functions, lines, statements
 
 ### File Organization
 

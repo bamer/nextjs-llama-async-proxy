@@ -55,7 +55,7 @@ const createMUIComponent = (tagName: string, testId?: string) => (props: any) =>
 - `Box` - Renders as `div` with filtered props
 - `Card`, `CardActions`, `CardContent`, `CardHeader` - Render as `div`
 - `CircularProgress` - Renders as `div` with `data-testid="circular-progress"`
-- `Grid` - Handles `size` prop properly (MUI v7 compatibility)
+- `Grid` - Handles `size` prop properly (MUI v8 compatibility)
 - `Paper` - Renders as `div` with `data-testid="paper"`
 - `Typography` - Maps variants to correct HTML elements (h1-h6 to heading tags, others to `p`)
 - `Button` - Renders as `button` with `data-testid="button"`

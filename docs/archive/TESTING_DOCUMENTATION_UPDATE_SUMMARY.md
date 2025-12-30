@@ -373,7 +373,7 @@ docs/
 
 2. **Testing Infrastructure:**
    - Jest configuration details
-   - MUI v7 mock strategy
+   - MUI v8 mock strategy
    - External dependency mocking
 
 3. **Test Patterns & Best Practices:**

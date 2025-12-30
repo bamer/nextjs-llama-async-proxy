@@ -147,7 +147,7 @@ export const tooltipConfig: TooltipConfig = {
 
 ## Styling
 
-The tooltip system uses MUI v7 theming and follows these design principles:
+The tooltip system uses MUI v8 theming and follows these design principles:
 
 - **Colors**:
   - Title: `primary.main`

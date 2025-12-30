@@ -1413,6 +1413,8 @@ export function ModelConfigDialog({
 
   // Render appropriate form based on config type (memoized)
   const renderForm = useCallback(() => {
+    if (!localConfig) return null;
+
     switch (configType) {
       case "sampling":
         return <SamplingForm config={localConfig as SamplingConfig} onChange={handleConfigChange} />;

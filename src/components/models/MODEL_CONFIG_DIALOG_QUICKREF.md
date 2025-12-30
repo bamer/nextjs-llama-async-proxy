@@ -19,7 +19,7 @@ A comprehensive configuration dialog component that allows users to view and edi
 ## Component Features
 
 ### UI Features
-- ✅ Material-UI v7 Dialog with responsive design
+- ✅ Material-UI v8 Dialog with responsive design
 - ✅ Sliders for numeric parameters with appropriate ranges
 - ✅ Text inputs for numbers and file paths
 - ✅ Switches for boolean options
@@ -34,7 +34,7 @@ A comprehensive configuration dialog component that allows users to view and edi
 - ✅ Default values from database schema
 - ✅ State management for local changes
 - ✅ Save/Cancel workflow
-- ✅ Proper MUI v7 patterns (no `item` prop, use `size` prop)
+- ✅ Proper MUI v8 patterns (no `item` prop, use `size` prop)
 
 ## Props Interface
 

@@ -70,7 +70,7 @@ The project uses:
 - **Next.js 16.1.0** with App Router
 - **React 19.2.3** with Server Components
 - **TypeScript 5.9.3** with strict mode
-- **MUI v7.3.6** for UI components
+- **MUI v8.3.6** for UI components
 - **Zustand 5.0.9** for client state
 - **@tanstack/react-query 5** for server state
 - **Socket.IO 4.8** for real-time communication
@@ -241,10 +241,10 @@ const handleClick = useCallback(() => {
 }, []);
 ```
 
-### MUI v7 Components
+### MUI v8 Components
 
 ```tsx
-// ✅ CORRECT (MUI v7 syntax)
+// ✅ CORRECT (MUI v8 syntax)
 <Grid size={{ xs: 12, sm: 6, md: 4 }}>
   <Box sx={{ padding: 2 }}>
     <Typography variant="h6">Title</Typography>

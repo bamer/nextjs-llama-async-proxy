@@ -14,7 +14,7 @@ Complete feature documentation for the Next.js Llama Async Proxy, covering all m
 - [Configuration Management](#configuration-management)
 - [API Features](#api-features)
 - [Testing & Quality](#testing--quality)
-- [MUI v7 Migration](#mui-v7-migration)
+- [MUI v8 Migration](#mui-v8-migration)
 
 ---
 
@@ -627,10 +627,10 @@ db.prepare('SELECT * FROM metrics_history ORDER BY timestamp DESC LIMIT 10').all
 
 ### Modern Design System
 
-- **MUI v7.3.6**: Latest Material-UI components
+- **MUI v8.3.6**: Latest Material-UI components
 - **@mui/x-charts v8.23.0**: Modern charts and data visualization
 - **Tailwind CSS v4**: Utility-first styling
-- **Dark/Light Mode**: Automatic theme switching with MUI v7
+- **Dark/Light Mode**: Automatic theme switching with MUI v8
 - **3D Effects**: Enhanced shadows and depth for visual hierarchy
 
 ### Responsive Design
@@ -869,21 +869,21 @@ Real-time bidirectional communication:
 
 ---
 
-## MUI v7 Migration
+## MUI v8 Migration
 
 ### Overview
 
-Migrated from MUI v6 to v7.3.6 to leverage latest features and improved performance.
+Migrated from MUI v6 to v8.3.6 to leverage latest features and improved performance.
 
 ### Critical Migration: Grid Component
 
-**MUI v7 deprecated the `item` prop on Grid components. Always use `size` prop instead:**
+**MUI v8 deprecated the `item` prop on Grid components. Always use `size` prop instead:**
 
 ```tsx
 // ❌ WRONG (MUI v6 syntax - deprecated)
 <Grid item xs={12} sm={6} md={4}>
 
-// ✅ CORRECT (MUI v7 syntax)
+// ✅ CORRECT (MUI v8 syntax)
 <Grid size={{ xs: 12, sm: 6, md: 4 }}>
 ```
 
@@ -979,13 +979,13 @@ All Grid components throughout the codebase have been updated:
 - **Next.js 16.1.0** - App Router with Server Components and Turbopack
 - **React 19.2.3** - Latest React features with concurrent rendering
 - **TypeScript 5.9.3** - Strict mode enabled
-- **MUI v7.3.6** - Material-UI components with @mui/material-nextjs
+- **MUI v8.3.6** - Material-UI components with @mui/material-nextjs
 - **@mui/x-charts v8.23.0** - Charts and data visualization
 - **Tailwind CSS v4** - Utility-first styling
 - **Framer Motion** - Animation library with LazyMotion optimization
 - **Zustand v5.0.9** - Lightweight client state management
 - **@tanstack/react-query v5** - Server state management
-- **React Hook Form v7.69.0** - Form handling
+- **React Hook Form v8.69.0** - Form handling
 - **Zod v4.2.1** - Runtime validation
 - **Socket.IO Client v4.8.3** - Real-time communication
 

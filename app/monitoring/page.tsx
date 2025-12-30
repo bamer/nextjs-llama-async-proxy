@@ -22,6 +22,9 @@ export default function MonitoringPage() {
   );
 }
 
+// Export for testing
+export { MonitoringContent };
+
 function MonitoringContent() {
   const metrics = useStore((state) => state.metrics);
   const { isDark } = useTheme();
