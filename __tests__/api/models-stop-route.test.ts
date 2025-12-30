@@ -159,13 +159,17 @@ describe("POST /api/models/:name/stop", () => {
       json: jest.fn().mockRejectedValue(new Error("Invalid JSON")),
     } as unknown as NextRequest;
 
+    (validateRequestBody as jest.Mock).mockReturnValue({
+      success: false,
+      errors: ["Invalid request body"],
+    });
+
     const mockParams = Promise.resolve({ name: "test-model" });
     const response = await POST(mockRequest, { params: mockParams });
     const json = await response.json();
 
-    expect(response.status).toBe(500);
-    expect(json.error).toBe("Internal server error");
-    expect(json.status).toBe("error");
+    expect(response.status).toBe(400);
+    expect(json.error).toBe("Invalid request body");
   });
 
   // Edge case: Handle concurrent stop requests

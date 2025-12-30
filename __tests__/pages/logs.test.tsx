@@ -87,6 +87,12 @@ jest.mock('@/lib/store', () => ({
     };
     return selector(state);
   }),
+  default: {
+    getState: () => ({
+      logs: [],
+      clearLogs: jest.fn(),
+    }),
+  },
 }));
 
 const mockLogs = [

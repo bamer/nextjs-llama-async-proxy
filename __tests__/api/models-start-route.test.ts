@@ -365,6 +365,7 @@ describe("POST /api/models/:name/start", () => {
       models: [
         { id: "model1", name: "model1", status: "running" },
         { id: "model2", name: "model2", status: "loaded" },
+        { id: "model3", name: "model3", available: true },
       ],
     });
 
@@ -375,6 +376,12 @@ describe("POST /api/models/:name/start", () => {
     (validateRequestBody as jest.Mock).mockReturnValue({
       success: true,
       data: { model: "model3" },
+    });
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: jest.fn().mockResolvedValue({}),
     });
 
     const mockParams = Promise.resolve({ name: "model3" });

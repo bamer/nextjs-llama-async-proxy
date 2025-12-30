@@ -28,7 +28,7 @@ describe("model-actions", () => {
 
   describe("getModelsAction", () => {
     it("should get all models", async () => {
-      const mockModels = [
+      const mockModels: any = [
         { id: 1, name: "model1", type: "llama", status: "idle" },
         { id: 2, name: "model2", type: "mistral", status: "running" },
       ];
@@ -41,8 +41,8 @@ describe("model-actions", () => {
     });
 
     it("should get models with filters", async () => {
-      const mockModels = [{ id: 1, name: "model1", type: "llama", status: "idle" }];
-      const filters = { status: "idle" };
+      const mockModels: any = [{ id: 1, name: "model1", type: "llama", status: "idle" }];
+      const filters: any = { status: "idle" };
       (db.getModels as jest.Mock).mockResolvedValue(mockModels);
 
       const result = await getModelsAction(filters);
@@ -62,7 +62,7 @@ describe("model-actions", () => {
 
   describe("getModelByIdAction", () => {
     it("should get model by id", async () => {
-      const mockModel = { id: 1, name: "model1", type: "llama", status: "idle" };
+      const mockModel: any = { id: 1, name: "model1", type: "llama", status: "idle" };
       (db.getModelById as jest.Mock).mockResolvedValue(mockModel);
 
       const result = await getModelByIdAction(1);
@@ -82,7 +82,7 @@ describe("model-actions", () => {
 
   describe("get config actions", () => {
     it("getModelSamplingConfigAction should call database function", async () => {
-      const mockConfig = { id: 1, model_id: 1, temp: 0.7 };
+      const mockConfig: any = { id: 1, model_id: 1, temperature: 0.7 };
       (db.getModelSamplingConfig as jest.Mock).mockResolvedValue(mockConfig);
 
       const result = await getModelSamplingConfigAction(1);
@@ -92,7 +92,7 @@ describe("model-actions", () => {
     });
 
     it("getModelMemoryConfigAction should call database function", async () => {
-      const mockConfig = { id: 1, model_id: 1, batch_size: 512 };
+      const mockConfig: any = { id: 1, model_id: 1, cache_ram: 2 };
       (db.getModelMemoryConfig as jest.Mock).mockResolvedValue(mockConfig);
 
       const result = await getModelMemoryConfigAction(1);
@@ -102,7 +102,7 @@ describe("model-actions", () => {
     });
 
     it("getModelGpuConfigAction should call database function", async () => {
-      const mockConfig = { id: 1, model_id: 1, gpu_enabled: true };
+      const mockConfig: any = { id: 1, model_id: 1, gpu_layers: 35 };
       (db.getModelGpuConfig as jest.Mock).mockResolvedValue(mockConfig);
 
       const result = await getModelGpuConfigAction(1);
@@ -112,7 +112,7 @@ describe("model-actions", () => {
     });
 
     it("getModelAdvancedConfigAction should call database function", async () => {
-      const mockConfig = { id: 1, model_id: 1, custom: "value" };
+      const mockConfig: any = { id: 1, model_id: 1, context_shift: 0 };
       (db.getModelAdvancedConfig as jest.Mock).mockResolvedValue(mockConfig);
 
       const result = await getModelAdvancedConfigAction(1);
@@ -122,7 +122,7 @@ describe("model-actions", () => {
     });
 
     it("getModelLoraConfigAction should call database function", async () => {
-      const mockConfig = { id: 1, model_id: 1, lora_enabled: true };
+      const mockConfig: any = { id: 1, model_id: 1, lora: "" };
       (db.getModelLoraConfig as jest.Mock).mockResolvedValue(mockConfig);
 
       const result = await getModelLoraConfigAction(1);
@@ -132,7 +132,7 @@ describe("model-actions", () => {
     });
 
     it("getModelMultimodalConfigAction should call database function", async () => {
-      const mockConfig = { id: 1, model_id: 1, vision_enabled: true };
+      const mockConfig: any = { id: 1, model_id: 1, mmproj: "" };
       (db.getModelMultimodalConfig as jest.Mock).mockResolvedValue(mockConfig);
 
       const result = await getModelMultimodalConfigAction(1);
@@ -140,11 +140,35 @@ describe("model-actions", () => {
       expect(result).toEqual(mockConfig);
       expect(db.getModelMultimodalConfig).toHaveBeenCalledWith(1);
     });
+
+    it("should handle null config from sampling", async () => {
+      (db.getModelSamplingConfig as jest.Mock).mockResolvedValue(null);
+
+      const result = await getModelSamplingConfigAction(1);
+
+      expect(result).toBeNull();
+    });
+
+    it("should handle null config from memory", async () => {
+      (db.getModelMemoryConfig as jest.Mock).mockResolvedValue(null);
+
+      const result = await getModelMemoryConfigAction(1);
+
+      expect(result).toBeNull();
+    });
+
+    it("should handle null config from GPU", async () => {
+      (db.getModelGpuConfig as jest.Mock).mockResolvedValue(null);
+
+      const result = await getModelGpuConfigAction(1);
+
+      expect(result).toBeNull();
+    });
   });
 
   describe("save config actions", () => {
     it("saveModelSamplingConfigAction should call database function", async () => {
-      const mockConfig = { temp: 0.7 };
+      const mockConfig: any = { temperature: 0.7, top_p: 0.9, top_k: 40 };
       (db.saveModelSamplingConfig as jest.Mock).mockResolvedValue(1);
 
       const result = await saveModelSamplingConfigAction(1, mockConfig);
@@ -154,7 +178,7 @@ describe("model-actions", () => {
     });
 
     it("saveModelMemoryConfigAction should call database function", async () => {
-      const mockConfig = { batch_size: 512 };
+      const mockConfig: any = { cache_ram: 2, mmap: 1, mlock: 0 };
       (db.saveModelMemoryConfig as jest.Mock).mockResolvedValue(2);
 
       const result = await saveModelMemoryConfigAction(1, mockConfig);
@@ -164,7 +188,7 @@ describe("model-actions", () => {
     });
 
     it("saveModelGpuConfigAction should call database function", async () => {
-      const mockConfig = { gpu_enabled: true };
+      const mockConfig: any = { gpu_layers: 35, main_gpu: 0 };
       (db.saveModelGpuConfig as jest.Mock).mockResolvedValue(3);
 
       const result = await saveModelGpuConfigAction(1, mockConfig);
@@ -174,7 +198,7 @@ describe("model-actions", () => {
     });
 
     it("saveModelAdvancedConfigAction should call database function", async () => {
-      const mockConfig = { custom: "value" };
+      const mockConfig: any = { context_shift: 0, flash_attn: "" };
       (db.saveModelAdvancedConfig as jest.Mock).mockResolvedValue(4);
 
       const result = await saveModelAdvancedConfigAction(1, mockConfig);
@@ -184,7 +208,7 @@ describe("model-actions", () => {
     });
 
     it("saveModelLoraConfigAction should call database function", async () => {
-      const mockConfig = { lora_enabled: true };
+      const mockConfig: any = { lora: "", draft_max: 16 };
       (db.saveModelLoraConfig as jest.Mock).mockResolvedValue(5);
 
       const result = await saveModelLoraConfigAction(1, mockConfig);
@@ -194,7 +218,7 @@ describe("model-actions", () => {
     });
 
     it("saveModelMultimodalConfigAction should call database function", async () => {
-      const mockConfig = { vision_enabled: true };
+      const mockConfig: any = { mmproj: "", image_max_tokens: 0 };
       (db.saveModelMultimodalConfig as jest.Mock).mockResolvedValue(6);
 
       const result = await saveModelMultimodalConfigAction(1, mockConfig);
@@ -206,7 +230,7 @@ describe("model-actions", () => {
 
   describe("saveModelAction", () => {
     it("should save a new model", async () => {
-      const modelConfig = { name: "test", type: "llama", status: "idle" };
+      const modelConfig: any = { name: "test", type: "llama", status: "idle", path: "/path/to/model" };
       (db.saveModel as jest.Mock).mockResolvedValue(1);
 
       const result = await saveModelAction(modelConfig);
@@ -216,7 +240,7 @@ describe("model-actions", () => {
     });
 
     it("should return new model ID", async () => {
-      const modelConfig = { name: "test", type: "llama", status: "idle" };
+      const modelConfig: any = { name: "test", type: "llama", status: "idle", path: "/path/to/model" };
       (db.saveModel as jest.Mock).mockResolvedValue(42);
 
       const result = await saveModelAction(modelConfig);
@@ -227,7 +251,7 @@ describe("model-actions", () => {
 
   describe("updateModelAction", () => {
     it("should update a model", async () => {
-      const updates = { status: "running" };
+      const updates: any = { status: "running" };
       (db.updateModel as jest.Mock).mockResolvedValue(undefined);
 
       await updateModelAction(1, updates);
@@ -236,7 +260,7 @@ describe("model-actions", () => {
     });
 
     it("should handle partial updates", async () => {
-      const updates = { status: "idle", updated_at: new Date().toISOString() };
+      const updates: any = { status: "idle" };
       (db.updateModel as jest.Mock).mockResolvedValue(undefined);
 
       await updateModelAction(1, updates);
@@ -258,6 +282,72 @@ describe("model-actions", () => {
       (db.deleteModel as jest.Mock).mockResolvedValue(undefined);
 
       await expect(deleteModelAction(999)).resolves.not.toThrow();
+    });
+  });
+
+  describe("Error handling", () => {
+    it("should handle database errors in getModelsAction", async () => {
+      const error = new Error("Database connection failed");
+      (db.getModels as jest.Mock).mockRejectedValue(error);
+
+      await expect(getModelsAction()).rejects.toEqual(error);
+    });
+
+    it("should handle database errors in getModelByIdAction", async () => {
+      const error = new Error("Database connection failed");
+      (db.getModelById as jest.Mock).mockRejectedValue(error);
+
+      await expect(getModelByIdAction(1)).rejects.toEqual(error);
+    });
+
+    it("should handle database errors in saveModelAction", async () => {
+      const modelConfig: any = { name: "test", type: "llama", status: "idle", path: "/path" };
+      const error = new Error("Save failed");
+      (db.saveModel as jest.Mock).mockRejectedValue(error);
+
+      await expect(saveModelAction(modelConfig)).rejects.toEqual(error);
+    });
+  });
+
+  describe("Integration workflows", () => {
+    it("should support full CRUD workflow", async () => {
+      // Create
+      const newModel: any = { name: "test", type: "llama", status: "idle", path: "/path" };
+      (db.saveModel as jest.Mock).mockResolvedValue(1);
+      const modelId = await saveModelAction(newModel);
+      expect(modelId).toBe(1);
+
+      // Read
+      const mockModel: any = { id: 1, name: "test", type: "llama", status: "idle", path: "/path" };
+      (db.getModelById as jest.Mock).mockResolvedValue(mockModel);
+      const retrievedModel = await getModelByIdAction(1);
+      expect(retrievedModel).toEqual(mockModel);
+
+      // Update
+      const updates: any = { status: "running" };
+      (db.updateModel as jest.Mock).mockResolvedValue(undefined);
+      await updateModelAction(1, updates);
+      expect(db.updateModel).toHaveBeenCalledWith(1, updates);
+
+      // Delete
+      (db.deleteModel as jest.Mock).mockResolvedValue(undefined);
+      await deleteModelAction(1);
+      expect(db.deleteModel).toHaveBeenCalledWith(1);
+    });
+
+    it("should support config management workflow", async () => {
+      const modelId = 1;
+
+      // Save sampling config
+      const samplingConfig: any = { temperature: 0.7, top_p: 0.9 };
+      (db.saveModelSamplingConfig as jest.Mock).mockResolvedValue(1);
+      await saveModelSamplingConfigAction(modelId, samplingConfig);
+      expect(db.saveModelSamplingConfig).toHaveBeenCalledWith(modelId, samplingConfig);
+
+      // Get sampling config
+      (db.getModelSamplingConfig as jest.Mock).mockResolvedValue({ id: 1, model_id: 1, ...samplingConfig });
+      const retrievedConfig = await getModelSamplingConfigAction(modelId);
+      expect(retrievedConfig).toEqual({ id: 1, model_id: 1, ...samplingConfig });
     });
   });
 });
