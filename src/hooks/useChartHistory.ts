@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useEffectEvent as ReactUseEffectEvent } from "react";
+import { useCallback, useEffect, useRef, useState, useEffectEvent as ReactUseEffectEvent } from "react";
 import { useStore } from "@/lib/store";
 import { requestIdleCallback, cancelIdleCallback } from "@/utils/request-idle-callback";
 
@@ -12,6 +12,9 @@ export function useChartHistory() {
   const chartHistory = useStore((state) => state.chartHistory);
   const setChartData = useStore((state) => state.setChartData);
   const rebuildChartHistory = useStore((state) => state.rebuildChartHistory);
+
+  // Track loading state for history initialization
+  const [loadingHistory, setLoadingHistory] = useState(true);
 
   // Track last update time for debouncing
   const lastUpdateRef = useRef<number>(0);
@@ -33,6 +36,69 @@ export function useChartHistory() {
 
   // Track flush timeout ID for requestIdleCallback
   const flushIdleHandleRef = useRef<number | void>(undefined);
+
+  /**
+   * Load chart history from database API
+   * This ensures charts have data on cold launch/refresh
+   */
+  const loadChartHistory = useCallback(async (): Promise<void> => {
+    try {
+      setLoadingHistory(true);
+      const response = await fetch('/api/monitoring/history');
+
+      if (!response.ok) {
+        console.error('[useChartHistory] Failed to load chart history:', response.status);
+        setLoadingHistory(false);
+        return;
+      }
+
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        const data = result.data;
+
+        // Validate we have chart data arrays
+        if (data.cpu && data.cpu.length > 0) {
+          setChartData(data);
+          console.log('[useChartHistory] Loaded chart history from database:', {
+            cpu: data.cpu.length,
+            memory: data.memory.length,
+            requests: data.requests.length,
+          });
+        } else {
+          // No history in database, initialize empty
+          setChartData({
+            cpu: [],
+            memory: [],
+            requests: [],
+            gpuUtil: [],
+            power: [],
+          });
+        }
+      } else {
+        // Initialize empty if no data
+        setChartData({
+          cpu: [],
+          memory: [],
+          requests: [],
+          gpuUtil: [],
+          power: [],
+        });
+      }
+    } catch (error) {
+      console.error('[useChartHistory] Error loading chart history:', error);
+      // Initialize empty on error
+      setChartData({
+        cpu: [],
+        memory: [],
+        requests: [],
+        gpuUtil: [],
+        power: [],
+      });
+    } finally {
+      setLoadingHistory(false);
+    }
+  }, [setChartData]);
 
   // Helper function to create a chart data point
   const createDataPoint = useCallback((value: number) => {
@@ -132,21 +198,11 @@ export function useChartHistory() {
     lastUpdateRef.current = now;
   });
 
-  // Initialize chart history on mount
-  // Chart history is populated via WebSocket metrics streaming
-  // No database initialization needed for client-side charts
+  // Load chart history on mount - ensures data available on cold launch/refresh
   useEffect(() => {
-    // Initialize with empty arrays if not already set
-    if (chartHistory.cpu.length === 0) {
-      setChartData({
-        cpu: [],
-        memory: [],
-        requests: [],
-        gpuUtil: [],
-        power: [],
-      });
-    }
-  }, []); // Run only on mount to initialize empty arrays
+    // Load persisted history from database first
+    loadChartHistory();
+  }, [loadChartHistory]);
 
   // Process metrics whenever metrics data changes
   // processMetrics is stable via useEffectEvent, so only metrics is in deps

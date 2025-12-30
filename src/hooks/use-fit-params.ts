@@ -99,6 +99,9 @@ export function useFitParams(modelName: string | null) {
       if (result.success && result.data?.fitParams) {
         setData(result.data.fitParams);
       }
+
+      // Refresh data from database after POST completes to get latest results
+      await refresh();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
       setError(message);
@@ -106,7 +109,7 @@ export function useFitParams(modelName: string | null) {
     } finally {
       setLoading(false);
     }
-  }, [modelName]);
+  }, [modelName, refresh]);
 
   useEffect(() => {
     if (modelName) {

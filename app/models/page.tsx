@@ -667,8 +667,8 @@ export default function ModelsPage() {
 
       // Check for errors from hook
       if (fitParamsHook.error) {
-        setError(`Analyse échouée : ${fitParamsHook.error}`);
-        setSnackbarMessage(`Erreur : ${fitParamsHook.error}`);
+        setError(`Analysis failed: ${fitParamsHook.error}`);
+        setSnackbarMessage(`Error: ${fitParamsHook.error}`);
         setSnackbarSeverity('error');
         setSnackbarOpen(true);
       }
@@ -676,17 +676,17 @@ export default function ModelsPage() {
       // Get results
       if (fitParamsHook.data) {
         setCurrentFitParams(fitParamsHook.data);
-        setSnackbarMessage('Analyse terminée avec succès !');
+        setSnackbarMessage('Analysis completed successfully!');
         setSnackbarSeverity('success');
         setSnackbarOpen(true);
       } else if (!fitParamsHook.error) {
-        setSnackbarMessage('Analyse terminée mais aucune donnée disponible');
+        setSnackbarMessage('Analysis completed but no data available');
         setSnackbarSeverity('info');
         setSnackbarOpen(true);
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erreur inconnue';
-      setError(`Erreur d'analyse : ${message}`);
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(`Analysis error: ${message}`);
       setSnackbarMessage(message);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);

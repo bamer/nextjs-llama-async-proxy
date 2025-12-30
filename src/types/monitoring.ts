@@ -1,9 +1,29 @@
 /** src/types/monitoring.ts */
+
+export interface SystemMetrics {
+  cpu: {
+    usage: number;
+  };
+  memory: {
+    used: number;
+  };
+  disk: {
+    used: number;
+  };
+  network: {
+    rx: number;
+    tx: number;
+  };
+  uptime: number;
+}
+
+export interface ModelMetrics {
+  status: string;
+  memory: number;
+  requests: number;
+}
+
 export interface MonitoringEntry {
-  cpuUsage: number;
-  memoryUsage: number;
-  activeModels: number;
-  totalRequests: number;
-  avgResponseTime: number;
-  timestamp: string;
+  system: SystemMetrics;
+  models: ModelMetrics[];
 }

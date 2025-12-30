@@ -14,7 +14,11 @@ describe("GET /api/monitoring/latest", () => {
   let mockLlamaService: jest.Mocked<{
     getState: () => {
       status: string;
-      models?: Array<{ status?: string; size?: number }>;
+      models?: Array<{
+        id?: string;
+        status?: string;
+        size?: number;
+      }>;
     };
   }>;
 

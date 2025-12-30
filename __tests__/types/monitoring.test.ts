@@ -1,221 +1,453 @@
-/**
- * Tests for src/types/monitoring.ts
- * Objective: Verify MonitoringEntry interface structure and type safety
- */
-
-import { describe, it, expect } from '@jest/globals';
 import type { MonitoringEntry } from '@/types/monitoring';
 
-describe('src/types/monitoring.ts - MonitoringEntry Interface', () => {
-  /**
-   * Positive Test: Verify MonitoringEntry can be instantiated with all valid fields
-   * Expected result: MonitoringEntry should accept all defined properties
-   */
-  it('should create valid MonitoringEntry with all fields', () => {
-    // Arrange
-    const validEntry: MonitoringEntry = {
-      cpuUsage: 45.5,
-      memoryUsage: 60.2,
-      activeModels: 2,
-      totalRequests: 1000,
-      avgResponseTime: 150,
-      timestamp: '2025-01-01T00:00:00Z',
-    };
+describe('Monitoring Types', () => {
+  describe('MonitoringEntry', () => {
+    it('creates valid MonitoringEntry - positive test for type structure', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 45.5 },
+          memory: { used: 60.2 },
+          disk: { used: 50.5 },
+          network: { rx: 5000000, tx: 2500000 },
+          uptime: 3600,
+        },
+        models: [
+          {
+            status: 'running',
+            memory: 2048,
+            requests: 100,
+          },
+        ],
+      };
 
-    // Act & Assert
-    expect(validEntry.cpuUsage).toBe(45.5);
-    expect(validEntry.memoryUsage).toBe(60.2);
-    expect(validEntry.activeModels).toBe(2);
-    expect(validEntry.totalRequests).toBe(1000);
-    expect(validEntry.avgResponseTime).toBe(150);
-    expect(validEntry.timestamp).toBe('2025-01-01T00:00:00Z');
-  });
-
-  /**
-   * Negative Test: Verify MonitoringEntry enforces required fields
-   * Expected result: Missing required fields should cause type errors
-   */
-  it('should enforce required fields in MonitoringEntry', () => {
-    // Arrange - Create partial entry (would fail TypeScript check)
-    const createPartialEntry = (): any => ({
-      cpuUsage: 45.5,
-      // Missing other required fields
+      expect(entry.system.cpu.usage).toBe(45.5);
+      expect(entry.system.memory.used).toBe(60.2);
+      expect(entry.system.disk.used).toBe(50.5);
+      expect(entry.system.network.rx).toBe(5000000);
+      expect(entry.system.network.tx).toBe(2500000);
+      expect(entry.system.uptime).toBe(3600);
+      expect(entry.models).toHaveLength(1);
     });
 
-    // Act & Assert - Verify complete entry structure
-    const completeEntry: MonitoringEntry = {
-      cpuUsage: 45.5,
-      memoryUsage: 60.2,
-      activeModels: 2,
-      totalRequests: 1000,
-      avgResponseTime: 150,
-      timestamp: '2025-01-01T00:00:00Z',
-    };
+    it('handles zero values - edge case for idle system', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 0 },
+          memory: { used: 0 },
+          disk: { used: 0 },
+          network: { rx: 0, tx: 0 },
+          uptime: 0,
+        },
+        models: [],
+      };
 
-    expect(() => {
-      // Validate that all required fields are present
-      const requiredFields: (keyof MonitoringEntry)[] = [
-        'cpuUsage',
-        'memoryUsage',
-        'activeModels',
-        'totalRequests',
-        'avgResponseTime',
-        'timestamp',
-      ];
+      expect(entry.system.cpu.usage).toBe(0);
+      expect(entry.system.memory.used).toBe(0);
+      expect(entry.system.disk.used).toBe(0);
+      expect(entry.system.network.rx).toBe(0);
+      expect(entry.system.network.tx).toBe(0);
+      expect(entry.system.uptime).toBe(0);
+      expect(entry.models).toHaveLength(0);
+    });
 
-      requiredFields.forEach((field) => {
-        if (!(field in completeEntry)) {
-          throw new Error(`Missing required field: ${field}`);
-        }
-      });
-    }).not.toThrow();
+    it('handles maximum values - edge case for fully loaded system', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 100 },
+          memory: { used: 100 },
+          disk: { used: 100 },
+          network: { rx: 10000000, tx: 5000000 },
+          uptime: 86400,
+        },
+        models: [
+          {
+            status: 'running',
+            memory: 10240,
+            requests: 1000,
+          },
+        ],
+      };
 
-    // Partial entry should be missing fields
-    expect(Object.keys(createPartialEntry()).length).toBeLessThan(6);
+      expect(entry.system.cpu.usage).toBe(100);
+      expect(entry.system.memory.used).toBe(100);
+      expect(entry.system.disk.used).toBe(100);
+    });
+
+    it('handles fractional values for CPU and memory', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 75.5 },
+          memory: { used: 82.3 },
+          disk: { used: 50.0 },
+          network: { rx: 5500000, tx: 2750000 },
+          uptime: 1800,
+        },
+        models: [],
+      };
+
+      expect(entry.system.cpu.usage).toBeCloseTo(75.5, 1);
+      expect(entry.system.memory.used).toBeCloseTo(82.3, 1);
+    });
+
+    it('handles single active model', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 25 },
+          memory: { used: 30 },
+          disk: { used: 50 },
+          network: { rx: 1000000, tx: 500000 },
+          uptime: 7200,
+        },
+        models: [
+          {
+            status: 'running',
+            memory: 2048,
+            requests: 100,
+          },
+        ],
+      };
+
+      expect(entry.models).toHaveLength(1);
+    });
+
+    it('handles multiple active models', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 80 },
+          memory: { used: 75 },
+          disk: { used: 50 },
+          network: { rx: 8000000, tx: 4000000 },
+          uptime: 14400,
+        },
+        models: [
+          {
+            status: 'running',
+            memory: 2048,
+            requests: 100,
+          },
+          {
+            status: 'running',
+            memory: 4096,
+            requests: 200,
+          },
+          {
+            status: 'stopped',
+            memory: 0,
+            requests: 0,
+          },
+        ],
+      };
+
+      expect(entry.models.length).toBeGreaterThan(2);
+    });
+
+    it('handles low CPU usage with high memory usage', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 20 },
+          memory: { used: 85 },
+          disk: { used: 50 },
+          network: { rx: 2000000, tx: 1000000 },
+          uptime: 3600,
+        },
+        models: [],
+      };
+
+      expect(entry.system.cpu.usage).toBeLessThan(entry.system.memory.used);
+    });
+
+    it('handles high CPU usage with low memory usage', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 85 },
+          memory: { used: 30 },
+          disk: { used: 50 },
+          network: { rx: 3000000, tx: 1500000 },
+          uptime: 3600,
+        },
+        models: [],
+      };
+
+      expect(entry.system.cpu.usage).toBeGreaterThan(entry.system.memory.used);
+    });
   });
 
-  /**
-   * Positive Test: Verify MonitoringEntry supports valid data ranges
-   * Expected result: All numeric fields should accept valid ranges
-   */
-  it('should accept valid numeric ranges for all fields', () => {
-    // Arrange
-    const minEntry: MonitoringEntry = {
-      cpuUsage: 0,
-      memoryUsage: 0,
-      activeModels: 0,
-      totalRequests: 0,
-      avgResponseTime: 0,
-      timestamp: '2025-01-01T00:00:00Z',
-    };
+  describe('Type validation', () => {
+    it('validates MonitoringEntry structure', () => {
+      const entry: unknown = {
+        system: {
+          cpu: { usage: 45 },
+          memory: { used: 60 },
+          disk: { used: 50 },
+          network: { rx: 5000000, tx: 2500000 },
+          uptime: 3600,
+        },
+        models: [],
+      };
 
-    const maxEntry: MonitoringEntry = {
-      cpuUsage: 100,
-      memoryUsage: 100,
-      activeModels: 1000,
-      totalRequests: 1000000,
-      avgResponseTime: 10000,
-      timestamp: '2025-01-01T00:00:00Z',
-    };
+      const isValidEntry =
+        typeof entry === 'object' &&
+        entry !== null &&
+        'system' in entry &&
+        'models' in entry;
 
-    // Act & Assert - Verify min values
-    expect(minEntry.cpuUsage).toBeGreaterThanOrEqual(0);
-    expect(minEntry.memoryUsage).toBeGreaterThanOrEqual(0);
-    expect(minEntry.activeModels).toBeGreaterThanOrEqual(0);
-    expect(minEntry.totalRequests).toBeGreaterThanOrEqual(0);
-    expect(minEntry.avgResponseTime).toBeGreaterThanOrEqual(0);
+      expect(isValidEntry).toBe(true);
+    });
 
-    // Verify max values are valid
-    expect(maxEntry.cpuUsage).toBeLessThanOrEqual(100);
-    expect(maxEntry.memoryUsage).toBeLessThanOrEqual(100);
-    expect(maxEntry.activeModels).toBeLessThanOrEqual(1000);
-    expect(maxEntry.totalRequests).toBeLessThanOrEqual(1000000);
-    expect(maxEntry.avgResponseTime).toBeLessThanOrEqual(10000);
+    it('validates all numeric fields are numbers', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 45.5 },
+          memory: { used: 60.2 },
+          disk: { used: 50 },
+          network: { rx: 5000000, tx: 2500000 },
+          uptime: 3600,
+        },
+        models: [],
+      };
+
+      expect(typeof entry.system.cpu.usage).toBe('number');
+      expect(typeof entry.system.memory.used).toBe('number');
+      expect(typeof entry.system.disk.used).toBe('number');
+      expect(typeof entry.system.network.rx).toBe('number');
+      expect(typeof entry.system.network.tx).toBe('number');
+      expect(typeof entry.system.uptime).toBe('number');
+    });
+
+    it('validates models array exists', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 45 },
+          memory: { used: 60 },
+          disk: { used: 50 },
+          network: { rx: 5000000, tx: 2500000 },
+          uptime: 3600,
+        },
+        models: [],
+      };
+
+      expect(Array.isArray(entry.models)).toBe(true);
+    });
   });
 
-  /**
-   * Positive Test: Verify MonitoringEntry timestamp accepts ISO format
-   * Expected result: timestamp should accept ISO 8601 formatted strings
-   */
-  it('should accept valid ISO 8601 timestamp formats', () => {
-    // Arrange
-    const now = new Date();
-    const isoString = now.toISOString();
+  describe('Edge cases and special scenarios', () => {
+    it('handles very small fractional values', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 0.1 },
+          memory: { used: 0.5 },
+          disk: { used: 1 },
+          network: { rx: 100000, tx: 50000 },
+          uptime: 60,
+        },
+        models: [],
+      };
 
-    // Act
-    const entry: MonitoringEntry = {
-      cpuUsage: 50,
-      memoryUsage: 50,
-      activeModels: 1,
-      totalRequests: 100,
-      avgResponseTime: 100,
-      timestamp: isoString,
-    };
+      expect(entry.system.cpu.usage).toBeGreaterThan(0);
+      expect(entry.system.memory.used).toBeGreaterThan(0);
+    });
 
-    // Assert
-    expect(() => new Date(entry.timestamp)).not.toThrow();
-    expect(new Date(entry.timestamp).toISOString()).toBe(isoString);
+    it('handles very large network traffic', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 95 },
+          memory: { used: 90 },
+          disk: { used: 50 },
+          network: { rx: 100000000, tx: 50000000 },
+          uptime: 3600,
+        },
+        models: [],
+      };
+
+      expect(entry.system.network.rx).toBeGreaterThan(10000000);
+    });
+
+    it('handles very long uptime', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 10 },
+          memory: { used: 15 },
+          disk: { used: 50 },
+          network: { rx: 1000000, tx: 500000 },
+          uptime: 604800, // 7 days
+        },
+        models: [],
+      };
+
+      expect(entry.system.uptime).toBeGreaterThan(500000);
+    });
+
+    it('handles extreme CPU usage value', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 100 },
+          memory: { used: 100 },
+          disk: { used: 100 },
+          network: { rx: 10000000, tx: 5000000 },
+          uptime: 3600,
+        },
+        models: [],
+      };
+
+      expect(entry.system.cpu.usage).toBe(100);
+      expect(entry.system.memory.used).toBe(100);
+    });
+
+    it('handles entry with all fields at minimum', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 0 },
+          memory: { used: 0 },
+          disk: { used: 0 },
+          network: { rx: 0, tx: 0 },
+          uptime: 0,
+        },
+        models: [],
+      };
+
+      expect(entry.system.cpu.usage).toBe(0);
+      expect(entry.system.memory.used).toBe(0);
+      expect(entry.system.disk.used).toBe(0);
+    });
+
+    it('handles moderate load scenario', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 50 },
+          memory: { used: 50 },
+          disk: { used: 50 },
+          network: { rx: 5000000, tx: 2500000 },
+          uptime: 1800,
+        },
+        models: [
+          {
+            status: 'running',
+            memory: 2048,
+            requests: 100,
+          },
+        ],
+      };
+
+      expect(entry.system.cpu.usage).toBe(50);
+      expect(entry.system.memory.used).toBe(50);
+    });
+
+    it('handles different model statuses', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 50 },
+          memory: { used: 50 },
+          disk: { used: 50 },
+          network: { rx: 5000000, tx: 2500000 },
+          uptime: 3600,
+        },
+        models: [
+          {
+            status: 'running',
+            memory: 2048,
+            requests: 100,
+          },
+          {
+            status: 'stopped',
+            memory: 0,
+            requests: 0,
+          },
+          {
+            status: 'loading',
+            memory: 1024,
+            requests: 0,
+          },
+          {
+            status: 'error',
+            memory: 0,
+            requests: 0,
+          },
+        ],
+      };
+
+      expect(entry.models).toHaveLength(4);
+    });
+
+    it('handles exact values for consistency checks', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 42.0 },
+          memory: { used: 42.0 },
+          disk: { used: 42.0 },
+          network: { rx: 4200000, tx: 2100000 },
+          uptime: 15120,
+        },
+        models: [],
+      };
+
+      expect(entry.system.cpu.usage).toBe(42.0);
+      expect(entry.system.memory.used).toBe(42.0);
+      expect(entry.system.disk.used).toBe(42.0);
+    });
   });
 
-  /**
-   * Positive Test: Verify MonitoringEntry supports decimal values
-   * Expected result: cpuUsage, memoryUsage, avgResponseTime should support decimals
-   */
-  it('should support decimal values for numeric fields', () => {
-    // Arrange
-    const decimalEntry: MonitoringEntry = {
-      cpuUsage: 45.6789,
-      memoryUsage: 60.1234,
-      activeModels: 2, // Integer
-      totalRequests: 1000, // Integer
-      avgResponseTime: 150.5678,
-      timestamp: '2025-01-01T00:00:00.000Z',
-    };
+  describe('Data integrity scenarios', () => {
+    it('verifies cpu usage is within reasonable bounds', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 55 },
+          memory: { used: 60 },
+          disk: { used: 50 },
+          network: { rx: 5000000, tx: 2500000 },
+          uptime: 3600,
+        },
+        models: [],
+      };
 
-    // Act & Assert
-    expect(decimalEntry.cpuUsage % 1).not.toBe(0); // Verify decimal
-    expect(decimalEntry.memoryUsage % 1).not.toBe(0);
-    expect(decimalEntry.avgResponseTime % 1).not.toBe(0);
-    expect(decimalEntry.activeModels % 1).toBe(0); // Verify integer
-    expect(decimalEntry.totalRequests % 1).toBe(0); // Verify integer
-  });
+      expect(entry.system.cpu.usage).toBeGreaterThanOrEqual(0);
+      expect(entry.system.cpu.usage).toBeLessThanOrEqual(100);
+    });
 
-  /**
-   * Positive Test: Verify multiple MonitoringEntry instances can be created
-   * Expected result: Array of MonitoringEntry should be valid type
-   */
-  it('should support arrays of MonitoringEntry', () => {
-    // Arrange
-    const entries: MonitoringEntry[] = [
-      {
-        cpuUsage: 45,
-        memoryUsage: 60,
-        activeModels: 2,
-        totalRequests: 1000,
-        avgResponseTime: 150,
-        timestamp: '2025-01-01T00:00:00Z',
-      },
-      {
-        cpuUsage: 50,
-        memoryUsage: 65,
-        activeModels: 3,
-        totalRequests: 1100,
-        avgResponseTime: 155,
-        timestamp: '2025-01-01T00:01:00Z',
-      },
-    ];
+    it('verifies memory usage is within reasonable bounds', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 55 },
+          memory: { used: 60 },
+          disk: { used: 50 },
+          network: { rx: 5000000, tx: 2500000 },
+          uptime: 3600,
+        },
+        models: [],
+      };
 
-    // Act & Assert
-    expect(entries).toHaveLength(2);
-    expect(entries[0].cpuUsage).toBe(45);
-    expect(entries[1].cpuUsage).toBe(50);
-    expect(entries.every((entry) => entry.timestamp)).toBe(true);
-  });
+      expect(entry.system.memory.used).toBeGreaterThanOrEqual(0);
+      expect(entry.system.memory.used).toBeLessThanOrEqual(100);
+    });
 
-  /**
-   * Negative Test: Verify type safety through structure validation
-   * Expected result: Invalid field types should be detectable at runtime
-   */
-  it('should enforce correct field types', () => {
-    // Arrange
-    const validEntry: MonitoringEntry = {
-      cpuUsage: 45.5,
-      memoryUsage: 60.2,
-      activeModels: 2,
-      totalRequests: 1000,
-      avgResponseTime: 150,
-      timestamp: '2025-01-01T00:00:00Z',
-    };
+    it('verifies uptime is non-negative', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 55 },
+          memory: { used: 60 },
+          disk: { used: 50 },
+          network: { rx: 5000000, tx: 2500000 },
+          uptime: 3600,
+        },
+        models: [],
+      };
 
-    // Act & Assert - Verify each field has correct type
-    expect(typeof validEntry.cpuUsage).toBe('number');
-    expect(typeof validEntry.memoryUsage).toBe('number');
-    expect(typeof validEntry.activeModels).toBe('number');
-    expect(typeof validEntry.totalRequests).toBe('number');
-    expect(typeof validEntry.avgResponseTime).toBe('number');
-    expect(typeof validEntry.timestamp).toBe('string');
+      expect(entry.system.uptime).toBeGreaterThanOrEqual(0);
+    });
 
-    // Verify timestamp can be parsed
-    expect(() => new Date(validEntry.timestamp)).not.toThrow();
+    it('verifies network metrics are non-negative', () => {
+      const entry: MonitoringEntry = {
+        system: {
+          cpu: { usage: 55 },
+          memory: { used: 60 },
+          disk: { used: 50 },
+          network: { rx: 5000000, tx: 2500000 },
+          uptime: 3600,
+        },
+        models: [],
+      };
+
+      expect(entry.system.network.rx).toBeGreaterThanOrEqual(0);
+      expect(entry.system.network.tx).toBeGreaterThanOrEqual(0);
+    });
   });
 });
