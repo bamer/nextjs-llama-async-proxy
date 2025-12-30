@@ -169,7 +169,7 @@ describe('ThemeToggle', () => {
       });
 
       const { rerender } = render(<ThemeToggle />);
-      let sunIcon = document.querySelector('[data-icon="Sun"]');
+      const sunIcon = document.querySelector('[data-icon="Sun"]');
       expect(sunIcon).toBeInTheDocument();
 
       // Test dark mode
@@ -181,7 +181,7 @@ describe('ThemeToggle', () => {
       });
 
       rerender(<ThemeToggle />);
-      let moonIcon = document.querySelector('[data-icon="Moon"]');
+      const moonIcon = document.querySelector('[data-icon="Moon"]');
       expect(moonIcon).toBeInTheDocument();
 
       // Test system mode
@@ -193,7 +193,7 @@ describe('ThemeToggle', () => {
       });
 
       rerender(<ThemeToggle />);
-      let monitorIcon = document.querySelector('[data-icon="Monitor"]');
+      const monitorIcon = document.querySelector('[data-icon="Monitor"]');
       expect(monitorIcon).toBeInTheDocument();
     });
   });
