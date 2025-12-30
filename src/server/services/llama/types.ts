@@ -23,7 +23,35 @@ export interface LlamaServerConfig {
   embedding?: boolean;
   cache_type_k?: string;
   cache_type_v?: string;
-  [key: string]: any;
+  penalize_nl?: boolean;
+  ignore_eos?: boolean;
+  mlock?: boolean;
+  numa?: boolean;
+  memory_mapped?: boolean;
+  use_mmap?: boolean;
+  grp_attn_n?: number;
+  grp_attn_w?: number;
+  neg_prompt_multiplier?: number;
+  min_p?: number;
+  xtc_probability?: number;
+  xtc_threshold?: number;
+  typical_p?: number;
+  presence_penalty?: number;
+  frequency_penalty?: number;
+  dry_multiplier?: number;
+  dry_base?: number;
+  dry_allowed_length?: number;
+  dry_penalty_last_n?: number;
+  repeat_last_n?: number;
+  rope_freq_base?: number;
+  rope_freq_scale?: number;
+  yarn_ext_factor?: number;
+  yarn_attn_factor?: number;
+  yarn_beta_fast?: number;
+  yarn_beta_slow?: number;
+  no_kv_offload?: boolean;
+  ml_lock?: boolean;
+  [key: string]: unknown;
 }
 
 export interface LlamaModel {
@@ -32,8 +60,9 @@ export interface LlamaModel {
   size: number;
   type: string;
   modified_at: number;
-  path?: string;
-  available?: boolean;
+  path: string;
+  availableTemplates?: string[];
+  template?: string;
 }
 
 export type LlamaServiceStatus =

@@ -32,8 +32,8 @@ export interface FormValidation<T = unknown> {
   data?: T;
 }
 
-export type ValidationRule<T = unknown> = (value: T) => string | null;
 
-export interface FieldValidationRules<T extends Record<string, unknown> = Record<string, unknown>> {
+export type ValidationRule<T = unknown> = (value: T) => string | null;
+export type FieldValidationRules<T extends Record<string, unknown> = Record<string, unknown>> = {
   [K in keyof T]?: ValidationRule<T[K]>[];
 }

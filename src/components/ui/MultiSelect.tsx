@@ -101,7 +101,7 @@ export function MultiSelect<T = string>({
           const values = Array.isArray(newValue) ? newValue as unknown[] : [];
           setInternalSelected(values as T[]);
         }}
-        disabled={disabled}
+        disabled={!!disabled}
         size={size}
         fullWidth={fullWidth}
         renderValue={() => (

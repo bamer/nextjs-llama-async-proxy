@@ -34,7 +34,7 @@ jest.mock('axios', () => {
 
 jest.mock('@/config/app.config');
 
-const axios = require('axios');
+import axios from "axios";
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 const mockedAPP_CONFIG = APP_CONFIG as any;
 const mockAxiosInstance = axios.mockAxiosInstance as any;

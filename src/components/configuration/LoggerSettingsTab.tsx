@@ -40,7 +40,7 @@ export function LoggerSettingsTab({ fieldErrors }: LoggerSettingsTabProps = {}) 
         value={props.value}
         onChange={props.onChange}
         size="small"
-        disabled={props.disabled}
+        disabled={!!props.disabled}
         error={!!props.error}
       >
         {props.children}

@@ -1,5 +1,5 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import React from "react";
+import { render, screen } from "@testing-library/react";
 import { ThemeToggle } from './ThemeToggle';
 
 // Mock the ThemeContext
@@ -10,7 +10,7 @@ jest.mock('@/contexts/ThemeContext', () => ({
   useTheme: jest.fn(),
 }));
 
-const mockUseTheme = require('@/contexts/ThemeContext').useTheme;
+import { useTheme as mockUseTheme } from "@/contexts/ThemeContext";
 
 describe('ThemeToggle', () => {
   let useEffectCalled = false;
