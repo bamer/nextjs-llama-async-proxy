@@ -356,19 +356,6 @@ describe('useConfigurationForm', () => {
     expect(result.current.validationErrors).toContain('Llama Server Settings: serverPath - Too small: expected string to have >=1 characters');
   });
 
-    act(() => {
-      result.current.handleInputChange({
-        target: { name: 'llamaServerPath', value: '/path/to/server', type: 'text', checked: false },
-      } as React.ChangeEvent<HTMLInputElement>);
-    });
-
-    await act(async () => {
-      await result.current.handleSave();
-    });
-
-    expect(result.current.validationErrors).toContain('Llama Server Settings: serverPath - Too small: expected string to have >=1 characters');
-  });
-
   it('should validate ctx_size as positive number during save', async () => {
     const { result } = renderHook(() => useConfigurationForm());
 
@@ -1310,5 +1297,125 @@ describe('useConfigurationForm', () => {
     expect(result.current.isLoadingConfig).toBe(false);
 
     consoleSpy.mockRestore();
+  });
+
+  // New test: Test validation error accumulation
+  it('accumulates multiple validation errors correctly', async () => {
+    const { result } = renderHook(() => useConfigurationForm());
+
+    await waitFor(() => {
+      expect(result.current.isLoadingConfig).toBe(false);
+    });
+
+    // Set multiple invalid values
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'host', value: '', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'ctx_size', value: '-100', type: 'number', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'batch_size', value: 'invalid', type: 'number', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    await act(async () => {
+      await result.current.handleSave();
+    });
+
+    // Should accumulate all errors
+    expect(result.current.validationErrors.length).toBeGreaterThan(0);
+    expect(result.current.validationErrors).toContain('Llama Server Settings: host - Too small: expected string to have >=1 characters');
+    expect(result.current.validationErrors).toContain('Llama Server Settings: ctx_size - Too small: expected number to be >=1');
+  });
+
+  // New test: Test API error handling with non-200 response
+  it('handles API errors with non-200 response status', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+    global.fetch = jest.fn((url, options) => {
+      if (url === '/api/config' && options?.method === 'POST') {
+        return Promise.resolve({
+          ok: false,
+          status: 500,
+          statusText: 'Internal Server Error',
+        } as Response);
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(DEFAULT_SERVER_CONFIG),
+      } as Response);
+    }) as jest.Mock;
+
+    const { result } = renderHook(() => useConfigurationForm());
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'host', value: 'localhost', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    await act(async () => {
+      await result.current.handleSave();
+    });
+
+    expect(result.current.isSaving).toBe(false);
+    expect(result.current.saveSuccess).toBe(false);
+    expect(consoleSpy).toHaveBeenCalledWith('Save error:', expect.any(Error));
+
+    consoleSpy.mockRestore();
+  });
+
+  // New test: Test save success timeout (3s)
+  it('clears save success state after 3 second timeout', async () => {
+    jest.useFakeTimers();
+
+    global.fetch = jest.fn((url, options) => {
+      if (url === '/api/config' && options?.method === 'POST') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ success: true }),
+        } as Response);
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(DEFAULT_SERVER_CONFIG),
+      } as Response);
+    }) as jest.Mock;
+
+    const { result } = renderHook(() => useConfigurationForm());
+
+    act(() => {
+      result.current.handleInputChange({
+        target: { name: 'host', value: 'localhost', type: 'text', checked: false },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    await act(async () => {
+      await result.current.handleSave();
+    });
+
+    expect(result.current.saveSuccess).toBe(true);
+
+    // Advance time by 2.9 seconds - should still be true
+    act(() => {
+      jest.advanceTimersByTime(2900);
+    });
+    expect(result.current.saveSuccess).toBe(true);
+
+    // Advance time by 0.1 more seconds (total 3s) - should be false
+    act(() => {
+      jest.advanceTimersByTime(100);
+    });
+    expect(result.current.saveSuccess).toBe(false);
+
+    jest.useRealTimers();
   });
 

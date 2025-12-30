@@ -565,4 +565,323 @@ describe('PerformanceChart', () => {
 
     expect(screen.getByTestId('line-chart')).toBeInTheDocument();
   });
+
+  // Additional tests for missing branch coverage
+  it('renders chart when showAnimation is true', () => {
+    render(
+      <PerformanceChart
+        title="Animated Chart"
+        description="With animation"
+        datasets={[{
+          dataKey: 'value',
+          label: 'Value',
+          colorDark: '#60a5fa',
+          colorLight: '#2563eb',
+          data: mockData,
+        }]}
+        isDark={false}
+        showAnimation={true}
+      />
+    );
+
+    expect(screen.getByText('Animated Chart')).toBeInTheDocument();
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+
+  it('renders chart when showAnimation is false', () => {
+    render(
+      <PerformanceChart
+        title="Static Chart"
+        description="Without animation"
+        datasets={[{
+          dataKey: 'value',
+          label: 'Value',
+          colorDark: '#60a5fa',
+          colorLight: '#2563eb',
+          data: mockData,
+        }]}
+        isDark={false}
+        showAnimation={false}
+      />
+    );
+
+    expect(screen.getByText('Static Chart')).toBeInTheDocument();
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+
+  it('shows empty state when all datasets have invalid values', () => {
+    const invalidData = [
+      { time: '10:00', displayTime: '10:00', value: NaN },
+      { time: '10:05', displayTime: '10:05', value: null as any },
+    ];
+
+    render(
+      <PerformanceChart
+        title="Invalid Data"
+        description="Testing invalid values"
+        datasets={[{
+          dataKey: 'value',
+          label: 'Value',
+          colorDark: '#60a5fa',
+          colorLight: '#2563eb',
+          data: invalidData,
+        }]}
+        isDark={false}
+      />
+    );
+
+    expect(screen.getByText('No data available')).toBeInTheDocument();
+  });
+
+  it('shows empty state when merged data has less than 2 points', () => {
+    const shortData = [
+      { time: '10:00', displayTime: '10:00', value: 45 },
+    ];
+
+    render(
+      <PerformanceChart
+        title="Short Data"
+        description="Less than 2 points"
+        datasets={[{
+          dataKey: 'value',
+          label: 'Value',
+          colorDark: '#60a5fa',
+          colorLight: '#2563eb',
+          data: shortData,
+        }]}
+        isDark={false}
+      />
+    );
+
+    expect(screen.getByText('No data available')).toBeInTheDocument();
+  });
+
+  it('handles datasets with NaN values mixed with valid values', () => {
+    const mixedData = [
+      { time: '10:00', displayTime: '10:00', value: 45 },
+      { time: '10:05', displayTime: '10:05', value: NaN },
+      { time: '10:10', displayTime: '10:10', value: 55 },
+    ];
+
+    render(
+      <PerformanceChart
+        title="Mixed NaN"
+        description="Testing NaN values"
+        datasets={[{
+          dataKey: 'value',
+          label: 'Value',
+          colorDark: '#60a5fa',
+          colorLight: '#2563eb',
+          valueFormatter: (val) => isNaN(Number(val)) ? 'N/A' : `${val}%`,
+          data: mixedData,
+        }]}
+        isDark={false}
+      />
+    );
+
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+
+  it('handles single dataset with exact 2 data points', () => {
+    const exactTwoPoints = [
+      { time: '10:00', displayTime: '10:00', value: 45 },
+      { time: '10:05', displayTime: '10:05', value: 50 },
+    ];
+
+    render(
+      <PerformanceChart
+        title="Two Points"
+        description="Exactly 2 points"
+        datasets={[{
+          dataKey: 'value',
+          label: 'Value',
+          colorDark: '#60a5fa',
+          colorLight: '#2563eb',
+          data: exactTwoPoints,
+        }]}
+        isDark={false}
+      />
+    );
+
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+
+  it('memoizes chart properly with same datasets', () => {
+    const datasets = [{
+      dataKey: 'value',
+      label: 'Value',
+      colorDark: '#60a5fa',
+      colorLight: '#2563eb',
+      data: mockData,
+    }];
+
+    const { rerender } = render(
+      <PerformanceChart
+        title="Memo Test"
+        description="Testing memoization"
+        datasets={datasets}
+        isDark={false}
+      />
+    );
+
+    expect(screen.getByText('Memo Test')).toBeInTheDocument();
+
+    rerender(
+      <PerformanceChart
+        title="Memo Test"
+        description="Testing memoization"
+        datasets={datasets}
+        isDark={false}
+      />
+    );
+
+    expect(screen.getByText('Memo Test')).toBeInTheDocument();
+  });
+
+  it('handles datasets with only one data point in first dataset', () => {
+    const singlePointData = [
+      { time: '10:00', displayTime: '10:00', value: 45 },
+    ];
+
+    render(
+      <PerformanceChart
+        title="Single Point"
+        description="First dataset has one point"
+        datasets={[{
+          dataKey: 'value',
+          label: 'Value',
+          colorDark: '#60a5fa',
+          colorLight: '#2563eb',
+          data: singlePointData,
+        }]}
+        isDark={false}
+      />
+    );
+
+    expect(screen.getByText('No data available')).toBeInTheDocument();
+  });
+
+  it('handles all empty datasets', () => {
+    render(
+      <PerformanceChart
+        title="All Empty"
+        description="All datasets have no data"
+        datasets={[
+          {
+            dataKey: 'value1',
+            label: 'Value 1',
+            colorDark: '#60a5fa',
+            colorLight: '#2563eb',
+            data: [],
+          },
+          {
+            dataKey: 'value2',
+            label: 'Value 2',
+            colorDark: '#4ade80',
+            colorLight: '#16a34a',
+            data: [],
+          },
+        ]}
+        isDark={false}
+      />
+    );
+
+    expect(screen.getByText('No data available')).toBeInTheDocument();
+  });
+
+  it('handles first dataset empty but second dataset has data', () => {
+    const data = [
+      { time: '10:00', displayTime: '10:00', value: 45 },
+      { time: '10:05', displayTime: '10:05', value: 50 },
+    ];
+
+    render(
+      <PerformanceChart
+        title="First Empty"
+        description="First dataset empty, second has data"
+        datasets={[
+          {
+            dataKey: 'value1',
+            label: 'Value 1',
+            colorDark: '#60a5fa',
+            colorLight: '#2563eb',
+            data: [],
+          },
+          {
+            dataKey: 'value2',
+            label: 'Value 2',
+            colorDark: '#4ade80',
+            colorLight: '#16a34a',
+            data: data,
+          },
+        ]}
+        isDark={false}
+      />
+    );
+
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+
+  it('handles datasets with 3 data points', () => {
+    const threePointData = [
+      { time: '10:00', displayTime: '10:00', value: 45 },
+      { time: '10:05', displayTime: '10:05', value: 50 },
+      { time: '10:10', displayTime: '10:10', value: 55 },
+    ];
+
+    render(
+      <PerformanceChart
+        title="Three Points"
+        description="Exactly 3 points"
+        datasets={[{
+          dataKey: 'value',
+          label: 'Value',
+          colorDark: '#60a5fa',
+          colorLight: '#2563eb',
+          data: threePointData,
+        }]}
+        isDark={false}
+      />
+    );
+
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+
+  it('handles animation toggle between true and false', () => {
+    const { rerender } = render(
+      <PerformanceChart
+        title="Animation Toggle"
+        description="Testing animation toggle"
+        datasets={[{
+          dataKey: 'value',
+          label: 'Value',
+          colorDark: '#60a5fa',
+          colorLight: '#2563eb',
+          data: mockData,
+        }]}
+        isDark={false}
+        showAnimation={true}
+      />
+    );
+
+    expect(screen.getByText('Animation Toggle')).toBeInTheDocument();
+
+    rerender(
+      <PerformanceChart
+        title="Animation Toggle"
+        description="Testing animation toggle"
+        datasets={[{
+          dataKey: 'value',
+          label: 'Value',
+          colorDark: '#60a5fa',
+          colorLight: '#2563eb',
+          data: mockData,
+        }]}
+        isDark={false}
+        showAnimation={false}
+      />
+    );
+
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
 });

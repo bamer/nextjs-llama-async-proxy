@@ -5,10 +5,19 @@ const jestConfig: Config = {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'], // Temporarily removed mui-mocks.tsx due to module resolution issues
   moduleNameMapper: {
-      '^@/app/(.*)$': '<rootDir>/app/$1',
-      '^@/(.*)$': '<rootDir>/src/$1',
-    },
+    '^@/app/(.*)$': '<rootDir>/app/$1',
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^.+\\.module\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '^.+\\.(css|less|scss|sass)$': '<rootDir>/__mocks__/style-mock.js',
+  },
   snapshotSerializers: ['@emotion/jest/serializer'],
+  // Increase memory limits for tests
+  maxWorkers: '50%',
+  workerIdleMemoryLimit: '512MB',
+  cache: false,
+  bail: false,
+  verbose: true,
+  maxConcurrency: 2,
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     'app/**/*.{ts,tsx}',
@@ -39,6 +48,9 @@ const jestConfig: Config = {
       tsconfig: '<rootDir>/tsconfig.json',
     }],
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(axios|@mui|@emotion)/)',
+  ],
 };
 
 export default jestConfig;

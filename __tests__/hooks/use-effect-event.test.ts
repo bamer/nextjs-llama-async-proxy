@@ -90,7 +90,8 @@ describe('useEffectEvent', () => {
 
     const { result } = renderHook(() => useEffectEvent(undefinedHandler));
 
-    expect(result.current()).toBeUndefined();
+    const returnValue = result.current();
+    expect(returnValue).toBeUndefined();
   });
 
   it('should handle functions that return null', () => {
@@ -203,7 +204,8 @@ describe('useEffectEvent', () => {
 
     const { result } = renderHook(() => useEffectEvent(restHandler));
 
-    expect(result.current(1, 2, 3, 4)).toBe(10);
+    const returnValue = result.current(1, 2, 3, 4);
+    expect(returnValue).toBe(10);
   });
 
   it('should handle functions with default parameters', () => {
@@ -211,9 +213,13 @@ describe('useEffectEvent', () => {
 
     const { result } = renderHook(() => useEffectEvent(defaultHandler));
 
-    expect(result.current()).toBe(30);
-    expect(result.current(5)).toBe(25);
-    expect(result.current(5, 8)).toBe(13);
+    const returnValue1 = result.current();
+    const returnValue2 = result.current(5);
+    const returnValue3 = result.current(5, 8);
+
+    expect(returnValue1).toBe(30);
+    expect(returnValue2).toBe(25);
+    expect(returnValue3).toBe(13);
   });
 
   it('should work with generic functions', () => {
@@ -280,7 +286,8 @@ describe('useEffectEvent', () => {
     const { result } = renderHook(() => useEffectEvent(largeArgsHandler));
 
     const args = Array.from({ length: 1000 }, (_, i) => i);
-    expect(result.current(...args)).toBe(999);
+    const returnValue = result.current(...args);
+    expect(returnValue).toBe(999);
   });
 
   it('should work correctly with React strict mode', () => {

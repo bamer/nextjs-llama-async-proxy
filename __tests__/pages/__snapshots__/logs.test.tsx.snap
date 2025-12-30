@@ -1,0 +1,113 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`LogsPage snapshot test 1`] = `
+<div
+  data-testid="main-layout"
+>
+  <div
+    sx="[object Object]"
+  >
+    <div
+      sx="[object Object]"
+    >
+      <span
+        font-weight="bold"
+        variant="h4"
+      >
+        Logs
+      </span>
+    </div>
+    <div
+      sx="[object Object]"
+    >
+      <input
+        id="logs-search-input"
+        inputprops="[object Object]"
+        name="logs-search-input"
+        placeholder="Search logs..."
+        sx="[object Object]"
+        type="text"
+        value=""
+      />
+      <div
+        sx="[object Object]"
+      >
+        <select
+          data-testid="multi-select"
+          multiple=""
+        >
+          <option
+            value="error"
+          >
+            Error
+          </option>
+          <option
+            value="warn"
+          >
+            Warning
+          </option>
+          <option
+            value="info"
+          >
+            Info
+          </option>
+          <option
+            value="debug"
+          >
+            Debug
+          </option>
+        </select>
+      </div>
+    </div>
+    <div
+      sx="[object Object]"
+    >
+      <button
+        color="primary"
+        title="Refresh logs"
+      >
+        <svg
+          data-icon="Refresh"
+          font-size="small"
+        />
+      </button>
+      <button
+        color="error"
+        title="Clear logs"
+      >
+        <svg
+          data-icon="Delete"
+          font-size="small"
+        />
+      </button>
+      <button
+        color="info"
+        title="Download logs"
+      >
+        <svg
+          data-icon="Download"
+          font-size="small"
+        />
+      </button>
+    </div>
+    <div
+      sx="[object Object]"
+    >
+      <div
+        data-testid="skeleton-logs"
+      >
+        Skeleton x10
+      </div>
+    </div>
+    <div
+      sx="[object Object]"
+    >
+      <div
+        data-testid="pagination"
+      >
+        Page 1 of 0
+      </div>
+    </div>
+  </div>
+</div>
+`;

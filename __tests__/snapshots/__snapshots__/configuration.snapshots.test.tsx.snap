@@ -253,6 +253,776 @@ exports[`Configuration Snapshots ConfigurationTabs Component should match snapsh
 </div>
 `;
 
+exports[`Configuration Snapshots Form States should match snapshot with dirty form: form-dirty 1`] = `
+<div
+  animate="[object Object]"
+  initial="[object Object]"
+  transition="[object Object]"
+>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <h5
+        font-weight="bold"
+      >
+        General Settings
+      </h5>
+      <div
+        data-testid="grid"
+      >
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="basePath"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="logLevel"
+          >
+            <option
+              value="debug"
+            >
+              debug
+            </option>
+            <option
+              value="info"
+            >
+              info
+            </option>
+            <option
+              value="warn"
+            >
+              warn
+            </option>
+            <option
+              value="error"
+            >
+              error
+            </option>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="maxConcurrentModels"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <label>
+            <input
+              aria-checked="false"
+              name="autoUpdate"
+              role="switch"
+              type="checkbox"
+            />
+            <span>
+              Auto Update
+            </span>
+          </label>
+          <span>
+            Automatically update models and dependencies
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <label>
+            <input
+              aria-checked="false"
+              name="notificationsEnabled"
+              role="switch"
+              type="checkbox"
+            />
+            <span>
+              Notifications Enabled
+            </span>
+          </label>
+          <span>
+            Receive system alerts and notifications
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServerPath"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots Form States should match snapshot with invalid form: form-invalid 1`] = `
+<div
+  animate="[object Object]"
+  initial="[object Object]"
+  transition="[object Object]"
+>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <h5
+        font-weight="bold"
+      >
+        General Settings
+      </h5>
+      <div
+        data-testid="grid"
+      >
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="basePath"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="logLevel"
+          >
+            <option
+              value="debug"
+            >
+              debug
+            </option>
+            <option
+              value="info"
+            >
+              info
+            </option>
+            <option
+              value="warn"
+            >
+              warn
+            </option>
+            <option
+              value="error"
+            >
+              error
+            </option>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="maxConcurrentModels"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <label>
+            <input
+              aria-checked="false"
+              name="autoUpdate"
+              role="switch"
+              type="checkbox"
+            />
+            <span>
+              Auto Update
+            </span>
+          </label>
+          <span>
+            Automatically update models and dependencies
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <label>
+            <input
+              aria-checked="false"
+              name="notificationsEnabled"
+              role="switch"
+              type="checkbox"
+            />
+            <span>
+              Notifications Enabled
+            </span>
+          </label>
+          <span>
+            Receive system alerts and notifications
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServerPath"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots Form States should match snapshot with pristine form: form-pristine 1`] = `
+<div
+  animate="[object Object]"
+  initial="[object Object]"
+  transition="[object Object]"
+>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <h5
+        font-weight="bold"
+      >
+        General Settings
+      </h5>
+      <div
+        data-testid="grid"
+      >
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="basePath"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="logLevel"
+          >
+            <option
+              value="debug"
+            >
+              debug
+            </option>
+            <option
+              value="info"
+            >
+              info
+            </option>
+            <option
+              value="warn"
+            >
+              warn
+            </option>
+            <option
+              value="error"
+            >
+              error
+            </option>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="maxConcurrentModels"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <label>
+            <input
+              aria-checked="false"
+              name="autoUpdate"
+              role="switch"
+              type="checkbox"
+            />
+            <span>
+              Auto Update
+            </span>
+          </label>
+          <span>
+            Automatically update models and dependencies
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <label>
+            <input
+              aria-checked="false"
+              name="notificationsEnabled"
+              role="switch"
+              type="checkbox"
+            />
+            <span>
+              Notifications Enabled
+            </span>
+          </label>
+          <span>
+            Receive system alerts and notifications
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServerPath"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots Form States should match snapshot with valid form: form-valid 1`] = `
+<div
+  animate="[object Object]"
+  initial="[object Object]"
+  transition="[object Object]"
+>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <h5
+        font-weight="bold"
+      >
+        General Settings
+      </h5>
+      <div
+        data-testid="grid"
+      >
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="basePath"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="logLevel"
+          >
+            <option
+              value="debug"
+            >
+              debug
+            </option>
+            <option
+              value="info"
+            >
+              info
+            </option>
+            <option
+              value="warn"
+            >
+              warn
+            </option>
+            <option
+              value="error"
+            >
+              error
+            </option>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="maxConcurrentModels"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <label>
+            <input
+              aria-checked="false"
+              name="autoUpdate"
+              role="switch"
+              type="checkbox"
+            />
+            <span>
+              Auto Update
+            </span>
+          </label>
+          <span>
+            Automatically update models and dependencies
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <label>
+            <input
+              aria-checked="false"
+              name="notificationsEnabled"
+              role="switch"
+              type="checkbox"
+            />
+            <span>
+              Notifications Enabled
+            </span>
+          </label>
+          <span>
+            Receive system alerts and notifications
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServerPath"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots GeneralSettingsTab Component should match snapshot in dark mode: general-settings-dark 1`] = `
+<div
+  animate="[object Object]"
+  initial="[object Object]"
+  transition="[object Object]"
+>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <h5
+        font-weight="bold"
+      >
+        General Settings
+      </h5>
+      <div
+        data-testid="grid"
+      >
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="basePath"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="logLevel"
+          >
+            <option
+              value="debug"
+            >
+              debug
+            </option>
+            <option
+              value="info"
+            >
+              info
+            </option>
+            <option
+              value="warn"
+            >
+              warn
+            </option>
+            <option
+              value="error"
+            >
+              error
+            </option>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="maxConcurrentModels"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <label>
+            <input
+              aria-checked="false"
+              name="autoUpdate"
+              role="switch"
+              type="checkbox"
+            />
+            <span>
+              Auto Update
+            </span>
+          </label>
+          <span>
+            Automatically update models and dependencies
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <label>
+            <input
+              aria-checked="false"
+              name="notificationsEnabled"
+              role="switch"
+              type="checkbox"
+            />
+            <span>
+              Notifications Enabled
+            </span>
+          </label>
+          <span>
+            Receive system alerts and notifications
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServerPath"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots GeneralSettingsTab Component should match snapshot in light mode: general-settings-light 1`] = `
+<div
+  animate="[object Object]"
+  initial="[object Object]"
+  transition="[object Object]"
+>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <h5
+        font-weight="bold"
+      >
+        General Settings
+      </h5>
+      <div
+        data-testid="grid"
+      >
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="basePath"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="logLevel"
+          >
+            <option
+              value="debug"
+            >
+              debug
+            </option>
+            <option
+              value="info"
+            >
+              info
+            </option>
+            <option
+              value="warn"
+            >
+              warn
+            </option>
+            <option
+              value="error"
+            >
+              error
+            </option>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="maxConcurrentModels"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <label>
+            <input
+              aria-checked="false"
+              name="autoUpdate"
+              role="switch"
+              type="checkbox"
+            />
+            <span>
+              Auto Update
+            </span>
+          </label>
+          <span>
+            Automatically update models and dependencies
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <label>
+            <input
+              aria-checked="false"
+              name="notificationsEnabled"
+              role="switch"
+              type="checkbox"
+            />
+            <span>
+              Notifications Enabled
+            </span>
+          </label>
+          <span>
+            Receive system alerts and notifications
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServerPath"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots GeneralSettingsTab Component should match snapshot with validation errors: general-settings-errors 1`] = `
+<div
+  animate="[object Object]"
+  initial="[object Object]"
+  transition="[object Object]"
+>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <h5
+        font-weight="bold"
+      >
+        General Settings
+      </h5>
+      <div
+        data-testid="grid"
+      >
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="basePath"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="logLevel"
+          >
+            <option
+              value="debug"
+            >
+              debug
+            </option>
+            <option
+              value="info"
+            >
+              info
+            </option>
+            <option
+              value="warn"
+            >
+              warn
+            </option>
+            <option
+              value="error"
+            >
+              error
+            </option>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="maxConcurrentModels"
+            type="number"
+          />
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <label>
+            <input
+              aria-checked="false"
+              name="autoUpdate"
+              role="switch"
+              type="checkbox"
+            />
+            <span>
+              Auto Update
+            </span>
+          </label>
+          <span>
+            Automatically update models and dependencies
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <label>
+            <input
+              aria-checked="false"
+              name="notificationsEnabled"
+              role="switch"
+              type="checkbox"
+            />
+            <span>
+              Notifications Enabled
+            </span>
+          </label>
+          <span>
+            Receive system alerts and notifications
+          </span>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div
+            name="llamaServerPath"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
 exports[`Configuration Snapshots LlamaServerSettingsTab Component should match snapshot in dark mode: llama-server-dark 1`] = `
 <div
   animate="[object Object]"
@@ -694,6 +1464,338 @@ exports[`Configuration Snapshots LlamaServerSettingsTab Component should match s
 </div>
 `;
 
+exports[`Configuration Snapshots LoggerSettingsTab Component should match snapshot in dark mode: logger-settings-dark 1`] = `
+<div
+  class="MuiCard-root"
+>
+  <div>
+    <h6
+      font-weight="bold"
+    >
+      Log Levels
+    </h6>
+    <div>
+      <label>
+        <input
+          aria-checked="true"
+          checked=""
+          role="switch"
+          type="checkbox"
+        />
+        <span>
+          Enable Console Logging
+        </span>
+      </label>
+    </div>
+    <div>
+      <span>
+        Console Level
+      </span>
+      <select
+        role="combobox"
+      >
+        <option>
+          Error
+        </option>
+        <option>
+          Warning
+        </option>
+        <option>
+          Info
+        </option>
+        <option>
+          Debug
+        </option>
+      </select>
+    </div>
+    <hr />
+    <div>
+      <label>
+        <input
+          aria-checked="true"
+          checked=""
+          role="switch"
+          type="checkbox"
+        />
+        <span>
+          Enable File Logging (logs/ directory)
+        </span>
+      </label>
+    </div>
+    <div
+      data-testid="grid"
+    >
+      <div
+        data-testid="grid"
+      >
+        <div>
+          <span>
+            File Level (application.log)
+          </span>
+          <select
+            role="combobox"
+          >
+            <option>
+              Error
+            </option>
+            <option>
+              Warning
+            </option>
+            <option>
+              Info
+            </option>
+            <option>
+              Debug
+            </option>
+          </select>
+        </div>
+      </div>
+      <div
+        data-testid="grid"
+      >
+        <div>
+          <span>
+            Error File Level (errors.log)
+          </span>
+          <select
+            role="combobox"
+          >
+            <option>
+              Error Only
+            </option>
+            <option>
+              Error + Warning
+            </option>
+          </select>
+        </div>
+      </div>
+      <div
+        data-testid="grid"
+      >
+        <div>
+          <span>
+            Max File Size
+          </span>
+          <select
+            role="combobox"
+          >
+            <option>
+              10 MB
+            </option>
+            <option>
+              20 MB
+            </option>
+            <option>
+              50 MB
+            </option>
+            <option>
+              100 MB
+            </option>
+            <option>
+              500 MB
+            </option>
+          </select>
+        </div>
+      </div>
+      <div
+        data-testid="grid"
+      >
+        <div>
+          <span>
+            File Retention Period
+          </span>
+          <select
+            role="combobox"
+          >
+            <option>
+              7 Days
+            </option>
+            <option>
+              14 Days
+            </option>
+            <option>
+              30 Days
+            </option>
+            <option>
+              60 Days
+            </option>
+            <option>
+              90 Days
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots LoggerSettingsTab Component should match snapshot in light mode: logger-settings-light 1`] = `
+<div
+  class="MuiCard-root"
+>
+  <div>
+    <h6
+      font-weight="bold"
+    >
+      Log Levels
+    </h6>
+    <div>
+      <label>
+        <input
+          aria-checked="true"
+          checked=""
+          role="switch"
+          type="checkbox"
+        />
+        <span>
+          Enable Console Logging
+        </span>
+      </label>
+    </div>
+    <div>
+      <span>
+        Console Level
+      </span>
+      <select
+        role="combobox"
+      >
+        <option>
+          Error
+        </option>
+        <option>
+          Warning
+        </option>
+        <option>
+          Info
+        </option>
+        <option>
+          Debug
+        </option>
+      </select>
+    </div>
+    <hr />
+    <div>
+      <label>
+        <input
+          aria-checked="true"
+          checked=""
+          role="switch"
+          type="checkbox"
+        />
+        <span>
+          Enable File Logging (logs/ directory)
+        </span>
+      </label>
+    </div>
+    <div
+      data-testid="grid"
+    >
+      <div
+        data-testid="grid"
+      >
+        <div>
+          <span>
+            File Level (application.log)
+          </span>
+          <select
+            role="combobox"
+          >
+            <option>
+              Error
+            </option>
+            <option>
+              Warning
+            </option>
+            <option>
+              Info
+            </option>
+            <option>
+              Debug
+            </option>
+          </select>
+        </div>
+      </div>
+      <div
+        data-testid="grid"
+      >
+        <div>
+          <span>
+            Error File Level (errors.log)
+          </span>
+          <select
+            role="combobox"
+          >
+            <option>
+              Error Only
+            </option>
+            <option>
+              Error + Warning
+            </option>
+          </select>
+        </div>
+      </div>
+      <div
+        data-testid="grid"
+      >
+        <div>
+          <span>
+            Max File Size
+          </span>
+          <select
+            role="combobox"
+          >
+            <option>
+              10 MB
+            </option>
+            <option>
+              20 MB
+            </option>
+            <option>
+              50 MB
+            </option>
+            <option>
+              100 MB
+            </option>
+            <option>
+              500 MB
+            </option>
+          </select>
+        </div>
+      </div>
+      <div
+        data-testid="grid"
+      >
+        <div>
+          <span>
+            File Retention Period
+          </span>
+          <select
+            role="combobox"
+          >
+            <option>
+              7 Days
+            </option>
+            <option>
+              14 Days
+            </option>
+            <option>
+              30 Days
+            </option>
+            <option>
+              60 Days
+            </option>
+            <option>
+              90 Days
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
 exports[`Configuration Snapshots ModernConfiguration Component should match snapshot with Advanced tab active: config-advanced-tab 1`] = `
 <div>
   <div>
@@ -1025,6 +2127,206 @@ exports[`Configuration Snapshots ModernConfiguration Component should match snap
 </div>
 `;
 
+exports[`Configuration Snapshots ModernConfiguration Component should match snapshot with Logger tab active: config-logger-tab 1`] = `
+<div>
+  <div>
+    <div
+      animate="[object Object]"
+      initial="[object Object]"
+      transition="[object Object]"
+    >
+      <h1
+        font-weight="bold"
+      >
+        Configuration Center
+      </h1>
+      <span>
+        Manage your application settings and preferences
+      </span>
+    </div>
+  </div>
+  <hr />
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <button />
+      <button />
+      <button />
+      <button />
+    </div>
+  </div>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <h6
+        font-weight="bold"
+      >
+        Log Levels
+      </h6>
+      <div>
+        <label>
+          <input
+            aria-checked="true"
+            checked=""
+            role="switch"
+            type="checkbox"
+          />
+          <span>
+            Enable Console Logging
+          </span>
+        </label>
+      </div>
+      <div>
+        <span>
+          Console Level
+        </span>
+        <select
+          role="combobox"
+        >
+          <option>
+            Error
+          </option>
+          <option>
+            Warning
+          </option>
+          <option>
+            Info
+          </option>
+          <option>
+            Debug
+          </option>
+        </select>
+      </div>
+      <hr />
+      <div>
+        <label>
+          <input
+            aria-checked="true"
+            checked=""
+            role="switch"
+            type="checkbox"
+          />
+          <span>
+            Enable File Logging (logs/ directory)
+          </span>
+        </label>
+      </div>
+      <div
+        data-testid="grid"
+      >
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              File Level (application.log)
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                Error
+              </option>
+              <option>
+                Warning
+              </option>
+              <option>
+                Info
+              </option>
+              <option>
+                Debug
+              </option>
+            </select>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              Error File Level (errors.log)
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                Error Only
+              </option>
+              <option>
+                Error + Warning
+              </option>
+            </select>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              Max File Size
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                10 MB
+              </option>
+              <option>
+                20 MB
+              </option>
+              <option>
+                50 MB
+              </option>
+              <option>
+                100 MB
+              </option>
+              <option>
+                500 MB
+              </option>
+            </select>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              File Retention Period
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                7 Days
+              </option>
+              <option>
+                14 Days
+              </option>
+              <option>
+                30 Days
+              </option>
+              <option>
+                60 Days
+              </option>
+              <option>
+                90 Days
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <button>
+      Save Configuration
+    </button>
+  </div>
+</div>
+`;
+
 exports[`Configuration Snapshots ModernConfiguration Component should match snapshot with loading state: config-loading 1`] = `
 <div>
   <div>
@@ -1103,6 +2405,806 @@ exports[`Configuration Snapshots ModernConfiguration Component should match snap
         data-testid="skeleton"
       />
     </div>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots Responsive Configuration Layouts should match snapshot at desktop width (1024px): config-desktop 1`] = `
+<div>
+  <div>
+    <div
+      animate="[object Object]"
+      initial="[object Object]"
+      transition="[object Object]"
+    >
+      <h1
+        font-weight="bold"
+      >
+        Configuration Center
+      </h1>
+      <span>
+        Manage your application settings and preferences
+      </span>
+    </div>
+  </div>
+  <hr />
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <button />
+      <button />
+      <button />
+      <button />
+    </div>
+  </div>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <h6
+        font-weight="bold"
+      >
+        Log Levels
+      </h6>
+      <div>
+        <label>
+          <input
+            aria-checked="true"
+            checked=""
+            role="switch"
+            type="checkbox"
+          />
+          <span>
+            Enable Console Logging
+          </span>
+        </label>
+      </div>
+      <div>
+        <span>
+          Console Level
+        </span>
+        <select
+          role="combobox"
+        >
+          <option>
+            Error
+          </option>
+          <option>
+            Warning
+          </option>
+          <option>
+            Info
+          </option>
+          <option>
+            Debug
+          </option>
+        </select>
+      </div>
+      <hr />
+      <div>
+        <label>
+          <input
+            aria-checked="true"
+            checked=""
+            role="switch"
+            type="checkbox"
+          />
+          <span>
+            Enable File Logging (logs/ directory)
+          </span>
+        </label>
+      </div>
+      <div
+        data-testid="grid"
+      >
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              File Level (application.log)
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                Error
+              </option>
+              <option>
+                Warning
+              </option>
+              <option>
+                Info
+              </option>
+              <option>
+                Debug
+              </option>
+            </select>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              Error File Level (errors.log)
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                Error Only
+              </option>
+              <option>
+                Error + Warning
+              </option>
+            </select>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              Max File Size
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                10 MB
+              </option>
+              <option>
+                20 MB
+              </option>
+              <option>
+                50 MB
+              </option>
+              <option>
+                100 MB
+              </option>
+              <option>
+                500 MB
+              </option>
+            </select>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              File Retention Period
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                7 Days
+              </option>
+              <option>
+                14 Days
+              </option>
+              <option>
+                30 Days
+              </option>
+              <option>
+                60 Days
+              </option>
+              <option>
+                90 Days
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <button>
+      Save Configuration
+    </button>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots Responsive Configuration Layouts should match snapshot at large desktop width (1440px): config-large-desktop 1`] = `
+<div>
+  <div>
+    <div
+      animate="[object Object]"
+      initial="[object Object]"
+      transition="[object Object]"
+    >
+      <h1
+        font-weight="bold"
+      >
+        Configuration Center
+      </h1>
+      <span>
+        Manage your application settings and preferences
+      </span>
+    </div>
+  </div>
+  <hr />
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <button />
+      <button />
+      <button />
+      <button />
+    </div>
+  </div>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <h6
+        font-weight="bold"
+      >
+        Log Levels
+      </h6>
+      <div>
+        <label>
+          <input
+            aria-checked="true"
+            checked=""
+            role="switch"
+            type="checkbox"
+          />
+          <span>
+            Enable Console Logging
+          </span>
+        </label>
+      </div>
+      <div>
+        <span>
+          Console Level
+        </span>
+        <select
+          role="combobox"
+        >
+          <option>
+            Error
+          </option>
+          <option>
+            Warning
+          </option>
+          <option>
+            Info
+          </option>
+          <option>
+            Debug
+          </option>
+        </select>
+      </div>
+      <hr />
+      <div>
+        <label>
+          <input
+            aria-checked="true"
+            checked=""
+            role="switch"
+            type="checkbox"
+          />
+          <span>
+            Enable File Logging (logs/ directory)
+          </span>
+        </label>
+      </div>
+      <div
+        data-testid="grid"
+      >
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              File Level (application.log)
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                Error
+              </option>
+              <option>
+                Warning
+              </option>
+              <option>
+                Info
+              </option>
+              <option>
+                Debug
+              </option>
+            </select>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              Error File Level (errors.log)
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                Error Only
+              </option>
+              <option>
+                Error + Warning
+              </option>
+            </select>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              Max File Size
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                10 MB
+              </option>
+              <option>
+                20 MB
+              </option>
+              <option>
+                50 MB
+              </option>
+              <option>
+                100 MB
+              </option>
+              <option>
+                500 MB
+              </option>
+            </select>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              File Retention Period
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                7 Days
+              </option>
+              <option>
+                14 Days
+              </option>
+              <option>
+                30 Days
+              </option>
+              <option>
+                60 Days
+              </option>
+              <option>
+                90 Days
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <button>
+      Save Configuration
+    </button>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots Responsive Configuration Layouts should match snapshot at mobile width (375px): config-mobile 1`] = `
+<div>
+  <div>
+    <div
+      animate="[object Object]"
+      initial="[object Object]"
+      transition="[object Object]"
+    >
+      <h1
+        font-weight="bold"
+      >
+        Configuration Center
+      </h1>
+      <span>
+        Manage your application settings and preferences
+      </span>
+    </div>
+  </div>
+  <hr />
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <button />
+      <button />
+      <button />
+      <button />
+    </div>
+  </div>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <h6
+        font-weight="bold"
+      >
+        Log Levels
+      </h6>
+      <div>
+        <label>
+          <input
+            aria-checked="true"
+            checked=""
+            role="switch"
+            type="checkbox"
+          />
+          <span>
+            Enable Console Logging
+          </span>
+        </label>
+      </div>
+      <div>
+        <span>
+          Console Level
+        </span>
+        <select
+          role="combobox"
+        >
+          <option>
+            Error
+          </option>
+          <option>
+            Warning
+          </option>
+          <option>
+            Info
+          </option>
+          <option>
+            Debug
+          </option>
+        </select>
+      </div>
+      <hr />
+      <div>
+        <label>
+          <input
+            aria-checked="true"
+            checked=""
+            role="switch"
+            type="checkbox"
+          />
+          <span>
+            Enable File Logging (logs/ directory)
+          </span>
+        </label>
+      </div>
+      <div
+        data-testid="grid"
+      >
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              File Level (application.log)
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                Error
+              </option>
+              <option>
+                Warning
+              </option>
+              <option>
+                Info
+              </option>
+              <option>
+                Debug
+              </option>
+            </select>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              Error File Level (errors.log)
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                Error Only
+              </option>
+              <option>
+                Error + Warning
+              </option>
+            </select>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              Max File Size
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                10 MB
+              </option>
+              <option>
+                20 MB
+              </option>
+              <option>
+                50 MB
+              </option>
+              <option>
+                100 MB
+              </option>
+              <option>
+                500 MB
+              </option>
+            </select>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              File Retention Period
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                7 Days
+              </option>
+              <option>
+                14 Days
+              </option>
+              <option>
+                30 Days
+              </option>
+              <option>
+                60 Days
+              </option>
+              <option>
+                90 Days
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <button>
+      Save Configuration
+    </button>
+  </div>
+</div>
+`;
+
+exports[`Configuration Snapshots Responsive Configuration Layouts should match snapshot at tablet width (768px): config-tablet 1`] = `
+<div>
+  <div>
+    <div
+      animate="[object Object]"
+      initial="[object Object]"
+      transition="[object Object]"
+    >
+      <h1
+        font-weight="bold"
+      >
+        Configuration Center
+      </h1>
+      <span>
+        Manage your application settings and preferences
+      </span>
+    </div>
+  </div>
+  <hr />
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <button />
+      <button />
+      <button />
+      <button />
+    </div>
+  </div>
+  <div
+    class="MuiCard-root"
+  >
+    <div>
+      <h6
+        font-weight="bold"
+      >
+        Log Levels
+      </h6>
+      <div>
+        <label>
+          <input
+            aria-checked="true"
+            checked=""
+            role="switch"
+            type="checkbox"
+          />
+          <span>
+            Enable Console Logging
+          </span>
+        </label>
+      </div>
+      <div>
+        <span>
+          Console Level
+        </span>
+        <select
+          role="combobox"
+        >
+          <option>
+            Error
+          </option>
+          <option>
+            Warning
+          </option>
+          <option>
+            Info
+          </option>
+          <option>
+            Debug
+          </option>
+        </select>
+      </div>
+      <hr />
+      <div>
+        <label>
+          <input
+            aria-checked="true"
+            checked=""
+            role="switch"
+            type="checkbox"
+          />
+          <span>
+            Enable File Logging (logs/ directory)
+          </span>
+        </label>
+      </div>
+      <div
+        data-testid="grid"
+      >
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              File Level (application.log)
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                Error
+              </option>
+              <option>
+                Warning
+              </option>
+              <option>
+                Info
+              </option>
+              <option>
+                Debug
+              </option>
+            </select>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              Error File Level (errors.log)
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                Error Only
+              </option>
+              <option>
+                Error + Warning
+              </option>
+            </select>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              Max File Size
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                10 MB
+              </option>
+              <option>
+                20 MB
+              </option>
+              <option>
+                50 MB
+              </option>
+              <option>
+                100 MB
+              </option>
+              <option>
+                500 MB
+              </option>
+            </select>
+          </div>
+        </div>
+        <div
+          data-testid="grid"
+        >
+          <div>
+            <span>
+              File Retention Period
+            </span>
+            <select
+              role="combobox"
+            >
+              <option>
+                7 Days
+              </option>
+              <option>
+                14 Days
+              </option>
+              <option>
+                30 Days
+              </option>
+              <option>
+                60 Days
+              </option>
+              <option>
+                90 Days
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <button>
+      Save Configuration
+    </button>
   </div>
 </div>
 `;

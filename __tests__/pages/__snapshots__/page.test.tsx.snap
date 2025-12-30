@@ -2,13 +2,371 @@
 
 exports[`HomePage snapshot test 1`] = `
 <div
-  data-testid="home-page"
+  data-testid="main-layout"
 >
-  <h1>
-    Welcome to Llama Runner Pro
-  </h1>
-  <p>
-    The ultimate platform for managing and monitoring your AI models
-  </p>
+  <div>
+    <div
+      mb="6"
+      textalign="center"
+    >
+      <div>
+        <svg
+          data-icon="Rocket"
+          height="24"
+          sx="[object Object]"
+          width="24"
+        />
+      </div>
+      <h1
+        component="h1"
+        font-weight="bold"
+      >
+        Welcome to Llama Runner Pro
+      </h1>
+      <p
+        color="text.secondary"
+        maxwidth="800px"
+        mb="4"
+        mx="auto"
+      >
+        The ultimate platform for managing and monitoring your AI models with real-time data and advanced analytics
+      </p>
+      <button
+        href="/dashboard"
+      >
+        Get Started
+      </button>
+    </div>
+    <div>
+      <h1
+        font-weight="bold"
+        mb="4"
+        textalign="center"
+      >
+        Key Features
+      </h1>
+      <div>
+        <div>
+          <a
+            data-href="/dashboard"
+            href="/dashboard"
+          >
+            <div>
+              <div>
+                <div
+                  font-size="3rem"
+                  mb="2"
+                >
+                  <svg
+                    color="primary"
+                    data-icon="Dashboard"
+                    height="24"
+                    sx="[object Object]"
+                    width="24"
+                  />
+                </div>
+                <p
+                  font-weight="bold"
+                >
+                  Real-time Dashboard
+                </p>
+                <p
+                  color="text.secondary"
+                >
+                  Monitor your AI models with live metrics and performance data
+                </p>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div>
+          <a
+            data-href="/models"
+            href="/models"
+          >
+            <div>
+              <div>
+                <div
+                  font-size="3rem"
+                  mb="2"
+                >
+                  <svg
+                    color="secondary"
+                    data-icon="ModelTraining"
+                    height="24"
+                    sx="[object Object]"
+                    width="24"
+                  />
+                </div>
+                <p
+                  font-weight="bold"
+                >
+                  Model Management
+                </p>
+                <p
+                  color="text.secondary"
+                >
+                  Easily configure and control multiple AI models
+                </p>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div>
+          <a
+            data-href="/monitoring"
+            href="/monitoring"
+          >
+            <div>
+              <div>
+                <div
+                  font-size="3rem"
+                  mb="2"
+                >
+                  <svg
+                    color="success"
+                    data-icon="Monitor"
+                    height="24"
+                    sx="[object Object]"
+                    width="24"
+                  />
+                </div>
+                <p
+                  font-weight="bold"
+                >
+                  Advanced Monitoring
+                </p>
+                <p
+                  color="text.secondary"
+                >
+                  Track system health and performance in real-time
+                </p>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div>
+          <a
+            data-href="/settings"
+            href="/settings"
+          >
+            <div>
+              <div>
+                <div
+                  font-size="3rem"
+                  mb="2"
+                >
+                  <svg
+                    color="warning"
+                    data-icon="Settings"
+                    height="24"
+                    sx="[object Object]"
+                    width="24"
+                  />
+                </div>
+                <p
+                  font-weight="bold"
+                >
+                  Custom Configuration
+                </p>
+                <p
+                  color="text.secondary"
+                >
+                  Fine-tune your setup with advanced settings
+                </p>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div>
+        <p
+          font-weight="bold"
+          sx="[object Object]"
+        >
+          Quick Stats
+        </p>
+        <div
+          justifycontent="center"
+        >
+          <div>
+            <h1
+              color="primary"
+              font-weight="bold"
+            >
+              4+
+            </h1>
+            <p
+              color="text.secondary"
+            >
+              Active Models
+            </p>
+          </div>
+          <div>
+            <h1
+              color="secondary"
+              font-weight="bold"
+            >
+              99.9%
+            </h1>
+            <p
+              color="text.secondary"
+            >
+              Uptime
+            </p>
+          </div>
+          <div>
+            <h1
+              color="success"
+              font-weight="bold"
+            >
+              150ms
+            </h1>
+            <p
+              color="text.secondary"
+            >
+              Avg Response
+            </p>
+          </div>
+          <div>
+            <h1
+              color="warning"
+              font-weight="bold"
+            >
+              1000+
+            </h1>
+            <p
+              color="text.secondary"
+            >
+              Requests
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div>
+        <p
+          font-weight="bold"
+          mb="2"
+          textalign="center"
+        >
+          Built with Modern Technologies
+        </p>
+        <div>
+          <div>
+            <div>
+              <svg
+                data-icon="BarChart"
+                height="24"
+                sx="[object Object]"
+                width="24"
+              />
+            </div>
+            <p
+              font-weight="medium"
+            >
+              Next.js
+            </p>
+          </div>
+          <div>
+            <div>
+              <svg
+                data-icon="Code"
+                height="24"
+                sx="[object Object]"
+                width="24"
+              />
+            </div>
+            <p
+              font-weight="medium"
+            >
+              Material UI
+            </p>
+          </div>
+          <div>
+            <div>
+              <svg
+                data-icon="Cloud"
+                height="24"
+                sx="[object Object]"
+                width="24"
+              />
+            </div>
+            <p
+              font-weight="medium"
+            >
+              WebSocket
+            </p>
+          </div>
+          <div>
+            <div>
+              <svg
+                data-icon="Terminal"
+                height="24"
+                sx="[object Object]"
+                width="24"
+              />
+            </div>
+            <p
+              font-weight="medium"
+            >
+              TypeScript
+            </p>
+          </div>
+        </div>
+        <p
+          color="text.secondary"
+          textalign="center"
+        >
+          Powered by modern web technologies for optimal performance and developer experience
+        </p>
+      </div>
+    </div>
+    <div>
+      <div>
+        <div>
+          <p
+            font-weight="bold"
+            mb="2"
+          >
+            Getting Started
+          </p>
+          <p>
+            New to Llama Runner Pro? Here are some steps to help you get started:
+          </p>
+          <div
+            component="ol"
+          >
+            <li>
+              Connect your AI models through the settings
+            </li>
+            <li>
+              Configure model parameters and settings
+            </li>
+            <li>
+              Start monitoring real-time performance
+            </li>
+            <li>
+              Analyze metrics and optimize your setup
+            </li>
+          </div>
+          <div
+            display="flex"
+            justifycontent="flex-end"
+            mt="3"
+          >
+            <button
+              href="/docs"
+            >
+              View Documentation
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 `;

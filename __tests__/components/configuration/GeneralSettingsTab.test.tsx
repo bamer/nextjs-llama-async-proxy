@@ -534,4 +534,152 @@ describe('GeneralSettingsTab', () => {
     fireEvent.click(autoUpdateCheckbox);
     expect(mockOnInputChange).toHaveBeenCalledTimes(3);
   });
+
+  // Additional tests for missing coverage
+  it('renders single model mode alert when maxConcurrentModels is 1', () => {
+    const singleModelConfig = {
+      ...defaultFormConfig,
+      maxConcurrentModels: 1,
+    };
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={singleModelConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
+    );
+
+    expect(screen.getByText('Single Model Mode:')).toBeInTheDocument();
+    expect(screen.getByText('Only one model can be loaded at a time.')).toBeInTheDocument();
+    expect(screen.getByText('Loading a new model will require stopping the currently running one first.')).toBeInTheDocument();
+    expect(screen.getByText('Change "Max Concurrent Models" to a higher value for parallel loading.')).toBeInTheDocument();
+  });
+
+  it('does not render single model mode alert when maxConcurrentModels > 1', () => {
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
+    );
+
+    expect(screen.queryByText('Single Model Mode:')).not.toBeInTheDocument();
+  });
+
+  it('does not render single model mode alert when maxConcurrentModels is 0', () => {
+    const zeroModelConfig = {
+      ...defaultFormConfig,
+      maxConcurrentModels: 0,
+    };
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={zeroModelConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
+    );
+
+    expect(screen.queryByText('Single Model Mode:')).not.toBeInTheDocument();
+  });
+
+  it('shows single model mode helper text when maxConcurrentModels is 1', () => {
+    const singleModelConfig = {
+      ...defaultFormConfig,
+      maxConcurrentModels: 1,
+    };
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={singleModelConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
+    );
+
+    const maxConcurrentInput = screen.getByLabelText('Max Concurrent Models');
+    const helperText = screen.getByText('Single model mode: Only one model loaded at a time');
+    expect(helperText).toBeInTheDocument();
+  });
+
+  it('shows parallel mode helper text when maxConcurrentModels > 1', () => {
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
+    );
+
+    const helperText = screen.getByText('Parallel mode: Multiple models can be loaded simultaneously');
+    expect(helperText).toBeInTheDocument();
+  });
+
+  it('renders Alert component with correct severity', () => {
+    const singleModelConfig = {
+      ...defaultFormConfig,
+      maxConcurrentModels: 1,
+    };
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={singleModelConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
+    );
+
+    const alert = screen.getByRole('alert');
+    expect(alert).toBeInTheDocument();
+  });
+
+  it('handles field error for basePath', () => {
+    const fieldErrors = {
+      basePath: 'Base path is required',
+    };
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={fieldErrors} />
+    );
+
+    expect(screen.getByText('Base path is required')).toBeInTheDocument();
+    const basePathInput = screen.getByLabelText('Base Path');
+    expect(basePathInput).toHaveClass('Mui-error');
+  });
+
+  it('handles field error for logLevel', () => {
+    const fieldErrors = {
+      logLevel: 'Invalid log level',
+    };
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={fieldErrors} />
+    );
+
+    expect(screen.getByText('Invalid log level')).toBeInTheDocument();
+    const logLevelSelect = screen.getByLabelText('Log Level');
+    expect(logLevelSelect).toHaveClass('Mui-error');
+  });
+
+  it('handles field error for maxConcurrentModels', () => {
+    const fieldErrors = {
+      maxConcurrentModels: 'Must be between 1 and 20',
+    };
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={fieldErrors} />
+    );
+
+    expect(screen.getByText('Must be between 1 and 20')).toBeInTheDocument();
+    const maxConcurrentInput = screen.getByLabelText('Max Concurrent Models');
+    expect(maxConcurrentInput).toHaveClass('Mui-error');
+  });
+
+  it('handles field error for llamaServerPath', () => {
+    const fieldErrors = {
+      llamaServerPath: 'Server path is required',
+    };
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={fieldErrors} />
+    );
+
+    expect(screen.getByText('Server path is required')).toBeInTheDocument();
+    const serverPathInput = screen.getByLabelText('Llama-Server Path');
+    expect(serverPathInput).toHaveClass('Mui-error');
+  });
+
+  it('shows default helper text when no field errors', () => {
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={defaultFieldErrors} />
+    );
+
+    expect(screen.getByText('Path to your models directory')).toBeInTheDocument();
+    expect(screen.getByText('Logging verbosity level')).toBeInTheDocument();
+  });
+
+  it('shows error helper text when field errors exist', () => {
+    const fieldErrors = {
+      basePath: 'Error message',
+      logLevel: 'Invalid level',
+    };
+    renderWithTheme(
+      <GeneralSettingsTab formConfig={defaultFormConfig} onInputChange={mockOnInputChange} fieldErrors={fieldErrors} />
+    );
+
+    expect(screen.getByText('Error message')).toBeInTheDocument();
+    expect(screen.getByText('Invalid level')).toBeInTheDocument();
+    expect(screen.queryByText('Path to your models directory')).not.toBeInTheDocument();
+    expect(screen.queryByText('Logging verbosity level')).not.toBeInTheDocument();
+  });
 });

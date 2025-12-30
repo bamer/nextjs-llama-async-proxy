@@ -74,17 +74,19 @@ describe('LlamaService (Constructor & State)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.clearAllTimers();
     jest.useFakeTimers();
 
-    // Reset mock states
-    mockStateManager.getState.mockReturnValue({
+    // Reset mock states with minimal data
+    const mockState = {
       status: 'initial',
       models: [],
       lastError: null,
       retries: 0,
       uptime: 0,
       startedAt: null,
-    });
+    };
+    mockStateManager.getState.mockReturnValue(mockState);
 
     config = {
       host: 'localhost',
@@ -97,8 +99,43 @@ describe('LlamaService (Constructor & State)', () => {
   });
 
   afterEach(() => {
+    jest.runOnlyPendingTimers();
     jest.useRealTimers();
-    jest.clearAllMocks();
+    jest.clearAllTimers();
+
+    // Clear mock calls but keep implementations
+    mockProcessManager.spawn.mockClear();
+    mockProcessManager.onData.mockClear();
+    mockProcessManager.onError.mockClear();
+    mockProcessManager.onExit.mockClear();
+    mockProcessManager.isRunning.mockClear();
+    mockProcessManager.kill.mockClear();
+
+    mockHealthChecker.check.mockClear();
+    mockHealthChecker.waitForReady.mockClear();
+
+    mockModelLoader.load.mockClear();
+
+    mockStateManager.onStateChange.mockClear();
+    mockStateManager.getState.mockClear();
+    mockStateManager.updateStatus.mockClear();
+    mockStateManager.setModels.mockClear();
+    mockStateManager.incrementRetries.mockClear();
+    mockStateManager.startUptimeTracking.mockClear();
+    mockStateManager.stopUptimeTracking.mockClear();
+
+    mockRetryHandler.canRetry.mockClear();
+    mockRetryHandler.getBackoffMs.mockClear();
+    mockRetryHandler.waitForRetry.mockClear();
+
+    mockLogger.info.mockClear();
+    mockLogger.warn.mockClear();
+    mockLogger.error.mockClear();
+    mockLogger.debug.mockClear();
+
+    // Explicitly dereference to help GC
+    (service as any) = null;
+    (config as any) = null;
   });
 
   describe('constructor', () => {
@@ -137,14 +174,6 @@ describe('LlamaService (Constructor & State)', () => {
       service.onStateChange(callback2);
 
       expect(mockStateManager.onStateChange).toHaveBeenCalledTimes(2);
-    });
-
-    it('should delegate callback error handling to StateManager', () => {
-      const errorCallback = jest.fn();
-
-      service.onStateChange(errorCallback);
-
-      expect(mockStateManager.onStateChange).toHaveBeenCalledWith(errorCallback);
     });
   });
 

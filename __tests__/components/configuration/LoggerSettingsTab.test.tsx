@@ -654,4 +654,273 @@ describe('LoggerSettingsTab', () => {
     fireEvent.change(consoleSelect, { target: { value: 'error' } });
     expect(mockUpdateConfig).toHaveBeenCalledWith({ consoleLevel: 'error' });
   });
+
+  // Additional tests for missing coverage
+  it('renders with fieldErrors prop populated - consoleLevel', () => {
+    const fieldErrors = {
+      consoleLevel: 'Invalid log level',
+    };
+    renderComponent(<LoggerSettingsTab fieldErrors={fieldErrors} />);
+
+    expect(screen.getByText('Invalid log level')).toBeInTheDocument();
+  });
+
+  it('renders with fieldErrors prop populated - fileLevel', () => {
+    const fieldErrors = {
+      fileLevel: 'Invalid file level',
+    };
+    renderComponent(<LoggerSettingsTab fieldErrors={fieldErrors} />);
+
+    expect(screen.getByText('Invalid file level')).toBeInTheDocument();
+  });
+
+  it('renders with fieldErrors prop populated - errorLevel', () => {
+    const fieldErrors = {
+      errorLevel: 'Invalid error level',
+    };
+    renderComponent(<LoggerSettingsTab fieldErrors={fieldErrors} />);
+
+    expect(screen.getByText('Invalid error level')).toBeInTheDocument();
+  });
+
+  it('renders with fieldErrors prop populated - maxFileSize', () => {
+    const fieldErrors = {
+      maxFileSize: 'Invalid file size',
+    };
+    renderComponent(<LoggerSettingsTab fieldErrors={fieldErrors} />);
+
+    expect(screen.getByText('Invalid file size')).toBeInTheDocument();
+  });
+
+  it('renders with fieldErrors prop populated - maxFiles', () => {
+    const fieldErrors = {
+      maxFiles: 'Invalid retention period',
+    };
+    renderComponent(<LoggerSettingsTab fieldErrors={fieldErrors} />);
+
+    expect(screen.getByText('Invalid retention period')).toBeInTheDocument();
+  });
+
+  it('renders with multiple field errors', () => {
+    const fieldErrors = {
+      consoleLevel: 'Invalid console level',
+      fileLevel: 'Invalid file level',
+      errorLevel: 'Invalid error level',
+    };
+    renderComponent(<LoggerSettingsTab fieldErrors={fieldErrors} />);
+
+    expect(screen.getByText('Invalid console level')).toBeInTheDocument();
+    expect(screen.getByText('Invalid file level')).toBeInTheDocument();
+    expect(screen.getByText('Invalid error level')).toBeInTheDocument();
+  });
+
+  it('shows error styling when fieldErrors are present', () => {
+    const fieldErrors = {
+      consoleLevel: 'This field is required',
+    };
+
+    const config = { ...defaultLoggerConfig, enableConsoleLogging: false };
+    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
+      loggerConfig: config,
+      updateConfig: mockUpdateConfig,
+      loading: false,
+      clearFieldError: mockClearFieldError,
+    });
+
+    renderComponent(<LoggerSettingsTab fieldErrors={fieldErrors} />);
+
+    const selects = screen.getAllByRole('combobox');
+    const consoleSelect = selects[0];
+    expect(consoleSelect).toHaveClass('Mui-error');
+  });
+
+  it('disables console level select when console logging is disabled', () => {
+    const config = { ...defaultLoggerConfig, enableConsoleLogging: false };
+    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
+      loggerConfig: config,
+      updateConfig: mockUpdateConfig,
+      loading: false,
+      clearFieldError: mockClearFieldError,
+    });
+    renderComponent(<LoggerSettingsTab />);
+
+    const selects = screen.getAllByRole('combobox');
+    const consoleSelect = selects[0];
+    expect(consoleSelect).toBeDisabled();
+  });
+
+  it('disables file level select when file logging is disabled', () => {
+    const config = { ...defaultLoggerConfig, enableFileLogging: false };
+    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
+      loggerConfig: config,
+      updateConfig: mockUpdateConfig,
+      loading: false,
+      clearFieldError: mockClearFieldError,
+    });
+    renderComponent(<LoggerSettingsTab />);
+
+    const selects = screen.getAllByRole('combobox');
+    const fileSelect = selects[1];
+    expect(fileSelect).toBeDisabled();
+  });
+
+  it('disables error level select when file logging is disabled', () => {
+    const config = { ...defaultLoggerConfig, enableFileLogging: false };
+    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
+      loggerConfig: config,
+      updateConfig: mockUpdateConfig,
+      loading: false,
+      clearFieldError: mockClearFieldError,
+    });
+    renderComponent(<LoggerSettingsTab />);
+
+    const selects = screen.getAllByRole('combobox');
+    const errorSelect = selects[2];
+    expect(errorSelect).toBeDisabled();
+  });
+
+  it('disables max file size select when file logging is disabled', () => {
+    const config = { ...defaultLoggerConfig, enableFileLogging: false };
+    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
+      loggerConfig: config,
+      updateConfig: mockUpdateConfig,
+      loading: false,
+      clearFieldError: mockClearFieldError,
+    });
+    renderComponent(<LoggerSettingsTab />);
+
+    const selects = screen.getAllByRole('combobox');
+    const maxSizeSelect = selects[3];
+    expect(maxSizeSelect).toBeDisabled();
+  });
+
+  it('disables file retention select when file logging is disabled', () => {
+    const config = { ...defaultLoggerConfig, enableFileLogging: false };
+    (loggerHook.useLoggerConfig as jest.Mock).mockReturnValue({
+      loggerConfig: config,
+      updateConfig: mockUpdateConfig,
+      loading: false,
+      clearFieldError: mockClearFieldError,
+    });
+    renderComponent(<LoggerSettingsTab />);
+
+    const selects = screen.getAllByRole('combobox');
+    const retentionSelect = selects[4];
+    expect(retentionSelect).toBeDisabled();
+  });
+
+  it('clears field error when console level is changed', () => {
+    const fieldErrors = {
+      consoleLevel: 'Invalid value',
+    };
+    renderComponent(<LoggerSettingsTab fieldErrors={fieldErrors} />);
+
+    const selects = screen.getAllByRole('combobox');
+    const consoleSelect = selects[0];
+
+    fireEvent.change(consoleSelect, { target: { value: 'debug' } });
+
+    expect(mockClearFieldError).toHaveBeenCalledWith('consoleLevel');
+  });
+
+  it('clears field error when file level is changed', () => {
+    const fieldErrors = {
+      fileLevel: 'Invalid value',
+    };
+    renderComponent(<LoggerSettingsTab fieldErrors={fieldErrors} />);
+
+    const selects = screen.getAllByRole('combobox');
+    const fileSelect = selects[1];
+
+    fireEvent.change(fileSelect, { target: { value: 'debug' } });
+
+    expect(mockClearFieldError).toHaveBeenCalledWith('fileLevel');
+  });
+
+  it('clears field error when error level is changed', () => {
+    const fieldErrors = {
+      errorLevel: 'Invalid value',
+    };
+    renderComponent(<LoggerSettingsTab fieldErrors={fieldErrors} />);
+
+    const selects = screen.getAllByRole('combobox');
+    const errorSelect = selects[2];
+
+    fireEvent.change(errorSelect, { target: { value: 'warn' } });
+
+    expect(mockClearFieldError).toHaveBeenCalledWith('errorLevel');
+  });
+
+  it('clears field error when max file size is changed', () => {
+    const fieldErrors = {
+      maxFileSize: 'Invalid value',
+    };
+    renderComponent(<LoggerSettingsTab fieldErrors={fieldErrors} />);
+
+    const selects = screen.getAllByRole('combobox');
+    const maxSizeSelect = selects[3];
+
+    fireEvent.change(maxSizeSelect, { target: { value: '50m' } });
+
+    expect(mockClearFieldError).toHaveBeenCalledWith('maxFileSize');
+  });
+
+  it('clears field error when file retention is changed', () => {
+    const fieldErrors = {
+      maxFiles: 'Invalid value',
+    };
+    renderComponent(<LoggerSettingsTab fieldErrors={fieldErrors} />);
+
+    const selects = screen.getAllByRole('combobox');
+    const retentionSelect = selects[4];
+
+    fireEvent.change(retentionSelect, { target: { value: '60d' } });
+
+    expect(mockClearFieldError).toHaveBeenCalledWith('maxFiles');
+  });
+
+  it('renders error message below console level select', () => {
+    const fieldErrors = {
+      consoleLevel: 'Error message here',
+    };
+    renderComponent(<LoggerSettingsTab fieldErrors={fieldErrors} />);
+
+    expect(screen.getByText('Error message here')).toBeInTheDocument();
+  });
+
+  it('renders error message below file level select', () => {
+    const fieldErrors = {
+      fileLevel: 'Error message here',
+    };
+    renderComponent(<LoggerSettingsTab fieldErrors={fieldErrors} />);
+
+    expect(screen.getByText('Error message here')).toBeInTheDocument();
+  });
+
+  it('renders error message below error level select', () => {
+    const fieldErrors = {
+      errorLevel: 'Error message here',
+    };
+    renderComponent(<LoggerSettingsTab fieldErrors={fieldErrors} />);
+
+    expect(screen.getByText('Error message here')).toBeInTheDocument();
+  });
+
+  it('renders error message below max file size select', () => {
+    const fieldErrors = {
+      maxFileSize: 'Error message here',
+    };
+    renderComponent(<LoggerSettingsTab fieldErrors={fieldErrors} />);
+
+    expect(screen.getByText('Error message here')).toBeInTheDocument();
+  });
+
+  it('renders error message below file retention select', () => {
+    const fieldErrors = {
+      maxFiles: 'Error message here',
+    };
+    renderComponent(<LoggerSettingsTab fieldErrors={fieldErrors} />);
+
+    expect(screen.getByText('Error message here')).toBeInTheDocument();
+  });
 });

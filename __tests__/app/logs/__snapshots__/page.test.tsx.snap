@@ -1,0 +1,18 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`LogsPage snapshot test 1`] = `
+<div
+  data-testid="main-layout"
+>
+  <div
+    data-testid="logs-page"
+  >
+    <h1>
+      Logs Page
+    </h1>
+    <p>
+      View and filter application logs
+    </p>
+  </div>
+</div>
+`;

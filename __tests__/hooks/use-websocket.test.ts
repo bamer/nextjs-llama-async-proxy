@@ -58,7 +58,7 @@ store.useStore = mockStore;
 const websocketProvider = require('@/providers/websocket-provider');
 websocketProvider.useWebSocketContext = jest.fn(() => mockWebSocketContext);
 
-describe.skip('useWebSocket', () => {
+describe('useWebSocket', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();

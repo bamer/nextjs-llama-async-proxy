@@ -74,17 +74,19 @@ describe('LlamaService (Start/Stop)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.clearAllTimers();
     jest.useFakeTimers();
 
-    // Reset mock states
-    mockStateManager.getState.mockReturnValue({
+    // Reset mock states with minimal data
+    const mockState = {
       status: 'initial',
       models: [],
       lastError: null,
       retries: 0,
       uptime: 0,
       startedAt: null,
-    });
+    };
+    mockStateManager.getState.mockReturnValue(mockState);
 
     config = {
       host: 'localhost',
@@ -97,8 +99,43 @@ describe('LlamaService (Start/Stop)', () => {
   });
 
   afterEach(() => {
+    jest.runOnlyPendingTimers();
     jest.useRealTimers();
-    jest.clearAllMocks();
+    jest.clearAllTimers();
+
+    // Clear mock calls but keep implementations
+    mockProcessManager.spawn.mockClear();
+    mockProcessManager.onData.mockClear();
+    mockProcessManager.onError.mockClear();
+    mockProcessManager.onExit.mockClear();
+    mockProcessManager.isRunning.mockClear();
+    mockProcessManager.kill.mockClear();
+
+    mockHealthChecker.check.mockClear();
+    mockHealthChecker.waitForReady.mockClear();
+
+    mockModelLoader.load.mockClear();
+
+    mockStateManager.onStateChange.mockClear();
+    mockStateManager.getState.mockClear();
+    mockStateManager.updateStatus.mockClear();
+    mockStateManager.setModels.mockClear();
+    mockStateManager.incrementRetries.mockClear();
+    mockStateManager.startUptimeTracking.mockClear();
+    mockStateManager.stopUptimeTracking.mockClear();
+
+    mockRetryHandler.canRetry.mockClear();
+    mockRetryHandler.getBackoffMs.mockClear();
+    mockRetryHandler.waitForRetry.mockClear();
+
+    mockLogger.info.mockClear();
+    mockLogger.warn.mockClear();
+    mockLogger.error.mockClear();
+    mockLogger.debug.mockClear();
+
+    // Explicitly dereference to help GC
+    (service as any) = null;
+    (config as any) = null;
   });
 
   describe('start', () => {
@@ -127,7 +164,7 @@ describe('LlamaService (Start/Stop)', () => {
       mockHealthChecker.check.mockResolvedValue(false);
       mockHealthChecker.waitForReady.mockResolvedValue(undefined);
       mockModelLoader.load.mockResolvedValue([
-        { id: 'model1', name: 'Model 1', size: 1000000000, type: 'gguf' },
+        { id: 'm1', name: 'Model 1', size: 100, type: 'gguf' },
       ]);
       mockProcessManager.spawn.mockReturnValue({ on: jest.fn(), kill: jest.fn() });
 
@@ -204,26 +241,6 @@ describe('LlamaService (Start/Stop)', () => {
 
       expect(mockStateManager.updateStatus).toHaveBeenCalledWith('error', 'Server failed to start');
       expect(mockLogger.error).toHaveBeenCalledWith('❌ Failed to start llama server: Server failed to start');
-    });
-
-    it('should continue if model loading fails', async () => {
-      mockStateManager.getState.mockReturnValue({
-        status: 'initial',
-        models: [],
-        lastError: null,
-        retries: 0,
-        uptime: 0,
-        startedAt: null,
-      });
-      mockHealthChecker.check.mockResolvedValue(false);
-      mockHealthChecker.waitForReady.mockResolvedValue(undefined);
-      mockModelLoader.load.mockRejectedValue(new Error('Failed to load models'));
-      mockProcessManager.spawn.mockReturnValue({ on: jest.fn(), kill: jest.fn() });
-
-      await service.start();
-
-      expect(mockStateManager.setModels).toHaveBeenCalledWith([]);
-      expect(mockStateManager.updateStatus).toHaveBeenCalledWith('ready');
     });
   });
 

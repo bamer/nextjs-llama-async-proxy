@@ -49,6 +49,7 @@ jest.mock('@/components/charts/PerformanceChart', () => {
 // Mock GPUUMetricsCard
 jest.mock('@/components/charts/GPUUMetricsCard', () => {
   return function MockGPUUMetricsCard({ metrics, isDark }: any) {
+    // metrics is available for future use
     return React.createElement('div', { 'data-testid': 'gpu-metrics-card' },
       'GPUUMetricsCard Component',
       `isDark: ${isDark}`
@@ -61,19 +62,45 @@ jest.mock('@/hooks/use-effect-event', () => ({
   useEffectEvent: (fn: any) => fn,
 }));
 
-// Mock MUI components
+// Mock MUI components with proper prop filtering
 jest.mock('@mui/material', () => ({
-  Typography: ({ children, ...props }: any) => React.createElement('span', props, children),
-  Box: ({ children, ...props }: any) => React.createElement('div', props, children),
-  Card: ({ children, ...props }: any) => React.createElement('div', props, children),
+  Typography: ({ children, ...props }: any) => {
+    const { gutterBottom, variant, color, fontWeight, ...filteredProps } = props;
+    return React.createElement(variant === 'h3' || variant === 'h6' || variant === 'h5' || variant === 'h4' ? 'h1' : 'span', filteredProps, children);
+  },
+  Box: ({ children, ...props }: any) => {
+    const { sx, display, alignItems, justifyContent, mb, ...filteredProps } = props;
+    return React.createElement('div', filteredProps, children);
+  },
+  Card: ({ children, ...props }: any) => {
+    const { sx, ...filteredProps } = props;
+    return React.createElement('div', filteredProps, children);
+  },
   CardContent: ({ children }: any) => React.createElement('div', { children }),
-  Grid: ({ children, ...props }: any) => React.createElement('div', props, children),
-  IconButton: ({ children, onClick, ...props }: any) =>
-    React.createElement('button', { ...props, onClick }, children),
-  Tooltip: ({ children, ...props }: any) => React.createElement('div', { ...props }, children),
-  Divider: (props: any) => React.createElement('hr', props),
-  CircularProgress: (props: any) => React.createElement('span', { ...props }, 'Loading...'),
-  LinearProgress: (props: any) => React.createElement('div', { ...props }, 'Progress'),
+  Grid: ({ children, ...props }: any) => {
+    const { size, spacing, ...filteredProps } = props;
+    return React.createElement('div', filteredProps, children);
+  },
+  IconButton: ({ children, onClick, ...props }: any) => {
+    const { sx, size, color, disabled, title, ...filteredProps } = props;
+    return React.createElement('button', { ...filteredProps, onClick, disabled: disabled || false, title }, children);
+  },
+  Tooltip: ({ children, ...props }: any) => {
+    const { title, ...filteredProps } = props;
+    return React.createElement('div', filteredProps, children);
+  },
+  Divider: (props: any) => {
+    const { sx, ...filteredProps } = props;
+    return React.createElement('hr', filteredProps);
+  },
+  CircularProgress: (props: any) => {
+    const { sx, size, color, ...filteredProps } = props;
+    return React.createElement('span', filteredProps, 'Loading...');
+  },
+  LinearProgress: (props: any) => {
+    const { sx, variant, value, color, ...filteredProps } = props;
+    return React.createElement('div', filteredProps, 'Progress');
+  },
 }));
 
 // Mock MUI icons
@@ -99,6 +126,9 @@ jest.mock('@/lib/store', () => ({
     return selector(state);
   }),
 }));
+
+// Fix for unused variable warning
+const metrics = null;
 
 const mockMetrics = {
   cpuUsage: 45,

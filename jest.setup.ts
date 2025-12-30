@@ -47,46 +47,60 @@ if (typeof (global as any).setImmediate === 'undefined') {
   };
 }
 
-// Mock MUI components for testing (MUI v7 compatibility)
+// Mock specific MUI components first (before the general mock to ensure consistency)
+const createMUIComponent = (tagName: string, testId?: string) => (props: any) =>
+  React.createElement(tagName, { ...require('./jest-mocks.ts').filterMUIProps(props), ...(testId ? { 'data-testid': testId } : {}) }, props.children);
+
+// Mock @mui/material components before any imports happen
+jest.mock('@mui/material/Box', () => createMUIComponent('div'));
+jest.mock('@mui/material/Card', () => createMUIComponent('div', 'card'));
+jest.mock('@mui/material/CardActions', () => createMUIComponent('div'));
+jest.mock('@mui/material/CardContent', () => createMUIComponent('div'));
+jest.mock('@mui/material/CardHeader', () => createMUIComponent('div'));
+jest.mock('@mui/material/CircularProgress', () => createMUIComponent('div', 'circular-progress'));
+jest.mock('@mui/material/Grid', () => (props: any) => {
+  const { size, ...otherProps } = props;
+  return React.createElement('div', { ...require('./jest-mocks.ts').filterMUIProps(otherProps), 'data-testid': 'grid' }, props.children);
+});
+jest.mock('@mui/material/Paper', () => createMUIComponent('div', 'paper'));
+jest.mock('@mui/material/Typography', () => (props: any) =>
+  React.createElement(props.variant === 'h1' || props.variant === 'h2' || props.variant === 'h3' || props.variant === 'h4' || props.variant === 'h5' || props.variant === 'h6'
+    ? props.variant
+    : 'p', require('./jest-mocks.ts').filterMUIProps(props), props.children));
+jest.mock('@mui/material/Button', () => (props: any) =>
+  React.createElement('button', { ...require('./jest-mocks.ts').filterMUIProps(props), 'data-testid': 'button' }, props.children));
+jest.mock('@mui/material/TextField', () => (props: any) =>
+  React.createElement('input', { ...require('./jest-mocks.ts').filterMUIProps(props), 'data-testid': 'text-field', type: 'text', value: props.value || '' }));
+jest.mock('@mui/material/InputAdornment', () => (props: any) =>
+  React.createElement('span', { ...require('./jest-mocks.ts').filterMUIProps(props) }, props.children));
+jest.mock('@mui/material/IconButton', () => (props: any) =>
+  React.createElement('button', { ...require('./jest-mocks.ts').filterMUIProps(props), 'data-testid': 'icon-button', type: 'button' }, props.children));
+jest.mock('@mui/material/Pagination', () => (props: any) =>
+  React.createElement('div', { ...require('./jest-mocks.ts').filterMUIProps(props), 'data-testid': 'pagination' }, props.children));
+jest.mock('@mui/material/Chip', () => (props: any) =>
+  React.createElement('span', { ...require('./jest-mocks.ts').filterMUIProps(props), 'data-testid': 'chip' }, props.label || props.children));
+jest.mock('@mui/material/MenuItem', () => (props: any) =>
+  React.createElement('option', { ...require('./jest-mocks.ts').filterMUIProps(props), value: props.value }, props.children));
+jest.mock('@mui/material/Select', () => (props: any) => {
+  const { open, onOpen, onClose, ...filteredProps } = require('./jest-mocks.ts').filterMUIProps(props);
+  return React.createElement('select', {
+    ...filteredProps,
+    'data-testid': 'select',
+    'role': 'combobox',
+    value: props.value,
+    onClick: () => onOpen && onOpen(),
+    onBlur: () => onClose && onClose(),
+  }, props.children);
+});
+jest.mock('@mui/material/Checkbox', () => (props: any) =>
+  React.createElement('input', { ...require('./jest-mocks.ts').filterMUIProps(props), 'data-testid': 'checkbox', type: 'checkbox', checked: props.checked }));
+jest.mock('@mui/material/ListItemText', () => (props: any) =>
+  React.createElement('span', { ...require('./jest-mocks.ts').filterMUIProps(props) }, props.primary || props.children));
+
+// General mock for @mui/material (fallback for any components not specifically mocked above)
 jest.mock('@mui/material', () => {
   return require('./jest-mocks.ts').muiMocks;
 });
-
-// Mock specific MUI component paths
-jest.mock('@mui/material/Box', () => ({
-  default: (props: any) => React.createElement('div', require('./jest-mocks.ts').filterMUIProps(props), props.children),
-}));
-
-jest.mock('@mui/material/Card', () => ({
-  default: (props: any) => React.createElement('div', { ...require('./jest-mocks.ts').filterMUIProps(props), 'data-testid': 'card' }, props.children),
-}));
-
-jest.mock('@mui/material/CardActions', () => ({
-  default: (props: any) => React.createElement('div', require('./jest-mocks.ts').filterMUIProps(props), props.children),
-}));
-
-jest.mock('@mui/material/CardContent', () => ({
-  default: (props: any) => React.createElement('div', require('./jest-mocks.ts').filterMUIProps(props), props.children),
-}));
-
-jest.mock('@mui/material/CardHeader', () => ({
-  default: (props: any) => React.createElement('div', require('./jest-mocks.ts').filterMUIProps(props), props.children),
-}));
-
-jest.mock('@mui/material/CircularProgress', () => ({
-  default: (props: any) => React.createElement('div', { ...require('./jest-mocks.ts').filterMUIProps(props), 'data-testid': 'circular-progress' }),
-}));
-
-jest.mock('@mui/material/Grid', () => ({
-  default: (props: any) => {
-    const { size, ...otherProps } = props;
-    return React.createElement('div', { ...require('./jest-mocks.ts').filterMUIProps(otherProps), 'data-testid': 'grid' }, props.children);
-  },
-}));
-
-jest.mock('@mui/material/Paper', () => ({
-  default: (props: any) => React.createElement('div', { ...require('./jest-mocks.ts').filterMUIProps(props), 'data-testid': 'paper' }, props.children),
-}));
 
 // Mock MUI utils
 jest.mock('@mui/material/utils', () => ({
@@ -107,26 +121,38 @@ jest.mock('@mui/x-charts', () => ({
 
 // Mock MUI icons
 jest.mock('@mui/icons-material', () => {
+  const filterProps = (props: any) => {
+    const { sx, ...filtered } = props;
+    return filtered;
+  };
+
   return require('./jest-mocks.ts').iconMocks;
 });
 
 // Mock Lucide React icons
-jest.mock('lucide-react', () => ({
-  Monitor: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Monitor', role: 'img' }),
-  Bot: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Bot', role: 'img' }),
-  FileText: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'FileText', role: 'img' }),
-  Settings: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Settings', role: 'img' }),
-  X: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'X', role: 'img' }),
-  Home: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Home', role: 'img' }),
-  Rocket: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Rocket', role: 'img' }),
-  Dashboard: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Dashboard', role: 'img' }),
-  ModelTraining: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'ModelTraining', role: 'img' }),
-  Menu: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Menu', role: 'img' }),
-  ChevronLeft: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'ChevronLeft', role: 'img' }),
-  ChevronRight: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'ChevronRight', role: 'img' }),
-  Sun: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Sun', role: 'img' }),
-  Moon: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Moon', role: 'img' }),
-}));
+jest.mock('lucide-react', () => {
+  const filterProps = (props: any) => {
+    const { sx, ...filtered } = props;
+    return filtered;
+  };
+
+  return {
+    Monitor: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'Monitor', role: 'img' }),
+    Bot: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'Bot', role: 'img' }),
+    FileText: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'FileText', role: 'img' }),
+    Settings: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'Settings', role: 'img' }),
+    X: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'X', role: 'img' }),
+    Home: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'Home', role: 'img' }),
+    Rocket: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'Rocket', role: 'img' }),
+    Dashboard: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'Dashboard', role: 'img' }),
+    ModelTraining: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'ModelTraining', role: 'img' }),
+    Menu: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'Menu', role: 'img' }),
+    ChevronLeft: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'ChevronLeft', role: 'img' }),
+    ChevronRight: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'ChevronRight', role: 'img' }),
+    Sun: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'Sun', role: 'img' }),
+    Moon: (props: any) => React.createElement('svg', { ...filterProps(props), 'data-icon': 'Moon', role: 'img' }),
+  };
+});
 
 
 // Mock MUI styles
