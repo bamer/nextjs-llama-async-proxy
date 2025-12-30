@@ -22,6 +22,8 @@ export const muiProps = [
   'expandIcon', 'expanded', 'defaultExpanded', 'TransitionComponent', 'TransitionProps',
   // Dialog props
   'maxWidth', 'fullScreen', 'scroll', 'BackdropComponent', 'BackdropProps',
+  // Drawer props
+  'ModalProps',
   // Additional props from test failures
   'startIcon', 'fullWidth', 'container',
 ];
@@ -164,16 +166,45 @@ export const muiMocks = {
      return React.createElement('label', filterMUIProps(otherProps), children);
    },
 
-  // Layout
-  Divider: (props: any) => React.createElement('hr', filterMUIProps(props)),
+   // Layout
+   Divider: (props: any) => React.createElement('hr', filterMUIProps(props)),
 
-  // Navigation
+   // List components
+   List: (props: any) => React.createElement('ul', filterMUIProps(props), props.children),
+   ListItem: (props: any) => React.createElement('li', filterMUIProps(props), props.children),
+   ListItemButton: (props: any) => React.createElement('button', filterMUIProps(props), props.children),
+   ListItemIcon: (props: any) => React.createElement('span', filterMUIProps(props), props.children),
+   ListItemText: (props: any) => {
+    const { primary, secondary, ...otherProps } = props;
+    const children = [];
+    if (primary) children.push(React.createElement('span', { key: 'primary' }, primary));
+    if (secondary) children.push(React.createElement('span', { key: 'secondary' }, secondary));
+    return React.createElement('span', filterMUIProps(otherProps), children);
+   },
+
+   // Navigation
   Tabs: (props: any) => React.createElement('div', filterMUIProps(props), props.children),
   Tab: (props: any) => React.createElement('button', filterMUIProps(props), props.children),
 
   // Surfaces
   AppBar: (props: any) => React.createElement('header', filterMUIProps(props), props.children),
   Toolbar: (props: any) => React.createElement('div', filterMUIProps(props), props.children),
+  Drawer: (props: any) => {
+    const { open, onClose, children, ...otherProps } = props;
+    return React.createElement('aside', {
+      ...filterMUIProps(otherProps),
+      'data-testid': props['data-testid'] || 'drawer',
+      'data-open': open,
+    }, open ? children : null);
+  },
+  Link: (props: any) => {
+    const { href, underline, ...otherProps } = props;
+    return React.createElement('a', {
+      ...filterMUIProps(otherProps),
+      href: href,
+      'data-underline': underline,
+    }, props.children);
+  },
 
    // Utils
    ClickAwayListener: ({ children, ...props }: any) => React.createElement(React.Fragment, filterMUIProps(props), children),
