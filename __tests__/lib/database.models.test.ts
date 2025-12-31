@@ -13,7 +13,9 @@ import {
   getModelSamplingConfig,
   saveModelMemoryConfig,
   getModelMemoryConfig,
+  saveModelGpuConfig,
   getCompleteModelConfig,
+  clearAllTables,
 } from "@/lib/database";
 
 describe("Models Core Operations", () => {
@@ -21,9 +23,11 @@ describe("Models Core Operations", () => {
 
   beforeEach(() => {
     db = initDatabase();
+    clearAllTables(); // Clean up any existing data
   });
 
   afterEach(() => {
+    clearAllTables(); // Clean up after each test
     closeDatabase(db);
   });
 
@@ -159,6 +163,7 @@ describe("Complete Model Lazy Loading", () => {
 
   beforeEach(() => {
     db = initDatabase();
+    clearAllTables(); // Clean up any existing data
     modelId = saveModel({ name: "Test Model", type: "llama", status: "stopped" });
 
     // Add configs

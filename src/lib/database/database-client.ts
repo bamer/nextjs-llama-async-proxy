@@ -15,7 +15,14 @@ export function initDatabase(): Database.Database {
     timeout: 5000,
   });
 
-  db.pragma("journal_mode = WAL");
+  // Try to set WAL mode, but don't fail if it fails (e.g., in test environments)
+  try {
+    db.pragma("journal_mode = WAL");
+  } catch (error) {
+    // WAL mode may fail in certain environments, fall back to DELETE mode
+    console.warn(`[Database] Could not enable WAL mode: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
   db.pragma("synchronous = NORMAL"); // Balance between performance and durability
   db.pragma("cache_size = -64000"); // 64MB cache
   db.pragma("temp_store = MEMORY");
@@ -521,6 +528,29 @@ export function importDatabase(filePath: string): void {
       DETACH DATABASE backup;
     `);
     console.log(`Database imported from ${filePath}`);
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Clear all data from all tables (for testing)
+ * @warning This will delete all data from the database
+ */
+export function clearAllTables(): void {
+  const db = initDatabase();
+
+  try {
+    db.exec("DELETE FROM model_fit_params");
+    db.exec("DELETE FROM model_sampling_config");
+    db.exec("DELETE FROM model_memory_config");
+    db.exec("DELETE FROM model_gpu_config");
+    db.exec("DELETE FROM model_advanced_config");
+    db.exec("DELETE FROM model_lora_config");
+    db.exec("DELETE FROM model_multimodal_config");
+    db.exec("DELETE FROM models");
+    db.exec("DELETE FROM metrics_history");
+    console.log("All tables cleared");
   } finally {
     closeDatabase(db);
   }

@@ -1078,3 +1078,6 @@ export function getCompleteModelConfig(modelId: number): {
 
   return result;
 }
+
+// Export database client functions
+export { initDatabase, closeDatabase, getDatabaseSize, clearAllTables } from "./database-client";
