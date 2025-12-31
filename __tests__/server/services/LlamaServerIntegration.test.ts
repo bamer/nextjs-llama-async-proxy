@@ -453,61 +453,64 @@ describe('LlamaServerIntegration', () => {
         })
       );
     });
-  });
-});
 
-  describe('Additional Coverage Tests', () => {
-    beforeEach(async () => {
-      await integration.initialize(mockConfig);
-    });
-
-    // Verify snake_case handlers are registered
+    // Additional Coverage Tests - Verify snake_case handlers are registered
     it('should register request_metrics snake_case handler', async () => {
+      await integration.initialize(mockConfig);
       integration.setupWebSocketHandlers(mockSocket as Socket);
       expect(mockSocket.on).toHaveBeenCalledWith('request_metrics', expect.any(Function));
     });
 
     it('should register request_models snake_case handler', async () => {
+      await integration.initialize(mockConfig);
       integration.setupWebSocketHandlers(mockSocket as Socket);
       expect(mockSocket.on).toHaveBeenCalledWith('request_models', expect.any(Function));
     });
 
     it('should register request_logs snake_case handler', async () => {
+      await integration.initialize(mockConfig);
       integration.setupWebSocketHandlers(mockSocket as Socket);
       expect(mockSocket.on).toHaveBeenCalledWith('request_logs', expect.any(Function));
     });
 
     it('should register download_logs snake_case handler', async () => {
+      await integration.initialize(mockConfig);
       integration.setupWebSocketHandlers(mockSocket as Socket);
       expect(mockSocket.on).toHaveBeenCalledWith('download_logs', expect.any(Function));
     });
 
     it('should register toggle_model snake_case handler', async () => {
+      await integration.initialize(mockConfig);
       integration.setupWebSocketHandlers(mockSocket as Socket);
       expect(mockSocket.on).toHaveBeenCalledWith('toggle_model', expect.any(Function));
     });
 
     it('should register load_config handler', async () => {
+      await integration.initialize(mockConfig);
       integration.setupWebSocketHandlers(mockSocket as Socket);
       expect(mockSocket.on).toHaveBeenCalledWith('load_config', expect.any(Function));
     });
 
     it('should register save_config handler', async () => {
+      await integration.initialize(mockConfig);
       integration.setupWebSocketHandlers(mockSocket as Socket);
       expect(mockSocket.on).toHaveBeenCalledWith('save_config', expect.any(Function));
     });
 
     it('should register save_model handler', async () => {
+      await integration.initialize(mockConfig);
       integration.setupWebSocketHandlers(mockSocket as Socket);
       expect(mockSocket.on).toHaveBeenCalledWith('save_model', expect.any(Function));
     });
 
     it('should register update_model handler', async () => {
+      await integration.initialize(mockConfig);
       integration.setupWebSocketHandlers(mockSocket as Socket);
       expect(mockSocket.on).toHaveBeenCalledWith('update_model', expect.any(Function));
     });
 
     it('should register delete_model handler', async () => {
+      await integration.initialize(mockConfig);
       integration.setupWebSocketHandlers(mockSocket as Socket);
       expect(mockSocket.on).toHaveBeenCalledWith('delete_model', expect.any(Function));
     });
@@ -537,6 +540,7 @@ describe('LlamaServerIntegration', () => {
 
     // Test stop clears llamaService
     it('should clear llamaService on stop', async () => {
+      await integration.initialize(mockConfig);
       const service = integration.getLlamaService();
       expect(service).not.toBeNull();
 
@@ -546,3 +550,4 @@ describe('LlamaServerIntegration', () => {
       expect(serviceAfter).toBeNull();
     });
   });
+});

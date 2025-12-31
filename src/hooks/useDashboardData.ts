@@ -3,13 +3,43 @@
 import { useCallback, useEffect, useState } from "react";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useApi } from "@/hooks/use-api";
-import type { Model, SystemMetrics } from "@/types";
+import type { SystemMetrics } from "@/types/monitoring";
+
+// Old metrics format from WebSocket/API (global.d.ts)
+interface OldSystemMetrics {
+  cpuUsage: number;
+  memoryUsage: number;
+  diskUsage: number;
+  activeModels: number;
+  totalRequests: number;
+  avgResponseTime: number;
+  uptime: number;
+  timestamp: string;
+  gpuUsage?: number;
+  gpuMemoryUsage?: number;
+  gpuMemoryTotal?: number;
+  gpuMemoryUsed?: number;
+  gpuPowerUsage?: number;
+  gpuPowerLimit?: number;
+  gpuTemperature?: number;
+  gpuName?: string;
+}
+
+// Transform old flat metrics format to new nested format
+function transformMetrics(oldMetrics: OldSystemMetrics): SystemMetrics {
+  return {
+    cpu: { usage: oldMetrics.cpuUsage },
+    memory: { used: oldMetrics.memoryUsage },
+    disk: { used: oldMetrics.diskUsage },
+    network: { rx: 0, tx: 0 }, // Not available in old format
+    uptime: oldMetrics.uptime,
+  };
+}
 
 export function useDashboardData() {
   const { isConnected, connectionState, requestMetrics, on, off } = useWebSocket();
 
-  const modelsQuery = useApi<Model[]>("/api/models");
-  const metricsQuery = useApi<SystemMetrics>("/api/metrics");
+  const apiData = useApi();
 
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -18,8 +48,10 @@ export function useDashboardData() {
   // Handle metrics updates from WebSocket
   const handleMetricsUpdate = useCallback((data: unknown) => {
     try {
-      const metricsData = data as SystemMetrics;
-      setMetrics(metricsData);
+      // WebSocket sends old format - transform to new format
+      const oldMetrics = data as OldSystemMetrics;
+      const newMetrics = transformMetrics(oldMetrics);
+      setMetrics(newMetrics);
       setError(null);
     } catch (err) {
       console.error("Failed to parse metrics data:", err);
@@ -37,21 +69,22 @@ export function useDashboardData() {
         off("metrics", handleMetricsUpdate);
       };
     }
+    return;
   }, [isConnected, requestMetrics, on, off, handleMetricsUpdate]);
 
   // Fallback to API metrics when WebSocket is disconnected
   useEffect(() => {
-    if (!isConnected && metricsQuery.data) {
-      setMetrics(metricsQuery.data);
+    if (!isConnected && apiData.metrics.data) {
+      setMetrics(apiData.metrics.data);
     }
-  }, [isConnected, metricsQuery.data]);
+  }, [isConnected, apiData.metrics.data]);
 
   // Update loading and error states
   useEffect(() => {
-    const modelsLoading = modelsQuery.isLoading;
-    const metricsLoading = metricsQuery.isLoading;
-    const modelsError = modelsQuery.error;
-    const metricsError = metricsQuery.error;
+    const modelsLoading = apiData.models.isLoading;
+    const metricsLoading = apiData.metrics.isLoading;
+    const modelsError = apiData.models.error;
+    const metricsError = apiData.metrics.error;
 
     setLoading(modelsLoading || metricsLoading);
 
@@ -60,16 +93,17 @@ export function useDashboardData() {
     } else if (metricsError) {
       setError(metricsError instanceof Error ? metricsError.message : "Failed to load metrics");
     }
-  }, [modelsQuery.isLoading, metricsQuery.isLoading, modelsQuery.error, metricsQuery.error]);
+  }, [apiData.models.isLoading, apiData.metrics.isLoading, apiData.models.error, apiData.metrics.error]);
 
   // Combined models data from query
-  const models: Model[] = modelsQuery.data || [];
+  const models = apiData.models.data || [];
 
   return {
     models,
     metrics,
     loading,
     error,
+    isConnected,
     connectionState,
   };
 }

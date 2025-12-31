@@ -25,6 +25,7 @@ export interface FormFieldProps {
   type?: "text" | "number" | "select" | "boolean";
   options?: Array<{ value: string | number; label: string }>;
   fullWidth?: boolean;
+  disabled?: boolean;
 }
 
 export function FormField({
@@ -35,12 +36,17 @@ export function FormField({
   error,
   helperText,
   tooltip,
-  type = "text",
-  options = [],
-  fullWidth = false,
+  type,
+  options,
+  fullWidth,
+  disabled,
 }: FormFieldProps) {
   const hasError = !!error;
   const helperTextDisplay = hasError ? error : helperText;
+  const fieldType: FormFieldProps["type"] = type ?? "text";
+  const fieldOptions = options ?? [];
+  const isFullWidth: boolean = fullWidth ?? false;
+  const isDisabled: boolean = disabled ?? false;
 
   const renderLabel = () => {
     if (!tooltip) {
@@ -75,17 +81,18 @@ export function FormField({
   if (type === "boolean") {
     return (
       <Box sx={{ mb: 2 }}>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={Boolean(value)}
-              onChange={(_, checked) => handleChange(null, checked)}
-              name={name}
-              color="primary"
-            />
-          }
-          label={renderLabel()}
-        />
+         <FormControlLabel
+           control={
+              <Checkbox
+                checked={Boolean(value)}
+                onChange={(event, checked) => handleChange(event, checked)}
+                name={name}
+                color="primary"
+            disabled={isDisabled}
+              />
+           }
+           label={renderLabel()}
+         />
         {(helperTextDisplay || hasError) && (
           <Box>
             <Typography
@@ -104,10 +111,10 @@ export function FormField({
     );
   }
 
-  if (type === "select") {
+  if (fieldType === "select") {
     return (
       <Box sx={{ mb: 2 }}>
-        <FormControl fullWidth={fullWidth}>
+        <FormControl fullWidth={isFullWidth}>
           <InputLabel
             id={`${name}-label`}
             error={hasError}
@@ -119,10 +126,15 @@ export function FormField({
             labelId={`${name}-label`}
             value={value as string}
             label={label}
-            onChange={(e) => handleChange(null, e.target.value)}
+            onChange={(event) => {
+              const evt = event as unknown as { target?: { value: string } } | { value: string };
+              const value = 'target' in evt && evt.target ? evt.target.value : (evt as { value: string }).value;
+              handleChange(event as React.ChangeEvent<unknown>, value);
+            }}
             error={hasError}
+            disabled={isDisabled}
           >
-            {options.map((option) => (
+            {fieldOptions.map((option) => (
               <MenuItem key={String(option.value)} value={option.value}>
                 {option.label}
               </MenuItem>
@@ -148,17 +160,18 @@ export function FormField({
   return (
     <Box sx={{ mb: 2 }}>
       <TextField
-        fullWidth={fullWidth}
+        fullWidth={isFullWidth}
         label={renderLabel()}
         name={name}
         value={value}
-        type={type}
-        onChange={(e) => handleChange(null, e.target.value)}
+        type={fieldType}
+        onChange={(event) => handleChange(event, (event.target as any).value)}
         error={hasError}
         helperText={helperTextDisplay}
         InputLabelProps={{
           shrink: true,
         }}
+        disabled={isDisabled}
         variant="outlined"
       />
     </Box>

@@ -68,9 +68,12 @@ declare global {
     updatedAt: string;
     template?: string;
     availableTemplates?: string[];
+    progress?: number;
   }
 
-  interface SystemMetrics {
+  // Legacy flat metrics format - kept for backward compatibility with WebSocket/API
+  // New format is in src/types/monitoring.ts
+  interface LegacySystemMetrics {
     cpuUsage: number;
     memoryUsage: number;
     diskUsage: number;
@@ -99,5 +102,7 @@ declare global {
   }
 }
 
-export type { ModelConfig, SystemMetrics, LogEntry, ApiResponse, WebSocketMessage, AsyncReturnType, Nullable, Optional, PaginatedResponse };
+export type { ModelConfig, LogEntry, ApiResponse, WebSocketMessage, AsyncReturnType, Nullable, Optional, PaginatedResponse };
+export type { LegacySystemMetrics }; // Legacy format for backward compatibility
+export type { SystemMetrics } from './monitoring'; // Export new format as default
 export type { ThemeMode } from '@/contexts/ThemeContext';

@@ -57,7 +57,7 @@ export interface LlamaServerConfig {
 export interface LlamaModel {
   id: string;
   name: string;
-  size: number;
+  size?: number; // Made optional - llama-server may not provide it
   type: string;
   modified_at: number;
   path: string;

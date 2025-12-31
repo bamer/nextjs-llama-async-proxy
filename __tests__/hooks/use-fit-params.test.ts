@@ -1,8 +1,29 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useFitParams } from '@/hooks/use-fit-params';
 
-// Mock fetch globally to never resolve to prevent act warnings
-const fetchMock = jest.fn(() => new Promise(() => {})) as jest.MockedFunction<typeof fetch>;
+// Helper function to create a mock Response object
+function createMockResponse(data: unknown, ok = true): Response {
+  return {
+    ok,
+    status: ok ? 200 : 500,
+    statusText: ok ? 'OK' : 'Error',
+    headers: new Headers(),
+    redirected: false,
+    type: 'basic',
+    url: '',
+    body: null,
+    bodyUsed: false,
+    json: () => Promise.resolve(data),
+    text: () => Promise.resolve(JSON.stringify(data)),
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+    blob: () => Promise.resolve(new Blob()),
+    formData: () => Promise.resolve(new FormData()),
+    clone: () => createMockResponse(data, ok),
+  } as unknown as Response;
+}
+
+// Mock fetch globally
+const fetchMock = jest.fn() as jest.MockedFunction<typeof fetch>;
 global.fetch = fetchMock;
 
 describe('useFitParams', () => {
@@ -25,7 +46,7 @@ describe('useFitParams', () => {
     projected_gpu_memory_mb: 4096,
     created_at: 1640995200000,
     updated_at: 1640995200000,
-  };
+  } as const;
 
   const mockApiResponse = {
     success: true,
@@ -34,7 +55,7 @@ describe('useFitParams', () => {
       fitParams: mockFitParams,
     },
     timestamp: Date.now(),
-  };
+  } as const;
 
   const mockApiResponseNoFitParams = {
     success: true,
@@ -43,7 +64,7 @@ describe('useFitParams', () => {
       fitParams: null,
     },
     timestamp: Date.now(),
-  };
+  } as const;
 
   const mockErrorResponse = {
     success: false,
@@ -52,7 +73,7 @@ describe('useFitParams', () => {
       message: 'Model analysis failed',
     },
     timestamp: Date.now(),
-  };
+  } as const;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -88,39 +109,9 @@ describe('useFitParams', () => {
     });
 
     it('should fetch fit params data on refresh when modelName is provided', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockApiResponse),
-        headers: new Headers(),
-        redirected: false,
-        status: 200,
-        statusText: 'OK',
-        type: 'basic',
-        url: '',
-        clone: () => ({} as Response),
-        body: null,
-        bodyUsed: false,
-        arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
-        blob: () => Promise.resolve(new Blob()),
-        formData: () => Promise.resolve(new FormData()),
-        text: () => Promise.resolve(''),
-      } as Response).mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockApiResponse),
-        headers: new Headers(),
-        redirected: false,
-        status: 200,
-        statusText: 'OK',
-        type: 'basic',
-        url: '',
-        clone: () => ({} as Response),
-        body: null,
-        bodyUsed: false,
-        arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
-        blob: () => Promise.resolve(new Blob()),
-        formData: () => Promise.resolve(new FormData()),
-        text: () => Promise.resolve(''),
-      } as Response);
+      fetchMock.mockResolvedValueOnce(createMockResponse(mockApiResponse)).mockResolvedValueOnce(
+        createMockResponse(mockApiResponse)
+      );
 
       const { result } = renderHook(() => useFitParams('test-model'));
 
@@ -141,7 +132,7 @@ describe('useFitParams', () => {
       let resolveFetch: (value: any) => void;
       const fetchPromise = new Promise((resolve) => {
         resolveFetch = resolve;
-      });
+      }) as Promise<Response>;
 
       fetchMock.mockReturnValue(fetchPromise);
 
@@ -168,10 +159,7 @@ describe('useFitParams', () => {
     });
 
     it('should set data when refresh succeeds with fit params', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockApiResponse),
-      });
+      fetchMock.mockResolvedValueOnce(createMockResponse(mockApiResponse));
 
       const { result } = renderHook(() => useFitParams('test-model'));
 
@@ -185,10 +173,7 @@ describe('useFitParams', () => {
     });
 
     it('should handle responses with no fit params', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockApiResponseNoFitParams),
-      });
+      fetchMock.mockResolvedValueOnce(createMockResponse(mockApiResponseNoFitParams));
 
       const { result } = renderHook(() => useFitParams('test-model'));
 
@@ -200,10 +185,7 @@ describe('useFitParams', () => {
     });
 
     it('should handle HTTP error responses', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: false,
-        json: () => Promise.resolve(mockErrorResponse),
-      });
+      fetchMock.mockResolvedValueOnce(createMockResponse(mockErrorResponse, false));
 
       const { result } = renderHook(() => useFitParams('test-model'));
 
@@ -259,10 +241,7 @@ describe('useFitParams', () => {
     });
 
     it('should POST to analyze endpoint when modelName is provided', async () => {
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(mockApiResponse),
-      });
+      fetchMock.mockResolvedValue(createMockResponse(mockApiResponse));
 
       const { result } = renderHook(() => useFitParams('test-model'));
 
@@ -291,7 +270,7 @@ describe('useFitParams', () => {
       let resolveFetch: (value: any) => void;
       const fetchPromise = new Promise((resolve) => {
         resolveFetch = resolve;
-      });
+      }) as Promise<Response>;
 
       fetchMock.mockReturnValue(fetchPromise);
 
@@ -318,10 +297,7 @@ describe('useFitParams', () => {
     });
 
     it('should set data when analyze succeeds', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockApiResponse),
-      });
+      fetchMock.mockResolvedValueOnce(createMockResponse(mockApiResponse));
 
       const { result } = renderHook(() => useFitParams('test-model'));
 
@@ -335,13 +311,9 @@ describe('useFitParams', () => {
     });
 
     it('should handle analyze errors', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockApiResponse),
-      }).mockResolvedValueOnce({
-        ok: false,
-        json: () => Promise.resolve(mockErrorResponse),
-      });
+      fetchMock.mockResolvedValueOnce(createMockResponse(mockApiResponse)).mockResolvedValueOnce(
+        createMockResponse(mockErrorResponse, false)
+      );
 
       const { result } = renderHook(() => useFitParams('test-model'));
 
@@ -364,10 +336,7 @@ describe('useFitParams', () => {
 
   describe('automatic refresh on mount', () => {
     it('should automatically refresh on mount when modelName is provided', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockApiResponse),
-      });
+      fetchMock.mockResolvedValueOnce(createMockResponse(mockApiResponse));
 
       renderHook(() => useFitParams('test-model'));
 
@@ -385,10 +354,7 @@ describe('useFitParams', () => {
 
   describe('modelName changes', () => {
     it('should refresh when modelName changes', async () => {
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(mockApiResponse),
-      });
+      fetchMock.mockResolvedValue(createMockResponse(mockApiResponse));
 
       const { rerender } = renderHook(
         ({ modelName }: { modelName: string }) => useFitParams(modelName),
@@ -424,10 +390,8 @@ describe('useFitParams', () => {
 
   describe('error handling edge cases', () => {
     it('should handle malformed JSON response', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.reject(new Error('Invalid JSON')),
-      });
+      // Mock fetch to throw error when response.json() is called
+      fetchMock.mockRejectedValueOnce(new Error('Invalid JSON'));
 
       const { result } = renderHook(() => useFitParams('test-model'));
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
@@ -449,13 +413,9 @@ describe('useFitParams', () => {
         timestamp: Date.now(),
       };
 
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockApiResponse),
-      }).mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(incompleteResponse),
-      });
+      fetchMock.mockResolvedValueOnce(createMockResponse(mockApiResponse)).mockResolvedValueOnce(
+        createMockResponse(incompleteResponse)
+      );
 
       const { result } = renderHook(() => useFitParams('test-model'));
 
@@ -477,13 +437,9 @@ describe('useFitParams', () => {
         timestamp: Date.now(),
       };
 
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockApiResponse),
-      }).mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(incompleteResponse),
-      });
+      fetchMock.mockResolvedValueOnce(createMockResponse(mockApiResponse)).mockResolvedValueOnce(
+        createMockResponse(incompleteResponse)
+      );
 
       const { result } = renderHook(() => useFitParams('test-model'));
 
@@ -502,10 +458,7 @@ describe('useFitParams', () => {
 
   describe('concurrent operations', () => {
     it('should handle multiple refresh calls', async () => {
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(mockApiResponse),
-      });
+      fetchMock.mockResolvedValue(createMockResponse(mockApiResponse));
 
       const { result } = renderHook(() => useFitParams('test-model'));
 
@@ -531,7 +484,7 @@ describe('useFitParams', () => {
       let resolveFetch: (value: any) => void;
       const fetchPromise = new Promise((resolve) => {
         resolveFetch = resolve;
-      });
+      }) as Promise<Response>;
 
       fetchMock.mockReturnValue(fetchPromise);
 
@@ -547,10 +500,7 @@ describe('useFitParams', () => {
 
       // Resolve one fetch
       act(() => {
-        resolveFetch({
-          ok: true,
-          json: () => Promise.resolve(mockApiResponse),
-        });
+        resolveFetch(createMockResponse(mockApiResponse));
       });
 
       await waitFor(() => {
@@ -561,17 +511,16 @@ describe('useFitParams', () => {
 });
   describe('analyze error branch coverage (line 96)', () => {
     it('should handle analyze HTTP error responses', async () => {
-      fetchMock.mockResolvedValue({
-        ok: false,
-        json: () => Promise.resolve({
+      fetchMock.mockResolvedValue(
+        createMockResponse({
           success: false,
           error: {
             code: 'ANALYSIS_FAILED',
             message: 'Model analysis failed',
           },
           timestamp: Date.now(),
-        }),
-      });
+        }, false)
+      );
 
       const { result } = renderHook(() => useFitParams('test-model'));
 
@@ -599,17 +548,16 @@ describe('useFitParams', () => {
 
   describe('success/fitParams null handling (line 99)', () => {
     it('should set null when success is false', async () => {
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({
+      fetchMock.mockResolvedValue(
+        createMockResponse({
           success: false,
           data: {
             model: { id: 123, name: 'test-model' },
             fitParams: null, // Explicitly null
           },
           timestamp: Date.now(),
-        }),
-      });
+        })
+      );
 
       const { result } = renderHook(() => useFitParams('test-model'));
 
@@ -621,17 +569,16 @@ describe('useFitParams', () => {
     });
 
     it('should set null when fitParams is undefined', async () => {
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({
+      fetchMock.mockResolvedValue(
+        createMockResponse({
           success: true,
           data: {
             model: { id: 123, name: 'test-model' },
             // fitParams property missing
           },
           timestamp: Date.now(),
-        }),
-      });
+        })
+      );
 
       const { result } = renderHook(() => useFitParams('test-model'));
 

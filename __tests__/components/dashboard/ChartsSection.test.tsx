@@ -43,9 +43,9 @@ describe("ChartsSection Component", () => {
       valueFormatter: (v: number | null) => `${v}%`,
       yAxisLabel: "CPU",
       data: [
-        { timestamp: Date.now() - 60000, value: 45 },
-        { timestamp: Date.now() - 30000, value: 50 },
-        { timestamp: Date.now(), value: 48 },
+        { time: "10:00", displayTime: "10:00 AM", value: 45 },
+        { time: "10:01", displayTime: "10:01 AM", value: 50 },
+        { time: "10:02", displayTime: "10:02 AM", value: 48 },
       ],
     },
     {
@@ -56,9 +56,9 @@ describe("ChartsSection Component", () => {
       valueFormatter: (v: number | null) => `${v}%`,
       yAxisLabel: "Memory",
       data: [
-        { timestamp: Date.now() - 60000, value: 62 },
-        { timestamp: Date.now() - 30000, value: 65 },
-        { timestamp: Date.now(), value: 63 },
+        { time: "10:00", displayTime: "10:00 AM", value: 62 },
+        { time: "10:01", displayTime: "10:01 AM", value: 65 },
+        { time: "10:02", displayTime: "10:02 AM", value: 63 },
       ],
     },
   ];
@@ -72,9 +72,9 @@ describe("ChartsSection Component", () => {
       valueFormatter: (v: number | null) => `${v}%`,
       yAxisLabel: "GPU %",
       data: [
-        { timestamp: Date.now() - 60000, value: 30 },
-        { timestamp: Date.now() - 30000, value: 35 },
-        { timestamp: Date.now(), value: 32 },
+        { time: "10:00", displayTime: "10:00 AM", value: 30 },
+        { time: "10:01", displayTime: "10:01 AM", value: 35 },
+        { time: "10:02", displayTime: "10:02 AM", value: 32 },
       ],
     },
     {
@@ -85,9 +85,9 @@ describe("ChartsSection Component", () => {
       valueFormatter: (v: number | null) => `${v}W`,
       yAxisLabel: "Power (W)",
       data: [
-        { timestamp: Date.now() - 60000, value: 120 },
-        { timestamp: Date.now() - 30000, value: 125 },
-        { timestamp: Date.now(), value: 122 },
+        { time: "10:00", displayTime: "10:00 AM", value: 120 },
+        { time: "10:01", displayTime: "10:01 AM", value: 125 },
+        { time: "10:02", displayTime: "10:02 AM", value: 122 },
       ],
     },
   ];

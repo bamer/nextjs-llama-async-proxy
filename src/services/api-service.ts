@@ -1,6 +1,7 @@
 import { apiClient } from "@/utils/api-client";
 import { useStore } from "@/lib/store";
-import { ModelConfig, SystemMetrics, LogEntry, ApiResponse } from "@/types";
+import { ModelConfig, SystemMetrics, LogEntry, ApiResponse, LegacySystemMetrics } from "@/types";
+import { transformMetrics } from "@/utils/metrics-transformer";
 
 // Logger configuration interface
 export interface LoggerConfig {
@@ -146,20 +147,21 @@ class ApiService {
 
   // Metrics API
   public async getMetrics(): Promise<SystemMetrics> {
-    const response = await apiClient.get<SystemMetrics>(`${this.baseUrl}/metrics`);
+    const response = await apiClient.get<LegacySystemMetrics>(`${this.baseUrl}/metrics`);
     if (response.success && response.data) {
-      useStore.getState().setMetrics(response.data);
-      return response.data;
+      const transformedMetrics = transformMetrics(response.data);
+      useStore.getState().setMetrics(transformedMetrics);
+      return transformedMetrics;
     }
     throw new Error(response.error?.message || "Failed to fetch metrics");
   }
 
   public async getMetricsHistory(params: { limit?: number; hours?: number }): Promise<SystemMetrics[]> {
-    const response = await apiClient.get<SystemMetrics[]>(`${this.baseUrl}/metrics/history`, {
+    const response = await apiClient.get<LegacySystemMetrics[]>(`${this.baseUrl}/metrics/history`, {
       params,
     });
     if (response.success && response.data) {
-      return response.data;
+      return response.data.map((m) => transformMetrics(m));
     }
     throw new Error(response.error?.message || "Failed to fetch metrics history");
   }
@@ -241,7 +243,6 @@ class ApiService {
   public async updateConfig(config: ServerConfig): Promise<ApiResponse<ServerConfig>> {
     const response = await apiClient.post<ServerConfig>(`${this.baseUrl}/config`, config);
     if (response.success && response.data) {
-      useStore.getState().updateSettings(response.data);
       return response;
     }
     throw new Error(response.error?.message || "Failed to update config");
@@ -329,10 +330,11 @@ class ApiService {
   }
 
   public async getSystemMetrics(): Promise<ApiResponse<SystemMetrics>> {
-    const response = await apiClient.get<SystemMetrics>(`${this.baseUrl}/system/metrics`);
+    const response = await apiClient.get<LegacySystemMetrics>(`${this.baseUrl}/system/metrics`);
     if (response.success && response.data) {
-      useStore.getState().setMetrics(response.data);
-      return response;
+      const transformedMetrics = transformMetrics(response.data);
+      useStore.getState().setMetrics(transformedMetrics);
+      return { ...response, data: transformedMetrics };
     }
     throw new Error(response.error?.message || "Failed to fetch system metrics");
   }

@@ -3,7 +3,8 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { websocketServer } from "@/lib/websocket-client";
 import { useStore } from "@/lib/store";
-import type { SystemMetrics, ModelConfig, LogEntry } from "@/types";
+import type { SystemMetrics, ModelConfig, LogEntry, LegacySystemMetrics } from "@/types";
+import { transformMetrics } from "@/utils/metrics-transformer";
 
 // Message type definitions for WebSocket messages
 interface BaseMessage {
@@ -28,6 +29,7 @@ function isConfigMessage(msg: WebSocketMessage): msg is ConfigMessage {
 interface WebSocketContextType {
   isConnected: boolean;
   connectionState: string;
+  reconnectionAttempts: number;
   sendMessage: (event: string, data?: unknown) => void;
   requestMetrics: () => void;
   requestLogs: () => void;
@@ -45,6 +47,7 @@ const WebSocketContext = createContext<WebSocketContextType | null>(null);
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [connectionState, setConnectionState] = useState<string>('disconnected');
+  const [reconnectionAttempts, setReconnectionAttempts] = useState<number>(0);
 
   // Batching refs for different data types
   const metricsBatchRef = useRef<SystemMetrics[]>([]);
@@ -97,6 +100,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       console.log('[WebSocketProvider] WebSocket connected');
       setIsConnected(true);
       setConnectionState('connected');
+      setReconnectionAttempts(0);
 
       // Request initial data after connection
       websocketServer.requestMetrics();
@@ -111,8 +115,12 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         const msg = message as WebSocketMessage;
 
         if (msg.type === 'metrics' && msg.data) {
+          // Transform legacy flat format to new nested format
+          const legacyMetrics = msg.data as LegacySystemMetrics;
+          const transformedMetrics = transformMetrics(legacyMetrics);
+
           // Batch metrics with 500ms debounce
-          metricsBatchRef.current.push(msg.data as SystemMetrics);
+          metricsBatchRef.current.push(transformedMetrics);
           if (!metricsThrottleRef.current) {
             metricsThrottleRef.current = setTimeout(processMetricsBatch, 500);
           }
@@ -225,7 +233,8 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     const handleDisconnect = () => {
       console.log('[WebSocketProvider] WebSocket disconnected');
       setIsConnected(false);
-      setConnectionState('disconnected');
+      setConnectionState('reconnecting');
+      setReconnectionAttempts((prev) => prev + 1);
     };
 
     // Handle connect_error event
@@ -309,6 +318,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const value: WebSocketContextType = {
     isConnected,
     connectionState,
+    reconnectionAttempts,
     sendMessage,
     requestMetrics,
     requestLogs,

@@ -22,9 +22,9 @@ export function useLlamaStatus(): LlamaStatus & { isLoading: boolean } {
         status: data.data.status,
         models: data.data.models || [],
         lastError: data.data.lastError,
-        retries: data.data.retries,
-        uptime: data.data.uptime,
-        startedAt: data.data.startedAt,
+        retries: data.data.retries || 0,
+        uptime: data.data.uptime || 0,
+        startedAt: data.data.startedAt || null,
       });
       setIsLoading(false);
     }

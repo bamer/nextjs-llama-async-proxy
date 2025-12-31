@@ -612,3 +612,271 @@ exports[`Pages Snapshots Responsive Page Layouts should match ModelsPage at tabl
   />
 </div>
 `;
+
+exports[`Pages Snapshots SettingsAppearance Component should match snapshot in dark mode: settings-appearance-dark 1`] = `
+<div
+  class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6"
+>
+  <h2
+    class="text-2xl font-bold text-gray-900 dark:text-white mb-6"
+  >
+    Appearance
+  </h2>
+  <div
+    class="grid grid-cols-1 sm:grid-cols-3 gap-4"
+  >
+    <button
+      class="p-6 rounded-lg border-2 transition-all text-center font-medium capitalize border-gray-300 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+    >
+      <div
+        class="text-3xl mb-2"
+      >
+        ☀️
+      </div>
+      <div>
+        light
+      </div>
+    </button>
+    <button
+      class="p-6 rounded-lg border-2 transition-all text-center font-medium capitalize border-gray-300 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+    >
+      <div
+        class="text-3xl mb-2"
+      >
+        🌙
+      </div>
+      <div>
+        dark
+      </div>
+    </button>
+    <button
+      class="p-6 rounded-lg border-2 transition-all text-center font-medium capitalize border-gray-300 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+    >
+      <div
+        class="text-3xl mb-2"
+      >
+        💻
+      </div>
+      <div>
+        system
+      </div>
+    </button>
+  </div>
+</div>
+`;
+
+exports[`Pages Snapshots SettingsAppearance Component should match snapshot in light mode: settings-appearance-light 1`] = `
+<div
+  class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6"
+>
+  <h2
+    class="text-2xl font-bold text-gray-900 dark:text-white mb-6"
+  >
+    Appearance
+  </h2>
+  <div
+    class="grid grid-cols-1 sm:grid-cols-3 gap-4"
+  >
+    <button
+      class="p-6 rounded-lg border-2 transition-all text-center font-medium capitalize border-gray-300 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+    >
+      <div
+        class="text-3xl mb-2"
+      >
+        ☀️
+      </div>
+      <div>
+        light
+      </div>
+    </button>
+    <button
+      class="p-6 rounded-lg border-2 transition-all text-center font-medium capitalize border-gray-300 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+    >
+      <div
+        class="text-3xl mb-2"
+      >
+        🌙
+      </div>
+      <div>
+        dark
+      </div>
+    </button>
+    <button
+      class="p-6 rounded-lg border-2 transition-all text-center font-medium capitalize border-gray-300 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+    >
+      <div
+        class="text-3xl mb-2"
+      >
+        💻
+      </div>
+      <div>
+        system
+      </div>
+    </button>
+  </div>
+</div>
+`;
+
+exports[`Pages Snapshots SettingsSystem Component should match snapshot in dark mode: settings-system-dark 1`] = `
+<div
+  class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6"
+>
+  <h2
+    class="text-2xl font-bold text-gray-900 dark:text-white mb-8"
+  >
+    System Settings
+  </h2>
+  <div
+    class="space-y-8"
+  >
+    <div
+      class="space-y-3"
+    >
+      <div
+        class="flex justify-between items-center"
+      >
+        <label
+          class="font-medium text-gray-900 dark:text-white"
+        >
+          Max Concurrent Models
+        </label>
+        <span
+          class="text-lg font-bold text-blue-600 dark:text-blue-400"
+        />
+      </div>
+      <input
+        class="w-full h-2 bg-gray-300 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+        max="10"
+        min="1"
+        type="range"
+      />
+      <div
+        class="flex justify-between text-sm text-gray-600 dark:text-gray-400"
+      >
+        <span>
+          1 model
+        </span>
+        <span>
+          10 models
+        </span>
+      </div>
+    </div>
+    <div
+      class="space-y-3"
+    >
+      <div
+        class="flex justify-between items-center"
+      >
+        <label
+          class="font-medium text-gray-900 dark:text-white"
+        >
+          Refresh Interval (seconds)
+        </label>
+        <span
+          class="text-lg font-bold text-blue-600 dark:text-blue-400"
+        >
+          s
+        </span>
+      </div>
+      <input
+        class="w-full h-2 bg-gray-300 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+        max="10"
+        min="1"
+        type="range"
+      />
+      <div
+        class="flex justify-between text-sm text-gray-600 dark:text-gray-400"
+      >
+        <span>
+          1 second
+        </span>
+        <span>
+          10 seconds
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Pages Snapshots SettingsSystem Component should match snapshot in light mode: settings-system-light 1`] = `
+<div
+  class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6"
+>
+  <h2
+    class="text-2xl font-bold text-gray-900 dark:text-white mb-8"
+  >
+    System Settings
+  </h2>
+  <div
+    class="space-y-8"
+  >
+    <div
+      class="space-y-3"
+    >
+      <div
+        class="flex justify-between items-center"
+      >
+        <label
+          class="font-medium text-gray-900 dark:text-white"
+        >
+          Max Concurrent Models
+        </label>
+        <span
+          class="text-lg font-bold text-blue-600 dark:text-blue-400"
+        />
+      </div>
+      <input
+        class="w-full h-2 bg-gray-300 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+        max="10"
+        min="1"
+        type="range"
+      />
+      <div
+        class="flex justify-between text-sm text-gray-600 dark:text-gray-400"
+      >
+        <span>
+          1 model
+        </span>
+        <span>
+          10 models
+        </span>
+      </div>
+    </div>
+    <div
+      class="space-y-3"
+    >
+      <div
+        class="flex justify-between items-center"
+      >
+        <label
+          class="font-medium text-gray-900 dark:text-white"
+        >
+          Refresh Interval (seconds)
+        </label>
+        <span
+          class="text-lg font-bold text-blue-600 dark:text-blue-400"
+        >
+          s
+        </span>
+      </div>
+      <input
+        class="w-full h-2 bg-gray-300 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+        max="10"
+        min="1"
+        type="range"
+      />
+      <div
+        class="flex justify-between text-sm text-gray-600 dark:text-gray-400"
+      >
+        <span>
+          1 second
+        </span>
+        <span>
+          10 seconds
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+`;

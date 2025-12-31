@@ -87,7 +87,8 @@ export class LlamaServerIntegration {
       data: {
         status: state.status,
         lastError: state.lastError,
-        uptime: state.uptime,
+        uptime: state.uptime || 0,
+        startedAt: state.startedAt ? state.startedAt.toISOString() : null,
         models: state.models.map((m: any) => ({
           id: m.id || m.name,
           name: m.name,
@@ -135,7 +136,22 @@ export class LlamaServerIntegration {
 
     this.metricsInterval = setInterval(async () => {
       const metrics = await this.collectMetrics();
-      this.io.emit("metrics", { type: "metrics", data: metrics, timestamp: Date.now() });
+        this.io.emit("metrics", { type: "metrics", data: {
+          cpu: { usage: metrics.cpuUsage },
+          memory: { used: metrics.memoryUsage },
+          disk: { used: metrics.diskUsage },
+          network: { rx: 0, tx: 0 },
+          uptime: metrics.uptime,
+          gpu: metrics.gpuUsage !== undefined ? {
+            usage: metrics.gpuUsage,
+            memoryUsed: metrics.gpuMemoryUsed,
+            memoryTotal: metrics.gpuMemoryTotal,
+            powerUsage: metrics.gpuPowerUsage,
+            powerLimit: metrics.gpuPowerLimit,
+            temperature: metrics.gpuTemperature,
+            name: metrics.gpuName,
+          } : undefined,
+        }, timestamp: Date.now() });
 
       // Also persist metrics to database for chart history
       try {
@@ -145,19 +161,19 @@ export class LlamaServerIntegration {
           gpu: metrics.gpuUsage,
           requests: metrics.totalRequests
         });
-        saveMetricsToDb({
-          cpu_usage: metrics.cpuUsage,
-          memory_usage: metrics.memoryUsage,
-          disk_usage: metrics.diskUsage,
-          gpu_usage: metrics.gpuUsage || 0,
-          gpu_temperature: metrics.gpuTemperature || 0,
-          gpu_memory_used: metrics.gpuMemoryUsed || 0,
-          gpu_memory_total: metrics.gpuMemoryTotal || 0,
-          gpu_power_usage: metrics.gpuPowerUsage || 0,
-          active_models: metrics.activeModels || 0,
-          uptime: metrics.uptime || 0,
-          requests_per_minute: Math.round((metrics.totalRequests || 0) / 10),
-        });
+          saveMetricsToDb({
+            cpu_usage: metrics.cpuUsage || 0,
+            memory_usage: metrics.memoryUsage || 0,
+            disk_usage: metrics.diskUsage || 0,
+            gpu_usage: metrics.gpuUsage || 0,
+            gpu_temperature: metrics.gpuTemperature || 0,
+            gpu_memory_used: metrics.gpuMemoryUsed || 0,
+            gpu_memory_total: metrics.gpuMemoryTotal || 0,
+            gpu_power_usage: metrics.gpuPowerUsage || 0,
+            active_models: 0,
+            uptime: metrics.uptime || 0,
+            requests_per_minute: Math.round((metrics.totalRequests || 0) / 10),
+          });
         logger.debug('✅ Metrics saved to database successfully');
       } catch (error) {
         logger.error('❌ Failed to save metrics to database:', error);
@@ -167,26 +183,51 @@ export class LlamaServerIntegration {
     logger.info("📊 Metrics broadcasting started (every 3s)");
   }
 
-  private async collectMetrics(): Promise<SystemMetrics> {
-    const state = this.llamaService?.getState();
-    const uptime = state?.uptime || 0;
+  private async collectMetrics(): Promise<import("@/types/monitoring").SystemMetrics> {
+    try {
+      const state = this.llamaService?.getState();
+      const uptime = state?.uptime || 0;
 
-    const cpuMem = await this.getCpuMemoryUsage();
-    const gpuMetrics = await this.getGpuMetrics();
+      const cpuMem = await this.getCpuMemoryUsage();
+      const diskUsage = await this.getDiskUsage();
+      const gpuMetrics = await this.getGpuMetrics();
 
-    return {
-      cpuUsage: cpuMem.cpu,
-      memoryUsage: cpuMem.memory,
-      diskUsage: await this.getDiskUsage(),
-      activeModels: state?.models?.length || 0,
-      totalRequests: this.totalRequests,
-      avgResponseTime: this.responseTimes.length > 0
-        ? this.responseTimes.reduce((a, b) => a + b, 0) / this.responseTimes.length
-        : 0,
-      uptime,
-      timestamp: new Date().toISOString(),
-      ...gpuMetrics,
-    };
+      logger.info('[METRICS] Collected metrics:', {
+        cpu: cpuMem.cpu,
+        memory: cpuMem.memory,
+        disk: diskUsage,
+        gpu: gpuMetrics.gpuUsage,
+        uptime
+      });
+
+      return {
+        cpu: { usage: cpuMem.cpu },
+        memory: { used: cpuMem.memory },
+        disk: { used: diskUsage },
+        network: { rx: 0, tx: 0 },
+        uptime,
+        gpu: gpuMetrics.gpuName ? {
+          usage: gpuMetrics.gpuUsage || 0,
+          memoryUsed: gpuMetrics.gpuMemoryUsed || 0,
+          memoryTotal: gpuMetrics.gpuMemoryTotal || 0,
+          powerUsage: gpuMetrics.gpuPowerUsage || 0,
+          powerLimit: gpuMetrics.gpuPowerLimit || 0,
+          temperature: gpuMetrics.gpuTemperature || 0,
+          name: gpuMetrics.gpuName,
+        } : undefined,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.error(`[METRICS] Failed to collect metrics: ${message}`);
+      return {
+        cpu: { usage: 0 },
+        memory: { used: 0 },
+        disk: { used: 0 },
+        network: { rx: 0, tx: 0 },
+        uptime: this.llamaService?.getState()?.uptime || 0,
+        gpu: undefined,
+      };
+    }
   }
 
   private async getCpuMemoryUsage(): Promise<{ cpu: number; memory: number }> {
@@ -311,7 +352,8 @@ export class LlamaServerIntegration {
           data: {
             status: state.status,
             lastError: state.lastError,
-            uptime: state.uptime,
+            uptime: state.uptime || 0,
+            startedAt: state.startedAt ? state.startedAt.toISOString() : null,
           },
           timestamp: Date.now(),
         });

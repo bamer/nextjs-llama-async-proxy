@@ -348,9 +348,9 @@ describe('Config Tests', () => {
   describe('Config types', () => {
     it('AppConfig type is correctly typed', () => {
       const config: AppConfig = {
-        name: 'Test',
-        version: '1.0.0',
-        description: 'Test',
+        name: 'Llama Runner Pro' as const,
+        version: '2.0.0' as const,
+        description: 'Advanced Llama Model Management System' as const,
         api: {
           baseUrl: 'http://localhost:3000',
           websocketUrl: 'ws://localhost:3000',

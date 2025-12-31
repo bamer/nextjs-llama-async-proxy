@@ -24,7 +24,7 @@ export interface LlamaStatus {
   lastError: string | null;
   retries: number;
   uptime: number;
-  startedAt: string | null;
+  startedAt?: string | null; // Made optional since it's not always sent from server
 }
 
 export interface LlamaStatusEvent {

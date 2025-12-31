@@ -2,6 +2,7 @@ import { getLogger } from "@/lib/logger";
 import type {
   LlamaServiceState,
   LlamaServiceStatus,
+  LlamaModel,
 } from "./types";
 
 const logger = getLogger();
@@ -54,7 +55,7 @@ export class StateManager {
    * Update models list
    */
   updateModels(models: unknown[]): void {
-    this.state.models = models;
+    this.state.models = models as LlamaModel[];
     this.emitStateChange();
   }
 

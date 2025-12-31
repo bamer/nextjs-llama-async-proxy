@@ -69,7 +69,7 @@ export function ThemedCard({
   };
 
   return (
-    <Card className={className} sx={getCardStyles()}>
+    <Card {...(className ? { className } : {})} sx={getCardStyles()}>
       <Box sx={{ p: 3 }}>{children}</Box>
     </Card>
   );

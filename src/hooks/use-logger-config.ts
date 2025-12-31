@@ -4,7 +4,7 @@ import {
   type LoggerSettings,
 } from '@/lib/validators';
 
-interface LoggerConfig {
+export interface LoggerConfig {
   consoleLevel: string;
   fileLevel: string;
   errorLevel: string;

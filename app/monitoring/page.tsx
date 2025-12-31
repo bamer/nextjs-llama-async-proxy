@@ -8,7 +8,6 @@ import { Card, CardContent, Typography, Box, Grid, LinearProgress, Chip, IconBut
 import { useTheme } from "@/contexts/ThemeContext";
 import { Refresh, Warning, CheckCircle, Info, Memory, Storage, Timer, NetworkCheck, Computer } from "@mui/icons-material";
 import { PerformanceChart } from '@/components/charts/PerformanceChart';
-import { GPUUMetricsCard } from '@/components/charts/GPUUMetricsCard';
 import { Loading, SkeletonMetricCard } from '@/components/ui';
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { MonitoringFallback } from "@/components/ui/error-fallbacks";
@@ -73,10 +72,14 @@ function MonitoringContent() {
     if (currentMetrics) {
       const updatedMetrics = {
         ...currentMetrics,
-        cpuUsage: Math.max(5, Math.min(95, currentMetrics.cpuUsage + Math.floor(Math.random() * 10) - 5)),
-        memoryUsage: Math.max(30, Math.min(90, currentMetrics.memoryUsage + Math.floor(Math.random() * 15) - 7)),
-        totalRequests: currentMetrics.totalRequests + Math.floor(Math.random() * 50),
-        timestamp: new Date().toISOString()
+        cpu: {
+          ...currentMetrics.cpu,
+          usage: Math.max(5, Math.min(95, currentMetrics.cpu.usage + Math.floor(Math.random() * 10) - 5)),
+        },
+        memory: {
+          ...currentMetrics.memory,
+          used: Math.max(30, Math.min(90, currentMetrics.memory.used + Math.floor(Math.random() * 15) - 7)),
+        },
       };
       useStore.getState().setMetrics(updatedMetrics);
     }
@@ -128,17 +131,17 @@ function MonitoringContent() {
                   <Typography variant="h6" fontWeight="bold">Memory Usage</Typography>
                 </Box>
                 <Typography variant="h3" fontWeight="bold" mb={1}>
-                  {metrics?.memoryUsage ?? 0}%
+                  {metrics?.memory?.used ?? 0}%
                 </Typography>
                 <LinearProgress
                   variant="determinate"
-                  value={metrics?.memoryUsage ?? 0}
-                  color={getStatusColor(metrics?.memoryUsage ?? 0, 85)}
+                  value={metrics?.memory?.used ?? 0}
+                  color={getStatusColor(metrics?.memory?.used ?? 0, 85)}
                   sx={{ height: '8px', borderRadius: '4px', mb: 1 }}
                 />
                 <Chip
-                  label={(metrics?.memoryUsage ?? 0) > 85 ? 'High' : (metrics?.memoryUsage ?? 0) > 70 ? 'Medium' : 'Normal'}
-                  color={getStatusColor(metrics?.memoryUsage ?? 0, 85) as any}
+                  label={(metrics?.memory?.used ?? 0) > 85 ? 'High' : (metrics?.memory?.used ?? 0) > 70 ? 'Medium' : 'Normal'}
+                  color={getStatusColor(metrics?.memory?.used ?? 0, 85) as any}
                   size="small"
                 />
               </CardContent>
@@ -157,17 +160,17 @@ function MonitoringContent() {
                   <Typography variant="h6" fontWeight="bold">CPU Usage</Typography>
                 </Box>
                 <Typography variant="h3" fontWeight="bold" mb={1}>
-                  {metrics?.cpuUsage ?? 0}%
+                  {metrics?.cpu?.usage ?? 0}%
                 </Typography>
                 <LinearProgress
                   variant="determinate"
-                  value={metrics?.cpuUsage ?? 0}
-                  color={getStatusColor(metrics?.cpuUsage ?? 0, 90)}
+                  value={metrics?.cpu?.usage ?? 0}
+                  color={getStatusColor(metrics?.cpu?.usage ?? 0, 90)}
                   sx={{ height: '8px', borderRadius: '4px', mb: 1 }}
                 />
                 <Chip
-                  label={(metrics?.cpuUsage ?? 0) > 90 ? 'High' : (metrics?.cpuUsage ?? 0) > 60 ? 'Medium' : 'Normal'}
-                  color={getStatusColor(metrics?.cpuUsage ?? 0, 90) as any}
+                  label={(metrics?.cpu?.usage ?? 0) > 90 ? 'High' : (metrics?.cpu?.usage ?? 0) > 60 ? 'Medium' : 'Normal'}
+                  color={getStatusColor(metrics?.cpu?.usage ?? 0, 90) as any}
                   size="small"
                 />
               </CardContent>
@@ -186,17 +189,17 @@ function MonitoringContent() {
                   <Typography variant="h6" fontWeight="bold">Disk Usage</Typography>
                 </Box>
                 <Typography variant="h3" fontWeight="bold" mb={1}>
-                  {metrics?.diskUsage ?? 0}%
+                  {metrics?.disk?.used ?? 0}%
                 </Typography>
                 <LinearProgress
                   variant="determinate"
-                  value={metrics?.diskUsage ?? 0}
-                  color={getStatusColor(metrics?.diskUsage ?? 0, 95)}
+                  value={metrics?.disk?.used ?? 0}
+                  color={getStatusColor(metrics?.disk?.used ?? 0, 95)}
                   sx={{ height: '8px', borderRadius: '4px', mb: 1 }}
                 />
                 <Chip
-                  label={(metrics?.diskUsage ?? 0) > 95 ? 'Critical' : (metrics?.diskUsage ?? 0) > 80 ? 'High' : 'Normal'}
-                  color={getStatusColor(metrics?.diskUsage ?? 0, 95) as any}
+                  label={(metrics?.disk?.used ?? 0) > 95 ? 'Critical' : (metrics?.disk?.used ?? 0) > 80 ? 'High' : 'Normal'}
+                  color={getStatusColor(metrics?.disk?.used ?? 0, 95) as any}
                   size="small"
                 />
               </CardContent>
@@ -212,19 +215,19 @@ function MonitoringContent() {
               <CardContent>
                 <Box display="flex" alignItems="center" mb={2}>
                   <NetworkCheck color="info" sx={{ mr: 1, fontSize: '2rem' }} />
-                  <Typography variant="h6" fontWeight="bold">Available Models</Typography>
+                  <Typography variant="h6" fontWeight="bold">Network RX</Typography>
                 </Box>
                 <Typography variant="h3" fontWeight="bold" mb={1}>
-                  {metrics?.activeModels ?? 0}
+                  {(metrics?.network?.rx ?? 0).toFixed(1)} MB/s
                 </Typography>
                 <LinearProgress
                   variant="determinate"
-                  value={(metrics?.activeModels ?? 0) / 10 * 100}
+                  value={Math.min(100, ((metrics?.network?.rx ?? 0) / 1000) * 100)}
                   color="info"
                   sx={{ height: '8px', borderRadius: '4px', mb: 1 }}
                 />
                 <Chip
-                  label={`${metrics?.activeModels ?? 0}/10 models active`}
+                  label="Network throughput"
                   color="info"
                   size="small"
                 />
@@ -271,47 +274,8 @@ function MonitoringContent() {
           xAxisType="band"
         />
 
-        {/* GPU Metrics - Show when ANY GPU data is available */}
-        {(metrics?.gpuUsage !== undefined || metrics?.gpuPowerUsage !== undefined || metrics?.gpuMemoryUsage !== undefined) && (
-          <>
-            {/* Show GPU card when gpuUsage or gpuMemory data is available */}
-            {(metrics?.gpuUsage !== undefined || metrics?.gpuMemoryUsage !== undefined) && (
-              <GPUUMetricsCard metrics={metrics} isDark={isDark} />
-            )}
-
-            {/* GPU Power & Utilization Chart - Show when ANY GPU data is available */}
-            {(metrics?.gpuUsage !== undefined || metrics?.gpuPowerUsage !== undefined || metrics?.gpuMemoryUsage !== undefined) && (
-              <PerformanceChart
-                title="GPU Power & Utilization"
-                description="GPU percentage and power consumption over time"
-                datasets={[
-                  {
-                    dataKey: 'gpuUtil',
-                    label: 'GPU Utilization %',
-                    colorDark: '#f472b6',
-                    colorLight: '#dc2626',
-                    valueFormatter: (value) => value !== null ? `${value.toFixed(1)}%` : 'N/A',
-                    yAxisLabel: '%',
-                    data: chartHistory.gpuUtil,
-                  },
-                  {
-                    dataKey: 'power',
-                    label: 'Power (W)',
-                    colorDark: '#fb923c',
-                    colorLight: '#f97316',
-                    valueFormatter: (value) => value !== null ? `${value.toFixed(1)}W` : 'N/A',
-                    yAxisLabel: 'W',
-                    data: chartHistory.power,
-                  },
-                ]}
-                isDark={isDark}
-                height={250}
-                showAnimation={false}
-                xAxisType="band"
-              />
-            )}
-          </>
-        )}
+        {/* GPU Metrics - Not available in new metrics format */}
+        {/* GPU metrics can be added as extension to monitoring.ts in future */}
 
         {/* System Health Summary */}
         <Card sx={{
@@ -343,15 +307,15 @@ function MonitoringContent() {
               <Grid size={{ xs: 12, md: 6 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <NetworkCheck color="info" sx={{ mr: 1, fontSize: '1.5rem' }} />
-                  <Typography variant="subtitle1" fontWeight="medium">Performance Status</Typography>
+                  <Typography variant="subtitle1" fontWeight="medium">Network Status</Typography>
                 </Box>
                 <Typography variant="h4" fontWeight="bold" color="info.main" mb={2}>
-                  {metrics?.avgResponseTime ?? 0}ms avg
+                  {((metrics?.network?.rx ?? 0) + (metrics?.network?.tx ?? 0)).toFixed(1)} MB/s
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Info color="info" />
                   <Typography variant="body2" color="text.secondary">
-                    {metrics?.totalRequests ?? 0} requests processed
+                    RX: {(metrics?.network?.rx ?? 0).toFixed(1)} MB/s, TX: {(metrics?.network?.tx ?? 0).toFixed(1)} MB/s
                   </Typography>
                 </Box>
               </Grid>
@@ -366,26 +330,26 @@ function MonitoringContent() {
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {metrics?.memoryUsage && (metrics.memoryUsage > 85) ? <Warning color="error" /> : <CheckCircle color="success" />}
-                  <Typography variant="body2">Memory: {metrics?.memoryUsage ?? 0}%</Typography>
+                  {metrics?.memory?.used && (metrics.memory.used > 85) ? <Warning color="error" /> : <CheckCircle color="success" />}
+                  <Typography variant="body2">Memory: {metrics?.memory?.used ?? 0}%</Typography>
                 </Box>
               </Grid>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {metrics?.cpuUsage && (metrics.cpuUsage > 90) ? <Warning color="error" /> : <CheckCircle color="success" />}
-                  <Typography variant="body2">CPU: {metrics?.cpuUsage ?? 0}%</Typography>
+                  {metrics?.cpu?.usage && (metrics.cpu.usage > 90) ? <Warning color="error" /> : <CheckCircle color="success" />}
+                  <Typography variant="body2">CPU: {metrics?.cpu?.usage ?? 0}%</Typography>
                 </Box>
               </Grid>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {metrics?.diskUsage && (metrics.diskUsage > 95) ? <Warning color="error" /> : <CheckCircle color="success" />}
-                  <Typography variant="body2">Disk: {metrics?.diskUsage ?? 0}%</Typography>
+                  {metrics?.disk?.used && (metrics.disk.used > 95) ? <Warning color="error" /> : <CheckCircle color="success" />}
+                  <Typography variant="body2">Disk: {metrics?.disk?.used ?? 0}%</Typography>
                 </Box>
               </Grid>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <CheckCircle color="success" />
-                  <Typography variant="body2">Models: {metrics?.activeModels ?? 0} active</Typography>
+                  <Typography variant="body2">System: Healthy</Typography>
                 </Box>
               </Grid>
             </Grid>

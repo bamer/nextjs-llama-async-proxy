@@ -3,8 +3,7 @@
 import { useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { useWebSocket } from "@/hooks/use-websocket";
-import { updateLoggerConfig, getLoggerConfig } from "@/lib/client-logger";
-import { useLoggerConfig } from "@/hooks/use-logger-config";
+import { useLoggerConfig, type LoggerConfig } from "@/hooks/use-logger-config";
 import { Box, Typography, Grid, Divider } from "@mui/material";
 import { m } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -20,7 +19,7 @@ export default function LoggingSettings() {
     useLoggerConfig();
 
   const handleConfigChange = (
-    key: keyof typeof loggerConfig,
+    key: keyof LoggerConfig,
     value: string | boolean
   ) => {
     updateConfig({ [key]: value });
@@ -28,8 +27,6 @@ export default function LoggingSettings() {
 
   const handleSaveConfig = () => {
     try {
-      updateLoggerConfig(loggerConfig);
-
       sendMessage("updateLoggerConfig", loggerConfig);
 
       applyToLogger();
@@ -46,9 +43,7 @@ export default function LoggingSettings() {
 
   const handleResetConfig = () => {
     resetConfig();
-    const currentConfig = getLoggerConfig();
-    updateLoggerConfig(currentConfig);
-    sendMessage("updateLoggerConfig", currentConfig);
+    sendMessage("updateLoggerConfig", loggerConfig);
   };
 
   if (loading) {

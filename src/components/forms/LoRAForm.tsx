@@ -4,14 +4,14 @@ import React, { useCallback } from "react";
 import { Grid, TextField, Tooltip } from "@mui/material";
 import SliderField from "@/components/ui/SliderField";
 import { LoRAConfig } from "@/config/model-config-schema";
-import { PARAM_DESCRIPTIONS } from "@/components/models/ModelConfigDialog";
+import { PARAM_DESCRIPTIONS } from "@/config/model-params-descriptions";
 
 interface LoRAFormProps {
   config: LoRAConfig;
   onChange: (config: LoRAConfig) => void;
 }
 
-export default function LoRAForm({ config, onChange }: LoRAFormProps): JSX.Element {
+export default function LoRAForm({ config, onChange }: LoRAFormProps): React.ReactElement {
   const handleChange = useCallback(
     (field: keyof LoRAConfig, value: number | string) => {
       onChange({ ...config, [field]: value });
@@ -22,7 +22,7 @@ export default function LoRAForm({ config, onChange }: LoRAFormProps): JSX.Eleme
   return (
     <Grid container spacing={2}>
       <Grid size={{ xs: 12 }}>
-        <Tooltip title={PARAM_DESCRIPTIONS.lora_adapter} arrow>
+        <Tooltip title="Path to LoRA adapter file for model fine-tuning" arrow>
           <TextField
             fullWidth
             label="LoRA Adapter Path"
@@ -35,7 +35,7 @@ export default function LoRAForm({ config, onChange }: LoRAFormProps): JSX.Eleme
         </Tooltip>
       </Grid>
       <Grid size={{ xs: 12 }}>
-        <Tooltip title={PARAM_DESCRIPTIONS.lora_base} arrow>
+        <Tooltip title="Base model path for LoRA adapter compatibility" arrow>
           <TextField
             fullWidth
             label="LoRA Base Model"
@@ -55,11 +55,11 @@ export default function LoRAForm({ config, onChange }: LoRAFormProps): JSX.Eleme
           min={0}
           max={1}
           step={0.1}
-          description={PARAM_DESCRIPTIONS.lora_scale}
+          description="Scale factor for LoRA adapter influence (0-1)"
         />
       </Grid>
       <Grid size={{ xs: 12 }}>
-        <Tooltip title={PARAM_DESCRIPTIONS.control_vectors} arrow>
+        <Tooltip title="Comma-separated paths to control vector files for steering" arrow>
           <TextField
             fullWidth
             label="Control Vectors"

@@ -9,12 +9,12 @@ jest.mock('axios', () => {
     patch: jest.fn(),
     interceptors: {
       request: {
-        use: jest.fn((onFulfilled: any, onRejected: any) => {
+        use: jest.fn((onFulfilled: any, _onRejected: any) => {
           return onFulfilled;
         }),
       },
       response: {
-        use: jest.fn((onFulfilled: any, onRejected: any) => {
+        use: jest.fn((onFulfilled: any, _onRejected: any) => {
           return onFulfilled;
         }),
       },
@@ -35,9 +35,9 @@ jest.mock('axios', () => {
 jest.mock('@/config/app.config');
 
 import axios from "axios";
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-const mockedAPP_CONFIG = APP_CONFIG as any;
-const mockAxiosInstance = axios.mockAxiosInstance as any;
+  const mockedAxios = axios as jest.Mocked<typeof axios>;
+  const mockedAPP_CONFIG = APP_CONFIG as any;
+  const mockAxiosInstance = mockedAxios;
 
 import { apiClient } from '@/utils/api-client';
 import axiosModule, { AxiosError } from 'axios';

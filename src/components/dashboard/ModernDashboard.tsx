@@ -31,7 +31,7 @@ export default function ModernDashboard() {
   const { isConnected, connectionState, sendMessage } = useWebSocket();
   const models = useModels();
   const metrics = useMetrics();
-  const safeMetrics = metrics || undefined;
+  const safeMetrics = metrics === null ? undefined : metrics;
   const [loading, setLoading] = useState(true);
   const [serverLoading, setServerLoading] = useState(false);
   const [serverRunning, setServerRunning] = useState(false);
@@ -114,7 +114,7 @@ export default function ModernDashboard() {
   const gpuDatasets = useMemo(
     () => Object.entries(CHART_CONFIG).slice(3, 5).map(([key, config]) => ({
       ...config,
-      valueFormatter: (value) => (value !== null ? `${value.toFixed(1)}${config.yAxisLabel || '%'}` : 'N/A'),
+      valueFormatter: (value: number | null) => (value !== null ? `${value.toFixed(1)}${(config as any).yAxisLabel || '%'}` : 'N/A'),
       data: deferredChartHistory[key as keyof typeof deferredChartHistory],
     })),
     [deferredChartHistory],

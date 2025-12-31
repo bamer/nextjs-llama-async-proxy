@@ -11,7 +11,7 @@ interface LoggingPreviewProps {
 
 export default function LoggingPreview({
   config,
-}: LoggingPreviewProps): JSX.Element {
+}: LoggingPreviewProps): React.ReactElement {
   const { isDark } = useTheme();
 
   return (

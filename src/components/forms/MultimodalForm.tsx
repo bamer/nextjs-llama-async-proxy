@@ -4,17 +4,17 @@ import React, { useCallback } from "react";
 import { Box, Grid, TextField, Tooltip } from "@mui/material";
 import FormSwitch from "@/components/ui/FormSwitch";
 import { MultimodalConfig } from "@/config/model-config-schema";
-import { PARAM_DESCRIPTIONS } from "@/components/models/ModelConfigDialog";
+import { PARAM_DESCRIPTIONS } from "@/config/model-params-descriptions";
 
 interface MultimodalFormProps {
   config: MultimodalConfig;
   onChange: (config: MultimodalConfig) => void;
 }
 
-export default function MultimodalForm({ config, onChange }: MultimodalFormProps): JSX.Element {
+export default function MultimodalForm({ config, onChange }: MultimodalFormProps): React.ReactElement {
   const handleChange = useCallback(
-    (field: keyof MultimodalConfig, value: boolean | string) => {
-      onChange({ ...config, [field]: value });
+    (field: keyof MultimodalConfig, value: string | number | boolean) => {
+      onChange({ ...config, [field]: value as any });
     },
     [config, onChange],
   );
@@ -22,7 +22,7 @@ export default function MultimodalForm({ config, onChange }: MultimodalFormProps
   return (
     <Grid container spacing={2}>
       <Grid size={{ xs: 12 }}>
-        <Tooltip title={PARAM_DESCRIPTIONS.image_data} arrow>
+        <Tooltip title={PARAM_DESCRIPTIONS.multimodal?.image_data?.description || "Image data for multimodal input"} arrow>
           <TextField
             fullWidth
             label="Image Data"
@@ -42,12 +42,12 @@ export default function MultimodalForm({ config, onChange }: MultimodalFormProps
             label="Cache CLIP Vision Model"
             checked={config.clip_vision_cache}
             onChange={(_e, checked) => handleChange("clip_vision_cache", checked)}
-            tooltip={PARAM_DESCRIPTIONS.clip_vision_cache}
+            tooltip={PARAM_DESCRIPTIONS.multimodal?.clip_vision_cache?.description || "Cache CLIP vision model"}
           />
         </Box>
       </Grid>
       <Grid size={{ xs: 12 }}>
-        <Tooltip title={PARAM_DESCRIPTIONS.mmproj} arrow>
+        <Tooltip title={PARAM_DESCRIPTIONS.multimodal?.mmproj?.description || "Path to multimodal projection model"} arrow>
           <TextField
             fullWidth
             label="MMProj Model Path"

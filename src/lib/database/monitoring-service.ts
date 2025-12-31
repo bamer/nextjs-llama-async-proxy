@@ -2,6 +2,9 @@ import Database from "better-sqlite3";
 import type { MetricsHistoryEntry } from "./metrics-service";
 import { initDatabase, closeDatabase } from "./database-client";
 
+// Re-export MetricsHistoryEntry for use by other modules
+export type { MetricsHistoryEntry } from "./metrics-service";
+
 export function getHistory(minutes: number = 10): MetricsHistoryEntry[] {
   const db = initDatabase();
   const cutoffTime = Date.now() - minutes * 60 * 1000;

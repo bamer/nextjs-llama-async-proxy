@@ -33,18 +33,18 @@ describe('useWebSocket - Edge Cases', () => {
     });
 
     // Mock websocket server methods
-    mockWebsocketServer.connect = jest.fn();
-    mockWebsocketServer.disconnect = jest.fn();
-    mockWebsocketServer.getSocketId = jest.fn(() => 'socket-123');
-    mockWebsocketServer.on = jest.fn();
-    mockWebsocketServer.off = jest.fn();
-    mockWebsocketServer.sendMessage = jest.fn();
-    mockWebsocketServer.requestMetrics = jest.fn();
-    mockWebsocketServer.requestLogs = jest.fn();
-    mockWebsocketServer.requestModels = jest.fn();
-    mockWebsocketServer.startModel = jest.fn();
-    mockWebsocketServer.stopModel = jest.fn();
-    mockWebsocketServer.getSocket = jest.fn(() => null);
+    mockWebsocketServer.connect.mockImplementation(jest.fn());
+    mockWebsocketServer.disconnect.mockImplementation(jest.fn());
+    mockWebsocketServer.getSocketId.mockImplementation(() => 'socket-123');
+    mockWebsocketServer.on.mockImplementation(jest.fn());
+    mockWebsocketServer.off.mockImplementation(jest.fn());
+    mockWebsocketServer.sendMessage.mockImplementation(jest.fn());
+    mockWebsocketServer.requestMetrics.mockImplementation(jest.fn());
+    mockWebsocketServer.requestLogs.mockImplementation(jest.fn());
+    mockWebsocketServer.requestModels.mockImplementation(jest.fn());
+    mockWebsocketServer.startModel.mockImplementation(jest.fn());
+    mockWebsocketServer.stopModel.mockImplementation(jest.fn());
+    mockWebsocketServer.getSocket.mockImplementation(() => null);
   });
 
   afterEach(() => {

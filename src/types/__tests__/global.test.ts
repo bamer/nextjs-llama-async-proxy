@@ -81,7 +81,7 @@ describe('Global Types', () => {
     });
 
     it('does not allow null', () => {
-      const value: Optional<string> = null;
+      const value: Optional<string> = undefined;
 
       expect(value).toBeNull();
     });

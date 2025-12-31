@@ -6,11 +6,13 @@ import type { LlamaModel } from "./types";
 const logger = getLogger();
 
 export class ModelLoader {
-  private basePath?: string;
+  private basePath: string | undefined;
   private loadModelsFn: () => Promise<LlamaModel[]>;
 
   constructor(basePath: string | undefined, loadModelsFn: () => Promise<LlamaModel[]>) {
-    this.basePath = basePath;
+    if (basePath !== undefined) {
+      this.basePath = basePath;
+    }
     this.loadModelsFn = loadModelsFn;
   }
 
@@ -29,7 +31,7 @@ export class ModelLoader {
 
         models.forEach((model) => {
           const sizeGb =
-            model.size > 0
+            (model.size !== undefined && model.size > 0)
               ? (model.size / 1024 / 1024 / 1024).toFixed(2)
               : "unknown";
           logger.info(`  - ${model.name} (${sizeGb} GB)`);
@@ -149,14 +151,9 @@ export class ModelLoader {
           size: model.size,
           type: model.path.endsWith(".gguf") ? "gguf" : "bin",
           modified_at: model.modified_at,
+          ...(availableTemplates.length > 0 && { availableTemplates }),
+          ...(matchingTemplate && { template: matchingTemplate }),
         };
-
-        if (availableTemplates.length > 0) {
-          resultModel.availableTemplates = availableTemplates;
-        }
-        if (matchingTemplate) {
-          resultModel.template = matchingTemplate;
-        }
 
         return resultModel;
       });

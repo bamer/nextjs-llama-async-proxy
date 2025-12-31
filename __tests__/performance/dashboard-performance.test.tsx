@@ -9,14 +9,11 @@ import type { ModelConfig, SystemMetrics } from '@/types';
 
 // Helper function to create mock metrics
 const createMockMetrics = (overrides: Partial<SystemMetrics> = {}): SystemMetrics => ({
-  cpuUsage: 45,
-  memoryUsage: 55,
-  diskUsage: 60,
-  activeModels: 2,
-  totalRequests: 1000,
-  avgResponseTime: 150,
+  cpu: { usage: 45 },
+  memory: { used: 55 },
+  disk: { used: 60 },
+  network: { rx: 0, tx: 0 },
   uptime: 86400,
-  timestamp: new Date().toISOString(),
   ...overrides,
 });
 

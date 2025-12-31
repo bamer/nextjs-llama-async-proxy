@@ -52,6 +52,7 @@ export function useWebSocket() {
   const {
     isConnected,
     connectionState,
+    reconnectionAttempts,
     sendMessage,
     requestMetrics,
     requestLogs,
@@ -60,11 +61,13 @@ export function useWebSocket() {
     stopModel,
     on,
     off,
+    socketId,
   } = useWebSocketContext();
 
   return {
     isConnected,
     connectionState,
+    reconnectionAttempts,
     sendMessage,
     requestMetrics,
     requestLogs,
@@ -74,6 +77,6 @@ export function useWebSocket() {
     on,
     off,
     useWebSocketEvent,
-    socketId: "socket-123", // TODO: Get from websocket client
+    socketId,
   };
 }

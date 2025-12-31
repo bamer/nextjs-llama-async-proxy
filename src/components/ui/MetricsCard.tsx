@@ -9,9 +9,10 @@ import StorageIcon from '@mui/icons-material/Storage';
 import DnsIcon from '@mui/icons-material/Dns';
 import DeviceHubIcon from '@mui/icons-material/DeviceHub';
 import { useTheme } from "@/contexts/ThemeContext";
+import type { AppStore } from "@/lib/store/types";
 
 export function MetricsCard() {
-  const metrics = useStore((state) => state.metrics);
+  const metrics = useStore((state: AppStore) => state.metrics);
   const { isDark } = useTheme();
 
   if (!metrics) {
@@ -32,36 +33,36 @@ export function MetricsCard() {
     {
       icon: <StorageIcon color="primary" />,
       label: "CPU Usage",
-      value: `${metrics.cpuUsage.toFixed(1)}%`,
-      progress: metrics.cpuUsage,
+      value: `${metrics.cpu?.usage.toFixed(1) ?? 0}%`,
+      progress: metrics.cpu?.usage ?? 0,
       color: "primary",
     },
     {
       icon: <MemoryIcon color="secondary" />,
       label: "Memory Usage",
-      value: `${metrics.memoryUsage.toFixed(1)}%`,
-      progress: metrics.memoryUsage,
+      value: `${metrics.memory?.used.toFixed(1) ?? 0}%`,
+      progress: metrics.memory?.used ?? 0,
       color: "secondary",
     },
     {
       icon: <DnsIcon color="success" />,
-      label: "Available Models",
-      value: metrics.activeModels.toString(),
-      progress: (metrics.activeModels / 10) * 100,
+      label: "Disk Usage",
+      value: `${metrics.disk?.used.toFixed(1) ?? 0}%`,
+      progress: metrics.disk?.used ?? 0,
       color: "success",
     },
     {
       icon: <TimerIcon color="warning" />,
-      label: "Avg Response",
-      value: `${metrics.avgResponseTime}ms`,
-      progress: Math.min(metrics.avgResponseTime / 1000, 100),
+      label: "Uptime",
+      value: `${Math.floor(metrics.uptime / 3600)}h`,
+      progress: Math.min((metrics.uptime / 86400) * 100, 100),
       color: "warning",
     },
     {
       icon: <DeviceHubIcon color="info" />,
-      label: "Total Requests",
-      value: metrics.totalRequests.toString(),
-      progress: Math.min(metrics.totalRequests / 1000, 100),
+      label: "Network",
+      value: `${((metrics.network?.rx ?? 0) + (metrics.network?.tx ?? 0)).toFixed(1)} MB/s`,
+      progress: Math.min(((metrics.network?.rx ?? 0) / 1000) * 100, 100),
       color: "info",
     },
   ];

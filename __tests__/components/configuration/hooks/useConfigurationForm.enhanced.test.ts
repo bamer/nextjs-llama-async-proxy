@@ -122,7 +122,7 @@ describe('useConfigurationForm - Enhanced Coverage', () => {
   });
 
   describe('Form Interactions - Coverage Enhancement', () => {
-    it('handles rapid input changes', () => {
+    it('handles rapid input changes', async () => {
       const { result } = renderHook(() => useConfigurationForm());
 
       await waitFor(() => expect(result.current.loading).toBe(false));
@@ -149,7 +149,7 @@ describe('useConfigurationForm - Enhanced Coverage', () => {
       expect(result.current.formConfig.basePath).toBe('/path3');
     });
 
-    it('handles multiple field changes in sequence', () => {
+    it('handles multiple field changes in sequence', async () => {
       const { result } = renderHook(() => useConfigurationForm());
 
       await waitFor(() => expect(result.current.loading).toBe(false));
@@ -177,7 +177,7 @@ describe('useConfigurationForm - Enhanced Coverage', () => {
       expect(result.current.formConfig.maxConcurrentModels).toBe('3');
     });
 
-    it('handles llama server nested field changes', () => {
+    it('handles llama server nested field changes', async () => {
       const { result } = renderHook(() => useConfigurationForm());
 
       await waitFor(() => expect(result.current.loading).toBe(false));
@@ -200,7 +200,7 @@ describe('useConfigurationForm - Enhanced Coverage', () => {
   });
 
   describe('Tab Navigation', () => {
-    it('handles tab changes', () => {
+    it('handles tab changes', async () => {
       const { result } = renderHook(() => useConfigurationForm());
 
       await waitFor(() => expect(result.current.loading).toBe(false));
@@ -215,7 +215,7 @@ describe('useConfigurationForm - Enhanced Coverage', () => {
       expect(result.current.activeTab).not.toBe(initialTab);
     });
 
-    it('handles sequential tab changes', () => {
+    it('handles sequential tab changes', async () => {
       const { result } = renderHook(() => useConfigurationForm());
 
       await waitFor(() => expect(result.current.loading).toBe(false));
@@ -315,7 +315,7 @@ describe('useConfigurationForm - Enhanced Coverage', () => {
       expect(Array.isArray(result.current.validationErrors)).toBe(true);
     });
 
-    it('clears field errors on input change', () => {
+    it('clears field errors on input change', async () => {
       const { result } = renderHook(() => useConfigurationForm());
 
       await waitFor(() => expect(result.current.loading).toBe(false));
@@ -335,7 +335,7 @@ describe('useConfigurationForm - Enhanced Coverage', () => {
   });
 
   describe('Model Defaults', () => {
-    it('handles model defaults changes', () => {
+    it('handles model defaults changes', async () => {
       const { result } = renderHook(() => useConfigurationForm());
 
       await waitFor(() => expect(result.current.loading).toBe(false));
@@ -353,7 +353,7 @@ describe('useConfigurationForm - Enhanced Coverage', () => {
       expect(result.current.formConfig.modelDefaults?.batch_size).toBe(1024);
     });
 
-    it('handles multiple model defaults changes', () => {
+    it('handles multiple model defaults changes', async () => {
       const { result } = renderHook(() => useConfigurationForm());
 
       await waitFor(() => expect(result.current.loading).toBe(false));
@@ -421,7 +421,7 @@ describe('useConfigurationForm - Enhanced Coverage', () => {
       expect(saveError).toBeNull();
     });
 
-    it('handles all input types correctly', () => {
+    it('handles all input types correctly', async () => {
       const { result } = renderHook(() => useConfigurationForm());
 
       await waitFor(() => expect(result.current.loading).toBe(false));
@@ -447,9 +447,9 @@ describe('useConfigurationForm - Enhanced Coverage', () => {
         } as any);
       });
 
-      expect(result.current.formConfig.test).toBe('value');
-      expect(result.current.formConfig.num).toBe('123');
-      expect(result.current.formConfig.check).toBe(true);
+      expect((result.current.formConfig as Record<string, unknown>).test).toBe('value');
+      expect((result.current.formConfig as Record<string, unknown>).num).toBe('123');
+      expect((result.current.formConfig as Record<string, unknown>).check).toBe(true);
     });
   });
 });

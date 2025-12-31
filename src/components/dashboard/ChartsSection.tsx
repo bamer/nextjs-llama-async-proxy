@@ -2,6 +2,7 @@
 
 import { lazy, Suspense } from 'react';
 import { Grid, Box, Typography, CircularProgress } from '@mui/material';
+import { type ChartDataPoint, type Dataset } from '@/components/charts/ChartContainer';
 
 const PerformanceChart = lazy(() =>
   import('@/components/charts/PerformanceChart').then((module) => ({
@@ -10,24 +11,8 @@ const PerformanceChart = lazy(() =>
 );
 
 interface ChartsSectionProps {
-  datasets: Array<{
-    dataKey: string;
-    label: string;
-    colorDark: string;
-    colorLight: string;
-    valueFormatter: (value: number | null) => string;
-    yAxisLabel?: string;
-    data: Array<{ timestamp: number; value: number | null }>;
-  }>;
-  gpuDatasets: Array<{
-    dataKey: string;
-    label: string;
-    colorDark: string;
-    colorLight: string;
-    valueFormatter: (value: number | null) => string;
-    yAxisLabel?: string;
-    data: Array<{ timestamp: number; value: number | null }>;
-  }>;
+  datasets: Dataset[];
+  gpuDatasets: Dataset[];
   isDark: boolean;
 }
 

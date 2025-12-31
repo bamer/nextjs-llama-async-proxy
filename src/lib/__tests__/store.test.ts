@@ -42,6 +42,7 @@ describe('store', () => {
         status: {
           isLoading: false,
           error: null,
+          llamaServerStatus: 'unknown' as const,
         },
         chartHistory: {
           cpu: [],

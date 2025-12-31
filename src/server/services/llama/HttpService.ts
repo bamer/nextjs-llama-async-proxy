@@ -1,6 +1,7 @@
 import type { AxiosInstance } from "axios";
 import axios from "axios";
 import { getLogger } from "@/lib/logger";
+import type { LlamaModel } from "./types";
 
 const logger = getLogger();
 
@@ -30,7 +31,7 @@ export class HttpService {
   /**
    * Get models from server
    */
-  async getModels(): Promise<unknown[]> {
+  async getModels(): Promise<LlamaModel[]> {
     try {
       const response = await this.client.get("/models");
 
@@ -41,7 +42,7 @@ export class HttpService {
           : response.data.data || response.data;
 
         if (Array.isArray(modelsData)) {
-          return modelsData;
+          return modelsData as LlamaModel[];
         }
       }
 

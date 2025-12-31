@@ -50,14 +50,14 @@ jest.mock('@/components/configuration/ConfigurationStatusMessages', () => ({
 }));
 
 jest.mock('@/components/configuration/GeneralSettingsTab', () => ({
-  GeneralSettingsTab: ({ formConfig, onInputChange, fieldErrors }: any) =>
+  GeneralSettingsTab: ({ onInputChange }: any) =>
     React.createElement('div', { 'data-testid': 'general-settings-tab' },
       React.createElement('button', { onClick: () => onInputChange('test', 'value') }, 'Change Input')
     ),
 }));
 
 jest.mock('@/components/configuration/LlamaServerSettingsTab', () => ({
-  LlamaServerSettingsTab: ({ formConfig, onLlamaServerChange, fieldErrors }: any) =>
+  LlamaServerSettingsTab: ({ onLlamaServerChange }: any) =>
     React.createElement('div', { 'data-testid': 'llama-server-settings-tab' },
       React.createElement('button', { onClick: () => onLlamaServerChange('host', 'localhost') }, 'Change Server')
     ),

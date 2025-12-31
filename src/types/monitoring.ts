@@ -15,6 +15,15 @@ export interface SystemMetrics {
     tx: number;
   };
   uptime: number;
+  gpu?: {
+    usage: number;
+    memoryUsed: number;
+    memoryTotal: number;
+    powerUsage: number;
+    powerLimit: number;
+    temperature: number;
+    name?: string;
+  };
 }
 
 export interface ModelMetrics {

@@ -1,10 +1,9 @@
 import { LlamaServerConfig, LlamaServiceState } from "./types";
-import { ProcessManager } from "./processManager";
-import { HealthChecker } from "./healthCheck";
-import { ModelLoader } from "./modelLoader";
-import { ArgumentBuilder } from "./argumentBuilder";
-import { StateManager } from "./stateManager";
-import { RetryHandler } from "./retryHandler";
+import { ProcessManager } from "./ProcessManager";
+import { HealthCheck } from "./HealthCheck";
+import { ModelLoader } from "./ModelLoader";
+import { StateManager } from "./StateManager";
+import { RetryHandler } from "./RetryHandler";
 import { getLogger } from "@/lib/logger";
 
 const logger = getLogger();
@@ -12,16 +11,25 @@ const logger = getLogger();
 export class LlamaService {
   private config: LlamaServerConfig;
   private processManager: ProcessManager;
-  private healthChecker: HealthChecker;
+  private healthChecker: HealthCheck;
   private modelLoader: ModelLoader;
   private stateManager: StateManager;
   private retryHandler: RetryHandler;
 
   constructor(config: LlamaServerConfig) {
     this.config = config;
-    this.processManager = new ProcessManager();
-    this.healthChecker = new HealthChecker(config.host, config.port);
-    this.modelLoader = new ModelLoader(config.host, config.port, config.basePath);
+    this.processManager = new ProcessManager(config);
+    this.healthChecker = new HealthCheck(
+      async () => {
+        try {
+          const response = await fetch(`http://${config.host}:${config.port}/health`);
+          return response.ok;
+        } catch {
+          return false;
+        }
+      }
+    );
+    this.modelLoader = new ModelLoader(config.basePath, this.loadModelsFromServer.bind(this));
     this.stateManager = new StateManager();
     this.retryHandler = new RetryHandler();
 
@@ -49,14 +57,14 @@ export class LlamaService {
       return;
     }
 
-    this.stateManager.updateStatus("starting");
+    this.stateManager.updateState("starting");
 
     try {
       const isAlive = await this.healthChecker.check();
       if (isAlive) {
         logger.info("✅ Llama server already running");
         await this.loadModels();
-        this.stateManager.updateStatus("ready");
+        this.stateManager.updateState("ready");
         this.stateManager.startUptimeTracking();
         return;
       }
@@ -66,67 +74,48 @@ export class LlamaService {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       logger.error(`❌ Failed to start llama server: ${message}`);
-      this.stateManager.updateStatus("error", message);
+      this.stateManager.updateState("error", message);
       await this.handleCrash();
     }
   }
 
   async stop(): Promise<void> {
     logger.info("🛑 Stopping llama server...");
-    this.stateManager.updateStatus("stopping");
+    this.stateManager.updateState("stopping");
     this.stateManager.stopUptimeTracking();
 
-    if (this.processManager.isRunning()) {
-      await this.processManager.kill("SIGTERM");
-      logger.info("✅ Llama server stopped");
-    }
+    await this.processManager.stop();
 
-    this.stateManager.updateStatus("initial");
+    this.stateManager.updateState("initial");
   }
 
   private async spawnServer(): Promise<void> {
-    const args = ArgumentBuilder.build(this.config);
-    const serverBinary = this.config.serverPath || "llama-server";
-
-    logger.info(
-      `🚀 Spawning ${serverBinary} with args: ${args.join(" ")}`
-    );
-
-    const process = this.processManager.spawn(serverBinary, args);
-
-    this.processManager.onData((message) => {
-      logger.debug(`[llama-server] ${message}`);
-    }, "stdout");
-
-    this.processManager.onData((message) => {
-      logger.warn(`[llama-server-err] ${message}`);
-    }, "stderr");
-
-    this.processManager.onError((error) => {
-      logger.error(`Process error: ${error.message}`);
-      this.handleCrash();
-    });
-
-    this.processManager.onExit((code, signal) => {
-      logger.warn(`Process exited with code ${code} signal ${signal}`);
-      if (this.stateManager.getState().status !== "stopping") {
-        this.handleCrash();
+    await this.processManager.spawnServer(
+      async () => {
+        await this.healthChecker.waitForReady();
+        await this.loadModels();
+        this.stateManager.updateState("ready");
+        logger.info("✅ Llama server is ready and models loaded");
+      },
+      async (error) => {
+        logger.error(`Process error: ${error.message}`);
+        await this.handleCrash();
+      },
+      async (code, signal) => {
+        logger.warn(`Process exited with code ${code} signal ${signal}`);
+        if (this.stateManager.getState().status !== "stopping") {
+          await this.handleCrash();
+        }
       }
-    });
-
-    await this.healthChecker.waitForReady();
-    await this.loadModels();
-
-    this.stateManager.updateStatus("ready");
-    logger.info("✅ Llama server is ready and models loaded");
+    );
   }
 
   private async loadModels(): Promise<void> {
     try {
       logger.info("🔍 Querying llama-server for available models...");
-      const models = await this.modelLoader.load();
+      const models = await this.modelLoader.loadModels();
 
-      this.stateManager.setModels(models);
+      this.stateManager.updateModels(models);
 
       logger.info(`✅ Loaded ${models.length} model(s)`);
       models.forEach((model) => {
@@ -139,34 +128,36 @@ export class LlamaService {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       logger.warn(`Failed to load models: ${message}`);
-      this.stateManager.setModels([]);
+      this.stateManager.updateModels([]);
+    }
+  }
+
+  private async loadModelsFromServer(): Promise<import("./types").LlamaModel[]> {
+    try {
+      const response = await fetch(`http://${this.config.host}:${this.config.port}/models`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch models: ${response.statusText}`);
+      }
+      return await response.json();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.warn(`Failed to fetch models from server: ${message}`);
+      return [];
     }
   }
 
   private async handleCrash(): Promise<void> {
     const currentRetries = this.stateManager.getState().retries;
 
-    if (!this.retryHandler.canRetry(currentRetries)) {
+    const onFailure = () => {
       logger.error(
         `❌ Max retries exceeded. Giving up.`
       );
-      this.stateManager.updateStatus("error", "Max retries exceeded");
-      return;
-    }
-
-    this.stateManager.incrementRetries();
-    const nextRetries = this.stateManager.getState().retries;
-    const delayMs = this.retryHandler.getBackoffMs(nextRetries - 1);
-
-    logger.info(
-      `🔄 Retry ${nextRetries} in ${delayMs / 1000}s`
-    );
-    this.stateManager.updateStatus("crashed");
-
-    await this.retryHandler.waitForRetry(nextRetries - 1);
+      this.stateManager.updateState("error", "Max retries exceeded");
+    };
 
     try {
-      await this.start();
+      await this.retryHandler.retry(currentRetries, () => this.start(), onFailure);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       logger.error(`Retry failed: ${message}`);

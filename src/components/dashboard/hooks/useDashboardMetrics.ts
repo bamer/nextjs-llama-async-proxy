@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
+import type { AppStore } from "@/lib/store/types";
 import { MONITORING_CONFIG } from "@/config/monitoring.config";
 import { useWebSocket } from "@/hooks/use-websocket";
 
@@ -14,7 +15,7 @@ interface ChartDataPoint {
 }
 
 export function useDashboardMetrics() {
-  const metrics = useStore((state) => state.metrics);
+  const metrics = useStore((state: AppStore) => state.metrics);
   const { isConnected } = useWebSocket();
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +29,7 @@ export function useDashboardMetrics() {
 
   // Handle metrics update
   useEffect(() => {
-    if (metrics && metrics.cpuUsage !== undefined) {
+    if (metrics && metrics.cpu?.usage !== undefined) {
       setLoading(false);
     }
   }, [metrics]);
@@ -47,15 +48,15 @@ export function useDashboardMetrics() {
 
   // Update chart data
   useEffect(() => {
-    if (metrics && metrics.cpuUsage !== undefined) {
+    if (metrics && metrics.cpu?.usage !== undefined) {
       setChartData((prev) => {
+        const cpuUsage = metrics.cpu?.usage ?? 0;
+        const memoryUsage = metrics.memory?.used ?? 0;
+
         const hasChanged =
           prev.length === 0 ||
-          prev[prev.length - 1].cpu !== metrics.cpuUsage ||
-          prev[prev.length - 1].memory !== metrics.memoryUsage ||
-          prev[prev.length - 1].requests !== metrics.totalRequests ||
-          (metrics.gpuUsage !== undefined &&
-            prev[prev.length - 1]?.gpu !== metrics.gpuUsage);
+          prev[prev.length - 1].cpu !== cpuUsage ||
+          prev[prev.length - 1].memory !== memoryUsage;
 
         if (!hasChanged) {
           return prev;
@@ -64,12 +65,12 @@ export function useDashboardMetrics() {
         const timestamp = new Date().toLocaleTimeString();
         const newData: ChartDataPoint = {
           timestamp,
-          cpu: metrics.cpuUsage,
-          memory: metrics.memoryUsage,
-          requests: metrics.totalRequests,
-          gpu: metrics.gpuUsage ?? 0,
-          gpuMemory: metrics.gpuMemoryUsage ?? 0,
-          gpuPower: metrics.gpuPowerUsage ?? 0,
+          cpu: cpuUsage,
+          memory: memoryUsage,
+          requests: 0, // Not available in new format
+          gpu: 0, // Not available in new format
+          gpuMemory: 0, // Not available in new format
+          gpuPower: 0, // Not available in new format
         };
 
         return [...prev, newData].slice(-20);

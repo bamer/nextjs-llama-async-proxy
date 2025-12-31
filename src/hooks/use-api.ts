@@ -1,11 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '@/services/api-service';
 
-export function useApi() {
+export function useApi(): any {
   const queryClient = useQueryClient();
 
   // Models queries
-  // Note: Polling disabled - WebSocket provides real-time updates
   const modelsQuery = useQuery({
     queryKey: ['models'],
     queryFn: () => apiService.getModels(),
@@ -13,7 +12,6 @@ export function useApi() {
   });
 
   // Metrics queries
-  // Note: Polling disabled - WebSocket provides real-time updates
   const metricsQuery = useQuery({
     queryKey: ['metrics'],
     queryFn: () => apiService.getMetrics(),
@@ -21,7 +19,6 @@ export function useApi() {
   });
 
   // Logs queries
-  // Note: Polling disabled - WebSocket provides real-time updates
   const logsQuery = useQuery({
     queryKey: ['logs'],
     queryFn: () => apiService.getLogs({ limit: 50 }),

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, useTransition } from 'react';
 import { Card, CardContent, Typography, Box, Grid } from "@mui/material";
 import { loadModelTemplates, saveModelTemplate } from '@/lib/client-model-templates';
 import { useStore } from '@/lib/store';
+import type { AppStore } from '@/lib/store/types';
 import { MemoizedModelItem } from './MemoizedModelItem';
 import { detectModelType, getModelTypeTemplates } from './MemoizedModelItem';
 
@@ -28,7 +29,7 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
   const [optimisticStatus, setOptimisticStatus] = useState<Record<string, string>>({});
   const startTransition = useTransition()[1];
 
-  const modelsList = useStore((state) => state.models);
+  const modelsList = useStore((state: AppStore) => state.models);
   const templatesLoadedRef = useRef(false);
   const lastModelsHashRef = useRef('');
   const isInitializedRef = useRef(false);

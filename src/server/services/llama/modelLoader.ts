@@ -64,6 +64,7 @@ export class ModelLoader {
         return {
           id: file,
           name: file.replace(/\.(gguf|bin)$/i, ""),
+          path: fullPath,
           size: stats.size,
           type: file.endsWith(".gguf") ? "gguf" : "bin",
           modified_at: Math.floor(stats.mtimeMs / 1000),

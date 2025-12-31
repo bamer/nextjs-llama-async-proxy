@@ -11,7 +11,7 @@ export interface SliderFieldProps {
   max: number;
   step: number;
   description?: string;
-  marks?: Array<{ value: number; label: string }>;
+  marks?: Array<{ value: number; label?: string }>;
   unit?: string;
 }
 
@@ -25,7 +25,7 @@ export default function SliderField({
   description,
   marks,
   unit,
-}: SliderFieldProps): JSX.Element {
+}: SliderFieldProps): React.ReactElement {
   const handleSliderChange = useCallback(
     (_event: Event | React.SyntheticEvent<Element, Event>, newValue: number | number[]) => {
       onChange(newValue as number);
@@ -33,33 +33,41 @@ export default function SliderField({
     [onChange],
   );
 
-  const input = (
-    <Box sx={{ mb: 2 }}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-          {label}
-        </Typography>
-        <Typography variant="body2" color="textSecondary">
-          {value.toFixed(step >= 1 ? 0 : 2)}
-          {unit && <span> {unit}</span>}
-        </Typography>
-      </Box>
-      <Slider
-        value={value}
-        onChange={handleSliderChange}
-        min={min}
-        max={max}
-        step={step}
-        marks={marks}
-        valueLabelDisplay="off"
-        sx={{
+  const input = React.createElement(
+    Box,
+    { sx: { mb: 2 } },
+    React.createElement(
+      Box,
+      { sx: { display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 } },
+      React.createElement(
+        Typography,
+        { variant: "body2", sx: { fontWeight: 500 } },
+        label
+      ),
+      React.createElement(
+        Typography,
+        { variant: "body2", color: "textSecondary" },
+        `${value.toFixed(step >= 1 ? 0 : 2)}${unit ? ` ${unit}` : ""}`
+      )
+    ),
+    React.createElement(
+      Slider,
+      {
+        value,
+        onChange: handleSliderChange,
+        min,
+        max,
+        step,
+        ...(marks !== undefined ? { marks } : {}),
+        valueLabelDisplay: "off",
+        sx: {
           "& .MuiSlider-thumb": {
             height: 20,
             width: 20,
           },
-        }}
-      />
-    </Box>
+        },
+      }
+    )
   );
 
   return description ? <Tooltip title={description} arrow placement="top">{input}</Tooltip> : input;

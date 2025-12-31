@@ -6,7 +6,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 
 export interface StatusBadgeProps {
   status: "running" | "idle" | "loading" | "error" | "stopped";
-  size?: "small" | "medium" | "large";
+  size?: "small" | "medium";
   label?: string;
 }
 
@@ -37,8 +37,6 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 
   const getSizeValue = (badgeSize: StatusBadgeProps["size"]): number => {
     switch (badgeSize) {
-      case "large":
-        return 24;
       case "medium":
         return 20;
       case "small":
@@ -55,7 +53,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
       label={displayLabel}
       color={config.color}
       size={size}
-      avatar={avatar}
+      {...(avatar !== undefined ? { avatar } : {})}
       sx={{
         fontWeight: 500,
         "& .MuiChip-label": {
@@ -64,4 +62,4 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
       }}
     />
   );
-};
+}

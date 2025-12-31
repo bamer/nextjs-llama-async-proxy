@@ -1,18 +1,12 @@
 "use client";
 
 import React from "react";
-import {
-  Grid,
-  TextField,
-  Switch,
-  FormControlLabel,
-  Box,
-  Typography,
-  Alert,
-} from "@mui/material";
+import { Grid, Box, Typography, Alert } from "@mui/material";
 import { Settings as SettingsIcon } from "@mui/icons-material";
 import { m } from "framer-motion";
 import { FormSection } from "@/components/ui/FormSection";
+import { FormField } from "@/components/ui/FormField";
+import FormSwitch from "@/components/ui/FormSwitch";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface GeneralSettingsTabProps {
@@ -27,6 +21,21 @@ export function GeneralSettingsTab({
   fieldErrors,
 }: GeneralSettingsTabProps): React.ReactNode {
   const { isDark } = useTheme();
+
+  const handleChange = (name: string, value: string | number | boolean) => {
+    onInputChange({ target: { name, value } } as any);
+  };
+
+  const handleSwitchChange = (name: string) => (_e: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
+    onInputChange({ target: { name, value: checked } } as any);
+  };
+
+  const logLevelOptions = [
+    { value: "debug", label: "Debug" },
+    { value: "info", label: "Info" },
+    { value: "warn", label: "Warning" },
+    { value: "error", label: "Error" },
+  ];
 
   return (
     <m.div
@@ -46,123 +55,80 @@ export function GeneralSettingsTab({
 
       <FormSection title="General Settings" icon={<SettingsIcon />}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <TextField
-            fullWidth
+          <FormField
             label="Base Path"
             name="basePath"
             value={formConfig.basePath}
-            onChange={onInputChange}
-            variant="outlined"
+            onChange={handleChange}
             helperText={fieldErrors.basePath || "Path to your models directory"}
-            error={!!fieldErrors.basePath}
+            error={fieldErrors.basePath}
+            fullWidth
           />
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <TextField
-            fullWidth
+          <FormField
             label="Log Level"
             name="logLevel"
+            type="select"
             value={formConfig.logLevel}
-            onChange={onInputChange}
-            select
-            SelectProps={{ native: true }}
-            variant="outlined"
+            onChange={handleChange}
+            options={logLevelOptions}
             helperText={fieldErrors.logLevel || "Logging verbosity level"}
-            error={!!fieldErrors.logLevel}
-          >
-            {["debug", "info", "warn", "error"].map((level) => (
-              <option key={level} value={level}>
-                {level}
-              </option>
-            ))}
-          </TextField>
+            error={fieldErrors.logLevel}
+            fullWidth
+          />
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <TextField
-            fullWidth
+          <FormField
             label="Max Concurrent Models"
             name="maxConcurrentModels"
             type="number"
             value={formConfig.maxConcurrentModels || 1}
-            onChange={onInputChange}
-            variant="outlined"
+            onChange={handleChange}
             helperText={
               fieldErrors.maxConcurrentModels ||
               (formConfig.maxConcurrentModels === 1
                 ? "Single model mode: Only one model loaded at a time"
                 : "Parallel mode: Multiple models can be loaded simultaneously")
             }
-            error={!!fieldErrors.maxConcurrentModels}
-            InputProps={{ inputProps: { min: 1, max: 20 } }}
+            error={fieldErrors.maxConcurrentModels}
+            fullWidth
           />
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
           <Box>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formConfig.autoUpdate}
-                  onChange={(e) =>
-                    onInputChange({
-                      target: {
-                        name: "autoUpdate",
-                        checked: e.target.checked,
-                        type: "checkbox",
-                      },
-                    } as any)
-                    }
-                  name="autoUpdate"
-                  color="primary"
-                />
-              }
+            <FormSwitch
               label="Auto Update"
+              checked={formConfig.autoUpdate}
+              onChange={handleSwitchChange("autoUpdate")}
+              helperText="Automatically update models and dependencies"
             />
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Automatically update models and dependencies
-            </Typography>
           </Box>
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
           <Box>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formConfig.notificationsEnabled}
-                  onChange={(e) =>
-                    onInputChange({
-                      target: {
-                        name: "notificationsEnabled",
-                        checked: e.target.checked,
-                        type: "checkbox",
-                      },
-                    } as any)
-                    }
-                  name="notificationsEnabled"
-                  color="primary"
-                />
-              }
+            <FormSwitch
               label="Notifications Enabled"
+              checked={formConfig.notificationsEnabled}
+              onChange={handleSwitchChange("notificationsEnabled")}
+              helperText="Receive system alerts and notifications"
             />
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Receive system alerts and notifications
-            </Typography>
           </Box>
         </Grid>
 
         <Grid size={{ xs: 12 }}>
-          <TextField
-            fullWidth
+          <FormField
             label="Llama-Server Path"
             name="llamaServerPath"
             value={formConfig.llamaServerPath || ""}
-            onChange={onInputChange}
-            variant="outlined"
+            onChange={handleChange}
             helperText={fieldErrors.llamaServerPath || "Path to llama-server executable"}
-            error={!!fieldErrors.llamaServerPath}
+            error={fieldErrors.llamaServerPath}
+            fullWidth
           />
         </Grid>
       </FormSection>

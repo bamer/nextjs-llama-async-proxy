@@ -4,6 +4,8 @@ import { Tooltip, TooltipProps, Typography, Box, IconButton } from "@mui/materia
 import { Info } from "@mui/icons-material";
 import { TooltipContent } from "@/config/tooltip-config";
 
+export type { TooltipContent } from "@/config/tooltip-config";
+
 interface FormTooltipProps {
   content: TooltipContent;
   size?: "small" | "medium";

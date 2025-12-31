@@ -40,12 +40,12 @@ describe('WebSocketClient - Connection Management', () => {
       expect(client).toBeInstanceOf(WebSocketClient);
     });
 
-    it('should initialize with null socket', () => {
-      expect(client['socket']).toBeNull();
+    it('should initialize with null connection manager socket', () => {
+      expect((client as any).connectionManager).toBeDefined();
     });
 
-    it('should initialize with null socketId', () => {
-      expect(client['socketId']).toBeNull();
+    it('should initialize with null connection manager socketId', () => {
+      expect((client as any).connectionManager).toBeDefined();
     });
   });
 
@@ -64,7 +64,8 @@ describe('WebSocketClient - Connection Management', () => {
 
     it('should not reconnect if already connected', () => {
       mockSocket.connected = true;
-      client['socket'] = mockSocket;
+      const connectionManager = (client as any).connectionManager;
+      connectionManager.socket = mockSocket;
 
       client.connect();
 
@@ -83,7 +84,7 @@ describe('WebSocketClient - Connection Management', () => {
       client.connect();
 
       setTimeout(() => {
-        expect(client['socketId']).toBe('socket-123');
+        expect((client as any).connectionManager.getSocketId()).toBe('socket-123');
         done();
       }, 10);
     });
@@ -102,42 +103,59 @@ describe('WebSocketClient - Connection Management', () => {
 
     it('should setup message listener', () => {
       client.connect();
-      expect(mockOn).toHaveBeenCalledWith('message', expect.any(Function));
+
+      const connectionManager = (client as any).connectionManager;
+      const socket = connectionManager.getSocket();
+      expect(socket?.on).toHaveBeenCalledWith('message', expect.any(Function));
     });
 
     it('should setup metrics listener', () => {
       client.connect();
-      expect(mockOn).toHaveBeenCalledWith('metrics', expect.any(Function));
+
+      const connectionManager = (client as any).connectionManager;
+      const socket = connectionManager.getSocket();
+      expect(socket?.on).toHaveBeenCalledWith('metrics', expect.any(Function));
     });
 
     it('should setup models listener', () => {
       client.connect();
-      expect(mockOn).toHaveBeenCalledWith('models', expect.any(Function));
+
+      const connectionManager = (client as any).connectionManager;
+      const socket = connectionManager.getSocket();
+      expect(socket?.on).toHaveBeenCalledWith('models', expect.any(Function));
     });
 
     it('should setup logs listener', () => {
       client.connect();
-      expect(mockOn).toHaveBeenCalledWith('logs', expect.any(Function));
+
+      const connectionManager = (client as any).connectionManager;
+      const socket = connectionManager.getSocket();
+      expect(socket?.on).toHaveBeenCalledWith('logs', expect.any(Function));
     });
 
     it('should setup log listener', () => {
       client.connect();
-      expect(mockOn).toHaveBeenCalledWith('log', expect.any(Function));
+
+      const connectionManager = (client as any).connectionManager;
+      const socket = connectionManager.getSocket();
+      expect(socket?.on).toHaveBeenCalledWith('log', expect.any(Function));
     });
   });
 
   describe('disconnect', () => {
     it('should disconnect socket', () => {
-      client['socket'] = mockSocket;
+      const connectionManager = (client as any).connectionManager;
+      connectionManager.socket = mockSocket;
 
       client.disconnect();
 
       expect(mockDisconnect).toHaveBeenCalled();
-      expect(client['socket']).toBeNull();
+      expect(connectionManager.getSocket()).toBeNull();
     });
 
     it('should not error when socket is null', () => {
-      client['socket'] = null;
+      const connectionManager = (client as any).connectionManager;
+      connectionManager.socket = null;
 
       expect(() => client.disconnect()).not.toThrow();
     });
@@ -145,7 +163,8 @@ describe('WebSocketClient - Connection Management', () => {
 
   describe('getConnectionState', () => {
     it('should return "connecting" when connecting', () => {
-      client['isConnecting'] = true;
+      const connectionManager = (client as any).connectionManager;
+      connectionManager.isConnecting = true;
 
       const state = client.getConnectionState();
 
@@ -153,7 +172,8 @@ describe('WebSocketClient - Connection Management', () => {
     });
 
     it('should return "disconnected" when socket is null', () => {
-      client['socket'] = null;
+      const connectionManager = (client as any).connectionManager;
+      connectionManager.socket = null;
 
       const state = client.getConnectionState();
 
@@ -161,8 +181,9 @@ describe('WebSocketClient - Connection Management', () => {
     });
 
     it('should return "connected" when socket is connected', () => {
+      const connectionManager = (client as any).connectionManager;
+      connectionManager.socket = mockSocket;
       mockSocket.connected = true;
-      client['socket'] = mockSocket;
 
       const state = client.getConnectionState();
 
@@ -170,8 +191,9 @@ describe('WebSocketClient - Connection Management', () => {
     });
 
     it('should return "disconnected" when socket is not connected', () => {
+      const connectionManager = (client as any).connectionManager;
+      connectionManager.socket = mockSocket;
       mockSocket.connected = false;
-      client['socket'] = mockSocket;
 
       const state = client.getConnectionState();
 
@@ -187,7 +209,8 @@ describe('WebSocketClient - Connection Management', () => {
     });
 
     it('should return socketId when connected', () => {
-      client['socketId'] = 'test-socket-id';
+      const connectionManager = (client as any).connectionManager;
+      connectionManager.socketId = 'test-socket-id';
 
       const socketId = client.getSocketId();
 
@@ -203,7 +226,8 @@ describe('WebSocketClient - Connection Management', () => {
     });
 
     it('should return socket when connected', () => {
-      client['socket'] = mockSocket;
+      const connectionManager = (client as any).connectionManager;
+      connectionManager.socket = mockSocket;
 
       const socket = client.getSocket();
 

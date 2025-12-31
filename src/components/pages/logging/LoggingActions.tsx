@@ -16,7 +16,7 @@ export default function LoggingActions({
   onReset,
   loading,
   hasChanges = false,
-}: LoggingActionsProps): JSX.Element {
+}: LoggingActionsProps): React.ReactElement {
   const { isDark } = useTheme();
 
   return (

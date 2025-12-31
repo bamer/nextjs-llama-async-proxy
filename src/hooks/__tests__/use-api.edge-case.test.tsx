@@ -190,7 +190,17 @@ describe('useApi - Edge Cases', () => {
     });
 
     it('should transition from loading to success', async () => {
-      mockedApiService.getModels.mockResolvedValue([{ id: '1', name: 'Model 1' }]);
+      mockedApiService.getModels.mockResolvedValue([
+        {
+          id: '1',
+          name: 'Model 1',
+          type: 'llama',
+          parameters: {},
+          status: 'running',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ]);
       mockedApiService.getMetrics.mockResolvedValue({ cpu: 50 } as any);
       mockedApiService.getLogs.mockResolvedValue([]);
       mockedApiService.getConfig.mockResolvedValue({ theme: 'dark' } as any);
@@ -229,7 +239,17 @@ describe('useApi - Edge Cases', () => {
 
   describe('Concurrent Calls', () => {
     it('should handle multiple simultaneous component renders', async () => {
-      mockedApiService.getModels.mockResolvedValue([{ id: '1' }]);
+      mockedApiService.getModels.mockResolvedValue([
+        {
+          id: '1',
+          name: 'Model 1',
+          type: 'llama',
+          parameters: {},
+          status: 'running',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ]);
       mockedApiService.getMetrics.mockResolvedValue({ cpu: 50 } as any);
       mockedApiService.getLogs.mockResolvedValue([]);
       mockedApiService.getConfig.mockResolvedValue({} as any);
@@ -253,7 +273,17 @@ describe('useApi - Edge Cases', () => {
     });
 
     it('should handle rapid refetch calls', async () => {
-      mockedApiService.getModels.mockResolvedValue([{ id: '1' }]);
+      mockedApiService.getModels.mockResolvedValue([
+        {
+          id: '1',
+          name: 'Model 1',
+          type: 'llama',
+          parameters: {},
+          status: 'running',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ]);
       mockedApiService.getMetrics.mockResolvedValue({ cpu: 50 } as any);
       mockedApiService.getLogs.mockResolvedValue([]);
       mockedApiService.getConfig.mockResolvedValue({} as any);
@@ -293,7 +323,17 @@ describe('useApi - Edge Cases', () => {
 
   describe('Memory Leaks', () => {
     it('should not leak memory with frequent remounts', async () => {
-      mockedApiService.getModels.mockResolvedValue([{ id: '1' }]);
+      mockedApiService.getModels.mockResolvedValue([
+        {
+          id: '1',
+          name: 'Model 1',
+          type: 'llama',
+          parameters: {},
+          status: 'running',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ]);
       mockedApiService.getMetrics.mockResolvedValue({ cpu: 50 } as any);
       mockedApiService.getLogs.mockResolvedValue([]);
       mockedApiService.getConfig.mockResolvedValue({} as any);
@@ -316,6 +356,11 @@ describe('useApi - Edge Cases', () => {
       const largeData = Array.from({ length: 10000 }, (_, i) => ({
         id: `model-${i}`,
         name: `Model ${i}`,
+        type: 'llama' as const,
+        parameters: {},
+        status: 'running' as const,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       }));
 
       mockedApiService.getModels.mockResolvedValue(largeData);
@@ -341,7 +386,17 @@ describe('useApi - Edge Cases', () => {
     it('should refetch models every 30 seconds', async () => {
       jest.useFakeTimers();
 
-      mockedApiService.getModels.mockResolvedValue([{ id: '1' }]);
+      mockedApiService.getModels.mockResolvedValue([
+        {
+          id: '1',
+          name: 'Model 1',
+          type: 'llama',
+          parameters: {},
+          status: 'running',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ]);
       mockedApiService.getMetrics.mockResolvedValue({} as any);
       mockedApiService.getLogs.mockResolvedValue([]);
       mockedApiService.getConfig.mockResolvedValue({} as any);
@@ -431,7 +486,17 @@ describe('useApi - Edge Cases', () => {
     });
 
     it('should allow manual invalidation through queryClient', async () => {
-      mockedApiService.getModels.mockResolvedValue([{ id: '1' }]);
+      mockedApiService.getModels.mockResolvedValue([
+        {
+          id: '1',
+          name: 'Model 1',
+          type: 'llama',
+          parameters: {},
+          status: 'running',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ]);
       mockedApiService.getMetrics.mockResolvedValue({} as any);
       mockedApiService.getLogs.mockResolvedValue([]);
       mockedApiService.getConfig.mockResolvedValue({} as any);
@@ -473,7 +538,23 @@ describe('useApi - Edge Cases', () => {
 
     it('should handle extremely slow network responses', async () => {
       mockedApiService.getModels.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve([{ id: '1' }]), 5000))
+        () => new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve([
+                {
+                  id: '1',
+                  name: 'Model 1',
+                  type: 'llama',
+                  parameters: {},
+                  status: 'running',
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                },
+              ]),
+            5000,
+          ),
+        ),
       );
       mockedApiService.getMetrics.mockResolvedValue({} as any);
       mockedApiService.getLogs.mockResolvedValue([]);
@@ -511,7 +592,15 @@ describe('useApi - Edge Cases', () => {
     });
 
     it('should handle responses with circular references', async () => {
-      const circularData: any = { id: '1' };
+      const circularData: any = {
+        id: '1',
+        name: 'Model 1',
+        type: 'llama',
+        parameters: {},
+        status: 'running',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
       circularData.self = circularData;
 
       mockedApiService.getModels.mockResolvedValue([circularData]);
@@ -528,7 +617,15 @@ describe('useApi - Edge Cases', () => {
 
     it('should handle responses with special characters', async () => {
       const specialData = [
-        { id: '<script>alert("xss")</script>', name: 'Model with "quotes" & <tags>' },
+        {
+          id: '<script>alert("xss")</script>',
+          name: 'Model with "quotes" & <tags>',
+          type: 'llama' as const,
+          parameters: {},
+          status: 'running' as const,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
       ];
 
       mockedApiService.getModels.mockResolvedValue(specialData);
@@ -544,7 +641,17 @@ describe('useApi - Edge Cases', () => {
     });
 
     it('should handle responses with unicode characters', async () => {
-      const unicodeData = [{ id: '1', name: '模型 🚀 测试' }];
+      const unicodeData = [
+        {
+          id: '1',
+          name: '模型 🚀 测试',
+          type: 'llama' as const,
+          parameters: {},
+          status: 'running' as const,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ];
 
       mockedApiService.getModels.mockResolvedValue(unicodeData);
       mockedApiService.getMetrics.mockResolvedValue({} as any);
@@ -560,18 +667,34 @@ describe('useApi - Edge Cases', () => {
 
     it('should handle responses with very long strings', async () => {
       const longString = 'a'.repeat(1000000);
-      const longData = [{ id: '1', description: longString }];
+      const longData = [
+        {
+          id: '1',
+          name: 'Model with long description',
+          type: 'llama' as const,
+          parameters: { description: longString },
+          status: 'running' as const,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ];
 
       mockedApiService.getModels.mockResolvedValue(longData);
       mockedApiService.getMetrics.mockResolvedValue({} as any);
       mockedApiService.getLogs.mockResolvedValue([]);
       mockedApiService.getConfig.mockResolvedValue({} as any);
 
-      const { result } = renderHook(() => useApi(), { wrapper: createWrapper() });
+      const { result, unmount } = renderHook(() => useApi(), { wrapper: createWrapper() });
 
       await waitFor(() => {
-        expect(result.current.models.data![0].description).toBe(longString);
+        expect(result.current.models.data![0].parameters).toEqual({ description: longString });
       });
+
+      unmount();
+
+      // Memory should be cleaned up
+      const cachedData = queryClient.getQueryData(['models']);
+      expect(cachedData).toBeUndefined();
     });
   });
 });

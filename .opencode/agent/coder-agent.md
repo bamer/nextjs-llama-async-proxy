@@ -8,7 +8,7 @@ tools:
   write: true
   grep: true
   glob: true
-  bash: false
+  bash: true
   patch: true
 permissions:
   bash:

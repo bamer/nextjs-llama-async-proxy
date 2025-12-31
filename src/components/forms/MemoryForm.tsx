@@ -5,14 +5,14 @@ import { Box, Grid, Tooltip, TextField } from "@mui/material";
 import FormSwitch from "@/components/ui/FormSwitch";
 import SliderField from "@/components/ui/SliderField";
 import { MemoryConfig } from "@/config/model-config-schema";
-import { PARAM_DESCRIPTIONS } from "@/components/models/ModelConfigDialog";
+import { PARAM_DESCRIPTIONS } from "@/config/model-params-descriptions";
 
 interface MemoryFormProps {
   config: MemoryConfig;
   onChange: (config: MemoryConfig) => void;
 }
 
-export default function MemoryForm({ config, onChange }: MemoryFormProps): JSX.Element {
+export default function MemoryForm({ config, onChange }: MemoryFormProps): React.ReactElement {
   const handleChange = useCallback(
     (field: keyof MemoryConfig, value: number | boolean | string) => {
       onChange({ ...config, [field]: value });
@@ -23,7 +23,7 @@ export default function MemoryForm({ config, onChange }: MemoryFormProps): JSX.E
   return (
     <Grid container spacing={2}>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title={PARAM_DESCRIPTIONS.ctx_size} arrow>
+        <Tooltip title="Context window size (number of tokens in prompt + completion)" arrow>
           <TextField
             fullWidth
             label="ctx_size"
@@ -37,7 +37,7 @@ export default function MemoryForm({ config, onChange }: MemoryFormProps): JSX.E
         </Tooltip>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title={PARAM_DESCRIPTIONS.num_batch} arrow>
+        <Tooltip title="Maximum batch size for prompt processing" arrow>
           <TextField
             fullWidth
             label="Batch Size"
@@ -50,7 +50,7 @@ export default function MemoryForm({ config, onChange }: MemoryFormProps): JSX.E
         </Tooltip>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title={PARAM_DESCRIPTIONS.cache_ram} arrow>
+        <Tooltip title="Maximum RAM to use for KV cache in MB (0 = unlimited)" arrow>
           <TextField
             fullWidth
             label="Cache RAM (MB)"
@@ -69,7 +69,7 @@ export default function MemoryForm({ config, onChange }: MemoryFormProps): JSX.E
             label="Use F16 Memory"
             checked={config.memory_f16}
             onChange={(_e, checked) => handleChange("memory_f16", checked)}
-            tooltip={PARAM_DESCRIPTIONS.memory_f16}
+            tooltip="Use half-precision floats for memory to save space"
           />
         </Box>
       </Grid>
@@ -79,7 +79,7 @@ export default function MemoryForm({ config, onChange }: MemoryFormProps): JSX.E
             label="Lock Memory"
             checked={config.memory_lock}
             onChange={(_e, checked) => handleChange("memory_lock", checked)}
-            tooltip={PARAM_DESCRIPTIONS.memory_lock}
+            tooltip="Lock memory allocations to prevent relocation"
           />
         </Box>
       </Grid>

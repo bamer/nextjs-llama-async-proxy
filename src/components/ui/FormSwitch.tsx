@@ -1,7 +1,6 @@
 "use client";
 
-import { FormControlLabel, Switch, type SwitchProps } from "@mui/material";
-import FormTooltip from "@/components/ui/FormTooltip";
+import { FormControlLabel, Switch, Tooltip, type SwitchProps } from "@mui/material";
 
 export interface FormSwitchProps extends Omit<SwitchProps, "onChange"> {
   label?: string;
@@ -20,7 +19,7 @@ export default function FormSwitch({
   helperText,
   tooltip,
   ...switchProps
-}: FormSwitchProps): JSX.Element {
+}: FormSwitchProps): React.ReactElement {
   const labelContent = label ? (
     <span>
       {label}
@@ -44,7 +43,7 @@ export default function FormSwitch({
       control={
         <Switch
           checked={checked}
-          onChange={onChange}
+          onChange={(event, checked) => onChange(event, checked)}
           disabled={disabled}
           {...switchProps}
         />
@@ -55,7 +54,11 @@ export default function FormSwitch({
   );
 
   if (tooltip) {
-    return <FormTooltip title={tooltip}>{control}</FormTooltip>;
+    return (
+      <Tooltip title={tooltip} placement="right" arrow enterDelay={500}>
+        {control}
+      </Tooltip>
+    );
   }
 
   return control;

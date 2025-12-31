@@ -15,7 +15,7 @@ interface FileLoggingSectionProps {
 export default function FileLoggingSection({
   config,
   onChange,
-}: FileLoggingSectionProps): JSX.Element {
+}: FileLoggingSectionProps): React.ReactElement {
   const { isDark } = useTheme();
   const logLevels = ["error", "warn", "info", "debug", "verbose"];
 

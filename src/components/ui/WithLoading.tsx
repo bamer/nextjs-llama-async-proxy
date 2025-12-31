@@ -29,7 +29,7 @@ export const WithLoading: React.FC<WithLoadingProps> = ({
   switch (variant) {
     case "skeleton":
       return (
-        <Box sx={sx}>
+        <Box {...(sx !== undefined ? { sx } : {})}>
           <LinearProgress />
         </Box>
       );
@@ -39,7 +39,7 @@ export const WithLoading: React.FC<WithLoadingProps> = ({
         <Box
           sx={{
             position: "relative",
-            ...sx,
+            ...(sx !== undefined ? sx : {}),
           }}
         >
           {children}
@@ -72,7 +72,7 @@ export const WithLoading: React.FC<WithLoadingProps> = ({
             justifyContent: "center",
             alignItems: "center",
             p: 2,
-            ...sx,
+            ...(sx !== undefined ? sx : {}),
           }}
         >
           <CircularProgress />

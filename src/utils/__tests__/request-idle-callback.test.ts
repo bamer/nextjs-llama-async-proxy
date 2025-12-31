@@ -3,11 +3,8 @@
  */
 
 import {
-  requestIdleCallbackPromise,
-  isRequestIdleCallbackSupported,
   requestIdleCallback,
   cancelIdleCallback,
-  runTasksInIdle,
 } from '../request-idle-callback';
 
 // Mock window object

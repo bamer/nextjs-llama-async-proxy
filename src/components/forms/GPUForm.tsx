@@ -5,14 +5,14 @@ import { Box, Grid, Tooltip, TextField } from "@mui/material";
 import FormSwitch from "@/components/ui/FormSwitch";
 import SliderField from "@/components/ui/SliderField";
 import { GPUConfig } from "@/config/model-config-schema";
-import { PARAM_DESCRIPTIONS } from "@/components/models/ModelConfigDialog";
+import { PARAM_DESCRIPTIONS } from "@/config/model-params-descriptions";
 
 interface GPUFormProps {
   config: GPUConfig;
   onChange: (config: GPUConfig) => void;
 }
 
-export default function GPUForm({ config, onChange }: GPUFormProps): JSX.Element {
+export default function GPUForm({ config, onChange }: GPUFormProps): React.ReactElement {
   const handleChange = useCallback(
     (field: keyof GPUConfig, value: number | boolean | string) => {
       onChange({ ...config, [field]: value });
@@ -23,7 +23,7 @@ export default function GPUForm({ config, onChange }: GPUFormProps): JSX.Element
   return (
     <Grid container spacing={2}>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title={PARAM_DESCRIPTIONS.n_gpu_layers} arrow>
+        <Tooltip title={PARAM_DESCRIPTIONS.gpu?.n_gpu_layers?.description || "Number of layers to offload to GPU"} arrow>
           <TextField
             fullWidth
             label="GPU Layers"
@@ -37,7 +37,7 @@ export default function GPUForm({ config, onChange }: GPUFormProps): JSX.Element
         </Tooltip>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title={PARAM_DESCRIPTIONS.n_gpu} arrow>
+        <Tooltip title={PARAM_DESCRIPTIONS.gpu?.n_gpu?.description || "Number of GPUs to use"} arrow>
           <TextField
             fullWidth
             label="Number of GPUs"
@@ -50,7 +50,7 @@ export default function GPUForm({ config, onChange }: GPUFormProps): JSX.Element
         </Tooltip>
       </Grid>
       <Grid size={{ xs: 12 }}>
-        <Tooltip title={PARAM_DESCRIPTIONS.tensor_split} arrow>
+        <Tooltip title={PARAM_DESCRIPTIONS.gpu?.tensor_split?.description || "Split tensors across GPUs"} arrow>
           <TextField
             fullWidth
             label="Tensor Split"
@@ -63,7 +63,7 @@ export default function GPUForm({ config, onChange }: GPUFormProps): JSX.Element
         </Tooltip>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title={PARAM_DESCRIPTIONS.main_gpu} arrow>
+        <Tooltip title={PARAM_DESCRIPTIONS.gpu?.main_gpu?.description || "Main GPU ID"} arrow>
           <TextField
             fullWidth
             label="Main GPU"
@@ -81,7 +81,7 @@ export default function GPUForm({ config, onChange }: GPUFormProps): JSX.Element
             label="Lock MM Tensors"
             checked={config.mm_lock}
             onChange={(_e, checked) => handleChange("mm_lock", checked)}
-            tooltip={PARAM_DESCRIPTIONS.mm_lock}
+            tooltip={PARAM_DESCRIPTIONS.gpu?.mm_lock?.description || "Lock multimodal tensors"}
           />
         </Box>
       </Grid>

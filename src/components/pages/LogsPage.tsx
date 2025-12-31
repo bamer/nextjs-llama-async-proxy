@@ -3,10 +3,11 @@
 import { useState, useEffect, useMemo, useEffectEvent as ReactUseEffectEvent } from 'react';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useStore } from '@/lib/store';
+import type { AppStore } from '@/lib/store/types';
 
 const LogsPage = () => {
   const { requestLogs, isConnected } = useWebSocket();
-  const logs = useStore((state) => state.logs);
+  const logs = useStore((state: AppStore) => state.logs);
   const [filterText, setFilterText] = useState('');
   const [selectedLevel, setSelectedLevel] = useState<string>('all');
   const [maxLines, setMaxLines] = useState(50);
@@ -23,9 +24,8 @@ const LogsPage = () => {
   }, [isConnected, requestLogsIfConnected]);
 
 
-
   const filteredLogs = useMemo(() =>
-    logs.filter((log) => {
+    logs.filter((log: any) => {
       const source = log.source || (typeof log.context?.source === 'string' ? log.context.source : 'application');
       const messageText = typeof log.message === 'string' ? log.message : JSON.stringify(log.message);
       const trimmedFilterText = filterText.trim();
@@ -129,7 +129,7 @@ const LogsPage = () => {
                {logs.length === 0 ? 'No logs available' : 'No logs match the selected filters'}
              </div>
            ) : (
-                filteredLogs.map((log, index) => {
+                 filteredLogs.map((log: any, index: number) => {
                   const source = log.source || (typeof log.context?.source === 'string' ? log.context.source : 'application');
                   const messageText = typeof log.message === 'string' ? log.message : JSON.stringify(log.message);
                   const level = log.level || 'unknown';

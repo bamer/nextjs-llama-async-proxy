@@ -13,7 +13,7 @@ interface ConsoleLoggingSectionProps {
 export default function ConsoleLoggingSection({
   config,
   onChange,
-}: ConsoleLoggingSectionProps): JSX.Element {
+}: ConsoleLoggingSectionProps): React.ReactElement {
   const { isDark } = useTheme();
   const logLevels = ["error", "warn", "info", "debug", "verbose"];
 

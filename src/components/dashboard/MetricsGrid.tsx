@@ -2,18 +2,10 @@
 
 import { Grid } from '@mui/material';
 import { MetricCard } from '@/components/dashboard/MetricCard';
+import { SystemMetrics } from '@/types/monitoring';
 
 interface MetricsGridProps {
-  metrics?: {
-    cpuUsage?: number;
-    memoryUsage?: number;
-    diskUsage?: number;
-    gpuUsage?: number;
-    gpuTemperature?: number;
-    gpuMemoryUsed?: number;
-    gpuMemoryTotal?: number;
-    gpuPowerUsage?: number;
-  };
+  metrics?: SystemMetrics | undefined;
   activeModelsCount: number;
   isDark: boolean;
 }
@@ -26,15 +18,12 @@ export function MetricsGrid({
   activeModelsCount,
   isDark,
 }: MetricsGridProps) {
-  const gpuMemoryPercent =
-    (metrics?.gpuMemoryUsed || 0) / (metrics?.gpuMemoryTotal || 1) * 100;
-
   return (
-    <Grid container spacing={3}>
-      <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
+    <Grid container spacing={3} data-testid="grid">
+      <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }} data-testid="grid">
         <MetricCard
           title="CPU Usage"
-          value={metrics?.cpuUsage || 0}
+          value={metrics?.cpu?.usage || 0}
           unit="%"
           icon="🖥️"
           isDark={isDark}
@@ -42,10 +31,10 @@ export function MetricsGrid({
           showGauge={true}
         />
       </Grid>
-      <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }} data-testid="grid">
         <MetricCard
           title="Memory Usage"
-          value={metrics?.memoryUsage || 0}
+          value={metrics?.memory?.used || 0}
           unit="%"
           icon="💾"
           isDark={isDark}
@@ -53,10 +42,10 @@ export function MetricsGrid({
           showGauge={true}
         />
       </Grid>
-      <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }} data-testid="grid">
         <MetricCard
           title="Disk Usage"
-          value={metrics?.diskUsage || 0}
+          value={metrics?.disk?.used || 0}
           unit="%"
           icon="💿"
           isDark={isDark}
@@ -64,7 +53,7 @@ export function MetricsGrid({
           showGauge={true}
         />
       </Grid>
-      <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }} data-testid="grid">
         <MetricCard
           title="Active Models"
           value={activeModelsCount}
@@ -75,10 +64,10 @@ export function MetricsGrid({
           showGauge={true}
         />
       </Grid>
-      <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }} data-testid="grid">
         <MetricCard
           title="GPU Utilization"
-          value={metrics?.gpuUsage || 0}
+          value={metrics?.gpu?.usage ?? 0}
           unit="%"
           icon="🎮"
           isDark={isDark}
@@ -86,10 +75,10 @@ export function MetricsGrid({
           showGauge={true}
         />
       </Grid>
-      <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }} data-testid="grid">
         <MetricCard
           title="GPU Temperature"
-          value={metrics?.gpuTemperature || 0}
+          value={metrics?.gpu?.temperature ?? 0}
           unit="°C"
           icon="🌡️"
           isDark={isDark}
@@ -97,10 +86,14 @@ export function MetricsGrid({
           showGauge={true}
         />
       </Grid>
-      <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }} data-testid="grid">
         <MetricCard
           title="GPU Memory Usage"
-          value={gpuMemoryPercent}
+          value={
+            metrics?.gpu?.memoryUsed && metrics?.gpu?.memoryTotal
+              ? Math.round((metrics.gpu.memoryUsed / metrics.gpu.memoryTotal) * 100)
+              : 0
+          }
           unit="%"
           icon="💿"
           isDark={isDark}
@@ -108,10 +101,10 @@ export function MetricsGrid({
           showGauge={true}
         />
       </Grid>
-      <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 4, lg: 1.5, xl: 1.5 }} data-testid="grid">
         <MetricCard
           title="GPU Power"
-          value={metrics?.gpuPowerUsage || 0}
+          value={metrics?.gpu?.powerUsage ?? 0}
           unit="W"
           icon="⚡"
           isDark={isDark}
