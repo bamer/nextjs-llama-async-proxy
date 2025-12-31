@@ -26,7 +26,7 @@ export default function SamplingForm({ config, onChange }: SamplingFormProps): R
 
   const sliderFields = [
     {
-      label: "Temperature",
+      label: "Température",
       value: config.temperature,
       onChange: (v: number) => handleChange("temperature", v),
       min: 0,
@@ -62,7 +62,7 @@ export default function SamplingForm({ config, onChange }: SamplingFormProps): R
       description: tooltipConfig.sampling.typical_p?.description,
     },
     {
-      label: "Repeat Penalty",
+      label: "Pénalité de Répétition",
       value: config.repeat_penalty,
       onChange: (v: number) => handleChange("repeat_penalty", v),
       min: 0,
@@ -71,7 +71,7 @@ export default function SamplingForm({ config, onChange }: SamplingFormProps): R
       description: tooltipConfig.sampling.repeat_penalty?.description,
     },
     {
-      label: "Frequency Penalty",
+      label: "Pénalité de Fréquence",
       value: config.frequency_penalty,
       onChange: (v: number) => handleChange("frequency_penalty", v),
       min: 0,
@@ -80,7 +80,7 @@ export default function SamplingForm({ config, onChange }: SamplingFormProps): R
       description: tooltipConfig.sampling.frequency_penalty?.description,
     },
     {
-      label: "Presence Penalty",
+      label: "Pénalité de Présence",
       value: config.presence_penalty,
       onChange: (v: number) => handleChange("presence_penalty", v),
       min: 0,
@@ -97,32 +97,32 @@ export default function SamplingForm({ config, onChange }: SamplingFormProps): R
       value: config.top_k,
       type: "number" as const,
       onChange: (v: number) => handleChange("top_k", v),
-      helperText: "Number of top tokens to consider",
+      helperText: "Nombre de tokens principaux à considérer",
       tooltip: tooltipConfig.sampling.top_k,
     },
     {
-      label: "Repeat Last N",
+      label: "Répéter Dernier N",
       name: "repeat_last_n" as const,
       value: config.repeat_last_n,
       type: "number" as const,
       onChange: (v: number) => handleChange("repeat_last_n", v),
-      helperText: "Tokens to penalize for repetition",
+      helperText: "Tokens à pénaliser pour la répétition",
       tooltip: tooltipConfig.sampling.repeat_last_n,
     },
     {
-      label: "Seed",
+      label: "Graine",
       name: "seed" as const,
       value: config.seed,
       type: "number" as const,
       onChange: (v: number) => handleChange("seed", v),
-      helperText: "-1 for random",
+      helperText: "-1 pour aléatoire",
       tooltip: tooltipConfig.sampling.seed,
     },
   ];
 
   return (
     <>
-      <FormSection title="Sampling Parameters" spacing={2} divider={false}>
+      <FormSection title="Paramètres d'Échantillonnage" spacing={2} divider={false}>
         <Grid container spacing={2}>
           {sliderFields.map((field) => (
             <Grid key={field.label} size={{ xs: 12, sm: 6 }}>

@@ -191,11 +191,11 @@ Stores sampling parameters and generation settings. Linked to `models` via forei
 | `dry_sequence_breaker` | TEXT | NULL | NULL | DRY sequence breaker (string or "none") |
 | **Dynamic Temperature** | | | | |
 | `dynatemp_range` | REAL | - | 0.0 | Dynamic temperature range (0.0 = disabled) |
-| `dynatemp_exp` | REAL | - | 1.0 | Dynamic temperature exponent |
+| `dynatemp_exponent` | REAL | - | 1.0 | Dynamic temperature exponent |
 | **Mirostat** | | | | |
 | `mirostat` | INTEGER | - | 0 | Mirostat sampling (0=disabled, 1=enabled, 2=Mirostat2.0) |
-| `mirostat_lr` | REAL | - | 0.1 | Mirostat learning rate |
-| `mirostat_ent` | REAL | - | 5.0 | Mirostat target entropy |
+| `mirostat_eta` | REAL | - | 0.1 | Mirostat learning rate (eta) |
+| `mirostat_tau` | REAL | - | 5.0 | Mirostat target entropy (tau) |
 | **Samplers** | | | | |
 | `samplers` | TEXT | NULL | NULL | Custom samplers sequence (semicolon-separated) |
 | `sampler_seq` | TEXT | - | 'edskypmxt' | Simplified sampler sequence |

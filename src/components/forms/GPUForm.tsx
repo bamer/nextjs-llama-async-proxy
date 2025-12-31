@@ -23,24 +23,24 @@ export default function GPUForm({ config, onChange }: GPUFormProps): React.React
   return (
     <Grid container spacing={2}>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title={PARAM_DESCRIPTIONS.gpu?.n_gpu_layers?.description || "Number of layers to offload to GPU"} arrow>
+        <Tooltip title={PARAM_DESCRIPTIONS.gpu?.n_gpu_layers?.description || "Nombre de couches à décharger sur GPU"} arrow>
           <TextField
             fullWidth
-            label="GPU Layers"
+            label="Couches GPU"
             type="number"
             value={config.n_gpu_layers}
             onChange={(e) => handleChange("n_gpu_layers", parseInt(e.target.value) || 0)}
             InputProps={{ inputProps: { min: -1 } }}
-            helperText="-1 for all layers"
+            helperText="-1 pour toutes les couches"
             size="small"
           />
         </Tooltip>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title={PARAM_DESCRIPTIONS.gpu?.n_gpu?.description || "Number of GPUs to use"} arrow>
+        <Tooltip title={PARAM_DESCRIPTIONS.gpu?.n_gpu?.description || "Nombre de GPUs à utiliser"} arrow>
           <TextField
             fullWidth
-            label="Number of GPUs"
+            label="Nombre de GPUs"
             type="number"
             value={config.n_gpu}
             onChange={(e) => handleChange("n_gpu", parseInt(e.target.value) || 1)}
@@ -50,23 +50,23 @@ export default function GPUForm({ config, onChange }: GPUFormProps): React.React
         </Tooltip>
       </Grid>
       <Grid size={{ xs: 12 }}>
-        <Tooltip title={PARAM_DESCRIPTIONS.gpu?.tensor_split?.description || "Split tensors across GPUs"} arrow>
+        <Tooltip title={PARAM_DESCRIPTIONS.gpu?.tensor_split?.description || "Répartir les tenseurs sur les GPUs"} arrow>
           <TextField
             fullWidth
-            label="Tensor Split"
+            label="Répartition Tensor"
             value={config.tensor_split}
             onChange={(e) => handleChange("tensor_split", e.target.value)}
-            helperText="Comma-separated values (e.g., 16,8)"
-            placeholder="e.g., 16,8"
+            helperText="Valeurs séparées par virgule (ex: 16,8)"
+            placeholder="ex: 16,8"
             size="small"
           />
         </Tooltip>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title={PARAM_DESCRIPTIONS.gpu?.main_gpu?.description || "Main GPU ID"} arrow>
+        <Tooltip title={PARAM_DESCRIPTIONS.gpu?.main_gpu?.description || "ID du GPU principal"} arrow>
           <TextField
             fullWidth
-            label="Main GPU"
+            label="GPU Principal"
             type="number"
             value={config.main_gpu}
             onChange={(e) => handleChange("main_gpu", parseInt(e.target.value) || 0)}
@@ -78,58 +78,58 @@ export default function GPUForm({ config, onChange }: GPUFormProps): React.React
       <Grid size={{ xs: 12, sm: 6 }}>
         <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
           <FormSwitch
-            label="Lock MM Tensors"
+            label="Verrouiller Tenseurs MM"
             checked={config.mm_lock}
             onChange={(_e, checked) => handleChange("mm_lock", checked)}
-            tooltip={PARAM_DESCRIPTIONS.gpu?.mm_lock?.description || "Lock multimodal tensors"}
+            tooltip={PARAM_DESCRIPTIONS.gpu?.mm_lock?.description || "Verrouiller les tenseurs multimodaux"}
           />
         </Box>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
         <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
           <FormSwitch
-            label="list_devices"
+            label="Lister les périphériques"
             checked={config.list_devices}
             onChange={(_e, checked) => handleChange("list_devices", checked)}
-            tooltip="List available devices"
+            tooltip="Lister les périphériques disponibles"
           />
         </Box>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
         <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
           <FormSwitch
-            label="kv_offload"
+            label="Déchargement KV"
             checked={config.kv_offload}
             onChange={(_e, checked) => handleChange("kv_offload", checked)}
-            tooltip="Offload KV cache"
+            tooltip="Décharger le cache KV"
           />
         </Box>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
         <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
           <FormSwitch
-            label="repack"
+            label="Réempaqueter"
             checked={config.repack}
             onChange={(_e, checked) => handleChange("repack", checked)}
-            tooltip="Repack tensors"
+            tooltip="Réempaqueter les tenseurs"
           />
         </Box>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
         <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
           <FormSwitch
-            label="no_host"
+            label="Pas d'hôte"
             checked={config.no_host}
             onChange={(_e, checked) => handleChange("no_host", checked)}
-            tooltip="No host offload"
+            tooltip="Pas de déchargement hôte"
           />
         </Box>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title="Split mode (layer, row)" arrow>
+        <Tooltip title="Mode de partage (layer, row)" arrow>
           <TextField
             fullWidth
-            label="split_mode"
+            label="mode_de_partage"
             value={config.split_mode}
             onChange={(e) => handleChange("split_mode", e.target.value)}
             placeholder="layer"
@@ -138,10 +138,10 @@ export default function GPUForm({ config, onChange }: GPUFormProps): React.React
         </Tooltip>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title="Device to use (e.g., cuda:0)" arrow>
+        <Tooltip title="Périphérique à utiliser (ex: cuda:0)" arrow>
           <TextField
             fullWidth
-            label="device"
+            label="périphérique"
             value={config.device}
             onChange={(e) => handleChange("device", e.target.value)}
             placeholder="cuda:0"

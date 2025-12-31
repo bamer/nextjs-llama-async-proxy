@@ -268,8 +268,8 @@
         "description": "Mirostat sampling (0=disabled, 1=v1, 2=v2.0)",
         "tooltip": "Maintains consistent entropy. Alternative to temperature-based sampling."
       },
-      "mirostat_lr": {
-        "short": "--mirostat-lr",
+      "mirostat_eta": {
+        "short": "--mirostat-eta",
         "type": "number",
         "default": 0.1,
         "min": 0.0,
@@ -278,8 +278,8 @@
         "description": "Mirostat learning rate (eta)",
         "tooltip": "How quickly Mirostat adapts. Lower = slower adaptation."
       },
-      "mirostat_ent": {
-        "short": "--mirostat-ent",
+      "mirostat_tau": {
+        "short": "--mirostat-tau",
         "type": "number",
         "default": 5.0,
         "min": 0.0,

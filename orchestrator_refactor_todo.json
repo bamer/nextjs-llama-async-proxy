@@ -1,0 +1,432 @@
+{
+  "pipelineId": "REFACTOR-2025-12-31-001",
+  "status": "PLANNED",
+  "phase": "PHASE_1_CRITICAL",
+  "startTime": "2025-12-31T14:00:00Z",
+  "estimatedDuration": "8 weeks",
+  "goal": "Reduce all production files to < 200 lines, 95% of test files to < 200 lines",
+  "exclusions": [
+    "Files in .gitignore",
+    "Files in hidden directories (.opencode, .beads, etc.)"
+  ],
+  "metrics": {
+    "totalFilesToRefactor": 278,
+    "criticalFiles": 94,
+    "highPriorityFiles": 105,
+    "mediumPriorityFiles": 79,
+    "progress": 0
+  },
+  "tasks": [
+    {
+      "taskId": "RF-001",
+      "role": "coder-agent",
+      "description": "Refactor app/models/page.tsx (1,167 lines → < 200)",
+      "filesAffected": [
+        "app/models/page.tsx"
+      ],
+      "inputs": {
+        "currentLines": 1167,
+        "targetLines": 200,
+        "extractionStrategy": [
+          "Extract ModelsListCard component",
+          "Extract ModelGrid component",
+          "Extract ModelSearchBar component",
+          "Extract ModelFilters component",
+          "Extract useModels hook",
+          "Extract useModelFilters hook",
+          "Create model-utils.ts for helpers"
+        ]
+      },
+      "successCriteria": [
+        "app/models/page.tsx < 200 lines",
+        "All extracted components follow naming conventions",
+        "pnpm test __tests__/components/pages/ModelsPage.test.tsx passes",
+        "pnpm type:check shows no new errors",
+        "pnpm lint passes"
+      ],
+      "dependsOn": [],
+      "timeoutSeconds": 3600,
+      "priority": "critical"
+    },
+    {
+      "taskId": "RF-002",
+      "role": "reviewer",
+      "description": "Review app/models/page.tsx refactoring",
+      "filesAffected": [
+        "app/models/page.tsx",
+        "app/models/components/*"
+      ],
+      "inputs": {},
+      "successCriteria": [
+        "Main file < 200 lines",
+        "No circular dependencies",
+        "All imports resolve correctly",
+        "Naming conventions followed",
+        "No breaking changes to functionality"
+      ],
+      "dependsOn": ["RF-001"],
+      "timeoutSeconds": 600,
+      "priority": "critical"
+    },
+    {
+      "taskId": "RF-003",
+      "role": "coder-agent",
+      "description": "Refactor src/lib/database/models-service.ts (1,088 → < 200)",
+      "filesAffected": [
+        "src/lib/database/models-service.ts"
+      ],
+      "inputs": {
+        "currentLines": 1088,
+        "extractionStrategy": [
+          "Split into models-core.ts (CRUD operations)",
+          "Split into models-search.ts (search functionality)",
+          "Extract models.types.ts (type definitions)",
+          "Extract models.utils.ts (helper functions)",
+          "Extract query builders to separate module"
+        ]
+      },
+      "successCriteria": [
+        "models-service.ts < 200 lines",
+        "All extracted modules properly typed",
+        "pnpm test __tests__/lib/database* passes",
+        "pnpm type:check passes"
+      ],
+      "dependsOn": ["RF-002"],
+      "timeoutSeconds": 3600,
+      "priority": "critical"
+    },
+    {
+      "taskId": "RF-004",
+      "role": "reviewer",
+      "description": "Review src/lib/database/models-service.ts refactoring",
+      "filesAffected": [
+        "src/lib/database/models-service.ts",
+        "src/lib/database/models-*.ts"
+      ],
+      "inputs": {},
+      "successCriteria": [
+        "Main service < 200 lines",
+        "Database operations still functional",
+        "No circular dependencies",
+        "All tests passing"
+      ],
+      "dependsOn": ["RF-003"],
+      "timeoutSeconds": 600,
+      "priority": "critical"
+    },
+    {
+      "taskId": "RF-005",
+      "role": "coder-agent",
+      "description": "Refactor src/components/ui/ModelConfigDialog.tsx (1,086 → < 200)",
+      "filesAffected": [
+        "src/components/ui/ModelConfigDialog.tsx"
+      ],
+      "inputs": {
+        "currentLines": 1086,
+        "extractionStrategy": [
+          "Create ModelConfigDialog/ directory structure",
+          "Extract FitParamsTab component",
+          "Extract AdvancedTab component",
+          "Extract SystemPromptTab component",
+          "Extract useModelConfigForm hook",
+          "Extract model-config.types.ts",
+          "Extract model-config.utils.ts"
+        ]
+      },
+      "successCriteria": [
+        "ModelConfigDialog.tsx < 200 lines",
+        "All tabs extracted as separate components",
+        "Hook properly isolated",
+        "pnpm test __tests__/components/ui/* passes",
+        "pnpm type:check passes"
+      ],
+      "dependsOn": ["RF-004"],
+      "timeoutSeconds": 3600,
+      "priority": "critical"
+    },
+    {
+      "taskId": "RF-006",
+      "role": "reviewer",
+      "description": "Review ModelConfigDialog.tsx refactoring",
+      "filesAffected": [
+        "src/components/ui/ModelConfigDialog.tsx",
+        "src/components/ui/ModelConfigDialog/*"
+      ],
+      "inputs": {},
+      "successCriteria": [
+        "Dialog < 200 lines",
+        "Tab components properly isolated",
+        "Form hook works correctly",
+        "All tests passing"
+      ],
+      "dependsOn": ["RF-005"],
+      "timeoutSeconds": 600,
+      "priority": "critical"
+    },
+    {
+      "taskId": "RF-007",
+      "role": "coder-agent",
+      "description": "Refactor src/server/services/LlamaServerIntegration.ts (916 → < 200)",
+      "filesAffected": [
+        "src/server/services/LlamaServerIntegration.ts"
+      ],
+      "inputs": {
+        "currentLines": 916,
+        "extractionStrategy": [
+          "Split into ServerCore.ts (core logic)",
+          "Split into ServerProcess.ts (process management)",
+          "Split into ServerWebSocket.ts (WebSocket handling)",
+          "Extract server.types.ts",
+          "Extract server.utils.ts",
+          "Extract server.constants.ts",
+          "Create modules/ for feature-specific logic"
+        ]
+      },
+      "successCriteria": [
+        "LlamaServerIntegration.ts < 200 lines",
+        "Server functionality preserved",
+        "WebSocket still works",
+        "pnpm test __tests__/server/services/LlamaServerIntegration.test.ts passes",
+        "pnpm type:check passes"
+      ],
+      "dependsOn": ["RF-006"],
+      "timeoutSeconds": 3600,
+      "priority": "critical"
+    },
+    {
+      "taskId": "RF-008",
+      "role": "reviewer",
+      "description": "Review LlamaServerIntegration.ts refactoring",
+      "filesAffected": [
+        "src/server/services/LlamaServerIntegration.ts",
+        "src/server/services/server-*.ts"
+      ],
+      "inputs": {},
+      "successCriteria": [
+        "Main service < 200 lines",
+        "Server starts without errors",
+        "WebSocket connections work",
+        "All tests passing"
+      ],
+      "dependsOn": ["RF-007"],
+      "timeoutSeconds": 600,
+      "priority": "critical"
+    },
+    {
+      "taskId": "RF-009",
+      "role": "coder-agent",
+      "description": "Refactor src/config/tooltip-config.ts (769 → < 200)",
+      "filesAffected": [
+        "src/config/tooltip-config.ts"
+      ],
+      "inputs": {
+        "currentLines": 769,
+        "extractionStrategy": [
+          "Split into metrics-tooltips.ts",
+          "Split into model-tooltips.ts",
+          "Split into ui-tooltips.ts",
+          "Extract tooltip-config.types.ts",
+          "Keep main index.ts for exports"
+        ]
+      },
+      "successCriteria": [
+        "tooltip-config.ts < 200 lines",
+        "All tooltips organized by category",
+        "Exports working correctly",
+        "pnpm type:check passes"
+      ],
+      "dependsOn": ["RF-008"],
+      "timeoutSeconds": 1800,
+      "priority": "critical"
+    },
+    {
+      "taskId": "RF-010",
+      "role": "reviewer",
+      "description": "Review tooltip-config.ts refactoring",
+      "filesAffected": [
+        "src/config/tooltip-config.ts",
+        "src/config/*-tooltips.ts"
+      ],
+      "inputs": {},
+      "successCriteria": [
+        "Main config < 200 lines",
+        "Imports from new modules work",
+        "Type checking passes"
+      ],
+      "dependsOn": ["RF-009"],
+      "timeoutSeconds": 300,
+      "priority": "critical"
+    },
+    {
+      "taskId": "RF-011",
+      "role": "coder-agent",
+      "description": "Refactor src/lib/database/database-client.ts (509 → < 200)",
+      "filesAffected": [
+        "src/lib/database/database-client.ts"
+      ],
+      "inputs": {
+        "currentLines": 509,
+        "extractionStrategy": [
+          "Extract connection-pool.ts",
+          "Extract query-helpers.ts",
+          "Extract database.types.ts",
+          "Simplify main client to orchestration only"
+        ]
+      },
+      "successCriteria": [
+        "database-client.ts < 200 lines",
+        "Connection pooling isolated",
+        "Query helpers extracted",
+        "pnpm type:check passes"
+      ],
+      "dependsOn": ["RF-010"],
+      "timeoutSeconds": 3600,
+      "priority": "critical"
+    },
+    {
+      "taskId": "RF-012",
+      "role": "reviewer",
+      "description": "Review database-client.ts refactoring",
+      "filesAffected": [
+        "src/lib/database/database-client.ts",
+        "src/lib/database/*.ts"
+      ],
+      "inputs": {},
+      "successCriteria": [
+        "Main client < 200 lines",
+        "Database operations still work",
+        "No connection leaks",
+        "All tests passing"
+      ],
+      "dependsOn": ["RF-011"],
+      "timeoutSeconds": 600,
+      "priority": "critical"
+    },
+    {
+      "taskId": "RF-013",
+      "role": "coder-agent",
+      "description": "Refactor server.js to server.ts (501 → < 200)",
+      "filesAffected": [
+        "server.js"
+      ],
+      "inputs": {
+        "currentLines": 501,
+        "extractionStrategy": [
+          "Convert to TypeScript: server.ts",
+          "Extract routes/ directory",
+          "Extract middleware/ directory",
+          "Extract config/ directory",
+          "Extract server setup logic"
+        ]
+      },
+      "successCriteria": [
+        "server.ts < 200 lines",
+        "TypeScript conversion complete",
+        "Server starts without errors",
+        "All routes functional",
+        "pnpm type:check passes"
+      ],
+      "dependsOn": ["RF-012"],
+      "timeoutSeconds": 3600,
+      "priority": "critical"
+    },
+    {
+      "taskId": "RF-014",
+      "role": "reviewer",
+      "description": "Review server.js → server.ts refactoring",
+      "filesAffected": [
+        "server.ts",
+        "server/routes/*",
+        "server/middleware/*",
+        "server/config/*"
+      ],
+      "inputs": {},
+      "successCriteria": [
+        "Main server < 200 lines",
+        "TypeScript conversion complete",
+        "Server runs correctly",
+        "No runtime errors"
+      ],
+      "dependsOn": ["RF-013"],
+      "timeoutSeconds": 600,
+      "priority": "critical"
+    },
+    {
+      "taskId": "RF-015",
+      "role": "tester",
+      "description": "Run comprehensive tests after Phase 1 completion",
+      "filesAffected": [],
+      "inputs": {
+        "phase": "PHASE_1",
+        "filesRefactored": 7
+      },
+      "successCriteria": [
+        "pnpm test passes",
+        "Coverage >= 70%",
+        "No new test failures",
+        "All Phase 1 files verified"
+      ],
+      "dependsOn": ["RF-014"],
+      "timeoutSeconds": 900,
+      "priority": "critical"
+    },
+    {
+      "taskId": "RF-016",
+      "role": "docs-agent",
+      "description": "Document Phase 1 refactoring results",
+      "filesAffected": [
+        "docs/",
+        "REFACTORING_200_LINES_PLAN.md"
+      ],
+      "inputs": {
+        "phase": "PHASE_1_COMPLETE",
+        "filesRefactored": 7
+      },
+      "successCriteria": [
+        "Architecture diagrams updated",
+        "File structure documented",
+        "Lessons learned recorded",
+        "Phase 1 summary created"
+      ],
+      "dependsOn": ["RF-015"],
+      "timeoutSeconds": 600,
+      "priority": "medium"
+    },
+    {
+      "taskId": "RF-017",
+      "role": "reviewer",
+      "description": "Validate Phase 1 completion and approve Phase 2",
+      "filesAffected": [],
+      "inputs": {},
+      "successCriteria": [
+        "All 7 critical files < 200 lines",
+        "Tests passing",
+        "Type check passing",
+        "Documentation complete",
+        "Phase 2 approved"
+      ],
+      "dependsOn": ["RF-016"],
+      "timeoutSeconds": 600,
+      "priority": "critical"
+    }
+  ],
+  "taskDependencies": {
+    "RF-001": [],
+    "RF-002": ["RF-001"],
+    "RF-003": ["RF-002"],
+    "RF-004": ["RF-003"],
+    "RF-005": ["RF-004"],
+    "RF-006": ["RF-005"],
+    "RF-007": ["RF-006"],
+    "RF-008": ["RF-007"],
+    "RF-009": ["RF-008"],
+    "RF-010": ["RF-009"],
+    "RF-011": ["RF-010"],
+    "RF-012": ["RF-011"],
+    "RF-013": ["RF-012"],
+    "RF-014": ["RF-013"],
+    "RF-015": ["RF-014"],
+    "RF-016": ["RF-015"],
+    "RF-017": ["RF-016"]
+  }
+}

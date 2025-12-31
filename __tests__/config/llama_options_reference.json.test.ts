@@ -255,14 +255,14 @@ describe("llama_options_reference.json", () => {
       expect(Array.isArray(mirostat.options)).toBe(true);
     });
 
-    it("has mirostat_lr option", () => {
-      expect(sampling).toHaveProperty("mirostat_lr");
-      expect(typeof sampling.mirostat_lr).toBe("object");
+    it("has mirostat_eta option", () => {
+      expect(sampling).toHaveProperty("mirostat_eta");
+      expect(typeof sampling.mirostat_eta).toBe("object");
     });
 
-    it("has mirostat_ent option", () => {
-      expect(sampling).toHaveProperty("mirostat_ent");
-      expect(typeof sampling.mirostat_ent).toBe("object");
+    it("has mirostat_tau option", () => {
+      expect(sampling).toHaveProperty("mirostat_tau");
+      expect(typeof sampling.mirostat_tau).toBe("object");
     });
   });
 

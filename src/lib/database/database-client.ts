@@ -16,16 +16,34 @@ export function initDatabase(): Database.Database {
   });
 
   db.pragma("journal_mode = WAL");
+  db.pragma("synchronous = NORMAL"); // Balance between performance and durability
+  db.pragma("cache_size = -64000"); // 64MB cache
+  db.pragma("temp_store = MEMORY");
   createTables(db);
   return db;
 }
 
 /**
- * Close database connection
+ * Close database connection and checkpoint WAL
  * @param db - Database instance to close
  */
 export function closeDatabase(db: Database.Database): void {
-  db.close();
+  try {
+    // Perform WAL checkpoint to ensure all changes are written to main database
+    const checkpoint = db.pragma("wal_checkpoint(TRUNCATE)");
+    // Only log if there was data to checkpoint
+    if (checkpoint && typeof checkpoint === "object" && "checkpointed" in checkpoint) {
+      const ckpt = checkpoint as { checkpointed: number; log: number; busy: number };
+      if (ckpt.checkpointed > 0 || ckpt.log > 0) {
+        console.log(`[Database] WAL checkpoint: ${ckpt.checkpointed} pages checkpointed, ${ckpt.log} log pages, busy: ${ckpt.busy}`);
+      }
+    }
+  } catch (error) {
+    // Don't fail on checkpoint errors, just log them
+    console.warn(`[Database] WAL checkpoint warning: ${error instanceof Error ? error.message : String(error)}`);
+  } finally {
+    db.close();
+  }
 }
 
 /**
@@ -155,10 +173,10 @@ function createTables(db: Database.Database): void {
       dry_penalty_last_n INTEGER DEFAULT -1,
       dry_sequence_breaker TEXT,
       dynatemp_range REAL DEFAULT 0.0,
-      dynatemp_exp REAL DEFAULT 1.0,
+      dynatemp_exponent REAL DEFAULT 1.0,
       mirostat INTEGER DEFAULT 0,
-      mirostat_lr REAL DEFAULT 0.1,
-      mirostat_ent REAL DEFAULT 5.0,
+      mirostat_eta REAL DEFAULT 0.1,
+      mirostat_tau REAL DEFAULT 5.0,
       samplers TEXT,
       sampler_seq TEXT DEFAULT 'edskypmxt',
       seed INTEGER DEFAULT -1,

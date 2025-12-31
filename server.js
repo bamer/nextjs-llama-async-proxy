@@ -396,61 +396,89 @@ app.prepare().then(() => {
       logger.info(`📋 [CONFIG] Llama server path: ${llamaConfig.serverPath}`);
       logger.info(`📋 [CONFIG] Host: ${llamaConfig.host}:${llamaConfig.port}`);
       logger.info(`📋 [CONFIG] Base path: ${llamaConfig.basePath}`);
+      logger.info(`📋 [CONFIG] ctx_size: ${llamaConfig.ctx_size}, batch_size: ${llamaConfig.batch_size}, threads: ${llamaConfig.threads}`);
       await llamaIntegration.initialize(llamaConfig);
 
       registry.register('llamaService', llamaIntegration.getLlamaService());
       logger.info('✅ LlamaServer integration initialized successfully');
 
-      // Auto-import models if database is empty
-      try {
-        const dbModels = getModels();
-        logger.info(`[AUTO-IMPORT] Database has ${dbModels.length} models`);
+      // Auto-import models if database is empty (with retry logic)
+      const tryAutoImport = async (retries = 3) => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            const dbModels = getModels();
+            logger.info(`[AUTO-IMPORT] Check ${i + 1}/${retries}: Database has ${dbModels.length} models`);
 
-        if (dbModels.length === 0) {
-          logger.info('📥 [AUTO-IMPORT] Database is empty, importing from llama-server...');
+            if (dbModels.length === 0) {
+              logger.info('📥 [AUTO-IMPORT] Database is empty, importing from llama-server...');
 
-          const llamaService = llamaIntegration.getLlamaService();
-          if (!llamaService) {
-            logger.warn('[AUTO-IMPORT] LlamaService not available, skipping auto-import');
-          } else {
-            const llamaModels = llamaService.getState().models;
-            logger.info(`[AUTO-IMPORT] Found ${llamaModels.length} models from llama-server`);
-
-            for (const llamaModel of llamaModels) {
-              try {
-                // Validate required fields
-                if (!llamaModel.name || typeof llamaModel.name !== 'string') {
-                  logger.warn(`[AUTO-IMPORT] Skipping model with invalid name:`, llamaModel);
-                  continue;
-                }
-
-                const modelRecord = {
-                  name: llamaModel.name.trim(),
-                  type: 'llama',
-                  status: 'stopped',
-                  model_path: llamaModel.id || llamaModel.name,
-                  model_url: '',
-                  ctx_size: llamaConfig.ctx_size,
-                  batch_size: llamaConfig.batch_size,
-                  threads: llamaConfig.threads,
-                  file_size_bytes: llamaModel.size || 0,
-                };
-
-                const dbId = saveModel(modelRecord);
-                logger.info(`[AUTO-IMPORT] Imported model: ${modelRecord.name} (DB ID: ${dbId})`);
-              } catch (error) {
-                const message = error instanceof Error ? error.message : String(error);
-                const modelName = llamaModel?.name || 'unknown';
-                logger.error(`[AUTO-IMPORT] Failed to import model ${modelName}: ${message}`);
+              const llamaService = llamaIntegration.getLlamaService();
+              if (!llamaService) {
+                logger.warn(`[AUTO-IMPORT] Retry ${i + 1}/${retries}: LlamaService not available yet, waiting...`);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                continue;
               }
-            }
 
-            logger.info('✅ [AUTO-IMPORT] Models import completed');
+              const llamaModels = llamaService.getState().models;
+              logger.info(`[AUTO-IMPORT] Found ${llamaModels.length} models from llama-server`);
+
+              if (llamaModels.length === 0) {
+                logger.warn(`[AUTO-IMPORT] Retry ${i + 1}/${retries}: No models found in llama-server`);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                continue;
+              }
+
+              for (const llamaModel of llamaModels) {
+                try {
+                  // Validate required fields
+                  if (!llamaModel.name || typeof llamaModel.name !== 'string') {
+                    logger.warn(`[AUTO-IMPORT] Skipping model with invalid name:`, llamaModel);
+                    continue;
+                  }
+
+                  const modelRecord = {
+                    name: llamaModel.name.trim(),
+                    type: 'llama',
+                    status: 'stopped',
+                    model_path: llamaModel.id || llamaModel.name,
+                    model_url: '',
+                    ctx_size: llamaConfig.ctx_size,
+                    batch_size: llamaConfig.batch_size,
+                    threads: llamaConfig.threads,
+                    file_size_bytes: llamaModel.size || 0,
+                  };
+
+                  const dbId = saveModel(modelRecord);
+                  logger.info(`[AUTO-IMPORT] Imported model: ${modelRecord.name} (DB ID: ${dbId})`);
+                } catch (error) {
+                  const message = error instanceof Error ? error.message : String(error);
+                  const modelName = llamaModel?.name || 'unknown';
+                  logger.error(`[AUTO-IMPORT] Failed to import model ${modelName}: ${message}`);
+                }
+              }
+
+              logger.info('✅ [AUTO-IMPORT] Models import completed');
+              return true; // Success
+            } else {
+              logger.info('[AUTO-IMPORT] Database already has models, skipping import');
+              return true; // Success - no import needed
+            }
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            logger.warn(`[AUTO-IMPORT] Retry ${i + 1}/${retries} failed: ${message}`);
+            if (i < retries - 1) {
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
           }
         }
+        return false; // All retries failed
+      };
+
+      try {
+        await tryAutoImport(5);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        logger.warn(`⚠️ [AUTO-IMPORT] Failed to check/import models: ${message}`);
+        logger.warn(`⚠️ [AUTO-IMPORT] Failed to check/import models after all retries: ${message}`);
       }
     } catch (error) {
       logger.error(`❌ Failed to initialize LlamaServer integration: ${error.message}`);

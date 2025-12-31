@@ -25,53 +25,53 @@ export default function AdvancedForm({ config, onChange }: AdvancedFormProps): R
 
   const basicFields = [
     {
-      label: "RoPE Frequency",
+      label: "Fréquence RoPE",
       name: "rope_frequency" as const,
       type: "number" as const,
       value: config.rope_frequency,
       onChange: (v: number) => handleChange("rope_frequency", v),
-      helperText: "Default: 10000",
+      helperText: "Par défaut : 10000",
       tooltip: tooltipConfig.advanced.rope_freq_base,
     },
     {
-      label: "RoPE Scale",
+      label: "Échelle RoPE",
       name: "rope_scale" as const,
       type: "number" as const,
       value: config.rope_scale,
       onChange: (v: number) => handleChange("rope_scale", v),
-      helperText: "Default: 1.0",
+      helperText: "Par défaut : 1.0",
       tooltip: tooltipConfig.advanced.rope_scale,
     },
     {
-      label: "Number of Threads",
+      label: "Nombre de Threads",
       name: "num_thread" as const,
       type: "number" as const,
       value: config.num_thread,
       onChange: (v: number) => handleChange("num_thread", v),
-      helperText: "CPU threads for computation",
+      helperText: "Threads CPU pour le calcul",
       tooltip: tooltipConfig.advanced.check_tensors,
     },
     {
-      label: "Max Predict Tokens",
+      label: "Tokens Max de Prédiction",
       name: "num_predict" as const,
       type: "number" as const,
       value: config.num_predict,
       onChange: (v: number) => handleChange("num_predict", v),
-      helperText: "-1 for unlimited",
+      helperText: "-1 pour illimité",
       tooltip: tooltipConfig.sampling.sampler_seq,
     },
   ];
 
   return (
     <>
-      <FormSection title="Basic Advanced Settings" spacing={2}>
+      <FormSection title="Paramètres Avancés de Base" spacing={2}>
         <Grid container spacing={2}>
           {basicFields.map((field) => (
             <Grid key={field.label} size={{ xs: 12, sm: 6 }}>
               <FormField
                 {...field}
-                onChange={(_name, value) => field.onChange(Number(value))}
-                fullWidth
+                  onChange={(_name, value) => field.onChange(Number(value))}
+                  fullWidth
               />
             </Grid>
           ))}

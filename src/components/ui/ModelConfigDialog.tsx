@@ -41,8 +41,8 @@ import {
   Error as ErrorIcon,
   Edit as EditIcon,
 } from "@mui/icons-material";
-import { useEffect, useState, useCallback } from "react";
-import { getTooltipContent } from "@/config/tooltip-config";
+import { useEffect, useState, useCallback, useMemo, memo } from "react";
+import { getTooltipContent, TooltipContent as TooltipContentType } from "@/config/tooltip-config";
 import { FieldWithTooltip } from "./FormTooltip";
 import { useTheme } from "@mui/material/styles";
 
@@ -90,16 +90,138 @@ interface FieldDefinition {
   marks?: Array<{ value: number; label: string }>;
 }
 
+// Import TooltipContent type
+import { TooltipContent } from "@/config/tooltip-config";
+
+// Memoized Field Components
+const MemoizedTextField = memo(({
+  field,
+  value,
+  error,
+  tooltipContent,
+  onChange,
+}: {
+  field: FieldDefinition;
+  value: unknown;
+  error?: string;
+  tooltipContent?: TooltipContentType;
+  onChange: (name: string, value: unknown) => void;
+}) => (
+  <FieldWithTooltip content={tooltipContent as TooltipContentType}>
+    <Box>
+      <TextField
+        fullWidth
+        size="small"
+        label={field.label}
+        value={value}
+        onChange={(e) => onChange(field.name, e.target.value)}
+        variant="outlined"
+        error={Boolean(error)}
+        helperText={error}
+        sx={{
+          transition: "all 0.2s ease",
+        }}
+      />
+    </Box>
+  </FieldWithTooltip>
+));
+
+MemoizedTextField.displayName = "MemoizedTextField";
+
+const MemoizedBooleanField = memo(({
+  field,
+  value,
+  tooltipContent,
+  onChange,
+}: {
+  field: FieldDefinition;
+  value: unknown;
+  tooltipContent?: TooltipContentType;
+  onChange: (name: string, value: unknown) => void;
+}) => (
+  <FieldWithTooltip content={tooltipContent as TooltipContentType}>
+    <FormControlLabel
+      control={
+        <Switch
+          checked={Boolean(value)}
+          onChange={(e) => onChange(field.name, e.target.checked)}
+          aria-label={`Toggle ${field.label}`}
+          sx={{
+            transition: "transform 0.2s ease",
+            "&:hover": {
+              transform: "scale(1.05)",
+            },
+          }}
+        />
+      }
+      label={
+        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          {field.label}
+        </Typography>
+      }
+    />
+  </FieldWithTooltip>
+));
+
+MemoizedBooleanField.displayName = "MemoizedBooleanField";
+
+const MemoizedSelectField = memo(({
+  field,
+  value,
+  error,
+  tooltipContent,
+  theme,
+  onChange,
+}: {
+  field: FieldDefinition;
+  value: unknown;
+  error?: string;
+  tooltipContent?: TooltipContentType;
+  theme: any;
+  onChange: (name: string, value: unknown) => void;
+}) => (
+  <FieldWithTooltip content={tooltipContent as TooltipContentType}>
+    <FormControl fullWidth size="small" error={Boolean(error)}>
+      <InputLabel>{field.label}</InputLabel>
+      <Select
+        label={field.label}
+        value={value}
+        onChange={(e) => onChange(field.name, e.target.value)}
+        aria-label={`Select ${field.label}`}
+        sx={{
+          transition: "all 0.2s ease",
+          "&:hover": {
+            borderColor: theme.palette.primary.main,
+          },
+        }}
+      >
+        {field.options?.map((option: string) => (
+          <MenuItem key={option} value={option}>
+            {option || "None"}
+          </MenuItem>
+        ))}
+      </Select>
+      {error && (
+        <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 0.75 }}>
+          {error}
+        </Typography>
+      )}
+    </FormControl>
+  </FieldWithTooltip>
+));
+
+MemoizedSelectField.displayName = "MemoizedSelectField";
+
 // Section groups for accordion organization
 const sectionGroups: Record<ConfigType, Array<{ title: string; icon: React.ReactNode; fields: string[] }>> = {
   sampling: [
     {
-      title: "Core Sampling",
+      title: "Échantillonnage Principal",
       icon: <SpeedIcon />,
       fields: ["temperature", "top_k", "top_p", "min_p", "typical_p"],
     },
     {
-      title: "Repetition Control",
+      title: "Contrôle de Répétition",
       icon: <TuneIcon />,
       fields: [
         "repeat_last_n",
@@ -114,21 +236,21 @@ const sectionGroups: Record<ConfigType, Array<{ title: string; icon: React.React
       ],
     },
     {
-      title: "Advanced Sampling",
+      title: "Échantillonnage Avancé",
       icon: <SettingsIcon />,
       fields: [
         "mirostat",
-        "mirostat_lr",
-        "mirostat_ent",
+        "mirostat_eta",
+        "mirostat_tau",
         "dynatemp_range",
-        "dynatemp_exp",
+        "dynatemp_exponent",
         "top_nsigma",
         "xtc_probability",
         "xtc_threshold",
       ],
     },
     {
-      title: "Output Constraints",
+      title: "Contraintes de Sortie",
       icon: <LayersIcon />,
       fields: [
         "samplers",
@@ -143,7 +265,7 @@ const sectionGroups: Record<ConfigType, Array<{ title: string; icon: React.React
       ],
     },
     {
-      title: "Context Extension (ROPE)",
+      title: "Extension de Contexte (ROPE)",
       icon: <MemoryIcon />,
       fields: [
         "rope_scaling_type",
@@ -165,36 +287,36 @@ const sectionGroups: Record<ConfigType, Array<{ title: string; icon: React.React
   ],
   memory: [
     {
-      title: "Cache Settings",
+      title: "Paramètres de Cache",
       icon: <MemoryIcon />,
       fields: ["cache_ram", "cache_type_k", "cache_type_v"],
     },
     {
-      title: "Memory Management",
+      title: "Gestion de la Mémoire",
       icon: <SettingsIcon />,
       fields: ["mmap", "mlock", "numa", "defrag_thold"],
     },
   ],
   gpu: [
     {
-      title: "Device Selection",
+      title: "Sélection de Périphérique",
       icon: <GpuIcon />,
       fields: ["device", "list_devices"],
     },
     {
-      title: "GPU Configuration",
+      title: "Configuration GPU",
       icon: <SettingsIcon />,
       fields: ["gpu_layers", "split_mode", "tensor_split", "main_gpu", "kv_offload"],
     },
     {
-      title: "Performance Options",
+      title: "Options de Performance",
       icon: <SpeedIcon />,
       fields: ["repack", "no_host"],
     },
   ],
   advanced: [
     {
-      title: "Model Behavior",
+      title: "Comportement du Modèle",
       icon: <SettingsIcon />,
       fields: [
         "swa_full",
@@ -207,34 +329,34 @@ const sectionGroups: Record<ConfigType, Array<{ title: string; icon: React.React
       ],
     },
     {
-      title: "Distributed Computing",
+      title: "Calcul Distribué",
       icon: <GpuIcon />,
       fields: ["rpc", "offline", "override_kv", "op_offload"],
     },
     {
-      title: "Model Fitting",
+      title: "Ajustement du Modèle",
       icon: <TuneIcon />,
       fields: ["fit", "fit_target", "fit_ctx", "check_tensors"],
     },
     {
-      title: "Resource Management",
+      title: "Gestion des Ressources",
       icon: <MemoryIcon />,
       fields: ["sleep_idle_seconds", "polling", "polling_batch"],
     },
     {
-      title: "Reasoning",
+      title: "Raisonnement",
       icon: <LayersIcon />,
       fields: ["reasoning_format_value_format", "reasoning_budget", "custom_params"],
     },
   ],
   lora: [
     {
-      title: "LoRA Adapters",
+      title: "Adaptateurs LoRA",
       icon: <LayersIcon />,
       fields: ["lora", "lora_scaled"],
     },
     {
-      title: "Control Vectors",
+      title: "Vecteurs de Contrôle",
       icon: <TuneIcon />,
       fields: [
         "control_vector",
@@ -243,7 +365,7 @@ const sectionGroups: Record<ConfigType, Array<{ title: string; icon: React.React
       ],
     },
     {
-      title: "Speculative Decoding",
+      title: "Décodage Spéculatif",
       icon: <SpeedIcon />,
       fields: [
         "model_draft",
@@ -257,7 +379,7 @@ const sectionGroups: Record<ConfigType, Array<{ title: string; icon: React.React
       ],
     },
     {
-      title: "Draft Model Cache",
+      title: "Cache du Modèle de Brouillon",
       icon: <MemoryIcon />,
       fields: [
         "cache_type_k_draft",
@@ -269,19 +391,19 @@ const sectionGroups: Record<ConfigType, Array<{ title: string; icon: React.React
       ],
     },
     {
-      title: "Speculative Decoding Options",
+      title: "Options de Décodage Spéculatif",
       icon: <SettingsIcon />,
       fields: ["spec_replace"],
     },
   ],
   multimodal: [
     {
-      title: "Vision Projection",
+      title: "Projection Visuelle",
       icon: <ImageIcon />,
       fields: ["mmproj", "mmproj_url", "mmproj_auto", "mmproj_offload"],
     },
     {
-      title: "Image Processing",
+      title: "Traitement d'Images",
       icon: <SettingsIcon />,
       fields: ["image_min_tokens", "image_max_tokens"],
     },
@@ -306,11 +428,11 @@ const validationRules: Record<string, ValidationRule> = {
   dry_base: { min: 1, max: 3, required: false },
   dry_allowed_length: { min: 0, max: 10, required: false },
   dry_penalty_last_n: { min: 0, max: 512, required: false },
-  dynatemp_range: { min: 0, max: 2, required: false },
-  dynatemp_exp: { min: 0.1, max: 2, required: false },
-  mirostat: { min: 0, max: 2, required: false },
-  mirostat_lr: { min: 0.001, max: 1, required: false },
-  mirostat_ent: { min: 0, max: 10, required: false },
+    dynatemp_range: { min: 0, max: 2, required: false },
+    dynatemp_exponent: { min: 0.1, max: 2, required: false },
+    mirostat: { min: 0, max: 2, required: false },
+    mirostat_eta: { min: 0.001, max: 1, required: false },
+    mirostat_tau: { min: 0, max: 10, required: false },
   seed: { min: -1, max: Number.MAX_SAFE_INTEGER, required: false },
   rope_scale: { min: 0, max: 10, required: false },
   rope_freq_base: { min: 0, max: 1000000, required: false },
@@ -343,125 +465,128 @@ const validationRules: Record<string, ValidationRule> = {
 // Field definitions for each config type
 const configFields: Record<ConfigType, FieldDefinition[]> = {
   sampling: [
-    { name: "temperature", label: "Temperature", type: "number", defaultValue: 0.7, xs: 12, sm: 6, unit: "", step: 0.01, marks: [{ value: 0, label: "0" }, { value: 1, label: "1" }, { value: 2, label: "2" }] },
+    { name: "temperature", label: "Température", type: "number", defaultValue: 0.7, xs: 12, sm: 6, unit: "", step: 0.01, marks: [{ value: 0, label: "0" }, { value: 1, label: "1" }, { value: 2, label: "2" }] },
     { name: "top_k", label: "Top K", type: "number", defaultValue: 40, xs: 12, sm: 6, unit: "", step: 1 },
     { name: "top_p", label: "Top P", type: "number", defaultValue: 0.9, xs: 12, sm: 6, unit: "", step: 0.01, marks: [{ value: 0, label: "0" }, { value: 1, label: "1" }] },
     { name: "min_p", label: "Min P", type: "number", defaultValue: 0.05, xs: 12, sm: 6, unit: "", step: 0.01 },
     { name: "top_nsigma", label: "Top N Sigma", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 0.1 },
-    { name: "xtc_probability", label: "XTC Probability", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 0.01, marks: [{ value: 0, label: "0" }, { value: 1, label: "1" }] },
-    { name: "xtc_threshold", label: "XTC Threshold", type: "number", defaultValue: 0.1, xs: 12, sm: 6, unit: "", step: 0.01 },
+    { name: "xtc_probability", label: "Probabilité XTC", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 0.01, marks: [{ value: 0, label: "0" }, { value: 1, label: "1" }] },
+    { name: "xtc_threshold", label: "Seuil XTC", type: "number", defaultValue: 0.1, xs: 12, sm: 6, unit: "", step: 0.01 },
     { name: "typical_p", label: "Typical P", type: "number", defaultValue: 1, xs: 12, sm: 6, unit: "", step: 0.01, marks: [{ value: 0, label: "0" }, { value: 1, label: "1" }] },
-    { name: "repeat_last_n", label: "Repeat Last N", type: "number", defaultValue: 64, xs: 12, sm: 6, unit: "tokens", step: 1 },
-    { name: "repeat_penalty", label: "Repeat Penalty", type: "number", defaultValue: 1, xs: 12, sm: 6, unit: "", step: 0.01, marks: [{ value: 1, label: "1.0" }, { value: 1.5, label: "1.5" }, { value: 2, label: "2.0" }] },
-    { name: "presence_penalty", label: "Presence Penalty", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 0.1 },
-    { name: "frequency_penalty", label: "Frequency Penalty", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 0.1 },
-    { name: "dry_multiplier", label: "DRY Multiplier", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 0.1 },
-    { name: "dry_base", label: "DRY Base", type: "number", defaultValue: 1.75, xs: 12, sm: 6, unit: "", step: 0.01 },
-    { name: "dry_allowed_length", label: "DRY Allowed Length", type: "number", defaultValue: 2, xs: 12, sm: 6, unit: "tokens", step: 1 },
-    { name: "dry_penalty_last_n", label: "DRY Penalty Last N", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "tokens", step: 1 },
-    { name: "dry_sequence_breaker", label: "DRY Sequence Breaker", type: "text", defaultValue: "\\n, !, ., ?", xs: 12, sm: 6 },
-    { name: "dynatemp_range", label: "Dynatemp Range", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 0.1 },
-    { name: "dynatemp_exp", label: "Dynatemp Exp", type: "number", defaultValue: 1, xs: 12, sm: 6, unit: "", step: 0.1 },
+    { name: "repeat_last_n", label: "Répéter Dernier N", type: "number", defaultValue: 64, xs: 12, sm: 6, unit: "tokens", step: 1 },
+    { name: "repeat_penalty", label: "Pénalité de Répétition", type: "number", defaultValue: 1, xs: 12, sm: 6, unit: "", step: 0.01, marks: [{ value: 1, label: "1.0" }, { value: 1.5, label: "1.5" }, { value: 2, label: "2.0" }] },
+    { name: "presence_penalty", label: "Pénalité de Présence", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 0.1 },
+    { name: "frequency_penalty", label: "Pénalité de Fréquence", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 0.1 },
+    { name: "dry_multiplier", label: "Multiplicateur DRY", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 0.1 },
+    { name: "dry_base", label: "Base DRY", type: "number", defaultValue: 1.75, xs: 12, sm: 6, unit: "", step: 0.01 },
+    { name: "dry_allowed_length", label: "Longueur Autorisée DRY", type: "number", defaultValue: 2, xs: 12, sm: 6, unit: "tokens", step: 1 },
+    { name: "dry_penalty_last_n", label: "Pénalité Dernier N DRY", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "tokens", step: 1 },
+    { name: "dry_sequence_breaker", label: "Séparateur de Séquence DRY", type: "text", defaultValue: "\\n, !, ., ?", xs: 12, sm: 6 },
+    { name: "dynatemp_range", label: "Plage Dynatemp", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 0.1 },
+    { name: "dynatemp_exp", label: "Exp Dynatemp", type: "number", defaultValue: 1, xs: 12, sm: 6, unit: "", step: 0.1 },
     { name: "mirostat", label: "Mirostat", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "mirostat_lr", label: "Mirostat LR", type: "number", defaultValue: 0.1, xs: 12, sm: 6, unit: "", step: 0.01 },
-    { name: "mirostat_ent", label: "Mirostat Ent", type: "number", defaultValue: 5, xs: 12, sm: 6, unit: "", step: 0.1 },
-    { name: "samplers", label: "Samplers", type: "text", defaultValue: "", xs: 12 },
-    { name: "sampler_seq", label: "Sampler Sequence", type: "text", defaultValue: "", xs: 12 },
-    { name: "seed", label: "Seed", type: "number", defaultValue: -1, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "grammar", label: "Grammar", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "grammar_file", label: "Grammar File", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "json_schema", label: "JSON Schema", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "json_schema_file", label: "JSON Schema File", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "ignore_eos", label: "Ignore EOS", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "escape", label: "Escape", type: "boolean", defaultValue: false, xs: 12, sm: 6 },
-    { name: "rope_scaling_type", label: "ROPE Scaling Type", type: "select", options: ["", "linear", "yarn"], defaultValue: "", xs: 12, sm: 6 },
-    { name: "rope_scale", label: "ROPE Scale", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 0.1 },
-    { name: "rope_freq_base", label: "ROPE Freq Base", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 100 },
-    { name: "rope_freq_scale", label: "ROPE Freq Scale", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 0.1 },
-    { name: "yarn_orig_ctx", label: "YARN Orig Ctx", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "tokens", step: 1 },
-    { name: "yarn_ext_factor", label: "YARN Ext Factor", type: "number", defaultValue: -1, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "yarn_attn_factor", label: "YARN Attn Factor", type: "number", defaultValue: 1, xs: 12, sm: 6, unit: "", step: 0.1 },
-    { name: "yarn_beta_slow", label: "YARN Beta Slow", type: "number", defaultValue: 1, xs: 12, sm: 6, unit: "", step: 0.1 },
-    { name: "yarn_beta_fast", label: "YARN Beta Fast", type: "number", defaultValue: 32, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "flash_attn", label: "Flash Attention", type: "select", options: ["", "0", "1"], defaultValue: "", xs: 12, sm: 6 },
-    { name: "logit_bias", label: "Logit Bias", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "mirostat_lr", label: "LR Mirostat", type: "number", defaultValue: 0.1, xs: 12, sm: 6, unit: "", step: 0.01 },
+    { name: "mirostat_ent", label: "Ent Mirostat", type: "number", defaultValue: 5, xs: 12, sm: 6, unit: "", step: 0.1 },
+    { name: "samplers", label: "Échantillonneurs", type: "text", defaultValue: "", xs: 12 },
+    { name: "sampler_seq", label: "Séquence d'Échantillonnage", type: "text", defaultValue: "", xs: 12 },
+    { name: "seed", label: "Graine", type: "number", defaultValue: -1, xs: 12, sm: 6, unit: "", step: 1 },
+    { name: "grammar", label: "Grammaire", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "grammar_file", label: "Fichier de Grammaire", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "json_schema", label: "Schéma JSON", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "json_schema_file", label: "Fichier de Schéma JSON", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "ignore_eos", label: "Ignorer Token EOS", type: "boolean", defaultValue: false, xs: 12, sm: 6 },
+    { name: "escape", label: "Échappement", type: "boolean", defaultValue: false, xs: 12, sm: 6 },
+    { name: "rope_scaling_type", label: "Type de Mise à l'Échelle ROPE", type: "select", options: ["", "linear", "yarn"], defaultValue: "", xs: 12, sm: 6 },
+    { name: "rope_scale", label: "Échelle ROPE", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 0.1 },
+    { name: "rope_freq_base", label: "Base Fréquence ROPE", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 100 },
+    { name: "rope_freq_scale", label: "Échelle Fréquence ROPE", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 0.1 },
+    { name: "yarn_orig_ctx", label: "Ctx Original YARN", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "tokens", step: 1 },
+    { name: "yarn_ext_factor", label: "Facteur Extension YARN", type: "number", defaultValue: -1, xs: 12, sm: 6, unit: "", step: 1 },
+    { name: "yarn_attn_factor", label: "Facteur Attention YARN", type: "number", defaultValue: 1, xs: 12, sm: 6, unit: "", step: 0.1 },
+    { name: "yarn_beta_slow", label: "Beta Lent YARN", type: "number", defaultValue: 1, xs: 12, sm: 6, unit: "", step: 0.1 },
+    { name: "yarn_beta_fast", label: "Beta Rapide YARN", type: "number", defaultValue: 32, xs: 12, sm: 6, unit: "", step: 1 },
+    { name: "flash_attn", label: "Attention Flash", type: "select", options: ["", "0", "1"], defaultValue: "", xs: 12, sm: 6 },
+    { name: "logit_bias", label: "Biais Logit", type: "text", defaultValue: "", xs: 12, sm: 6 },
   ],
   memory: [
-    { name: "cache_ram", label: "Cache RAM", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "GB", step: 0.1 },
-    { name: "cache_type_k", label: "Cache Type K", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "cache_type_v", label: "Cache Type V", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "mmap", label: "MMap", type: "number", defaultValue: 1, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "mlock", label: "MLock", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
+    { name: "cache_ram", label: "Cache RAM", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "Go", step: 0.1 },
+    { name: "cache_type_k", label: "Type de Cache K", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "cache_type_v", label: "Type de Cache V", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "mmap", label: "MMap (Cartographie Mémoire)", type: "boolean", defaultValue: true, xs: 12, sm: 6 },
+    { name: "mlock", label: "MLock (Verrou Mémoire)", type: "boolean", defaultValue: false, xs: 12, sm: 6 },
     { name: "numa", label: "NUMA", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "defrag_thold", label: "Defrag Threshold", type: "number", defaultValue: -1, xs: 12, sm: 6, unit: "", step: 0.01 },
+    { name: "defrag_thold", label: "Seuil de Défragmentation", type: "number", defaultValue: -1, xs: 12, sm: 6, unit: "", step: 0.01 },
   ],
   gpu: [
-    { name: "device", label: "Device", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "list_devices", label: "List Devices", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "gpu_layers", label: "GPU Layers", type: "number", defaultValue: -1, xs: 12, sm: 6, unit: "layers", step: 1 },
-    { name: "split_mode", label: "Split Mode", type: "select", options: ["", "layer", "row"], defaultValue: "", xs: 12, sm: 6 },
-    { name: "tensor_split", label: "Tensor Split", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "main_gpu", label: "Main GPU", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "kv_offload", label: "KV Offload", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "repack", label: "Repack", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "no_host", label: "No Host", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
+    { name: "device", label: "Périphérique", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "list_devices", label: "Lister les Périphériques", type: "boolean", defaultValue: false, xs: 12, sm: 6 },
+    { name: "gpu_layers", label: "Couches GPU", type: "number", defaultValue: -1, xs: 12, sm: 6, unit: "couches", step: 1 },
+    { name: "split_mode", label: "Mode de Partage", type: "select", options: ["", "layer", "row"], defaultValue: "", xs: 12, sm: 6 },
+    { name: "tensor_split", label: "Répartition Tensor", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "main_gpu", label: "GPU Principal", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
+    { name: "kv_offload", label: "Déchargement KV", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
+    { name: "repack", label: "Réempaqueter", type: "boolean", defaultValue: false, xs: 12, sm: 6 },
+    { name: "no_host", label: "Pas d'Hôte", type: "boolean", defaultValue: false, xs: 12, sm: 6 },
   ],
   advanced: [
-    { name: "swa_full", label: "SWA Full", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "override_tensor", label: "Override Tensor", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "cpu_moe", label: "CPU MoE", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
+    { name: "swa_full", label: "SWA Complet", type: "boolean", defaultValue: false, xs: 12, sm: 6 },
+    { name: "override_tensor", label: "Surcharger Tenseur", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "cpu_moe", label: "CPU MoE", type: "boolean", defaultValue: false, xs: 12, sm: 6 },
     { name: "n_cpu_moe", label: "N CPU MoE", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "kv_unified", label: "KV Unified", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "pooling", label: "Pooling", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "context_shift", label: "Context Shift", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
+    { name: "kv_unified", label: "KV Unifié", type: "boolean", defaultValue: false, xs: 12, sm: 6 },
+    { name: "pooling", label: "Mise en Commun", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "context_shift", label: "Décalage de Contexte", type: "boolean", defaultValue: false, xs: 12, sm: 6 },
     { name: "rpc", label: "RPC", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "offline", label: "Offline", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "override_kv", label: "Override KV", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "op_offload", label: "Op Offload", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "fit", label: "Fit", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "fit_target", label: "Fit Target", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "fit_ctx", label: "Fit Context", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "tokens", step: 1 },
-    { name: "check_tensors", label: "Check Tensors", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "sleep_idle_seconds", label: "Sleep Idle Seconds", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "s", step: 1 },
-    { name: "polling", label: "Polling", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "polling_batch", label: "Polling Batch", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "reasoning_format", label: "Reasoning Format", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "reasoning_budget", label: "Reasoning Budget", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "tokens", step: 1 },
-    { name: "custom_params", label: "Custom Params", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "offline", label: "Mode Hors Ligne", type: "boolean", defaultValue: false, xs: 12, sm: 6 },
+    { name: "override_kv", label: "Surcharger KV", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "op_offload", label: "Déchargement Op", type: "boolean", defaultValue: false, xs: 12, sm: 6 },
+    { name: "fit", label: "Ajuster", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "fit_target", label: "Cible d'Ajustement", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
+    { name: "fit_ctx", label: "Contexte d'Ajustement", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "tokens", step: 1 },
+    { name: "check_tensors", label: "Vérifier Tenseurs", type: "boolean", defaultValue: false, xs: 12, sm: 6 },
+    { name: "sleep_idle_seconds", label: "Secondes de Veille", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "s", step: 1 },
+    { name: "polling", label: "Interrogation", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "polling_batch", label: "Traitement par Lot", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "reasoning_format", label: "Format de Raisonnement", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "reasoning_budget", label: "Budget de Raisonnement", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "tokens", step: 1 },
+    { name: "custom_params", label: "Paramètres Personnalisés", type: "text", defaultValue: "", xs: 12, sm: 6 },
   ],
   lora: [
     { name: "lora", label: "LoRA", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "lora_scaled", label: "LoRA Scaled", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "control_vector", label: "Control Vector", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "control_vector_scaled", label: "Control Vector Scaled", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "control_vector_layer_range", label: "Control Vector Layer Range", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "model_draft", label: "Model Draft", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "model_url_draft", label: "Model URL Draft", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "ctx_size_draft", label: "Context Size Draft", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "tokens", step: 1 },
-    { name: "threads_draft", label: "Threads Draft", type: "number", defaultValue: -1, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "threads_batch_draft", label: "Threads Batch Draft", type: "number", defaultValue: -1, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "draft_max", label: "Draft Max", type: "number", defaultValue: 16, xs: 12, sm: 6, unit: "tokens", step: 1 },
-    { name: "draft_min", label: "Draft Min", type: "number", defaultValue: 5, xs: 12, sm: 6, unit: "tokens", step: 1 },
-    { name: "draft_p_min", label: "Draft P Min", type: "number", defaultValue: 0.05, xs: 12, sm: 6, unit: "", step: 0.01 },
-    { name: "cache_type_k_draft", label: "Cache Type K Draft", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "cache_type_v_draft", label: "Cache Type V Draft", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "cpu_moe_draft", label: "CPU MoE Draft", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "n_cpu_moe_draft", label: "N CPU MoE Draft", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "n_gpu_layers_draft", label: "N GPU Layers Draft", type: "number", defaultValue: -1, xs: 12, sm: 6, unit: "layers", step: 1 },
-    { name: "device_draft", label: "Device Draft", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "spec_replace", label: "Spec Replace", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "lora_scaled", label: "LoRA Mis à l'Échelle", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "control_vector", label: "Vecteur de Contrôle", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "control_vector_scaled", label: "Vecteur de Contrôle Mis à l'Échelle", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "control_vector_layer_range", label: "Plage de Couches Vecteur de Contrôle", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "model_draft", label: "Modèle de Brouillon", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "model_url_draft", label: "URL du Modèle de Brouillon", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "ctx_size_draft", label: "Taille du Contexte de Brouillon", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "tokens", step: 1 },
+    { name: "threads_draft", label: "Threads de Brouillon", type: "number", defaultValue: -1, xs: 12, sm: 6, unit: "", step: 1 },
+    { name: "threads_batch_draft", label: "Threads par Lot de Brouillon", type: "number", defaultValue: -1, xs: 12, sm: 6, unit: "", step: 1 },
+    { name: "draft_max", label: "Brouillon Maximum", type: "number", defaultValue: 16, xs: 12, sm: 6, unit: "tokens", step: 1 },
+    { name: "draft_min", label: "Brouillon Minimum", type: "number", defaultValue: 5, xs: 12, sm: 6, unit: "tokens", step: 1 },
+    { name: "draft_p_min", label: "P Min de Brouillon", type: "number", defaultValue: 0.05, xs: 12, sm: 6, unit: "", step: 0.01 },
+    { name: "cache_type_k_draft", label: "Type de Cache K Brouillon", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "cache_type_v_draft", label: "Type de Cache V Brouillon", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "cpu_moe_draft", label: "CPU MoE Brouillon", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
+    { name: "n_cpu_moe_draft", label: "N CPU MoE Brouillon", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
+    { name: "n_gpu_layers_draft", label: "N Couches GPU Brouillon", type: "number", defaultValue: -1, xs: 12, sm: 6, unit: "couches", step: 1 },
+    { name: "device_draft", label: "Périphérique Brouillon", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "spec_replace", label: "Remplacement Spéculatif", type: "text", defaultValue: "", xs: 12, sm: 6 },
   ],
   multimodal: [
-    { name: "mmproj", label: "MMPROJ", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "mmproj_url", label: "MMPROJ URL", type: "text", defaultValue: "", xs: 12, sm: 6 },
-    { name: "mmproj_auto", label: "MMPROJ Auto", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "mmproj_offload", label: "MMPROJ Offload", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "", step: 1 },
-    { name: "image_min_tokens", label: "Image Min Tokens", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "tokens", step: 1 },
-    { name: "image_max_tokens", label: "Image Max Tokens", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "tokens", step: 1 },
+    { name: "mmproj", label: "Projecteur Multimodal", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "mmproj_url", label: "URL du Projecteur Multimodal", type: "text", defaultValue: "", xs: 12, sm: 6 },
+    { name: "mmproj_auto", label: "Détection Auto MMPROJ", type: "boolean", defaultValue: false, xs: 12, sm: 6 },
+    { name: "mmproj_offload", label: "Déchargement MMPROJ", type: "boolean", defaultValue: false, xs: 12, sm: 6 },
+    { name: "image_min_tokens", label: "Tokens Min d'Image", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "tokens", step: 1 },
+    { name: "image_max_tokens", label: "Tokens Max d'Image", type: "number", defaultValue: 0, xs: 12, sm: 6, unit: "tokens", step: 1 },
   ],
 };
 
-export default function ModelConfigDialog({
+// Export sectionGroups for use in ModelsPage sidebar
+export { sectionGroups };
+
+const ModelConfigDialogComponent = function ModelConfigDialog({
   open,
   modelId,
   configType,
@@ -483,10 +608,32 @@ export default function ModelConfigDialog({
   }>({ open: false, message: "", severity: "success" });
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
+  // Helper function to convert database config to UI format
+  const convertConfigFromDatabase = useCallback((config: Record<string, unknown>): Record<string, unknown> => {
+    const converted: Record<string, unknown> = { ...config };
+
+    // Fields that are stored as numbers in database but should be boolean in UI
+    const numberToBooleanFields = [
+      "mmap", "mlock", "list_devices", "repack", "no_host",
+      "swa_full", "cpu_moe", "kv_unified", "context_shift", "offline",
+      "op_offload", "check_tensors", "mmproj_auto", "mmproj_offload", "ignore_eos"
+    ];
+
+    numberToBooleanFields.forEach((field) => {
+      if (typeof converted[field] === "number") {
+        converted[field] = (converted[field] as number) !== 0;
+      }
+    });
+
+    return converted;
+  }, []);
+
   // Initialize config when dialog opens
   useEffect(() => {
     if (open && configType && config) {
-      setEditedConfig({ ...config });
+      // Convert database config to UI format (numbers -> booleans)
+      const uiConfig = convertConfigFromDatabase(config);
+      setEditedConfig(uiConfig);
       setHasChanges(false);
       setErrors({});
     } else if (open && configType && !config) {
@@ -506,7 +653,7 @@ export default function ModelConfigDialog({
       setHasChanges(false);
       setErrors({});
     }
-  }, [open, configType, config]);
+  }, [open, configType, config, convertConfigFromDatabase]);
 
   // Validate single field
   const validateField = useCallback((fieldName: string, value: unknown): string | null => {
@@ -515,22 +662,22 @@ export default function ModelConfigDialog({
 
     // Required check
     if (rule.required && (value === "" || value === null || value === undefined)) {
-      return "This field is required";
+      return "Ce champ est requis";
     }
 
     // Type-specific validation
     if (typeof value === "number") {
       if (rule.min !== undefined && value < rule.min) {
-        return `Value must be at least ${rule.min}`;
+        return `La valeur doit être au moins ${rule.min}`;
       }
       if (rule.max !== undefined && value > rule.max) {
-        return `Value must be at most ${rule.max}`;
+        return `La valeur doit être au plus ${rule.max}`;
       }
     }
 
     if (rule.pattern && typeof value === "string") {
       if (!rule.pattern.test(value)) {
-        return "Invalid format";
+        return "Format invalide";
       }
     }
 
@@ -576,12 +723,32 @@ export default function ModelConfigDialog({
     }
   };
 
+  // Helper function to convert config for database compatibility
+  const convertConfigForDatabase = useCallback((config: Record<string, unknown>): Record<string, unknown> => {
+    const converted: Record<string, unknown> = { ...config };
+
+    // Fields that are boolean in UI but stored as numbers in database
+    const booleanToNumberFields = [
+      "mmap", "mlock", "list_devices", "repack", "no_host",
+      "swa_full", "cpu_moe", "kv_unified", "context_shift", "offline",
+      "op_offload", "check_tensors", "mmproj_auto", "mmproj_offload", "ignore_eos"
+    ];
+
+    booleanToNumberFields.forEach((field) => {
+      if (typeof converted[field] === "boolean") {
+        converted[field] = (converted[field] as boolean) ? 1 : 0;
+      }
+    });
+
+    return converted;
+  }, []);
+
   const handleSave = async () => {
     // Validate all fields before saving
     if (!validateAll(editedConfig)) {
       setNotification({
         open: true,
-        message: "Please fix validation errors before saving",
+        message: "Veuillez corriger les erreurs de validation avant de sauvegarder",
         severity: "error",
       });
       return;
@@ -589,17 +756,19 @@ export default function ModelConfigDialog({
 
     setIsSaving(true);
     try {
-      await onSave(editedConfig);
+      // Convert boolean values to numbers for database compatibility
+      const dbConfig = convertConfigForDatabase(editedConfig);
+      await onSave(dbConfig);
       setHasChanges(false);
       setNotification({
         open: true,
-        message: "Configuration saved successfully",
+        message: "Configuration sauvegardée avec succès",
         severity: "success",
       });
     } catch {
       setNotification({
         open: true,
-        message: "Failed to save configuration",
+        message: "Échec de la sauvegarde de la configuration",
         severity: "error",
       });
     } finally {
@@ -623,7 +792,7 @@ export default function ModelConfigDialog({
     setShowResetDialog(false);
     setNotification({
       open: true,
-      message: "Configuration reset to defaults",
+      message: "Configuration réinitialisée aux valeurs par défaut",
       severity: "success",
     });
   };
@@ -665,28 +834,15 @@ export default function ModelConfigDialog({
 
     switch (field.type) {
       case "text":
-        return (
-          <FieldWithTooltip content={tooltipContent!}>
-            <Box>
-              <TextField
-                fullWidth
-                size="small"
-                label={field.label}
-                value={value}
-                onChange={(e) => handleFieldChange(field.name, e.target.value)}
-                variant="outlined"
-                error={Boolean(error)}
-                helperText={error}
-                sx={{
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                }}
-              />
-            </Box>
-          </FieldWithTooltip>
-        );
+        return tooltipContent ? (
+          <MemoizedTextField
+            field={field}
+            value={value}
+            error={error}
+            tooltipContent={tooltipContent}
+            onChange={handleFieldChange}
+          />
+        ) : null;
 
       case "number":
         return (
@@ -780,62 +936,26 @@ export default function ModelConfigDialog({
         );
 
       case "select":
-        return (
-          <FieldWithTooltip content={tooltipContent!}>
-            <FormControl fullWidth size="small" error={Boolean(error)}>
-              <InputLabel>{field.label}</InputLabel>
-              <Select
-                label={field.label}
-                value={value}
-                onChange={(e) => handleFieldChange(field.name, e.target.value)}
-                aria-label={`Select ${field.label}`}
-                sx={{
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                }}
-              >
-                {field.options?.map((option: string) => (
-                  <MenuItem key={option} value={option}>
-                    {option || "None"}
-                  </MenuItem>
-                ))}
-              </Select>
-              {error && (
-                <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 0.75 }}>
-                  {error}
-                </Typography>
-              )}
-            </FormControl>
-          </FieldWithTooltip>
-        );
+        return tooltipContent ? (
+          <MemoizedSelectField
+            field={field}
+            value={value}
+            error={error}
+            tooltipContent={tooltipContent}
+            theme={theme}
+            onChange={handleFieldChange}
+          />
+        ) : null;
 
       case "boolean":
-        return (
-          <FieldWithTooltip content={tooltipContent!}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={Boolean(value)}
-                  onChange={(e) => handleFieldChange(field.name, e.target.checked)}
-                  aria-label={`Toggle ${field.label}`}
-                  sx={{
-                    transition: "transform 0.2s ease",
-                    "&:hover": {
-                      transform: "scale(1.05)",
-                    },
-                  }}
-                />
-              }
-              label={
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {field.label}
-                </Typography>
-              }
-            />
-          </FieldWithTooltip>
-        );
+        return tooltipContent ? (
+          <MemoizedBooleanField
+            field={field}
+            value={value}
+            tooltipContent={tooltipContent}
+            onChange={handleFieldChange}
+          />
+        ) : null;
 
       default:
         return null;
@@ -957,16 +1077,16 @@ export default function ModelConfigDialog({
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Box>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                Configure {configTitle}
+                Configurer {configTitle}
               </Typography>
               <Typography variant="caption" sx={{ opacity: 0.9 }}>
-                Model {modelId}
+                Modèle {modelId}
               </Typography>
             </Box>
             {hasChanges && (
               <Chip
                 icon={<EditIcon />}
-                label="Unsaved Changes"
+                label="Modifications Non Sauvegardées"
                 size="small"
                 color="warning"
                 sx={{ backgroundColor: "warning.light", color: "warning.dark" }}
@@ -993,7 +1113,7 @@ export default function ModelConfigDialog({
               },
             }}
           >
-            Reset to Defaults
+            Réinitialiser aux Valeurs par Défaut
           </Button>
           <Box sx={{ flex: 1 }} />
           <Button
@@ -1002,7 +1122,7 @@ export default function ModelConfigDialog({
               transition: "all 0.2s ease",
             }}
           >
-            Cancel
+            Annuler
           </Button>
           <Button
             onClick={handleSave}
@@ -1022,7 +1142,7 @@ export default function ModelConfigDialog({
               },
             }}
           >
-            {isSaving ? "Saving..." : "Save Configuration"}
+            {isSaving ? "Sauvegarde..." : "Sauvegarder la Configuration"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1040,23 +1160,23 @@ export default function ModelConfigDialog({
         <DialogTitle>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <RestoreIcon color="warning" />
-            <Typography variant="h6">Reset to Defaults</Typography>
+            <Typography variant="h6">Réinitialiser aux Valeurs par Défaut</Typography>
           </Box>
         </DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to reset all {configTitle} configuration to default values? This action cannot be undone.
+            Êtes-vous sûr de vouloir réinitialiser toute la configuration {configTitle} aux valeurs par défaut ? Cette action ne peut pas être annulée.
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowResetDialog(false)}>Cancel</Button>
+          <Button onClick={() => setShowResetDialog(false)}>Annuler</Button>
           <Button
             onClick={confirmReset}
             variant="contained"
             color="warning"
             startIcon={<RestoreIcon />}
           >
-            Reset to Defaults
+            Réinitialiser aux Valeurs par Défaut
           </Button>
         </DialogActions>
       </Dialog>
@@ -1083,4 +1203,7 @@ export default function ModelConfigDialog({
       </Snackbar>
     </>
   );
-}
+};
+
+// Memoize the entire component to prevent unnecessary re-renders
+export default memo(ModelConfigDialogComponent);

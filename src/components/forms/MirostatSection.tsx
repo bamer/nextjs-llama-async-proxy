@@ -48,7 +48,7 @@ export function MirostatSection({
             type="number"
             onChange={(_name: string, value: string | number | boolean) => onChange("mirostat_tau", Number(value))}
             helperText="Target perplexity (default: 5.0)"
-            tooltip={tooltips.mirostat_ent}
+            tooltip={tooltips.mirostat_tau}
             fullWidth
           />
         </Grid>
@@ -60,7 +60,7 @@ export function MirostatSection({
             type="number"
             onChange={(_name: string, value: string | number | boolean) => onChange("mirostat_eta", Number(value))}
             helperText="Learning rate (default: 0.1)"
-            tooltip={tooltips.mirostat_lr}
+            tooltip={tooltips.mirostat_eta}
             fullWidth
           />
         </Grid>

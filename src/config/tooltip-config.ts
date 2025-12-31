@@ -142,8 +142,8 @@ export const tooltipConfig: TooltipConfig = {
       effectOnModel: "Enables temperature to vary dynamically within this range for more varied outputs.",
       whenToAdjust: "Enable when you want varied creativity throughout the response.",
     },
-    dynatemp_exp: {
-      title: "Dynatemp Exp",
+    dynatemp_exponent: {
+      title: "Dynatemp Exponent",
       description: "Exponent for dynamic temperature curve shape.",
       recommendedValue: "0.1 - 2.0 (default: 1)",
       effectOnModel: "Controls the distribution shape of dynamic temperature values.",
@@ -156,16 +156,16 @@ export const tooltipConfig: TooltipConfig = {
       effectOnModel: "Maintains constant perplexity for more consistent text quality. Mirostat 2.0 is more advanced.",
       whenToAdjust: "Use when you need consistently high-quality output with controlled perplexity.",
     },
-    mirostat_lr: {
-      title: "Mirostat Learning Rate",
-      description: "Learning rate for Mirostat algorithm.",
+    mirostat_eta: {
+      title: "Mirostat Eta (Learning Rate)",
+      description: "Learning rate (eta) for Mirostat algorithm.",
       recommendedValue: "0.001 - 1.0 (default: 0.1)",
       effectOnModel: "Controls how quickly Mirostat adapts to maintain target perplexity.",
       whenToAdjust: "Adjust based on how quickly you want the algorithm to adapt.",
     },
-    mirostat_ent: {
-      title: "Mirostat Entropy",
-      description: "Target entropy for Mirostat algorithm.",
+    mirostat_tau: {
+      title: "Mirostat Tau (Target Entropy)",
+      description: "Target entropy (tau) for Mirostat algorithm.",
       recommendedValue: "0.0 - 10.0 (default: 5)",
       effectOnModel: "Sets the target perplexity/entropy for text generation.",
       whenToAdjust: "Lower for more focused text, higher for more diverse text.",

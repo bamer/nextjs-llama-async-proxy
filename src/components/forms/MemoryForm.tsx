@@ -23,7 +23,7 @@ export default function MemoryForm({ config, onChange }: MemoryFormProps): React
   return (
     <Grid container spacing={2}>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title="Context window size (number of tokens in prompt + completion)" arrow>
+        <Tooltip title="Taille de fenêtre de contexte (nombre de tokens dans le prompt + completion)" arrow>
           <TextField
             fullWidth
             label="ctx_size"
@@ -31,16 +31,16 @@ export default function MemoryForm({ config, onChange }: MemoryFormProps): React
             value={config.ctx_size}
             onChange={(e) => handleChange("ctx_size", parseInt(e.target.value) || 0)}
             InputProps={{ inputProps: { min: 1 } }}
-            helperText="Number of tokens"
+            helperText="Nombre de tokens"
             size="small"
           />
         </Tooltip>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title="Maximum batch size for prompt processing" arrow>
+        <Tooltip title="Taille de lot maximum pour le traitement du prompt" arrow>
           <TextField
             fullWidth
-            label="Batch Size"
+            label="Taille du Batch"
             type="number"
             value={config.num_batch}
             onChange={(e) => handleChange("num_batch", parseInt(e.target.value) || 0)}
@@ -50,15 +50,15 @@ export default function MemoryForm({ config, onChange }: MemoryFormProps): React
         </Tooltip>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title="Maximum RAM to use for KV cache in MB (0 = unlimited)" arrow>
+        <Tooltip title="RAM maximale à utiliser pour le cache KV en Mo (0 = illimité)" arrow>
           <TextField
             fullWidth
-            label="Cache RAM (MB)"
+            label="Cache RAM (Mo)"
             type="number"
             value={config.cache_ram}
             onChange={(e) => handleChange("cache_ram", parseInt(e.target.value) || 0)}
             InputProps={{ inputProps: { min: 0 } }}
-            helperText="0 for unlimited MB"
+            helperText="0 pour illimité"
             size="small"
           />
         </Tooltip>
@@ -66,20 +66,20 @@ export default function MemoryForm({ config, onChange }: MemoryFormProps): React
       <Grid size={{ xs: 12, sm: 6 }}>
         <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
           <FormSwitch
-            label="Use F16 Memory"
+            label="Utiliser Mémoire F16"
             checked={config.memory_f16}
             onChange={(_e, checked) => handleChange("memory_f16", checked)}
-            tooltip="Use half-precision floats for memory to save space"
+            tooltip="Utiliser des flottants demi-précision pour économiser l'espace mémoire"
           />
         </Box>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
         <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
           <FormSwitch
-            label="Lock Memory"
+            label="Verrouiller la Mémoire"
             checked={config.memory_lock}
             onChange={(_e, checked) => handleChange("memory_lock", checked)}
-            tooltip="Lock memory allocations to prevent relocation"
+            tooltip="Verrouiller les allocations mémoire pour empêcher la relocalisation"
           />
         </Box>
       </Grid>
@@ -89,7 +89,7 @@ export default function MemoryForm({ config, onChange }: MemoryFormProps): React
             label="mmap"
             checked={config.mmap}
             onChange={(_e, checked) => handleChange("mmap", checked)}
-            tooltip="Memory map model file"
+            tooltip="Cartographier le fichier modèle en mémoire"
           />
         </Box>
       </Grid>
@@ -99,25 +99,25 @@ export default function MemoryForm({ config, onChange }: MemoryFormProps): React
             label="mlock"
             checked={config.mlock}
             onChange={(_e, checked) => handleChange("mlock", checked)}
-            tooltip="Lock memory in RAM"
+            tooltip="Verrouiller la mémoire en RAM"
           />
         </Box>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title="NUMA policy (e.g., distribute)" arrow>
+        <Tooltip title="Politique NUMA (ex: distribute)" arrow>
           <TextField
             fullWidth
             label="numa"
             value={config.numa}
             onChange={(e) => handleChange("numa", e.target.value)}
             placeholder="distribute"
-            helperText="Empty for default"
+            helperText="Vide pour défaut"
             size="small"
           />
         </Tooltip>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title="Defragmentation threshold" arrow>
+        <Tooltip title="Seuil de défragmentation" arrow>
           <TextField
             fullWidth
             label="defrag_thold"
@@ -125,13 +125,13 @@ export default function MemoryForm({ config, onChange }: MemoryFormProps): React
             value={config.defrag_thold}
             onChange={(e) => handleChange("defrag_thold", parseFloat(e.target.value) || -1)}
             InputProps={{ inputProps: { min: -1, step: 0.1 } }}
-            helperText="-1 for disabled"
+            helperText="-1 pour désactivé"
             size="small"
           />
         </Tooltip>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title="KV cache type for K" arrow>
+        <Tooltip title="Type de cache KV pour K" arrow>
           <TextField
             fullWidth
             label="cache_type_k"
@@ -143,7 +143,7 @@ export default function MemoryForm({ config, onChange }: MemoryFormProps): React
         </Tooltip>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Tooltip title="KV cache type for V" arrow>
+        <Tooltip title="Type de cache KV pour V" arrow>
           <TextField
             fullWidth
             label="cache_type_v"

@@ -2,10 +2,10 @@
 
 import { MainLayout } from "@/components/layout/main-layout";
 import { useStore } from "@/lib/store";
-import { useState, useEffect } from "react";
-import { Card, CardContent, Typography, Box, Grid, Chip, LinearProgress, Button, IconButton, CircularProgress, Menu, MenuItem, Badge, Tooltip, Snackbar, Alert } from "@mui/material";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
+import { Card, CardContent, Typography, Box, Grid, Chip, LinearProgress, Button, IconButton, CircularProgress, Menu, MenuItem, Badge, Tooltip } from "@mui/material";
 import { useTheme } from "@/contexts/ThemeContext";
-import { PlayArrow, Stop, Refresh, Add, MoreVert, Delete, Check, Science, Storage } from "@mui/icons-material";
+import { PlayArrow, Stop, Refresh, Add, MoreVert, Delete, Check, Science, Storage, Settings as SettingsIcon } from "@mui/icons-material";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { ModelsFallback } from "@/components/ui/error-fallbacks";
@@ -13,7 +13,30 @@ import { SkeletonCard } from "@/components/ui";
 import { useEffectEvent } from "@/hooks/use-effect-event";
 import { loadModelConfig, saveModelConfig } from "@/actions/config-actions";
 import ModelConfigDialog, { ConfigType } from "@/components/ui/ModelConfigDialog";
+import ModelConfigSidebar from "@/components/ui/ModelConfigSidebar";
+import ConfigTypeSelector from "@/components/ui/ConfigTypeSelector";
 import { useFitParams, FitParamsData } from "@/hooks/use-fit-params";
+
+// Re-use types and field definitions from ModelConfigDialog
+// These are re-used to maintain consistency
+export type { ConfigType } from "@/components/ui/ModelConfigDialog";
+
+interface FieldDefinition {
+  name: string;
+  label: string;
+  type: "text" | "number" | "select" | "boolean";
+  options?: string[];
+  defaultValue: unknown;
+  xs?: number;
+  sm?: number;
+  md?: number;
+  lg?: number;
+  validation?: any;
+  unit?: string;
+  step?: number;
+  marks?: Array<{ value: number; label: string }>;
+}
+
 
 // Local type definitions (matching database types)
 interface ModelConfig {
@@ -70,10 +93,10 @@ interface ModelSamplingConfig {
   dry_penalty_last_n?: number;
   dry_sequence_breaker?: string;
   dynatemp_range?: number;
-  dynatemp_exp?: number;
+  dynatemp_exponent?: number;
   mirostat?: number;
-  mirostat_lr?: number;
-  mirostat_ent?: number;
+  mirostat_eta?: number;
+  mirostat_tau?: number;
   samplers?: string;
   sampler_seq?: string;
   seed?: number;
@@ -266,7 +289,7 @@ interface ModelMultimodalConfig {
     return `${size.toFixed(2)} ${units[unitIndex]}`;
   }
 
-export default function ModelsPage() {
+function ModelsPage() {
   const models = useStore((state) => state.models);
   const { isDark } = useTheme();
   const [loading, setLoading] = useState<string | null>(null);
@@ -276,24 +299,29 @@ export default function ModelsPage() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const { requestModels, sendMessage, on, off } = useWebSocket();
-  const setModels = useStore((state) => state.setModels);
-  const updateStoreModel = useStore((state) => state.updateModel);
+   const setModels = useStore((state) => state.setModels);
+   const updateStoreModel = useStore((state) => state.updateModel);
 
-  // Dialog state for configuration
-  const [configDialogOpen, setConfigDialogOpen] = useState(false);
-  const [editingConfigType, setEditingConfigType] = useState<ConfigType | null>(null);
-  const [currentConfig, setCurrentConfig] = useState<any>(null);
-  const [selectedModel, setSelectedModel] = useState<ModelData | null>(null);
+   // Sidebar state for configuration
+   const [configSidebarOpen, setConfigSidebarOpen] = useState(false);
+   const [editingConfigType, setEditingConfigType] = useState<ConfigType | null>(null);
+   const [editedConfig, setEditedConfig] = useState<Record<string, unknown>>({});
+   const [selectedModel, setSelectedModel] = useState<ModelData | null>(null);
+   const [sidebarConfig, setSidebarConfig] = useState<any>(null);
+   const [hasChanges, setHasChanges] = useState(false);
 
-  // Fit params state for selected model (for analysis dialog)
-  const [analyzingModelId, setAnalyzingModelId] = useState<string | null>(null);
-  const [fitParamsDialogOpen, setFitParamsDialogOpen] = useState(false);
-  const [currentFitParams, setCurrentFitParams] = useState<FitParamsData | null>(null);
+   // Notification state
+   const [notification, setNotification] = useState<{
+     open: boolean;
+     message: string;
+     severity: "success" | "error";
+   }>({ open: false, message: "", severity: "success" });
 
-  // Snackbar state for user feedback
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('success');
-  const [snackbarMessage, setSnackbarMessage] = useState('');
+   // Fit params state for selected model (for analysis dialog)
+   const [analyzingModelId, setAnalyzingModelId] = useState<string | null>(null);
+   const [fitParamsDialogOpen, setFitParamsDialogOpen] = useState(false);
+   const [currentFitParams, setCurrentFitParams] = useState<FitParamsData | null>(null);
+
 
   // Fit params hook for the selected model (uses model name, not ID)
   const fitParamsHook = useFitParams(analyzingModelId);
@@ -306,63 +334,79 @@ export default function ModelsPage() {
     setTimeout(() => setIsInitialLoading(false), 1000);
   }, [sendMessage]);
 
-    // Handle WebSocket responses for database operations
-  useEffect(() => {
-    // Listen for WebSocket messages via websocket-client
-    const handleConfigLoaded = (data: any) => {
-      if (data.success) {
-        console.log("[ModelsPage] Config loaded successfully:", data.data);
-        const { id, type, config } = data.data;
+     // Handle WebSocket responses for database operations
+     useEffect(() => {
+       // Listen for WebSocket messages via websocket-client
+       const handleConfigLoaded = (data: any) => {
+         if (data.success) {
+           console.log("[ModelsPage] Config loaded successfully:", data.data);
+           const { id, type, config } = data.data;
 
-        // Open dialog if this config type was being edited
-        if (type === editingConfigType && id === selectedModel?.id) {
-          setCurrentConfig(config);
-          setConfigDialogOpen(true);
-        }
-      } else {
-        console.error("[ModelsPage] Failed to load config:", data.error);
-      }
-    };
+           // Update sidebar config if this config type was requested and matches current model
+           if (type === editingConfigType && id === selectedModel?.id) {
+             setSidebarConfig(config);
+             // Update edited config with new data
+             setEditedConfig(prev => ({
+               ...prev,
+               ...config
+             }));
+           }
+         } else {
+           console.error("[ModelsPage] Failed to load config:", data.error);
+         }
+       };
 
-    const handleConfigSaved = (data: any) => {
-      if (data.success) {
-        console.log("[ModelsPage] Config saved successfully:", data.data);
-        // Close dialog on successful save
-        setConfigDialogOpen(false);
-        setError(null); // Clear any errors
-      } else {
-        console.error("[ModelsPage] Failed to save config:", data.error);
-        setError(`Failed to save config: ${data.error?.message || 'Unknown error'}`);
-      }
-    };
+       const handleConfigSaved = (data: any) => {
+         if (data.success) {
+           console.log("[ModelsPage] Config saved successfully:", data.data);
+           // Close sidebar on successful save
+           setConfigSidebarOpen(false);
+           setHasChanges(false);
+           setError(null);
+           setNotification({
+             open: true,
+             message: "Configuration saved successfully",
+             severity: "success"
+           });
+         } else {
+           console.error("[ModelsPage] Failed to save config:", data.error);
+           setError(`Failed to save config: ${data.error?.message || 'Unknown error'}`);
+           setNotification({
+             open: true,
+             message: `Failed to save config: ${data.error?.message || 'Unknown error'}`,
+             severity: "error"
+           });
+         }
+       };
 
-    const handleModelDeleted = (data: any) => {
-      if (data.success) {
-        console.log("[ModelsPage] Model deleted successfully:", data.data);
-        // Remove model from store
-        const dbId = data.data.id;
-        useStore.getState().removeModel(dbId.toString());
-      } else {
-        console.error("[ModelsPage] Failed to delete model:", data.error);
-        setError(`Failed to delete model: ${data.error?.message || 'Unknown error'}`);
-      }
-    };
+       const handleModelDeleted = (data: any) => {
+         if (data.success) {
+           console.log("[ModelsPage] Model deleted successfully:", data.data);
+           // Remove model from store
+           const dbId = data.data.id;
+           useStore.getState().removeModel(dbId.toString());
+         } else {
+           console.error("[ModelsPage] Failed to delete model:", data.error);
+           setError(`Failed to delete model: ${data.error?.message || 'Unknown error'}`);
+         }
+       };
 
-    // Register listeners for database events
-    on('config_loaded', handleConfigLoaded);
-    on('config_saved', handleConfigSaved);
-    on('model_deleted', handleModelDeleted);
+       // Register listeners for database events
+       on('config_loaded', handleConfigLoaded);
+       on('config_saved', handleConfigSaved);
+       on('model_deleted', handleModelDeleted);
 
-    return () => {
-      // Remove listeners
-      off('config_loaded', handleConfigLoaded);
-      off('config_saved', handleConfigSaved);
-      off('model_deleted', handleModelDeleted);
-    };
-  }, [editingConfigType, selectedModel, on, off]);
+       return () => {
+         // Remove listeners
+         off('config_loaded', handleConfigLoaded);
+         off('config_saved', handleConfigSaved);
+         off('model_deleted', handleModelDeleted);
+       };
+     }, [editingConfigType, selectedModel, on, off]);
+
 
   // Helper functions defined outside component (created once)
-  const normalizeStatus = (status: string | { value?: string; args?: unknown; preset?: unknown } | unknown): string => {
+  const normalizeStatus = useCallback((status: string | { value?: string; args?: unknown; preset?: unknown } | unknown): string => {
     if (typeof status === 'string') {
       return status;
     }
@@ -370,9 +414,9 @@ export default function ModelsPage() {
       return status.value;
     }
     return 'idle';
-  };
+  }, []);
 
-  const getStatusColor = (status: string | { value?: string; args?: unknown; preset?: unknown } | unknown) => {
+  const getStatusColor = useCallback((status: string | { value?: string; args?: unknown; preset?: unknown } | unknown) => {
     const normalized = normalizeStatus(status);
     switch (normalized) {
       case 'running': return 'success';
@@ -380,73 +424,53 @@ export default function ModelsPage() {
       case 'error': return 'error';
       default: return 'default';
     }
-  };
+  }, [normalizeStatus]);
 
-  // Open configuration dialog for a specific model and config type
-  const handleConfigure = useEffectEvent(async (model: ModelData, configType: ConfigType) => {
+  // Open configuration sidebar for a specific model
+  const handleConfigure = useEffectEvent(async (model: ModelData) => {
     if (!model.id) return;
 
     // Set editing state
     setSelectedModel(model);
-    setEditingConfigType(configType);
+    setEditingConfigType('sampling'); // Start with sampling as default
     setError(null);
 
-    // Check if config is already loaded
-    if (model[configType]) {
-      // Config already loaded, use it immediately
-      setCurrentConfig(model[configType]);
-      console.log(`[ModelsPage] Opening dialog with loaded ${configType} config for model ${model.name}`);
-    } else {
-      // Send WebSocket message to load config
-      sendMessage('load_config', { id: model.id, type: configType });
-      console.log(`[ModelsPage] Requested ${configType} config for model ${model.name}`);
+    // Initialize edited config with current model configs
+    const initialConfig: Record<string, unknown> = {};
+
+    // Load all available configs
+    if (model.sampling) initialConfig['sampling'] = model.sampling;
+    if (model.memory) initialConfig['memory'] = model.memory;
+    if (model.gpu) initialConfig['gpu'] = model.gpu;
+    if (model.advanced) initialConfig['advanced'] = model.advanced;
+    if (model.lora) initialConfig['lora'] = model.lora;
+    if (model.multimodal) initialConfig['multimodal'] = model.multimodal;
+
+    setEditedConfig(initialConfig);
+
+    // Load configs via WebSocket if not already loaded
+    if (!model.sampling) {
+      sendMessage('load_config', { id: model.id, type: 'sampling' });
+    }
+    if (!model.memory) {
+      sendMessage('load_config', { id: model.id, type: 'memory' });
+    }
+    if (!model.gpu) {
+      sendMessage('load_config', { id: model.id, type: 'gpu' });
+    }
+    if (!model.advanced) {
+      sendMessage('load_config', { id: model.id, type: 'advanced' });
+    }
+    if (!model.lora) {
+      sendMessage('load_config', { id: model.id, type: 'lora' });
+    }
+    if (!model.multimodal) {
+      sendMessage('load_config', { id: model.id, type: 'multimodal' });
     }
 
-    // Always open dialog - config will populate via WebSocket if not already loaded
-    setConfigDialogOpen(true);
-  });
-
-  // Lazy-load config for a specific model using WebSocket (kept for compatibility)
-  const handleLoadConfig = useEffectEvent(async (model: ModelData, configType: ConfigType) => {
-    handleConfigure(model, configType);
-  });
-
-  // Save config for a specific model using WebSocket
-  const handleSaveConfig = useEffectEvent(async (model: ModelData, configType: 'sampling' | 'memory' | 'gpu' | 'advanced' | 'lora' | 'multimodal') => {
-    if (!model.id) return;
-
-    try {
-      let config: any;
-      switch (configType) {
-        case "sampling":
-          config = model.sampling;
-          break;
-        case "memory":
-          config = model.memory;
-          break;
-        case "gpu":
-          config = model.gpu;
-          break;
-        case "advanced":
-          config = model.advanced;
-          break;
-        case "lora":
-          config = model.lora;
-          break;
-        case "multimodal":
-          config = model.multimodal;
-          break;
-      }
-
-      if (config) {
-        // Send WebSocket message to save config
-        sendMessage('save_config', { id: model.id, type: configType, config });
-        console.log(`[ModelsPage] Saving ${configType} config for model ${model.name}`);
-      }
-    } catch (err) {
-      console.error(`[ModelsPage] Failed to save ${configType} config for model ${model.name}:`, err);
-      setError(`Failed to save ${configType} config: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    }
+    // Open sidebar
+    setConfigSidebarOpen(true);
+    console.log(`[ModelsPage] Opening config sidebar for model ${model.name}`);
   });
 
   // Use useEffectEvent for handlers to keep them stable
@@ -667,29 +691,36 @@ export default function ModelsPage() {
 
       // Check for errors from hook
       if (fitParamsHook.error) {
-        setError(`Analysis failed: ${fitParamsHook.error}`);
-        setSnackbarMessage(`Error: ${fitParamsHook.error}`);
-        setSnackbarSeverity('error');
-        setSnackbarOpen(true);
+        setNotification({
+          open: true,
+          message: `Analysis failed: ${fitParamsHook.error}`,
+          severity: "error"
+        });
       }
 
       // Get results
       if (fitParamsHook.data) {
         setCurrentFitParams(fitParamsHook.data);
-        setSnackbarMessage('Analysis completed successfully!');
-        setSnackbarSeverity('success');
-        setSnackbarOpen(true);
+        setNotification({
+          open: true,
+          message: 'Analysis completed successfully!',
+          severity: "success"
+        });
       } else if (!fitParamsHook.error) {
-        setSnackbarMessage('Analysis completed but no data available');
-        setSnackbarSeverity('info');
-        setSnackbarOpen(true);
+        setNotification({
+          open: true,
+          message: 'Analysis completed but no data available',
+          severity: "info"
+        });
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setError(`Analysis error: ${message}`);
-      setSnackbarMessage(message);
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
+      setNotification({
+        open: true,
+        message,
+        severity: "error"
+      });
     }
 
     setAnalyzingModelId(null);
@@ -763,19 +794,8 @@ export default function ModelsPage() {
               startIcon={<Add />}
               sx={{ mt: 3 }}
               onClick={() => {
-                console.log('Add new model');
-                const tempModel: ModelData = {
-                  id: 0,
-                  name: '',
-                  type: 'llama',
-                  status: 'stopped',
-                  created_at: Date.now(),
-                  updated_at: Date.now(),
-                };
-                setSelectedModel(tempModel);
-                setEditingConfigType('sampling');
-                setCurrentConfig({});
-                setConfigDialogOpen(true);
+                console.log('Add new model - feature coming soon');
+                // TODO: Implement add model dialog
               }}
             >
               Add Model
@@ -898,168 +918,67 @@ export default function ModelsPage() {
                       ) : null}
                     </Box>
 
-                    {/* Config loaded indicators */}
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
-                      <Badge
-                        color={storeToModelData(model).sampling ? 'success' : 'default'}
-                        overlap="circular"
-                        badgeContent={storeToModelData(model).sampling ? <Check sx={{ fontSize: 10 }} /> : null}
-                        sx={{
-                          '& .MuiBadge-badge': {
-                            width: 14,
-                            height: 14,
-                            minWidth: 14,
-                            borderRadius: 7
-                          }
-                        }}
-                      >
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => handleConfigure(storeToModelData(model), 'sampling')}
-                        >
-                          Sampling
-                        </Button>
-                      </Badge>
-                      <Badge
-                        color={storeToModelData(model).memory ? 'success' : 'default'}
-                        overlap="circular"
-                        badgeContent={storeToModelData(model).memory ? <Check sx={{ fontSize: 10 }} /> : null}
-                        sx={{
-                          '& .MuiBadge-badge': {
-                            width: 14,
-                            height: 14,
-                            minWidth: 14,
-                            borderRadius: 7
-                          }
-                        }}
-                      >
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => handleConfigure(storeToModelData(model), 'memory')}
-                        >
-                          Memory
-                        </Button>
-                      </Badge>
-                      <Badge
-                        color={storeToModelData(model).gpu ? 'success' : 'default'}
-                        overlap="circular"
-                        badgeContent={storeToModelData(model).gpu ? <Check sx={{ fontSize: 10 }} /> : null}
-                        sx={{
-                          '& .MuiBadge-badge': {
-                            width: 14,
-                            height: 14,
-                            minWidth: 14,
-                            borderRadius: 7
-                          }
-                        }}
-                      >
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => handleConfigure(storeToModelData(model), 'gpu')}
-                        >
-                          GPU
-                        </Button>
-                      </Badge>
-                      <Badge
-                        color={storeToModelData(model).advanced ? 'success' : 'default'}
-                        overlap="circular"
-                        badgeContent={storeToModelData(model).advanced ? <Check sx={{ fontSize: 10 }} /> : null}
-                        sx={{
-                          '& .MuiBadge-badge': {
-                            width: 14,
-                            height: 14,
-                            minWidth: 14,
-                            borderRadius: 7
-                          }
-                        }}
-                      >
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => handleConfigure(storeToModelData(model), 'advanced')}
-                        >
-                          Advanced
-                        </Button>
-                      </Badge>
-                      <Badge
-                        color={storeToModelData(model).lora ? 'success' : 'default'}
-                        overlap="circular"
-                        badgeContent={storeToModelData(model).lora ? <Check sx={{ fontSize: 10 }} /> : null}
-                        sx={{
-                          '& .MuiBadge-badge': {
-                            width: 14,
-                            height: 14,
-                            minWidth: 14,
-                            borderRadius: 7
-                          }
-                        }}
-                      >
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => handleConfigure(storeToModelData(model), 'lora')}
-                        >
-                          LoRA
-                        </Button>
-                      </Badge>
-                      <Badge
-                        color={storeToModelData(model).multimodal ? 'success' : 'default'}
-                        overlap="circular"
-                        badgeContent={storeToModelData(model).multimodal ? <Check sx={{ fontSize: 10 }} /> : null}
-                        sx={{
-                          '& .MuiBadge-badge': {
-                            width: 14,
-                            height: 14,
-                            minWidth: 14,
-                            borderRadius: 7
-                          }
-                        }}
-                      >
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => handleConfigure(storeToModelData(model), 'multimodal')}
-                        >
-                          Multi
-                        </Button>
-                      </Badge>
-                    </Box>
+                     {/* Config loaded indicators */}
+                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mb: 2 }}>
+                       <Badge
+                         color={storeToModelData(model).sampling ? 'success' : 'default'}
+                         overlap="circular"
+                         badgeContent={storeToModelData(model).sampling ? <Check sx={{ fontSize: 10 }} /> : null}
+                         sx={{
+                           '& .MuiBadge-badge': {
+                             width: 14,
+                             height: 14,
+                             minWidth: 14,
+                             borderRadius: 7
+                           }
+                         }}
+                       >
+                       </Badge>
+                     </Box>
 
-                    <LinearProgress
-                      variant="determinate"
-                      value={normalizeStatus(model.status) === 'running' ? 100 : normalizeStatus(model.status) === 'loading' ? 50 : 0}
-                      color={getStatusColor(model.status) as 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' | 'inherit'}
-                      sx={{ height: '4px', borderRadius: '2px', mb: 2 }}
-                    />
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-                      {normalizeStatus(model.status) === 'running' ? (
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          startIcon={<Stop />}
-                          size="small"
-                          disabled={loading === model.id}
-                          onClick={() => handleStopModel(model.id)}
-                        >
-                          {loading === model.id ? 'Stopping...' : 'Stop'}
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          startIcon={<PlayArrow />}
-                          size="small"
-                          disabled={loading === model.id}
-                          onClick={() => handleStartModel(model.id)}
-                        >
-                          {loading === model.id ? 'Starting...' : 'Start'}
-                        </Button>
-                      )}
-                    </Box>
-                  </CardContent>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1, mt: 2 }}>
+                        <Tooltip title="Configure model parameters">
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            startIcon={<SettingsIcon />}
+                            size="small"
+                            onClick={() => handleConfigure(storeToModelData(model))}
+                            sx={{
+                              minWidth: 80,
+                              "&:hover": {
+                                transform: "translateY(-1px)",
+                              }
+                            }}
+                          >
+                            Config
+                          </Button>
+                        </Tooltip>
+                        {normalizeStatus(model.status) === 'running' ? (
+                          <Button
+                            variant="outlined"
+                            color="error"
+                            startIcon={<Stop />}
+                            size="small"
+                            disabled={loading === model.id}
+                            onClick={() => handleStopModel(model.id)}
+                          >
+                            {loading === model.id ? 'Stopping...' : 'Stop'}
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            startIcon={<PlayArrow />}
+                            size="small"
+                            disabled={loading === model.id}
+                            onClick={() => handleStartModel(model.id)}
+                          >
+                            {loading === model.id ? 'Starting...' : 'Start'}
+                          </Button>
+                        )}
+                       </Box>
+                   </CardContent>
                 </Card>
               </Grid>
             );
@@ -1080,88 +999,137 @@ export default function ModelsPage() {
           </MenuItem>
         </Menu>
 
-        {/* Model Configuration Dialog */}
-        <ModelConfigDialog
-          open={configDialogOpen}
-          modelId={selectedModel?.id}
-          configType={editingConfigType}
-          config={currentConfig}
-          onClose={() => setConfigDialogOpen(false)}
-          onSave={(config) => {
-            if (selectedModel && editingConfigType) {
-              // Send WebSocket message to save config
-              sendMessage('save_config', {
-                id: selectedModel.id,
-                type: editingConfigType,
-                config
-              });
-              console.log(`[ModelsPage] Saving ${editingConfigType} config for model ${selectedModel.name}`);
-            }
-          }}
-        />
+         {/* Model Configuration Sidebar */}
+         <ModelConfigSidebar
+           open={configSidebarOpen}
+           onClose={() => setConfigSidebarOpen(false)}
+           modelId={selectedModel?.id}
+           configType={editingConfigType}
+           config={editedConfig}
+           onSave={(config) => {
+             if (selectedModel && editingConfigType) {
+               // Send WebSocket message to save config
+               sendMessage('save_config', {
+                 id: selectedModel.id,
+                 type: editingConfigType,
+                 config
+               });
+               console.log(`[ModelsPage] Saving ${editingConfigType} config for model ${selectedModel.name}`);
+             }
+           }}
+           editedConfig={editedConfig}
+           onFieldChange={(name, value) => {
+             setEditedConfig(prev => ({
+               ...prev,
+               [name]: value
+             }));
+             setHasChanges(true);
+           }}
+           hasChanges={hasChanges}
+           isSaving={loading !== null}
+           error={error}
+           notification={notification ? {
+             open: notification.open,
+             message: notification.message,
+             severity: notification.severity
+           } : undefined}
+           onDismissNotification={() => setNotification({ ...notification, open: false })}
+           onReset={() => {
+             // Reset to current loaded config
+             if (sidebarConfig) {
+               setEditedConfig(sidebarConfig);
+             }
+             setHasChanges(false);
+           }}
+         >
+            <ConfigTypeSelector
+              selectedType={editingConfigType}
+              onSelect={setEditingConfigType}
+              compact={true}
+            />
+            {/* Display current config values */}
+            <Box sx={{ p: 2, mt: 2 }}>
+              {editingConfigType ? (
+                <>
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    {editingConfigType.charAt(0).toUpperCase() + editingConfigType.slice(1)} Configuration
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {Object.keys(editedConfig).length > 0
+                      ? `${Object.keys(editedConfig).length} parameter(s) configured`
+                      : 'No configuration saved yet'}
+                  </Typography>
+                  {/* Show some sample config values */}
+                  {editedConfig && Object.keys(editedConfig).length > 0 && (
+                    <Box sx={{
+                      p: 2,
+                          backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(13, 158, 248, 0.1)',
+                      borderRadius: 1,
+                      maxHeight: 400,
+                      overflowY: 'auto'
+                    }}>
+                      {Object.entries(editedConfig).slice(0, 10).map(([key, value]: [string, unknown]) => (
+                        <Box key={key} sx={{ mb: 1.5 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                            {key.replace(/_/g, ' ').replace(/\b\w/g, (match) => match.toUpperCase())}
+                          </Typography>
+                          <Typography variant="body2" sx={{
+                            fontFamily: 'monospace',
+                            wordBreak: 'break-all',
+                            backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(13, 158, 248, 0.1)',
+                            p: 1,
+                            borderRadius: 0.5
+                          }}>
+                            {typeof value === 'object' ? JSON.stringify(value) : String(value ?? '')}
+                          </Typography>
+                        </Box>
+                      ))}
+                      {Object.keys(editedConfig).length > 10 && (
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 2 }}>
+                          ... and {Object.keys(editedConfig).length - 10} more
+                        </Typography>
+                      )}
+                    </Box>
+                  )}
+                </>
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  Select a configuration type above to view and edit parameters
+                </Typography>
+              )}
+            </Box>
+          </ModelConfigSidebar>
 
-        {/* Fit-Params Analysis Result Dialog */}
-        {/* Note: Fit-params dialog would show detailed analysis results here */}
-
-        {/* Snackbar for user feedback */}
-        <Snackbar
-          open={snackbarOpen}
-          autoHideDuration={6000}
-          onClose={() => setSnackbarOpen(false)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert
-            onClose={() => setSnackbarOpen(false)}
-            severity={snackbarSeverity}
-            sx={{ width: '100%' }}
-          >
-            {snackbarMessage}
-          </Alert>
-        </Snackbar>
-
-        {/* Empty state */}
-        {models.length === 0 && (
-          <Box sx={{
-            textAlign: 'center',
-            py: 8,
-            border: `2px dashed ${isDark ? 'rgba(255,255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)'}`,
-            borderRadius: '8px',
-            mt: 4
-          }}>
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              No models found
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Add your first AI model to get started
-            </Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<Add />}
-              sx={{ mr: 2 }}
-              onClick={() => {
-                console.log('Add new model');
-                // Create a temporary model for dialog
-                const tempModel: ModelData = {
-                  id: 0, // Temporary ID for new model
-                  name: '',
-                  type: 'llama',
-                  status: 'stopped',
-                  created_at: Date.now(),
-                  updated_at: Date.now(),
-                };
-                setSelectedModel(tempModel);
-                setEditingConfigType('sampling');
-                setCurrentConfig({});
-                setConfigDialogOpen(true);
-              }}
-            >
-              Add Model
-            </Button>
-          </Box>
-        )}
-      </Box>
-      </ErrorBoundary>
-    </MainLayout>
-  );
+         {/* Empty state */}
+         {models.length === 0 && (
+           <Box sx={{
+             textAlign: 'center',
+             py: 8,
+             border: `2px dashed ${isDark ? 'rgba(255,255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)'}`,
+             borderRadius: '8px',
+             mt: 4
+           }}>
+             <Typography variant="h6" color="text.secondary" gutterBottom>
+               No models found
+             </Typography>
+             <Typography variant="body2" color="text.secondary">
+               Add your first AI model to get started
+             </Typography>
+             <Button
+               variant="contained"
+               color="primary"
+               startIcon={<Add />}
+               onClick={handleConfigure}
+             >
+               Add Model
+             </Button>
+            </Box>
+          )}
+        </Box>
+       </ErrorBoundary>
+     </MainLayout>
+   );
 }
+ 
+ export default ModelsPage;
+
