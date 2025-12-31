@@ -334,75 +334,87 @@ function ModelsPage() {
     setTimeout(() => setIsInitialLoading(false), 1000);
   }, [sendMessage]);
 
-     // Handle WebSocket responses for database operations
-     useEffect(() => {
-       // Listen for WebSocket messages via websocket-client
-       const handleConfigLoaded = (data: any) => {
-         if (data.success) {
-           console.log("[ModelsPage] Config loaded successfully:", data.data);
-           const { id, type, config } = data.data;
+      // Handle WebSocket responses for database operations
+      useEffect(() => {
+        // Listen for WebSocket messages via websocket-client
+        const handleModelsLoaded = (data: any) => {
+          if (data.success) {
+            console.log("[ModelsPage] Models loaded successfully:", data.data);
+            // Update store with loaded models (including configs)
+            setModels(data.data);
+          } else {
+            console.error("[ModelsPage] Failed to load models:", data.error);
+          }
+        };
 
-           // Update sidebar config if this config type was requested and matches current model
-           if (type === editingConfigType && id === selectedModel?.id) {
-             setSidebarConfig(config);
-             // Update edited config with new data
-             setEditedConfig(prev => ({
-               ...prev,
-               ...config
-             }));
-           }
-         } else {
-           console.error("[ModelsPage] Failed to load config:", data.error);
-         }
-       };
+        const handleConfigLoaded = (data: any) => {
+          if (data.success) {
+            console.log("[ModelsPage] Config loaded successfully:", data.data);
+            const { id, type, config } = data.data;
 
-       const handleConfigSaved = (data: any) => {
-         if (data.success) {
-           console.log("[ModelsPage] Config saved successfully:", data.data);
-           // Close sidebar on successful save
-           setConfigSidebarOpen(false);
-           setHasChanges(false);
-           setError(null);
-           setNotification({
-             open: true,
-             message: "Configuration saved successfully",
-             severity: "success"
-           });
-         } else {
-           console.error("[ModelsPage] Failed to save config:", data.error);
-           setError(`Failed to save config: ${data.error?.message || 'Unknown error'}`);
-           setNotification({
-             open: true,
-             message: `Failed to save config: ${data.error?.message || 'Unknown error'}`,
-             severity: "error"
-           });
-         }
-       };
+            // Update sidebar config if this config type was requested and matches current model
+            if (type === editingConfigType && id === selectedModel?.id) {
+              setSidebarConfig(config);
+              // Update edited config with new data
+              setEditedConfig(prev => ({
+                ...prev,
+                ...config
+              }));
+            }
+          } else {
+            console.error("[ModelsPage] Failed to load config:", data.error);
+          }
+        };
 
-       const handleModelDeleted = (data: any) => {
-         if (data.success) {
-           console.log("[ModelsPage] Model deleted successfully:", data.data);
-           // Remove model from store
-           const dbId = data.data.id;
-           useStore.getState().removeModel(dbId.toString());
-         } else {
-           console.error("[ModelsPage] Failed to delete model:", data.error);
-           setError(`Failed to delete model: ${data.error?.message || 'Unknown error'}`);
-         }
-       };
+        const handleConfigSaved = (data: any) => {
+          if (data.success) {
+            console.log("[ModelsPage] Config saved successfully:", data.data);
+            // Close sidebar on successful save
+            setConfigSidebarOpen(false);
+            setHasChanges(false);
+            setError(null);
+            setNotification({
+              open: true,
+              message: "Configuration saved successfully",
+              severity: "success"
+            });
+          } else {
+            console.error("[ModelsPage] Failed to save config:", data.error);
+            setError(`Failed to save config: ${data.error?.message || 'Unknown error'}`);
+            setNotification({
+              open: true,
+              message: `Failed to save config: ${data.error?.message || 'Unknown error'}`,
+              severity: "error"
+            });
+          }
+        };
 
-       // Register listeners for database events
-       on('config_loaded', handleConfigLoaded);
-       on('config_saved', handleConfigSaved);
-       on('model_deleted', handleModelDeleted);
+        const handleModelDeleted = (data: any) => {
+          if (data.success) {
+            console.log("[ModelsPage] Model deleted successfully:", data.data);
+            // Remove model from store
+            const dbId = data.data.id;
+            useStore.getState().removeModel(dbId.toString());
+          } else {
+            console.error("[ModelsPage] Failed to delete model:", data.error);
+            setError(`Failed to delete model: ${data.error?.message || 'Unknown error'}`);
+          }
+        };
 
-       return () => {
-         // Remove listeners
-         off('config_loaded', handleConfigLoaded);
-         off('config_saved', handleConfigSaved);
-         off('model_deleted', handleModelDeleted);
-       };
-     }, [editingConfigType, selectedModel, on, off]);
+        // Register listeners for database events
+        on('models_loaded', handleModelsLoaded);
+        on('config_loaded', handleConfigLoaded);
+        on('config_saved', handleConfigSaved);
+        on('model_deleted', handleModelDeleted);
+
+        return () => {
+          // Remove listeners
+          off('models_loaded', handleModelsLoaded);
+          off('config_loaded', handleConfigLoaded);
+          off('config_saved', handleConfigSaved);
+          off('model_deleted', handleModelDeleted);
+        };
+      }, [editingConfigType, selectedModel, on, off]);
 
 
   // Helper functions defined outside component (created once)
@@ -435,36 +447,37 @@ function ModelsPage() {
     setEditingConfigType('sampling'); // Start with sampling as default
     setError(null);
 
-    // Initialize edited config with current model configs
+    // Initialize edited config with current model configs from parameters object
     const initialConfig: Record<string, unknown> = {};
+    const params = model.parameters || {};
 
-    // Load all available configs
-    if (model.sampling) initialConfig['sampling'] = model.sampling;
-    if (model.memory) initialConfig['memory'] = model.memory;
-    if (model.gpu) initialConfig['gpu'] = model.gpu;
-    if (model.advanced) initialConfig['advanced'] = model.advanced;
-    if (model.lora) initialConfig['lora'] = model.lora;
-    if (model.multimodal) initialConfig['multimodal'] = model.multimodal;
+    // Load all available configs from parameters
+    if (params.sampling) initialConfig['sampling'] = params.sampling;
+    if (params.memory) initialConfig['memory'] = params.memory;
+    if (params.gpu) initialConfig['gpu'] = params.gpu;
+    if (params.advanced) initialConfig['advanced'] = params.advanced;
+    if (params.lora) initialConfig['lora'] = params.lora;
+    if (params.multimodal) initialConfig['multimodal'] = params.multimodal;
 
     setEditedConfig(initialConfig);
 
     // Load configs via WebSocket if not already loaded
-    if (!model.sampling) {
+    if (!params.sampling) {
       sendMessage('load_config', { id: model.id, type: 'sampling' });
     }
-    if (!model.memory) {
+    if (!params.memory) {
       sendMessage('load_config', { id: model.id, type: 'memory' });
     }
-    if (!model.gpu) {
+    if (!params.gpu) {
       sendMessage('load_config', { id: model.id, type: 'gpu' });
     }
-    if (!model.advanced) {
+    if (!params.advanced) {
       sendMessage('load_config', { id: model.id, type: 'advanced' });
     }
-    if (!model.lora) {
+    if (!params.lora) {
       sendMessage('load_config', { id: model.id, type: 'lora' });
     }
-    if (!model.multimodal) {
+    if (!params.multimodal) {
       sendMessage('load_config', { id: model.id, type: 'multimodal' });
     }
 
