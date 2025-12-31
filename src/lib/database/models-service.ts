@@ -260,6 +260,14 @@ export function saveModel(
   const db = initDatabase();
   const now = Date.now();
 
+  // Validate required fields
+  if (!config.name || typeof config.name !== 'string' || config.name.trim() === '') {
+    throw new Error('Model name is required and cannot be empty');
+  }
+
+  // Normalize name
+  config.name = config.name.trim();
+
   try {
     const stmt = db.prepare(`
       INSERT INTO models (
