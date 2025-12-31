@@ -430,9 +430,9 @@ app.prepare().then(() => {
                   status: 'stopped',
                   model_path: llamaModel.id || llamaModel.name,
                   model_url: '',
-                  ctx_size: 4096,
-                  batch_size: 2048,
-                  threads: -1,
+                  ctx_size: llamaConfig.ctx_size,
+                  batch_size: llamaConfig.batch_size,
+                  threads: llamaConfig.threads,
                   file_size_bytes: llamaModel.size || 0,
                 };
 
@@ -440,7 +440,8 @@ app.prepare().then(() => {
                 logger.info(`[AUTO-IMPORT] Imported model: ${modelRecord.name} (DB ID: ${dbId})`);
               } catch (error) {
                 const message = error instanceof Error ? error.message : String(error);
-                logger.error(`[AUTO-IMPORT] Failed to import model ${llamaModel.name}: ${message}`);
+                const modelName = llamaModel?.name || 'unknown';
+                logger.error(`[AUTO-IMPORT] Failed to import model ${modelName}: ${message}`);
               }
             }
 
@@ -493,9 +494,6 @@ process.on('unhandledRejection', (reason, promise) => {
   logger.error('❌ [UNHANDLED REJECTION]', reason);
   cleanup();
 });
-
-  process.on('SIGTERM', cleanup);
-  process.on('SIGINT', cleanup);
 
 }).catch((error) => {
   logger.error(`❌ [SOCKET.IO] Failed to prepare Next.js app: ${error.message}`);

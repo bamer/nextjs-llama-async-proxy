@@ -6,7 +6,7 @@ import { initDatabase, closeDatabase } from "./database-client";
 export interface ModelConfig {
   id?: number;
   name: string;
-  type: "llama" | "gpt" | "mistrall" | "custom";
+  type: "llama" | "gpt" | "mistral" | "custom";
   status: "running" | "stopped" | "loading" | "error";
   model_path?: string;
   model_url?: string;

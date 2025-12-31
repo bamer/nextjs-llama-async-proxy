@@ -4,6 +4,20 @@ import type { ModelConfig } from "@/lib/database";
 
 const logger = getLogger();
 
+export interface LlamaModel {
+  id?: string;
+  name: string;
+  size?: number;
+  type?: string;
+  parameters?: {
+    model_path?: string;
+    model_url?: string;
+    ctx_size?: number;
+    batch_size?: number;
+    threads?: number;
+  };
+}
+
 export interface ModelSyncResult {
   imported: number;
   updated: number;
@@ -19,7 +33,7 @@ export class ModelSyncService {
    * - Optionally removes models not in llama-server
    */
   static async syncModelsFromLlamaServer(
-    llamaModels: any[],
+    llamaModels: LlamaModel[],
     options?: { removeMissing?: boolean }
   ): Promise<ModelSyncResult> {
     const result: ModelSyncResult = {

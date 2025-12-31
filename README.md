@@ -181,6 +181,236 @@ pnpm lint:fix        # Auto-fix linting issues
 pnpm type:check      # TypeScript type check (tsc --noEmit)
 ```
 
+## 🔧 Troubleshooting
+
+### Models Not Appearing
+
+If models are not loading or appearing in the dashboard:
+
+#### 1. Check Database State
+
+Verify that models exist in the database:
+
+```bash
+# Using health endpoint
+curl http://localhost:3000/api/health/models
+
+# Should show:
+{
+  "database_model_count": 18,
+  "status": "ok",
+  "models": [...]
+}
+```
+
+If `database_model_count` is 0, models are not persisted.
+
+#### 2. Clear Database and Restart
+
+If models exist in llama-server but not in database, clear and restart:
+
+```bash
+# Stop server
+pkill -f "node.*server.js"
+
+# Remove database
+rm -f /home/bamer/nextjs-llama-async-proxy/data/llama-dashboard.db
+
+# Start server
+pnpm dev
+```
+
+The server will automatically import all models from llama-server on startup.
+
+#### 3. Check Models Directory Configuration
+
+Verify that models directory is correctly configured:
+
+```bash
+# Check llama-server-config.json
+cat /home/bamer/nextjs-llama-async-proxy/llama-server-config.json | grep basePath
+
+# Should point to your models directory, e.g.:
+# "basePath": "/media/bamer/crucial MX300/llm/llama/models"
+
+# Verify directory exists
+ls -la /media/bamer/crucial MX300/llm/llama/models | head -5
+```
+
+#### 4. Manual Model Import
+
+You can manually trigger model import without restarting the server:
+
+```bash
+# Using API endpoint
+curl -X POST http://localhost:3000/api/models/import
+
+# Response:
+{
+  "success": true,
+  "data": {
+    "message": "Import complete: 0 new, 18 updated",
+    "imported": 0,
+    "updated": 18,
+    "errors": 0
+  }
+}
+```
+
+#### 5. Check Server Logs
+
+Look for auto-import messages in the logs:
+
+```bash
+# Check today's logs
+tail -100 /home/bamer/nextjs-llama-async-proxy/logs/application-$(date +%Y-%m-%d).log | grep AUTO-IMPORT
+
+# Should see:
+# [AUTO-IMPORT] Database has 0 models
+# [AUTO-IMPORT] Database is empty, importing from llama-server...
+# [AUTO-IMPORT] Found 18 models from llama-server
+# [AUTO-IMPORT] Imported model: ModelName (DB ID: X)
+# ✅ [AUTO-IMPORT] Models import completed
+```
+
+#### 6. Verify LlamaServer is Running
+
+Ensure that llama-server is running and accessible:
+
+```bash
+# Check if llama-server process is running
+ps aux | grep llama-server | grep -v grep
+
+# Test health endpoint
+curl http://localhost:8134/health
+
+# Test models endpoint
+curl http://localhost:8134/models
+
+# Should return list of available models
+```
+
+#### 7. Common Error Messages
+
+| Error Message | Cause | Solution |
+|---------------|--------|----------|
+| `NOT NULL constraint failed: models.name` | Model name is null or empty | Ensure models have valid names in llama-server presets |
+| `Model name is required and cannot be empty` | Invalid model name validation | Check model names in your models directory |
+| `[AUTO-IMPORT] LlamaService not available` | LlamaServer integration failed | Check llama-server-config.json and server logs |
+| `[WS] Loaded 0 model(s) from database` | Database is empty | Clear database and restart server for auto-import |
+| `Failed to import models: ...` | Filesystem or database error | Check file permissions and disk space |
+
+### Auto-Import Behavior
+
+The application automatically imports models from llama-server when:
+
+1. The database is empty (0 models)
+2. The server starts up
+3. LlamaServer integration is successfully initialized
+
+Models are imported with default configuration values from `llama-server-config.json`:
+
+- `ctx_size`: From config file
+- `batch_size`: From config file
+- `threads`: From config file
+- `status`: Set to "stopped" initially
+
+### Manual Import Options
+
+#### Via API Endpoint
+
+```bash
+# Trigger full model scan and import
+curl -X POST http://localhost:3000/api/models/import
+```
+
+#### Via WebSocket
+
+```javascript
+// Send rescan command via WebSocket
+websocketClient.sendMessage('rescanModels');
+```
+
+#### Via ModelSyncService
+
+```typescript
+// Programmatic sync (advanced use case)
+import { ModelSyncService } from '@/server/services/ModelSyncService';
+
+const result = await ModelSyncService.syncModelsFromLlamaServer(llamaModels);
+console.log(`Synced: ${result.imported} imported, ${result.updated} updated`);
+```
+
+### Health Check Endpoint
+
+The `/api/health/models` endpoint provides:
+
+- **database_model_count**: Number of models in database
+- **models_directory**: Path to models directory from config
+- **status**: "ok" if models exist, "needs_import" if empty
+- **models**: Array of all models with basic info
+- **timestamp**: When the check was performed
+
+Use this to verify model synchronization status:
+
+```bash
+curl http://localhost:3000/api/health/models | jq '.'
+```
+
+### Database Reset
+
+To completely reset the model database:
+
+```bash
+# Stop server
+pkill -f "node.*server.js"
+
+# Remove database
+rm -f /home/bamer/nextjs-llama-async-proxy/data/llama-dashboard.db
+
+# Restart server
+pnpm dev
+```
+
+**Warning**: This will delete all model configurations and custom settings. Models will be re-imported with default values.
+
+### Advanced Debugging
+
+#### Check Database Directly
+
+```bash
+# Open SQLite database
+sqlite3 /home/bamer/nextjs-llama-async-proxy/data/llama-dashboard.db
+
+# In SQLite shell:
+SELECT id, name, type, status, model_path FROM models;
+.quit
+```
+
+#### Monitor WebSocket Messages
+
+```javascript
+// Add logging to see WebSocket traffic
+socket.onAny((event, ...args) => {
+  console.log('[WS]', event, args);
+});
+```
+
+#### Enable Debug Logging
+
+Check logs for detailed operation traces:
+
+```bash
+# Follow logs in real-time
+tail -f /home/bamer/nextjs-llama-async-proxy/logs/application-$(date +%Y-%m-%d).log
+```
+
+Look for:
+- `[AUTO-IMPORT]` - Model import activity
+- `[ModelSync]` - Sync service operations
+- `[SOCKET.IO]` - WebSocket communication
+- `[WS]` - WebSocket events
+
 ## 📊 API Overview
 
 See **[API_REFERENCE.md](docs/API_REFERENCE.md)** for complete API documentation.
