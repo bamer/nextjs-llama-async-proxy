@@ -67,16 +67,16 @@ describe("POST /api/models/:name/start", () => {
       json: jest.fn().mockResolvedValue({}),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: { model: "llama-2-7b" } });
 
     const response = await POST(mockRequest, {
       params: Promise.resolve({ name: "llama-2-7b" }),
     });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       model: "llama-2-7b",
       status: "loaded",
     });
@@ -113,7 +113,7 @@ describe("POST /api/models/:name/start", () => {
       json: jest.fn().mockResolvedValue({ template: "chat-template" }),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({
       success: true,
       data: { model: "mistral-7b", template: "chat-template" },
@@ -122,10 +122,10 @@ describe("POST /api/models/:name/start", () => {
     const response = await POST(mockRequest, {
       params: Promise.resolve({ name: "mistral-7b" }),
     });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.model).toBe("mistral-7b");
+    expect(_json.model).toBe("mistral-7b");
   });
 
   // Negative test: Return 400 when model name is missing
@@ -136,10 +136,10 @@ describe("POST /api/models/:name/start", () => {
         params: Promise.resolve({ name: "" }),
       }
     );
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       error: "Model name is required",
     });
   });
@@ -150,7 +150,7 @@ describe("POST /api/models/:name/start", () => {
       json: jest.fn().mockResolvedValue({ invalid: "data" }),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({
       success: false,
       errors: ["Invalid request body"],
@@ -159,10 +159,10 @@ describe("POST /api/models/:name/start", () => {
     const response = await POST(mockRequest, {
       params: Promise.resolve({ name: "test-model" }),
     });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       error: "Invalid request body",
       details: ["Invalid request body"],
     });
@@ -180,16 +180,16 @@ describe("POST /api/models/:name/start", () => {
       json: jest.fn().mockResolvedValue({}),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: { model: "test" } });
 
     const response = await POST(mockRequest, {
       params: Promise.resolve({ name: "test-model" }),
     });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(503);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       error: "Llama service not initialized",
     });
   });
@@ -213,16 +213,16 @@ describe("POST /api/models/:name/start", () => {
       json: jest.fn().mockResolvedValue({}),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: { model: "test" } });
 
     const response = await POST(mockRequest, {
       params: Promise.resolve({ name: "test-model" }),
     });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(503);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       error: "Llama server is not ready (status: loading)",
     });
   });
@@ -252,16 +252,16 @@ describe("POST /api/models/:name/start", () => {
       json: jest.fn().mockResolvedValue({}),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: { model: "test" } });
 
     const response = await POST(mockRequest, {
       params: Promise.resolve({ name: "test-model" }),
     });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(409);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       error: expect.stringContaining("Maximum concurrent models"),
     });
   });
@@ -288,16 +288,16 @@ describe("POST /api/models/:name/start", () => {
       json: jest.fn().mockResolvedValue({}),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: { model: "unknown" } });
 
     const response = await POST(mockRequest, {
       params: Promise.resolve({ name: "unknown-model" }),
     });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(404);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       error: "Model not found",
       model: "unknown-model",
     });
@@ -326,16 +326,16 @@ describe("POST /api/models/:name/start", () => {
       json: jest.fn().mockResolvedValue({}),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: { model: "test" } });
 
     const response = await POST(mockRequest, {
       params: Promise.resolve({ name: "llama-2-7b" }),
     });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(503);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       error: expect.stringContaining("Failed to connect to llama-server"),
     });
   });
@@ -367,16 +367,16 @@ describe("POST /api/models/:name/start", () => {
       json: jest.fn().mockResolvedValue({}),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: { model: "test" } });
 
     const response = await POST(mockRequest, {
       params: Promise.resolve({ name: "llama-2-7b" }),
     });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       error: expect.stringContaining("Failed to load model"),
     });
   });
@@ -408,13 +408,13 @@ describe("POST /api/models/:name/start", () => {
       json: jest.fn().mockResolvedValue({}),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: { model: "llama-2-7b" } });
 
     const response = await POST(mockRequest, {
       params: Promise.resolve({ name: "llama-2-7b" }),
     });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -449,7 +449,7 @@ describe("POST /api/models/:name/start", () => {
       json: jest.fn().mockResolvedValue({}),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: { model: "test-model" } });
 
     const response = await POST(mockRequest, {
@@ -482,16 +482,16 @@ describe("POST /api/models/:name/start", () => {
       json: jest.fn().mockResolvedValue({}),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: { model: "test-model" } });
 
     const response = await POST(mockRequest, {
       params: Promise.resolve({ name: "test-model" }),
     });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       error: expect.stringContaining("Failed to load model"),
     });
   });
@@ -521,7 +521,7 @@ describe("POST /api/models/:name/start", () => {
       json: jest.fn().mockResolvedValue({}),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: { model: "test" } });
 
     const [response1, response2] = await Promise.all([

@@ -1,0 +1,165 @@
+{
+  "tasks": [
+    {
+      "taskId": "T-011",
+      "role": "reviewer",
+      "description": "Analyze remaining 626 TypeScript errors and categorize them",
+      "filesAffected": [],
+      "inputs": {
+        "totalErrors": 626,
+        "errorContext": "Core src/ files also have errors, not just tests"
+      },
+      "successCriteria": [
+        "Errors categorized by file type (core src/, test __tests__/)",
+        "Top 10 error patterns identified",
+        "Priority list created (Critical/High/Medium/Low)"
+      ],
+      "dependsOn": [],
+      "timeoutSeconds": 600,
+      "priority": "critical"
+    },
+    {
+      "taskId": "T-012",
+      "role": "coder-agent",
+      "description": "Fix critical TypeScript errors in core server files",
+      "filesAffected": [
+        "src/server/services/llama/LlamaService.ts",
+        "src/server/services/llama/ModelLoader.ts",
+        "src/server/services/llama/LlamaServerIntegration.ts",
+        "src/server/services/LlamaServerIntegration.ts"
+      ],
+      "inputs": {},
+      "successCriteria": [
+        "All TypeScript errors in server service files resolved",
+        "pnpm type:check shows 0 errors in these files",
+        "Service methods properly typed"
+      ],
+      "dependsOn": ["T-011"],
+      "timeoutSeconds": 900,
+      "priority": "critical"
+    },
+    {
+      "taskId": "T-013",
+      "role": "coder-agent",
+      "description": "Fix TypeScript errors in __tests__/api test files (json variable issues)",
+      "filesAffected": [
+        "__tests__/api/logger-config.test.ts",
+        "__tests__/api/config-route.test.ts",
+        "__tests__/api/metrics-route.test.ts",
+        "__tests__/api/models-analyze-route.test.ts"
+      ],
+      "inputs": {
+        "errorPattern": "Cannot find name 'json' - likely variable naming conflict"
+      },
+      "successCriteria": [
+        "All 'json' variable conflicts resolved",
+        "pnpm type:check shows 0 errors in __tests__/api/",
+        "Tests run successfully"
+      ],
+      "dependsOn": ["T-011"],
+      "timeoutSeconds": 600,
+      "priority": "critical"
+    },
+    {
+      "taskId": "T-014",
+      "role": "coder-agent",
+      "description": "Fix top 20 failing test files",
+      "filesAffected": [
+        "__tests__/lib/analytics.test.ts",
+        "__tests__/components/configuration/LoggerSettingsTab.test.tsx",
+        "__tests__/components/layout/Sidebar.test.tsx",
+        "__tests__/components/dashboard/ModernDashboard.test.tsx",
+        "__tests__/lib/agent1-core-enhancement.test.ts",
+        "__tests__/components/configuration/GeneralSettingsTab.test.tsx",
+        "__tests__/api/model-templates/route.test.ts",
+        "__tests__/lib/server-model-templates.test.ts",
+        "__tests__/performance/dashboard-performance.test.tsx",
+        "__tests__/services/api-service-new-methods.test.ts",
+        "__tests__/lib/services/ModelDiscoveryService.test.ts",
+        "__tests__/pages/monitoring.comprehensive.test.tsx",
+        "__tests__/lib/agent1-logger-monitor.test.ts",
+        "__tests__/lib/client-model-templates.test.ts",
+        "__tests__/utils/api-client.edge-cases.test.ts",
+        "__tests__/components/configuration/hooks/useConfigurationForm.test.ts",
+        "__tests__/components/pages/MonitoringPage.test.tsx",
+        "__tests__/snapshots/configuration.snapshots.test.tsx",
+        "__tests__/api/rescan.test.ts",
+        "__tests__/lib/ollama.test.ts"
+      ],
+      "inputs": {},
+      "successCriteria": [
+        "All 20 test files pass",
+        "Test suite shows significant improvement",
+        "Coverage increases by at least 5%"
+      ],
+      "dependsOn": ["T-012", "T-013"],
+      "priority": "critical"
+    },
+    {
+      "taskId": "T-015",
+      "role": "tester",
+      "description": "Run tests after critical fixes and verify coverage improvement",
+      "filesAffected": [],
+      "inputs": {
+        "targetCoverage": 70,
+        "expectedImprovement": "From 68.59% to 70%+"
+      },
+      "successCriteria": [
+        "Test failures reduced by >50%",
+        "Coverage >= 70%",
+        "Critical test files (services, components) passing"
+      ],
+      "dependsOn": ["T-012", "T-013", "T-014"],
+      "timeoutSeconds": 900,
+      "priority": "critical"
+    },
+    {
+      "taskId": "T-016",
+      "role": "reviewer",
+      "description": "Verify all critical fixes are working",
+      "filesAffected": [
+        "src/server/services/*",
+        "src/components/dashboard/*",
+        "__tests__/"
+      ],
+      "inputs": {},
+      "successCriteria": [
+        "pnpm type:check returns exit code 0",
+        "pnpm lint returns 0 errors",
+        "Application runs without critical errors"
+      ],
+      "dependsOn": ["T-015"],
+      "timeoutSeconds": 300,
+      "priority": "critical"
+    },
+    {
+      "taskId": "T-017",
+      "role": "docs-agent",
+      "description": "Update RESCUE_PLAN.md with Phase 2 results",
+      "filesAffected": [
+        "RESCUE_PLAN.md"
+      ],
+      "inputs": {
+        "phase": "PHASE_2"
+      },
+      "successCriteria": [
+        "Phase 1 results documented",
+        "Phase 2 plan documented",
+        "Lessons learned updated",
+        "Review approved"
+      ],
+      "dependsOn": ["T-016"],
+      "timeoutSeconds": 300,
+      "priority": "low"
+    }
+  ],
+  "taskDependencies": {
+    "T-011": [],
+    "T-012": ["T-011"],
+    "T-013": ["T-011"],
+    "T-014": ["T-012", "T-013"],
+    "T-015": ["T-012", "T-013", "T-014"],
+    "T-016": ["T-015"],
+    "T-017": ["T-016"]
+  }
+}

@@ -52,14 +52,14 @@ describe("POST /api/llama-server/rescan", () => {
       json: jest.fn().mockResolvedValue(mockBody),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: mockBody });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json).toEqual({
+    expect(_json).toEqual({
       message: "Models rescanned successfully",
       config: {
         host: "localhost",
@@ -95,17 +95,17 @@ describe("POST /api/llama-server/rescan", () => {
       json: jest.fn().mockResolvedValue(mockBody),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: mockBody });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.config.host).toBe("custom-host");
-    expect(json.config.port).toBe(9000);
-    expect(json.config.basePath).toBe("/models");
-    expect(json.config.serverPath).toContain("llama-server");
+    expect(_json.config.host).toBe("custom-host");
+    expect(_json.config.port).toBe(9000);
+    expect(_json.config.basePath).toBe("/models");
+    expect(_json.config.serverPath).toContain("llama-server");
   });
 
   // Negative test: Return 503 when llamaIntegration is not available
@@ -121,14 +121,14 @@ describe("POST /api/llama-server/rescan", () => {
       json: jest.fn().mockResolvedValue(mockBody),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: mockBody });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(503);
-    expect(json).toEqual({
+    expect(_json).toEqual({
       error: "Llama service not initialized",
     });
   });
@@ -143,17 +143,17 @@ describe("POST /api/llama-server/rescan", () => {
       json: jest.fn().mockResolvedValue(mockBody),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({
       success: false,
       errors: ["Invalid host", "Invalid port"],
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json).toEqual({
+    expect(_json).toEqual({
       error: "Invalid request body",
       details: ["Invalid host", "Invalid port"],
     });
@@ -178,14 +178,14 @@ describe("POST /api/llama-server/rescan", () => {
       json: jest.fn().mockResolvedValue(mockBody),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: mockBody });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json).toEqual({
+    expect(_json).toEqual({
       error: "Failed to rescan models",
     });
   });
@@ -209,14 +209,14 @@ describe("POST /api/llama-server/rescan", () => {
       json: jest.fn().mockResolvedValue(mockBody),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: mockBody });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json).toEqual({
+    expect(_json).toEqual({
       error: "Failed to rescan models",
     });
   });
@@ -246,17 +246,17 @@ describe("POST /api/llama-server/rescan", () => {
       json: jest.fn().mockResolvedValue(mockBody),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: mockBody });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.config.host).toBe("env-host");
-    expect(json.config.port).toBe(9999);
-    expect(json.config.basePath).toBe("/env/models");
-    expect(json.config.serverPath).toBe("/env/server");
+    expect(_json.config.host).toBe("env-host");
+    expect(_json.config.port).toBe(9999);
+    expect(_json.config.basePath).toBe("/env/models");
+    expect(_json.config.serverPath).toBe("/env/server");
 
     process.env = originalEnv;
   });
@@ -279,15 +279,15 @@ describe("POST /api/llama-server/rescan", () => {
       json: jest.fn().mockResolvedValue(mockBody),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: mockBody });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.config.port).toBe(12345);
-    expect(typeof json.config.port).toBe("number");
+    expect(_json.config.port).toBe(12345);
+    expect(typeof _json.config.port).toBe("number");
   });
 
   // Edge case: Handle validation data as null or undefined
@@ -304,7 +304,7 @@ describe("POST /api/llama-server/rescan", () => {
       json: jest.fn().mockResolvedValue({}),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: null });
 
     const response = await POST(mockRequest);
@@ -337,14 +337,14 @@ describe("POST /api/llama-server/rescan", () => {
       json: jest.fn().mockResolvedValue(mockBody),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: mockBody });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.config).toMatchObject({
+    expect(_json.config).toMatchObject({
       host: "test-host",
       port: 8888,
       basePath: "/test/path",
@@ -375,7 +375,7 @@ describe("POST /api/llama-server/rescan", () => {
       json: jest.fn().mockResolvedValue(mockBody),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: mockBody });
 
     const [response1, response2, response3] = await Promise.all([
@@ -403,7 +403,7 @@ describe("POST /api/llama-server/rescan", () => {
       json: jest.fn().mockResolvedValue({}),
     } as unknown as NextRequest;
 
-    const { validateRequestBody } = require("@/lib/validation-utils");
+    const { validateRequestBody } = jest.mocked(require("@/lib/validation-utils"));
     validateRequestBody.mockReturnValue({ success: true, data: undefined });
 
     const response = await POST(mockRequest);

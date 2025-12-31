@@ -2,7 +2,7 @@ import { GET, POST } from "../../app/api/model-templates/route";
 import { NextRequest } from "next/server";
 import { promises as fs } from "fs";
 import { validateRequestBody, validateConfig } from "@/lib/validation-utils";
-import { modelTemplatesConfigSchema, modelTemplateSaveRequestSchema } from "@/lib/validators";
+import { modelTemplatesConfigSchema } from "@/lib/validators";
 import {
   getModelTemplatesConfig,
   updateModelTemplatesConfig,
@@ -85,13 +85,13 @@ describe("GET /api/model-templates", () => {
     mockConfigCache = mockCachedConfig;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.success).toBe(true);
-    expect(json.data.model_templates).toEqual(mockCachedConfig.model_templates);
-    expect(json.data.default_model).toBe(mockCachedConfig.default_model);
-    expect(json.timestamp).toBeDefined();
+    expect(_json.success).toBe(true);
+    expect(_json.data.model_templates).toEqual(mockCachedConfig.model_templates);
+    expect(_json.data.default_model).toBe(mockCachedConfig.default_model);
+    expect(_json.timestamp).toBeDefined();
   });
 
   // Positive test: Load config from disk on cache miss
@@ -115,10 +115,10 @@ describe("GET /api/model-templates", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.success).toBe(true);
+    expect(_json.success).toBe(true);
     expect(fs.readFile).toHaveBeenCalled();
     expect(validateConfig).toHaveBeenCalled();
   });
@@ -133,11 +133,11 @@ describe("GET /api/model-templates", () => {
     mockConfigCache = mockCachedConfig;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.data.model_templates).toEqual({});
-    expect(json.data.default_model).toBeNull();
+    expect(_json.data.model_templates).toEqual({});
+    expect(_json.data.default_model).toBeNull();
   });
 
   // Negative test: Return default on validation failure
@@ -156,12 +156,12 @@ describe("GET /api/model-templates", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.success).toBe(true);
-    expect(json.data.model_templates).toEqual({});
-    expect(json.data.default_model).toBeNull();
+    expect(_json.success).toBe(true);
+    expect(_json.data.model_templates).toEqual({});
+    expect(_json.data.default_model).toBeNull();
   });
 
   // Negative test: Return 500 on file read error
@@ -172,11 +172,11 @@ describe("GET /api/model-templates", () => {
     );
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json.success).toBe(false);
-    expect(json.error).toBe("Failed to load model templates");
+    expect(_json.success).toBe(false);
+    expect(_json.error).toBe("Failed to load model templates");
   });
 
   // Edge case: Handle concurrent GET requests
@@ -212,10 +212,10 @@ describe("GET /api/model-templates", () => {
     mockConfigCache = mockCachedConfig;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(Object.keys(json.data.model_templates)).toHaveLength(100);
+    expect(Object.keys(_json.data.model_templates)).toHaveLength(100);
   });
 });
 
@@ -288,11 +288,11 @@ describe("POST /api/model-templates", () => {
     };
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.success).toBe(true);
-    expect(json.data.model_templates).toEqual(requestBody.model_templates);
+    expect(_json.success).toBe(true);
+    expect(_json.data.model_templates).toEqual(requestBody.model_templates);
     expect(updateModelTemplatesConfig).toHaveBeenCalledWith(requestBody);
     expect(invalidateModelTemplatesCache).toHaveBeenCalled();
   });
@@ -313,11 +313,11 @@ describe("POST /api/model-templates", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.success).toBe(true);
-    expect(json.data.model_templates).toEqual({});
+    expect(_json.success).toBe(true);
+    expect(_json.data.model_templates).toEqual({});
   });
 
   // Negative test: Return 400 on validation failure
@@ -338,12 +338,12 @@ describe("POST /api/model-templates", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json.success).toBe(false);
-    expect(json.error).toBe("Invalid request body");
-    expect(json.details).toBeDefined();
+    expect(_json.success).toBe(false);
+    expect(_json.error).toBe("Invalid request body");
+    expect(_json.details).toBeDefined();
   });
 
   // Negative test: Return 500 on save error
@@ -367,11 +367,11 @@ describe("POST /api/model-templates", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json.success).toBe(false);
-    expect(json.error).toBe("Failed to save model templates");
+    expect(_json.success).toBe(false);
+    expect(_json.error).toBe("Failed to save model templates");
   });
 
   // Edge case: Handle invalid JSON
@@ -381,11 +381,11 @@ describe("POST /api/model-templates", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json.success).toBe(false);
-    expect(json.error).toBe("Failed to save model templates");
+    expect(_json.success).toBe(false);
+    expect(_json.error).toBe("Failed to save model templates");
   });
 
   // Edge case: Handle concurrent POST requests
@@ -440,10 +440,10 @@ describe("POST /api/model-templates", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(Object.keys(json.data.model_templates)).toHaveLength(1000);
+    expect(Object.keys(_json.data.model_templates)).toHaveLength(1000);
   });
 
   // Edge case: Handle template with special characters
@@ -466,10 +466,10 @@ describe("POST /api/model-templates", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.data.model_templates).toHaveProperty(
+    expect(_json.data.model_templates).toHaveProperty(
       "llama-2-7b-日本語-中文-العربية"
     );
   });
@@ -504,9 +504,9 @@ describe("POST /api/model-templates", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.data.model_templates["test-model"].ctx_size).toBe(4096);
+    expect(_json.data.model_templates["test-model"].ctx_size).toBe(4096);
   });
 });

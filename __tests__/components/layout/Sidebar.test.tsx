@@ -461,12 +461,20 @@ describe('Sidebar', () => {
     it('handles theme switching while open', () => {
       const { container, rerender } = renderWithTheme(<Sidebar />);
 
+      // Update both theme and sidebar context to keep sidebar open
       (themeContext.useTheme as jest.Mock).mockReturnValue({
         isDark: true,
         mode: 'dark' as const,
         setMode: jest.fn(),
         toggleTheme: jest.fn(),
         currentTheme: theme,
+      });
+
+      (sidebarContext.useSidebar as jest.Mock).mockReturnValue({
+        isOpen: true,
+        toggleSidebar: jest.fn(),
+        openSidebar: jest.fn(),
+        closeSidebar: mockCloseSidebar,
       });
 
       rerender(

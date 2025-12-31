@@ -10,7 +10,7 @@ jest.mock('@/lib/websocket-client', () => ({
   },
 }));
 
-const { websocketServer } = require('@/lib/websocket-client');
+const { websocketServer } = jest.mocked(require('@/lib/websocket-client'));
 
 describe('useLlamaStatus', () => {
   beforeEach(() => {
@@ -403,7 +403,7 @@ describe('useLlamaStatus', () => {
 
       // Get the socket event handler
       const socketHandler = mockSocket.on.mock.calls.find(
-        (call: any) => call[0] === 'llamaStatus'
+        (call: unknown) => call[0] === 'llamaStatus'
       )?.[1];
 
       expect(socketHandler).toBeDefined();
@@ -445,7 +445,7 @@ describe('useLlamaStatus', () => {
 
       const messageHandler = websocketServer.on.mock.calls[0][1];
       const socketHandler = mockSocket.on.mock.calls.find(
-        (call: any) => call[0] === 'llamaStatus'
+        (call: unknown) => call[0] === 'llamaStatus'
       )?.[1];
 
       // Act - update via message first

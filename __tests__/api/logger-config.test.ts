@@ -1,4 +1,4 @@
-import { POST } from "../app/api/logger/config/route";
+import { POST } from "../../app/api/logger/config/route";
 import { NextRequest } from "next/server";
 
 jest.mock("next/server", () => ({
@@ -34,10 +34,10 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       message: "Logger config received (client-side only)",
       note: "Server-side logging is configured in server.js",
     });
@@ -58,10 +58,10 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.message).toBe("Logger config received (client-side only)");
+    expect(_json.message).toBe("Logger config received (client-side only)");
   });
 
   // Positive test: Handle complex configuration
@@ -82,10 +82,10 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.note).toContain("Server-side logging is configured in server.js");
+    expect(_json.note).toContain("Server-side logging is configured in server.js");
   });
 
   // Negative test: Return 500 when request JSON parsing fails
@@ -95,10 +95,10 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json).toEqual({
+    expect(_json).toEqual({
       error: "Failed to process logger config",
     });
   });
@@ -112,10 +112,10 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.message).toBe("Logger config received (client-side only)");
+    expect(_json.message).toBe("Logger config received (client-side only)");
   });
 
   // Positive test: Handle configuration with special characters
@@ -130,7 +130,7 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -163,10 +163,10 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.message).toBe("Logger config received (client-side only)");
+    expect(_json.message).toBe("Logger config received (client-side only)");
   });
 
   // Positive test: Handle configuration with numeric values
@@ -183,7 +183,7 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -203,7 +203,7 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -226,7 +226,7 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -243,7 +243,7 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -260,7 +260,7 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -278,7 +278,7 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -300,7 +300,7 @@ describe("POST /api/logger/config", () => {
       POST(mockRequest),
     ]);
 
-    responses.forEach((response) => {
+    responses.forEach((response: { status: number }) => {
       expect(response.status).toBe(200);
     });
   });
@@ -318,7 +318,7 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -336,7 +336,7 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -358,7 +358,7 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -376,7 +376,7 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -394,7 +394,7 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -414,7 +414,7 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -433,7 +433,7 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -451,7 +451,7 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -470,7 +470,7 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -488,7 +488,7 @@ describe("POST /api/logger/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });

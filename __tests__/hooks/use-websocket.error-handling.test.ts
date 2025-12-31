@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { useWebSocket } from '@/hooks/use-websocket';
 
 // Mock dependencies
@@ -20,8 +20,8 @@ const mockWebSocketContext = {
   socketId: 'socket-123',
 };
 
-// Mock the modules
-const websocketProvider = require('@/providers/websocket-provider');
+// Mock modules
+const websocketProvider = jest.mocked(require('@/providers/websocket-provider'));
 websocketProvider.useWebSocketContext = jest.fn(() => mockWebSocketContext);
 
 describe('useWebSocket - Error Handling', () => {

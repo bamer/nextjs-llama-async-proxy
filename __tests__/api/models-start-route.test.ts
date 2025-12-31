@@ -75,11 +75,11 @@ describe("POST /api/models/:name/start", () => {
 
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.status).toBe("loaded");
-    expect(json.message).toContain("llama-2-7b");
+    expect(_json.status).toBe("loaded");
+    expect(_json.message).toContain("llama-2-7b");
     expect(global.fetch).toHaveBeenCalled();
   });
 
@@ -102,10 +102,10 @@ describe("POST /api/models/:name/start", () => {
 
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.status).toBe("loaded");
+    expect(_json.status).toBe("loaded");
   });
 
   // Negative test: Return 400 when model name is missing
@@ -114,10 +114,10 @@ describe("POST /api/models/:name/start", () => {
     const mockParams = Promise.resolve({ name: "" });
 
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json.error).toBe("Model name is required");
+    expect(_json.error).toBe("Model name is required");
   });
 
   // Negative test: Return 400 when validation fails
@@ -133,11 +133,11 @@ describe("POST /api/models/:name/start", () => {
 
     const mockParams = Promise.resolve({ name: "test-model" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json.error).toBe("Invalid request body");
-    expect(json.details).toBeDefined();
+    expect(_json.error).toBe("Invalid request body");
+    expect(_json.details).toBeDefined();
   });
 
   // Negative test: Return 503 when llamaService is not initialized
@@ -156,10 +156,10 @@ describe("POST /api/models/:name/start", () => {
 
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(503);
-    expect(json.error).toBe("Llama service not initialized");
+    expect(_json.error).toBe("Llama service not initialized");
   });
 
   // Negative test: Return 503 when server is not ready
@@ -179,11 +179,11 @@ describe("POST /api/models/:name/start", () => {
 
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(503);
-    expect(json.error).toContain("Llama server is not ready");
-    expect(json.status).toBe("error");
+    expect(_json.error).toContain("Llama server is not ready");
+    expect(_json.status).toBe("error");
   });
 
   // Negative test: Return 409 when max concurrent models reached
@@ -206,12 +206,12 @@ describe("POST /api/models/:name/start", () => {
 
     const mockParams = Promise.resolve({ name: "new-model" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(409);
-    expect(json.error).toContain("Maximum concurrent models");
-    expect(json.runningModels).toBe("running-model");
-    expect(json.maxConcurrent).toBe(1);
+    expect(_json.error).toContain("Maximum concurrent models");
+    expect(_json.runningModels).toBe("running-model");
+    expect(_json.maxConcurrent).toBe(1);
   });
 
   // Negative test: Return 404 when model not found
@@ -232,14 +232,13 @@ describe("POST /api/models/:name/start", () => {
       data: { model: "nonexistent-model" },
     });
 
-    (mockParams) => Promise.resolve({ name: "nonexistent-model" });
     const mockParams = Promise.resolve({ name: "nonexistent-model" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(404);
-    expect(json.error).toBe("Model not found");
-    expect(json.status).toBe("not_found");
+    expect(_json.error).toBe("Model not found");
+    expect(_json.status).toBe("not_found");
   });
 
   // Negative test: Return 503 when fetch fails to connect
@@ -257,10 +256,10 @@ describe("POST /api/models/:name/start", () => {
 
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(503);
-    expect(json.error).toContain("Failed to connect to llama-server");
+    expect(_json.error).toContain("Failed to connect to llama-server");
   });
 
   // Negative test: Return error when llama-server returns error
@@ -282,10 +281,10 @@ describe("POST /api/models/:name/start", () => {
 
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json.error).toBeDefined();
+    expect(_json.error).toBeDefined();
   });
 
   // Edge case: Handle model found by id
@@ -314,7 +313,7 @@ describe("POST /api/models/:name/start", () => {
 
     const mockParams = Promise.resolve({ name: "model-123" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -349,7 +348,7 @@ describe("POST /api/models/:name/start", () => {
 
     const mockParams = Promise.resolve({ name: "llama-2-7b-日本語" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -386,7 +385,7 @@ describe("POST /api/models/:name/start", () => {
 
     const mockParams = Promise.resolve({ name: "model3" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -439,10 +438,10 @@ describe("POST /api/models/:name/start", () => {
 
     const mockParams = Promise.resolve({ name: "nonexistent-model" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(404);
-    expect(json.error).toBe("Model not found");
+    expect(_json.error).toBe("Model not found");
   });
 
   // Edge case: Handle models with 'loaded' status
@@ -465,9 +464,9 @@ describe("POST /api/models/:name/start", () => {
 
     const mockParams = Promise.resolve({ name: "model2" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(409);
-    expect(json.error).toContain("Maximum concurrent models");
+    expect(_json.error).toContain("Maximum concurrent models");
   });
 });

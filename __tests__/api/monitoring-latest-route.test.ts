@@ -43,59 +43,59 @@ describe("GET /api/monitoring/latest", () => {
   // Positive test: Successfully return monitoring data
   it("should return monitoring data successfully", async () => {
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.success).toBe(true);
-    expect(json.data).toBeDefined();
-    expect(json.data.system).toBeDefined();
-    expect(json.data.models).toBeDefined();
-    expect(json.timestamp).toBeDefined();
+    expect(_json.success).toBe(true);
+    expect(_json.data).toBeDefined();
+    expect(_json.data.system).toBeDefined();
+    expect(_json.data.models).toBeDefined();
+    expect(_json.timestamp).toBeDefined();
   });
 
   // Positive test: Include system metrics
   it("should include all system metrics", async () => {
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.data.system).toHaveProperty("cpu");
-    expect(json.data.system).toHaveProperty("memory");
-    expect(json.data.system).toHaveProperty("disk");
-    expect(json.data.system).toHaveProperty("network");
-    expect(json.data.system).toHaveProperty("uptime");
-    expect(json.data.system.cpu).toHaveProperty("usage");
-    expect(json.data.system.memory).toHaveProperty("used");
-    expect(json.data.system.disk).toHaveProperty("used");
-    expect(json.data.system.network).toHaveProperty("rx");
-    expect(json.data.system.network).toHaveProperty("tx");
+    expect(_json.data.system).toHaveProperty("cpu");
+    expect(_json.data.system).toHaveProperty("memory");
+    expect(_json.data.system).toHaveProperty("disk");
+    expect(_json.data.system).toHaveProperty("network");
+    expect(_json.data.system).toHaveProperty("uptime");
+    expect(_json.data.system.cpu).toHaveProperty("usage");
+    expect(_json.data.system.memory).toHaveProperty("used");
+    expect(_json.data.system.disk).toHaveProperty("used");
+    expect(_json.data.system.network).toHaveProperty("rx");
+    expect(_json.data.system.network).toHaveProperty("tx");
   });
 
   // Positive test: Return valid CPU usage
   it("should return CPU usage in valid range", async () => {
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
-    expect(json.data.system.cpu.usage).toBeGreaterThanOrEqual(20);
-    expect(json.data.system.cpu.usage).toBeLessThanOrEqual(60);
+    expect(_json.data.system.cpu.usage).toBeGreaterThanOrEqual(20);
+    expect(_json.data.system.cpu.usage).toBeLessThanOrEqual(60);
   });
 
   // Positive test: Return valid memory usage
   it("should return memory usage in valid range", async () => {
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
-    expect(json.data.system.memory.used).toBeGreaterThanOrEqual(40);
-    expect(json.data.system.memory.used).toBeLessThanOrEqual(70);
+    expect(_json.data.system.memory.used).toBeGreaterThanOrEqual(40);
+    expect(_json.data.system.memory.used).toBeLessThanOrEqual(70);
   });
 
   // Positive test: Return valid disk usage
   it("should return disk usage in valid range", async () => {
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
-    expect(json.data.system.disk.used).toBeGreaterThanOrEqual(50);
-    expect(json.data.system.disk.used).toBeLessThanOrEqual(70);
+    expect(_json.data.system.disk.used).toBeGreaterThanOrEqual(50);
+    expect(_json.data.system.disk.used).toBeLessThanOrEqual(70);
   });
 
   // Positive test: Include models from llama service
@@ -109,13 +109,13 @@ describe("GET /api/monitoring/latest", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.data.models).toHaveLength(2);
-    expect(json.data.models[0]).toHaveProperty("status");
-    expect(json.data.models[0]).toHaveProperty("memory");
-    expect(json.data.models[0]).toHaveProperty("requests");
+    expect(_json.data.models).toHaveLength(2);
+    expect(_json.data.models[0]).toHaveProperty("status");
+    expect(_json.data.models[0]).toHaveProperty("memory");
+    expect(_json.data.models[0]).toHaveProperty("requests");
   });
 
   // Positive test: Handle models without size
@@ -126,10 +126,10 @@ describe("GET /api/monitoring/latest", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.data.models[0].memory).toBe(0);
+    expect(_json.data.models[0].memory).toBe(0);
   });
 
   // Positive test: Handle models with large size
@@ -142,10 +142,10 @@ describe("GET /api/monitoring/latest", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.data.models[0].memory).toBeGreaterThan(0);
+    expect(_json.data.models[0].memory).toBeGreaterThan(0);
   });
 
   // Negative test: Return error when llamaService fails
@@ -155,20 +155,20 @@ describe("GET /api/monitoring/latest", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200); // Still returns 200 with empty models
-    expect(json.data.models).toEqual([]);
+    expect(_json.data.models).toEqual([]);
   });
 
   // Positive test: Return valid timestamp
   it("should return valid timestamp", async () => {
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.timestamp).toBeDefined();
-    expect(() => new Date(json.timestamp)).not.toThrow();
+    expect(_json.timestamp).toBeDefined();
+    expect(() => new Date(_json.timestamp)).not.toThrow();
   });
 
   // Edge case: Handle llamaService not available
@@ -179,10 +179,10 @@ describe("GET /api/monitoring/latest", () => {
     (global as unknown as { registry: unknown }).registry = mockRegistry;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.data.models).toEqual([]);
+    expect(_json.data.models).toEqual([]);
   });
 
   // Edge case: Handle concurrent requests
@@ -208,10 +208,10 @@ describe("GET /api/monitoring/latest", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.data.models).toHaveLength(5);
+    expect(_json.data.models).toHaveLength(5);
   });
 
   // Edge case: Handle very large model count
@@ -228,10 +228,10 @@ describe("GET /api/monitoring/latest", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.data.models).toHaveLength(100);
+    expect(_json.data.models).toHaveLength(100);
   });
 
   // Edge case: Handle zero models
@@ -242,28 +242,28 @@ describe("GET /api/monitoring/latest", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.data.models).toEqual([]);
+    expect(_json.data.models).toEqual([]);
   });
 
   // Edge case: Return valid network metrics
   it("should return valid network metrics", async () => {
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
-    expect(json.data.system.network.rx).toBeGreaterThan(0);
-    expect(json.data.system.network.tx).toBeGreaterThan(0);
+    expect(_json.data.system.network.rx).toBeGreaterThan(0);
+    expect(_json.data.system.network.tx).toBeGreaterThan(0);
   });
 
   // Edge case: Return valid uptime
   it("should return valid uptime value", async () => {
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
-    expect(json.data.system.uptime).toBeGreaterThanOrEqual(3600); // At least 1 hour
-    expect(json.data.system.uptime).toBeLessThanOrEqual(90000); // At most 25 hours
+    expect(_json.data.system.uptime).toBeGreaterThanOrEqual(3600); // At least 1 hour
+    expect(_json.data.system.uptime).toBeLessThanOrEqual(90000); // At most 25 hours
   });
 
   // Edge case: Handle memory calculation edge case
@@ -274,10 +274,10 @@ describe("GET /api/monitoring/latest", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.data.models[0].memory).toBe(0); // Rounding down
+    expect(_json.data.models[0].memory).toBe(0); // Rounding down
   });
 
   // Edge case: Handle memory calculation for very large models
@@ -289,9 +289,9 @@ describe("GET /api/monitoring/latest", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.data.models[0].memory).toBeGreaterThan(0);
+    expect(_json.data.models[0].memory).toBeGreaterThan(0);
   });
 });

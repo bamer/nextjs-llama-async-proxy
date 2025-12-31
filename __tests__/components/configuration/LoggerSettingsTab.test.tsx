@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import React from 'react';
-import { LoggerSettingsTab } from '../../../src/components/configuration/LoggerSettingsTab';
+import { LoggerSettingsTab } from '@/components/configuration/LoggerSettingsTab';
 import * as loggerHook from '@/hooks/use-logger-config';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -21,7 +21,12 @@ jest.mock('@/hooks/use-logger-config', () => ({
 jest.mock('@/contexts/ThemeContext');
 
 function renderComponent(component: React.ReactElement) {
-  return render(component);
+  try {
+    return render(component);
+  } catch (error) {
+    console.error('Render error:', error);
+    throw error;
+  }
 }
 
 describe('LoggerSettingsTab', () => {

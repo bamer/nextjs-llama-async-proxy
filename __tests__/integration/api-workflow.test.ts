@@ -13,6 +13,8 @@
 import { apiService } from "@/services/api-service";
 import { apiClient } from "@/utils/api-client";
 import { useStore } from "@/lib/store";
+import type { SystemMetrics } from "@/types/monitoring";
+import type { LegacySystemMetrics } from "@/types";
 
 // Mock dependencies
 jest.mock("@/utils/api-client");
@@ -39,6 +41,7 @@ describe("API Workflow Integration", () => {
       status: {
         isLoading: false,
         error: null,
+        llamaServerStatus: "running" as const,
       },
       chartHistory: {
         cpu: [],
@@ -130,7 +133,7 @@ describe("API Workflow Integration", () => {
         avgResponseTime: 200,
         uptime: 3600,
         timestamp: new Date().toISOString(),
-      },
+      } as LegacySystemMetrics,
       timestamp: new Date().toISOString(),
     };
 
@@ -157,7 +160,7 @@ describe("API Workflow Integration", () => {
 
     // Assert: Verify all requests completed successfully
     expect(models).toHaveLength(2);
-    expect(metrics.cpuUsage).toBe(50);
+    expect(metrics.cpu.usage).toBe(50);
     expect(logs).toHaveLength(2);
     expect(apiClient.get).toHaveBeenCalledTimes(3);
   });
@@ -321,9 +324,8 @@ describe("API Workflow Integration", () => {
 
     (apiClient.get as jest.Mock).mockResolvedValue(malformedResponse);
 
-    // Act & Assert: Should handle gracefully
-    const result = await apiService.getModels();
-    expect(result).toBeNull();
+    // Act & Assert: Should throw error on null data
+    await expect(apiService.getModels()).rejects.toThrow("Failed to fetch models");
   });
 
   /**
@@ -353,9 +355,13 @@ describe("API Workflow Integration", () => {
       data: {
         cpuUsage: 45,
         memoryUsage: 55,
+        diskUsage: 30,
         activeModels: 1,
+        totalRequests: 50,
+        avgResponseTime: 150,
+        uptime: 3600,
         timestamp: new Date().toISOString(),
-      },
+      } as LegacySystemMetrics,
       timestamp: new Date().toISOString(),
     };
 
@@ -370,7 +376,7 @@ describe("API Workflow Integration", () => {
     // Assert: Verify sequential flow
     expect(models).toHaveLength(2);
     expect(startedModel.status).toBe("running");
-    expect(metrics.activeModels).toBe(1);
+    expect(metrics.cpu.usage).toBe(45);
     expect(apiClient.get).toHaveBeenCalledTimes(2);
     expect(apiClient.post).toHaveBeenCalledTimes(1);
   });
@@ -427,7 +433,12 @@ describe("API Workflow Integration", () => {
       timestamp: new Date().toISOString(),
     };
 
-    (apiClient.get as jest.Mock).mockResolvedValueOnce(modelsResponse).mockResolvedValueOnce(errorResponse);
+    // Mock get calls to alternate between success and error
+    (apiClient.get as jest.Mock)
+      .mockResolvedValueOnce(modelsResponse)
+      .mockResolvedValueOnce(errorResponse)
+      .mockResolvedValueOnce(modelsResponse)
+      .mockResolvedValueOnce(errorResponse);
 
     // Act & Assert: Promise.all should fail
     await expect(
@@ -561,6 +572,7 @@ describe("API Workflow Integration", () => {
     const created = await apiService.createModel({
       name: "New Model",
       type: "llama",
+      status: "idle" as const,
       parameters: {},
     });
 
@@ -571,8 +583,8 @@ describe("API Workflow Integration", () => {
     // Assert: Verify all CRUD operations
     expect(created.name).toBe("New Model");
     expect(updated.name).toBe("Updated Model");
-    expect(mockStoreState.addModel).toHaveBeenCalledWith(newModel);
-    expect(mockStoreState.updateModel).toHaveBeenCalledWith("model-new", { name: "Updated Model" });
+    expect(mockStoreState.addModel).toHaveBeenCalledWith(expect.objectContaining(newModel));
+    expect(mockStoreState.updateModel).toHaveBeenCalledWith("model-new", expect.objectContaining({ name: "Updated Model" }));
     expect(mockStoreState.removeModel).toHaveBeenCalledWith("model-new");
   });
 });

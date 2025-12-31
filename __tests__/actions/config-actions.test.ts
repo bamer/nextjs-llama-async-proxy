@@ -277,6 +277,7 @@ describe("config-actions", () => {
     });
 
     it("should throw error for invalid config type", async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Testing runtime validation
       await expect(
         loadModelConfig(1, "invalid" as any)
       ).rejects.toThrow("Invalid config type: invalid");
@@ -284,6 +285,7 @@ describe("config-actions", () => {
 
     it("should throw error with correct message for invalid config type", async () => {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any - Testing runtime validation
         await loadModelConfig(1, "unknown" as any);
         fail("Expected error to be thrown");
       } catch (error) {
@@ -603,6 +605,7 @@ describe("config-actions", () => {
     });
 
     it("should throw error for invalid config type in save", async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Testing runtime validation
       await expect(
         saveModelConfig(1, "invalid" as any, {})
       ).rejects.toThrow("Invalid config type: invalid");
@@ -610,6 +613,7 @@ describe("config-actions", () => {
 
     it("should throw error with correct message for invalid config type", async () => {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any - Testing runtime validation
         await saveModelConfig(1, "unknown" as any, {});
         fail("Expected error to be thrown");
       } catch (error) {
@@ -684,7 +688,7 @@ describe("config-actions", () => {
       try {
         await loadModelConfig(1, "sampling");
         fail("Expected error to be thrown");
-      } catch (e) {
+      } catch (_e) {
         // Error should be thrown and logged
         expect(consoleErrorSpy).toHaveBeenCalledWith(
           "Error loading sampling config:",
@@ -700,7 +704,7 @@ describe("config-actions", () => {
       try {
         await saveModelConfig(1, "sampling", {});
         fail("Expected error to be thrown");
-      } catch (e) {
+      } catch (_e) {
         // Error should be thrown and logged
         expect(consoleErrorSpy).toHaveBeenCalledWith(
           "Error saving sampling config:",

@@ -48,21 +48,21 @@ describe("GET /api/models/:name/analyze", () => {
     getModelFitParams.mockReturnValue(mockFitParams);
 
     const response = await GET(null as any, { params: Promise.resolve({ name: "test-model" }) });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.success).toBe(true);
-    expect(json.data.model).toEqual(mockModel);
-    expect(json.data.fitParams).toEqual(mockFitParams);
+    expect(_json.success).toBe(true);
+    expect(_json.data.model).toEqual(mockModel);
+    expect(_json.data.fitParams).toEqual(mockFitParams);
   });
 
   it("should return 400 when model name is missing", async () => {
     const response = await GET(null as any, { params: Promise.resolve({ name: "" }) });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json.success).toBe(false);
-    expect(json.error.code).toBe("MODEL_NAME_REQUIRED");
+    expect(_json.success).toBe(false);
+    expect(_json.error.code).toBe("MODEL_NAME_REQUIRED");
   });
 
   it("should return 404 when model is not found", async () => {
@@ -70,11 +70,11 @@ describe("GET /api/models/:name/analyze", () => {
     getModels.mockReturnValue([]);
 
     const response = await GET(null as any, { params: Promise.resolve({ name: "nonexistent" }) });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(404);
-    expect(json.success).toBe(false);
-    expect(json.error.code).toBe("MODEL_NOT_FOUND");
+    expect(_json.success).toBe(false);
+    expect(_json.error.code).toBe("MODEL_NOT_FOUND");
   });
 });
 
@@ -118,23 +118,23 @@ describe("POST /api/models/:name/analyze", () => {
     saveModelFitParams.mockReturnValue(1);
 
     const response = await POST(null as any, { params: Promise.resolve({ name: "test-model" }) });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.success).toBe(true);
-    expect(json.data.model).toEqual(mockModel);
-    expect(json.data.fitParams.recommended_ctx_size).toBe(2048);
-    expect(json.data.fitParams.recommended_gpu_layers).toBe(20);
+    expect(_json.success).toBe(true);
+    expect(_json.data.model).toEqual(mockModel);
+    expect(_json.data.fitParams.recommended_ctx_size).toBe(2048);
+    expect(_json.data.fitParams.recommended_gpu_layers).toBe(20);
     expect(analyzeModel).toHaveBeenCalledWith("/path/to/model.gguf");
   });
 
   it("should return 400 when model name is missing", async () => {
     const response = await POST(null as any, { params: Promise.resolve({ name: "" }) });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json.success).toBe(false);
-    expect(json.error.code).toBe("MODEL_NAME_REQUIRED");
+    expect(_json.success).toBe(false);
+    expect(_json.error.code).toBe("MODEL_NAME_REQUIRED");
   });
 
   it("should return 404 when model is not found", async () => {
@@ -142,11 +142,11 @@ describe("POST /api/models/:name/analyze", () => {
     getModels.mockReturnValue([]);
 
     const response = await POST(null as any, { params: Promise.resolve({ name: "nonexistent" }) });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(404);
-    expect(json.success).toBe(false);
-    expect(json.error.code).toBe("MODEL_NOT_FOUND");
+    expect(_json.success).toBe(false);
+    expect(_json.error.code).toBe("MODEL_NOT_FOUND");
   });
 
   it("should return 400 when model has no path", async () => {
@@ -163,10 +163,10 @@ describe("POST /api/models/:name/analyze", () => {
     getModels.mockReturnValue([mockModel]);
 
     const response = await POST(null as any, { params: Promise.resolve({ name: "test-model" }) });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json.success).toBe(false);
-    expect(json.error.code).toBe("NO_MODEL_PATH");
+    expect(_json.success).toBe(false);
+    expect(_json.error.code).toBe("NO_MODEL_PATH");
   });
 });

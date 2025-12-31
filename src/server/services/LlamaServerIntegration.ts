@@ -3,6 +3,7 @@ import { LlamaService, LlamaServerConfig, LlamaModel } from "./LlamaService";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { getWebSocketTransport, getLogger } from "../../lib/logger";
+import type { SystemMetrics } from "@/types/monitoring";
 
 const logger = getLogger();
 const execAsync = promisify(exec);
@@ -29,25 +30,6 @@ import {
   getModelMultimodalConfig,
   saveMetrics as saveMetricsToDb,
 } from "../../lib/database";
-
-export interface SystemMetrics {
-  cpuUsage: number;
-  memoryUsage: number;
-  diskUsage: number;
-  activeModels: number;
-  totalRequests: number;
-  avgResponseTime: number;
-  uptime: number;
-  timestamp: string;
-  gpuUsage?: number;
-  gpuMemoryUsage?: number;
-  gpuMemoryTotal?: number;
-  gpuMemoryUsed?: number;
-  gpuPowerUsage?: number;
-  gpuPowerLimit?: number;
-  gpuTemperature?: number;
-  gpuName?: string;
-}
 
 export class LlamaServerIntegration {
   private io: Server;
@@ -136,44 +118,29 @@ export class LlamaServerIntegration {
 
     this.metricsInterval = setInterval(async () => {
       const metrics = await this.collectMetrics();
-        this.io.emit("metrics", { type: "metrics", data: {
-          cpu: { usage: metrics.cpuUsage },
-          memory: { used: metrics.memoryUsage },
-          disk: { used: metrics.diskUsage },
-          network: { rx: 0, tx: 0 },
-          uptime: metrics.uptime,
-          gpu: metrics.gpuUsage !== undefined ? {
-            usage: metrics.gpuUsage,
-            memoryUsed: metrics.gpuMemoryUsed,
-            memoryTotal: metrics.gpuMemoryTotal,
-            powerUsage: metrics.gpuPowerUsage,
-            powerLimit: metrics.gpuPowerLimit,
-            temperature: metrics.gpuTemperature,
-            name: metrics.gpuName,
-          } : undefined,
-        }, timestamp: Date.now() });
+      this.io.emit("metrics", { type: "metrics", data: metrics, timestamp: Date.now() });
 
       // Also persist metrics to database for chart history
       try {
         logger.debug('[METRICS] Saving to database:', {
-          cpu: metrics.cpuUsage,
-          memory: metrics.memoryUsage,
-          gpu: metrics.gpuUsage,
-          requests: metrics.totalRequests
+          cpu: metrics.cpu.usage,
+          memory: metrics.memory.used,
+          gpu: metrics.gpu?.usage,
+          requests: this.totalRequests
         });
-          saveMetricsToDb({
-            cpu_usage: metrics.cpuUsage || 0,
-            memory_usage: metrics.memoryUsage || 0,
-            disk_usage: metrics.diskUsage || 0,
-            gpu_usage: metrics.gpuUsage || 0,
-            gpu_temperature: metrics.gpuTemperature || 0,
-            gpu_memory_used: metrics.gpuMemoryUsed || 0,
-            gpu_memory_total: metrics.gpuMemoryTotal || 0,
-            gpu_power_usage: metrics.gpuPowerUsage || 0,
-            active_models: 0,
-            uptime: metrics.uptime || 0,
-            requests_per_minute: Math.round((metrics.totalRequests || 0) / 10),
-          });
+        saveMetricsToDb({
+          cpu_usage: metrics.cpu.usage || 0,
+          memory_usage: metrics.memory.used || 0,
+          disk_usage: metrics.disk.used || 0,
+          gpu_usage: metrics.gpu?.usage || 0,
+          gpu_temperature: metrics.gpu?.temperature || 0,
+          gpu_memory_used: metrics.gpu?.memoryUsed || 0,
+          gpu_memory_total: metrics.gpu?.memoryTotal || 0,
+          gpu_power_usage: metrics.gpu?.powerUsage || 0,
+          active_models: 0,
+          uptime: metrics.uptime || 0,
+          requests_per_minute: Math.round((this.totalRequests || 0) / 10),
+        });
         logger.debug('✅ Metrics saved to database successfully');
       } catch (error) {
         logger.error('❌ Failed to save metrics to database:', error);
@@ -192,30 +159,27 @@ export class LlamaServerIntegration {
       const diskUsage = await this.getDiskUsage();
       const gpuMetrics = await this.getGpuMetrics();
 
-      logger.info('[METRICS] Collected metrics:', {
-        cpu: cpuMem.cpu,
-        memory: cpuMem.memory,
-        disk: diskUsage,
-        gpu: gpuMetrics.gpuUsage,
-        uptime
-      });
-
-      return {
+      const result: SystemMetrics = {
         cpu: { usage: cpuMem.cpu },
         memory: { used: cpuMem.memory },
         disk: { used: diskUsage },
         network: { rx: 0, tx: 0 },
         uptime,
-        gpu: gpuMetrics.gpuName ? {
-          usage: gpuMetrics.gpuUsage || 0,
-          memoryUsed: gpuMetrics.gpuMemoryUsed || 0,
-          memoryTotal: gpuMetrics.gpuMemoryTotal || 0,
-          powerUsage: gpuMetrics.gpuPowerUsage || 0,
-          powerLimit: gpuMetrics.gpuPowerLimit || 0,
-          temperature: gpuMetrics.gpuTemperature || 0,
-          name: gpuMetrics.gpuName,
-        } : undefined,
       };
+
+      if (gpuMetrics) {
+        result.gpu = gpuMetrics;
+      }
+
+      logger.info('[METRICS] Collected metrics:', {
+        cpu: cpuMem.cpu,
+        memory: cpuMem.memory,
+        disk: diskUsage,
+        gpu: gpuMetrics?.usage,
+        uptime
+      });
+
+      return result;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       logger.error(`[METRICS] Failed to collect metrics: ${message}`);
@@ -225,7 +189,6 @@ export class LlamaServerIntegration {
         disk: { used: 0 },
         network: { rx: 0, tx: 0 },
         uptime: this.llamaService?.getState()?.uptime || 0,
-        gpu: undefined,
       };
     }
   }
@@ -253,30 +216,94 @@ export class LlamaServerIntegration {
     }
   }
 
-  private async getGpuMetrics(): Promise<Partial<SystemMetrics>> {
+  private async getGpuMetrics(): Promise<SystemMetrics["gpu"]> {
     try {
-      const { stdout } = await execAsync("nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total,power.draw,power.limit,temperature.gpu,name --format=csv,noheader,nounits");
+      const { stdout } = await execAsync("nvidia-smi --query-gpu=index,utilization.gpu,memory.used,memory.total,power.draw,power.limit,temperature.gpu,name --format=csv,noheader,nounits");
 
       if (!stdout.trim()) {
-        return {};
+        return undefined;
       }
 
-      const [gpu, memUsed, memTotal, powerUsed, powerLimit, temp, name] = stdout.trim().split(",").map(s => s.trim());
+      const [gpuIndex, gpu, memUsed, memTotal, powerUsed, powerLimit, temp, name] = stdout.trim().split(",").map((s) => s.trim());
 
-      const gpuMemoryUsage = memTotal && memUsed ? (parseFloat(memUsed) / parseFloat(memTotal)) * 100 : 0;
+      // Only use GPU 0 (primary GPU) for metrics
+      if (gpuIndex !== '0') {
+        return undefined;
+      }
 
       return {
-        gpuUsage: parseFloat(gpu) || 0,
-        gpuMemoryUsed: parseFloat(memUsed) || 0,
-        gpuMemoryTotal: parseFloat(memTotal) || 0,
-        gpuMemoryUsage,
-        gpuPowerUsage: parseFloat(powerUsed) || 0,
-        gpuPowerLimit: parseFloat(powerLimit) || 0,
-        gpuTemperature: parseFloat(temp) || 0,
-        gpuName: name || "Unknown GPU",
+        usage: parseFloat(gpu) || 0,
+        memoryUsed: parseFloat(memUsed) || 0,
+        memoryTotal: parseFloat(memTotal) || 0,
+        powerUsage: parseFloat(powerUsed) || 0,
+        powerLimit: parseFloat(powerLimit) || 0,
+        temperature: parseFloat(temp) || 0,
+        name: name || "Unknown GPU",
       };
     } catch (error) {
-      return {};
+      return undefined;
+    }
+  }
+
+      const [gpuIndex, gpu, memUsed, memTotal, powerUsed, powerLimit, temp, name] = stdout.trim().split(",").map((s) => s.trim());
+
+      // Only use GPU 0 (primary GPU) for metrics
+      if (gpuIndex !== '0') {
+        return undefined;
+      }
+
+      return {
+        usage: parseFloat(gpu) || 0,
+        memoryUsed: parseFloat(memUsed) || 0,
+        memoryTotal: parseFloat(memTotal) || 0,
+        powerUsage: parseFloat(powerUsed) || 0,
+        powerLimit: parseFloat(powerLimit) || 0,
+        temperature: parseFloat(temp) || 0,
+        name: name || "Unknown GPU",
+      };
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+      const [gpuIndex, gpu, memUsed, memTotal, powerUsed, powerLimit, temp, name] = stdout.trim().split(",").map((s) => s.trim());
+
+      // Only use GPU 0 for now (primary GPU)
+      if (gpuIndex !== '0') {
+        return undefined;
+      }
+
+      return {
+        usage: parseFloat(gpu) || 0,
+        memoryUsed: parseFloat(memUsed) || 0,
+        memoryTotal: parseFloat(memTotal) || 0,
+        powerUsage: parseFloat(powerUsed) || 0,
+        powerLimit: parseFloat(powerLimit) || 0,
+        temperature: parseFloat(temp) || 0,
+        name: name || "Unknown GPU",
+      };
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+      if (!stdout.trim()) {
+        return undefined;
+      }
+
+      const [gpu, memUsed, memTotal, powerUsed, powerLimit, temp, name] = stdout.trim().split(",").map((s) => s.trim());
+
+      return {
+        usage: parseFloat(gpu) || 0,
+        memoryUsed: parseFloat(memUsed) || 0,
+        memoryTotal: parseFloat(memTotal) || 0,
+        powerUsage: parseFloat(powerUsed) || 0,
+        powerLimit: parseFloat(powerLimit) || 0,
+        temperature: parseFloat(temp) || 0,
+        name: name || "Unknown GPU",
+      };
+    } catch (error) {
+      return undefined;
     }
   }
 

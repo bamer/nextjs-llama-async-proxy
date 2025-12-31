@@ -318,23 +318,19 @@ describe('src/types/global.d.ts - Global Type Definitions', () => {
     it('should create valid SystemMetrics', () => {
       // Arrange
       const metrics: SystemMetrics = {
-        cpuUsage: 45.5,
-        memoryUsage: 60.2,
-        diskUsage: 30.0,
-        activeModels: 2,
-        totalRequests: 1000,
-        avgResponseTime: 150,
+        cpu: { usage: 45.5 },
+        memory: { used: 60.2 },
+        disk: { used: 30.0 },
+        network: { rx: 100, tx: 50 },
         uptime: 3600,
-        timestamp: '2025-01-01T00:00:00Z',
       };
 
       // Act & Assert
-      expect(metrics.cpuUsage).toBe(45.5);
-      expect(metrics.memoryUsage).toBe(60.2);
-      expect(metrics.diskUsage).toBe(30.0);
-      expect(metrics.activeModels).toBe(2);
-      expect(metrics.totalRequests).toBe(1000);
-      expect(metrics.avgResponseTime).toBe(150);
+      expect(metrics.cpu.usage).toBe(45.5);
+      expect(metrics.memory.used).toBe(60.2);
+      expect(metrics.disk.used).toBe(30.0);
+      expect(metrics.network.rx).toBe(100);
+      expect(metrics.network.tx).toBe(50);
       expect(metrics.uptime).toBe(3600);
     });
 
@@ -345,39 +341,34 @@ describe('src/types/global.d.ts - Global Type Definitions', () => {
     it('should support optional GPU fields', () => {
       // Arrange
       const metricsWithoutGPU: SystemMetrics = {
-        cpuUsage: 50,
-        memoryUsage: 60,
-        diskUsage: 30,
-        activeModels: 1,
-        totalRequests: 100,
-        avgResponseTime: 150,
+        cpu: { usage: 50 },
+        memory: { used: 60 },
+        disk: { used: 30 },
+        network: { rx: 0, tx: 0 },
         uptime: 300,
-        timestamp: '2025-01-01T00:00:00Z',
       };
 
       const metricsWithGPU: SystemMetrics = {
-        cpuUsage: 50,
-        memoryUsage: 60,
-        diskUsage: 30,
-        activeModels: 1,
-        totalRequests: 100,
-        avgResponseTime: 150,
+        cpu: { usage: 50 },
+        memory: { used: 60 },
+        disk: { used: 30 },
+        network: { rx: 0, tx: 0 },
         uptime: 300,
-        timestamp: '2025-01-01T00:00:00Z',
-        gpuUsage: 75.0,
-        gpuMemoryUsage: 8.5,
-        gpuMemoryTotal: 16.0,
-        gpuMemoryUsed: 8.5,
-        gpuPowerUsage: 250,
-        gpuPowerLimit: 300,
-        gpuTemperature: 65,
-        gpuName: 'NVIDIA RTX 4090',
+        gpu: {
+          usage: 75.0,
+          memoryUsed: 8.5,
+          memoryTotal: 16.0,
+          powerUsage: 250,
+          powerLimit: 300,
+          temperature: 65,
+          name: 'NVIDIA RTX 4090',
+        },
       };
 
       // Act & Assert
-      expect(metricsWithoutGPU.gpuUsage).toBeUndefined();
-      expect(metricsWithGPU.gpuUsage).toBe(75.0);
-      expect(metricsWithGPU.gpuName).toBe('NVIDIA RTX 4090');
+      expect(metricsWithoutGPU.gpu).toBeUndefined();
+      expect(metricsWithGPU.gpu?.usage).toBe(75.0);
+      expect(metricsWithGPU.gpu?.name).toBe('NVIDIA RTX 4090');
     });
   });
 

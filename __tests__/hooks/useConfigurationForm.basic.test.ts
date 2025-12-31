@@ -8,7 +8,7 @@ jest.mock('@/hooks/use-logger-config', () => ({
 }));
 
 const mockApplyToLogger = jest.fn();
-const { useLoggerConfig } = require('@/hooks/use-logger-config');
+const { useLoggerConfig } = jest.mocked(require('@/hooks/use-logger-config'));
 
 const DEFAULT_SERVER_CONFIG = {
   host: '127.0.0.1',

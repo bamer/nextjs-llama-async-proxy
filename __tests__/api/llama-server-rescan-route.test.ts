@@ -53,11 +53,11 @@ describe("POST /api/llama-server/rescan", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.message).toBe("Models rescanned successfully");
-    expect(json.config).toEqual({
+    expect(_json.message).toBe("Models rescanned successfully");
+    expect(_json.config).toEqual({
       host: "localhost",
       port: 8134,
       basePath: "/models",
@@ -88,10 +88,10 @@ describe("POST /api/llama-server/rescan", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.message).toBe("Models rescanned successfully");
+    expect(_json.message).toBe("Models rescanned successfully");
     expect(mockLlamaIntegration.stop).toHaveBeenCalled();
     expect(mockLlamaIntegration.initialize).toHaveBeenCalled();
   });
@@ -108,12 +108,12 @@ describe("POST /api/llama-server/rescan", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.message).toBe("Models rescanned successfully");
-    expect(json.config.host).toBeDefined();
-    expect(json.config.port).toBeDefined();
+    expect(_json.message).toBe("Models rescanned successfully");
+    expect(_json.config.host).toBeDefined();
+    expect(_json.config.port).toBeDefined();
   });
 
   // Positive test: Successfully rescan with string port
@@ -133,10 +133,10 @@ describe("POST /api/llama-server/rescan", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.config.port).toBe(8134);
+    expect(_json.config.port).toBe(8134);
   });
 
   // Negative test: Return 503 when llamaIntegration is not initialized
@@ -153,10 +153,10 @@ describe("POST /api/llama-server/rescan", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(503);
-    expect(json.error).toBe("Llama service not initialized");
+    expect(_json.error).toBe("Llama service not initialized");
   });
 
   // Negative test: Return 400 when validation fails
@@ -171,11 +171,11 @@ describe("POST /api/llama-server/rescan", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json.error).toBe("Invalid request body");
-    expect(json.details).toBeDefined();
+    expect(_json.error).toBe("Invalid request body");
+    expect(_json.details).toBeDefined();
   });
 
   // Negative test: Return 500 when initialize fails
@@ -192,10 +192,10 @@ describe("POST /api/llama-server/rescan", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json.error).toBe("Failed to rescan models");
+    expect(_json.error).toBe("Failed to rescan models");
   });
 
   // Negative test: Return 500 when stop fails
@@ -212,10 +212,10 @@ describe("POST /api/llama-server/rescan", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json.error).toBe("Failed to rescan models");
+    expect(_json.error).toBe("Failed to rescan models");
   });
 
   // Edge case: Handle invalid JSON in request body
@@ -230,10 +230,10 @@ describe("POST /api/llama-server/rescan", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json.error).toBe("Invalid request body");
+    expect(_json.error).toBe("Invalid request body");
   });
 
   // Edge case: Handle concurrent rescan requests
@@ -277,11 +277,11 @@ describe("POST /api/llama-server/rescan", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.config.basePath).toBe("/path/with spaces/model");
-    expect(json.config.serverPath).toBe("/path/with spaces/llama-server");
+    expect(_json.config.basePath).toBe("/path/with spaces/model");
+    expect(_json.config.serverPath).toBe("/path/with spaces/llama-server");
   });
 
   // Edge case: Handle unicode in paths
@@ -302,10 +302,10 @@ describe("POST /api/llama-server/rescan", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.config.basePath).toBe("/models/日本語/中文");
+    expect(_json.config.basePath).toBe("/models/日本語/中文");
   });
 
   // Edge case: Handle zero port
@@ -325,10 +325,10 @@ describe("POST /api/llama-server/rescan", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.config.port).toBe(8134); // Should use default
+    expect(_json.config.port).toBe(8134); // Should use default
   });
 
   // Edge case: Handle very large port
@@ -348,10 +348,10 @@ describe("POST /api/llama-server/rescan", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.config.port).toBe(999999);
+    expect(_json.config.port).toBe(999999);
   });
 
   // Edge case: Handle negative thread value
@@ -372,10 +372,10 @@ describe("POST /api/llama-server/rescan", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.config.threads).toBe(-5);
+    expect(_json.config.threads).toBe(-5);
   });
 
   // Edge case: Handle zero ctx_size
@@ -396,11 +396,11 @@ describe("POST /api/llama-server/rescan", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
     // Note: 0 is falsy, so default value of 8192 is used
-    expect(json.config.ctx_size).toBe(8192);
+    expect(_json.config.ctx_size).toBe(8192);
   });
 
   // Edge case: Handle very large ctx_size
@@ -421,9 +421,9 @@ describe("POST /api/llama-server/rescan", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.config.ctx_size).toBe(65536);
+    expect(_json.config.ctx_size).toBe(65536);
   });
 });

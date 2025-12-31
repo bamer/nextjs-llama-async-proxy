@@ -120,7 +120,7 @@ export class LlamaService {
       logger.info(`✅ Loaded ${models.length} model(s)`);
       models.forEach((model) => {
         const sizeGb =
-          model.size > 0
+          model.size !== undefined && model.size > 0
             ? (model.size / 1024 / 1024 / 1024).toFixed(2)
             : "unknown";
         logger.info(`  - ${model.name} (${sizeGb} GB)`);

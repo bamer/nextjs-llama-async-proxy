@@ -13,8 +13,14 @@ jest.mock("@/utils/api-client", () => ({
   },
 }));
 
-const mockUseWebSocket = require("@/hooks/use-websocket").useWebSocket;
-const mockApiClient = require("@/utils/api-client").apiClient;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports - Jest dynamic import
+const mockUseWebSocket = jest.mocked(require("@/hooks/use-websocket")).useWebSocket;
+// eslint-disable-next-line @typescript-eslint/no-require-imports - Jest dynamic import
+const mockApiClient = jest.mocked(require("@/utils/api-client")).apiClient;
 
 const defaultConfig: LoggerConfig = {
   level: "info",
@@ -445,7 +451,7 @@ describe("useLoggerConfig Hook", () => {
     });
 
     it("sets loading true during save", async () => {
-      let resolveSave: (value: any) => void;
+      let resolveSave: (value: unknown) => void;
       mockApiClient.put.mockReturnValue(
         new Promise((resolve) => {
           resolveSave = resolve;

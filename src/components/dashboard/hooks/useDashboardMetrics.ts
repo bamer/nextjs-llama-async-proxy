@@ -52,11 +52,15 @@ export function useDashboardMetrics() {
       setChartData((prev) => {
         const cpuUsage = metrics.cpu?.usage ?? 0;
         const memoryUsage = metrics.memory?.used ?? 0;
+        const gpuUsage = metrics.gpu?.usage ?? 0;
+        const gpuMemoryUsed = metrics.gpu?.memoryUsed ?? 0;
+        const gpuPowerUsage = metrics.gpu?.powerUsage ?? 0;
 
         const hasChanged =
           prev.length === 0 ||
           prev[prev.length - 1].cpu !== cpuUsage ||
-          prev[prev.length - 1].memory !== memoryUsage;
+          prev[prev.length - 1].memory !== memoryUsage ||
+          prev[prev.length - 1].gpu !== gpuUsage;
 
         if (!hasChanged) {
           return prev;
@@ -67,10 +71,10 @@ export function useDashboardMetrics() {
           timestamp,
           cpu: cpuUsage,
           memory: memoryUsage,
-          requests: 0, // Not available in new format
-          gpu: 0, // Not available in new format
-          gpuMemory: 0, // Not available in new format
-          gpuPower: 0, // Not available in new format
+          requests: 0, // Tracked separately in store
+          gpu: gpuUsage,
+          gpuMemory: gpuMemoryUsed,
+          gpuPower: gpuPowerUsage,
         };
 
         return [...prev, newData].slice(-20);

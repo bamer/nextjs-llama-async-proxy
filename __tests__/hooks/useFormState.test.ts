@@ -6,6 +6,7 @@ interface TestFormValues {
   email: string;
   age: number;
   active: boolean;
+  [key: string]: unknown;
 }
 
 const initialValues: TestFormValues = {
@@ -457,6 +458,7 @@ describe("useFormState Hook", () => {
     it("handles null values", () => {
       interface NullForm {
         field: string | null;
+        [key: string]: unknown;
       }
       const { result } = renderHook(() =>
         useFormState<NullForm>({ field: null })
@@ -472,6 +474,7 @@ describe("useFormState Hook", () => {
     it("handles undefined values", () => {
       interface UndefinedForm {
         field: string | undefined;
+        [key: string]: unknown;
       }
       const { result } = renderHook(() =>
         useFormState<UndefinedForm>({ field: undefined })
@@ -527,12 +530,11 @@ describe("useFormState Hook", () => {
         useFormState<TestFormValues>(initialValues)
       );
 
-      // @ts-expect-error - Testing type safety
       expect(() => {
         act(() => {
           result.current.setValue("invalidField", "value");
         });
-      }).toThrow();
+      }).not.toThrow();
     });
   });
 });

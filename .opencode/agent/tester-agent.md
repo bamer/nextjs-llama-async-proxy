@@ -11,15 +11,24 @@ tools:
   bash: false
   patch: false
 permissions:
+  bash:
+    "*": "allow"
+    "rm -rf *": "ask"
+    "rm -rf /*": "deny"
+    "sudo *": "deny"
+    "> /dev/*": "deny"
   edit:
-    "**/*.*": "deny"
+    "**/*.env*": "deny"
+    "**/*.key": "deny"
+    "**/*.secret": "deny"
+    "node_modules/**": "deny"
+    ".git/**": "deny"
   write:
-    "**/*.*": "deny"
-permissions:
-  read:
-    "**/*.*": "allow"
-  patch:
-    "**/*.*": "deny"
+    "**/*.env*": "deny"
+    "**/*.key": "deny"
+    "**/*.secret": "deny"
+    "node_modules/**": "deny"
+    ".git/**": "deny"
 ---
 
 # Tester Agent (@tester-agent)

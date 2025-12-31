@@ -47,20 +47,20 @@ describe("GET /api/models", () => {
     (global as unknown as { registry: unknown }).registry = mockRegistry;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json).toHaveProperty("models");
-    expect(json.models).toHaveLength(2);
-    expect(json.models[0]).toMatchObject({
+    expect(_json).toHaveProperty("models");
+    expect(_json.models).toHaveLength(2);
+    expect(_json.models[0]).toMatchObject({
       id: "model-1",
       name: "llama-2-7b",
       type: "llama",
       available: true,
       size: 4096000000,
     });
-    expect(json.models[0].createdAt).toBeDefined();
-    expect(json.models[0].updatedAt).toBeDefined();
+    expect(_json.models[0].createdAt).toBeDefined();
+    expect(_json.models[0].updatedAt).toBeDefined();
     expect(mockRegistry.get).toHaveBeenCalledWith("llamaService");
   });
 
@@ -73,10 +73,10 @@ describe("GET /api/models", () => {
     (global as unknown as { registry: unknown }).registry = mockRegistry;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(503);
-    expect(json).toEqual({
+    expect(_json).toEqual({
       error: "Llama service not initialized",
       models: [],
     });
@@ -88,10 +88,10 @@ describe("GET /api/models", () => {
     (global as unknown as { registry: unknown }).registry = undefined;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(503);
-    expect(json).toEqual({
+    expect(_json).toEqual({
       error: "Llama service not initialized",
       models: [],
     });
@@ -122,11 +122,11 @@ describe("GET /api/models", () => {
     (global as unknown as { registry: unknown }).registry = mockRegistry;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.models[0].id).toBe("llama-2-7b");
-    expect(json.models[0].type).toBe("unknown");
+    expect(_json.models[0].id).toBe("llama-2-7b");
+    expect(_json.models[0].type).toBe("unknown");
   });
 
   // Positive test: Handle models without modified_at field
@@ -154,11 +154,11 @@ describe("GET /api/models", () => {
     (global as unknown as { registry: unknown }).registry = mockRegistry;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.models[0].createdAt).toBeDefined();
-    expect(json.models[0].updatedAt).toBeDefined();
+    expect(_json.models[0].createdAt).toBeDefined();
+    expect(_json.models[0].updatedAt).toBeDefined();
   });
 
   // Negative test: Handle unexpected error in llamaService.getState
@@ -176,10 +176,10 @@ describe("GET /api/models", () => {
     (global as unknown as { registry: unknown }).registry = mockRegistry;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json).toEqual({
+    expect(_json).toEqual({
       error: "Failed to fetch models",
       models: [],
     });
@@ -201,10 +201,10 @@ describe("GET /api/models", () => {
     (global as unknown as { registry: unknown }).registry = mockRegistry;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.models).toEqual([]);
+    expect(_json.models).toEqual([]);
   });
 
   // Edge case: Handle models with extremely large size values
@@ -233,10 +233,10 @@ describe("GET /api/models", () => {
     (global as unknown as { registry: unknown }).registry = mockRegistry;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.models[0].size).toBe(Number.MAX_SAFE_INTEGER);
+    expect(_json.models[0].size).toBe(Number.MAX_SAFE_INTEGER);
   });
 
   // Edge case: Handle models with negative timestamp
@@ -265,10 +265,10 @@ describe("GET /api/models", () => {
     (global as unknown as { registry: unknown }).registry = mockRegistry;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.models[0].createdAt).toBeDefined();
+    expect(_json.models[0].createdAt).toBeDefined();
   });
 
   // Edge case: Handle models with unicode characters in name
@@ -297,10 +297,10 @@ describe("GET /api/models", () => {
     (global as unknown as { registry: unknown }).registry = mockRegistry;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.models[0].name).toBe("llama-2-7b-日本語-中文-العربية");
+    expect(_json.models[0].name).toBe("llama-2-7b-日本語-中文-العربية");
   });
 
   // Edge case: Handle models with null/undefined fields
@@ -329,10 +329,10 @@ describe("GET /api/models", () => {
     (global as unknown as { registry: unknown }).registry = mockRegistry;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.models[0].type).toBe("unknown");
+    expect(_json.models[0].type).toBe("unknown");
   });
 
   // Edge case: Handle models with extremely long names
@@ -362,10 +362,10 @@ describe("GET /api/models", () => {
     (global as unknown as { registry: unknown }).registry = mockRegistry;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.models[0].name).toBe(longName);
+    expect(_json.models[0].name).toBe(longName);
   });
 
   // Edge case: Handle very large number of models
@@ -392,10 +392,10 @@ describe("GET /api/models", () => {
     (global as unknown as { registry: unknown }).registry = mockRegistry;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.models).toHaveLength(1000);
+    expect(_json.models).toHaveLength(1000);
   });
 
   // Edge case: Handle malformed model data
@@ -488,10 +488,10 @@ describe("GET /api/models", () => {
     (global as unknown as { registry: unknown }).registry = mockRegistry;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.models[0].createdAt).toBeDefined();
+    expect(_json.models[0].createdAt).toBeDefined();
   });
 
   // Edge case: Handle models with zero size
@@ -520,10 +520,10 @@ describe("GET /api/models", () => {
     (global as unknown as { registry: unknown }).registry = mockRegistry;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.models[0].size).toBe(0);
+    expect(_json.models[0].size).toBe(0);
   });
 
   // Edge case: Handle registry returning undefined service
@@ -535,10 +535,10 @@ describe("GET /api/models", () => {
     (global as unknown as { registry: unknown }).registry = mockRegistry;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(503);
-    expect(json).toEqual({
+    expect(_json).toEqual({
       error: "Llama service not initialized",
       models: [],
     });
@@ -562,11 +562,11 @@ describe("GET /api/models", () => {
     (global as unknown as { registry: unknown }).registry = mockRegistry;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     // Should return 500 due to error in processing invalid model data
     expect(response.status).toBe(500);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       error: "Failed to fetch models",
       models: [],
     });

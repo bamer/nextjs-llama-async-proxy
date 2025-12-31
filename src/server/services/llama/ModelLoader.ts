@@ -162,7 +162,10 @@ export class ModelLoader {
 
       // Log each model with template count
       result.forEach((model) => {
-        const sizeGb = (model.size / 1024 / 1024 / 1024).toFixed(2);
+        const sizeGb =
+          model.size !== undefined
+            ? (model.size / 1024 / 1024 / 1024).toFixed(2)
+            : "unknown";
         const templateInfo = model.availableTemplates
           ? ` with ${model.availableTemplates.length} template(s)`
           : "";

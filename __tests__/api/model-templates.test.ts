@@ -45,11 +45,11 @@ describe("GET /api/model-templates", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.success).toBe(true);
-    expect(json.data.model_templates).toEqual({
+    expect(_json.success).toBe(true);
+    expect(_json.data.model_templates).toEqual({
       "llama2-7b": "llama-2-7b",
       "llama3-8b": "llama-3-8b",
     });
@@ -72,11 +72,11 @@ describe("GET /api/model-templates", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.success).toBe(true);
-    expect(json.data.model_templates).toEqual({});
+    expect(_json.success).toBe(true);
+    expect(_json.data.model_templates).toEqual({});
   });
 
   it("should return 500 when file read fails", async () => {
@@ -85,11 +85,11 @@ describe("GET /api/model-templates", () => {
     );
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json.success).toBe(false);
-    expect(json.error).toBe("Failed to load model templates");
+    expect(_json.success).toBe(false);
+    expect(_json.error).toBe("Failed to load model templates");
   });
 
   it("should return 500 when validation fails", async () => {
@@ -107,22 +107,22 @@ describe("GET /api/model-templates", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json.success).toBe(false);
-    expect(json.error).toBe("Invalid model templates configuration");
+    expect(_json.success).toBe(false);
+    expect(_json.error).toBe("Invalid model templates configuration");
   });
 
   it("should handle JSON parse errors", async () => {
     (fs.readFile as jest.Mock).mockResolvedValue("invalid json");
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json.success).toBe(false);
-    expect(json.error).toBe("Failed to load model templates");
+    expect(_json.success).toBe(false);
+    expect(_json.error).toBe("Failed to load model templates");
   });
 });
 
@@ -166,11 +166,11 @@ describe("POST /api/model-templates", () => {
     (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.success).toBe(true);
-    expect(json.data.model_templates).toEqual({
+    expect(_json.success).toBe(true);
+    expect(_json.data.model_templates).toEqual({
       "custom-model": "custom-template",
     });
     expect(fs.writeFile).toHaveBeenCalled();
@@ -250,11 +250,11 @@ describe("POST /api/model-templates", () => {
     (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.success).toBe(true);
-    expect(json.data.model_templates).toEqual({});
+    expect(_json.success).toBe(true);
+    expect(_json.data.model_templates).toEqual({});
   });
 
   it("should handle large number of templates", async () => {
@@ -291,10 +291,10 @@ describe("POST /api/model-templates", () => {
     (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(Object.keys(json.data.model_templates || {}).length).toBe(100);
+    expect(Object.keys(_json.data.model_templates || {}).length).toBe(100);
   });
 
   it("should handle concurrent POST requests", async () => {
@@ -360,10 +360,10 @@ describe("POST /api/model-templates", () => {
     (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
-    expect(json).toHaveProperty("timestamp");
-    expect(typeof json.timestamp).toBe("string");
-    expect(new Date(json.timestamp)).toBeInstanceOf(Date);
+    expect(_json).toHaveProperty("timestamp");
+    expect(typeof _json.timestamp).toBe("string");
+    expect(new Date(_json.timestamp)).toBeInstanceOf(Date);
   });
 });

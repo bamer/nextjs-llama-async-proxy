@@ -29,7 +29,7 @@ describe("GET /api/metrics", () => {
 
   // Positive test: Should return valid metrics response
   it("should return valid metrics response", async () => {
-    const { metricsResponseSchema } = require("@/lib/validators");
+    const { metricsResponseSchema } = jest.mocked(require("@/lib/validators"));
     metricsResponseSchema.safeParse.mockReturnValue({
       success: true,
       data: {
@@ -48,23 +48,23 @@ describe("GET /api/metrics", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json).toHaveProperty("metrics");
-    expect(json).toHaveProperty("timestamp");
-    expect(json.metrics).toHaveProperty("cpuUsage");
-    expect(json.metrics).toHaveProperty("memoryUsage");
-    expect(json.metrics).toHaveProperty("diskUsage");
-    expect(json.metrics).toHaveProperty("activeModels");
-    expect(json.metrics).toHaveProperty("totalRequests");
-    expect(json.metrics).toHaveProperty("avgResponseTime");
-    expect(json.metrics).toHaveProperty("uptime");
+    expect(_json).toHaveProperty("metrics");
+    expect(_json).toHaveProperty("timestamp");
+    expect(_json.metrics).toHaveProperty("cpuUsage");
+    expect(_json.metrics).toHaveProperty("memoryUsage");
+    expect(_json.metrics).toHaveProperty("diskUsage");
+    expect(_json.metrics).toHaveProperty("activeModels");
+    expect(_json.metrics).toHaveProperty("totalRequests");
+    expect(_json.metrics).toHaveProperty("avgResponseTime");
+    expect(_json.metrics).toHaveProperty("uptime");
   });
 
   // Positive test: Include GPU metrics when available
   it("should include GPU metrics when available", async () => {
-    const { metricsResponseSchema } = require("@/lib/validators");
+    const { metricsResponseSchema } = jest.mocked(require("@/lib/validators"));
     metricsResponseSchema.safeParse.mockReturnValue({
       success: true,
       data: {
@@ -91,21 +91,21 @@ describe("GET /api/metrics", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
-    expect(json.metrics).toHaveProperty("gpuUsage");
-    expect(json.metrics).toHaveProperty("gpuMemoryUsage");
-    expect(json.metrics).toHaveProperty("gpuMemoryTotal");
-    expect(json.metrics).toHaveProperty("gpuMemoryUsed");
-    expect(json.metrics).toHaveProperty("gpuPowerUsage");
-    expect(json.metrics).toHaveProperty("gpuPowerLimit");
-    expect(json.metrics).toHaveProperty("gpuTemperature");
-    expect(json.metrics).toHaveProperty("gpuName");
+    expect(_json.metrics).toHaveProperty("gpuUsage");
+    expect(_json.metrics).toHaveProperty("gpuMemoryUsage");
+    expect(_json.metrics).toHaveProperty("gpuMemoryTotal");
+    expect(_json.metrics).toHaveProperty("gpuMemoryUsed");
+    expect(_json.metrics).toHaveProperty("gpuPowerUsage");
+    expect(_json.metrics).toHaveProperty("gpuPowerLimit");
+    expect(_json.metrics).toHaveProperty("gpuTemperature");
+    expect(_json.metrics).toHaveProperty("gpuName");
   });
 
   // Negative test: Return 500 when metrics validation fails
   it("should return 500 when metrics validation fails", async () => {
-    const { metricsResponseSchema } = require("@/lib/validators");
+    const { metricsResponseSchema } = jest.mocked(require("@/lib/validators"));
     metricsResponseSchema.safeParse.mockReturnValue({
       success: false,
       error: {
@@ -121,31 +121,31 @@ describe("GET /api/metrics", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json.error).toBe("Failed to validate metrics data");
-    expect(json.details).toBeDefined();
+    expect(_json.error).toBe("Failed to validate metrics data");
+    expect(_json.details).toBeDefined();
   });
 
   // Negative test: Handle unexpected errors
   it("should handle unexpected errors", async () => {
-    const { metricsResponseSchema } = require("@/lib/validators");
+    const { metricsResponseSchema } = jest.mocked(require("@/lib/validators"));
     metricsResponseSchema.safeParse.mockImplementation(() => {
       throw new Error("Unexpected validation error");
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json.error).toBe("Failed to fetch metrics");
-    expect(json.details).toBe("Unexpected validation error");
+    expect(_json.error).toBe("Failed to fetch metrics");
+    expect(_json.details).toBe("Unexpected validation error");
   });
 
   // Edge case: Metrics within expected ranges
   it("should have metrics within expected ranges", async () => {
-    const { metricsResponseSchema } = require("@/lib/validators");
+    const { metricsResponseSchema } = jest.mocked(require("@/lib/validators"));
     metricsResponseSchema.safeParse.mockReturnValue({
       success: true,
       data: {
@@ -164,9 +164,9 @@ describe("GET /api/metrics", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
-    const metrics = json.metrics;
+    const metrics = _json.metrics;
 
     expect(metrics.cpuUsage).toBeGreaterThanOrEqual(20);
     expect(metrics.cpuUsage).toBeLessThanOrEqual(60);
@@ -186,7 +186,7 @@ describe("GET /api/metrics", () => {
 
   // Edge case: Handle concurrent requests
   it("should handle concurrent GET requests", async () => {
-    const { metricsResponseSchema } = require("@/lib/validators");
+    const { metricsResponseSchema } = jest.mocked(require("@/lib/validators"));
     metricsResponseSchema.safeParse.mockReturnValue({
       success: true,
       data: {
@@ -213,7 +213,7 @@ describe("GET /api/metrics", () => {
 
   // Edge case: Handle GPU metrics without data
   it("should handle metrics without GPU data", async () => {
-    const { metricsResponseSchema } = require("@/lib/validators");
+    const { metricsResponseSchema } = jest.mocked(require("@/lib/validators"));
     metricsResponseSchema.safeParse.mockReturnValue({
       success: true,
       data: {
@@ -232,15 +232,15 @@ describe("GET /api/metrics", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
-    expect(json.metrics).not.toHaveProperty("gpuUsage");
-    expect(json.metrics).not.toHaveProperty("gpuMemoryUsage");
+    expect(_json.metrics).not.toHaveProperty("gpuUsage");
+    expect(_json.metrics).not.toHaveProperty("gpuMemoryUsage");
   });
 
   // Edge case: Handle edge values for metrics
   it("should handle edge values for all metrics", async () => {
-    const { metricsResponseSchema } = require("@/lib/validators");
+    const { metricsResponseSchema } = jest.mocked(require("@/lib/validators"));
     metricsResponseSchema.safeParse.mockReturnValue({
       success: true,
       data: {
@@ -259,18 +259,18 @@ describe("GET /api/metrics", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.metrics.cpuUsage).toBe(20);
-    expect(json.metrics.memoryUsage).toBe(40);
-    expect(json.metrics.diskUsage).toBe(50);
-    expect(json.metrics.activeModels).toBe(1);
+    expect(_json.metrics.cpuUsage).toBe(20);
+    expect(_json.metrics.memoryUsage).toBe(40);
+    expect(_json.metrics.diskUsage).toBe(50);
+    expect(_json.metrics.activeModels).toBe(1);
   });
 
   // Edge case: Handle max values for metrics
   it("should handle maximum values for all metrics", async () => {
-    const { metricsResponseSchema } = require("@/lib/validators");
+    const { metricsResponseSchema } = jest.mocked(require("@/lib/validators"));
     metricsResponseSchema.safeParse.mockReturnValue({
       success: true,
       data: {
@@ -289,14 +289,14 @@ describe("GET /api/metrics", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
 
   // Edge case: Handle zero values where applicable
   it("should handle zero values for certain metrics", async () => {
-    const { metricsResponseSchema } = require("@/lib/validators");
+    const { metricsResponseSchema } = jest.mocked(require("@/lib/validators"));
     metricsResponseSchema.safeParse.mockReturnValue({
       success: true,
       data: {
@@ -315,14 +315,14 @@ describe("GET /api/metrics", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
 
   // Edge case: Handle large timestamp values
   it("should handle large uptime timestamp values", async () => {
-    const { metricsResponseSchema } = require("@/lib/validators");
+    const { metricsResponseSchema } = jest.mocked(require("@/lib/validators"));
     metricsResponseSchema.safeParse.mockReturnValue({
       success: true,
       data: {
@@ -341,14 +341,14 @@ describe("GET /api/metrics", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
 
   // Edge case: Handle GPU metrics with all fields
   it("should handle GPU metrics with all optional fields", async () => {
-    const { metricsResponseSchema } = require("@/lib/validators");
+    const { metricsResponseSchema } = jest.mocked(require("@/lib/validators"));
     metricsResponseSchema.safeParse.mockReturnValue({
       success: true,
       data: {
@@ -375,11 +375,11 @@ describe("GET /api/metrics", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.metrics.gpuUsage).toBe(80);
-    expect(json.metrics.gpuTemperature).toBe(80);
-    expect(json.metrics.gpuPowerUsage).toBe(250);
+    expect(_json.metrics.gpuUsage).toBe(80);
+    expect(_json.metrics.gpuTemperature).toBe(80);
+    expect(_json.metrics.gpuPowerUsage).toBe(250);
   });
 });

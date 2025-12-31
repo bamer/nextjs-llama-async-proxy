@@ -44,12 +44,12 @@ describe("GET /api/models/:name/analyze", () => {
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
 
     const response = await GET(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.success).toBe(true);
-    expect(json.data.model).toEqual(mockModel);
-    expect(json.data.fitParams).toEqual(mockFitParams);
+    expect(_json.success).toBe(true);
+    expect(_json.data.model).toEqual(mockModel);
+    expect(_json.data.fitParams).toEqual(mockFitParams);
   });
 
   // Positive test: Handle model without fit-params
@@ -68,10 +68,10 @@ describe("GET /api/models/:name/analyze", () => {
     const mockParams = Promise.resolve({ name: "test-model" });
 
     const response = await GET(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.data.fitParams).toBe(null);
+    expect(_json.data.fitParams).toBe(null);
   });
 
   // Negative test: Return 400 when model name is missing
@@ -80,11 +80,11 @@ describe("GET /api/models/:name/analyze", () => {
     const mockParams = Promise.resolve({ name: "" });
 
     const response = await GET(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json.success).toBe(false);
-    expect(json.error.code).toBe("MODEL_NAME_REQUIRED");
+    expect(_json.success).toBe(false);
+    expect(_json.error.code).toBe("MODEL_NAME_REQUIRED");
   });
 
   // Negative test: Return 400 when model name is null
@@ -93,10 +93,10 @@ describe("GET /api/models/:name/analyze", () => {
     const mockParams = Promise.resolve({ name: null as unknown as string });
 
     const response = await GET(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json.error.code).toBe("MODEL_NAME_REQUIRED");
+    expect(_json.error.code).toBe("MODEL_NAME_REQUIRED");
   });
 
   // Negative test: Return 404 when model is not found
@@ -108,11 +108,11 @@ describe("GET /api/models/:name/analyze", () => {
     const mockParams = Promise.resolve({ name: "nonexistent-model" });
 
     const response = await GET(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(404);
-    expect(json.success).toBe(false);
-    expect(json.error.code).toBe("MODEL_NOT_FOUND");
+    expect(_json.success).toBe(false);
+    expect(_json.error.code).toBe("MODEL_NOT_FOUND");
   });
 
   // Negative test: Return 404 when model has no id
@@ -129,10 +129,10 @@ describe("GET /api/models/:name/analyze", () => {
     const mockParams = Promise.resolve({ name: "model-without-id" });
 
     const response = await GET(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(404);
-    expect(json.error.code).toBe("MODEL_NOT_FOUND");
+    expect(_json.error.code).toBe("MODEL_NOT_FOUND");
   });
 
   // Negative test: Return 500 when getModels throws
@@ -145,11 +145,11 @@ describe("GET /api/models/:name/analyze", () => {
     const mockParams = Promise.resolve({ name: "test-model" });
 
     const response = await GET(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json.success).toBe(false);
-    expect(json.error.code).toBe("GET_FIT_PARAMS_ERROR");
+    expect(_json.success).toBe(false);
+    expect(_json.error.code).toBe("GET_FIT_PARAMS_ERROR");
   });
 
   // Edge case: Handle model name with special characters
@@ -168,7 +168,7 @@ describe("GET /api/models/:name/analyze", () => {
     const mockParams = Promise.resolve({ name: "llama-2-7b-日本語-中文" });
 
     const response = await GET(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -240,13 +240,13 @@ describe("POST /api/models/:name/analyze", () => {
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
 
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.success).toBe(true);
-    expect(json.data.model).toEqual(mockModel);
-    expect(json.data.fitParams.recommended_ctx_size).toBe(4096);
-    expect(json.data.fitParams.recommended_gpu_layers).toBe(35);
+    expect(_json.success).toBe(true);
+    expect(_json.data.model).toEqual(mockModel);
+    expect(_json.data.fitParams.recommended_ctx_size).toBe(4096);
+    expect(_json.data.fitParams.recommended_gpu_layers).toBe(35);
     expect(analyzeModel).toHaveBeenCalledWith("/models/llama-2-7b.gguf");
     expect(saveModelFitParams).toHaveBeenCalled();
   });
@@ -257,10 +257,10 @@ describe("POST /api/models/:name/analyze", () => {
     const mockParams = Promise.resolve({ name: "" });
 
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json.error.code).toBe("MODEL_NAME_REQUIRED");
+    expect(_json.error.code).toBe("MODEL_NAME_REQUIRED");
   });
 
   // Negative test: Return 404 when model is not found
@@ -272,10 +272,10 @@ describe("POST /api/models/:name/analyze", () => {
     const mockParams = Promise.resolve({ name: "nonexistent-model" });
 
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(404);
-    expect(json.error.code).toBe("MODEL_NOT_FOUND");
+    expect(_json.error.code).toBe("MODEL_NOT_FOUND");
   });
 
   // Negative test: Return 400 when model has no path
@@ -292,10 +292,10 @@ describe("POST /api/models/:name/analyze", () => {
     const mockParams = Promise.resolve({ name: "model-without-path" });
 
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json.error.code).toBe("NO_MODEL_PATH");
+    expect(_json.error.code).toBe("NO_MODEL_PATH");
   });
 
   // Negative test: Return 500 when analysis fails
@@ -318,11 +318,11 @@ describe("POST /api/models/:name/analyze", () => {
     const mockParams = Promise.resolve({ name: "test-model" });
 
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.data.fitParams.fit_params_error).toBe("Analysis failed");
-    expect(json.data.fitParams.fit_params_success).toBe(0);
+    expect(_json.data.fitParams.fit_params_error).toBe("Analysis failed");
+    expect(_json.data.fitParams.fit_params_success).toBe(0);
   });
 
   // Negative test: Return 500 when analyzeModel throws
@@ -341,10 +341,10 @@ describe("POST /api/models/:name/analyze", () => {
     const mockParams = Promise.resolve({ name: "test-model" });
 
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json.error.code).toBe("ANALYSIS_ERROR");
+    expect(_json.error.code).toBe("ANALYSIS_ERROR");
   });
 
   // Negative test: Return 500 when saveModelFitParams throws
@@ -376,10 +376,10 @@ describe("POST /api/models/:name/analyze", () => {
     const mockParams = Promise.resolve({ name: "test-model" });
 
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json.error.code).toBe("ANALYSIS_ERROR");
+    expect(_json.error.code).toBe("ANALYSIS_ERROR");
   });
 
   // Edge case: Handle model with empty path
@@ -397,10 +397,10 @@ describe("POST /api/models/:name/analyze", () => {
     const mockParams = Promise.resolve({ name: "test-model" });
 
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json.error.code).toBe("NO_MODEL_PATH");
+    expect(_json.error.code).toBe("NO_MODEL_PATH");
   });
 
   // Edge case: Handle concurrent analysis requests
@@ -467,7 +467,7 @@ describe("POST /api/models/:name/analyze", () => {
     const mockParams = Promise.resolve({ name: "test-model" });
 
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
     expect(analyzeModel).toHaveBeenCalledWith("/path/with spaces/model.gguf");
@@ -508,9 +508,9 @@ describe("POST /api/models/:name/analyze", () => {
     const mockParams = Promise.resolve({ name: "test-model" });
 
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.data.fitParams.recommended_ctx_size).toBe(0);
+    expect(_json.data.fitParams.recommended_ctx_size).toBe(0);
   });
 });

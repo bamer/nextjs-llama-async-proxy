@@ -1,18 +1,15 @@
 import { useStore } from "@/lib/store";
-import type { SystemMetrics } from "@/types";
+import type { SystemMetrics } from "@/types/monitoring";
 
 describe("store-normalized", () => {
   beforeEach(() => {
     useStore.getState().setModels([]);
     useStore.getState().setMetrics({
-      cpuUsage: 0,
-      memoryUsage: 0,
-      diskUsage: 0,
-      uptime: 0,
-      totalRequests: 0,
-      avgResponseTime: 0,
-      activeModels: 0,
-      timestamp: new Date().toISOString()
+      cpu: { usage: 0 },
+      memory: { used: 0 },
+      disk: { used: 0 },
+      network: { rx: 0, tx: 0 },
+      uptime: 0
     });
     useStore.getState().setLogs([]);
     useStore.getState().clearChartData();
@@ -50,18 +47,15 @@ describe("store-normalized", () => {
 
     it("should compute CPU from metrics", () => {
       const metrics = {
-        cpuUsage: 45,
-        memoryUsage: 60,
-        diskUsage: 30,
-        uptime: 3600,
-        totalRequests: 100,
-        avgResponseTime: 50,
-        activeModels: 2,
-        timestamp: "2024-01-01T00:00:00Z"
+        cpu: { usage: 45 },
+        memory: { used: 60 },
+        disk: { used: 30 },
+        network: { rx: 0, tx: 0 },
+        uptime: 3600
       };
 
       useStore.getState().setMetrics(metrics);
-      const cpuAverage = useStore.getState().metrics?.cpuUsage || 0;
+      const cpuAverage = useStore.getState().metrics?.cpu.usage || 0;
       expect(cpuAverage).toBe(45);
     });
   });
@@ -167,14 +161,11 @@ describe("store-normalized", () => {
 
     it("should return same metrics reference when unchanged", () => {
       const metrics = {
-        cpuUsage: 50,
-        memoryUsage: 60,
-        diskUsage: 30,
-        uptime: 3600,
-        totalRequests: 100,
-        avgResponseTime: 50,
-        activeModels: 2,
-        timestamp: "2024-01-01T00:00:00Z"
+        cpu: { usage: 50 },
+        memory: { used: 60 },
+        disk: { used: 30 },
+        network: { rx: 0, tx: 0 },
+        uptime: 3600
       };
 
       useStore.getState().setMetrics(metrics);

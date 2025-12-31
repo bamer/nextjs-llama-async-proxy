@@ -26,10 +26,10 @@ describe("POST /api/models/[name]/stop", () => {
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
 
     const response = await StopModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       model: "llama-2-7b",
       status: "note",
       message:
@@ -45,10 +45,10 @@ describe("POST /api/models/[name]/stop", () => {
     const mockParams = Promise.resolve({ name: "" });
 
     const response = await StopModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json).toEqual({
+    expect(_json).toEqual({
       error: "Model name is required",
     });
   });
@@ -59,10 +59,10 @@ describe("POST /api/models/[name]/stop", () => {
     const mockParams = Promise.resolve({ name: "llama-2-7b-v2-test" });
 
     const response = await StopModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.model).toBe("llama-2-7b-v2-test");
+    expect(_json.model).toBe("llama-2-7b-v2-test");
   });
 
   // Positive test: Return informative message about llama.cpp behavior
@@ -71,12 +71,12 @@ describe("POST /api/models/[name]/stop", () => {
     const mockParams = Promise.resolve({ name: "mistral-7b" });
 
     const response = await StopModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.status).toBe("note");
-    expect(json.message).toContain("auto-manages model memory");
-    expect(json.info).toContain("restart the llama-server process");
+    expect(_json.status).toBe("note");
+    expect(_json.message).toContain("auto-manages model memory");
+    expect(_json.info).toContain("restart the llama-server process");
   });
 
   // Negative test: Handle unexpected errors
@@ -86,10 +86,10 @@ describe("POST /api/models/[name]/stop", () => {
     const mockRequest = {} as unknown as NextRequest;
 
     const response = await StopModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       error: "Internal server error",
       status: "error",
     });
@@ -122,10 +122,10 @@ describe("POST /api/models/[name]/stop", () => {
       const mockParams = Promise.resolve({ name });
 
       const response = await StopModel(mockRequest, { params: mockParams });
-      const json = await response.json();
+      const _json = await response.json();
 
       expect(response.status).toBe(200);
-      expect(json.model).toBe(name);
+      expect(_json.model).toBe(name);
     }
   });
 
@@ -135,10 +135,10 @@ describe("POST /api/models/[name]/stop", () => {
     const mockParams = Promise.resolve({ name: "" });
 
     const response = await StopModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json).toEqual({
+    expect(_json).toEqual({
       error: "Model name is required",
     });
   });
@@ -150,10 +150,10 @@ describe("POST /api/models/[name]/stop", () => {
     const mockParams = Promise.resolve({ name: longName });
 
     const response = await StopModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.model).toBe(longName);
+    expect(_json.model).toBe(longName);
   });
 
   // Edge case: Handle model names with unicode characters
@@ -163,10 +163,10 @@ describe("POST /api/models/[name]/stop", () => {
     const mockParams = Promise.resolve({ name: unicodeName });
 
     const response = await StopModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.model).toBe(unicodeName);
+    expect(_json.model).toBe(unicodeName);
   });
 
   // Edge case: Handle concurrent stop requests for same model
@@ -192,10 +192,10 @@ describe("POST /api/models/[name]/stop", () => {
     const mockParams = Promise.resolve({ name: pathName });
 
     const response = await StopModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.model).toBe(pathName);
+    expect(_json.model).toBe(pathName);
   });
 
   // Edge case: Handle model names with SQL-like patterns
@@ -205,10 +205,10 @@ describe("POST /api/models/[name]/stop", () => {
     const mockParams = Promise.resolve({ name: sqlName });
 
     const response = await StopModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.model).toBe(sqlName);
+    expect(_json.model).toBe(sqlName);
   });
 
   // Edge case: Handle model names with emoji
@@ -218,10 +218,10 @@ describe("POST /api/models/[name]/stop", () => {
     const mockParams = Promise.resolve({ name: emojiName });
 
     const response = await StopModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.model).toBe(emojiName);
+    expect(_json.model).toBe(emojiName);
   });
 
   // Edge case: Handle model name with null bytes
@@ -231,10 +231,10 @@ describe("POST /api/models/[name]/stop", () => {
     const mockParams = Promise.resolve({ name: specialName });
 
     const response = await StopModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.model).toBe(specialName);
+    expect(_json.model).toBe(specialName);
   });
 
   // Edge case: Handle params that reject instead of resolve
@@ -243,10 +243,10 @@ describe("POST /api/models/[name]/stop", () => {
     const mockRequest = {} as unknown as NextRequest;
 
     const response = await StopModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       error: "Internal server error",
       status: "error",
     });
@@ -259,11 +259,11 @@ describe("POST /api/models/[name]/stop", () => {
     const mockParams = Promise.resolve({ name: whitespaceName });
 
     const response = await StopModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     // Should be considered a valid name (non-empty string)
     expect(response.status).toBe(200);
-    expect(json.model).toBe(whitespaceName);
+    expect(_json.model).toBe(whitespaceName);
   });
 
   // Edge case: Handle model name with URL encoding characters
@@ -273,10 +273,10 @@ describe("POST /api/models/[name]/stop", () => {
     const mockParams = Promise.resolve({ name: urlName });
 
     const response = await StopModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.model).toBe(urlName);
+    expect(_json.model).toBe(urlName);
   });
 
   // Edge case: Verify response contains all expected fields
@@ -285,12 +285,12 @@ describe("POST /api/models/[name]/stop", () => {
     const mockParams = Promise.resolve({ name: "test-model" });
 
     const response = await StopModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json).toHaveProperty("model");
-    expect(json).toHaveProperty("status");
-    expect(json).toHaveProperty("message");
-    expect(json).toHaveProperty("info");
+    expect(_json).toHaveProperty("model");
+    expect(_json).toHaveProperty("status");
+    expect(_json).toHaveProperty("message");
+    expect(_json).toHaveProperty("info");
   });
 });

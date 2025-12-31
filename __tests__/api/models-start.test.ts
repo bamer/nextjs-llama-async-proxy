@@ -59,10 +59,10 @@ describe.skip("POST /api/models/[name]/start", () => {
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
 
     const response = await StartModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       model: "llama-2-7b",
       status: "loaded",
       message: "Model llama-2-7b loaded successfully",
@@ -100,10 +100,10 @@ describe.skip("POST /api/models/[name]/start", () => {
     const mockParams = Promise.resolve({ name: "" });
 
     const response = await StartModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json).toEqual({
+    expect(_json).toEqual({
       error: "Model name is required",
     });
   });
@@ -123,10 +123,10 @@ describe.skip("POST /api/models/[name]/start", () => {
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
 
     const response = await StartModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(503);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       error: "Llama service not initialized",
       status: "error",
     });
@@ -154,10 +154,10 @@ describe.skip("POST /api/models/[name]/start", () => {
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
 
     const response = await StartModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(503);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       error: "Llama server is not ready (status: loading)",
       status: "error",
     });
@@ -193,10 +193,10 @@ describe.skip("POST /api/models/[name]/start", () => {
     const mockParams = Promise.resolve({ name: "nonexistent-model" });
 
     const response = await StartModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(404);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       error: "Model not found",
       status: "not_found",
     });
@@ -236,10 +236,10 @@ describe.skip("POST /api/models/[name]/start", () => {
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
 
     const response = await StartModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(503);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       error: "Failed to connect to llama-server. Make sure it's running on the configured host and port.",
       status: "error",
     });
@@ -285,10 +285,10 @@ describe.skip("POST /api/models/[name]/start", () => {
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
 
     const response = await StartModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json).toMatchObject({
+    expect(_json).toMatchObject({
       error: "Model load failed",
       status: "error",
     });
@@ -332,10 +332,10 @@ describe.skip("POST /api/models/[name]/start", () => {
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
 
     const response = await StartModel(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.model).toBe("llama-2-7b");
+    expect(_json.model).toBe("llama-2-7b");
   });
 
   // Positive test: Use custom host and port from environment

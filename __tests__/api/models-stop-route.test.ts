@@ -32,12 +32,12 @@ describe("POST /api/models/:name/stop", () => {
 
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.status).toBe("note");
-    expect(json.message).toContain("llama.cpp auto-manages model memory");
-    expect(json.info).toContain("restart the llama-server process");
+    expect(_json.status).toBe("note");
+    expect(_json.message).toContain("llama.cpp auto-manages model memory");
+    expect(_json.info).toContain("restart the llama-server process");
   });
 
   // Positive test: Stop model with force=true
@@ -53,10 +53,10 @@ describe("POST /api/models/:name/stop", () => {
 
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.message).toContain("auto-manages model memory");
+    expect(_json.message).toContain("auto-manages model memory");
   });
 
   // Positive test: Stop model with force=false
@@ -72,7 +72,7 @@ describe("POST /api/models/:name/stop", () => {
 
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -90,7 +90,7 @@ describe("POST /api/models/:name/stop", () => {
 
     const mockParams = Promise.resolve({ name: "llama-2-7b" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -108,10 +108,10 @@ describe("POST /api/models/:name/stop", () => {
 
     const mockParams = Promise.resolve({ name: "" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json.error).toBe("Model name is required");
+    expect(_json.error).toBe("Model name is required");
   });
 
   // Negative test: Return 400 when model name is null
@@ -127,10 +127,10 @@ describe("POST /api/models/:name/stop", () => {
 
     const mockParams = Promise.resolve({ name: null as unknown as string });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json.error).toBe("Model name is required");
+    expect(_json.error).toBe("Model name is required");
   });
 
   // Negative test: Return 400 when validation fails
@@ -146,11 +146,11 @@ describe("POST /api/models/:name/stop", () => {
 
     const mockParams = Promise.resolve({ name: "test-model" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json.error).toBe("Invalid request body");
-    expect(json.details).toBeDefined();
+    expect(_json.error).toBe("Invalid request body");
+    expect(_json.details).toBeDefined();
   });
 
   // Edge case: Handle invalid JSON in request body
@@ -166,10 +166,10 @@ describe("POST /api/models/:name/stop", () => {
 
     const mockParams = Promise.resolve({ name: "test-model" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(400);
-    expect(json.error).toBe("Invalid request body");
+    expect(_json.error).toBe("Invalid request body");
   });
 
   // Edge case: Handle concurrent stop requests
@@ -209,10 +209,10 @@ describe("POST /api/models/:name/stop", () => {
 
     const mockParams = Promise.resolve({ name: "llama-2-7b-日本語-中文" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.model).toBe("llama-2-7b-日本語-中文");
+    expect(_json.model).toBe("llama-2-7b-日本語-中文");
   });
 
   // Edge case: Handle very long model name
@@ -230,10 +230,10 @@ describe("POST /api/models/:name/stop", () => {
 
     const mockParams = Promise.resolve({ name: longName });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.model).toBe(longName);
+    expect(_json.model).toBe(longName);
   });
 
   // Edge case: Handle model name with emoji
@@ -249,10 +249,10 @@ describe("POST /api/models/:name/stop", () => {
 
     const mockParams = Promise.resolve({ name: "🦙-llama-2-7b-🚀" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.model).toBe("🦙-llama-2-7b-🚀");
+    expect(_json.model).toBe("🦙-llama-2-7b-🚀");
   });
 
   // Edge case: Handle empty request body
@@ -268,7 +268,7 @@ describe("POST /api/models/:name/stop", () => {
 
     const mockParams = Promise.resolve({ name: "test-model" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -290,7 +290,7 @@ describe("POST /api/models/:name/stop", () => {
 
     const mockParams = Promise.resolve({ name: "test-model" });
     const response = await POST(mockRequest, { params: mockParams });
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });

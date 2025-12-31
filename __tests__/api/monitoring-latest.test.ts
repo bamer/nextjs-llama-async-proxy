@@ -24,25 +24,25 @@ describe("GET /api/monitoring/latest", () => {
 
   it("should return monitoring data with system metrics", async () => {
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.success).toBe(true);
-    expect(json.data).toHaveProperty("system");
-    expect(json.data).toHaveProperty("models");
-    expect(json.data.system).toHaveProperty("cpu");
-    expect(json.data.system).toHaveProperty("memory");
-    expect(json.data.system).toHaveProperty("disk");
-    expect(json.data.system).toHaveProperty("network");
-    expect(json.data.system).toHaveProperty("uptime");
-    expect(json.timestamp).toBeDefined();
+    expect(_json.success).toBe(true);
+    expect(_json.data).toHaveProperty("system");
+    expect(_json.data).toHaveProperty("models");
+    expect(_json.data.system).toHaveProperty("cpu");
+    expect(_json.data.system).toHaveProperty("memory");
+    expect(_json.data.system).toHaveProperty("disk");
+    expect(_json.data.system).toHaveProperty("network");
+    expect(_json.data.system).toHaveProperty("uptime");
+    expect(_json.timestamp).toBeDefined();
   });
 
   it("should include system metrics within expected ranges", async () => {
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
-    const system = json.data.system;
+    const system = _json.data.system;
 
     expect(system.cpu.usage).toBeGreaterThanOrEqual(20);
     expect(system.cpu.usage).toBeLessThanOrEqual(60);
@@ -66,9 +66,9 @@ describe("GET /api/monitoring/latest", () => {
     };
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
-    expect(json.data.models).toEqual([]);
+    expect(_json.data.models).toEqual([]);
   });
 
   it("should return models data when llama service is available", async () => {
@@ -93,14 +93,14 @@ describe("GET /api/monitoring/latest", () => {
     };
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
-    expect(json.data.models).toHaveLength(2);
-    expect(json.data.models[0]).toHaveProperty("status");
-    expect(json.data.models[0]).toHaveProperty("memory");
-    expect(json.data.models[0]).toHaveProperty("requests");
-    expect(json.data.models[0].memory).toBe(3906); // 4GB in MB, rounded
-    expect(json.data.models[1].memory).toBe(1953); // 2GB in MB, rounded
+    expect(_json.data.models).toHaveLength(2);
+    expect(_json.data.models[0]).toHaveProperty("status");
+    expect(_json.data.models[0]).toHaveProperty("memory");
+    expect(_json.data.models[0]).toHaveProperty("requests");
+    expect(_json.data.models[0].memory).toBe(3906); // 4GB in MB, rounded
+    expect(_json.data.models[1].memory).toBe(1953); // 2GB in MB, rounded
   });
 
   it("should handle llama service errors gracefully", async () => {
@@ -116,11 +116,11 @@ describe("GET /api/monitoring/latest", () => {
     };
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.success).toBe(true);
-    expect(json.data.models).toEqual([]);
+    expect(_json.success).toBe(true);
+    expect(_json.data.models).toEqual([]);
   });
 
   it("should handle registry errors", async () => {
@@ -128,11 +128,11 @@ describe("GET /api/monitoring/latest", () => {
     globalAny.registry = null;
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.success).toBe(true);
-    expect(json.data.models).toEqual([]);
+    expect(_json.success).toBe(true);
+    expect(_json.data.models).toEqual([]);
   });
 
   it("should handle unexpected errors", async () => {
@@ -143,11 +143,11 @@ describe("GET /api/monitoring/latest", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json.success).toBe(false);
-    expect(json.error.code).toBe("MONITORING_FETCH_ERROR");
+    expect(_json.success).toBe(false);
+    expect(_json.error.code).toBe("MONITORING_FETCH_ERROR");
 
     // Restore Math.random
     Math.random = originalRandom;

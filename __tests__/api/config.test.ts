@@ -30,10 +30,10 @@ describe("GET /api/config", () => {
     (loadConfig as jest.Mock).mockReturnValue(mockConfig);
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json).toEqual(mockConfig);
+    expect(_json).toEqual(mockConfig);
     expect(loadConfig).toHaveBeenCalledTimes(1);
   });
 
@@ -44,10 +44,10 @@ describe("GET /api/config", () => {
     });
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json).toEqual({
+    expect(_json).toEqual({
       error: "Failed to get config",
     });
     expect(loadConfig).toHaveBeenCalledTimes(1);
@@ -60,10 +60,10 @@ describe("GET /api/config", () => {
     (loadConfig as jest.Mock).mockReturnValue(mockConfig);
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json).toEqual({});
+    expect(_json).toEqual({});
   });
 
   // Positive test: Handle complex configuration object
@@ -88,10 +88,10 @@ describe("GET /api/config", () => {
     (loadConfig as jest.Mock).mockReturnValue(mockConfig);
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json).toEqual(mockConfig);
+    expect(_json).toEqual(mockConfig);
   });
 });
 
@@ -115,10 +115,10 @@ describe("POST /api/config", () => {
     (saveConfig as jest.Mock).mockImplementation(() => {});
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json).toEqual({
+    expect(_json).toEqual({
       message: "Configuration saved successfully",
       config: mockConfig,
     });
@@ -142,11 +142,11 @@ describe("POST /api/config", () => {
     (saveConfig as jest.Mock).mockImplementation(() => {});
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.message).toBe("Configuration saved successfully");
-    expect(json.config).toEqual(mockConfig);
+    expect(_json.message).toBe("Configuration saved successfully");
+    expect(_json.config).toEqual(mockConfig);
   });
 
   // Negative test: Return 500 when saveConfig fails
@@ -165,10 +165,10 @@ describe("POST /api/config", () => {
     });
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json).toEqual({
+    expect(_json).toEqual({
       error: "Failed to save config",
     });
   });
@@ -180,10 +180,10 @@ describe("POST /api/config", () => {
     } as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json).toEqual({
+    expect(_json).toEqual({
       error: "Failed to save config",
     });
   });
@@ -199,11 +199,11 @@ describe("POST /api/config", () => {
     (saveConfig as jest.Mock).mockImplementation(() => {});
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.message).toBe("Configuration saved successfully");
-    expect(json.config).toEqual({});
+    expect(_json.message).toBe("Configuration saved successfully");
+    expect(_json.config).toEqual({});
   });
 
   // Positive test: Handle configuration with special characters
@@ -222,10 +222,10 @@ describe("POST /api/config", () => {
     (saveConfig as jest.Mock).mockImplementation(() => {});
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.config).toEqual(mockConfig);
+    expect(_json.config).toEqual(mockConfig);
   });
 
   // Edge case: Handle very large configuration object
@@ -246,10 +246,10 @@ describe("POST /api/config", () => {
     (saveConfig as jest.Mock).mockImplementation(() => {});
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json.config).toEqual(mockConfig);
+    expect(_json.config).toEqual(mockConfig);
   });
 
   // Edge case: Handle configuration with invalid data types
@@ -273,7 +273,7 @@ describe("POST /api/config", () => {
     (saveConfig as jest.Mock).mockImplementation(() => {});
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -294,7 +294,7 @@ describe("POST /api/config", () => {
     (saveConfig as jest.Mock).mockImplementation(() => {});
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -339,7 +339,7 @@ describe("POST /api/config", () => {
     (saveConfig as jest.Mock).mockImplementation(() => {});
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -369,7 +369,7 @@ describe("POST /api/config", () => {
     (saveConfig as jest.Mock).mockImplementation(() => {});
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -391,7 +391,7 @@ describe("POST /api/config", () => {
     (saveConfig as jest.Mock).mockImplementation(() => {});
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });
@@ -401,10 +401,10 @@ describe("POST /api/config", () => {
     (loadConfig as jest.Mock).mockReturnValue(undefined);
 
     const response = await GET();
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
-    expect(json).toBeUndefined();
+    expect(_json).toBeUndefined();
   });
 
   // Edge case: POST with request that has no json method
@@ -412,10 +412,10 @@ describe("POST /api/config", () => {
     const mockRequest = {} as unknown as NextRequest;
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(500);
-    expect(json).toEqual({
+    expect(_json).toEqual({
       error: "Failed to save config",
     });
   });
@@ -437,7 +437,7 @@ describe("POST /api/config", () => {
     (saveConfig as jest.Mock).mockImplementation(() => {});
 
     const response = await POST(mockRequest);
-    const json = await response.json();
+    const _json = await response.json();
 
     expect(response.status).toBe(200);
   });

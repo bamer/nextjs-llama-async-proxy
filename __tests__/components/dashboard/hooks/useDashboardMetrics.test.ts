@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { useDashboardMetrics } from '@/components/dashboard/hooks/useDashboardMetrics';
-import type { SystemMetrics } from '@/types/global';
+import type { SystemMetrics } from '@/types/monitoring';
 
 jest.mock('@/lib/store');
 jest.mock('@/hooks/use-websocket', () => ({
@@ -23,17 +23,20 @@ const mockUseStore = useStore as jest.MockedFunction<typeof useStore>;
 
 describe('useDashboardMetrics', () => {
   const mockMetrics: SystemMetrics = {
-    cpuUsage: 45.5,
-    memoryUsage: 62.3,
-    diskUsage: 55.0,
-    activeModels: 2,
+    cpu: { usage: 45.5 },
+    memory: { used: 62.3 },
+    disk: { used: 55.0 },
+    network: { rx: 100, tx: 50 },
     uptime: 3600,
-    totalRequests: 1000,
-    avgResponseTime: 150,
-    timestamp: new Date().toISOString(),
-    gpuUsage: 80.0,
-    gpuMemoryUsage: 12.5,
-    gpuPowerUsage: 200.0,
+    gpu: {
+      usage: 80.0,
+      memoryUsed: 12.5,
+      memoryTotal: 16,
+      powerUsage: 200.0,
+      powerLimit: 300,
+      temperature: 65,
+      name: 'NVIDIA RTX 4090',
+    },
   };
 
   const createMockState = (metrics: SystemMetrics | null) => ({
@@ -49,6 +52,7 @@ describe('useDashboardMetrics', () => {
     status: {
       isLoading: false,
       error: null,
+      llamaServerStatus: 'running',
     },
     chartHistory: {
       cpu: [],
@@ -116,9 +120,9 @@ describe('useDashboardMetrics', () => {
 
     const latestDataPoint =
       result.current.chartData[result.current.chartData.length - 1];
-    expect(latestDataPoint.cpu).toBe(mockMetrics.cpuUsage);
-    expect(latestDataPoint.memory).toBe(mockMetrics.memoryUsage);
-    expect(latestDataPoint.requests).toBe(mockMetrics.totalRequests);
+    expect(latestDataPoint.cpu).toBe(mockMetrics.cpu.usage);
+    expect(latestDataPoint.memory).toBe(mockMetrics.memory.used);
+    expect(latestDataPoint.gpu).toBe(mockMetrics.gpu?.usage);
   });
 
   it('limits chart data to 20 points', async () => {
@@ -138,9 +142,12 @@ describe('useDashboardMetrics', () => {
   it('includes GPU metrics in chart data when available', async () => {
     const metricsWithGPU: SystemMetrics = {
       ...mockMetrics,
-      gpuUsage: 85.0,
-      gpuMemoryUsage: 15.2,
-      gpuPowerUsage: 250.0,
+      gpu: {
+        ...mockMetrics.gpu!,
+        usage: 85.0,
+        memoryUsed: 15.2,
+        powerUsage: 250.0,
+      },
     };
 
     mockUseStore.mockImplementation((selector) =>
@@ -155,21 +162,18 @@ describe('useDashboardMetrics', () => {
 
     const latestDataPoint =
       result.current.chartData[result.current.chartData.length - 1];
-    expect(latestDataPoint.gpu).toBe(metricsWithGPU.gpuUsage);
-    expect(latestDataPoint.gpuMemory).toBe(metricsWithGPU.gpuMemoryUsage);
-    expect(latestDataPoint.gpuPower).toBe(metricsWithGPU.gpuPowerUsage);
+    expect(latestDataPoint.gpu).toBe(metricsWithGPU.gpu!.usage);
+    expect(latestDataPoint.gpuMemory).toBe(metricsWithGPU.gpu!.memoryUsed);
+    expect(latestDataPoint.gpuPower).toBe(metricsWithGPU.gpu!.powerUsage);
   });
 
   it('defaults GPU metrics to 0 when not available', async () => {
     const metricsWithoutGPU: SystemMetrics = {
-      cpuUsage: 45.5,
-      memoryUsage: 62.3,
-      diskUsage: 55.0,
-      activeModels: 2,
+      cpu: { usage: 45.5 },
+      memory: { used: 62.3 },
+      disk: { used: 55.0 },
+      network: { rx: 0, tx: 0 },
       uptime: 3600,
-      totalRequests: 1000,
-      avgResponseTime: 150,
-      timestamp: new Date().toISOString(),
     };
 
     mockUseStore.mockImplementation((selector) =>

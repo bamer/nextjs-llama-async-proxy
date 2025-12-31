@@ -3,6 +3,7 @@ import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { create } from 'zustand';
 import React from 'react';
+import type { SystemMetrics } from '@/types/monitoring';
 
 // Mock external dependencies
 jest.mock('@/hooks/use-websocket');
@@ -29,13 +30,15 @@ interface MockWebSocket {
   lastMessage: { type: string; data: unknown } | null;
   retryCount: number;
   serverStatus: { status: string; uptime: number };
-  metrics: { cpuUsage: number; memoryUsage: number };
+  metrics: SystemMetrics;
   activeModels: number;
 }
 
 interface MockStore {
   models: ModelConfig[];
   metrics: SystemMetrics | null;
+  activeModelId: string | null;
+  logs: LogEntry[];
   setModels: (models: ModelConfig[]) => void;
   updateModel: (id: string, updates: Partial<ModelConfig>) => void;
   removeModel: (id: string) => void;
@@ -50,6 +53,8 @@ const createTestStore = (initialState?: Partial<MockStore>) => {
   return create<MockStore>((set) => ({
     models: initialState?.models || [],
     metrics: initialState?.metrics || null,
+    activeModelId: initialState?.activeModelId || null,
+    logs: initialState?.logs || [],
     setModels: (models) => set({ models }),
     updateModel: (id, updates) =>
       set((state) => ({
@@ -103,22 +108,20 @@ const mockModels: ModelConfig[] = [
 ];
 
 const mockMetrics: SystemMetrics = {
-  cpuUsage: 45.5,
-  memoryUsage: 62.3,
-  diskUsage: 55.0,
-  activeModels: 0,
-  totalRequests: 1250,
-  avgResponseTime: 120,
+  cpu: { usage: 45.5 },
+  memory: { used: 62.3 },
+  disk: { used: 55.0 },
+  network: { rx: 100, tx: 50 },
   uptime: 3600,
-  timestamp: '2024-01-01T00:00:00Z',
-  gpuUsage: 65.0,
-  gpuMemoryUsage: 8.2,
-  gpuMemoryTotal: 24,
-  gpuMemoryUsed: 8.2,
-  gpuPowerUsage: 180,
-  gpuPowerLimit: 250,
-  gpuTemperature: 65,
-  gpuName: 'NVIDIA RTX 4090',
+  gpu: {
+    usage: 65.0,
+    memoryUsed: 8.2,
+    memoryTotal: 24,
+    powerUsage: 180,
+    powerLimit: 250,
+    temperature: 65,
+    name: 'NVIDIA RTX 4090',
+  },
 };
 
 describe('User Flows E2E Tests', () => {
@@ -136,7 +139,13 @@ describe('User Flows E2E Tests', () => {
       lastMessage: null,
       retryCount: 0,
       serverStatus: { status: 'ready', uptime: 3600 },
-      metrics: { cpuUsage: 45.5, memoryUsage: 62.3 },
+      metrics: {
+        cpu: { usage: 45.5 },
+        memory: { used: 62.3 },
+        disk: { used: 55.0 },
+        network: { rx: 100, tx: 50 },
+        uptime: 3600,
+      },
       activeModels: 0,
     };
 
@@ -209,7 +218,7 @@ describe('User Flows E2E Tests', () => {
 
       // Simulate model status change
       await act(async () => {
-        store.updateModel('model-1', { status: 'running' });
+        store.getState().updateModel('model-1', { status: 'running' });
       });
 
       // Assert 4: Metrics update to reflect running model
@@ -227,7 +236,7 @@ describe('User Flows E2E Tests', () => {
 
       // Simulate model status change
       await act(async () => {
-        store.updateModel('model-1', { status: 'idle' });
+        store.getState().updateModel('model-1', { status: 'idle' });
       });
 
       // Assert 6: State cleanup verified

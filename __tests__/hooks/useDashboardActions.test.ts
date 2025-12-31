@@ -130,7 +130,7 @@ describe("useDashboardActions Hook", () => {
 
       try {
         await result.current.handleRestart();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -185,7 +185,7 @@ describe("useDashboardActions Hook", () => {
 
       try {
         await result.current.handleStart();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -266,7 +266,7 @@ describe("useDashboardActions Hook", () => {
 
       try {
         await result.current.handleRefresh();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -401,7 +401,7 @@ describe("useDashboardActions Hook", () => {
 
       try {
         await result.current.handleDownloadLogs();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 

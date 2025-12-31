@@ -761,8 +761,22 @@ export default function ModelsPage() {
               variant="contained"
               color="primary"
               startIcon={<Add />}
-              sx={{ mr: 2 }}
-              onClick={() => console.log('Add new model')}
+              sx={{ mt: 3 }}
+              onClick={() => {
+                console.log('Add new model');
+                const tempModel: ModelData = {
+                  id: 0,
+                  name: '',
+                  type: 'llama',
+                  status: 'stopped',
+                  created_at: Date.now(),
+                  updated_at: Date.now(),
+                };
+                setSelectedModel(tempModel);
+                setEditingConfigType('sampling');
+                setCurrentConfig({});
+                setConfigDialogOpen(true);
+              }}
             >
               Add Model
             </Button>
@@ -1124,8 +1138,23 @@ export default function ModelsPage() {
               variant="contained"
               color="primary"
               startIcon={<Add />}
-              sx={{ mt: 3 }}
-              onClick={() => console.log('Add new model')}
+              sx={{ mr: 2 }}
+              onClick={() => {
+                console.log('Add new model');
+                // Create a temporary model for dialog
+                const tempModel: ModelData = {
+                  id: 0, // Temporary ID for new model
+                  name: '',
+                  type: 'llama',
+                  status: 'stopped',
+                  created_at: Date.now(),
+                  updated_at: Date.now(),
+                };
+                setSelectedModel(tempModel);
+                setEditingConfigType('general');
+                setCurrentConfig({});
+                setConfigDialogOpen(true);
+              }}
             >
               Add Model
             </Button>

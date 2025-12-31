@@ -43,11 +43,8 @@ jest.mock("@/styles/theme", () => ({
 const mockUseTheme = (require("next-themes") as any).useTheme;
 const mockUseMediaQuery = (require("@mui/material") as any).useMediaQuery;
 
-// Use the mocked ThemeProvider from the context module
-import { ThemeProvider } from "@/contexts/ThemeContext";
-
-const mockUseTheme = (require("next-themes") as any).useTheme;
-const mockUseMediaQuery = (require("@mui/material") as any).useMediaQuery;
+// Use the mocked ThemeProvider and useTheme from the context module
+import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 
 describe("ThemeContext", () => {
   beforeEach(() => {

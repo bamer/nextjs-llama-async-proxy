@@ -10,8 +10,8 @@ jest.mock("@/hooks/use-api", () => ({
   useApi: jest.fn(),
 }));
 
-const mockUseWebSocket = require("@/hooks/use-websocket").useWebSocket;
-const mockUseApi = require("@/hooks/use-api").useApi;
+const mockUseWebSocket = jest.mocked(require("@/hooks/use-websocket").useWebSocket);
+const mockUseApi = jest.mocked(require("@/hooks/use-api").useApi);
 
 describe("useDashboardData Hook", () => {
   const mockModels = [
@@ -159,9 +159,9 @@ describe("useDashboardData Hook", () => {
     });
 
     it("updates metrics from WebSocket message", async () => {
-      let metricsHandler: any;
+      let metricsHandler: ((data: unknown) => void) | undefined;
 
-      mockOn.mockImplementation((event: string, handler: any) => {
+      mockOn.mockImplementation((event: string, handler: (data: unknown) => void) => {
         if (event === "metrics") {
           metricsHandler = handler;
         }
@@ -186,9 +186,30 @@ describe("useDashboardData Hook", () => {
     });
 
     it("handles metrics update gracefully", () => {
-      const { result } = renderHook(() => useDashboardData());
+      renderHook(() => useDashboardData());
 
       expect(mockOn).toHaveBeenCalledWith("metrics", expect.any(Function));
+    });
+
+    it("handles malformed metrics data", () => {
+      mockUseApi.mockImplementation((endpoint: string) => {
+        if (endpoint === "/api/metrics") {
+          return {
+            data: { invalid: "data" },
+            isLoading: false,
+            error: null,
+          };
+        }
+        return {
+          data: mockModels,
+          isLoading: false,
+          error: null,
+        };
+      });
+
+      expect(() => {
+        renderHook(() => useDashboardData());
+      }).not.toThrow();
     });
   });
 
