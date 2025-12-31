@@ -1151,7 +1151,7 @@ export default function ModelsPage() {
                   updated_at: Date.now(),
                 };
                 setSelectedModel(tempModel);
-                setEditingConfigType('general');
+                setEditingConfigType('sampling');
                 setCurrentConfig({});
                 setConfigDialogOpen(true);
               }}

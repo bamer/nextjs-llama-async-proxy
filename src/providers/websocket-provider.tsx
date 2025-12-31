@@ -3,8 +3,8 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { websocketServer } from "@/lib/websocket-client";
 import { useStore } from "@/lib/store";
-import type { SystemMetrics, ModelConfig, LogEntry, LegacySystemMetrics } from "@/types";
-import { transformMetrics } from "@/utils/metrics-transformer";
+import type { SystemMetrics, ModelConfig, LogEntry } from "@/types";
+
 
 // Message type definitions for WebSocket messages
 interface BaseMessage {
@@ -115,20 +115,31 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         const msg = message as WebSocketMessage;
 
         if (msg.type === 'metrics' && msg.data) {
-          // Transform legacy flat format to new nested format
-          const legacyMetrics = msg.data as LegacySystemMetrics;
-          const transformedMetrics = transformMetrics(legacyMetrics);
+          // Backend now sends nested SystemMetrics format directly - no transformation needed
+          const metrics = msg.data as SystemMetrics;
 
           // Batch metrics with 500ms debounce
-          metricsBatchRef.current.push(transformedMetrics);
+          metricsBatchRef.current.push(metrics);
           if (!metricsThrottleRef.current) {
             metricsThrottleRef.current = setTimeout(processMetricsBatch, 500);
           }
         } else if (msg.type === 'models' && msg.data) {
           // Do NOT process 'models' messages from llama-server
-          // Models are loaded from database via 'load_models' message
+          // Models are loaded from database via 'models_loaded' message
           // Llama-server models don't have database IDs needed for configuration
-          console.log('[WebSocketProvider] Ignoring models message from llama-server (use database models via load_models)');
+          console.log('[WebSocketProvider] Ignoring models message from llama-server (use database models via models_loaded)');
+        } else if (msg.type === 'models_loaded' && msg.data) {
+          // Models loaded from database - process them
+          const models = msg.data as ModelConfig[];
+          console.log('[WebSocketProvider] Received models from database:', models.length, 'models');
+          modelsBatchRef.current.push(models);
+          if (!modelsThrottleRef.current) {
+            modelsThrottleRef.current = setTimeout(processModelsBatch, 500);
+          }
+        } else if (msg.type === 'models_imported' && msg.data) {
+          // Models imported successfully - trigger load from database
+          console.log('[WebSocketProvider] Models imported successfully, triggering database load');
+          websocketServer.sendMessage('load_models', {});
         } else if (msg.type === 'logs' && msg.data) {
           // Batch logs with 1000ms debounce
           const logs = msg.data as LogEntry[];

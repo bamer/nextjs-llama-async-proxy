@@ -262,45 +262,6 @@ exports[`Pages Snapshots ConfigurationPage Component should match snapshot in li
 </div>
 `;
 
-exports[`Pages Snapshots Data-Loaded States should match snapshot with many models: models-page-many-models 1`] = `
-<div
-  class="models-page"
->
-  <h1
-    class="text-3xl font-bold mb-8 text-foreground"
-  >
-    Models
-  </h1>
-  <div
-    class="flex justify-between items-center mb-8"
-  >
-    <input
-      class="border border-border rounded-lg px-4 py-3 w-64 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-      placeholder="Search models..."
-      type="text"
-      value=""
-    />
-    <div
-      class="flex gap-3"
-    >
-      <button
-        class="bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
-      >
-        Discover Models
-      </button>
-      <button
-        class="bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
-      >
-        Rescan Models
-      </button>
-    </div>
-  </div>
-  <div
-    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-  />
-</div>
-`;
-
 exports[`Pages Snapshots ModelsPage Component should match snapshot in dark mode: models-page-dark 1`] = `
 <div
   class="models-page"
@@ -419,84 +380,6 @@ exports[`Pages Snapshots ModelsPage Component should match snapshot with empty m
 `;
 
 exports[`Pages Snapshots ModelsPage Component should match snapshot with loaded models: models-page-with-models 1`] = `
-<div
-  class="models-page"
->
-  <h1
-    class="text-3xl font-bold mb-8 text-foreground"
-  >
-    Models
-  </h1>
-  <div
-    class="flex justify-between items-center mb-8"
-  >
-    <input
-      class="border border-border rounded-lg px-4 py-3 w-64 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-      placeholder="Search models..."
-      type="text"
-      value=""
-    />
-    <div
-      class="flex gap-3"
-    >
-      <button
-        class="bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
-      >
-        Discover Models
-      </button>
-      <button
-        class="bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
-      >
-        Rescan Models
-      </button>
-    </div>
-  </div>
-  <div
-    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-  />
-</div>
-`;
-
-exports[`Pages Snapshots Page States should match snapshot with empty state: page-empty 1`] = `
-<div
-  class="models-page"
->
-  <h1
-    class="text-3xl font-bold mb-8 text-foreground"
-  >
-    Models
-  </h1>
-  <div
-    class="flex justify-between items-center mb-8"
-  >
-    <input
-      class="border border-border rounded-lg px-4 py-3 w-64 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-      placeholder="Search models..."
-      type="text"
-      value=""
-    />
-    <div
-      class="flex gap-3"
-    >
-      <button
-        class="bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
-      >
-        Discover Models
-      </button>
-      <button
-        class="bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50 px-6 py-3 rounded-lg transition-colors font-medium"
-      >
-        Rescan Models
-      </button>
-    </div>
-  </div>
-  <div
-    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-  />
-</div>
-`;
-
-exports[`Pages Snapshots Page States should match snapshot with loading state: page-loading 1`] = `
 <div
   class="models-page"
 >

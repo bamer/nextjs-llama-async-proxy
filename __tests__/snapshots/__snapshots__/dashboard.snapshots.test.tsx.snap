@@ -993,6 +993,7 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot in 
       </div>
     </div>
   </div>
+  <div />
   <div
     data-testid="grid"
   >
@@ -1462,6 +1463,7 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot in 
       </div>
     </div>
   </div>
+  <div />
   <div
     data-testid="grid"
   >
@@ -1526,7 +1528,7 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot wit
         <div>
           <div>
             <h3>
-              🖥️
+              📊
             </h3>
             <div
               data-testid="skeleton"
@@ -1550,7 +1552,7 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot wit
         <div>
           <div>
             <h3>
-              💾
+              📊
             </h3>
             <div
               data-testid="skeleton"
@@ -1574,7 +1576,7 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot wit
         <div>
           <div>
             <h3>
-              💿
+              📊
             </h3>
             <div
               data-testid="skeleton"
@@ -1598,7 +1600,7 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot wit
         <div>
           <div>
             <h3>
-              🤖
+              📊
             </h3>
             <div
               data-testid="skeleton"
@@ -1622,7 +1624,7 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot wit
         <div>
           <div>
             <h3>
-              🎮
+              📊
             </h3>
             <div
               data-testid="skeleton"
@@ -1646,7 +1648,7 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot wit
         <div>
           <div>
             <h3>
-              🌡️
+              📊
             </h3>
             <div
               data-testid="skeleton"
@@ -1670,7 +1672,7 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot wit
         <div>
           <div>
             <h3>
-              💿
+              📊
             </h3>
             <div
               data-testid="skeleton"
@@ -1694,7 +1696,7 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot wit
         <div>
           <div>
             <h3>
-              ⚡
+              📊
             </h3>
             <div
               data-testid="skeleton"
@@ -1740,7 +1742,7 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot wit
         <div>
           <div>
             <h3>
-              🖥️
+              📊
             </h3>
             <div
               data-testid="skeleton"
@@ -1764,7 +1766,7 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot wit
         <div>
           <div>
             <h3>
-              💾
+              📊
             </h3>
             <div
               data-testid="skeleton"
@@ -1788,7 +1790,7 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot wit
         <div>
           <div>
             <h3>
-              💿
+              📊
             </h3>
             <div
               data-testid="skeleton"
@@ -1812,7 +1814,7 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot wit
         <div>
           <div>
             <h3>
-              🤖
+              📊
             </h3>
             <div
               data-testid="skeleton"
@@ -1836,7 +1838,7 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot wit
         <div>
           <div>
             <h3>
-              🎮
+              📊
             </h3>
             <div
               data-testid="skeleton"
@@ -1860,7 +1862,7 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot wit
         <div>
           <div>
             <h3>
-              🌡️
+              📊
             </h3>
             <div
               data-testid="skeleton"
@@ -1884,7 +1886,7 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot wit
         <div>
           <div>
             <h3>
-              💿
+              📊
             </h3>
             <div
               data-testid="skeleton"
@@ -1908,7 +1910,7 @@ exports[`Dashboard Snapshots ModernDashboard Component should match snapshot wit
         <div>
           <div>
             <h3>
-              ⚡
+              📊
             </h3>
             <div
               data-testid="skeleton"
@@ -2302,6 +2304,7 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at desktop
       </div>
     </div>
   </div>
+  <div />
   <div
     data-testid="grid"
   >
@@ -2771,6 +2774,7 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at large d
       </div>
     </div>
   </div>
+  <div />
   <div
     data-testid="grid"
   >
@@ -3240,6 +3244,7 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at mobile 
       </div>
     </div>
   </div>
+  <div />
   <div
     data-testid="grid"
   >
@@ -3709,6 +3714,7 @@ exports[`Dashboard Snapshots Responsive Layouts should match snapshot at tablet 
       </div>
     </div>
   </div>
+  <div />
   <div
     data-testid="grid"
   >

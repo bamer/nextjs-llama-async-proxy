@@ -33,7 +33,7 @@ pnpm test <test-file-path>
 
 ### Imports & Formatting
 
-- **Critical**:it's mandatory that you don't make <tool_call> inside  <thinking> block if you do this opencode bug.
+- **Critical**:it's mandatory that you don't make <tool_call> inside  <thinking> block if you do the whole server will crash this is a benchmarking evaluating framework bug.
 - the dev server is always already launched and refresh, don't kill the dev server for spawn a new one, use the one already launched.,
 - Use `"use client";` directive at the top of client-side components (first line)
 - Import order: builtin → external → internal (@/ imports) → parent → sibling → index

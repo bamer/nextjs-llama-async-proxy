@@ -96,7 +96,11 @@ export function updateLoggerConfig(config: Partial<LoggerConfig>): void {
 
   if (JSON.stringify(newConfig) !== JSON.stringify(currentConfig)) {
     currentConfig = newConfig;
-    loggerInstance?.info('Updating logger configuration:', config);
+    
+    if (loggerInstance) {
+      loggerInstance.clear();
+    }
+    
     initLogger(newConfig);
   }
 }

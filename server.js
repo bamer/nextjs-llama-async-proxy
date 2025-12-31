@@ -91,67 +91,16 @@ app.prepare().then(() => {
     socket.on('load_models', async () => {
       try {
         logger.info('📚 [SOCKET.IO] Loading models from database...');
-        let dbModels = getModels();
-
-        // Auto-import from llama-server if database is empty
-        if (dbModels.length === 0) {
-          logger.info('📥 [SOCKET.IO] Database is empty, auto-importing models from llama-server...');
-          try {
-            const llamaService = llamaIntegration.getLlamaService?.();
-            const state = llamaService?.getState?.();
-            const llamaModels = state?.models || [];
-            logger.info(`[SOCKET.IO] Found ${llamaModels.length} models in llama-server`);
-
-            for (const llamaModel of llamaModels) {
-              // Create model record for database
-              const modelRecord = {
-                name: llamaModel.name,
-                type: llamaModel.type === 'mistral' ? 'mistral' : llamaModel.type === 'custom' ? 'other' : 'llama',
-                status: 'stopped', // Use 'stopped' instead of 'idle' to match database constraint
-                model_path: llamaModel.parameters?.model_path || llamaModel.name,
-                model_url: llamaModel.parameters?.model_url || '',
-                ctx_size: llamaModel.parameters?.ctx_size || 2048,
-                batch_size: llamaModel.parameters?.batch_size || 512,
-                threads: llamaModel.parameters?.threads || 4,
-                created_at: Math.floor(Date.now() / 1000),
-                updated_at: Math.floor(Date.now() / 1000)
-              };
-
-              // Save to database
-              const dbId = saveModel(modelRecord);
-              logger.info(`[SOCKET.IO] Auto-imported model: ${llamaModel.name} (DB ID: ${dbId})`);
-            }
-
-            // Reload models after import
-            dbModels = getModels();
-            logger.info(`✅ [SOCKET.IO] Auto-imported ${llamaModels.length} models from llama-server`);
-          } catch (importError) {
-            logger.error(`❌ [SOCKET.IO] Error auto-importing models: ${importError.message}`);
-          }
-        }
-
-        // Transform database models to store format
+        const dbModels = getModels();
         const storeModels = dbModels.map(model => ({
-          id: model.id.toString(),
+          id: model.id,
           name: model.name,
-          type: model.type === 'mistrall' ? 'mistral' : model.type === 'custom' ? 'other' : 'llama',
-          status: model.status === 'stopped' ? 'idle' : model.status, // Map 'stopped' to 'idle' for display
-          createdAt: model.created_at,
-          updatedAt: model.updated_at,
-          parameters: {
-            ctx_size: model.ctx_size,
-            batch_size: model.batch_size,
-            threads: model.threads,
-            model_path: model.model_path,
-            model_url: model.model_url,
-            gpu_layers: model.gpu_layers,
-            main_gpu: model.main_gpu,
-            n_parallel: model.n_parallel,
-            n_ctx: model.n_ctx,
-            rope_freq_base: model.rope_freq_base,
-            rope_freq_scale: model.rope_freq_scale,
-            model: model.name,
-          },
+          path: model.path,
+          size: model.size,
+          architecture: model.architecture,
+          parameters: model.parameters,
+          quantization: model.quantization,
+          rope_freq_scale: model.rope_freq_scale,
         }));
 
         socket.emit('models_loaded', {

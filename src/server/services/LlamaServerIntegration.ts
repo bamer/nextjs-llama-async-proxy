@@ -1,9 +1,10 @@
 import { Server, Socket } from "socket.io";
-import { LlamaService, LlamaServerConfig, LlamaModel } from "./LlamaService";
+import { LlamaService, LlamaServerConfig, LlamaModel } from "./llama/LlamaService";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { getWebSocketTransport, getLogger } from "../../lib/logger";
 import type { SystemMetrics } from "@/types/monitoring";
+import { ModelImportService } from "./model-import-service";
 
 const logger = getLogger();
 const execAsync = promisify(exec);
@@ -38,9 +39,11 @@ export class LlamaServerIntegration {
   private totalRequests: number = 0;
   private responseTimes: number[] = [];
   private currentConfig: LlamaServerConfig | null = null;
+  private modelImportService: ModelImportService;
 
   constructor(io: Server) {
     this.io = io;
+    this.modelImportService = new ModelImportService();
   }
 
   async initialize(config: LlamaServerConfig): Promise<void> {
@@ -114,20 +117,14 @@ export class LlamaServerIntegration {
   private startMetricsBroadcast(): void {
     if (this.metricsInterval) {
       clearInterval(this.metricsInterval);
-    }
+    } 
 
     this.metricsInterval = setInterval(async () => {
       const metrics = await this.collectMetrics();
-      this.io.emit("metrics", { type: "metrics", data: metrics, timestamp: Date.now() });
+      this.io.emit("metrics", { type: "metrics", data: metrics, timestamp: Date.now() }); 
 
       // Also persist metrics to database for chart history
       try {
-        logger.debug('[METRICS] Saving to database:', {
-          cpu: metrics.cpu.usage,
-          memory: metrics.memory.used,
-          gpu: metrics.gpu?.usage,
-          requests: this.totalRequests
-        });
         saveMetricsToDb({
           cpu_usage: metrics.cpu.usage || 0,
           memory_usage: metrics.memory.used || 0,
@@ -141,13 +138,12 @@ export class LlamaServerIntegration {
           uptime: metrics.uptime || 0,
           requests_per_minute: Math.round((this.totalRequests || 0) / 10),
         });
-        logger.debug('✅ Metrics saved to database successfully');
       } catch (error) {
-        logger.error('❌ Failed to save metrics to database:', error);
+        logger.error('Failed to save metrics to database:', error);
       }
-    }, 3000);
+    }, 10000); // 10 seconds instead of 3 seconds
 
-    logger.info("📊 Metrics broadcasting started (every 3s)");
+    logger.info("Metrics broadcasting started (every 10s)");
   }
 
   private async collectMetrics(): Promise<import("@/types/monitoring").SystemMetrics> {
@@ -169,15 +165,7 @@ export class LlamaServerIntegration {
 
       if (gpuMetrics) {
         result.gpu = gpuMetrics;
-      }
-
-      logger.info('[METRICS] Collected metrics:', {
-        cpu: cpuMem.cpu,
-        memory: cpuMem.memory,
-        disk: diskUsage,
-        gpu: gpuMetrics?.usage,
-        uptime
-      });
+      } 
 
       return result;
     } catch (error) {
@@ -226,72 +214,9 @@ export class LlamaServerIntegration {
 
       const [gpuIndex, gpu, memUsed, memTotal, powerUsed, powerLimit, temp, name] = stdout.trim().split(",").map((s) => s.trim());
 
-      // Only use GPU 0 (primary GPU) for metrics
       if (gpuIndex !== '0') {
         return undefined;
       }
-
-      return {
-        usage: parseFloat(gpu) || 0,
-        memoryUsed: parseFloat(memUsed) || 0,
-        memoryTotal: parseFloat(memTotal) || 0,
-        powerUsage: parseFloat(powerUsed) || 0,
-        powerLimit: parseFloat(powerLimit) || 0,
-        temperature: parseFloat(temp) || 0,
-        name: name || "Unknown GPU",
-      };
-    } catch (error) {
-      return undefined;
-    }
-  }
-
-      const [gpuIndex, gpu, memUsed, memTotal, powerUsed, powerLimit, temp, name] = stdout.trim().split(",").map((s) => s.trim());
-
-      // Only use GPU 0 (primary GPU) for metrics
-      if (gpuIndex !== '0') {
-        return undefined;
-      }
-
-      return {
-        usage: parseFloat(gpu) || 0,
-        memoryUsed: parseFloat(memUsed) || 0,
-        memoryTotal: parseFloat(memTotal) || 0,
-        powerUsage: parseFloat(powerUsed) || 0,
-        powerLimit: parseFloat(powerLimit) || 0,
-        temperature: parseFloat(temp) || 0,
-        name: name || "Unknown GPU",
-      };
-    } catch (error) {
-      return undefined;
-    }
-  }
-
-      const [gpuIndex, gpu, memUsed, memTotal, powerUsed, powerLimit, temp, name] = stdout.trim().split(",").map((s) => s.trim());
-
-      // Only use GPU 0 for now (primary GPU)
-      if (gpuIndex !== '0') {
-        return undefined;
-      }
-
-      return {
-        usage: parseFloat(gpu) || 0,
-        memoryUsed: parseFloat(memUsed) || 0,
-        memoryTotal: parseFloat(memTotal) || 0,
-        powerUsage: parseFloat(powerUsed) || 0,
-        powerLimit: parseFloat(powerLimit) || 0,
-        temperature: parseFloat(temp) || 0,
-        name: name || "Unknown GPU",
-      };
-    } catch (error) {
-      return undefined;
-    }
-  }
-
-      if (!stdout.trim()) {
-        return undefined;
-      }
-
-      const [gpu, memUsed, memTotal, powerUsed, powerLimit, temp, name] = stdout.trim().split(",").map((s) => s.trim());
 
       return {
         usage: parseFloat(gpu) || 0,
@@ -389,24 +314,60 @@ export class LlamaServerIntegration {
 
     socket.on("rescanModels", async () => {
       logger.info("[WS] Rescan models request received");
-      if (this.llamaService && this.currentConfig) {
-        try {
-          await this.llamaService.stop();
-          await this.llamaService.start();
-          logger.info("[WS] ✅ Models rescanned successfully");
-          socket.emit("llamaStatus", {
-            type: "status",
-            data: { message: "Models rescanned successfully" },
-            timestamp: Date.now(),
-          });
-        } catch (error) {
-          logger.error("[WS] ❌ Failed to rescan models:", error);
-          socket.emit("llamaStatus", {
-            type: "error",
-            data: { error: "Failed to rescan models" },
-            timestamp: Date.now(),
-          });
-        }
+      try {
+        const result = await this.modelImportService.importModels();
+        logger.info(`[WS] Models imported successfully: ${result.imported} new, ${result.updated} updated, ${result.errors} errors`);
+        socket.emit("llamaStatus", {
+          type: "status",
+          data: {
+            message: `Models imported: ${result.imported} new, ${result.updated} updated, ${result.errors} errors`,
+          },
+          timestamp: Date.now(),
+        });
+        socket.emit("models_imported", {
+          type: "models_imported",
+          data: {
+            imported: result.imported,
+            updated: result.updated,
+            errors: result.errors,
+          },
+          timestamp: Date.now(),
+        });
+      } catch (error) {
+        logger.error("[WS] Failed to import models:", error);
+        socket.emit("llamaStatus", {
+          type: "error",
+          data: { error: "Failed to import models" },
+          timestamp: Date.now(),
+        });
+      }
+    });
+
+    socket.on("load_models", async () => {
+      logger.info("[WS] Load models from database request received");
+      try {
+        const models = getModels();
+        logger.info(`[WS] Loaded ${models.length} model(s) from database`);
+        socket.emit("models_loaded", {
+          type: "models_loaded",
+          data: models.map((m: any) => ({
+            id: m.id,
+            name: m.name,
+            type: m.type,
+            status: m.status,
+            size: m.file_size_bytes,
+            createdAt: new Date(m.created_at).toISOString(),
+            updatedAt: new Date(m.updated_at).toISOString(),
+          })),
+          timestamp: Date.now(),
+        });
+      } catch (error) {
+        logger.error("[WS] Failed to load models from database:", error);
+        socket.emit("llamaStatus", {
+          type: "error",
+          data: { error: "Failed to load models" },
+          timestamp: Date.now(),
+        });
       }
     });
 
@@ -764,9 +725,6 @@ export class LlamaServerIntegration {
       try {
         logger.info(`[WS] Loading ${data.type} config for model ${data.id}`);
         
-        // Ensure database is initialized
-        await initDatabase();
-        
         let config: any;
         switch (data.type) {
           case "sampling":
@@ -821,9 +779,6 @@ export class LlamaServerIntegration {
       try {
         logger.info(`[WS] Saving ${data.type} config for model ${data.id}`);
         
-        // Ensure database is initialized
-        await initDatabase();
-        
         let result: any;
         switch (data.type) {
           case "sampling":
@@ -870,7 +825,6 @@ export class LlamaServerIntegration {
         logger.info(`[WS] Saving model: ${data.name}`);
         
         // Ensure database is initialized
-        await initDatabase();
         
         const model = await saveModel(data);
         socket.emit("model_saved", {
@@ -920,7 +874,6 @@ export class LlamaServerIntegration {
         logger.info(`[WS] Deleting model ${data.id}`);
         
         // Ensure database is initialized
-        await initDatabase();
         
         await deleteModel(data.id);
         socket.emit("model_deleted", {

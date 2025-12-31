@@ -18,8 +18,13 @@ function createConsoleTransport(config: LoggerConfig): Transport {
     level: config.consoleLevel,
     format: format.combine(
       format.colorize(),
+      format.timestamp({ format: 'HH:mm:ss' }),
       format.printf((info) => {
-        return `${info.timestamp} [${info.level}]: ${info.message}`;
+        const label = info.label ? `[${info.label}] ` : '';
+        const message = typeof info.message === 'object'
+          ? JSON.stringify(info.message, null, 2)
+          : info.message;
+        return `${info.timestamp} ${label}${info.level}: ${message}`;
       })
     ),
   });
@@ -77,10 +82,10 @@ export function createTransports(
     transportsList.push(...createFileTransports(config));
   }
 
-  // Add WebSocket transport if available
-  if (wsTransport) {
-    transportsList.push(wsTransport as any);
-  }
+    // Add WebSocket transport if available
+    if (wsTransport) {
+      transportsList.push(wsTransport as Transport);
+    }
 
   return transportsList;
 }

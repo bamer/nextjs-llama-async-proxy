@@ -40,6 +40,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "framer-motion": "^12.23.26",
+    "gguf": "^1.0.7",
     "lucide-react": "^0.562.0",
     "next": "16.1.0",
     "node-fetch": "^3.3.2",
