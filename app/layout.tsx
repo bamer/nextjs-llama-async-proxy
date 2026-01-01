@@ -4,27 +4,12 @@ import "./globals.css";
 import { AppProvider } from "@/providers/app-provider";
 import { APP_CONFIG } from "@/config/app.config";
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
-import { initDatabase, setMetadata } from "@/lib/database";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
 });
-
-// Initialize database on server startup (runs once)
-let dbInitialized = false;
-if (!dbInitialized && typeof window === "undefined") {
-  try {
-    const db = initDatabase();
-    setMetadata("server_start_time", Date.now().toString());
-    console.log("[Database] Database initialized successfully");
-    db.close();
-    dbInitialized = true;
-  } catch (error) {
-    console.error("[Database] Failed to initialize database:", error);
-  }
-}
 
 export const metadata: Metadata = {
   title: {

@@ -60,10 +60,10 @@ export interface ModelSamplingConfig {
   dry_penalty_last_n?: number;
   dry_sequence_breaker?: string;
   dynatemp_range?: number;
-  dynatemp_exp?: number;
+  dynatemp_exponent?: number;
   mirostat?: number;
-  mirostat_lr?: number;
-  mirostat_ent?: number;
+  mirostat_eta?: number;
+  mirostat_tau?: number;
   samplers?: string;
   sampler_seq?: string;
   seed?: number;
@@ -669,7 +669,7 @@ export function saveModelSamplingConfig(
         model_id, temperature, top_k, top_p, min_p, top_nsigma, xtc_probability, xtc_threshold,
         typical_p, repeat_last_n, repeat_penalty, presence_penalty, frequency_penalty,
         dry_multiplier, dry_base, dry_allowed_length, dry_penalty_last_n, dry_sequence_breaker,
-        dynatemp_range, dynatemp_exp, mirostat, mirostat_lr, mirostat_ent,
+        dynatemp_range, dynatemp_exponent, mirostat, mirostat_eta, mirostat_tau,
         samplers, sampler_seq, seed,
         grammar, grammar_file, json_schema, json_schema_file, ignore_eos, "escape",
         rope_scaling_type, rope_scale, rope_freq_base, rope_freq_scale,
@@ -698,10 +698,10 @@ export function saveModelSamplingConfig(
       config.dry_penalty_last_n ?? -1,
       config.dry_sequence_breaker ?? null,
       config.dynatemp_range ?? 0.0,
-      config.dynatemp_exp ?? 1.0,
+      config.dynatemp_exponent ?? 1.0,
       config.mirostat ?? 0,
-      config.mirostat_lr ?? 0.1,
-      config.mirostat_ent ?? 5.0,
+      config.mirostat_eta ?? 0.1,
+      config.mirostat_tau ?? 5.0,
       config.samplers ?? null,
       config.sampler_seq ?? "edskypmxt",
       config.seed ?? -1,

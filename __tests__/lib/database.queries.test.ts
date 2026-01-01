@@ -4,6 +4,7 @@ import Database from "better-sqlite3";
 import {
   initDatabase,
   closeDatabase,
+  getDatabaseSize,
   saveMetrics,
   getMetricsHistory,
   getLatestMetrics,

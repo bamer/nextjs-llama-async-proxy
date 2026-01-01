@@ -94,9 +94,10 @@ If you need updated information, Use WebFetch to retrieve content, extract relev
 9️⃣  Emit FINAL SUMMARY token → exit
 Key Guarantees
 
-No two agents edit the same file simultaneously.
-A task is considered DONE only after a human reviewer signs‑off.
-The whole pipeline ends only when tests pass, docs are updated, and the repo is clean.
+- No two agents edit the same file simultaneously.
+- A task is considered DONE only after a human reviewer signs‑off.
+- The whole pipeline ends only when tests pass, docs are updated, and the repo is clean.
+- **Critical**:it's mandatory that you don't make <tool_call> inside  <thinking> block if you do the whole server will crash this is a benchmarking
 
 ###3️⃣### Task Lifecycle
 

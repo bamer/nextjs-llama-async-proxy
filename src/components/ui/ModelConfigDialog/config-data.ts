@@ -1,5 +1,7 @@
 "use client";
 
+import React from "react";
+import type { SvgIconTypeMap } from "@mui/material";
 import {
   Speed as SpeedIcon,
   Memory as MemoryIcon,
@@ -11,6 +13,12 @@ import {
 } from "@mui/icons-material";
 import type { ConfigType, FieldDefinition, SectionGroup, ValidationRule } from "./types";
 
+// Create icon elements factory
+type IconComponentType = React.ComponentType<SvgIconTypeMap["props"]>;
+
+const createIcon = (IconComponent: IconComponentType): React.ReactElement =>
+  React.createElement(IconComponent);
+
 // Section groups for accordion organization
 export const sectionGroups: Record<
   ConfigType,
@@ -19,12 +27,12 @@ export const sectionGroups: Record<
   sampling: [
     {
       title: "Échantillonnage Principal",
-      icon: <SpeedIcon />,
+      icon: createIcon(SpeedIcon),
       fields: ["temperature", "top_k", "top_p", "min_p", "typical_p"],
     },
     {
       title: "Contrôle de Répétition",
-      icon: <TuneIcon />,
+      icon: createIcon(TuneIcon),
       fields: [
         "repeat_last_n",
         "repeat_penalty",
@@ -39,7 +47,7 @@ export const sectionGroups: Record<
     },
     {
       title: "Échantillonnage Avancé",
-      icon: <SettingsIcon />,
+      icon: createIcon(SettingsIcon),
       fields: [
         "mirostat",
         "mirostat_eta",
@@ -53,7 +61,7 @@ export const sectionGroups: Record<
     },
     {
       title: "Contraintes de Sortie",
-      icon: <LayersIcon />,
+      icon: createIcon(LayersIcon),
       fields: [
         "samplers",
         "sampler_seq",
@@ -68,7 +76,7 @@ export const sectionGroups: Record<
     },
     {
       title: "Extension de Contexte (ROPE)",
-      icon: <MemoryIcon />,
+      icon: createIcon(MemoryIcon),
       fields: [
         "rope_scaling_type",
         "rope_scale",
@@ -83,43 +91,43 @@ export const sectionGroups: Record<
     },
     {
       title: "Performance",
-      icon: <SpeedIcon />,
+      icon: createIcon(SpeedIcon),
       fields: ["flash_attn", "logit_bias"],
     },
   ],
   memory: [
     {
       title: "Paramètres de Cache",
-      icon: <MemoryIcon />,
+      icon: createIcon(MemoryIcon),
       fields: ["cache_ram", "cache_type_k", "cache_type_v"],
     },
     {
       title: "Gestion de la Mémoire",
-      icon: <SettingsIcon />,
+      icon: createIcon(SettingsIcon),
       fields: ["mmap", "mlock", "numa", "defrag_thold"],
     },
   ],
   gpu: [
     {
       title: "Sélection de Périphérique",
-      icon: <GpuIcon />,
+      icon: createIcon(GpuIcon),
       fields: ["device", "list_devices"],
     },
     {
       title: "Configuration GPU",
-      icon: <SettingsIcon />,
+      icon: createIcon(SettingsIcon),
       fields: ["gpu_layers", "split_mode", "tensor_split", "main_gpu", "kv_offload"],
     },
     {
       title: "Options de Performance",
-      icon: <SpeedIcon />,
+      icon: createIcon(SpeedIcon),
       fields: ["repack", "no_host"],
     },
   ],
   advanced: [
     {
       title: "Comportement du Modèle",
-      icon: <SettingsIcon />,
+      icon: createIcon(SettingsIcon),
       fields: [
         "swa_full",
         "override_tensor",
@@ -132,34 +140,34 @@ export const sectionGroups: Record<
     },
     {
       title: "Calcul Distribué",
-      icon: <GpuIcon />,
+      icon: createIcon(GpuIcon),
       fields: ["rpc", "offline", "override_kv", "op_offload"],
     },
     {
       title: "Ajustement du Modèle",
-      icon: <TuneIcon />,
+      icon: createIcon(TuneIcon),
       fields: ["fit", "fit_target", "fit_ctx", "check_tensors"],
     },
     {
       title: "Gestion des Ressources",
-      icon: <MemoryIcon />,
+      icon: createIcon(MemoryIcon),
       fields: ["sleep_idle_seconds", "polling", "polling_batch"],
     },
     {
       title: "Raisonnement",
-      icon: <LayersIcon />,
+      icon: createIcon(LayersIcon),
       fields: ["reasoning_format_value_format", "reasoning_budget", "custom_params"],
     },
   ],
   lora: [
     {
       title: "Adaptateurs LoRA",
-      icon: <LayersIcon />,
+      icon: createIcon(LayersIcon),
       fields: ["lora", "lora_scaled"],
     },
     {
       title: "Vecteurs de Contrôle",
-      icon: <TuneIcon />,
+      icon: createIcon(TuneIcon),
       fields: [
         "control_vector",
         "control_vector_scaled",
@@ -168,7 +176,7 @@ export const sectionGroups: Record<
     },
     {
       title: "Décodage Spéculatif",
-      icon: <SpeedIcon />,
+      icon: createIcon(SpeedIcon),
       fields: [
         "model_draft",
         "model_url_draft",
@@ -182,7 +190,7 @@ export const sectionGroups: Record<
     },
     {
       title: "Cache du Modèle de Brouillon",
-      icon: <MemoryIcon />,
+      icon: createIcon(MemoryIcon),
       fields: [
         "cache_type_k_draft",
         "cache_type_v_draft",
@@ -194,19 +202,19 @@ export const sectionGroups: Record<
     },
     {
       title: "Options de Décodage Spéculatif",
-      icon: <SettingsIcon />,
+      icon: createIcon(SettingsIcon),
       fields: ["spec_replace"],
     },
   ],
   multimodal: [
     {
       title: "Projection Visuelle",
-      icon: <ImageIcon />,
+      icon: createIcon(ImageIcon),
       fields: ["mmproj", "mmproj_url", "mmproj_auto", "mmproj_offload"],
     },
     {
       title: "Traitement d'Images",
-      icon: <SettingsIcon />,
+      icon: createIcon(SettingsIcon),
       fields: ["image_min_tokens", "image_max_tokens"],
     },
   ],

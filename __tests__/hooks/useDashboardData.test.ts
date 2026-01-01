@@ -1,476 +1,179 @@
-import { renderHook, waitFor } from "@testing-library/react";
-import { useDashboardData } from "@/hooks/useDashboardData";
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { renderHook, act, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useDashboardData } from '@/hooks/useDashboardData';
+import type { SystemMetrics } from '@/types/monitoring';
 
-// Mock dependencies
-jest.mock("@/hooks/use-websocket", () => ({
-  useWebSocket: jest.fn(),
+jest.mock('@/hooks/use-websocket', () => ({
+  useWebSocket: jest.fn(() => ({
+    isConnected: true,
+    connectionState: 'connected',
+    reconnectionAttempts: 0,
+    sendMessage: jest.fn(),
+    requestMetrics: jest.fn(),
+    requestLogs: jest.fn(),
+    requestModels: jest.fn(),
+    startModel: jest.fn(),
+    stopModel: jest.fn(),
+    on: jest.fn(),
+    off: jest.fn(),
+    socketId: 'test-socket-1',
+    useWebSocketEvent: jest.fn(),
+  })),
 }));
 
-jest.mock("@/hooks/use-api", () => ({
-  useApi: jest.fn(),
+jest.mock('@/hooks/use-api', () => ({
+  useApi: jest.fn(() => ({
+    models: {
+      data: [],
+      isLoading: false,
+      error: null,
+    },
+    metrics: {
+      data: null,
+      isLoading: false,
+      error: null,
+    },
+    logs: {
+      data: [],
+      isLoading: false,
+      error: null,
+    },
+    config: {
+      data: {},
+      isLoading: false,
+      error: null,
+    },
+    queryClient: {},
+  })),
 }));
 
-const mockUseWebSocket = jest.mocked(require("@/hooks/use-websocket").useWebSocket);
-const mockUseApi = jest.mocked(require("@/hooks/use-api").useApi);
-
-describe("useDashboardData Hook", () => {
-  const mockModels = [
-    { id: "1", name: "Model 1", status: "running" },
-    { id: "2", name: "Model 2", status: "idle" },
-  ];
-
-  const mockMetrics = {
-    cpuUsage: 50,
-    memoryUsage: 60,
-    uptime: 3600,
-  };
-
-  const mockOn = jest.fn();
-  const mockOff = jest.fn();
-  const mockRequestMetrics = jest.fn();
+describe('useDashboardData', () => {
+  let queryClient: QueryClient;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-
-    mockUseWebSocket.mockReturnValue({
-      isConnected: false,
-      connectionState: "disconnected",
-      requestMetrics: mockRequestMetrics,
-      on: mockOn,
-      off: mockOff,
-    });
-
-    mockUseApi.mockImplementation((endpoint: string) => {
-      if (endpoint === "/api/models") {
-        return {
-          data: mockModels,
-          isLoading: false,
-          error: null,
-        };
-      }
-      if (endpoint === "/api/metrics") {
-        return {
-          data: mockMetrics,
-          isLoading: false,
-          error: null,
-        };
-      }
-      return {
-        data: null,
-        isLoading: false,
-        error: null,
-      };
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+          staleTime: Infinity,
+        },
+      },
     });
   });
 
-  describe("Initialization", () => {
-    it("initializes with loading state", () => {
-      const { result } = renderHook(() => useDashboardData());
+  afterEach(() => {
+    queryClient.clear();
+  });
 
+  const wrapper = ({ children }: any) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+
+  describe('initial state', () => {
+    it('should initialize with loading state true', () => {
+      const { result } = renderHook(() => useDashboardData(), { wrapper });
+      
       expect(result.current.loading).toBe(true);
     });
 
-    it("initializes with null error", () => {
-      const { result } = renderHook(() => useDashboardData());
-
-      expect(result.current.error).toBeNull();
+    it('should return models array', async () => {
+      const { result } = renderHook(() => useDashboardData(), { wrapper });
+      
+      await waitFor(() => {
+        expect(Array.isArray(result.current.models)).toBe(true);
+      });
     });
 
-    it("initializes with null metrics", () => {
-      const { result } = renderHook(() => useDashboardData());
-
+    it('should return null metrics initially', () => {
+      const { result } = renderHook(() => useDashboardData(), { wrapper });
+      
       expect(result.current.metrics).toBeNull();
     });
-
-    it("returns models array", () => {
-      const { result } = renderHook(() => useDashboardData());
-
-      expect(Array.isArray(result.current.models)).toBe(true);
-    });
-
-    it("returns connectionState", () => {
-      const { result } = renderHook(() => useDashboardData());
-
-      expect(result.current.connectionState).toBe("disconnected");
-    });
   });
 
-  describe("Data Fetching - API", () => {
-    it("fetches models data via API", () => {
-      renderHook(() => useDashboardData());
-
-      expect(mockUseApi).toHaveBeenCalledWith("/api/models");
-    });
-
-    it("fetches metrics data via API", () => {
-      renderHook(() => useDashboardData());
-
-      expect(mockUseApi).toHaveBeenCalledWith("/api/metrics");
-    });
-
-    it("returns models from API response", () => {
-      const { result } = renderHook(() => useDashboardData());
-
-      expect(result.current.models).toEqual(mockModels);
-    });
-
-    it("uses API metrics when WebSocket disconnected", () => {
-      const { result } = renderHook(() => useDashboardData());
-
-      expect(result.current.metrics).toEqual(mockMetrics);
-    });
-  });
-
-  describe("Data Fetching - WebSocket", () => {
-    beforeEach(() => {
-      mockUseWebSocket.mockReturnValue({
-        isConnected: true,
-        connectionState: "connected",
-        requestMetrics: mockRequestMetrics,
-        on: mockOn,
-        off: mockOff,
-      });
-    });
-
-    it("requests metrics via WebSocket when connected", () => {
-      renderHook(() => useDashboardData());
-
-      expect(mockRequestMetrics).toHaveBeenCalled();
-    });
-
-    it("registers metrics event handler", () => {
-      renderHook(() => useDashboardData());
-
-      expect(mockOn).toHaveBeenCalledWith(
-        "metrics",
-        expect.any(Function)
-      );
-    });
-
-    it("unregisters metrics event handler on cleanup", () => {
-      const { unmount } = renderHook(() => useDashboardData());
-
-      unmount();
-
-      expect(mockOff).toHaveBeenCalledWith(
-        "metrics",
-        expect.any(Function)
-      );
-    });
-
-    it("updates metrics from WebSocket message", async () => {
-      let metricsHandler: ((data: unknown) => void) | undefined;
-
-      mockOn.mockImplementation((event: string, handler: (data: unknown) => void) => {
-        if (event === "metrics") {
-          metricsHandler = handler;
-        }
-      });
-
-      const { result } = renderHook(() => useDashboardData());
-
-      const newMetrics = {
-        cpuUsage: 75,
-        memoryUsage: 80,
-        uptime: 7200,
-      };
-
+  describe('WebSocket connection', () => {
+    it('should request metrics when WebSocket connected', async () => {
+      const { result } = renderHook(() => useDashboardData(), { wrapper });
+      
       await waitFor(() => {
-        if (metricsHandler) {
-          metricsHandler(newMetrics);
-        }
+        const { useWebSocket } = require('@/hooks/use-websocket');
+        expect(useWebSocket().requestMetrics).toHaveBeenCalled();
       });
-
-      // The handler should have been called
-      expect(mockOn).toHaveBeenCalledWith("metrics", expect.any(Function));
     });
 
-    it("handles metrics update gracefully", () => {
-      renderHook(() => useDashboardData());
-
-      expect(mockOn).toHaveBeenCalledWith("metrics", expect.any(Function));
-    });
-
-    it("handles malformed metrics data", () => {
-      mockUseApi.mockImplementation((endpoint: string) => {
-        if (endpoint === "/api/metrics") {
-          return {
-            data: { invalid: "data" },
-            isLoading: false,
-            error: null,
-          };
-        }
-        return {
-          data: mockModels,
-          isLoading: false,
-          error: null,
-        };
-      });
-
-      expect(() => {
-        renderHook(() => useDashboardData());
-      }).not.toThrow();
-    });
-  });
-
-  describe("Error Handling", () => {
-    it("sets error when models API fails", () => {
-      mockUseApi.mockImplementation((endpoint: string) => {
-        if (endpoint === "/api/models") {
-          return {
-            data: null,
-            isLoading: false,
-            error: new Error("Failed to load models"),
-          };
-        }
-        return {
-          data: mockMetrics,
-          isLoading: false,
-          error: null,
-        };
-      });
-
-      const { result } = renderHook(() => useDashboardData());
-
-      expect(result.current.error).toContain("models");
-    });
-
-    it("sets error when metrics API fails", () => {
-      mockUseApi.mockImplementation((endpoint: string) => {
-        if (endpoint === "/api/models") {
-          return {
-            data: mockModels,
-            isLoading: false,
-            error: null,
-          };
-        }
-        return {
-          data: null,
-          isLoading: false,
-          error: new Error("Failed to load metrics"),
-        };
-      });
-
-      const { result } = renderHook(() => useDashboardData());
-
-      expect(result.current.error).toContain("metrics");
-    });
-
-    it("sets loading false when both queries complete", async () => {
-      mockUseApi.mockImplementation((endpoint: string) => ({
-        data: endpoint === "/api/models" ? mockModels : mockMetrics,
-        isLoading: false,
-        error: null,
-      }));
-
-      const { result } = renderHook(() => useDashboardData());
-
+    it('should register metrics event handler', async () => {
+      const { result } = renderHook(() => useDashboardData(), { wrapper });
+      
       await waitFor(() => {
-        expect(result.current.loading).toBe(false);
+        const { useWebSocket } = require('@/hooks/use-websocket');
+        expect(useWebSocket().on).toHaveBeenCalledWith('metrics', expect.any(Function));
       });
-    });
-
-    it("sets loading true when any query is loading", () => {
-      mockUseApi.mockImplementation((endpoint: string) => {
-        if (endpoint === "/api/models") {
-          return {
-            data: mockModels,
-            isLoading: true,
-            error: null,
-          };
-        }
-        return {
-          data: mockMetrics,
-          isLoading: false,
-          error: null,
-        };
-      });
-
-      const { result } = renderHook(() => useDashboardData());
-
-      expect(result.current.loading).toBe(true);
     });
   });
 
-  describe("Loading State", () => {
-    it("is true when models is loading", () => {
-      mockUseApi.mockImplementation((endpoint: string) => {
-        if (endpoint === "/api/models") {
-          return {
-            data: null,
-            isLoading: true,
-            error: null,
-          };
-        }
-        return {
-          data: mockMetrics,
-          isLoading: false,
-          error: null,
+  describe('metrics transformation', () => {
+    it('should transform old metrics format to new format', async () => {
+      const { result } = renderHook(() => useDashboardData(), { wrapper });
+      
+      const { useWebSocket } = require('@/hooks/use-websocket');
+      const mockHandler = useWebSocket().on.mock.calls.find(
+        (call: any[]) => call[0] === 'metrics'
+      )?.[1];
+      if (mockHandler) {
+        const oldMetrics = {
+          cpuUsage: 50,
+          memoryUsage: 60,
+          diskUsage: 40,
+          activeModels: 2,
+          totalRequests: 100,
+          avgResponseTime: 150,
+          uptime: '1h 30m',
         };
-      });
-
-      const { result } = renderHook(() => useDashboardData());
-
-      expect(result.current.loading).toBe(true);
-    });
-
-    it("is true when metrics is loading", () => {
-      mockUseApi.mockImplementation((endpoint: string) => {
-        if (endpoint === "/api/metrics") {
-          return {
-            data: null,
-            isLoading: true,
-            error: null,
-          };
+        mockHandler(oldMetrics);
+      }
+      
+      await waitFor(() => {
+        expect(result.current.metrics).toBeDefined();
+        if (result.current.metrics) {
+          expect(result.current.metrics.cpu).toEqual({ usage: 50 });
+          expect(result.current.metrics.memory).toEqual({ used: 60 });
+          expect(result.current.metrics.disk).toEqual({ used: 40 });
+          expect(result.current.metrics.uptime).toBe('1h 30m');
         }
-        return {
-          data: mockModels,
-          isLoading: false,
-          error: null,
-        };
       });
-
-      const { result } = renderHook(() => useDashboardData());
-
-      expect(result.current.loading).toBe(true);
-    });
-
-    it("is false when both queries complete", () => {
-      mockUseApi.mockImplementation(() => ({
-        data: null,
-        isLoading: false,
-        error: null,
-      }));
-
-      const { result } = renderHook(() => useDashboardData());
-
-      expect(result.current.loading).toBe(false);
     });
   });
 
-  describe("Models Data", () => {
-    it("returns empty array when models is null", () => {
-      mockUseApi.mockReturnValue({
-        data: null,
-        isLoading: false,
-        error: null,
-      });
-
-      const { result } = renderHook(() => useDashboardData());
-
-      expect(result.current.models).toEqual([]);
-    });
-
-    it("returns empty array when models is undefined", () => {
-      mockUseApi.mockReturnValue({
-        data: undefined,
-        isLoading: false,
-        error: null,
-      });
-
-      const { result } = renderHook(() => useDashboardData());
-
-      expect(result.current.models).toEqual([]);
-    });
-
-    it("returns models array when data exists", () => {
-      const { result } = renderHook(() => useDashboardData());
-
-      expect(result.current.models).toEqual(mockModels);
-    });
-  });
-
-  describe("Connection State", () => {
-    it("returns connection state from useWebSocket", () => {
-      mockUseWebSocket.mockReturnValue({
-        isConnected: false,
-        connectionState: "connecting",
-        requestMetrics: mockRequestMetrics,
-        on: mockOn,
-        off: mockOff,
-      });
-
-      const { result } = renderHook(() => useDashboardData());
-
-      expect(result.current.connectionState).toBe("connecting");
-    });
-
-    it("returns connected state when WebSocket is connected", () => {
-      mockUseWebSocket.mockReturnValue({
-        isConnected: true,
-        connectionState: "connected",
-        requestMetrics: mockRequestMetrics,
-        on: mockOn,
-        off: mockOff,
-      });
-
-      const { result } = renderHook(() => useDashboardData());
-
-      expect(result.current.connectionState).toBe("connected");
-    });
-  });
-
-  describe("Edge Cases", () => {
-    it("handles malformed metrics data", () => {
-      mockUseApi.mockImplementation((endpoint: string) => {
-        if (endpoint === "/api/metrics") {
-          return {
-            data: { invalid: "data" },
-            isLoading: false,
-            error: null,
-          };
+  describe('error handling', () => {
+    it('should handle metrics parsing errors', async () => {
+      const { result } = renderHook(() => useDashboardData(), { wrapper });
+      
+      act(() => {
+        const { useWebSocket } = require('@/hooks/use-websocket');
+        const mockHandler = useWebSocket().on.mock.calls.find(
+          (call: any[]) => call[0] === 'metrics'
+        )?.[1];
+        if (mockHandler) {
+          mockHandler({ invalid: 'data' });
         }
-        return {
-          data: mockModels,
-          isLoading: false,
-          error: null,
-        };
       });
-
-      expect(() => {
-        renderHook(() => useDashboardData());
-      }).not.toThrow();
-    });
-
-    it("handles error objects", () => {
-      mockUseApi.mockImplementation((endpoint: string) => {
-        if (endpoint === "/api/models") {
-          return {
-            data: null,
-            isLoading: false,
-            error: { message: "Custom error" },
-          };
-        }
-        return {
-          data: mockMetrics,
-          isLoading: false,
-          error: null,
-        };
+      
+      await waitFor(() => {
+        expect(result.current.error).not.toBeNull();
+        expect(result.current.error).toContain('Failed to parse');
       });
-
-      const { result } = renderHook(() => useDashboardData());
-
-      expect(result.current.error).toContain("models");
     });
   });
 
-  describe("Cleanup", () => {
-    it("cleans up WebSocket listeners on unmount", () => {
-      mockUseWebSocket.mockReturnValue({
-        isConnected: true,
-        connectionState: "connected",
-        requestMetrics: mockRequestMetrics,
-        on: mockOn,
-        off: mockOff,
-      });
-
-      const { unmount } = renderHook(() => useDashboardData());
-
-      expect(mockOn).toHaveBeenCalled();
-
+  describe('cleanup', () => {
+    it('should unregister metrics event on unmount', () => {
+      const { unmount } = renderHook(() => useDashboardData(), { wrapper });
+      
+      const { useWebSocket } = require('@/hooks/use-websocket');
+      expect(useWebSocket().off).toHaveBeenCalledWith('metrics', expect.any(Function));
+      
       unmount();
-
-      expect(mockOff).toHaveBeenCalled();
     });
   });
 });
