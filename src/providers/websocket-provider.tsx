@@ -1,30 +1,10 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import { websocketServer } from "@/lib/websocket-client";
-import { useStore } from "@/lib/store";
-import type { SystemMetrics, ModelConfig, LogEntry } from "@/types";
-
-
-// Message type definitions for WebSocket messages
-interface BaseMessage {
-  type: string;
-  data?: unknown;
-}
-
-interface ConfigMessage extends BaseMessage {
-  type: 'config_saved';
-  success: boolean;
-  error?: string;
-  data?: unknown;
-}
-
-type WebSocketMessage = BaseMessage | ConfigMessage;
-
-// Type guard for config messages
-function isConfigMessage(msg: WebSocketMessage): msg is ConfigMessage {
-  return msg.type === 'config_saved' && 'success' in msg;
-}
+import { useWebSocketStateManager } from "./websocket-state-manager";
+import { handleMessage } from "./websocket-message-handler";
+import type { WebSocketMessage } from "./websocket-message-handler";
 
 interface WebSocketContextType {
   isConnected: boolean;
@@ -49,198 +29,21 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const [connectionState, setConnectionState] = useState<string>('disconnected');
   const [reconnectionAttempts, setReconnectionAttempts] = useState<number>(0);
 
-  // Batching refs for different data types
-  const metricsBatchRef = useRef<SystemMetrics[]>([]);
-  const metricsThrottleRef = useRef<NodeJS.Timeout | null>(null);
-  const modelsBatchRef = useRef<ModelConfig[][]>([]);
-  const modelsThrottleRef = useRef<NodeJS.Timeout | null>(null);
-  const logQueueRef = useRef<LogEntry[]>([]);
-  const logThrottleRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Process metrics batch
-  const processMetricsBatch = useCallback(() => {
-    if (metricsBatchRef.current.length > 0) {
-      const latestMetrics = metricsBatchRef.current[metricsBatchRef.current.length - 1];
-      useStore.getState().setMetrics(latestMetrics);
-
-      metricsBatchRef.current = [];
-    }
-    metricsThrottleRef.current = null;
-  }, []);
-
-  // Process models batch
-  const processModelsBatch = useCallback(() => {
-    if (modelsBatchRef.current.length > 0) {
-      const latestModels = modelsBatchRef.current[modelsBatchRef.current.length - 1];
-      useStore.getState().setModels(latestModels);
-
-      modelsBatchRef.current = [];
-    }
-    modelsThrottleRef.current = null;
-  }, []);
-
-  // Process log queue
-  const processLogQueue = useCallback(() => {
-    if (logQueueRef.current.length > 0) {
-      logQueueRef.current.forEach((log) => {
-        useStore.getState().addLog(log);
-      });
-      logQueueRef.current = [];
-    }
-    logThrottleRef.current = null;
-  }, []);
+  const stateManager = useWebSocketStateManager();
 
   useEffect(() => {
-    // Connect to WebSocket ONCE on mount
     console.log('[WebSocketProvider] Initializing WebSocket connection...');
     websocketServer.connect();
 
-    // Handle connect event
     const handleConnect = () => {
       console.log('[WebSocketProvider] WebSocket connected');
       setIsConnected(true);
       setConnectionState('connected');
       setReconnectionAttempts(0);
-
-      // Request initial data after connection
       websocketServer.requestMetrics();
-      // Models are loaded via 'load_models' message from models page (database as source of truth)
-      // Do NOT call requestModels() here to avoid overwriting database models with llama-server models
       websocketServer.requestLogs();
     };
 
-    // Handle incoming messages
-    const handleMessage = (message: unknown) => {
-      if (message && typeof message === 'object' && 'type' in message) {
-        const msg = message as WebSocketMessage;
-
-        if (msg.type === 'metrics' && msg.data) {
-          // Backend now sends nested SystemMetrics format directly - no transformation needed
-          const metrics = msg.data as SystemMetrics;
-
-          // Batch metrics with 500ms debounce
-          metricsBatchRef.current.push(metrics);
-          if (!metricsThrottleRef.current) {
-            metricsThrottleRef.current = setTimeout(processMetricsBatch, 500);
-          }
-        } else if (msg.type === 'models' && msg.data) {
-          // Do NOT process 'models' messages from llama-server
-          // Models are loaded from database via 'models_loaded' message
-          // Llama-server models don't have database IDs needed for configuration
-          console.log('[WebSocketProvider] Ignoring models message from llama-server (use database models via models_loaded)');
-        } else if (msg.type === 'models_loaded' && msg.data) {
-          // Models loaded from database - process them
-          const models = msg.data as ModelConfig[];
-          console.log('[WebSocketProvider] Received models from database:', models.length, 'models');
-          modelsBatchRef.current.push(models);
-          if (!modelsThrottleRef.current) {
-            modelsThrottleRef.current = setTimeout(processModelsBatch, 500);
-          }
-        } else if (msg.type === 'models_imported' && msg.data) {
-          // Models imported successfully - trigger load from database
-          console.log('[WebSocketProvider] Models imported successfully, triggering database load');
-          websocketServer.sendMessage('load_models', {});
-        } else if (msg.type === 'logs' && msg.data) {
-          // Batch logs with 1000ms debounce
-          const logs = msg.data as LogEntry[];
-          console.log('[WebSocketProvider] Received logs batch:', logs.length, 'entries');
-          logQueueRef.current.push(...logs);
-          if (!logThrottleRef.current) {
-            logThrottleRef.current = setTimeout(processLogQueue, 1000);
-          }
-        } else if (msg.type === 'log' && msg.data) {
-          // Single log with 500ms debounce
-          const log = msg.data as LogEntry;
-          console.log('[WebSocketProvider] Received single log:', log);
-          logQueueRef.current.push(log);
-          if (!logThrottleRef.current) {
-            logThrottleRef.current = setTimeout(processLogQueue, 500);
-          }
-        } else if (msg.type === 'status' && msg.data) {
-          // Llama-server status update with model runtime states
-          console.log('[WebSocketProvider] Received llama-server status:', msg.data);
-          // Update model statuses in store without replacing models
-          const statusData = msg.data as { models?: ModelConfig[]; status?: string };
-          if (statusData.models && Array.isArray(statusData.models)) {
-            const llamaModels = statusData.models;
-            useStore.getState().models.forEach((dbModel) => {
-              const llamaModel = llamaModels.find((lm) => lm.name === dbModel.name);
-              if (llamaModel && llamaModel.status) {
-                useStore.getState().updateModel(dbModel.id, { status: llamaModel.status });
-              }
-            });
-          }
-        } else if (msg.type === 'modelStopped') {
-          // Model was stopped/unloaded from llama-server
-          console.log('[WebSocketProvider] Model stopped:', msg.data);
-        } else if (msg.type === 'llamaServerStatus') {
-          // LlamaServer status update
-          console.log('[WebSocketProvider] LlamaServer status:', msg.data);
-          useStore.getState().setLlamaServerStatus(msg.data as any);
-        } else if (msg.type === 'save_model') {
-          // TODO: Forward to backend API route to save model
-          console.warn('[WebSocketProvider] save_model message requires backend API endpoint');
-        } else if (msg.type === 'update_model') {
-          // TODO: Forward to backend API route to update model
-          console.warn('[WebSocketProvider] update_model message requires backend API endpoint');
-        } else if (msg.type === 'delete_model') {
-          // TODO: Forward to backend API route to delete model
-          console.warn('[WebSocketProvider] delete_model message requires backend API endpoint');
-        } else if (msg.type === 'load_config') {
-          // TODO: Forward to backend API route to load model config
-          console.warn('[WebSocketProvider] load_config message requires backend API endpoint');
-        } else if (msg.type === 'save_config') {
-          // Config saved in database (handled by backend)
-          console.log('[WebSocketProvider] Config saved:', msg.data);
-        } else if (msg.type === 'models_loaded') {
-          // Models loaded from database (source of truth)
-          console.log('[WebSocketProvider] Database models loaded:', msg.data);
-          console.log('[WebSocketProvider] Data type:', typeof msg.data);
-          console.log('[WebSocketProvider] Data array?', Array.isArray(msg.data));
-          const dataArray = Array.isArray(msg.data) ? msg.data : [];
-          console.log('[WebSocketProvider] Data length:', dataArray.length);
-          if (dataArray.length > 0) {
-            console.log('[WebSocketProvider] First model name:', (dataArray[0] as ModelConfig)?.name);
-            console.log('[WebSocketProvider] First model id:', (dataArray[0] as ModelConfig)?.id);
-          }
-          if (msg.data) {
-            useStore.getState().setModels(msg.data as ModelConfig[]);
-            console.log('[WebSocketProvider] Called setModels, store now has:', useStore.getState().models.length);
-          }
-        } else if (msg.type === 'model_saved') {
-          // Model saved to database
-          console.log('[WebSocketProvider] Model saved to database:', msg.data);
-        } else if (msg.type === 'model_updated') {
-          // Model updated in database
-          console.log('[WebSocketProvider] Model updated in database:', msg.data);
-        } else if (msg.type === 'model_deleted') {
-          // Model deleted from database
-          console.log('[WebSocketProvider] Model deleted from database:', msg.data);
-        } else if (msg.type === 'config_loaded') {
-          // Config loaded from database
-          console.log('[WebSocketProvider] Config loaded:', msg.data);
-        } else if (msg.type === 'config_saved') {
-          // Config saved to database
-          if (isConfigMessage(msg)) {
-            if (msg.success) {
-              console.log('[WebSocketProvider] Config saved successfully:', msg.data);
-            } else {
-              console.error('[WebSocketProvider] Config save failed:', msg.error);
-            }
-          } else {
-            console.warn('[WebSocketProvider] Received config_saved message with unexpected format');
-          }
-        } else if (msg.type === 'models_imported') {
-          // Models imported from llama-server to database
-          console.log('[WebSocketProvider] Models imported:', msg.data);
-          if (msg.data) {
-            useStore.getState().setModels(msg.data as ModelConfig[]);
-          }
-        }
-      }
-    };
-
-    // Handle disconnect event
     const handleDisconnect = () => {
       console.log('[WebSocketProvider] WebSocket disconnected');
       setIsConnected(false);
@@ -248,83 +51,82 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       setReconnectionAttempts((prev) => prev + 1);
     };
 
-    // Handle connect_error event
     const handleError = (error: unknown) => {
       console.error('[WebSocketProvider] WebSocket error:', error);
       setConnectionState('error');
     };
 
-    // Add event listeners
+    const handleMessageWrapper = (message: unknown) => {
+      handleMessage(message, stateManager);
+    };
+
     websocketServer.on('connect', handleConnect);
     websocketServer.on('disconnect', handleDisconnect);
     websocketServer.on('connect_error', handleError);
-    websocketServer.on('message', handleMessage);
+    websocketServer.on('message', handleMessageWrapper);
 
-    // Cleanup - don't disconnect socket, just remove listeners
     return () => {
       console.log('[WebSocketProvider] Cleaning up event listeners (keeping WebSocket alive)');
 
-      // Flush any remaining data
-      if (logThrottleRef.current) {
-        clearTimeout(logThrottleRef.current);
-        processLogQueue();
+      if (stateManager.logThrottleRef.current) {
+        clearTimeout(stateManager.logThrottleRef.current);
+        stateManager.processLogQueue();
       }
-      if (metricsThrottleRef.current) {
-        clearTimeout(metricsThrottleRef.current);
-        processMetricsBatch();
+      if (stateManager.metricsThrottleRef.current) {
+        clearTimeout(stateManager.metricsThrottleRef.current);
+        stateManager.processMetricsBatch();
       }
-      if (modelsThrottleRef.current) {
-        clearTimeout(modelsThrottleRef.current);
-        processModelsBatch();
+      if (stateManager.modelsThrottleRef.current) {
+        clearTimeout(stateManager.modelsThrottleRef.current);
+        stateManager.processModelsBatch();
       }
 
-      // Remove event listeners
       websocketServer.off('connect', handleConnect);
       websocketServer.off('disconnect', handleDisconnect);
       websocketServer.off('connect_error', handleError);
-      websocketServer.off('message', handleMessage);
+      websocketServer.off('message', handleMessageWrapper);
     };
-  }, []); // Empty deps - connect only once
+  }, [stateManager]);
 
-  const sendMessage = useCallback((event: string, data?: unknown) => {
+  const sendMessage = (event: string, data?: unknown) => {
     if (!isConnected) {
       console.warn('[WebSocketProvider] WebSocket not connected, message not sent:', event);
       return;
     }
     websocketServer.sendMessage(event, data);
-  }, [isConnected]);
+  };
 
-  const requestMetrics = useCallback(() => {
+  const requestMetrics = () => {
     websocketServer.requestMetrics();
-  }, []);
+  };
 
-  const requestLogs = useCallback(() => {
+  const requestLogs = () => {
     websocketServer.requestLogs();
-  }, []);
+  };
 
-  const requestModels = useCallback(() => {
+  const requestModels = () => {
     websocketServer.requestModels();
-  }, []);
+  };
 
-  const startModel = useCallback((modelId: string) => {
+  const startModel = (modelId: string) => {
     websocketServer.startModel(modelId);
-  }, []);
+  };
 
-  const stopModel = useCallback((modelId: string) => {
+  const stopModel = (modelId: string) => {
     websocketServer.stopModel(modelId);
-  }, []);
+  };
 
-  const unloadModel = useCallback((modelId: string) => {
+  const unloadModel = (modelId: string) => {
     websocketServer.sendMessage('unloadModel', { modelId });
-  }, []);
+  };
 
-  const on = useCallback((event: string, callback: (data: any) => void) => {
+  const on = (event: string, callback: (data: any) => void) => {
     websocketServer.on(event, callback);
-  }, []);
+  };
 
-  const off = useCallback((event: string, callback: (data: any) => void) => {
+  const off = (event: string, callback: (data: any) => void) => {
     websocketServer.off(event, callback);
-  }, []);
+  };
 
   const value: WebSocketContextType = {
     isConnected,

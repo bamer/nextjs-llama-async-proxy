@@ -1,16 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useCallback, useEffect, useRef, useEffectEvent as ReactUseEffectEvent } from 'react';
+import { Select, Box, SxProps } from "@mui/material";
 import {
-  Select,
-  MenuItem,
-  Checkbox,
-  ListItemText,
-  Chip,
-  Box,
-  Typography,
-  SxProps,
-} from '@mui/material';
+  SelectAllItem,
+  MultiSelectCheckboxItem,
+  SelectedValueDisplay,
+} from "./MultiSelect/components";
+import { useMultiSelectState, useMultiSelectionHandlers } from "./MultiSelect/hooks";
 
 export interface MultiSelectOption<T = string> {
   value: T;
@@ -29,188 +25,91 @@ interface MultiSelectProps<T = string> {
   showSelectAll?: boolean;
   maxSelectedDisplay?: number;
   displayAllWhenFull?: boolean;
-  size?: 'small' | 'medium';
+  size?: "small" | "medium";
   fullWidth?: boolean;
 }
 
 export function MultiSelect<T = string>({
   options,
-  selected: externalSelected,
+  selected,
   onChange,
   sx,
-  placeholder = 'Select...',
+  placeholder = "Select...",
   disabled = false,
   showSelectAll = true,
   maxSelectedDisplay = 3,
   displayAllWhenFull = false,
-  size = 'small',
+  size = "small",
   fullWidth = true,
 }: MultiSelectProps<T>) {
-  const [open, setOpen] = useState(false);
-  const [internalSelected, setInternalSelected] = useState<T[]>([]);
+  const { open, setOpen, internalSelected, syncInternal } =
+    useMultiSelectState(selected);
 
-  const externalSelectedRef = useRef(externalSelected);
+  const { handleToggleAll, handleToggleItem, getIsSelectedAll, getIsSelectedSome } =
+    useMultiSelectionHandlers(options, selected, onChange, setOpen);
 
-  // Sync internal state with external prop
-  useEffect(() => {
-    externalSelectedRef.current = externalSelected;
-    const selectedArray = Array.from(externalSelected);
-    setInternalSelected(selectedArray);
-  }, [externalSelected]);
-
-  // Stable toggle all handler using useEffectEvent
-  const handleToggleAll = ReactUseEffectEvent(() => {
-    const newSelected = externalSelectedRef.current.size === options.length
-      ? new Set<T>()
-      : new Set(options.map((opt) => opt.value));
-    onChange(newSelected);
-    setOpen(false);
-  });
-
-  const isSelectedAll = externalSelectedRef.current.size === options.length;
-  const isSelectedSome = externalSelectedRef.current.size > 0 && externalSelectedRef.current.size < options.length;
-
-  const getDisplayValue = () => {
-    if (externalSelectedRef.current.size === 0) {
-      return placeholder;
-    }
-
-    if (displayAllWhenFull || externalSelectedRef.current.size <= maxSelectedDisplay) {
-      return options
-        .filter((opt) => externalSelectedRef.current.has(opt.value))
-        .map((opt) => opt.label)
-        .join(', ');
-    }
-
-    return `${externalSelectedRef.current.size} selected`;
-  };
+  const isSelectedAll = getIsSelectedAll();
+  const isSelectedSome = getIsSelectedSome();
 
   return (
     <Box sx={{ minWidth: 200, ...sx }}>
       <Select
-        id="log-levels-select"
-        name="log-levels-select"
+        id="multi-select"
+        name="multi-select"
         multiple
         open={open}
         onClose={() => setOpen(false)}
-        onOpen={() => setOpen(true)}
+        onOpen={() => {
+          setOpen(true);
+          syncInternal();
+        }}
         value={internalSelected.map(String)}
         onChange={(_event, newValue) => {
-          // Fallback: just sync internal state with MUI's value
-          // Actual selection updates are handled by MenuItem onClick handlers
           const values = Array.isArray(newValue) ? newValue as unknown[] : [];
-          setInternalSelected(values as T[]);
         }}
         disabled={!!disabled}
         size={size}
         fullWidth={fullWidth}
         renderValue={() => (
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-            {externalSelectedRef.current.size === 0 ? (
-              <Typography
-                variant="body2"
-                sx={{ color: 'text.secondary' }}
-              >
-                {placeholder}
-              </Typography>
-            ) : displayAllWhenFull || externalSelectedRef.current.size <= maxSelectedDisplay ? (
-              options
-                .filter((opt) => externalSelectedRef.current.has(opt.value))
-                .map((opt) => (
-                  <Chip
-                    key={String(opt.value)}
-                    label={opt.label}
-                    size="small"
-                    sx={{
-                      backgroundColor: opt.color,
-                      color: 'white',
-                      fontWeight: 600,
-                    }}
-                  />
-                ))
-            ) : (
-              <Chip
-                label={`${externalSelectedRef.current.size} selected`}
-                size="small"
-                sx={{
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                  fontWeight: 600,
-                }}
-              />
-            )}
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+            <SelectedValueDisplay
+              selected={selected}
+              placeholder={placeholder}
+              options={options}
+              maxSelectedDisplay={maxSelectedDisplay}
+              displayAllWhenFull={displayAllWhenFull}
+            />
           </Box>
         )}
         sx={{
-          '& .MuiSelect-select': {
-            display: 'flex',
-            alignItems: 'center',
-            py: size === 'small' ? 1 : 1.5,
+          "& .MuiSelect-select": {
+            display: "flex",
+            alignItems: "center",
+            py: size === "small" ? 1 : 1.5,
           },
         }}
       >
         {showSelectAll && options.length > 1 && (
-          <MenuItem
+          <SelectAllItem
+            checked={isSelectedAll}
+            indeterminate={isSelectedSome}
             onClick={handleToggleAll}
-            sx={{
-              fontWeight: 600,
-              color: 'primary.main',
-              '&:hover': {
-                backgroundColor: 'primary.light',
-              },
-            }}
-          >
-            <Checkbox
-              checked={isSelectedAll}
-              indeterminate={isSelectedSome}
-              size="small"
-            />
-            <ListItemText primary={isSelectedAll ? 'Deselect All' : 'Select All'} />
-          </MenuItem>
+          />
         )}
 
-        {options.map((option) => (
-          <MenuItem
-            key={String(option.value)}
-            value={String(option.value)}
-            onClick={(event) => {
-              // Prevent default MUI selection behavior
-              event.preventDefault();
-              event.stopPropagation();
-
-              // Manually toggle the option
-              const currentSelected = new Set(externalSelectedRef.current);
-              if (currentSelected.has(option.value)) {
-                currentSelected.delete(option.value);
-              } else {
-                currentSelected.add(option.value);
-              }
-              onChange(currentSelected);
-            }}
-            sx={{
-              py: 0.5,
-              '&:hover': {
-                backgroundColor: option.color ? `${option.color}20` : 'action.hover',
-              },
-            }}
-          >
-            <Checkbox
-              checked={externalSelectedRef.current.has(option.value)}
-              size="small"
-              sx={{
-                color: option.color,
-                '&.Mui-checked': { color: option.color },
-              }}
+        {options.map((option) => {
+          const color = option.color;
+          return (
+            <MultiSelectCheckboxItem
+              key={String(option.value)}
+              value={option.value}
+              label={option.label}
+              {...(color !== undefined ? { color } : {})}
+              checked={selected.has(option.value)}
+              onClick={handleToggleItem}
             />
-            <ListItemText
-              primary={option.label}
-              sx={{
-                color: externalSelectedRef.current.has(option.value) ? option.color : 'text.primary',
-                fontWeight: externalSelectedRef.current.has(option.value) ? 600 : 400,
-              }}
-            />
-          </MenuItem>
-        ))}
+          );
+        })}
       </Select>
     </Box>
   );

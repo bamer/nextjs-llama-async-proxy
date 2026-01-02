@@ -109,8 +109,7 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
         <Grid container spacing={2} sx={{ mb: 3 }}>
           {models?.map((model) => {
             const modelType = detectModelType(model.name);
-            const typeTemplates: string[] = getModelTypeTemplates(modelType);
-            const currentTemplate = selectedTemplates[model.name] || model.template || (typeTemplates?.[0] || '');
+            const currentTemplate = selectedTemplates[model.name] || model.template || (model.availableTemplates?.[0] || '');
 
             return (
               <MemoizedModelItem

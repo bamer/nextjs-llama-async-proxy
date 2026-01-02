@@ -18,13 +18,14 @@ jest.mock('@/hooks/use-logger-config', () => ({
   useLoggerConfig: jest.fn(),
 }));
 
-jest.mock('@/contexts/ThemeContext');
+// ThemeContext is already mocked in jest.setup.ts, no need to re-mock here
 
 function renderComponent(component: React.ReactElement) {
   try {
     return render(component);
   } catch (error) {
     console.error('Render error:', error);
+    console.error('Component type:', typeof component.type, component.type);
     throw error;
   }
 }

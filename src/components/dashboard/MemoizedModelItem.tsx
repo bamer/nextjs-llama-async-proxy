@@ -1,21 +1,18 @@
 "use client";
 
-import { memo, useCallback, useEffectEvent as ReactUseEffectEvent } from "react";
+import { memo } from "react";
 import { Box, Grid, Chip, LinearProgress, Button, MenuItem, Select, InputLabel, FormControl, Tooltip, Typography } from "@mui/material";
 import { PlayArrow, Stop } from "@mui/icons-material";
-import { getModelTemplatesSync } from '@/lib/client-model-templates';
+import { detectModelType, getStatusColor } from "./model-item-utils";
+import { useModelItemHandlers, type ModelConfig } from "./hooks/useModelItemHandlers";
+import { modelItemMemoComparison } from "./utils/modelItemMemoComparison";
 
-interface ModelConfig {
-  id: string;
-  name: string;
-  status: 'idle' | 'loading' | 'running' | 'error';
-  type: "llama" | "mistral" | "other";
-  progress?: number;
-  template?: string;
-  availableTemplates?: string[];
-}
+// Re-export utilities for backward compatibility
+export { detectModelType, getModelTypeTemplates } from "./model-item-utils";
 
-interface MemoizedModelItemProps {
+export type { ModelConfig };
+
+export interface MemoizedModelItemProps {
   model: ModelConfig;
   isDark: boolean;
   currentTemplate: string;
@@ -29,129 +26,117 @@ interface MemoizedModelItemProps {
   optimisticStatus?: string;
 }
 
-// Exported helper function
-export const detectModelType = (modelName: string): 'llama' | 'mistral' | 'other' => {
-  const nameLower = modelName.toLowerCase();
-  if (nameLower.includes('llama') || nameLower.includes('codellama') || nameLower.includes('gemma') || nameLower.includes('granite')) {
-    return 'llama';
-  }
-  if (nameLower.includes('mistral') || nameLower.includes('qwen') || nameLower.includes('nemotron') || nameLower.includes('magnus') || nameLower.includes('fluently')) {
-    return 'mistral';
-  }
-  return 'other';
-};
+interface ModelItemActionsProps {
+  displayStatus: string;
+  loadingModels: Record<string, boolean>;
+  model: ModelConfig;
+  currentTemplate: string;
+  onStartStop: () => void;
+  handleSaveTemplate: () => void;
+}
 
-// Exported helper function
-export const getModelTypeTemplates = (modelType: 'llama' | 'mistral' | 'other'): string[] => {
-  const allTemplates = getModelTemplatesSync();
-  const templateValues = Object.values(allTemplates) as string[];
-  if (modelType === 'other') {
-    return templateValues;
-  }
-  return templateValues.filter(t => {
-    const template = t.toLowerCase();
-    if (modelType === 'llama') {
-      return template.includes('llama') || template.includes('chat') || template.includes('instruct');
-    }
-    return template.includes('mistral');
-  });
-};
+const ModelItemActions = memo(({
+  displayStatus,
+  loadingModels,
+  model,
+  currentTemplate,
+  onStartStop,
+  handleSaveTemplate,
+}: ModelItemActionsProps) => (
+  <Box sx={{ display: 'flex', gap:1, mt: 1 }}>
+    <Button
+      variant={displayStatus === 'running' ? 'outlined' : 'contained'}
+      color={displayStatus === 'running' ? 'error' : 'primary'}
+      onClick={onStartStop}
+      disabled={loadingModels[model.id] || displayStatus === 'loading'}
+      startIcon={displayStatus === 'running' ? <Stop /> : <PlayArrow />}
+      fullWidth
+      size="small"
+    >
+      {displayStatus === 'running' ? 'Stop' : 'Start'}
+    </Button>
 
-// Helper function defined outside component (created once)
-const getStatusColor = (status: string): 'default' | 'error' | 'primary' | 'secondary' | 'info' | 'success' | 'warning' => {
-  switch (status) {
-    case 'running': return 'success';
-    case 'loading': return 'warning';
-    case 'error': return 'error';
-    default: return 'default';
-  }
-};
+    {displayStatus === 'running' && model.availableTemplates &&
+     model.availableTemplates.length > 0 && (
+      <Tooltip title={`Selected: ${currentTemplate}`}>
+        <Button
+          variant="outlined"
+          color="info"
+          size="small"
+          onClick={handleSaveTemplate}
+          sx={{ minWidth: 36, p: 0 }}
+        >
+          <Typography variant="caption" sx={{ fontSize: '14px' }}>
+            💾
+          </Typography>
+        </Button>
+      </Tooltip>
+    )}
+  </Box>
+));
 
-// Helper function defined outside component (created once)
-const getStatusLabel = (status: string, progress?: number): string => {
-  switch (status) {
-    case 'running': return 'RUNNING';
-    case 'loading': return progress !== undefined ? `Loading... ${progress}%` : 'LOADING';
-    case 'error': return 'ERROR';
-    default: return 'STOPPED';
-  }
-};
+ModelItemActions.displayName = 'ModelItemActions';
 
-// Memoized individual model item component
-const MemoizedModelItem = memo(function ModelItem({
+interface ModelItemTemplateSelectProps {
+  model: ModelConfig;
+  currentTemplate: string;
+  handleTemplateChange: (e: { target: { value: string } }) => void;
+  displayStatus: string;
+}
+
+const ModelItemTemplateSelect = memo(({
+  model,
+  currentTemplate,
+  handleTemplateChange,
+  displayStatus,
+}: ModelItemTemplateSelectProps) => {
+  if (!model.availableTemplates || model.availableTemplates.length === 0 ||
+      displayStatus === 'running') {
+    return null;
+  }
+
+  return (
+    <FormControl fullWidth size="small" sx={{ mt: 1 }}>
+      <InputLabel>Template</InputLabel>
+      <Select
+        value={currentTemplate}
+        onChange={handleTemplateChange}
+        size="small"
+      >
+        <MenuItem value="">
+          <em>Default</em>
+        </MenuItem>
+        {model.availableTemplates.map((template: string) => (
+          <MenuItem key={template} value={template}>
+            {template}
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+  );
+});
+
+ModelItemTemplateSelect.displayName = 'ModelItemTemplateSelect';
+
+interface ModelItemContentProps {
+  model: ModelConfig;
+  isDark: boolean;
+  displayStatus: string;
+  displayStatusColor: 'default' | 'error' | 'primary' | 'secondary' | 'info' | 'success' | 'warning';
+  progressElement?: React.ReactNode;
+  templateSelectElement: React.ReactNode;
+  actionsElement: React.ReactNode;
+}
+
+const ModelItemContent = memo(({
   model,
   isDark,
-  currentTemplate,
-  loadingModels,
-  setLoadingModels,
-  selectedTemplates,
-  onSaveTemplate,
-  onSaveTemplateToConfig,
-  onToggleModel,
-  onToggleModelOptimistic,
-  optimisticStatus
-}: MemoizedModelItemProps) {
-  // Use optimistic status if set, otherwise use actual status
-  const displayStatus = optimisticStatus || model.status;
-  const displayStatusColor = getStatusColor(displayStatus);
-  const displayStatusLabel = getStatusLabel(displayStatus, model.progress);
-
-  // Stable start/stop handler using useEffectEvent
-  const handleStartStop = ReactUseEffectEvent(async () => {
-    if (loadingModels[model.id]) return;
-
-    setLoadingModels((prev: Record<string, boolean>) => ({ ...prev, [model.id]: true }));
-
-    // OPTIMISTIC: Assume success, update UI immediately
-    const optimisticNewStatus = model.status === 'running' ? 'stopped' : 'loading';
-    const originalStatus = model.status;
-
-    // Update UI immediately (will be overridden by WebSocket on actual success)
-    onToggleModelOptimistic?.(model.id, optimisticNewStatus);
-
-    try {
-      if (model.status === 'running') {
-        await fetch(`/api/models/${encodeURIComponent(model.name)}/stop`, { method: 'POST' });
-      } else {
-        const selectedTemplate = selectedTemplates[model.name] || model.template;
-        const body: any = {};
-        if (selectedTemplate) {
-          body.template = selectedTemplate;
-        }
-
-        const response = await fetch(`/api/models/${encodeURIComponent(model.name)}/start`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Failed to start model');
-      }
-
-      // Success - WebSocket will update with actual status
-      onToggleModel(model.id);
-    } catch (error) {
-      // REVERT: Update failed, revert to original status
-      onToggleModelOptimistic?.(model.id, originalStatus);
-      console.error('Failed to toggle model:', error);
-      alert(error instanceof Error ? error.message : 'Failed to start model');
-    } finally {
-      setLoadingModels((prev: Record<string, boolean>) => ({ ...prev, [model.id]: false }));
-    }
-  });
-
-  // Stable template change handler using useEffectEvent
-  const handleTemplateChange = ReactUseEffectEvent((e: { target: { value: string } }) => {
-    const template = e.target.value as string;
-    onSaveTemplate(model.name, template);
-  });
-
-  // Stable save template handler using useEffectEvent
-  const handleSaveTemplate = ReactUseEffectEvent(() => {
-    onSaveTemplateToConfig(model.name, currentTemplate);
-  });
-
-  // Compute model type and related properties
+  displayStatus,
+  displayStatusColor,
+  progressElement,
+  templateSelectElement,
+  actionsElement,
+}: ModelItemContentProps) => {
   const modelType = detectModelType(model.name);
 
   return (
@@ -182,90 +167,93 @@ const MemoizedModelItem = memo(function ModelItem({
             </Typography>
           </Box>
           <Chip
-            label={displayStatusLabel}
+            label={displayStatus}
             color={displayStatusColor}
             size="small"
           />
         </Box>
 
-        {displayStatus === 'loading' && model.progress !== undefined && (
-          <LinearProgress
-            variant="determinate"
-            value={model.progress}
-            sx={{ height: 4, borderRadius: 2, mb: 1 }}
-          />
-        )}
+        {progressElement}
 
-        {model.availableTemplates && model.availableTemplates.length > 0 && displayStatus !== 'running' && (
-          <FormControl fullWidth size="small" sx={{ mt: 1 }}>
-            <InputLabel>Template</InputLabel>
-            <Select
-              value={currentTemplate}
-              onChange={handleTemplateChange}
-              size="small"
-            >
-              <MenuItem value="">
-                <em>Default</em>
-              </MenuItem>
-              {model.availableTemplates.map((template: string) => (
-                <MenuItem key={template} value={template}>
-                  {template}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        )}
+        {templateSelectElement}
 
-        <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-          <Button
-            variant={displayStatus === 'running' ? 'outlined' : 'contained'}
-            color={displayStatus === 'running' ? 'error' : 'primary'}
-            onClick={handleStartStop}
-            disabled={loadingModels[model.id] || displayStatus === 'loading'}
-            startIcon={displayStatus === 'running' ? <Stop /> : <PlayArrow />}
-            fullWidth
-            size="small"
-          >
-            {displayStatus === 'running' ? 'Stop' : 'Start'}
-          </Button>
-
-          {displayStatus === 'running' && model.availableTemplates && model.availableTemplates.length > 0 && (
-            <Tooltip title={`Selected: ${currentTemplate}`}>
-              <Button
-                variant="outlined"
-                color="info"
-                size="small"
-                onClick={handleSaveTemplate}
-                sx={{ minWidth: 36, p: 0 }}
-              >
-                <Typography variant="caption" sx={{ fontSize: '14px' }}>
-                  💾
-                </Typography>
-              </Button>
-            </Tooltip>
-          )}
-        </Box>
+        {actionsElement}
       </Box>
     </Grid>
   );
-}, (prevProps, nextProps) => {
-  // Custom comparison for fine-grained control
-  // Only re-render if critical model properties change
-  const prevModel = prevProps.model;
-  const nextModel = nextProps.model;
+});
+
+ModelItemContent.displayName = 'ModelItemContent';
+
+const MemoizedModelItem = memo(function ModelItem({
+  model,
+  isDark,
+  currentTemplate,
+  loadingModels,
+  setLoadingModels,
+  selectedTemplates,
+  onSaveTemplate,
+  onSaveTemplateToConfig,
+  onToggleModel,
+  onToggleModelOptimistic,
+  optimisticStatus
+}: MemoizedModelItemProps) {
+  const displayStatus = optimisticStatus || model.status;
+  const displayStatusColor = getStatusColor(displayStatus);
+
+  const { handleStartStop, handleTemplateChange, handleSaveTemplate } =
+    useModelItemHandlers({
+      model,
+      loadingModels,
+      setLoadingModels,
+      selectedTemplates,
+      currentTemplate,
+      onSaveTemplate,
+      onSaveTemplateToConfig,
+      onToggleModel,
+      onToggleModelOptimistic,
+    });
+
+  const progressElement = displayStatus === 'loading' && model.progress !== undefined ? (
+    <LinearProgress
+      variant="determinate"
+      value={model.progress}
+      sx={{ height: 4, borderRadius: 2, mb: 1 }}
+    />
+  ) : undefined;
+
+  const templateSelectElement = (
+    <ModelItemTemplateSelect
+      model={model}
+      currentTemplate={currentTemplate}
+      handleTemplateChange={handleTemplateChange}
+      displayStatus={displayStatus}
+    />
+  );
+
+  const actionsElement = (
+    <ModelItemActions
+      displayStatus={displayStatus}
+      loadingModels={loadingModels}
+      model={model}
+      currentTemplate={currentTemplate}
+      onStartStop={handleStartStop}
+      handleSaveTemplate={handleSaveTemplate}
+    />
+  );
 
   return (
-    prevProps.isDark === nextProps.isDark &&
-    prevProps.currentTemplate === nextProps.currentTemplate &&
-    prevProps.loadingModels[prevModel.id] === nextProps.loadingModels[nextModel.id] &&
-    prevProps.optimisticStatus === nextProps.optimisticStatus &&
-    prevModel.id === nextModel.id &&
-    prevModel.name === nextModel.name &&
-    prevModel.status === nextModel.status &&
-    prevModel.progress === nextModel.progress &&
-    prevModel.availableTemplates?.length === nextModel.availableTemplates?.length
+    <ModelItemContent
+      model={model}
+      isDark={isDark}
+      displayStatus={displayStatus}
+      displayStatusColor={displayStatusColor}
+      progressElement={progressElement}
+      templateSelectElement={templateSelectElement}
+      actionsElement={actionsElement}
+    />
   );
-});
+}, modelItemMemoComparison);
 
 MemoizedModelItem.displayName = 'MemoizedModelItem';
 

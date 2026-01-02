@@ -1,0 +1,81 @@
+import { TooltipContent } from "./tooltip-config.types";
+
+export const ropeScalingTooltips: Record<string, TooltipContent> = {
+  rope_scaling_type: {
+    title: "ROPE Scaling Type",
+    description: "Method for extending context window using ROPE (Rotary Position Embedding).",
+    recommendedValue: "empty, linear, or yarn (default: empty)",
+    effectOnModel: "Extends context window beyond model's original limit. YARN is more advanced.",
+    whenToAdjust: "Use when you need longer context than the model natively supports.",
+  },
+  rope_scale: {
+    title: "ROPE Scale",
+    description: "Scaling factor for ROPE position embeddings.",
+    recommendedValue: "0.0 - 10.0 (default: 0)",
+    effectOnModel: "Scales the context window. 1.0 = no scaling.",
+    whenToAdjust: "Set >1.0 to extend context window.",
+  },
+  rope_freq_base: {
+    title: "ROPE Frequency Base",
+    description: "Base frequency for ROPE position embeddings.",
+    recommendedValue: "0 - 1000000 (default: 0)",
+    effectOnModel: "Adjusts the frequency base for position encoding.",
+    whenToAdjust: "Adjust in conjunction with ROPE scaling for optimal results.",
+  },
+  rope_freq_scale: {
+    title: "ROPE Frequency Scale",
+    description: "Frequency scaling factor for ROPE.",
+    recommendedValue: "0.0 - 10.0 (default: 0)",
+    effectOnModel: "Scales position frequencies for context extension.",
+    whenToAdjust: "Use with ROPE scaling for fine-tuning context extension.",
+  },
+  yarn_orig_ctx: {
+    title: "YARN Original Context",
+    description: "Original context size for YARN scaling.",
+    recommendedValue: "0 - 32768 (default: 0)",
+    effectOnModel: "Sets the base context size for YARN scaling calculation.",
+    whenToAdjust: "Set to model's original context size when using YARN.",
+  },
+  yarn_ext_factor: {
+    title: "YARN Extension Factor",
+    description: "Factor by which to extend context with YARN.",
+    recommendedValue: "-1 to 16 (default: -1)",
+    effectOnModel: "Controls context extension factor. -1 uses auto-detection.",
+    whenToAdjust: "Set explicitly when auto-detection doesn't work well.",
+  },
+  yarn_attn_factor: {
+    title: "YARN Attention Factor",
+    description: "Attention factor for YARN scaling.",
+    recommendedValue: "0.0 - 4.0 (default: 1)",
+    effectOnModel: "Adjusts attention in extended context.",
+    whenToAdjust: "Fine-tune for better performance on extended context.",
+  },
+  yarn_beta_slow: {
+    title: "YARN Beta Slow",
+    description: "Slow beta parameter for YARN.",
+    recommendedValue: "0.0 - 10.0 (default: 1)",
+    effectOnModel: "Controls slow component of YARN interpolation.",
+    whenToAdjust: "Adjust for optimal extended context quality.",
+  },
+  yarn_beta_fast: {
+    title: "YARN Beta Fast",
+    description: "Fast beta parameter for YARN.",
+    recommendedValue: "0.0 - 100.0 (default: 32)",
+    effectOnModel: "Controls fast component of YARN interpolation.",
+    whenToAdjust: "Adjust with yarn_beta_slow for best results.",
+  },
+  flash_attn: {
+    title: "Flash Attention",
+    description: "Enables Flash Attention implementation for faster inference. 0=off, 1=on.",
+    recommendedValue: "0 or 1 (default: empty)",
+    effectOnModel: "Significantly speeds up attention computation when supported by hardware.",
+    whenToAdjust: "Enable if your GPU supports Flash Attention for faster generation.",
+  },
+  logit_bias: {
+    title: "Logit Bias",
+    description: "Comma-separated list of token biases in format token_id:bias.",
+    recommendedValue: "e.g., 123:2.0,456:-1.0",
+    effectOnModel: "Manually adjust probabilities of specific tokens.",
+    whenToAdjust: "Use to encourage or discourage specific words or tokens.",
+  },
+};

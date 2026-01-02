@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLogger } from "@/lib/logger";
 import { loadAppConfig } from "@/lib/server-config";
-import { validateRequestBody } from "@/lib/validation-utils";
-import { startModelRequestSchema } from "@/lib/validators";
+import { validateStartModelRequest } from "./validate-request";
+import { checkModelLoadingConstraints, findModelData } from "./model-loading";
+import { loadModelViaServer, createLoadSuccessResponse, createLoadErrorResponse } from "./response-handlers";
 
 const logger = getLogger();
 
@@ -13,36 +14,20 @@ export async function POST(
   try {
     const { name } = await params;
 
-    if (!name) {
-      return NextResponse.json(
-        { error: "Model name is required" },
-        { status: 400 }
-      );
-    }
-
     const body = await request.json().catch(() => ({}));
 
-    // Add model name from params to body before validation
-    const bodyWithModel = { model: name, ...body };
-
-    // Validate request body with Zod
-    const validation = validateRequestBody(startModelRequestSchema, bodyWithModel);
-    if (!validation.success) {
-      return NextResponse.json(
-        {
-          error: "Invalid request body",
-          details: validation.errors,
-        },
-        { status: 400 }
-      );
+    // Validate request
+    const validation = validateStartModelRequest(name, body);
+    if (!validation.success && validation.errorResponse) {
+      return validation.errorResponse;
     }
 
-    const selectedTemplate = validation.data?.template;
+    const selectedTemplate = validation.selectedTemplate;
 
     logger.info(`[API] Loading model: ${name}`, body);
 
-    const globalAny = global as unknown as { registry: any };
-    const registry = globalAny.registry as {
+    // Get llama service from registry
+    interface GlobalRegistry {
       get: (name: string) => {
         getState: () => {
           status: string;
@@ -50,7 +35,14 @@ export async function POST(
         };
         config?: { basePath?: string };
       } | null;
-    };
+    }
+
+    interface GlobalWithRegistry {
+      registry?: GlobalRegistry;
+    }
+
+    const globalWithRegistry = global as unknown as GlobalWithRegistry;
+    const registry = globalWithRegistry.registry;
 
     const llamaService = registry?.get("llamaService");
 
@@ -66,64 +58,19 @@ export async function POST(
       );
     }
 
+    // Check loading constraints
     const appConfig = loadAppConfig();
     const maxConcurrent = appConfig.maxConcurrentModels || 1;
     logger.info(`[API] Max concurrent models setting: ${maxConcurrent}`);
 
-    const state = llamaService.getState();
-    logger.info(`[API] Current llama-server status: ${state.status}`);
-
-    if (state.status !== "ready") {
-      return NextResponse.json(
-        {
-          error: `Llama server is not ready (status: ${state.status})`,
-          model: name,
-          status: "error",
-        },
-        { status: 503 }
-      );
+    const constraints = checkModelLoadingConstraints(llamaService, name, maxConcurrent);
+    if (!constraints.canLoad && constraints.errorResponse) {
+      return NextResponse.json(constraints.errorResponse, { status: 409 });
     }
 
-    const models = state.models || [];
-    const runningModels = models.filter((m: any) =>
-      m.status === 'running' || m.status === 'loaded'
-    );
-
-    logger.info(`[API] Currently running models: ${runningModels.length} (max: ${maxConcurrent})`);
-
-    if (runningModels.length >= maxConcurrent) {
-      const runningModelNames = runningModels.map((m: any) => m.name).join(", ");
-      logger.warn(`[API] Max concurrent models (${maxConcurrent}) reached. Currently running: ${runningModelNames}`);
-      return NextResponse.json(
-        {
-          error: `Maximum concurrent models (${maxConcurrent}) reached. Currently running: ${runningModelNames}`,
-          model: name,
-          status: "error",
-          runningModels: runningModelNames,
-          maxConcurrent,
-          hint: maxConcurrent === 1 ? "Stop the currently running model first, or increase Max Concurrent Models in Settings." : "Increase Max Concurrent Models in Settings to run more models simultaneously.",
-        },
-        { status: 409 }
-      );
-    }
-
-    const llamaServerHost = process.env.LLAMA_SERVER_HOST || "localhost";
-    const llamaServerPort = process.env.LLAMA_SERVER_PORT || "8134";
-
-    logger.info(
-      `[API] Forwarding model load to llama-server at ${llamaServerHost}:${llamaServerPort}`
-    );
-
-    const modelsList = state.models || [];
-    const modelData = modelsList.find(
-      (m: { id?: string; name?: string; available?: boolean }) =>
-        m.id === name || m.name === name
-    );
-
-    const modelName = modelData?.name || name;
-
+    // Find model data
+    const modelData = findModelData(llamaService, name);
     if (!modelData) {
-      logger.warn(`[API] Model ${name} was not found in discovered models`);
       return NextResponse.json(
         {
           error: "Model not found",
@@ -135,39 +82,19 @@ export async function POST(
       );
     }
 
+    const modelName = modelData.name || name;
+
     logger.info(`[API] Loading model: ${modelName} ${selectedTemplate ? `with template: ${selectedTemplate}` : ''}`);
 
-    const requestBody: any = {
-      model: modelName,
-      messages: [{ role: "user", content: "Hi" }],
-      max_tokens: 1,
-    };
+    // Load model
+    const loadResult = await loadModelViaServer(modelName, selectedTemplate);
 
-    if (selectedTemplate) {
-      requestBody.template = selectedTemplate;
-    }
-
-    const loadResponse = await fetch(
-      `http://${llamaServerHost}:${llamaServerPort}/v1/chat/completions`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      }
-    ).catch((error) => {
-      logger.error(
-        `[API] Failed to connect to llama-server: ${error.message}`
-      );
-      return null;
-    });
-
-    if (!loadResponse) {
+    if (!loadResult) {
+      const llamaServerHost = process.env.LLAMA_SERVER_HOST || "localhost";
+      const llamaServerPort = process.env.LLAMA_SERVER_PORT || "8134";
       return NextResponse.json(
         {
-          error:
-            "Failed to connect to llama-server. Make sure it's running on the configured host and port.",
+          error: "Failed to connect to llama-server. Make sure it's running on the configured host and port.",
           model: name,
           status: "error",
           debug: {
@@ -179,44 +106,26 @@ export async function POST(
       );
     }
 
-    const loadData = await loadResponse.json().catch(() => ({}));
-
-    if (!loadResponse.ok) {
+    if (!loadResult.ok) {
       logger.error(
-        `[API] llama-server returned error: ${loadResponse.status}`,
-        loadData
+        `[API] llama-server returned error: ${loadResult.status}`,
+        loadResult.data
       );
       return NextResponse.json(
         {
-          error: loadData.error || `Failed to load model (HTTP ${loadResponse.status})`,
+          error: loadResult.error || `Failed to load model (HTTP ${loadResult.status})`,
           model: name,
           status: "error",
-          detail: loadData,
+          detail: loadResult.data,
         },
-        { status: loadResponse.status }
+        { status: loadResult.status }
       );
     }
 
-    logger.info(`[API] Model ${name} loaded successfully`);
-    return NextResponse.json(
-      {
-        model: name,
-        status: "loaded",
-        message: `Model ${name} loaded successfully`,
-        data: loadData,
-      },
-      { status: 200 }
-    );
+    return createLoadSuccessResponse(name, loadResult.data);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     logger.error(`[API] Error loading model: ${message}`, error);
-    return NextResponse.json(
-      {
-        error: `Failed to load model: ${message}`,
-        model: name,
-        status: "error",
-      },
-      { status: 500 }
-    );
+    return createLoadErrorResponse(name, `Failed to load model: ${message}`, error);
   }
 }

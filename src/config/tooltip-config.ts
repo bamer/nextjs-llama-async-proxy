@@ -10,7 +10,7 @@ import {
 import { memoryTooltips } from "./metrics-tooltips";
 import { uiTooltips, gpuTooltips, advancedTooltips } from "./ui-tooltips";
 
-export type { TooltipContent, TooltipConfig };
+export { type TooltipContent, type TooltipConfig };
 
 export const tooltipConfig: TooltipConfig = {
   sampling: samplingTooltips,
