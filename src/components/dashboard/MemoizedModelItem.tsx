@@ -10,7 +10,8 @@ import { ModelTemplateSelect } from "./model-item/ModelTemplateSelect";
 import { ModelContent } from "./model-item/ModelContent";
 
 // Re-export utilities for backward compatibility
-export { detectModelType, getModelTypeTemplates } from "./model-item-utils";
+export { detectModelType } from "./model-item-utils";
+export { getModelTypeTemplates } from "./model-utils";
 
 export type { ModelConfig };
 
