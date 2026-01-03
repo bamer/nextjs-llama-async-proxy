@@ -1,6 +1,7 @@
 import { exec } from "child_process";
 import { promisify } from "util";
 import type { SystemMetrics } from "@/types/monitoring";
+import type { ModelDisplayData } from "./server.types";
 import { LLAMA_SERVER_HOST, LLAMA_SERVER_PORT, MODEL_STATUS_MAP } from "./server.constants";
 
 const execAsync = promisify(exec);
@@ -61,38 +62,49 @@ export async function getGpuMetrics(): Promise<SystemMetrics["gpu"]> {
   }
 }
 
-export function normalizeModelStatus(status: any): string {
+export function normalizeModelStatus(status: unknown): string {
   if (typeof status === "string") {
     return MODEL_STATUS_MAP[status as keyof typeof MODEL_STATUS_MAP] || status;
   }
   if (status && typeof status === "object" && "value" in status) {
-    return MODEL_STATUS_MAP[status.value as keyof typeof MODEL_STATUS_MAP] || status.value;
+    return MODEL_STATUS_MAP[(status as { value: string }).value as keyof typeof MODEL_STATUS_MAP] || (status as { value: string }).value;
   }
   return "idle";
 }
 
-export function transformLlamaModelToDisplay(model: any): {
-  id: string;
+interface LlamaModelRaw {
+  id?: string;
   name: string;
-  type: string;
-  status: string;
+  type?: string;
+  status: unknown;
   size?: number;
   template?: string;
   availableTemplates?: string[];
-  createdAt: string;
-  updatedAt: string;
-} {
-  return {
-    id: model.id || model.name,
-    name: model.name,
-    type: model.type || "unknown",
-    status: normalizeModelStatus(model.status),
-    size: model.size,
-    template: model.template,
-    availableTemplates: model.availableTemplates,
-    createdAt: new Date(model.modified_at * 1000).toISOString(),
-    updatedAt: new Date(model.modified_at * 1000).toISOString(),
+  modified_at: number;
+}
+
+export function transformLlamaModelToDisplay(model: unknown): ModelDisplayData {
+  const modelData = model as LlamaModelRaw;
+  const result: ModelDisplayData = {
+    id: modelData.id || modelData.name,
+    name: modelData.name,
+    type: modelData.type || "unknown",
+    status: normalizeModelStatus(modelData.status),
+    createdAt: new Date(modelData.modified_at * 1000).toISOString(),
+    updatedAt: new Date(modelData.modified_at * 1000).toISOString(),
   };
+
+  if (modelData.size !== undefined) {
+    result.size = modelData.size;
+  }
+  if (modelData.template !== undefined) {
+    result.template = modelData.template;
+  }
+  if (modelData.availableTemplates !== undefined) {
+    result.availableTemplates = modelData.availableTemplates;
+  }
+
+  return result;
 }
 
 export async function startModelViaChatCompletion(modelName: string): Promise<boolean> {

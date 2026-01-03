@@ -42,10 +42,10 @@ class ApiService {
   public async stopModel(id: string): Promise<ModelConfig> {
     return modelsApiService.stopModel(id);
   }
-  public async loadModel(id: string, config?: any): Promise<ApiResponse<any>> {
+  public async loadModel(id: string, config?: unknown): Promise<ApiResponse<unknown>> {
     return modelsApiService.loadModel(id, config);
   }
-  public async unloadModel(id: string): Promise<ApiResponse<any>> {
+  public async unloadModel(id: string): Promise<ApiResponse<unknown>> {
     return modelsApiService.unloadModel(id);
   }
   public async discoverModels(paths: string[]): Promise<ApiResponse<{ discovered: ModelConfig[] }>> {
@@ -77,7 +77,7 @@ class ApiService {
   public async getMonitoringHistory(params?: { minutes?: number }): Promise<ApiResponse<ChartHistoryData>> {
     return metricsApiService.getMonitoringHistory(params);
   }
-  public async getLatestMonitoring(): Promise<ApiResponse<any>> {
+  public async getLatestMonitoring(): Promise<ApiResponse<unknown>> {
     return metricsApiService.getLatestMonitoring();
   }
   public async getSystemMetrics(): Promise<ApiResponse<SystemMetrics>> {
@@ -99,15 +99,15 @@ class ApiService {
   }
 
   // Settings API
-  public async getSettings(): Promise<ApiResponse<any>> {
+  public async getSettings(): Promise<ApiResponse<unknown>> {
     return settingsApiService.getSettings();
   }
-  public async updateSettings(settings: any): Promise<ApiResponse<any>> {
+  public async updateSettings(settings: unknown): Promise<ApiResponse<unknown>> {
     return settingsApiService.updateSettings(settings);
   }
 
   // System API
-  public async getSystemInfo(): Promise<ApiResponse<any>> {
+  public async getSystemInfo(): Promise<ApiResponse<unknown>> {
     return systemApiService.getSystemInfo();
   }
   public async restartSystem(): Promise<ApiResponse<void>> {
@@ -116,7 +116,7 @@ class ApiService {
   public async shutdownSystem(): Promise<ApiResponse<void>> {
     return systemApiService.shutdownSystem();
   }
-  public async healthCheck(): Promise<ApiResponse<any>> {
+  public async healthCheck(): Promise<ApiResponse<unknown>> {
     return systemApiService.healthCheck();
   }
   public async getConfig(): Promise<ApiResponse<ServerConfig>> {
@@ -132,10 +132,10 @@ class ApiService {
   }
 
   // Generation API
-  public async generateText(data: { prompt: string; model?: string; max_tokens?: number }): Promise<ApiResponse<any>> {
+  public async generateText(data: { prompt: string; model?: string; max_tokens?: number }): Promise<ApiResponse<unknown>> {
     return generationApiService.generateText(data);
   }
-  public async chat(data: { messages: any[]; model?: string; max_tokens?: number }): Promise<ApiResponse<any>> {
+  public async chat(data: { messages: unknown[]; model?: string; max_tokens?: number }): Promise<ApiResponse<unknown>> {
     return generationApiService.chat(data);
   }
 }

@@ -30,7 +30,7 @@ export function requestIdleCallback(
   }
 
   if ('requestIdleCallback' in window) {
-    return (window as any).requestIdleCallback(callback, options);
+    return (window as Window & { requestIdleCallback: (cb: (deadline?: RequestIdleCallbackDeadline) => void, opts?: RequestIdleCallbackOptions) => number }).requestIdleCallback(callback, options);
   }
 
   // Fallback to setTimeout
@@ -50,7 +50,7 @@ export function requestIdleCallback(
 export function cancelIdleCallback(handle: number | void): void {
   if (typeof handle === 'number' && typeof window !== 'undefined') {
     if ('cancelIdleCallback' in window) {
-      (window as any).cancelIdleCallback(handle);
+      (window as Window & { cancelIdleCallback: (handle: number) => void }).cancelIdleCallback(handle);
     } else {
       clearTimeout(handle);
     }

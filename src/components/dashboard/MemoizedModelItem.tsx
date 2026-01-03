@@ -42,7 +42,7 @@ const MemoizedModelItem = memo(function ModelItem({
   onToggleModelOptimistic,
   optimisticStatus
 }: MemoizedModelItemProps) {
-  const { displayStatus, displayStatusColor, showProgress } = useModelItemDisplay({
+  const { displayStatus, displayStatusColor, showProgress, statusValue } = useModelItemDisplay({
     model,
     ...(optimisticStatus ? { optimisticStatus } : {}),
   });
@@ -73,13 +73,13 @@ const MemoizedModelItem = memo(function ModelItem({
       model={model}
       currentTemplate={currentTemplate}
       handleTemplateChange={handleTemplateChange}
-      displayStatus={displayStatus}
+      displayStatus={statusValue}
     />
   );
 
   const actionsElement = (
     <ModelActions
-      displayStatus={displayStatus}
+      displayStatus={statusValue}
       loadingModels={loadingModels}
       model={model}
       currentTemplate={currentTemplate}

@@ -78,7 +78,7 @@ class ApiClient {
     );
   }
 
-  private formatError(error: AxiosError): ApiResponse<any> {
+  private formatError(error: AxiosError): ApiResponse<never> {
     if (error.response) {
       return {
         success: false,
@@ -112,7 +112,7 @@ class ApiClient {
     }
   }
 
-  public async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  public async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
     try {
       const response = await this.getInstance().get<T>(url, config);
       return {
@@ -125,9 +125,9 @@ class ApiClient {
     }
   }
 
-  public async post<T = any>(
+  public async post<T = unknown>(
     url: string,
-    data?: any,
+    data?: unknown,
     config?: AxiosRequestConfig
   ): Promise<ApiResponse<T>> {
     try {
@@ -142,9 +142,9 @@ class ApiClient {
     }
   }
 
-  public async put<T = any>(
+  public async put<T = unknown>(
     url: string,
-    data?: any,
+    data?: unknown,
     config?: AxiosRequestConfig
   ): Promise<ApiResponse<T>> {
     try {
@@ -159,7 +159,7 @@ class ApiClient {
     }
   }
 
-  public async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  public async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
     try {
       const response = await this.getInstance().delete<T>(url, config);
       return {
@@ -172,9 +172,9 @@ class ApiClient {
     }
   }
 
-  public async patch<T = any>(
+  public async patch<T = unknown>(
     url: string,
-    data?: any,
+    data?: unknown,
     config?: AxiosRequestConfig
   ): Promise<ApiResponse<T>> {
     try {

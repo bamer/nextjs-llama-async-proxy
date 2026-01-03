@@ -29,6 +29,9 @@ export function useConfigPersistence() {
     setIsLoadingConfig(true);
     try {
       const response = await fetch("/api/config");
+      if (!response) {
+        throw new Error("No response received from server");
+      }
       if (response.ok) {
         const config = await response.json();
         const { serverConfig, appConfig } = config;
@@ -71,7 +74,7 @@ export function useConfigPersistence() {
 
     try {
       const serverConfig = formConfig.serverConfig || {};
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         serverConfig: {
           host: serverConfig.host || "127.0.0.1",
           port: serverConfig.port || 8080,

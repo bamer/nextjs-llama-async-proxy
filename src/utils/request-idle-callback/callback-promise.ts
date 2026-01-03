@@ -24,7 +24,7 @@ export function requestIdleCallbackPromise<T = void>(
     }
 
     if ('requestIdleCallback' in window) {
-      const handle = (window as any).requestIdleCallback(
+      (window as Window & { requestIdleCallback: (cb: (deadline: RequestIdleCallbackDeadline) => void, opts?: RequestIdleCallbackOptions) => number }).requestIdleCallback(
         (deadline: RequestIdleCallbackDeadline) => {
           if (deadline.didTimeout) {
             console.debug('[requestIdleCallback] Timeout reached, executing now');
@@ -73,7 +73,7 @@ function fallbackToRAF<T>(
   let executed = false;
 
   if ('requestAnimationFrame' in window) {
-    (window as any).requestAnimationFrame(() => {
+    (window as Window & { requestAnimationFrame: (cb: () => void) => number }).requestAnimationFrame(() => {
       if (!executed) {
         executed = true;
         executeCallback(callback, resolve, reject);

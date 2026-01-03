@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { Socket, Server as SocketIOServer } from 'socket.io';
 import LlamaServerIntegration from '../src/server/services/LlamaServerIntegration';
 import { getLogger } from '../src/lib/logger';

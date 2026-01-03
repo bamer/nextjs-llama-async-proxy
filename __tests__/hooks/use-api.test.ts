@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useApi } from '@/hooks/use-api';
+import React from 'react';
 
 jest.mock('@/services/api-service', () => ({
   apiService: {
@@ -30,14 +31,14 @@ describe('use-api', () => {
     queryClient.clear();
   });
 
-  const wrapper = ({ children }: any) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+  const wrapper = ({ children }: any) => {
+    return React.createElement(QueryClientProvider, { client: queryClient }, children);
+  };
 
   describe('useApi hook', () => {
     it('should return all query objects', async () => {
       const { result } = renderHook(() => useApi(), { wrapper });
-      
+
       await waitFor(() => {
         expect(result.current).toBeDefined();
         expect(result.current.models).toBeDefined();
@@ -50,7 +51,7 @@ describe('use-api', () => {
 
     it('should query models with correct key', async () => {
       const { result } = renderHook(() => useApi(), { wrapper });
-      
+
       await waitFor(() => {
         const { apiService } = require('@/services/api-service');
         expect(apiService.getModels).toHaveBeenCalled();
@@ -59,7 +60,7 @@ describe('use-api', () => {
 
     it('should query metrics with correct key', async () => {
       const { result } = renderHook(() => useApi(), { wrapper });
-      
+
       await waitFor(() => {
         const { apiService } = require('@/services/api-service');
         expect(apiService.getMetrics).toHaveBeenCalled();
@@ -68,7 +69,7 @@ describe('use-api', () => {
 
     it('should query logs with correct parameters', async () => {
       const { result } = renderHook(() => useApi(), { wrapper });
-      
+
       await waitFor(() => {
         const { apiService } = require('@/services/api-service');
         expect(apiService.getLogs).toHaveBeenCalledWith({ limit: 50 });
@@ -77,7 +78,7 @@ describe('use-api', () => {
 
     it('should query config with correct key', async () => {
       const { result } = renderHook(() => useApi(), { wrapper });
-      
+
       await waitFor(() => {
         const { apiService } = require('@/services/api-service');
         expect(apiService.getConfig).toHaveBeenCalled();
@@ -86,7 +87,7 @@ describe('use-api', () => {
 
     it('should return queryClient instance', async () => {
       const { result } = renderHook(() => useApi(), { wrapper });
-      
+
       await waitFor(() => {
         expect(result.current.queryClient).toBeInstanceOf(QueryClient);
       });

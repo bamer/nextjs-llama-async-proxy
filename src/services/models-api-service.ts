@@ -75,11 +75,11 @@ class ModelsApiService {
     throw new Error(response.error?.message || `Failed to stop model ${id}`);
   }
 
-  public async loadModel(id: string, config?: any): Promise<ApiResponse<any>> {
+  public async loadModel(id: string, config?: unknown): Promise<ApiResponse<unknown>> {
     return await apiClient.post(`${this.baseUrl}/models/${id}/load`, { config });
   }
 
-  public async unloadModel(id: string): Promise<ApiResponse<any>> {
+  public async unloadModel(id: string): Promise<ApiResponse<unknown>> {
     return await apiClient.post(`${this.baseUrl}/models/${id}/unload`);
   }
 

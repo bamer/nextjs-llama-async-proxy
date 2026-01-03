@@ -31,6 +31,9 @@ jest.mock("@/hooks/useChartHistory", () => ({
 // Mock store
 jest.mock("@/lib/store", () => ({
   useStore: jest.fn(),
+  useModels: jest.fn(),
+  useMetrics: jest.fn(),
+  useStore: jest.fn(),
 }));
 
 // Mock next/navigation

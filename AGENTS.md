@@ -46,7 +46,7 @@ pnpm test <test-file-path>
 - Max line width: 100 characters
 - Object-curly-spacing: `always` (spaces inside {})
 - Array-bracket-spacing: `never` (no spaces inside [])
-- Keep component < 200 lines
+- **Keep all files < 200 lines** (see "200-Line Refactoring Guidelines" below)
 - Use composition pattern
 - Each module should have single responsibility
 
@@ -131,6 +131,8 @@ pnpm test <test-file-path>
 - Expectations: `expect(...).toBe()`, `expect(...).toHaveProperty()`
 - Mock functions with `jest.fn()` and `.mockReturnValue()`
 - Test coverage threshold: 70% for branches, functions, lines, statements
+- **Split large test files** by logical category (see "200-Line Refactoring Guidelines")
+- Test file naming: `{ComponentName}.{category}.test.{ts,tsx}` (e.g., `MetricCard.rendering.test.tsx`)
 
 ### File Organization
 
@@ -148,6 +150,219 @@ src/
 ├── types/              # TypeScript type definitions
 ├── utils/              # Utility functions (api-client)
 └── config/             # Configuration files
+```
+
+### 200-Line Refactoring Guidelines
+
+**Critical Rule**: All source files must be kept under 200 lines to maintain maintainability, readability, and testability. When a file approaches this limit, it must be refactored using the patterns below.
+
+#### When to Refactor
+
+Refactor when:
+- A component file approaches 200 lines (aim for <180 lines to be safe)
+- A test file has more than 20-25 test cases
+- Multiple logical concerns are mixed in one file
+- Test setup code exceeds 50 lines
+- Component has complex nested sub-components (>3 levels)
+
+#### Component Extraction Pattern
+
+Extract sub-components into their own files following this pattern:
+
+```tsx
+// ❌ BEFORE: Large component with inline sub-components
+// src/pages/models/ModelsPage.tsx (220+ lines)
+export default function ModelsPage() {
+  return (
+    <div>
+      <Header />
+      <Grid>
+        {models.map(model => (
+          <div key={model.id}>
+            <Typography>{model.name}</Typography>
+            <ModelActions model={model} />
+            <ModelConfig model={model} />
+          </div>
+        ))}
+      </Grid>
+    </div>
+  );
+}
+
+// ✅ AFTER: Extracted sub-components
+// src/pages/models/ModelsPage.tsx (<150 lines)
+import { MemoizedModelItem } from '@/components/models/MemoizedModelItem';
+
+export default function ModelsPage() {
+  return (
+    <div>
+      <Header />
+      <Grid>
+        {models.map(model => (
+          <MemoizedModelItem key={model.id} model={model} />
+        ))}
+      </Grid>
+    </div>
+  );
+}
+
+// src/components/models/MemoizedModelItem.tsx (new file)
+export const MemoizedModelItem = React.memo(function ModelItem({ model }) {
+  return (
+    <div>
+      <ModelInfo model={model} />
+      <ModelActions model={model} />
+      <ModelConfig model={model} />
+    </div>
+  );
+});
+```
+
+**Key benefits**:
+- Each component has single responsibility
+- Easier to test individual components
+- Better performance with memoization
+- Clearer code organization
+
+#### Test File Splitting Pattern
+
+When test files grow large, split them by logical category:
+
+```typescript
+// ❌ BEFORE: One monolithic test file
+// __tests__/src/components/dashboard/MetricCard.test.tsx (400+ lines, 50+ tests)
+
+describe('MetricCard', () => {
+  // Rendering tests (15 tests)
+  // Metric data tests (12 tests)
+  // Loading state tests (8 tests)
+  // Error handling tests (6 tests)
+  // Theme tests (5 tests)
+  // Accessibility tests (4 tests)
+});
+
+// ✅ AFTER: Split by logical category
+// __tests__/src/components/dashboard/MetricCard/MetricCard.rendering.test.tsx
+describe('MetricCard Rendering', () => {
+  it('renders correctly', () => { /* ... */ });
+  it('displays title', () => { /* ... */ });
+  // 15 rendering tests
+});
+
+// __tests__/src/components/dashboard/MetricCard/MetricCard.data.test.tsx
+describe('MetricCard Data Handling', () => {
+  it('displays metric value', () => { /* ... */ });
+  it('formats numbers correctly', () => { /* ... */ });
+  // 12 data tests
+});
+
+// __tests__/src/components/dashboard/MetricCard/MetricCard.state.test.tsx
+describe('MetricCard State Management', () => {
+  it('shows loading indicator', () => { /* ... */ });
+  it('handles error state', () => { /* ... */ });
+  // 14 state/error tests
+});
+
+// __tests__/src/components/dashboard/MetricCard/MetricCard.test-utils.ts
+export const mockMetric = { /* shared mock data */ };
+export const renderMetricCard = (props) => { /* shared render helper */ };
+```
+
+**File naming pattern**: `{ComponentName}.{category}.test.{ts,tsx}`
+
+Categories:
+- `rendering` - Visual rendering tests
+- `data` - Data handling/formatting tests
+- `state` - Loading/error state tests
+- `integration` - Component integration tests
+- `accessibility` - A11y tests
+- `performance` - Memoization/performance tests
+- `test-utils` - Shared test helpers (not a test file)
+
+#### Composition Pattern Usage
+
+Use composition to build complex UIs from small, reusable components:
+
+```tsx
+// ✅ GOOD: Composed UI from small components
+<PageLayout>
+  <DashboardHeader title="Overview" />
+  <MetricsGrid>
+    <MetricCard metric={metric1} />
+    <MetricCard metric={metric2} />
+    <MetricCard metric={metric3} />
+  </MetricsGrid>
+  <ChartsSection>
+    <LineChart data={chartData} />
+  </ChartsSection>
+</PageLayout>
+
+// Each component is 50-150 lines and can be tested independently
+```
+
+#### Best Practices for Refactoring
+
+1. **Extract Sub-Components**
+   - Identify logical UI sections (headers, cards, lists, actions)
+   - Extract to separate files in appropriate directory
+   - Use memoization (`React.memo`) for performance-critical components
+   - Pass props only (avoid prop drilling with contexts when needed)
+
+2. **Create Helper Files for Shared Setup**
+   ```typescript
+   // __tests__/src/components/dashboard/test-setup.ts
+   export const mockDashboardData = { /* ... */ };
+   export const renderWithProviders = (component) => { /* ... */ };
+   export const waitForDataLoad = async () => { /* ... */ };
+   ```
+
+3. **Use Descriptive File Naming**
+   - Components: `{ComponentName}.tsx` (PascalCase)
+   - Test files: `{ComponentName}.{category}.test.{ts,tsx}`
+   - Helpers: `{FeatureName}.helpers.ts` or `{FeatureName}-utils.ts`
+   - Hooks: `use{FeatureName}.ts` (camelCase with "use" prefix)
+   - Types: `{FeatureName}.types.ts` or `{FeatureName}.types.d.ts`
+
+4. **Maintain Import Organization**
+   - Group imports logically (built-in → external → internal)
+   - Use path aliases consistently (`@/components/*`, `@/hooks/*`)
+   - Export types explicitly for reusability
+
+5. **Preserve Functionality During Refactoring**
+   - Run tests before and after refactoring
+   - Use git to verify only structural changes, not behavior changes
+   - Keep commit messages focused on the refactoring
+
+#### Refactoring Workflow
+
+1. **Identify** - Use `wc -l` to find files approaching 200 lines
+2. **Analyze** - Identify logical boundaries and extraction points
+3. **Extract** - Create new files for sub-components or test categories
+4. **Update Imports** - Add/modify imports in affected files
+5. **Verify** - Run `pnpm test` and `pnpm type:check`
+6. **Commit** - Create focused commits for each extraction
+
+#### Example Refactoring Commit Messages
+
+```
+feat: extract MemoizedModelItem from ModelsPage
+
+- Created src/components/models/MemoizedModelItem.tsx
+- Extracted 4 inline sub-components into separate files
+- Improved testability and code organization
+- Maintained all existing functionality
+
+Closes: [task-id]
+```
+
+```
+refactor: split MetricCard tests by category
+
+- Created MetricCard.rendering.test.tsx (15 tests)
+- Created MetricCard.data.test.tsx (12 tests)
+- Created MetricCard.state.test.tsx (14 tests)
+- Extracted shared test utilities to test-utils.ts
+- Improved test organization and maintainability
 ```
 
 ### WebSocket Patterns

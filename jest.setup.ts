@@ -17,6 +17,47 @@ jest.mock('winston-daily-rotate-file', () => ({
   })),
 }));
 
+// Mock fs for API route tests
+jest.mock("fs", () => ({
+  promises: {
+    readFile: jest.fn(),
+    writeFile: jest.fn(),
+  },
+  readFileSync: jest.fn(),
+  writeFileSync: jest.fn(),
+}));
+
+// Mock logger for API route tests
+jest.mock("@/lib/logger", () => ({
+  getLogger: () => ({
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  }),
+}));
+
+// Mock validation utils for API route tests
+const validateRequestBodyMock = jest.fn();
+const validateConfigMock = jest.fn();
+jest.mock("@/lib/validation-utils", () => ({
+  validateRequestBody: validateRequestBodyMock,
+  validateConfig: validateConfigMock,
+}));
+
+// Make mocks available globally for tests
+(global as any).validateRequestBody = validateRequestBodyMock;
+(global as any).validateConfig = validateConfigMock;
+
+// Invalidate model templates cache before each test
+beforeEach(() => {
+  try {
+    require('@/lib/model-templates-config').invalidateModelTemplatesCache();
+  } catch (e) {
+    // Ignore if module not loaded
+  }
+});
+
 import React from 'react';
 import '@testing-library/jest-dom';
 
@@ -51,6 +92,9 @@ jest.mock('@emotion/react', () => ({
   }
   json() {
     return Promise.resolve(this.body);
+  }
+  static json(data: unknown, init?: ResponseInit) {
+    return new Response(JSON.stringify(data), init);
   }
 };
 
@@ -127,7 +171,31 @@ jest.mock('@mui/material/utils', () => ({
 
 // Mock @mui/x-charts
 jest.mock('@mui/x-charts', () => ({
-  LineChart: (props: any) => React.createElement('div', { ...require('./jest-mocks.ts').filterMUIProps(props), 'data-testid': 'line-chart' }, 'LineChart'),
+  LineChart: React.forwardRef((props: any, ref: any) => {
+    const { children, ...domProps } = props;
+    const safeProps = Object.keys(domProps).reduce((acc, key) => {
+      if (!['xAxis', 'yAxis', 'series', 'dataset', 'margin', 'height', 'width', 'sx'].includes(key)) {
+        acc[key] = domProps[key];
+      }
+      return acc;
+    }, {} as any);
+    return React.createElement('div', { ...safeProps, ref, 'data-testid': 'line-chart' }, children);
+  }),
+  ChartsXAxis: React.forwardRef((props: any, ref: any) => {
+    const { label, tickLabelStyle, ...domProps } = props;
+    return React.createElement('div', { ...domProps, ref, 'data-testid': 'charts-x-axis' });
+  }),
+  ChartsYAxis: React.forwardRef((props: any, ref: any) => {
+    const { label, tickLabelStyle, ...domProps } = props;
+    return React.createElement('div', { ...domProps, ref, 'data-testid': 'charts-y-axis' });
+  }),
+  ChartsGrid: React.forwardRef((props: any, ref: any) => {
+    const { vertical, horizontal, ...domProps } = props;
+    return React.createElement('div', { ...domProps, ref, 'data-testid': 'charts-grid' });
+  }),
+  ChartsTooltip: React.forwardRef((props: any, ref: any) =>
+    React.createElement('div', { ...props, ref, 'data-testid': 'charts-tooltip' })
+  ),
   BarChart: (props: any) => React.createElement('div', { ...require('./jest-mocks.ts').filterMUIProps(props), 'data-testid': 'bar-chart' }, 'BarChart'),
 }));
 
@@ -295,6 +363,25 @@ jest.mock('next/navigation', () => ({
     replace: jest.fn(),
     prefetch: jest.fn(),
   }),
+}));
+
+// Mock next/server for API route tests
+jest.mock('next/server', () => ({
+  NextRequest: jest.fn(),
+  NextResponse: {
+    json: jest.fn((data: unknown, init?: ResponseInit) => ({
+      status: init?.status || 200,
+      json: async () => data,
+      headers: new Headers(),
+      ok: (init?.status || 200) < 400,
+      cookies: {
+        get: jest.fn(),
+        set: jest.fn(),
+        delete: jest.fn(),
+        getSetCookie: jest.fn(() => []),
+      },
+    })),
+  },
 }));
 
 // Mock TanStack Query

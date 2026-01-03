@@ -3,6 +3,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import type { SystemMetrics } from '@/types/monitoring';
+import React from 'react';
 
 jest.mock('@/hooks/use-websocket', () => ({
   useWebSocket: jest.fn(() => ({
@@ -66,20 +67,20 @@ describe('useDashboardData', () => {
     queryClient.clear();
   });
 
-  const wrapper = ({ children }: any) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+  const wrapper = ({ children }: any) => {
+    return React.createElement(QueryClientProvider, { client: queryClient }, children);
+  };
 
   describe('initial state', () => {
     it('should initialize with loading state true', () => {
       const { result } = renderHook(() => useDashboardData(), { wrapper });
-      
+
       expect(result.current.loading).toBe(true);
     });
 
     it('should return models array', async () => {
       const { result } = renderHook(() => useDashboardData(), { wrapper });
-      
+
       await waitFor(() => {
         expect(Array.isArray(result.current.models)).toBe(true);
       });
@@ -87,7 +88,7 @@ describe('useDashboardData', () => {
 
     it('should return null metrics initially', () => {
       const { result } = renderHook(() => useDashboardData(), { wrapper });
-      
+
       expect(result.current.metrics).toBeNull();
     });
   });
@@ -95,7 +96,7 @@ describe('useDashboardData', () => {
   describe('WebSocket connection', () => {
     it('should request metrics when WebSocket connected', async () => {
       const { result } = renderHook(() => useDashboardData(), { wrapper });
-      
+
       await waitFor(() => {
         const { useWebSocket } = require('@/hooks/use-websocket');
         expect(useWebSocket().requestMetrics).toHaveBeenCalled();
@@ -104,7 +105,7 @@ describe('useDashboardData', () => {
 
     it('should register metrics event handler', async () => {
       const { result } = renderHook(() => useDashboardData(), { wrapper });
-      
+
       await waitFor(() => {
         const { useWebSocket } = require('@/hooks/use-websocket');
         expect(useWebSocket().on).toHaveBeenCalledWith('metrics', expect.any(Function));
@@ -115,7 +116,7 @@ describe('useDashboardData', () => {
   describe('metrics transformation', () => {
     it('should transform old metrics format to new format', async () => {
       const { result } = renderHook(() => useDashboardData(), { wrapper });
-      
+
       const { useWebSocket } = require('@/hooks/use-websocket');
       const mockHandler = useWebSocket().on.mock.calls.find(
         (call: any[]) => call[0] === 'metrics'
@@ -132,7 +133,7 @@ describe('useDashboardData', () => {
         };
         mockHandler(oldMetrics);
       }
-      
+
       await waitFor(() => {
         expect(result.current.metrics).toBeDefined();
         if (result.current.metrics) {
@@ -148,7 +149,7 @@ describe('useDashboardData', () => {
   describe('error handling', () => {
     it('should handle metrics parsing errors', async () => {
       const { result } = renderHook(() => useDashboardData(), { wrapper });
-      
+
       act(() => {
         const { useWebSocket } = require('@/hooks/use-websocket');
         const mockHandler = useWebSocket().on.mock.calls.find(
@@ -158,7 +159,7 @@ describe('useDashboardData', () => {
           mockHandler({ invalid: 'data' });
         }
       });
-      
+
       await waitFor(() => {
         expect(result.current.error).not.toBeNull();
         expect(result.current.error).toContain('Failed to parse');
@@ -169,10 +170,10 @@ describe('useDashboardData', () => {
   describe('cleanup', () => {
     it('should unregister metrics event on unmount', () => {
       const { unmount } = renderHook(() => useDashboardData(), { wrapper });
-      
+
       const { useWebSocket } = require('@/hooks/use-websocket');
       expect(useWebSocket().off).toHaveBeenCalledWith('metrics', expect.any(Function));
-      
+
       unmount();
     });
   });

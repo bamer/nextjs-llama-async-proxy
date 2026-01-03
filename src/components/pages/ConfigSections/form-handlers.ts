@@ -1,9 +1,9 @@
 import React from "react";
-import { Config } from "./types";
+import type { Config } from "./types";
 
 export function handleInputChange(
   e: React.ChangeEvent<HTMLInputElement>,
-  config: Config,
+  _config: Config,
   setConfig: React.Dispatch<React.SetStateAction<Config>>,
 ): void {
   const { name, value, type, checked } = e.target;

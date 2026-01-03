@@ -23,14 +23,14 @@ jest.mock('@/providers/websocket-provider', () => ({
 }));
 
 describe('use-websocket', () => {
-  const wrapper = ({ children }: any) => (
-    <WebSocketProvider>{children}</WebSocketProvider>
-  );
+  const wrapper = ({ children }: any) => {
+    return React.createElement(WebSocketProvider, null, children);
+  };
 
   describe('useWebSocket hook', () => {
     it('should return WebSocket context values', () => {
       const { result } = renderHook(() => useWebSocket(), { wrapper });
-      
+
       expect(result.current).toBeDefined();
       expect(result.current.isConnected).toBeDefined();
       expect(result.current.connectionState).toBeDefined();
@@ -49,20 +49,20 @@ describe('use-websocket', () => {
 
     it('should expose connection state', () => {
       const { result } = renderHook(() => useWebSocket(), { wrapper });
-      
+
       expect(result.current.isConnected).toBe(true);
       expect(result.current.connectionState).toBe('connected');
     });
 
     it('should expose reconnection attempts', () => {
       const { result } = renderHook(() => useWebSocket(), { wrapper });
-      
+
       expect(result.current.reconnectionAttempts).toBe(0);
     });
 
     it('should expose WebSocket methods', () => {
       const { result } = renderHook(() => useWebSocket(), { wrapper });
-      
+
       expect(typeof result.current.sendMessage).toBe('function');
       expect(typeof result.current.requestMetrics).toBe('function');
       expect(typeof result.current.requestLogs).toBe('function');
@@ -79,11 +79,11 @@ describe('use-websocket', () => {
         () => useWebSocketEvent('test_event', handler),
         { wrapper }
       );
-      
+
       const { useWebSocketContext } = require('@/providers/websocket-provider');
       const context = useWebSocketContext();
       expect(context.on).toHaveBeenCalledWith('test_event', expect.any(Function));
-      
+
       unmount();
     });
 
@@ -93,12 +93,12 @@ describe('use-websocket', () => {
         () => useWebSocketEvent('test_event', handler),
         { wrapper }
       );
-      
+
       const { useWebSocketContext } = require('@/providers/websocket-provider');
       const context = useWebSocketContext();
-      
+
       unmount();
-      
+
       expect(context.off).toHaveBeenCalledWith('test_event', expect.any(Function));
     });
 
@@ -107,7 +107,7 @@ describe('use-websocket', () => {
       const handler2 = jest.fn();
       const dep1 = 'dep1';
       const dep2 = 'dep2';
-      
+
       const { rerender, unmount } = renderHook(
         ({ deps, handler }: any) => useWebSocketEvent('test_event', handler, deps),
         {
@@ -115,25 +115,25 @@ describe('use-websocket', () => {
           initialProps: { deps: [dep1], handler: handler1 },
         }
       );
-      
+
       rerender({ deps: [dep2], handler: handler2 });
-      
+
       unmount();
     });
 
     it('should register handler for custom event type', () => {
       const handler = jest.fn();
       const eventType = 'custom_event';
-      
+
       const { unmount } = renderHook(
         () => useWebSocketEvent<{ data: string }>(eventType, handler),
         { wrapper }
       );
-      
+
       const { useWebSocketContext } = require('@/providers/websocket-provider');
       const context = useWebSocketContext();
       expect(context.on).toHaveBeenCalledWith(eventType, expect.any(Function));
-      
+
       unmount();
     });
   });

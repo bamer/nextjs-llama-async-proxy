@@ -40,8 +40,8 @@ class MetricsApiService {
     throw new Error(response.error?.message || "Failed to fetch monitoring history");
   }
 
-  public async getLatestMonitoring(): Promise<ApiResponse<any>> {
-    const response = await apiClient.get<any>(`${this.baseUrl}/monitoring/latest`);
+  public async getLatestMonitoring(): Promise<ApiResponse<unknown>> {
+    const response = await apiClient.get<unknown>(`${this.baseUrl}/monitoring/latest`);
     if (response.success && response.data) {
       return response;
     }

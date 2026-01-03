@@ -9,7 +9,7 @@ class SystemApiService {
     this.baseUrl = "/api";
   }
 
-  public async getSystemInfo(): Promise<ApiResponse<any>> {
+  public async getSystemInfo(): Promise<ApiResponse<unknown>> {
     return await apiClient.get(`${this.baseUrl}/system/info`);
   }
 
@@ -21,7 +21,7 @@ class SystemApiService {
     return await apiClient.post(`${this.baseUrl}/system/shutdown`);
   }
 
-  public async healthCheck(): Promise<ApiResponse<any>> {
+  public async healthCheck(): Promise<ApiResponse<unknown>> {
     return await apiClient.get(`${this.baseUrl}/health`);
   }
 

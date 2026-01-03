@@ -10,11 +10,11 @@ class SettingsApiService {
     this.baseUrl = "/api";
   }
 
-  public async getSettings(): Promise<ApiResponse<any>> {
+  public async getSettings(): Promise<ApiResponse<unknown>> {
     return await apiClient.get(`${this.baseUrl}/settings`);
   }
 
-  public async updateSettings(settings: any): Promise<ApiResponse<any>> {
+  public async updateSettings(settings: unknown): Promise<ApiResponse<unknown>> {
     const response = await apiClient.put(`${this.baseUrl}/settings`, settings);
     if (response.success && response.data) {
       useStore.getState().updateSettings(response.data);

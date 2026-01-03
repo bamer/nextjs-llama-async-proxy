@@ -27,7 +27,7 @@ export function requestIdleCallback(
   const id = ++timeoutIdCounter;
 
   if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-    const actualCallback = window.requestIdleCallback as (cb: IdleCallback, opts?: any) => number;
+    const actualCallback = window.requestIdleCallback as (cb: IdleCallback, opts?: { timeout?: number }) => number;
     const actualId = actualCallback(callback, options);
     activeTimeouts.set(id, callback);
     return actualId;

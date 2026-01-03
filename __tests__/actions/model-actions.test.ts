@@ -18,6 +18,15 @@ import {
   deleteModelAction,
 } from "@/actions/model-actions";
 import * as db from "@/lib/database";
+import type {
+  ModelConfig,
+  ModelSamplingConfig,
+  ModelMemoryConfig,
+  ModelGpuConfig,
+  ModelAdvancedConfig,
+  ModelLoraConfig,
+  ModelMultimodalConfig,
+} from "@/lib/database";
 
 jest.mock("@/lib/database");
 
@@ -28,10 +37,9 @@ describe("model-actions", () => {
 
   describe("getModelsAction", () => {
     it("should get all models", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock data
-      const mockModels: any = [
+      const mockModels: ModelConfig[] = [
         { id: 1, name: "model1", type: "llama", status: "idle" },
-        { id: 2, name: "model2", type: "mistral", status: "running" },
+        { id: 2, name: "model2", type: "gpt", status: "running" },
       ];
       (db.getModels as jest.Mock).mockResolvedValue(mockModels);
 
@@ -42,10 +50,8 @@ describe("model-actions", () => {
     });
 
     it("should get models with filters", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock data
-      const mockModels: any = [{ id: 1, name: "model1", type: "llama", status: "idle" }];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock filter
-      const filters: any = { status: "idle" };
+      const mockModels: ModelConfig[] = [{ id: 1, name: "model1", type: "llama", status: "idle" }];
+      const filters: Record<string, unknown> = { status: "idle" };
       (db.getModels as jest.Mock).mockResolvedValue(mockModels);
 
       const result = await getModelsAction(filters);
@@ -65,8 +71,7 @@ describe("model-actions", () => {
 
   describe("getModelByIdAction", () => {
     it("should get model by id", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock data
-      const mockModel: any = { id: 1, name: "model1", type: "llama", status: "idle" };
+      const mockModel: ModelConfig = { id: 1, name: "model1", type: "llama", status: "idle" };
       (db.getModelById as jest.Mock).mockResolvedValue(mockModel);
 
       const result = await getModelByIdAction(1);
@@ -86,8 +91,7 @@ describe("model-actions", () => {
 
   describe("get config actions", () => {
     it("getModelSamplingConfigAction should call database function", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock config
-      const mockConfig: any = { id: 1, model_id: 1, temperature: 0.7 };
+      const mockConfig: ModelSamplingConfig = { id: 1, model_id: 1, temperature: 0.7 };
       (db.getModelSamplingConfig as jest.Mock).mockResolvedValue(mockConfig);
 
       const result = await getModelSamplingConfigAction(1);
@@ -97,8 +101,7 @@ describe("model-actions", () => {
     });
 
     it("getModelMemoryConfigAction should call database function", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock config
-      const mockConfig: any = { id: 1, model_id: 1, cache_ram: 2 };
+      const mockConfig: ModelMemoryConfig = { id: 1, model_id: 1, cache_ram: 2 };
       (db.getModelMemoryConfig as jest.Mock).mockResolvedValue(mockConfig);
 
       const result = await getModelMemoryConfigAction(1);
@@ -108,8 +111,7 @@ describe("model-actions", () => {
     });
 
     it("getModelGpuConfigAction should call database function", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock config
-      const mockConfig: any = { id: 1, model_id: 1, gpu_layers: 35 };
+      const mockConfig: ModelGpuConfig = { id: 1, model_id: 1, gpu_layers: 35 };
       (db.getModelGpuConfig as jest.Mock).mockResolvedValue(mockConfig);
 
       const result = await getModelGpuConfigAction(1);
@@ -119,8 +121,7 @@ describe("model-actions", () => {
     });
 
     it("getModelAdvancedConfigAction should call database function", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock config
-      const mockConfig: any = { id: 1, model_id: 1, context_shift: 0 };
+      const mockConfig: ModelAdvancedConfig = { id: 1, model_id: 1, context_shift: 0 };
       (db.getModelAdvancedConfig as jest.Mock).mockResolvedValue(mockConfig);
 
       const result = await getModelAdvancedConfigAction(1);
@@ -130,8 +131,7 @@ describe("model-actions", () => {
     });
 
     it("getModelLoraConfigAction should call database function", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock config
-      const mockConfig: any = { id: 1, model_id: 1, lora: "" };
+      const mockConfig: ModelLoraConfig = { id: 1, model_id: 1, lora: "" };
       (db.getModelLoraConfig as jest.Mock).mockResolvedValue(mockConfig);
 
       const result = await getModelLoraConfigAction(1);
@@ -141,8 +141,7 @@ describe("model-actions", () => {
     });
 
     it("getModelMultimodalConfigAction should call database function", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock config
-      const mockConfig: any = { id: 1, model_id: 1, mmproj: "" };
+      const mockConfig: ModelMultimodalConfig = { id: 1, model_id: 1, mmproj: "" };
       (db.getModelMultimodalConfig as jest.Mock).mockResolvedValue(mockConfig);
 
       const result = await getModelMultimodalConfigAction(1);
@@ -178,8 +177,7 @@ describe("model-actions", () => {
 
   describe("save config actions", () => {
     it("saveModelSamplingConfigAction should call database function", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock config
-      const mockConfig: any = { temperature: 0.7, top_p: 0.9, top_k: 40 };
+      const mockConfig: ModelSamplingConfig = { temperature: 0.7, top_p: 0.9, top_k: 40 };
       (db.saveModelSamplingConfig as jest.Mock).mockResolvedValue(1);
 
       const result = await saveModelSamplingConfigAction(1, mockConfig);
@@ -189,8 +187,7 @@ describe("model-actions", () => {
     });
 
     it("saveModelMemoryConfigAction should call database function", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock config
-      const mockConfig: any = { cache_ram: 2, mmap: 1, mlock: 0 };
+      const mockConfig: ModelMemoryConfig = { cache_ram: 2, mmap: 1, mlock: 0 };
       (db.saveModelMemoryConfig as jest.Mock).mockResolvedValue(2);
 
       const result = await saveModelMemoryConfigAction(1, mockConfig);
@@ -200,8 +197,7 @@ describe("model-actions", () => {
     });
 
     it("saveModelGpuConfigAction should call database function", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock config
-      const mockConfig: any = { gpu_layers: 35, main_gpu: 0 };
+      const mockConfig: ModelGpuConfig = { gpu_layers: 35, main_gpu: 0 };
       (db.saveModelGpuConfig as jest.Mock).mockResolvedValue(3);
 
       const result = await saveModelGpuConfigAction(1, mockConfig);
@@ -211,8 +207,7 @@ describe("model-actions", () => {
     });
 
     it("saveModelAdvancedConfigAction should call database function", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock config
-      const mockConfig: any = { context_shift: 0, flash_attn: "" };
+      const mockConfig: ModelAdvancedConfig = { context_shift: 0, offline: 0 };
       (db.saveModelAdvancedConfig as jest.Mock).mockResolvedValue(4);
 
       const result = await saveModelAdvancedConfigAction(1, mockConfig);
@@ -222,8 +217,7 @@ describe("model-actions", () => {
     });
 
     it("saveModelLoraConfigAction should call database function", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock config
-      const mockConfig: any = { lora: "", draft_max: 16 };
+      const mockConfig: ModelLoraConfig = { lora: "", draft_max: 16 };
       (db.saveModelLoraConfig as jest.Mock).mockResolvedValue(5);
 
       const result = await saveModelLoraConfigAction(1, mockConfig);
@@ -233,8 +227,7 @@ describe("model-actions", () => {
     });
 
     it("saveModelMultimodalConfigAction should call database function", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock config
-      const mockConfig: any = { mmproj: "", image_max_tokens: 0 };
+      const mockConfig: ModelMultimodalConfig = { mmproj: "", image_max_tokens: 0 };
       (db.saveModelMultimodalConfig as jest.Mock).mockResolvedValue(6);
 
       const result = await saveModelMultimodalConfigAction(1, mockConfig);
@@ -246,8 +239,7 @@ describe("model-actions", () => {
 
   describe("saveModelAction", () => {
     it("should save a new model", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock model config
-      const modelConfig: any = { name: "test", type: "llama", status: "idle", path: "/path/to/model" };
+      const modelConfig: ModelConfig = { name: "test", type: "llama", status: "idle", model_path: "/path/to/model" };
       (db.saveModel as jest.Mock).mockResolvedValue(1);
 
       const result = await saveModelAction(modelConfig);
@@ -257,8 +249,7 @@ describe("model-actions", () => {
     });
 
     it("should return new model ID", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock model config
-      const modelConfig: any = { name: "test", type: "llama", status: "idle", path: "/path/to/model" };
+      const modelConfig: ModelConfig = { name: "test", type: "llama", status: "idle", model_path: "/path/to/model" };
       (db.saveModel as jest.Mock).mockResolvedValue(42);
 
       const result = await saveModelAction(modelConfig);
@@ -269,8 +260,7 @@ describe("model-actions", () => {
 
   describe("updateModelAction", () => {
     it("should update a model", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock updates
-      const updates: any = { status: "running" };
+      const updates: Partial<ModelConfig> = { status: "running" };
       (db.updateModel as jest.Mock).mockResolvedValue(undefined);
 
       await updateModelAction(1, updates);
@@ -279,8 +269,7 @@ describe("model-actions", () => {
     });
 
     it("should handle partial updates", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock updates
-      const updates: any = { status: "idle" };
+      const updates: Partial<ModelConfig> = { status: "idle" };
       (db.updateModel as jest.Mock).mockResolvedValue(undefined);
 
       await updateModelAction(1, updates);
@@ -321,8 +310,7 @@ describe("model-actions", () => {
     });
 
     it("should handle database errors in saveModelAction", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock model config
-      const modelConfig: any = { name: "test", type: "llama", status: "idle", path: "/path" };
+      const modelConfig: ModelConfig = { name: "test", type: "llama", status: "idle", model_path: "/path" };
       const error = new Error("Save failed");
       (db.saveModel as jest.Mock).mockRejectedValue(error);
 
@@ -333,22 +321,19 @@ describe("model-actions", () => {
   describe("Integration workflows", () => {
     it("should support full CRUD workflow", async () => {
       // Create
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock new model
-      const newModel: any = { name: "test", type: "llama", status: "idle", path: "/path" };
+      const newModel: ModelConfig = { name: "test", type: "llama", status: "idle", model_path: "/path" };
       (db.saveModel as jest.Mock).mockResolvedValue(1);
       const modelId = await saveModelAction(newModel);
       expect(modelId).toBe(1);
 
       // Read
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock data
-      const mockModel: any = { id: 1, name: "test", type: "llama", status: "idle", path: "/path" };
+      const mockModel: ModelConfig = { id: 1, name: "test", type: "llama", status: "idle", model_path: "/path" };
       (db.getModelById as jest.Mock).mockResolvedValue(mockModel);
       const retrievedModel = await getModelByIdAction(1);
       expect(retrievedModel).toEqual(mockModel);
 
       // Update
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock updates
-      const updates: any = { status: "running" };
+      const updates: Partial<ModelConfig> = { status: "running" };
       (db.updateModel as jest.Mock).mockResolvedValue(undefined);
       await updateModelAction(1, updates);
       expect(db.updateModel).toHaveBeenCalledWith(1, updates);
@@ -363,8 +348,7 @@ describe("model-actions", () => {
       const modelId = 1;
 
       // Save sampling config
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any - Mock sampling config
-      const samplingConfig: any = { temperature: 0.7, top_p: 0.9 };
+      const samplingConfig: ModelSamplingConfig = { temperature: 0.7, top_p: 0.9 };
       (db.saveModelSamplingConfig as jest.Mock).mockResolvedValue(1);
       await saveModelSamplingConfigAction(modelId, samplingConfig);
       expect(db.saveModelSamplingConfig).toHaveBeenCalledWith(modelId, samplingConfig);

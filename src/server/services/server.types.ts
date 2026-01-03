@@ -29,15 +29,15 @@ export interface ModelDisplayData {
 }
 
 export interface ConfigHandler {
-  loadConfig(id: number, type: string): Promise<any>;
-  saveConfig(id: number, type: string, config: any): Promise<any>;
+  loadConfig(id: number, type: string): Promise<unknown>;
+  saveConfig(id: number, type: string, config: unknown): Promise<unknown>;
 }
 
 export interface WebSocketHandlersDependencies {
   llamaService: LlamaService | null;
-  modelImportService: any;
+  modelImportService: unknown;
   collectMetrics: () => Promise<SystemMetrics>;
-  broadcastState: (state: any) => void;
+  broadcastState: (state: unknown) => void;
 }
 
 export type WebSocketHandlerFactory = (

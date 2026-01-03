@@ -8,11 +8,11 @@ class GenerationApiService {
     this.baseUrl = "/api";
   }
 
-  public async generateText(data: { prompt: string; model?: string; max_tokens?: number }): Promise<ApiResponse<any>> {
+  public async generateText(data: { prompt: string; model?: string; max_tokens?: number }): Promise<ApiResponse<unknown>> {
     return await apiClient.post(`${this.baseUrl}/generate`, data);
   }
 
-  public async chat(data: { messages: any[]; model?: string; max_tokens?: number }): Promise<ApiResponse<any>> {
+  public async chat(data: { messages: unknown[]; model?: string; max_tokens?: number }): Promise<ApiResponse<unknown>> {
     return await apiClient.post(`${this.baseUrl}/chat`, data);
   }
 }

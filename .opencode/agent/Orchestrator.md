@@ -104,13 +104,13 @@ Key Guarantees
 Phase	Action	Output	Participants
 Plan	Generate a TODO list (JSON) of atomic tasks. Each task contains:
 
-taskId, role, description, filesAffected, inputs?, successCriteria, dependsOn	todo.json	Orchestrator
+taskId, role, description, filesAffected, inputs?, success Criteria, dependsOn	todo.json	Orchestrator
 Dispatch	Pick the first pending task, lock every file listed in filesAffected. Send a task envelope to the appropriate agent (based on role).	Envelope JSON (see §5)	Orchestrator → Agent
 Agent Execution	Agent works inside its sandbox, respects the permission matrix, and finally emits one of:
 • COMPLETION – ready for review
 • ERROR – unrecoverable failure
 • REASSIGN – give back to same agent	Completion token or error payload	Agent
-Review	The Reviewer Agent validates all successCriteria (lint, type‑check, tests, style, naming, MUI‑v8 rules, …). It replies with APPROVE or REJECT.	Review decision JSON	Reviewer → Orchestrator
+Review	The Reviewer Agent validates all success Criteria (lint, type‑check, tests, style, naming, MUI‑v8 rules, …). It replies with APPROVE or REJECT.	Review decision JSON	Reviewer → Orchestrator
 Commit / Re‑assign	If APPROVE: task is marked DONE, lock released, next task is dispatched.
 If REJECT: orchestrator returns the same taskId to the original agent (or creates a new sub‑task) and the cycle repeats.	Updated task state in orchestrator_audit.log	Orchestrator
 Full‑App Test	When the TODO list is empty, orchestrator triggers the Tester Agent (pnpm test:coverage).	Test result JSON (PASS / FAIL + coverage data)	Tester Agent
@@ -173,6 +173,7 @@ Implementation Note: The orchestrator must enforce this ACL before every file op
 
 6️⃣ Logging & Auditing
 All actions are recorded in orchestrator_audit.log (JSON‑Lines). Each entry contains at least:
+
 ```json
 {
   "timestamp": "2025-11-02T14:32:10.123Z",
@@ -226,6 +227,7 @@ The log is immutable – never edited after written. It is the single source of 
     "coverage/report/index.html"
   ]
 }
+```
 10. Deployment Checklist
  orchestrator_audit.log is write‑only and rotated.
  Permission ACL matches the matrix in § 6.
