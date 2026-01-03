@@ -279,5 +279,6 @@ export const iconMocks = {
   ErrorOutline: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'ErrorOutline' }),
   Rocket: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Rocket' }),
   Warning: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Warning' }),
+  Storage: (props: any) => React.createElement('svg', { ...props, 'data-icon': 'Storage' }),
 };
 

@@ -48,6 +48,11 @@ export function FormField({
   const isFullWidth: boolean = fullWidth ?? false;
   const isDisabled: boolean = disabled ?? false;
 
+  // Debug: log each section before rendering
+  if (typeof window !== 'undefined' && (window as any).__TESTING__) {
+    console.log('FormField rendering:', { fieldType, hasOptions: fieldOptions.length > 0 });
+  }
+
   const renderLabel = () => {
     if (!tooltip) {
       return label;
