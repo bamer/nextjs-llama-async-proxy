@@ -1,37 +1,18 @@
 {
-  "pipelineId": "RESCUE-2025-12-31-001",
-  "status": "PHASE_2_NEEDED",
-  "phase": "PHASE_2_DEEP_FIX",
-  "startTime": "2025-12-31T12:00:00Z",
-  "phase1Complete": "2025-12-31T03:00:00Z",
-  "phase1Results": {
-    "tasksExecuted": 5,
-    "tasksCompleted": 5,
-    "tasksFailed": 0
-  },
-  "currentAssessment": {
-    "typeCheck": {
-      "status": "FAIL",
-      "errors": 626,
-      "filesWithErrors": 79,
-      "summary": "Core application files have TypeScript errors, not just tests"
-    },
-    "tests": {
-      "status": "FAIL",
-      "totalTests": 7528,
-      "passed": 5626,
-      "failed": 1866,
-      "coverage": {
-        "statements": 68.59,
-        "functions": 63.07,
-        "branches": 64.49
-      },
-      "threshold": 70,
-      "met": false
-    },
-    "dashboardReview": {
-      "status": "APPROVED",
-      "summary": "GPU metrics correctly extracted from nested structure"
-    }
+  "pipelineId": "200-line-refactor-2025-01-04",
+  "status": "EXECUTING",
+  "createdAt": "2025-01-04T00:00:00.000Z",
+  "totalTasks": 49,
+  "completedTasks": 2,
+  "pendingTasks": 46,
+  "inProgressTasks": 0,
+  "failedTasks": 0,
+  "currentTask": null,
+  "currentTaskStatus": "DONE",
+  "completedTasksList": ["T-001", "T-002"],
+  "workflow": {
+    "phase": "EXECUTION",
+    "steps": ["PLAN", "DISPATCH", "EXECUTION", "REVIEW", "TEST", "DOCS", "CLEANUP", "SUMMARY"],
+    "currentStep": "EXECUTION"
   }
 }

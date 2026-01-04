@@ -99,25 +99,74 @@ Key Guarantees
 - The whole pipeline ends only when tests pass, docs are updated, and the repo is clean.
 - **Critical**:it's mandatory that you don't make <tool_call> inside  <thinking> block if you do the whole server will crash this is a benchmarking
 
+PLAN → DISPATCH (lock + envelope) → EXECUTION (COMPLETION/ERROR/REASSIGN)
+      ↓                                   ↓
+   REVIEW (APPROVE → COMMIT/REASSIGN)   REVIEW (REJECT → back to EXECUTION)
+      ↓                                   ↓
+   (repeat until todo.json empty) → FULL‑APP TEST
+      ↓
+   PASS → DOCS → mini‑REVIEW → CLEANUP → FINAL SUMMARY → EXIT
+      ↓
+   FAIL → create fix‑task → loop back to EXECUTION
+
 ###3️⃣### Task Lifecycle
 
-Phase	Action	Output	Participants
-Plan	Generate a TODO list (JSON) of atomic tasks. Each task contains:
+| Phase         | Action                                                                 | Output                                      | Participants          |
+|---------------|------------------------------------------------------------------------|---------------------------------------------|-----------------------|
+| **Plan**      | Generate a structured TODO list (JSON) of atomic tasks. Each task must include: | `todo.json`                                 | Orchestrator          |
+|               | - `taskId`: Unique identifier for the task                             |                                             |                       |
+|               | - `role`: Agent type responsible (e.g., "frontend", "backend")         |                                             |                       |
+|               | - `description`: Clear, actionable task description                   |                                             |                       |
+|               | - `filesAffected`: Array of files impacted by this task               |                                             |                       |
+|               | - `inputs`: Required inputs (if any)                                  |                                             |                       |
+|               | - `successCriteria`: Specific validation requirements (e.g., "Passes ESLint", "Covers 80% of new code") |                                             |                       |
+|               | - `dependsOn`: Array of taskIds this task depends on (if any)          |                                             |                       |
+| **Dispatch**  | 1. Select the first pending task from `todo.json`                     | Task envelope (JSON)                       | Orchestrator → Agent |
+|               | 2. Lock all files listed in `filesAffected`                           |                                             |                       |
+|               | 3. Send a task envelope to the appropriate agent based on `role`       |                                             |                       |
+| **Agent Execution** | Agent processes the task in its sandbox environment, adhering to: | Completion token or error payload          | Agent                 |
+|               | - Permission matrix restrictions                                        |                                             |                       |
+|               | - File locks (cannot modify locked files)                              |                                             |                       |
+|               | - Success criteria from the task definition                            |                                             |                       |
+|               | Upon completion, agent must emit one of:                               |                                             |                       |
+|               | - `COMPLETION`: Task ready for review                                   |                                             |                       |
+|               | - `ERROR`: Unrecoverable failure (includes error details)              |                                             |                       |
+|               | - `REASSIGN`: Request to return to same agent (includes progress status)|                                             |                       |
+| **Review**    | Reviewer Agent validates all success criteria:                          | Review decision (JSON)                     | Reviewer → Orchestrator |
+|               | - Code quality (linting, type-checking)                                |                                             |                       |
+|               | - Testing coverage and results                                          |                                             |                       |
+|               | - Style guidelines and naming conventions                               |                                             |                       |
+|               | - Framework-specific rules (e.g., MUI-v8)                              |                                             |                       |
+|               | Returns either `APPROVE` or `REJECT` with detailed feedback            |                                             |                       |
+| **Commit/Re-assign** | Based on review decision: | Updated task state in `orchestrator_audit.log` | Orchestrator |
+|               | - `APPROVE`: Mark task as `DONE`, release file locks, dispatch next task |                                             |                       |
+|               | - `REJECT`: Return same `taskId` to original agent (or create sub-task) |                                             |                       |
+| **Full-App Test** | When all tasks are complete: | Test result (JSON) | Tester Agent |
+|               | 1. Orchestrator triggers full test suite (`pnpm test:coverage`)        |                                             |                       |
+|               | 2. Tester Agent executes tests and provides:                           |                                             |                       |
+|               | - `PASS`/`FAIL` status                                                  |                                             |                       |
+|               | - Code coverage data                                                   |                                             |                       |
+| **Fix-Loop**  | If tests fail: | New task envelope | Orchestrator |
+|               | 1. Orchestrator creates atomic fix tasks (e.g., "Add test for X")       |                                             |                       |
+|               | 2. Tasks are added to `todo.json` and processed normally                |                                             |                       |
+| **Documentation** | After successful tests: | Updated docs + `DOCS_READY` token | Docs Agent → Orchestrator |
+|               | 1. Orchestrator delegates documentation updates to Docs Agent           |                                             |                       |
+|               | 2. Docs Agent modifies files under `docs/`                             |                                             |                       |
+|               | 3. Must emit `DOCS_READY` token upon completion                        |                                             |                       |
+|               | 4. Orchestrator performs mini-review (can reuse Reviewer Agent)         |                                             |                       |
+| **Cleanup**   | Final step before completion: | `CLEANUP_DONE` token | Janitor Agent |
+|               | 1. Orchestrator calls Janitor Agent to remove temporary artifacts:      |                                             |                       |
+|               | - `dist/` directory                                                     |                                             |                       |
+|               | - `coverage/` reports                                                   |                                             |                       |
+|               | - Stray log files                                                       |                                             |                       |
+| **Final Summary** | Orchestrator generates and emits: | Summary (JSON) | Orchestrator |
+|               | - Final summary token (`final-summary-token.md`)                        |                                             |                       |
+|               | - Includes:                                                             |                                             |                       |
+|               |   - Task completion statistics                                          |                                             |                       |
+|               |   - Any warnings or notes                                               |                                             |                       |
+|               | - Orchestrator exits after summary generation                            |                                             |                       |
 
-taskId, role, description, filesAffected, inputs?, success Criteria, dependsOn	todo.json	Orchestrator
-Dispatch	Pick the first pending task, lock every file listed in filesAffected. Send a task envelope to the appropriate agent (based on role).	Envelope JSON (see §5)	Orchestrator → Agent
-Agent Execution	Agent works inside its sandbox, respects the permission matrix, and finally emits one of:
-• COMPLETION – ready for review
-• ERROR – unrecoverable failure
-• REASSIGN – give back to same agent	Completion token or error payload	Agent
-Review	The Reviewer Agent validates all success Criteria (lint, type‑check, tests, style, naming, MUI‑v8 rules, …). It replies with APPROVE or REJECT.	Review decision JSON	Reviewer → Orchestrator
-Commit / Re‑assign	If APPROVE: task is marked DONE, lock released, next task is dispatched.
-If REJECT: orchestrator returns the same taskId to the original agent (or creates a new sub‑task) and the cycle repeats.	Updated task state in orchestrator_audit.log	Orchestrator
-Full‑App Test	When the TODO list is empty, orchestrator triggers the Tester Agent (pnpm test:coverage).	Test result JSON (PASS / FAIL + coverage data)	Tester Agent
-Fix‑Loop	On FAIL, orchestrator creates a new atomic fix task (e.g., “add missing test for X”) and loops back to step 3.	New task envelope	Orchestrator
-Documentation	After tests pass, orchestrator delegates a Docs Agent to modify files under docs/. The Docs Agent must emit a DOCS_READY token; the orchestrator then runs a mini‑review (can be the same Reviewer Agent).	Updated docs + DOCS_READY token	Docs Agent → Orchestrator
-Cleanup	Finally the orchestrator calls the Janitor Agent to delete temporary artefacts (dist/, coverage/, stray logs).	CLEANUP_DONE token	Janitor Agent
-Final Summary	Orchestrator emits a final summary token (final-summary-token.md) and exits.	Summary JSON	Orchestrator
+
 
 ###4️⃣### Agent Interaction Protocol
 4.1 Task Envelope (sent to any agent)

@@ -1,0 +1,1245 @@
+{
+  "pipelineId": "200-line-refactor-2025-01-04",
+  "status": "PENDING",
+  "createdAt": "2025-01-04T00:00:00.000Z",
+  "tasks": [
+    {
+      "taskId": "T-001",
+      "role": "tester",
+      "description": "Split ModelsListCard.test.tsx (1104 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/components/dashboard/ModelsListCard.test.tsx",
+        "__tests__/components/dashboard/ModelsListCard/",
+        "__tests__/components/dashboard/ModelsListCard/rendering.test.tsx",
+        "__tests__/components/dashboard/ModelsListCard/negative.test.tsx",
+        "__tests__/components/dashboard/ModelsListCard/enhancement.test.tsx",
+        "__tests__/components/dashboard/ModelsListCard/template.test.tsx",
+        "__tests__/components/dashboard/ModelsListCard/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/components/dashboard/ModelsListCard.test.tsx",
+        "categories": ["Positive Tests", "Negative Tests", "Enhancement Tests", "Template Functionality"]
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/components/dashboard/ModelsListCard/",
+        "Coverage maintained at same level",
+        "test-utils.ts contains shared mock data and helpers",
+        "pnpm lint passes for all new files",
+        "pnpm type:check passes"
+      ],
+      "dependsOn": [],
+      "priority": "high",
+      "estimatedMinutes": 45
+    },
+    {
+      "taskId": "T-002",
+      "role": "tester",
+      "description": "Split ModelsPage.test.tsx (988 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/components/pages/ModelsPage.test.tsx",
+        "__tests__/components/pages/ModelsPage/",
+        "__tests__/components/pages/ModelsPage/rendering.test.tsx",
+        "__tests__/components/pages/ModelsPage/interactions.test.tsx",
+        "__tests__/components/pages/ModelsPage/negative.test.tsx",
+        "__tests__/components/pages/ModelsPage/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/components/pages/ModelsPage.test.tsx"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/components/pages/ModelsPage/",
+        "Coverage maintained",
+        "test-utils.ts contains shared setup",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "high",
+      "estimatedMinutes": 40
+    },
+    {
+      "taskId": "T-003",
+      "role": "tester",
+      "description": "Split models-start.test.ts (925 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/api/models-start.test.ts",
+        "__tests__/api/models-start/",
+        "__tests__/api/models-start/success.test.ts",
+        "__tests__/api/models-start/error-handling.test.ts",
+        "__tests__/api/models-start/edge-cases.test.ts",
+        "__tests__/api/models-start/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/api/models-start.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/api/models-start/",
+        "Coverage maintained",
+        "test-utils.ts contains shared API mocks",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "high",
+      "estimatedMinutes": 40
+    },
+    {
+      "taskId": "T-004",
+      "role": "tester",
+      "description": "Split ModernDashboard.test.tsx (839 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/components/dashboard/ModernDashboard.test.tsx",
+        "__tests__/components/dashboard/ModernDashboard/",
+        "__tests__/components/dashboard/ModernDashboard/rendering.test.tsx",
+        "__tests__/components/dashboard/ModernDashboard/negative.test.tsx",
+        "__tests__/components/dashboard/ModernDashboard/enhancement.test.tsx",
+        "__tests__/components/dashboard/ModernDashboard/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/components/dashboard/ModernDashboard.test.tsx"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/components/dashboard/ModernDashboard/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "high",
+      "estimatedMinutes": 35
+    },
+    {
+      "taskId": "T-005",
+      "role": "tester",
+      "description": "Split GeneralSettingsTab.test.tsx (685 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/components/configuration/GeneralSettingsTab.test.tsx",
+        "__tests__/components/configuration/GeneralSettingsTab/",
+        "__tests__/components/configuration/GeneralSettingsTab/rendering.test.tsx",
+        "__tests__/components/configuration/GeneralSettingsTab/form-handling.test.tsx",
+        "__tests__/components/configuration/GeneralSettingsTab/negative.test.tsx",
+        "__tests__/components/configuration/GeneralSettingsTab/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/components/configuration/GeneralSettingsTab.test.tsx"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/components/configuration/GeneralSettingsTab/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "high",
+      "estimatedMinutes": 30
+    },
+    {
+      "taskId": "T-006",
+      "role": "tester",
+      "description": "Split rescan.test.ts (684 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/api/rescan.test.ts",
+        "__tests__/api/rescan/",
+        "__tests__/api/rescan/success.test.ts",
+        "__tests__/api/rescan/error-handling.test.ts",
+        "__tests__/api/rescan/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/api/rescan.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/api/rescan/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "high",
+      "estimatedMinutes": 30
+    },
+    {
+      "taskId": "T-007",
+      "role": "tester",
+      "description": "Split websocket-provider.test.tsx (678 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/providers/websocket-provider.test.tsx",
+        "__tests__/providers/websocket-provider/",
+        "__tests__/providers/websocket-provider/rendering.test.tsx",
+        "__tests__/providers/websocket-provider/event-handling.test.tsx",
+        "__tests__/providers/websocket-provider/negative.test.tsx",
+        "__tests__/providers/websocket-provider/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/providers/websocket-provider.test.tsx"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/providers/websocket-provider/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "high",
+      "estimatedMinutes": 30
+    },
+    {
+      "taskId": "T-008",
+      "role": "tester",
+      "description": "Split websocket-transport.test.ts (674 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/lib/websocket-transport.test.ts",
+        "__tests__/lib/websocket-transport/",
+        "__tests__/lib/websocket-transport/connection.test.ts",
+        "__tests__/lib/websocket-transport/messaging.test.ts",
+        "__tests__/lib/websocket-transport/error-handling.test.ts",
+        "__tests__/lib/websocket-transport/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/lib/websocket-transport.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/lib/websocket-transport/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "high",
+      "estimatedMinutes": 30
+    },
+    {
+      "taskId": "T-009",
+      "role": "tester",
+      "description": "Split useLlamaStatus.test.ts (656 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/hooks/useLlamaStatus.test.ts",
+        "__tests__/hooks/useLlamaStatus/",
+        "__tests__/hooks/useLlamaStatus/socket-events.test.ts",
+        "__tests__/hooks/useLlamaStatus/status-values.test.ts",
+        "__tests__/hooks/useLlamaStatus/lifecycle.test.ts",
+        "__tests__/hooks/useLlamaStatus/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/hooks/useLlamaStatus.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/hooks/useLlamaStatus/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "high",
+      "estimatedMinutes": 30
+    },
+    {
+      "taskId": "T-010",
+      "role": "tester",
+      "description": "Split DashboardHeader.test.tsx (655 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/components/dashboard/DashboardHeader.test.tsx",
+        "__tests__/components/dashboard/DashboardHeader/",
+        "__tests__/components/dashboard/DashboardHeader/rendering.test.tsx",
+        "__tests__/components/dashboard/DashboardHeader/interactions.test.tsx",
+        "__tests__/components/dashboard/DashboardHeader/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/components/dashboard/DashboardHeader.test.tsx"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/components/dashboard/DashboardHeader/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "high",
+      "estimatedMinutes": 30
+    },
+    {
+      "taskId": "T-011",
+      "role": "tester",
+      "description": "Split api-client.edge-cases.test.ts (645 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/utils/api-client.edge-cases.test.ts",
+        "__tests__/utils/api-client/",
+        "__tests__/utils/api-client/error-handling.test.ts",
+        "__tests__/utils/api-client/timeouts.test.ts",
+        "__tests__/utils/api-client/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/utils/api-client.edge-cases.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/utils/api-client/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "high",
+      "estimatedMinutes": 30
+    },
+    {
+      "taskId": "T-012",
+      "role": "tester",
+      "description": "Split useChartHistory.test.ts (643 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/hooks/useChartHistory.test.ts",
+        "__tests__/hooks/useChartHistory/",
+        "__tests__/hooks/useChartHistory/history-management.test.ts",
+        "__tests__/hooks/useChartHistory/edge-cases.test.ts",
+        "__tests__/hooks/useChartHistory/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/hooks/useChartHistory.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/hooks/useChartHistory/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "high",
+      "estimatedMinutes": 30
+    },
+    {
+      "taskId": "T-013",
+      "role": "tester",
+      "description": "Split Layout.test.tsx (638 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/components/layout/Layout.test.tsx",
+        "__tests__/components/layout/Layout/",
+        "__tests__/components/layout/Layout/rendering.test.tsx",
+        "__tests__/components/layout/Layout/responsive.test.tsx",
+        "__tests__/components/layout/Layout/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/components/layout/Layout.test.tsx"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/components/layout/Layout/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "high",
+      "estimatedMinutes": 30
+    },
+    {
+      "taskId": "T-014",
+      "role": "tester",
+      "description": "Split analytics.test.ts (622 lines) into categorized test files",
+      "filesAffected": [
+        "src/lib/__tests__/analytics.test.ts",
+        "src/lib/__tests__/analytics/",
+        "src/lib/__tests__/analytics/instance.test.ts",
+        "src/lib/__tests__/analytics/request-tracking.test.ts",
+        "src/lib/__tests__/analytics/response-time.test.ts",
+        "src/lib/__tests__/analytics/streaming.test.ts",
+        "src/lib/__tests__/analytics/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "src/lib/__tests__/analytics.test.ts",
+        "categories": ["getInstance", "incRequest", "decRequest", "recordResponseTime", "startStream", "getStream"]
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test src/lib/__tests__/analytics/",
+        "Coverage maintained",
+        "test-utils.ts contains shared helpers",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "high",
+      "estimatedMinutes": 35
+    },
+    {
+      "taskId": "T-015",
+      "role": "tester",
+      "description": "Split logger.test.ts (622 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/lib/logger.test.ts",
+        "__tests__/lib/logger/",
+        "__tests__/lib/logger/formatting.test.ts",
+        "__tests__/lib/logger/levels.test.ts",
+        "__tests__/lib/logger/transports.test.ts",
+        "__tests__/lib/logger/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/lib/logger.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/lib/logger/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "high",
+      "estimatedMinutes": 30
+    },
+    {
+      "taskId": "T-016",
+      "role": "tester",
+      "description": "Split LlamaService.test.ts (602 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/server/services/LlamaService.test.ts",
+        "__tests__/server/services/LlamaService/",
+        "__tests__/server/services/LlamaService/start-stop.test.ts",
+        "__tests__/server/services/LlamaService/models.test.ts",
+        "__tests__/server/services/LlamaService/config.test.ts",
+        "__tests__/server/services/LlamaService/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/server/services/LlamaService.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/server/services/LlamaService/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "high",
+      "estimatedMinutes": 30
+    },
+    {
+      "taskId": "T-017",
+      "role": "tester",
+      "description": "Split useDashboardMetrics.test.ts (601 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/hooks/useDashboardMetrics.test.ts",
+        "__tests__/hooks/useDashboardMetrics/",
+        "__tests__/hooks/useDashboardMetrics/metrics-fetching.test.ts",
+        "__tests__/hooks/useDashboardMetrics/refresh.test.ts",
+        "__tests__/hooks/useDashboardMetrics/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/hooks/useDashboardMetrics.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/hooks/useDashboardMetrics/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "high",
+      "estimatedMinutes": 25
+    },
+    {
+      "taskId": "T-018",
+      "role": "tester",
+      "description": "Split monitoring.comprehensive.test.tsx (595 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/pages/monitoring.comprehensive.test.tsx",
+        "__tests__/pages/monitoring/",
+        "__tests__/pages/monitoring/rendering.test.tsx",
+        "__tests__/pages/monitoring/metrics-display.test.tsx",
+        "__tests__/pages/monitoring/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/pages/monitoring.comprehensive.test.tsx"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/pages/monitoring/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "medium",
+      "estimatedMinutes": 30
+    },
+    {
+      "taskId": "T-019",
+      "role": "tester",
+      "description": "Split use-fit-params.test.ts (591 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/hooks/use-fit-params.test.ts",
+        "__tests__/hooks/use-fit-params/",
+        "__tests__/hooks/use-fit-params/params-loading.test.ts",
+        "__tests__/hooks/use-fit-params/validation.test.ts",
+        "__tests__/hooks/use-fit-params/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/hooks/use-fit-params.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/hooks/use-fit-params/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "medium",
+      "estimatedMinutes": 25
+    },
+    {
+      "taskId": "T-020",
+      "role": "tester",
+      "description": "Split api-service.test.ts (585 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/services/api-service.test.ts",
+        "__tests__/services/api-service/",
+        "__tests__/services/api-service/models.test.ts",
+        "__tests__/services/api-service/config.test.ts",
+        "__tests__/services/api-service/error-handling.test.ts",
+        "__tests__/services/api-service/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/services/api-service.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/services/api-service/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "medium",
+      "estimatedMinutes": 30
+    },
+    {
+      "taskId": "T-021",
+      "role": "tester",
+      "description": "Split api-service-coverage.test.ts (584 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/services/api-service-coverage.test.ts",
+        "__tests__/services/api-service-coverage/",
+        "__tests__/services/api-service-coverage/branches.test.ts",
+        "__tests__/services/api-service-coverage/edge-cases.test.ts",
+        "__tests__/services/api-service-coverage/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/services/api-service-coverage.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/services/api-service-coverage/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "medium",
+      "estimatedMinutes": 25
+    },
+    {
+      "taskId": "T-022",
+      "role": "tester",
+      "description": "Split models.test.ts (574 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/api/models.test.ts",
+        "__tests__/api/models/",
+        "__tests__/api/models/fetching.test.ts",
+        "__tests__/api/models/filtering.test.ts",
+        "__tests__/api/models/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/api/models.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/api/models/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "medium",
+      "estimatedMinutes": 25
+    },
+    {
+      "taskId": "T-023",
+      "role": "tester",
+      "description": "Split useLoggerConfig.test.ts (562 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/hooks/useLoggerConfig.test.ts",
+        "__tests__/hooks/useLoggerConfig/",
+        "__tests__/hooks/useLoggerConfig/config-loading.test.ts",
+        "__tests__/hooks/useLoggerConfig/updates.test.ts",
+        "__tests__/hooks/useLoggerConfig/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/hooks/useLoggerConfig.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/hooks/useLoggerConfig/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "medium",
+      "estimatedMinutes": 25
+    },
+    {
+      "taskId": "T-024",
+      "role": "tester",
+      "description": "Split user-flows.test.tsx (559 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/e2e/user-flows.test.tsx",
+        "__tests__/e2e/user-flows/",
+        "__tests__/e2e/user-flows/model-management.test.tsx",
+        "__tests__/e2e/user-flows/config-changes.test.tsx",
+        "__tests__/e2e/user-flows/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/e2e/user-flows.test.tsx"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/e2e/user-flows/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "medium",
+      "estimatedMinutes": 30
+    },
+    {
+      "taskId": "T-025",
+      "role": "tester",
+      "description": "Split model-templates.test.ts (558 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/lib/model-templates.test.ts",
+        "__tests__/lib/model-templates/",
+        "__tests__/lib/model-templates/loading.test.ts",
+        "__tests__/lib/model-templates/application.test.ts",
+        "__tests__/lib/model-templates/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/lib/model-templates.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/lib/model-templates/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "medium",
+      "estimatedMinutes": 25
+    },
+    {
+      "taskId": "T-026",
+      "role": "tester",
+      "description": "Split use-logger-config.test.ts (558 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/hooks/use-logger-config.test.ts",
+        "__tests__/hooks/use-logger-config/",
+        "__tests__/hooks/use-logger-config/toggles.test.ts",
+        "__tests__/hooks/use-logger-config/levels.test.ts",
+        "__tests__/hooks/use-logger-config/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/hooks/use-logger-config.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/hooks/use-logger-config/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "medium",
+      "estimatedMinutes": 25
+    },
+    {
+      "taskId": "T-027",
+      "role": "tester",
+      "description": "Split LlamaServerIntegration.test.ts (553 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/server/services/LlamaServerIntegration.test.ts",
+        "__tests__/server/services/LlamaServerIntegration/",
+        "__tests__/server/services/LlamaServerIntegration/connection.test.ts",
+        "__tests__/server/services/LlamaServerIntegration/commands.test.ts",
+        "__tests__/server/services/LlamaServerIntegration/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/server/services/LlamaServerIntegration.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/server/services/LlamaServerIntegration/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "medium",
+      "estimatedMinutes": 30
+    },
+    {
+      "taskId": "T-028",
+      "role": "tester",
+      "description": "Split agent1-utilities.test.ts (541 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/lib/agent1-utilities.test.ts",
+        "__tests__/lib/agent1-utilities/",
+        "__tests__/lib/agent1-utilities/formatting.test.ts",
+        "__tests__/lib/agent1-utilities/validation.test.ts",
+        "__tests__/lib/agent1-utilities/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/lib/agent1-utilities.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/lib/agent1-utilities/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "medium",
+      "estimatedMinutes": 25
+    },
+    {
+      "taskId": "T-029",
+      "role": "tester",
+      "description": "Split useFormState.test.ts (540 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/hooks/useFormState.test.ts",
+        "__tests__/hooks/useFormState/",
+        "__tests__/hooks/useFormState/state-management.test.ts",
+        "__tests__/hooks/useFormState/updates.test.ts",
+        "__tests__/hooks/useFormState/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/hooks/useFormState.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/hooks/useFormState/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "medium",
+      "estimatedMinutes": 25
+    },
+    {
+      "taskId": "T-030",
+      "role": "tester",
+      "description": "Split ModernConfiguration.test.ts (540 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/components/configuration/ModernConfiguration.test.ts",
+        "__tests__/components/configuration/ModernConfiguration/",
+        "__tests__/components/configuration/ModernConfiguration/rendering.test.tsx",
+        "__tests__/components/configuration/ModernConfiguration/form-handling.test.tsx",
+        "__tests__/components/configuration/ModernConfiguration/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/components/configuration/ModernConfiguration.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/components/configuration/ModernConfiguration/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "medium",
+      "estimatedMinutes": 30
+    },
+    {
+      "taskId": "T-031",
+      "role": "tester",
+      "description": "Split FormField.test.tsx (624 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/components/ui/FormField.test.tsx",
+        "__tests__/components/ui/FormField/",
+        "__tests__/components/ui/FormField/text-field.test.tsx",
+        "__tests__/components/ui/FormField/number-field.test.tsx",
+        "__tests__/components/ui/FormField/select-field.test.tsx",
+        "__tests__/components/ui/FormField/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/components/ui/FormField.test.tsx",
+        "categories": ["Type: Text", "Type: Number", "Type: Boolean (Checkbox)", "Type: Select"]
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/components/ui/FormField/",
+        "Coverage maintained",
+        "test-utils.ts contains shared mocks",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "high",
+      "estimatedMinutes": 35
+    },
+    {
+      "taskId": "T-032",
+      "role": "tester",
+      "description": "Split MetricCard.test.tsx (513 lines) into categorized test files",
+      "filesAffected": [
+        "__tests__/components/dashboard/MetricCard.test.tsx",
+        "__tests__/components/dashboard/MetricCard/",
+        "__tests__/components/dashboard/MetricCard/rendering.test.tsx",
+        "__tests__/components/dashboard/MetricCard/data-display.test.tsx",
+        "__tests__/components/dashboard/MetricCard/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "__tests__/components/dashboard/MetricCard.test.tsx"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test __tests__/components/dashboard/MetricCard/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "high",
+      "estimatedMinutes": 30
+    },
+    {
+      "taskId": "T-033",
+      "role": "tester",
+      "description": "Split websocket-client.scenarios.ts (411 lines) into categorized test files",
+      "filesAffected": [
+        "src/lib/__tests__/websocket-client.scenarios.ts",
+        "src/lib/__tests__/websocket-client/",
+        "src/lib/__tests__/websocket-client/connection-scenarios.test.ts",
+        "src/lib/__tests__/websocket-client/messaging-scenarios.test.ts",
+        "src/lib/__tests__/websocket-client/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "src/lib/__tests__/websocket-client.scenarios.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test src/lib/__tests__/websocket-client/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "medium",
+      "estimatedMinutes": 25
+    },
+    {
+      "taskId": "T-034",
+      "role": "tester",
+      "description": "Split error-handler.scenarios.ts (398 lines) into categorized test files",
+      "filesAffected": [
+        "src/lib/__tests__/error-handler.scenarios.ts",
+        "src/lib/__tests__/error-handler/",
+        "src/lib/__tests__/error-handler/api-errors.test.ts",
+        "src/lib/__tests__/error-handler/validation-errors.test.ts",
+        "src/lib/__tests__/error-handler/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "src/lib/__tests__/error-handler.scenarios.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test src/lib/__tests__/error-handler/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "medium",
+      "estimatedMinutes": 25
+    },
+    {
+      "taskId": "T-035",
+      "role": "tester",
+      "description": "Split client-model-templates.scenarios.ts (351 lines) into categorized test files",
+      "filesAffected": [
+        "src/lib/__tests__/client-model-templates.scenarios.ts",
+        "src/lib/__tests__/client-model-templates/",
+        "src/lib/__tests__/client-model-templates/loading.test.ts",
+        "src/lib/__tests__/client-model-templates/application.test.ts",
+        "src/lib/__tests__/client-model-templates/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "src/lib/__tests__/client-model-templates.scenarios.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test src/lib/__tests__/client-model-templates/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "medium",
+      "estimatedMinutes": 25
+    },
+    {
+      "taskId": "T-036",
+      "role": "tester",
+      "description": "Split llama-defaults.unit.test.ts (445 lines) into categorized test files",
+      "filesAffected": [
+        "src/config/llama-defaults.unit.test.ts",
+        "src/config/llama-defaults/",
+        "src/config/llama-defaults/defaults.test.ts",
+        "src/config/llama-defaults/overrides.test.ts",
+        "src/config/llama-defaults/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "src/config/llama-defaults.unit.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test src/config/llama-defaults/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "medium",
+      "estimatedMinutes": 25
+    },
+    {
+      "taskId": "T-037",
+      "role": "tester",
+      "description": "Split database.test.ts (296 lines) into categorized test files",
+      "filesAffected": [
+        "src/lib/__tests__/database.test.ts",
+        "src/lib/__tests__/database/",
+        "src/lib/__tests__/database/queries.test.ts",
+        "src/lib/__tests__/database/transactions.test.ts",
+        "src/lib/__tests__/database/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "src/lib/__tests__/database.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test src/lib/__tests__/database/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "medium",
+      "estimatedMinutes": 25
+    },
+    {
+      "taskId": "T-038",
+      "role": "tester",
+      "description": "Split request-idle-callback.test.ts (272 lines) into categorized test files",
+      "filesAffected": [
+        "src/utils/__tests__/request-idle-callback.test.ts",
+        "src/utils/__tests__/request-idle-callback/",
+        "src/utils/__tests__/request-idle-callback/timing.test.ts",
+        "src/utils/__tests__/request-idle-callback/cancellation.test.ts",
+        "src/utils/__tests__/request-idle-callback/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "src/utils/__tests__/request-idle-callback.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test src/utils/__tests__/request-idle-callback/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "low",
+      "estimatedMinutes": 20
+    },
+    {
+      "taskId": "T-039",
+      "role": "tester",
+      "description": "Split server-config.test.ts (265 lines) into categorized test files",
+      "filesAffected": [
+        "src/lib/__tests__/server-config.test.ts",
+        "src/lib/__tests__/server-config/",
+        "src/lib/__tests__/server-config/loading.test.ts",
+        "src/lib/__tests__/server-config/defaults.test.ts",
+        "src/lib/__tests__/server-config/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "src/lib/__tests__/server-config.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test src/lib/__tests__/server-config/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "low",
+      "estimatedMinutes": 20
+    },
+    {
+      "taskId": "T-040",
+      "role": "tester",
+      "description": "Split parameterService.test.ts (251 lines) into categorized test files",
+      "filesAffected": [
+        "src/lib/__tests__/services/parameterService.test.ts",
+        "src/lib/__tests__/services/parameterService/",
+        "src/lib/__tests__/services/parameterService/parameters.test.ts",
+        "src/lib/__tests__/services/parameterService/validation.test.ts",
+        "src/lib/__tests__/services/parameterService/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "src/lib/__tests__/services/parameterService.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test src/lib/__tests__/services/parameterService/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "low",
+      "estimatedMinutes": 20
+    },
+    {
+      "taskId": "T-041",
+      "role": "tester",
+      "description": "Split ModelDiscoveryService.test.ts (246 lines) into categorized test files",
+      "filesAffected": [
+        "src/lib/__tests__/services/ModelDiscoveryService.test.ts",
+        "src/lib/__tests__/services/ModelDiscoveryService/",
+        "src/lib/__tests__/services/ModelDiscoveryService/discovery.test.ts",
+        "src/lib/__tests__/services/ModelDiscoveryService/caching.test.ts",
+        "src/lib/__tests__/services/ModelDiscoveryService/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "src/lib/__tests__/services/ModelDiscoveryService.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test src/lib/__tests__/services/ModelDiscoveryService/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "low",
+      "estimatedMinutes": 20
+    },
+    {
+      "taskId": "T-042",
+      "role": "tester",
+      "description": "Split SidebarProvider.test.tsx (221 lines) into categorized test files",
+      "filesAffected": [
+        "src/components/layout/SidebarProvider.test.tsx",
+        "src/components/layout/SidebarProvider/",
+        "src/components/layout/SidebarProvider/rendering.test.tsx",
+        "src/components/layout/SidebarProvider/interactions.test.tsx",
+        "src/components/layout/SidebarProvider/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "src/components/layout/SidebarProvider.test.tsx"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test src/components/layout/SidebarProvider/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "low",
+      "estimatedMinutes": 20
+    },
+    {
+      "taskId": "T-043",
+      "role": "tester",
+      "description": "Split monitoring.config.test.ts (218 lines) into categorized test files",
+      "filesAffected": [
+        "src/config/monitoring.config.test.ts",
+        "src/config/monitoring.config/",
+        "src/config/monitoring.config/loading.test.ts",
+        "src/config/monitoring.config/defaults.test.ts",
+        "src/config/monitoring.config/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "src/config/monitoring.config.test.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test src/config/monitoring.config/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "low",
+      "estimatedMinutes": 20
+    },
+    {
+      "taskId": "T-044",
+      "role": "tester",
+      "description": "Split ThemeToggle.edge-case.test.tsx (211 lines) into categorized test files",
+      "filesAffected": [
+        "src/components/ui/ThemeToggle.edge-case.test.tsx",
+        "src/components/ui/ThemeToggle/",
+        "src/components/ui/ThemeToggle/theme-switching.test.tsx",
+        "src/components/ui/ThemeToggle/persistence.test.tsx",
+        "src/components/ui/ThemeToggle/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "src/components/ui/ThemeToggle.edge-case.test.tsx"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test src/components/ui/ThemeToggle/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "low",
+      "estimatedMinutes": 20
+    },
+    {
+      "taskId": "T-045",
+      "role": "tester",
+      "description": "Split error-boundary.edge-case.test.tsx (205 lines) into categorized test files",
+      "filesAffected": [
+        "src/components/ui/error-boundary.edge-case.test.tsx",
+        "src/components/ui/error-boundary/",
+        "src/components/ui/error-boundary/error-catching.test.tsx",
+        "src/components/ui/error-boundary/fallback-display.test.tsx",
+        "src/components/ui/error-boundary/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "src/components/ui/error-boundary.edge-case.test.tsx"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test src/components/ui/error-boundary/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "low",
+      "estimatedMinutes": 20
+    },
+    {
+      "taskId": "T-046",
+      "role": "tester",
+      "description": "Split validators.utils.ts (203 lines) into categorized utility files",
+      "filesAffected": [
+        "src/lib/__tests__/validators.utils.ts",
+        "src/lib/__tests__/validators/",
+        "src/lib/__tests__/validators/string-validators.test.ts",
+        "src/lib/__tests__/validators/number-validators.test.ts",
+        "src/lib/__tests__/validators/test-utils.ts"
+      ],
+      "inputs": {
+        "sourceFile": "src/lib/__tests__/validators.utils.ts"
+      },
+      "successCriteria": [
+        "All new test files must be under 200 lines",
+        "Original file deleted or replaced with index file",
+        "All tests pass: pnpm test src/lib/__tests__/validators/",
+        "Coverage maintained",
+        "pnpm lint and type:check pass"
+      ],
+      "dependsOn": [],
+      "priority": "low",
+      "estimatedMinutes": 20
+    },
+    {
+      "taskId": "T-047",
+      "role": "janitor",
+      "description": "Clean up temporary files and artifacts after refactoring",
+      "filesAffected": [
+        "orchestrator_audit.log",
+        "orchestrator_tasks/",
+        "orchestrator_artifacts/"
+      ],
+      "inputs": {},
+      "successCriteria": [
+        "All temporary build artifacts removed",
+        "Audit log preserved for final summary",
+        "No essential files deleted",
+        "Repository state clean"
+      ],
+      "dependsOn": ["T-001", "T-002", "T-003", "T-004", "T-005", "T-006", "T-007", "T-008", "T-009", "T-010", "T-011", "T-012", "T-013", "T-014", "T-015", "T-016", "T-017", "T-018", "T-019", "T-020", "T-021", "T-022", "T-023", "T-024", "T-025", "T-026", "T-027", "T-028", "T-029", "T-030", "T-031", "T-032", "T-033", "T-034", "T-035", "T-036", "T-037", "T-038", "T-039", "T-040", "T-041", "T-042", "T-043", "T-044", "T-045", "T-046"],
+      "priority": "low",
+      "estimatedMinutes": 10
+    },
+    {
+      "taskId": "T-048",
+      "role": "tester",
+      "description": "Run full test suite after all refactoring is complete",
+      "filesAffected": [],
+      "inputs": {},
+      "successCriteria": [
+        "All tests pass: pnpm test",
+        "Coverage threshold met: pnpm test:coverage",
+        "No test failures",
+        "Coverage maintained or improved"
+      ],
+      "dependsOn": ["T-001", "T-002", "T-003", "T-004", "T-005", "T-006", "T-007", "T-008", "T-009", "T-010", "T-011", "T-012", "T-013", "T-014", "T-015", "T-016", "T-017", "T-018", "T-019", "T-020", "T-021", "T-022", "T-023", "T-024", "T-025", "T-026", "T-027", "T-028", "T-029", "T-030", "T-031", "T-032", "T-033", "T-034", "T-035", "T-036", "T-037", "T-038", "T-039", "T-040", "T-041", "T-042", "T-043", "T-044", "T-045", "T-046"],
+      "priority": "high",
+      "estimatedMinutes": 30
+    },
+    {
+      "taskId": "T-049",
+      "role": "docs",
+      "description": "Update documentation to reflect refactored test structure",
+      "filesAffected": [
+        "docs/",
+        "AGENTS.md"
+      ],
+      "inputs": {},
+      "successCriteria": [
+        "Documentation updated with new test structure",
+        "File naming conventions documented",
+        "Test splitting patterns explained",
+        "Docs reviewed by Reviewer Agent"
+      ],
+      "dependsOn": ["T-048"],
+      "priority": "medium",
+      "estimatedMinutes": 30
+    }
+  ],
+  "summary": {
+    "totalTasks": 49,
+    "highPriority": 15,
+    "mediumPriority": 16,
+    "lowPriority": 18,
+    "estimatedTotalMinutes": 1185,
+    "filesToRefactor": 47,
+    "targetLineLimit": 200
+  }
+}
