@@ -97,7 +97,7 @@ describe("POST /api/models/[name]/start - Success Scenarios", () => {
     const mockRequest = createMockRequest({});
     const mockParams = createMockParams("llama-2-7b");
 
-    const response = await StartModel(mockRequest, { params: mockParams });
+    await StartModel(mockRequest, { params: mockParams });
 
     expect(global.fetch).toHaveBeenCalledWith(
       expect.stringContaining("custom-host:9999"),

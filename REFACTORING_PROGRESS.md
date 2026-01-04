@@ -47,7 +47,8 @@
 |------|------|-------|---------|--------|
 | 1 | `__tests__/components/dashboard/ModelsListCard.test.tsx` | 1104 | T-001 | ✅ DONE |
 | 2 | `__tests__/components/pages/ModelsPage.test.tsx` | 988 | T-002 | ✅ DONE |
-| 3 | `__tests__/api/models-start.test.ts` | 925 | T-003 | 🟡 PENDING |
+| 3 | `__tests__/api/models-start.test.ts` | 925 | T-003 | ✅ DONE |
+| 4 | `__tests__/components/dashboard/ModernDashboard.test.tsx` | 839 | T-004 | 🟡 PENDING |
 | 3 | `__tests__/api/models-start.test.ts` | 925 | T-003 | 🟡 PENDING |
 | 4 | `__tests__/components/dashboard/ModernDashboard.test.tsx` | 839 | T-004 | 🟡 PENDING |
 | 5 | `__tests__/components/configuration/GeneralSettingsTab.test.tsx` | 685 | T-005 | 🟡 PENDING |
