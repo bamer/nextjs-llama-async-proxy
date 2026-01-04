@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import React from 'react';
 import { GeneralSettingsTab } from '@/components/configuration/GeneralSettingsTab';
@@ -26,30 +26,22 @@ describe('GeneralSettingsTab Rendering', () => {
 
   it('renders correctly', () => {
     renderWithTheme(
-      React.createElement(
-        GeneralSettingsTab,
-        {
-          formConfig: defaultFormConfig,
-          onInputChange: mockOnInputChange,
-          fieldErrors: defaultFieldErrors,
-        },
-        null,
-      ),
+      <GeneralSettingsTab
+        formConfig={defaultFormConfig}
+        onInputChange={mockOnInputChange}
+        fieldErrors={defaultFieldErrors}
+      />,
     );
     expect(screen.getByText('General Settings')).toBeInTheDocument();
   });
 
   it('renders Base Path input', () => {
     renderWithTheme(
-      React.createElement(
-        GeneralSettingsTab,
-        {
-          formConfig: defaultFormConfig,
-          onInputChange: mockOnInputChange,
-          fieldErrors: defaultFieldErrors,
-        },
-        null,
-      ),
+      <GeneralSettingsTab
+        formConfig={defaultFormConfig}
+        onInputChange={mockOnInputChange}
+        fieldErrors={defaultFieldErrors}
+      />,
     );
     expect(screen.getByLabelText('Base Path')).toBeInTheDocument();
     expect(screen.getByDisplayValue('/models')).toBeInTheDocument();
@@ -57,30 +49,22 @@ describe('GeneralSettingsTab Rendering', () => {
 
   it('renders Log Level select', () => {
     renderWithTheme(
-      React.createElement(
-        GeneralSettingsTab,
-        {
-          formConfig: defaultFormConfig,
-          onInputChange: mockOnInputChange,
-          fieldErrors: defaultFieldErrors,
-        },
-        null,
-      ),
+      <GeneralSettingsTab
+        formConfig={defaultFormConfig}
+        onInputChange={mockOnInputChange}
+        fieldErrors={defaultFieldErrors}
+      />,
     );
     expect(screen.getByLabelText('Log Level')).toBeInTheDocument();
   });
 
   it('renders Max Concurrent Models input', () => {
     renderWithTheme(
-      React.createElement(
-        GeneralSettingsTab,
-        {
-          formConfig: defaultFormConfig,
-          onInputChange: mockOnInputChange,
-          fieldErrors: defaultFieldErrors,
-        },
-        null,
-      ),
+      <GeneralSettingsTab
+        formConfig={defaultFormConfig}
+        onInputChange={mockOnInputChange}
+        fieldErrors={defaultFieldErrors}
+      />,
     );
     expect(screen.getByLabelText('Max Concurrent Models')).toBeInTheDocument();
     expect(screen.getByDisplayValue('5')).toBeInTheDocument();
@@ -88,45 +72,33 @@ describe('GeneralSettingsTab Rendering', () => {
 
   it('renders Auto Update switch', () => {
     renderWithTheme(
-      React.createElement(
-        GeneralSettingsTab,
-        {
-          formConfig: defaultFormConfig,
-          onInputChange: mockOnInputChange,
-          fieldErrors: defaultFieldErrors,
-        },
-        null,
-      ),
+      <GeneralSettingsTab
+        formConfig={defaultFormConfig}
+        onInputChange={mockOnInputChange}
+        fieldErrors={defaultFieldErrors}
+      />,
     );
     expect(screen.getByLabelText('Auto Update')).toBeInTheDocument();
   });
 
   it('renders Notifications Enabled switch', () => {
     renderWithTheme(
-      React.createElement(
-        GeneralSettingsTab,
-        {
-          formConfig: defaultFormConfig,
-          onInputChange: mockOnInputChange,
-          fieldErrors: defaultFieldErrors,
-        },
-        null,
-      ),
+      <GeneralSettingsTab
+        formConfig={defaultFormConfig}
+        onInputChange={mockOnInputChange}
+        fieldErrors={defaultFieldErrors}
+      />,
     );
     expect(screen.getByLabelText('Notifications Enabled')).toBeInTheDocument();
   });
 
   it('renders Llama-Server Path input', () => {
     renderWithTheme(
-      React.createElement(
-        GeneralSettingsTab,
-        {
-          formConfig: defaultFormConfig,
-          onInputChange: mockOnInputChange,
-          fieldErrors: defaultFieldErrors,
-        },
-        null,
-      ),
+      <GeneralSettingsTab
+        formConfig={defaultFormConfig}
+        onInputChange={mockOnInputChange}
+        fieldErrors={defaultFieldErrors}
+      />,
     );
     expect(screen.getByLabelText('Llama-Server Path')).toBeInTheDocument();
     expect(screen.getByDisplayValue('/path/to/llama-server')).toBeInTheDocument();
@@ -135,15 +107,11 @@ describe('GeneralSettingsTab Rendering', () => {
   it('renders with dark theme', () => {
     setupDarkThemeMock();
     renderWithTheme(
-      React.createElement(
-        GeneralSettingsTab,
-        {
-          formConfig: defaultFormConfig,
-          onInputChange: mockOnInputChange,
-          fieldErrors: defaultFieldErrors,
-        },
-        null,
-      ),
+      <GeneralSettingsTab
+        formConfig={defaultFormConfig}
+        onInputChange={mockOnInputChange}
+        fieldErrors={defaultFieldErrors}
+      />,
     );
     expect(screen.getByText('General Settings')).toBeInTheDocument();
   });
@@ -151,15 +119,11 @@ describe('GeneralSettingsTab Rendering', () => {
   it('renders all log level options', () => {
     const { fireEvent } = require('@testing-library/react');
     renderWithTheme(
-      React.createElement(
-        GeneralSettingsTab,
-        {
-          formConfig: defaultFormConfig,
-          onInputChange: mockOnInputChange,
-          fieldErrors: defaultFieldErrors,
-        },
-        null,
-      ),
+      <GeneralSettingsTab
+        formConfig={defaultFormConfig}
+        onInputChange={mockOnInputChange}
+        fieldErrors={defaultFieldErrors}
+      />,
     );
     const select = screen.getByLabelText('Log Level');
     fireEvent.mouseDown(select);
@@ -172,15 +136,11 @@ describe('GeneralSettingsTab Rendering', () => {
 
   it('renders max concurrent models with constraints', () => {
     renderWithTheme(
-      React.createElement(
-        GeneralSettingsTab,
-        {
-          formConfig: defaultFormConfig,
-          onInputChange: mockOnInputChange,
-          fieldErrors: defaultFieldErrors,
-        },
-        null,
-      ),
+      <GeneralSettingsTab
+        formConfig={defaultFormConfig}
+        onInputChange={mockOnInputChange}
+        fieldErrors={defaultFieldErrors}
+      />,
     );
     const input = screen.getByLabelText('Max Concurrent Models');
     expect(input).toHaveAttribute('type', 'number');
@@ -190,19 +150,17 @@ describe('GeneralSettingsTab Rendering', () => {
 
   it('displays all helper and description texts', () => {
     renderWithTheme(
-      React.createElement(
-        GeneralSettingsTab,
-        {
-          formConfig: defaultFormConfig,
-          onInputChange: mockOnInputChange,
-          fieldErrors: defaultFieldErrors,
-        },
-        null,
-      ),
+      <GeneralSettingsTab
+        formConfig={defaultFormConfig}
+        onInputChange={mockOnInputChange}
+        fieldErrors={defaultFieldErrors}
+      />,
     );
     expect(screen.getByText('Path to your models directory')).toBeInTheDocument();
     expect(screen.getByText('Logging verbosity level')).toBeInTheDocument();
-    expect(screen.getByText('Maximum number of models that can run simultaneously')).toBeInTheDocument();
+    expect(
+      screen.getByText('Maximum number of models that can run simultaneously'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Automatically update models and dependencies')).toBeInTheDocument();
     expect(screen.getByText('Receive system alerts and notifications')).toBeInTheDocument();
     expect(screen.getByText('Path to llama-server executable')).toBeInTheDocument();
@@ -214,15 +172,11 @@ describe('GeneralSettingsTab Rendering', () => {
       maxConcurrentModels: 1,
     };
     renderWithTheme(
-      React.createElement(
-        GeneralSettingsTab,
-        {
-          formConfig: singleModelConfig,
-          onInputChange: mockOnInputChange,
-          fieldErrors: defaultFieldErrors,
-        },
-        null,
-      ),
+      <GeneralSettingsTab
+        formConfig={singleModelConfig}
+        onInputChange={mockOnInputChange}
+        fieldErrors={defaultFieldErrors}
+      />,
     );
 
     const alert = screen.getByRole('alert');
@@ -231,15 +185,11 @@ describe('GeneralSettingsTab Rendering', () => {
 
   it('shows default helper text when no field errors', () => {
     renderWithTheme(
-      React.createElement(
-        GeneralSettingsTab,
-        {
-          formConfig: defaultFormConfig,
-          onInputChange: mockOnInputChange,
-          fieldErrors: defaultFieldErrors,
-        },
-        null,
-      ),
+      <GeneralSettingsTab
+        formConfig={defaultFormConfig}
+        onInputChange={mockOnInputChange}
+        fieldErrors={defaultFieldErrors}
+      />,
     );
 
     expect(screen.getByText('Path to your models directory')).toBeInTheDocument();
@@ -248,15 +198,11 @@ describe('GeneralSettingsTab Rendering', () => {
 
   it('has correct ARIA attributes for Max Concurrent Models input', () => {
     renderWithTheme(
-      React.createElement(
-        GeneralSettingsTab,
-        {
-          formConfig: defaultFormConfig,
-          onInputChange: mockOnInputChange,
-          fieldErrors: defaultFieldErrors,
-        },
-        null,
-      ),
+      <GeneralSettingsTab
+        formConfig={defaultFormConfig}
+        onInputChange={mockOnInputChange}
+        fieldErrors={defaultFieldErrors}
+      />,
     );
 
     const input = screen.getByLabelText('Max Concurrent Models');
@@ -267,15 +213,11 @@ describe('GeneralSettingsTab Rendering', () => {
 
   it('has correct role for Switch components', () => {
     renderWithTheme(
-      React.createElement(
-        GeneralSettingsTab,
-        {
-          formConfig: defaultFormConfig,
-          onInputChange: mockOnInputChange,
-          fieldErrors: defaultFieldErrors,
-        },
-        null,
-      ),
+      <GeneralSettingsTab
+        formConfig={defaultFormConfig}
+        onInputChange={mockOnInputChange}
+        fieldErrors={defaultFieldErrors}
+      />,
     );
 
     const switches = screen.getAllByRole('switch');
