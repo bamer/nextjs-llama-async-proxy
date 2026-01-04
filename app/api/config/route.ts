@@ -22,26 +22,37 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const { appConfig, serverConfig } = validation.data || {};
-    
-    if (serverConfig && Object.keys(serverConfig).length > 0) {
+    // Separate server and app config
+    const serverConfig = body.serverConfig || {};
+    const appConfig = body.appConfig || {};
+
+    // Only update server config if provided
+    if (Object.keys(serverConfig).length > 0) {
       saveConfig(serverConfig as any);
+      logger.info("Server configuration saved");
     }
 
-    if (appConfig && Object.keys(appConfig).length > 0) {
+    // Only update app config if provided
+    if (Object.keys(appConfig).length > 0) {
       saveAppConfig(appConfig as any);
+      logger.info("App configuration saved");
     }
+
+    // Return updated configurations
+    const currentServerConfig = loadConfig();
+    const currentAppConfig = loadAppConfig();
 
     const response: any = {
       message: "Configuration saved successfully",
     };
 
-    if (serverConfig) {
-      response.serverConfig = loadConfig();
+    // Only return configs if they were updated
+    if (Object.keys(serverConfig).length > 0) {
+      response.serverConfig = currentServerConfig;
     }
 
-    if (appConfig) {
-      response.appConfig = loadAppConfig();
+    if (Object.keys(appConfig).length > 0) {
+      response.appConfig = currentAppConfig;
     }
 
     return NextResponse.json(response);
@@ -49,7 +60,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const message = error instanceof Error ? error.message : String(error);
     logger.error("[API] Error saving config:", error);
     return NextResponse.json(
-      { error: "Failed to save config", details: message },
+      {
+        error: "Failed to save config",
+        details: message,
+      },
       { status: 500 }
     );
   }
@@ -64,7 +78,9 @@ export async function GET(): Promise<NextResponse> {
   } catch (error) {
     logger.error("[API] Error getting config:", error);
     return NextResponse.json(
-      { error: "Failed to get config" },
+      {
+        error: "Failed to get config",
+      },
       { status: 500 }
     );
   }

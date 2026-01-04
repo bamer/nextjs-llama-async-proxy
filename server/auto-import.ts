@@ -11,6 +11,14 @@ export async function tryAutoImport(
   llamaConfig: LlamaServerConfig,
   retries: number = 3,
 ): Promise<boolean> {
+  // Check auto-start setting - only auto-import if enabled
+  const autoStart = (llamaConfig as any).autoStart ?? false;
+
+  if (!autoStart) {
+    logger.info('⏸ [AUTO-IMPORT] Auto-start is disabled - skipping auto-import');
+    return true;
+  }
+
   for (let i = 0; i < retries; i++) {
     try {
       const dbModels = getModels();

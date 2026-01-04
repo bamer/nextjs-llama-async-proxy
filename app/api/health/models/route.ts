@@ -9,7 +9,7 @@ export async function GET(): Promise<NextResponse> {
 
     return NextResponse.json({
       database_model_count: dbModels.length,
-      models_directory: config.basePath,
+      models_directory: config.baseModelsPath,
       status: dbModels.length === 0 ? 'needs_import' : 'ok',
       timestamp: new Date().toISOString(),
       models: dbModels.map(m => ({

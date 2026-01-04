@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { useLoggerConfig } from "@/hooks/use-logger-config";
 
 interface FormConfig {
-  basePath?: string;
+  baseModelsPath?: string;
   logLevel?: string;
   maxConcurrentModels?: number;
   autoUpdate?: boolean;
@@ -11,7 +11,7 @@ interface FormConfig {
   serverConfig?: {
     host?: string;
     port?: number;
-    basePath?: string;
+    baseModelsPath?: string;
     serverPath?: string;
     ctx_size?: number;
     batch_size?: number;
@@ -38,16 +38,16 @@ export function useConfigPersistence() {
         const { serverConfig, appConfig } = config;
 
         setFormConfig({
-          basePath: appConfig?.basePath,
           logLevel: appConfig?.logLevel,
           maxConcurrentModels: appConfig?.maxConcurrentModels,
           autoUpdate: appConfig?.autoUpdate,
           notificationsEnabled: appConfig?.notificationsEnabled,
+          baseModelsPath: serverConfig?.baseModelsPath,
           llamaServerPath: serverConfig?.serverPath,
           serverConfig: {
             host: serverConfig?.host,
             port: serverConfig?.port,
-            basePath: serverConfig?.basePath,
+            baseModelsPath: serverConfig?.baseModelsPath,
             serverPath: serverConfig?.serverPath,
             ctx_size: serverConfig?.ctx_size,
             batch_size: serverConfig?.batch_size,
@@ -79,7 +79,7 @@ export function useConfigPersistence() {
         serverConfig: {
           host: serverConfig.host || "127.0.0.1",
           port: serverConfig.port || 8080,
-          basePath: serverConfig.basePath || "/models",
+          baseModelsPath: serverConfig.baseModelsPath || "/models",
           serverPath: serverConfig.serverPath || formConfig.llamaServerPath || "/home/bamer/llama.cpp/build/bin/llama-server",
           ctx_size: serverConfig.ctx_size || 8192,
           batch_size: serverConfig.batch_size || 512,

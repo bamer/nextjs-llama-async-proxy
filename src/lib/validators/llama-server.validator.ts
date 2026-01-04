@@ -10,7 +10,7 @@ export const llamaServerConfigSchema = z
   .object({
     host: z.string().min(1).max(253).describe("Server hostname or IP address"),
     port: z.number().int().min(1).max(65535).describe("Server port number (1-65535)"),
-    basePath: z.string().min(1).describe("Base path where models are stored"),
+    baseModelsPath: z.string().min(1).describe("Base path where models are stored"),
     serverPath: z.string().min(1).describe("Full path to llama-server binary"),
     ctx_size: z.number().int().min(0).describe("Context size in tokens (0 for auto)"),
     batch_size: z
@@ -34,7 +34,7 @@ export const llamaServerConfigExtendedSchema = z
     host: z.string().min(1).max(253),
     port: z.number().int().min(1).max(65535),
     modelPath: z.string().optional().describe("Optional specific model file path"),
-    basePath: z.string().optional().describe("Path where models are stored for discovery"),
+    baseModelsPath: z.string().optional().describe("Path where models are stored for discovery"),
     serverPath: z.string().optional().describe("Full path to llama-server binary"),
     serverArgs: z.array(z.string()).optional().describe("Additional server arguments"),
     ctx_size: z.number().int().min(0).optional(),
@@ -67,7 +67,7 @@ export const llamaServerSettingsSchema = z
   .object({
     host: z.string().min(1).max(253).describe("Server hostname or IP"),
     port: z.number().int().min(1).max(65535).describe("Server port"),
-    basePath: z.string().min(1).describe("Models base path"),
+    baseModelsPath: z.string().min(1).describe("Models base path"),
     serverPath: z.string().min(1).describe("Server binary path"),
     ctx_size: z.number().int().min(0).describe("Context size in tokens"),
     batch_size: z.number().int().min(1).max(8192).describe("Batch size"),

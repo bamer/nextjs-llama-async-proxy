@@ -1,19 +1,19 @@
 interface FormConfig {
-  llamaServer?: Record<string, unknown>;
-  modelDefaults?: Record<string, unknown>;
-  basePath?: string;
-  logLevel?: string;
-  maxConcurrentModels?: number;
-  autoUpdate?: boolean;
-  notificationsEnabled?: boolean;
-  llamaServerPath?: string;
-  host?: string;
-  port?: number;
-  serverPath?: string;
-  ctx_size?: number;
-  batch_size?: number;
-  threads?: number;
-  gpu_layers?: number;
+   llamaServer?: Record<string, unknown>;
+   modelDefaults?: Record<string, unknown>;
+   baseModelsPath?: string;
+   logLevel?: string;
+   maxConcurrentModels?: number;
+   autoUpdate?: boolean;
+   notificationsEnabled?: boolean;
+   llamaServerPath?: string;
+   host?: string;
+   port?: number;
+   serverPath?: string;
+   ctx_size?: number;
+   batch_size?: number;
+   threads?: number;
+   gpu_layers?: number;
 }
 
 interface FieldErrors {
@@ -38,7 +38,7 @@ export function createConfigHandlers(
       [name]: type === "checkbox" ? checked : (type === "number" ? parseFloat(value) : value),
     }));
 
-    const llamaServerFields = ["host", "port", "basePath", "serverPath", "ctx_size", "batch_size", "threads", "gpu_layers"];
+    const llamaServerFields = ["host", "port", "baseModelsPath", "serverPath", "ctx_size", "batch_size", "threads", "gpu_layers"];
     const isLlamaServerField = llamaServerFields.includes(name);
 
     setFieldErrors((prev) => ({
@@ -53,25 +53,21 @@ export function createConfigHandlers(
   };
 
   const handleLlamaServerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type } = e.target;
+    const { name, value, type, checked } = e.target;
     const fieldName = name.split(".")[1];
-    setFormConfig((prev: any) => ({
-      ...prev,
-      llamaServer: {
-        ...prev.llamaServer,
-        [fieldName]: type === "number" ? parseFloat(value) : value,
-      },
-    }));
-
-    setFieldErrors((prev) => ({
-      ...prev,
-      llamaServer: {
-        ...prev.llamaServer,
-        [fieldName]: "",
-      },
-    }));
-
-    setClearedFields((prev) => new Set(prev).add(fieldName));
+    
+    setFormConfig((prev: any) => {
+      // Ensure llamaServer object exists
+      const existingLlamaServer = prev.llamaServer || {};
+      
+      return {
+        ...prev,
+        llamaServer: {
+          ...existingLlamaServer,
+          [fieldName]: type === "number" ? parseFloat(value) : value,
+        },
+      };
+    });
   };
 
   const handleModelDefaultsChange = (field: string, value: number) => {

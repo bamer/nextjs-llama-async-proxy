@@ -17,7 +17,7 @@ const APP_CONFIG_FILE = join(process.cwd(), 'app-config.json');
 const DEFAULT_SERVER_CONFIG: LlamaServerConfig = {
   host: "localhost",
   port: 8134,
-  basePath: "/models",
+  baseModelsPath: "/models",
   serverPath: "/home/bamer/llama.cpp/build/bin/llama-server",
   ctx_size: 8192,
   batch_size: 512,
@@ -95,7 +95,11 @@ export function loadAppConfig(): AppConfig {
 export function saveConfig(config: Partial<LlamaServerConfig>): void {
   try {
     const current = loadConfig();
-    const updated = { ...current, ...config };
+    // Filter out old 'basePath' field if it exists (migration to 'baseModelsPath')
+    const currentWithBasePathRemoved = Object.fromEntries(
+      Object.entries(current).filter(([key]) => key !== 'basePath')
+    ) as LlamaServerConfig;
+    const updated = { ...currentWithBasePathRemoved, ...config };
 
     // Validate before saving
     const validationResult = validateConfig(llamaServerConfigSchema, updated, "llama-server-config.json");

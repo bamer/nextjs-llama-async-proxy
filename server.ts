@@ -68,17 +68,25 @@ app
       const llamaConfig = loadLlamaConfig();
 
       try {
-        logger.info('🦙 Initializing LlamaServer integration...');
-        logger.info(`📋 [CONFIG] Llama server path: ${llamaConfig.serverPath}`);
-        logger.info(`📋 [CONFIG] Host: ${llamaConfig.host}:${llamaConfig.port}`);
-        logger.info(`📋 [CONFIG] Base path: ${llamaConfig.basePath}`);
-        logger.info(
-          `📋 [CONFIG] ctx_size: ${llamaConfig.ctx_size}, batch_size: ${llamaConfig.batch_size}, threads: ${llamaConfig.threads}`,
-        );
-        await llamaIntegration.initialize(llamaConfig);
+        // Check if auto-start is enabled before initializing
+        const autoStart = (llamaConfig as any).autoStart ?? false;
 
-        registry.register('llamaService', llamaIntegration.getLlamaService());
-        logger.info('✅ LlamaServer integration initialized successfully');
+        if (!autoStart) {
+          logger.info('⏸ [SERVER] Auto-start disabled - llama-server will NOT start automatically');
+          logger.info('ℹ️ [SERVER] Start llama-server from Settings page or use "Start Server" button');
+        } else {
+          logger.info('🦙 Initializing LlamaServer integration...');
+          logger.info(`📋 [CONFIG] Llama server path: ${llamaConfig.serverPath}`);
+          logger.info(`📋 [CONFIG] Host: ${llamaConfig.host}:${llamaConfig.port}`);
+          logger.info(`📋 [CONFIG] Base path: ${llamaConfig.baseModelsPath}`);
+          logger.info(
+            `📋 [CONFIG] ctx_size: ${llamaConfig.ctx_size}, batch_size: ${llamaConfig.batch_size}, threads: ${llamaConfig.threads}`,
+          );
+          await llamaIntegration.initialize(llamaConfig);
+
+          registry.register('llamaService', llamaIntegration.getLlamaService());
+          logger.info('✅ LlamaServer integration initialized successfully');
+        }
 
         try {
           await tryAutoImport(llamaIntegration, llamaConfig, 5);

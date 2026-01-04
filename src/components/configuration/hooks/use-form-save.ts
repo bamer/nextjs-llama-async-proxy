@@ -39,7 +39,7 @@ export function useFormSave({
         serverConfig: {
           host: llamaServer.host || formConfig.host || "127.0.0.1",
           port: llamaServer.port || formConfig.port || 8080,
-          basePath: llamaServer.basePath || "/models",
+          baseModelsPath: llamaServer.baseModelsPath || formConfig.baseModelsPath || "/models",
           serverPath: llamaServer.serverPath || formConfig.serverPath || "/home/bamer/llama.cpp/build/bin/llama-server",
           ctx_size: llamaServer.ctx_size || formConfig.ctx_size || 8192,
           batch_size: llamaServer.batch_size || formConfig.batch_size || 512,

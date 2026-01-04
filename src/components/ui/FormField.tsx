@@ -168,7 +168,7 @@ export function FormField({
         fullWidth={isFullWidth}
         label={renderLabel()}
         name={name}
-        value={value}
+        value={value ?? ""}
         type={fieldType}
         onChange={(event) => handleChange(event, (event.target as any).value)}
         error={hasError}

@@ -4,7 +4,7 @@ import { useLoggerConfig } from "@/hooks/use-logger-config";
 interface LlamaServerConfig {
   host: string;
   port: number;
-  basePath: string;
+  baseModelsPath: string;
   serverPath: string;
   ctx_size: number;
   batch_size: number;
@@ -25,7 +25,7 @@ interface ModelDefaultsConfig {
 }
 
 interface GeneralSettingsConfig {
-  basePath?: string;
+  baseModelsPath?: string;
   logLevel?: string;
   maxConcurrentModels?: number;
   autoUpdate?: boolean;
@@ -45,7 +45,7 @@ export interface FormConfig {
   batch_size?: number;
   threads?: number;
   gpu_layers?: number;
-  basePath?: string;
+  baseModelsPath?: string;
   logLevel?: string;
   maxConcurrentModels?: number;
   autoUpdate?: boolean;
@@ -99,14 +99,14 @@ export function useFormState() {
           llamaServer: {
             host: serverConfig?.host,
             port: serverConfig?.port,
-            basePath: serverConfig?.basePath,
+            baseModelsPath: serverConfig?.baseModelsPath,
             serverPath: serverConfig?.serverPath,
             ctx_size: serverConfig?.ctx_size,
             batch_size: serverConfig?.batch_size,
             threads: serverConfig?.threads,
             gpu_layers: serverConfig?.gpu_layers,
           },
-          basePath: serverConfig?.basePath,
+          baseModelsPath: serverConfig?.baseModelsPath,
           logLevel: appConfig?.logLevel,
           maxConcurrentModels: appConfig?.maxConcurrentModels,
           autoUpdate: appConfig?.autoUpdate,

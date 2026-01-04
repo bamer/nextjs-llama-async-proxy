@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Grid } from "@mui/material";
+import { Grid, Box, Typography, FormControlLabel, Checkbox, FormControl } from "@mui/material";
 import { Dns as ServerIcon, Tune as AdvancedIcon, Memory as GpuIcon } from "@mui/icons-material";
 import { m } from "framer-motion";
 import { FormSection } from "@/components/ui/FormSection";
@@ -31,14 +31,9 @@ export function LlamaServerSettingsTab({
     return value ?? defaultValue;
   };
 
+  const autoStartValue = getNestedValue("llamaServer.autoStart", false) as boolean;
+
   const serverBindingFields = [
-    {
-      name: "llamaServer.autoStart",
-      label: "Auto-start llama-server on application startup",
-      value: getNestedValue("llamaServer.autoStart", false) as boolean,
-      helperText: fieldErrors.autoStart || "Automatically start llama-server when the application starts",
-      error: fieldErrors.autoStart,
-    },
     {
       name: "llamaServer.host",
       label: "Host",
@@ -60,7 +55,7 @@ export function LlamaServerSettingsTab({
     {
       name: "llamaServer.ctx_size",
       label: "Context Size",
-      type: "number" as const,
+      type: "number",
       value: getNestedValue("llamaServer.ctx_size", 4096),
       helperText: fieldErrors.ctx_size || "Maximum context window size",
       error: fieldErrors.ctx_size,
@@ -68,7 +63,7 @@ export function LlamaServerSettingsTab({
     {
       name: "llamaServer.batch_size",
       label: "Batch Size",
-      type: "number" as const,
+      type: "number",
       value: getNestedValue("llamaServer.batch_size", 2048),
       helperText: fieldErrors.batch_size || "Logical maximum batch size",
       error: fieldErrors.batch_size,
@@ -76,14 +71,15 @@ export function LlamaServerSettingsTab({
     {
       name: "llamaServer.ubatch_size",
       label: "Micro Batch Size",
-      type: "number" as const,
+      type: "number",
       value: getNestedValue("llamaServer.ubatch_size", 512),
-      helperText: "Physical maximum batch size",
+      helperText: fieldErrors.ubatch_size || "Physical maximum batch size",
+      error: fieldErrors.ubatch_size,
     },
     {
       name: "llamaServer.threads",
       label: "Threads",
-      type: "number" as const,
+      type: "number",
       value: getNestedValue("llamaServer.threads", -1),
       helperText: fieldErrors.threads || "CPU threads (-1 = auto)",
       error: fieldErrors.threads,
@@ -94,7 +90,7 @@ export function LlamaServerSettingsTab({
     {
       name: "llamaServer.gpu_layers",
       label: "GPU Layers",
-      type: "number" as const,
+      type: "number",
       value: getNestedValue("llamaServer.gpu_layers", -1),
       helperText: fieldErrors.gpu_layers || "Layers to offload to GPU (-1 = all)",
       error: fieldErrors.gpu_layers,
@@ -102,9 +98,10 @@ export function LlamaServerSettingsTab({
     {
       name: "llamaServer.main_gpu",
       label: "Main GPU",
-      type: "number" as const,
+      type: "number",
       value: getNestedValue("llamaServer.main_gpu", 0),
-      helperText: "Main GPU device ID",
+      helperText: fieldErrors.main_gpu || "Main GPU device ID",
+      error: fieldErrors.main_gpu,
     },
   ];
 
@@ -112,21 +109,21 @@ export function LlamaServerSettingsTab({
     {
       name: "llamaServer.temperature",
       label: "Temperature",
-      type: "number" as const,
+      type: "number",
       value: getNestedValue("llamaServer.temperature", 0.8),
       helperText: "Sampling temperature (0-2)",
     },
     {
       name: "llamaServer.top_k",
       label: "Top-K",
-      type: "number" as const,
+      type: "number",
       value: getNestedValue("llamaServer.top_k", 40),
       helperText: "Top-K sampling",
     },
     {
       name: "llamaServer.top_p",
       label: "Top-P",
-      type: "number" as const,
+      type: "number",
       value: getNestedValue("llamaServer.top_p", 0.9),
       helperText: "Nucleus sampling",
     },
@@ -138,6 +135,29 @@ export function LlamaServerSettingsTab({
       animate={{ opacity: 1 }}
       transition={{ delay: 0.2, duration: 0.5 }}
     >
+      {/* Auto-start checkbox */}
+      <Box sx={{ mb: 3 }}>
+        <FormControl>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={autoStartValue}
+                onChange={(e, checked) => handleChange("llamaServer.autoStart", checked)}
+                name="llamaServer-autoStart"
+                color="primary"
+              />
+            }
+            label="Auto-start llama-server on application startup"
+          />
+          <Typography
+            variant="caption"
+            sx={{ ml: 2, color: fieldErrors.autoStart ? "error.main" : "text.secondary" }}
+          >
+            {fieldErrors.autoStart || "Automatically start llama-server when application starts"}
+          </Typography>
+        </FormControl>
+      </Box>
+
       <FormSection title="Server Binding" icon={<ServerIcon />} spacing={2}>
         {serverBindingFields.map((field) => (
           <Grid key={field.name} size={{ xs: 12, md: 6 }}>

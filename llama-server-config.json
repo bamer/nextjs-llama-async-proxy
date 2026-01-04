@@ -1,7 +1,7 @@
 {
   "host": "localhost",
   "port": 8134,
-  "basePath": "/media/bamer/crucial MX300/llm/llama/models",
+  "baseModelsPath": "/media/bamer/crucial MX300/llm/llama/models",
   "serverPath": "/home/bamer/llama.cpp/build/bin/llama-server",
   "ctx_size": 131000,
   "batch_size": 512,

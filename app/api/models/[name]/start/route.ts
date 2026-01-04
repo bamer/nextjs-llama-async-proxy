@@ -22,7 +22,9 @@ export async function POST(
       return validation.errorResponse;
     }
 
-    const selectedTemplate = validation.selectedTemplate;
+    const template = validation.success ? validation.template : undefined;
+
+    logger.info(`[API] Loading model: ${name}${template ? ` with template: ${template}` : ''}`);
 
     logger.info(`[API] Loading model: ${name}`, body);
 
@@ -84,10 +86,10 @@ export async function POST(
 
     const modelName = modelData.name || name;
 
-    logger.info(`[API] Loading model: ${modelName} ${selectedTemplate ? `with template: ${selectedTemplate}` : ''}`);
+    logger.info(`[API] Loading model: ${modelName} ${template ? `with template: ${template}` : ''}`);
 
     // Load model
-    const loadResult = await loadModelViaServer(modelName, selectedTemplate);
+    const loadResult = await loadModelViaServer(modelName, template);
 
     if (!loadResult) {
       const llamaServerHost = process.env.LLAMA_SERVER_HOST || "localhost";

@@ -57,11 +57,11 @@ export function GeneralSettingsTab({
         <Grid size={{ xs: 12, md: 6 }}>
           <FormField
             label="Base Path"
-            name="basePath"
-            value={formConfig.basePath}
+            name="baseModelsPath"
+            value={formConfig.baseModelsPath || ""}
             onChange={handleChange}
-            helperText={fieldErrors.basePath || "Path to your models directory"}
-            error={fieldErrors.basePath}
+            helperText={fieldErrors.baseModelsPath || "Path to your models directory"}
+            error={fieldErrors.baseModelsPath}
             fullWidth
           />
         </Grid>

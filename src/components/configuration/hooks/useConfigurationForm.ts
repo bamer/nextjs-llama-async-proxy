@@ -4,15 +4,15 @@ import { validateConfig } from "./use-config-validation";
 import { createConfigHandlers } from "./config-form-utils";
 
 interface FormConfig {
-  llamaServer?: Record<string, unknown>;
-  modelDefaults?: Record<string, unknown>;
-  basePath?: string;
-  logLevel?: string;
-  maxConcurrentModels?: number;
-  autoUpdate?: boolean;
-  notificationsEnabled?: boolean;
-  llamaServerPath?: string;
-  serverConfig?: Record<string, unknown>;
+   llamaServer?: Record<string, unknown>;
+   modelDefaults?: Record<string, unknown>;
+   baseModelsPath?: string;
+   logLevel?: string;
+   maxConcurrentModels?: number;
+   autoUpdate?: boolean;
+   notificationsEnabled?: boolean;
+   llamaServerPath?: string;
+   serverConfig?: Record<string, unknown>;
 }
 
 interface FieldErrors {
