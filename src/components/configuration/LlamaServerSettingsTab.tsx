@@ -33,6 +33,13 @@ export function LlamaServerSettingsTab({
 
   const serverBindingFields = [
     {
+      name: "llamaServer.autoStart",
+      label: "Auto-start llama-server on application startup",
+      value: getNestedValue("llamaServer.autoStart", false) as boolean,
+      helperText: fieldErrors.autoStart || "Automatically start llama-server when the application starts",
+      error: fieldErrors.autoStart,
+    },
+    {
       name: "llamaServer.host",
       label: "Host",
       value: getNestedValue("llamaServer.host", "127.0.0.1"),
@@ -42,7 +49,7 @@ export function LlamaServerSettingsTab({
     {
       name: "llamaServer.port",
       label: "Port",
-      type: "number" as const,
+      type: "number",
       value: getNestedValue("llamaServer.port", 8080),
       helperText: fieldErrors.port || "Server port number",
       error: fieldErrors.port,

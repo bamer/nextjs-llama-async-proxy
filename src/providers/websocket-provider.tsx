@@ -1,10 +1,9 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { websocketServer } from "@/lib/websocket-client";
 import { useWebSocketStateManager } from "./websocket-state-manager";
 import { handleMessage } from "./websocket-message-handler";
-import type { WebSocketMessage } from "./websocket-message-handler";
 
 interface WebSocketContextType {
   isConnected: boolean;
@@ -17,8 +16,8 @@ interface WebSocketContextType {
   startModel: (modelId: string) => void;
   stopModel: (modelId: string) => void;
   unloadModel: (modelId: string) => void;
-  on: (event: string, callback: (data: any) => void) => void;
-  off: (event: string, callback: (data: any) => void) => void;
+  on: <T = unknown>(event: string, callback: (data: T) => void) => void;
+  off: <T = unknown>(event: string, callback: (data: T) => void) => void;
   socketId: string;
 }
 
@@ -88,46 +87,47 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     };
   }, [stateManager]);
 
-  const sendMessage = (event: string, data?: unknown) => {
+  const sendMessage = useCallback((event: string, data?: unknown) => {
     if (!isConnected) {
       console.warn('[WebSocketProvider] WebSocket not connected, message not sent:', event);
       return;
     }
     websocketServer.sendMessage(event, data);
-  };
+  }, [isConnected]);
 
-  const requestMetrics = () => {
+  const requestMetrics = useCallback(() => {
     websocketServer.requestMetrics();
-  };
+  }, []);
 
-  const requestLogs = () => {
+  const requestLogs = useCallback(() => {
     websocketServer.requestLogs();
-  };
+  }, []);
 
-  const requestModels = () => {
+  const requestModels = useCallback(() => {
     websocketServer.requestModels();
-  };
+  }, []);
 
-  const startModel = (modelId: string) => {
+  const startModel = useCallback((modelId: string) => {
     websocketServer.startModel(modelId);
-  };
+  }, []);
 
-  const stopModel = (modelId: string) => {
+  const stopModel = useCallback((modelId: string) => {
     websocketServer.stopModel(modelId);
-  };
+  }, []);
 
-  const unloadModel = (modelId: string) => {
+  const unloadModel = useCallback((modelId: string) => {
     websocketServer.sendMessage('unloadModel', { modelId });
-  };
+  }, []);
 
-  const on = (event: string, callback: (data: any) => void) => {
-    websocketServer.on(event, callback);
-  };
+  const on = useCallback(<T = unknown>(event: string, callback: (data: T) => void) => {
+    websocketServer.on(event, callback as (data: unknown) => void);
+  }, []);
 
-  const off = (event: string, callback: (data: any) => void) => {
-    websocketServer.off(event, callback);
-  };
+  const off = useCallback(<T = unknown>(event: string, callback: (data: T) => void) => {
+    websocketServer.off(event, callback as (data: unknown) => void);
+  }, []);
 
+  // Memoize the value object to prevent unnecessary re-renders
   const value: WebSocketContextType = {
     isConnected,
     connectionState,

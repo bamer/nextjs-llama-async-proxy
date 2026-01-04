@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useLoggerConfig } from "@/hooks/use-logger-config";
 
 interface FormConfig {
@@ -22,7 +23,7 @@ interface FormConfig {
 export function useConfigPersistence() {
   const { applyToLogger } = useLoggerConfig();
 
-  const loadServerConfig = async (
+  const loadServerConfig = useCallback(async (
     setFormConfig: React.Dispatch<React.SetStateAction<FormConfig>>,
     setIsLoadingConfig: React.Dispatch<React.SetStateAction<boolean>>,
   ): Promise<void> => {
@@ -60,9 +61,9 @@ export function useConfigPersistence() {
     } finally {
       setIsLoadingConfig(false);
     }
-  };
+  }, []);
 
-  const saveConfig = async (
+  const saveConfig = useCallback(async (
     formConfig: FormConfig,
     setIsSaving: React.Dispatch<React.SetStateAction<boolean>>,
     setSaveSuccess: React.Dispatch<React.SetStateAction<boolean>>,
@@ -114,7 +115,7 @@ export function useConfigPersistence() {
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [applyToLogger]);
 
   return {
     loadServerConfig,

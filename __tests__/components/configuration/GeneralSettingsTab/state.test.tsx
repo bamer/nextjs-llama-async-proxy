@@ -16,7 +16,7 @@ jest.mock('framer-motion', () => ({
   m: {
     div: (props: unknown) => {
       const { children, ...rest } = props as { children?: React.ReactNode; [key: string]: unknown };
-      return React.createElement('div', rest as any, children);
+      return React.createElement('div', rest as Record<string, unknown>, children);
     },
   },
 }));
@@ -113,7 +113,6 @@ describe('GeneralSettingsTab State Management', () => {
       />,
     );
 
-    const maxConcurrentInput = screen.getByLabelText('Max Concurrent Models');
     const helperText = screen.getByText(
       'Single model mode: Only one model loaded at a time',
     );

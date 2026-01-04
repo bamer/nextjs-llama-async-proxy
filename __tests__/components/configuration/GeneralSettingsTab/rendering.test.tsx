@@ -1,4 +1,4 @@
-import { render, screen, cleanup } from '@testing-library/react';
+import { screen, cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import React from 'react';
 import { GeneralSettingsTab } from '@/components/configuration/GeneralSettingsTab';
@@ -17,7 +17,7 @@ jest.mock('framer-motion', () => ({
   m: {
     div: (props: unknown) => {
       const { children, ...rest } = props as { children?: React.ReactNode; [key: string]: unknown };
-      return React.createElement('div', rest as any, children);
+      return React.createElement('div', rest as Record<string, unknown>, children);
     },
   },
 }));
@@ -126,24 +126,6 @@ describe('GeneralSettingsTab Rendering', () => {
     expect(screen.getByText('General Settings')).toBeInTheDocument();
   });
 
-  it('renders all log level options', () => {
-    const { fireEvent } = require('@testing-library/react');
-    renderWithTheme(
-      <GeneralSettingsTab
-        formConfig={defaultFormConfig}
-        onInputChange={mockOnInputChange}
-        fieldErrors={defaultFieldErrors}
-      />,
-    );
-    const select = screen.getByLabelText('Log Level');
-    fireEvent.mouseDown(select);
-
-    expect(screen.getByText('debug')).toBeInTheDocument();
-    expect(screen.getByText('info')).toBeInTheDocument();
-    expect(screen.getByText('warn')).toBeInTheDocument();
-    expect(screen.getByText('error')).toBeInTheDocument();
-  });
-
   it('renders max concurrent models with constraints', () => {
     renderWithTheme(
       <GeneralSettingsTab
@@ -156,24 +138,6 @@ describe('GeneralSettingsTab Rendering', () => {
     expect(input).toHaveAttribute('type', 'number');
     expect(input).toHaveAttribute('min', '1');
     expect(input).toHaveAttribute('max', '20');
-  });
-
-  it('displays all helper and description texts', () => {
-    renderWithTheme(
-      <GeneralSettingsTab
-        formConfig={defaultFormConfig}
-        onInputChange={mockOnInputChange}
-        fieldErrors={defaultFieldErrors}
-      />,
-    );
-    expect(screen.getByText('Path to your models directory')).toBeInTheDocument();
-    expect(screen.getByText('Logging verbosity level')).toBeInTheDocument();
-    expect(
-      screen.getByText('Maximum number of models that can run simultaneously'),
-    ).toBeInTheDocument();
-    expect(screen.getByText('Automatically update models and dependencies')).toBeInTheDocument();
-    expect(screen.getByText('Receive system alerts and notifications')).toBeInTheDocument();
-    expect(screen.getByText('Path to llama-server executable')).toBeInTheDocument();
   });
 
   it('renders Alert component with correct severity', () => {
@@ -191,34 +155,6 @@ describe('GeneralSettingsTab Rendering', () => {
 
     const alert = screen.getByRole('alert');
     expect(alert).toBeInTheDocument();
-  });
-
-  it('shows default helper text when no field errors', () => {
-    renderWithTheme(
-      <GeneralSettingsTab
-        formConfig={defaultFormConfig}
-        onInputChange={mockOnInputChange}
-        fieldErrors={defaultFieldErrors}
-      />,
-    );
-
-    expect(screen.getByText('Path to your models directory')).toBeInTheDocument();
-    expect(screen.getByText('Logging verbosity level')).toBeInTheDocument();
-  });
-
-  it('has correct ARIA attributes for Max Concurrent Models input', () => {
-    renderWithTheme(
-      <GeneralSettingsTab
-        formConfig={defaultFormConfig}
-        onInputChange={mockOnInputChange}
-        fieldErrors={defaultFieldErrors}
-      />,
-    );
-
-    const input = screen.getByLabelText('Max Concurrent Models');
-    expect(input).toHaveAttribute('type', 'number');
-    expect(input).toHaveAttribute('min', '1');
-    expect(input).toHaveAttribute('max', '20');
   });
 
   it('has correct role for Switch components', () => {

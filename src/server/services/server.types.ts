@@ -1,6 +1,7 @@
 import type { Socket } from "socket.io";
 import type { LlamaService, LlamaModel } from "./llama/LlamaService";
 import type { SystemMetrics } from "@/types/monitoring";
+import type { ModelImportService } from "./model-import-service";
 
 export interface MetricsData {
   cpu_usage: number;

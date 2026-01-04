@@ -52,6 +52,7 @@ See **[docs/FEATURES.md](docs/FEATURES.md)** for comprehensive feature documenta
 ### Additional Guides
 
 - **[docs/ANIMATION_ARCHITECTURE.md](docs/ANIMATION_ARCHITECTURE.md)** - Animation system design
+- **[docs/TEST_FILE_ORGANIZATION.md](docs/TEST_FILE_ORGANIZATION.md)** - Test file organization pattern from 200-line refactoring (completed Jan 2026)
 - **[docs/TESTING.md](docs/TESTING.md)** - Testing guide and patterns
 - **[docs/COVERAGE.md](docs/COVERAGE.md)** - Coverage metrics and improvement strategies
 - **[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)** - Contributing guidelines

@@ -42,7 +42,8 @@ export function useModels(options?: UseModelsOptions): UseModelsReturn {
     console.log("[useModels] Loading models from database");
 
     return cleanup;
-  }, [wsSendMessage, cleanup]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wsSendMessage]);
 
   const handleStartModel = useCallback(
     async (modelId: string) => {

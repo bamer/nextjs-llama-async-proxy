@@ -50,6 +50,10 @@ export const llamaServerConfigSchema = z
       .min(-1)
       .default(-1)
       .describe("Number of GPU layers (-1 for all)"),
+    autoStart: z
+      .boolean()
+      .default(false)
+      .describe("Automatically start llama-server on application startup"),
   })
   .strict()
   .describe("Llama server configuration settings");

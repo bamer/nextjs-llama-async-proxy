@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useStore } from "@/lib/store";
 import { useWebSocket } from "@/hooks/use-websocket";
 
@@ -18,7 +19,7 @@ export function useWebSocketEventHandlers(
   const { requestModels, sendMessage, on, off } = useWebSocket();
   const setModels = useStore((state) => state.setModels);
 
-  const handleModelsLoaded = (data: unknown) => {
+  const handleModelsLoaded = useCallback((data: unknown) => {
     const typedData = data as { success: boolean; data?: unknown[] };
     if (typedData.success && typedData.data) {
       console.log("[useModels] Models loaded successfully:", typedData.data);
@@ -27,9 +28,10 @@ export function useWebSocketEventHandlers(
     } else {
       console.error("[useModels] Failed to load models:", data);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setModels, options?.onModelsLoaded]);
 
-  const handleConfigLoaded = (data: unknown) => {
+  const handleConfigLoaded = useCallback((data: unknown) => {
     const typedData = data as {
       success: boolean;
       error?: unknown;
@@ -41,9 +43,10 @@ export function useWebSocketEventHandlers(
     } else {
       console.error("[useModels] Failed to load config:", typedData.error);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options?.onConfigLoaded]);
 
-  const handleConfigSaved = (data: unknown) => {
+  const handleConfigSaved = useCallback((data: unknown) => {
     const typedData = data as {
       success: boolean;
       error?: unknown;
@@ -55,9 +58,10 @@ export function useWebSocketEventHandlers(
     } else {
       console.error("[useModels] Failed to save config:", typedData.error);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options?.onConfigSaved]);
 
-  const handleModelDeleted = (data: unknown) => {
+  const handleModelDeleted = useCallback((data: unknown) => {
     const typedData = data as {
       success: boolean;
       error?: unknown;
@@ -70,20 +74,21 @@ export function useWebSocketEventHandlers(
     } else {
       console.error("[useModels] Failed to delete model:", typedData.error);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options?.onModelDeleted]);
 
   on("models_loaded", handleModelsLoaded);
   on("config_loaded", handleConfigLoaded);
   on("config_saved", handleConfigSaved);
   on("model_deleted", handleModelDeleted);
 
-  // Return cleanup function
-  const cleanup = () => {
+  // Return cleanup function (memoized to prevent infinite loops)
+  const cleanup = useCallback(() => {
     off("models_loaded", handleModelsLoaded);
     off("config_loaded", handleConfigLoaded);
     off("config_saved", handleConfigSaved);
     off("model_deleted", handleModelDeleted);
-  };
+  }, [off, handleModelsLoaded, handleConfigLoaded, handleConfigSaved, handleModelDeleted]);
 
   return { requestModels, sendMessage, cleanup };
 }

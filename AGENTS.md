@@ -241,34 +241,53 @@ describe('MetricCard', () => {
   // Accessibility tests (4 tests)
 });
 
-// ✅ AFTER: Split by logical category
-// __tests__/src/components/dashboard/MetricCard/MetricCard.rendering.test.tsx
-describe('MetricCard Rendering', () => {
-  it('renders correctly', () => { /* ... */ });
-  it('displays title', () => { /* ... */ });
-  // 15 rendering tests
+// ✅ AFTER: Split by logical category into directory structure
+// __tests__/hooks/useFormState/form-operations.test.ts
+describe('Form Operations', () => {
+  it('should validate form', () => { /* ... */ });
+  // Form validation tests
 });
 
-// __tests__/src/components/dashboard/MetricCard/MetricCard.data.test.tsx
-describe('MetricCard Data Handling', () => {
-  it('displays metric value', () => { /* ... */ });
-  it('formats numbers correctly', () => { /* ... */ });
-  // 12 data tests
+// __tests__/hooks/useFormState/field-operations.test.ts
+describe('Field Operations', () => {
+  it('should update field value', () => { /* ... */ });
+  // Field management tests
 });
 
-// __tests__/src/components/dashboard/MetricCard/MetricCard.state.test.tsx
-describe('MetricCard State Management', () => {
-  it('shows loading indicator', () => { /* ... */ });
-  it('handles error state', () => { /* ... */ });
-  // 14 state/error tests
+// __tests__/hooks/useFormState/edge-cases.test.ts
+describe('Edge Cases', () => {
+  it('should handle null values', () => { /* ... */ });
+  // Boundary condition tests
 });
 
-// __tests__/src/components/dashboard/MetricCard/MetricCard.test-utils.ts
-export const mockMetric = { /* shared mock data */ };
-export const renderMetricCard = (props) => { /* shared render helper */ };
+// __tests__/hooks/useFormState/test-utils.ts
+export const setupFormHook = (values) => { /* ... */ };
+export const updateField = (hook, field, value) => { /* ... */ };
+export const setError = (hook, errors) => { /* ... */ };
 ```
 
 **File naming pattern**: `{ComponentName}.{category}.test.{ts,tsx}`
+
+**Directory structure pattern**:
+```
+__tests__/
+├── hooks/
+│   └── useFormState/
+│       ├── form-operations.test.ts       (199 lines)
+│       ├── field-operations.test.ts      (181 lines)
+│       ├── edge-cases.test.ts           (82 lines)
+│       ├── initialization.test.ts        (40 lines)
+│       └── test-utils.ts                (55 lines)
+├── hooks/
+│   └── useNotification/
+│       ├── show-hide.test.ts            (118 lines)
+│       ├── auto-hide.test.ts            (111 lines)
+│       ├── sequential-persistence.test.ts (73 lines)
+│       ├── close-reasons.test.ts        (63 lines)
+│       ├── edge-cases.test.ts           (51 lines)
+│       ├── initialization.test.ts        (45 lines)
+│       └── test-utils.ts                (36 lines)
+```
 
 Categories:
 - `rendering` - Visual rendering tests
@@ -278,6 +297,140 @@ Categories:
 - `accessibility` - A11y tests
 - `performance` - Memoization/performance tests
 - `test-utils` - Shared test helpers (not a test file)
+- `edge-cases` - Boundary conditions and exceptional scenarios
+- `initialization` - Component/hook initialization tests
+- `operations` - Core functionality operations
+- `form-operations` - Form-specific operations
+- `field-operations` - Field-level operations
+- `auto-hide` - Auto-hide functionality
+- `show-hide` - Show/hide visibility tests
+- `close-reasons` - Close event handling tests
+- `sequential-persistence` - State persistence tests
+
+#### Test Utils Export Guidelines (CRITICAL!)
+
+**CRITICAL**: All functions used in test files MUST be exported from test-utils.ts
+
+```typescript
+// ✅ CORRECT: Export all mock data and helper functions
+// __tests__/hooks/useFormState/test-utils.ts
+export interface TestFormValues {
+  username: string;
+  email: string;
+  age: number;
+  active: boolean;
+  [key: string]: unknown;
+}
+
+export const initialValues: TestFormValues = {
+  username: "",
+  email: "",
+  age: 0,
+  active: false,
+};
+
+export function setupFormHook<T = TestFormValues>(
+  values: T = initialValues as T
+) {
+  return renderHook(() => useFormState<T>(values));
+}
+
+export function updateField<T = TestFormValues>(
+  hook: ReturnType<typeof setupFormHook<T>>,
+  field: keyof T,
+  value: unknown
+): void {
+  act(() => {
+    hook.result.current.setValue(field as string, value);
+  });
+}
+
+export function setError<T = TestFormValue>(
+  hook: ReturnType<typeof setupFormHook<T>>,
+  errors: Partial<Record<string, string>>
+): void {
+  act(() => {
+    hook.result.current.setErrors(errors);
+  });
+}
+
+export function resetForm<T = TestFormValues>(
+  hook: ReturnType<typeof setupFormHook<T>>
+): void {
+  act(() => {
+    hook.result.current.resetForm();
+  });
+}
+
+// ❌ WRONG: Define but forget to export
+const initialValues = { /* ... */ };        // ❌ Not exported!
+const setupFormHook = (values) => { /* ... */ };  // ❌ Not exported!
+```
+
+**Example Usage in Test Files**:
+
+```typescript
+// __tests__/hooks/useFormState/form-operations.test.ts
+import { setupFormHook, updateField, setError, resetForm } from "./test-utils";
+
+describe("Form Operations", () => {
+  it("should update field value", () => {
+    const hook = setupFormHook();
+
+    updateField(hook, "username", "testuser");
+
+    expect(hook.result.current.values.username).toBe("testuser");
+  });
+
+  it("should reset form to initial values", () => {
+    const hook = setupFormHook({ username: "test" });
+
+    resetForm(hook);
+
+    expect(hook.result.current.values.username).toBe("");
+  });
+});
+```
+
+**Common test-utils patterns**:
+
+1. **Hook setup helpers**:
+   ```typescript
+   export function setupHook() {
+     return renderHook(() => useHook());
+   }
+   ```
+
+2. **Mock data objects**:
+   ```typescript
+   export const mockData = { /* ... */ };
+   export const mockOptions = { /* ... */ };
+   ```
+
+3. **Action wrappers**:
+   ```typescript
+   export function performAction(hook, ...args) {
+     act(() => {
+       hook.result.current.action(...args);
+     });
+   }
+   ```
+
+4. **Assertion helpers**:
+   ```typescript
+   export function assertState(hook, expected) {
+     expect(hook.result.current.state).toEqual(expected);
+   }
+   ```
+
+5. **Timer helpers**:
+   ```typescript
+   export function advanceTimers(ms: number): void {
+     act(() => {
+       jest.advanceTimersByTime(ms);
+     });
+   }
+   ```
 
 #### Composition Pattern Usage
 
@@ -342,6 +495,52 @@ Use composition to build complex UIs from small, reusable components:
 5. **Verify** - Run `pnpm test` and `pnpm type:check`
 6. **Commit** - Create focused commits for each extraction
 
+#### Success Criteria for Test Refactoring
+
+When refactoring test files, ensure:
+
+1. ✅ All new test files must be under 200 lines
+2. ✅ Original large test files deleted or replaced
+3. ✅ All tests pass: `pnpm test <directory>/`
+4. ✅ `pnpm lint` passes for all new files
+5. ✅ `pnpm type:check` passes
+6. ✅ test-utils.ts contains shared mocks and helpers
+7. ✅ **CRITICAL**: ALL functions exported from test-utils.ts that test files use
+8. ✅ Test coverage is maintained or improved
+9. ✅ Test execution time remains acceptable (<2 minutes for full suite)
+
+#### Example Refactored Test Structure
+
+**Before Refactoring**:
+```typescript
+// __tests__/hooks/useFormState.test.ts (400+ lines, 50+ tests)
+describe('useFormState', () => {
+  // Initialization tests (8 tests)
+  // Field operations tests (15 tests)
+  // Form operations tests (20 tests)
+  // Edge cases tests (7 tests)
+  // Total: 50 tests, 400+ lines
+});
+```
+
+**After Refactoring**:
+```
+__tests__/hooks/useFormState/
+├── test-utils.ts                (55 lines) - Shared helpers
+├── initialization.test.ts        (40 lines) - 8 tests
+├── field-operations.test.ts      (181 lines) - 15 tests
+├── form-operations.test.ts       (199 lines) - 20 tests
+└── edge-cases.test.ts           (82 lines) - 7 tests
+Total: 557 lines split across 5 files, all <200 lines
+```
+
+**Benefits**:
+- Each file has single responsibility
+- Easier to locate specific test categories
+- Faster test execution (can run specific category)
+- Better maintainability
+- Clearer code organization
+
 #### Example Refactoring Commit Messages
 
 ```
@@ -381,6 +580,12 @@ refactor: split MetricCard tests by category
 - No Redux or Context API for state (except ThemeContext)
 - Use pnpm as package manager
 - Always run `pnpm type:check` and `pnpm lint` before committing changes
+
+### Related Documentation
+
+- [docs/TEST_FILE_ORGANIZATION.md](docs/TEST_FILE_ORGANIZATION.md) - Comprehensive guide on test file organization pattern from 200-line refactoring
+- [docs/TESTING.md](docs/TESTING.md) - Comprehensive testing guide with patterns and best practices
+- [docs/COVERAGE.md](docs/COVERAGE.md) - Coverage metrics and improvement strategies
 
 <skills_system priority="1">
 

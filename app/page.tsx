@@ -2,11 +2,11 @@
 
 import { Box } from "@mui/material";
 import { MainLayout } from "@/components/layout/main-layout";
-import { HeroSection } from "./components/HeroSection";
-import { FeaturesSection } from "./components/FeaturesSection";
-import { QuickStats } from "./components/QuickStats";
-import { TechStack } from "./components/TechStack";
-import { GettingStarted } from "./components/GettingStarted";
+import { HeroSection } from "./page/components/HeroSection";
+import { FeaturesSection } from "./page/components/FeaturesSection";
+import { QuickStats } from "./page/components/QuickStats";
+import { TechStack } from "./page/components/TechStack";
+import { GettingStarted } from "./page/components/GettingStarted";
 
 export default function HomePage() {
   return (

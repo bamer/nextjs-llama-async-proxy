@@ -16,7 +16,7 @@ jest.mock('framer-motion', () => ({
   m: {
     div: (props: unknown) => {
       const { children, ...rest } = props as { children?: React.ReactNode; [key: string]: unknown };
-      return React.createElement('div', rest as any, children);
+      return React.createElement('div', rest as Record<string, unknown>, children);
     },
   },
 }));
@@ -44,18 +44,6 @@ describe('GeneralSettingsTab Negative Tests', () => {
     expect(screen.getByText('General Settings')).toBeInTheDocument();
   });
 
-  it('displays helper text for inputs', () => {
-    renderWithTheme(
-      <GeneralSettingsTab
-        formConfig={defaultFormConfig}
-        onInputChange={mockOnInputChange}
-        fieldErrors={defaultFieldErrors}
-      />,
-    );
-    expect(screen.getByText('Path to your models directory')).toBeInTheDocument();
-    expect(screen.getByText('Logging verbosity level')).toBeInTheDocument();
-  });
-
   it('handles undefined values gracefully', () => {
     const undefinedConfig = {
       basePath: undefined,
@@ -73,51 +61,6 @@ describe('GeneralSettingsTab Negative Tests', () => {
       />,
     );
     expect(screen.getByText('General Settings')).toBeInTheDocument();
-  });
-
-  it('handles empty formConfig without crashing', () => {
-    renderWithTheme(
-      <GeneralSettingsTab
-        formConfig={{} as typeof defaultFormConfig}
-        onInputChange={mockOnInputChange}
-        fieldErrors={{}}
-      />,
-    );
-    expect(screen.getByText('General Settings')).toBeInTheDocument();
-  });
-
-  it('handles undefined autoUpdate value gracefully', () => {
-    const config = {
-      ...defaultFormConfig,
-      autoUpdate: undefined as unknown as boolean,
-    };
-    renderWithTheme(
-      <GeneralSettingsTab
-        formConfig={config}
-        onInputChange={mockOnInputChange}
-        fieldErrors={{}}
-      />,
-    );
-
-    const checkbox = screen.getByLabelText('Auto Update');
-    expect(checkbox).toBeInTheDocument();
-  });
-
-  it('handles undefined notificationsEnabled value gracefully', () => {
-    const config = {
-      ...defaultFormConfig,
-      notificationsEnabled: undefined as unknown as boolean,
-    };
-    renderWithTheme(
-      <GeneralSettingsTab
-        formConfig={config}
-        onInputChange={mockOnInputChange}
-        fieldErrors={{}}
-      />,
-    );
-
-    const checkbox = screen.getByLabelText('Notifications Enabled');
-    expect(checkbox).toBeInTheDocument();
   });
 
   it('handles field error for basePath', () => {

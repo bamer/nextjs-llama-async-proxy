@@ -2,6 +2,7 @@ import type { Socket } from "socket.io";
 import type { LlamaModel } from "../llama/LlamaService";
 import type { WebSocketHandlersDependencies } from "../server.types";
 import { transformLlamaModelToDisplay, startModelViaChatCompletion } from "../server.utils";
+import { getModels } from "../../../lib/database/model-query-service";
 
 export function setupModelsHandlers(
   socket: Socket,
@@ -59,7 +60,6 @@ export function setupModelsHandlers(
   }
 
   async function handleLoadModelsFromDb() {
-    const { getModels } = require("../../lib/database");
     try {
       const models = getModels();
       socket.emit("models_loaded", {
