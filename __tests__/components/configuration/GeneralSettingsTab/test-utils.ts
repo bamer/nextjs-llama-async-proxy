@@ -58,20 +58,6 @@ export function setupDarkThemeMock(): void {
 }
 
 /**
- * Setup framer-motion mock for tests
- */
-export function setupFramerMotionMock(): void {
-  jest.mock('framer-motion', () => ({
-    m: {
-      div: (props: unknown) => {
-        const { children } = props as { children?: React.ReactNode };
-        return React.createElement('div', null, children);
-      },
-    },
-  }));
-}
-
-/**
  * Clear all mocks before each test
  */
 export function clearAllMocks(): void {

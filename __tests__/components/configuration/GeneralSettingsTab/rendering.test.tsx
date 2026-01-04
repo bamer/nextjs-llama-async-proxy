@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import React from 'react';
 import { GeneralSettingsTab } from '@/components/configuration/GeneralSettingsTab';
@@ -9,12 +9,18 @@ import {
   clearAllMocks,
   setupLightThemeMock,
   setupDarkThemeMock,
-  setupFramerMotionMock,
 } from './test-utils';
 
 jest.mock('@/contexts/ThemeContext');
 
-setupFramerMotionMock();
+jest.mock('framer-motion', () => ({
+  m: {
+    div: (props: unknown) => {
+      const { children, ...rest } = props as { children?: React.ReactNode; [key: string]: unknown };
+      return React.createElement('div', rest as any, children);
+    },
+  },
+}));
 
 describe('GeneralSettingsTab Rendering', () => {
   const mockOnInputChange = jest.fn();
@@ -22,6 +28,10 @@ describe('GeneralSettingsTab Rendering', () => {
   beforeEach(() => {
     clearAllMocks();
     setupLightThemeMock();
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it('renders correctly', () => {

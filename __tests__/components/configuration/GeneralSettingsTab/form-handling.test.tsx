@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { fireEvent } from '@testing-library/react';
 import React from 'react';
@@ -9,12 +9,18 @@ import {
   defaultFieldErrors,
   clearAllMocks,
   setupLightThemeMock,
-  setupFramerMotionMock,
 } from './test-utils';
 
 jest.mock('@/contexts/ThemeContext');
 
-setupFramerMotionMock();
+jest.mock('framer-motion', () => ({
+  m: {
+    div: (props: unknown) => {
+      const { children, ...rest } = props as { children?: React.ReactNode; [key: string]: unknown };
+      return React.createElement('div', rest as any, children);
+    },
+  },
+}));
 
 describe('GeneralSettingsTab Form Handling', () => {
   const mockOnInputChange = jest.fn();
@@ -22,6 +28,10 @@ describe('GeneralSettingsTab Form Handling', () => {
   beforeEach(() => {
     clearAllMocks();
     setupLightThemeMock();
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it('calls onInputChange when Base Path is changed', () => {

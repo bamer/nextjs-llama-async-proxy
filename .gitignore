@@ -71,3 +71,7 @@ test-results-real/
 .beads/*.log
 .beads/*.lock
 .beads/*.pid
+
+#opencode && claude
+.opencode/*
+.claude/*
