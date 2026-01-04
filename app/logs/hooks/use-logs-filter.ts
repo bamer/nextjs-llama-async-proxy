@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { LogEntry } from "@/types";
 
 export interface LogsFilterState {
   searchTerm: string;
@@ -45,18 +46,10 @@ export function extractLogSource(log: { context?: { source?: string } }): string
  * Filter logs based on search term and log levels
  */
 export function filterLogs(
-  logs: Array<{
-    level?: string;
-    message: string | Record<string, unknown>;
-    context?: { source?: string };
-  }>,
+  logs: LogEntry[],
   searchTerm: string,
   selectedLevels: Set<string>
-): Array<{
-  level?: string;
-  message: string | Record<string, unknown>;
-  context?: { source?: string };
-}> {
+): LogEntry[] {
   return logs.filter((log) => {
     const messageStr = extractLogMessage(log);
     const source = extractLogSource(log);

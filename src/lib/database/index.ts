@@ -9,12 +9,11 @@ export type {
   ModelSamplingConfig,
   ModelMemoryConfig,
   ModelGpuConfig,
-  ModelAdvancedConfig,
   ModelLoraConfig,
   ModelMultimodalConfig,
-  ModelFitParams,
-  ModelServerConfig,
-} from "./types/model-config.types";
+} from "@/types/model-config-types";
+export type { ModelAdvancedConfig } from "@/types/model-inference-types";
+export type { ModelFitParams, ModelServerConfig } from "@/types/model-metadata-types";
 
 // Model CRUD Operations
 export {

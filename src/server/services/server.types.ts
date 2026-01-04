@@ -36,7 +36,7 @@ export interface ConfigHandler {
 
 export interface WebSocketHandlersDependencies {
   llamaService: LlamaService | null;
-  modelImportService: unknown;
+  modelImportService: ModelImportService;
   collectMetrics: () => Promise<SystemMetrics>;
   broadcastState: (state: unknown) => void;
 }

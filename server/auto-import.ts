@@ -1,7 +1,7 @@
 import { getLogger } from '../src/lib/logger';
 import { getModels, saveModel } from '../src/lib/database';
 import type LlamaServerIntegration from '../src/server/services/LlamaServerIntegration';
-import type { LlamaServerConfig } from './config-loader';
+import type { LlamaServerConfig } from '../src/lib/validators';
 import type { LlamaServiceState } from '../src/server/services/llama/types';
 
 const logger = getLogger();

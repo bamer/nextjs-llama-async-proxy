@@ -1,7 +1,8 @@
 import fs from "fs";
 import gguf from "gguf";
 import { getLogger } from "@/lib/logger";
-import { DiscoveredModel, ModelWithMetadata } from "./model-import-service";
+import { DiscoveredModel } from "./model-downloader";
+import { ModelWithMetadata } from "./model-validator";
 
 const logger = getLogger();
 

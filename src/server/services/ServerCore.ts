@@ -173,7 +173,11 @@ export class ServerCore {
       llamaService: this.llamaService,
       modelImportService,
       collectMetrics: async () => this.collectMetrics(),
-      broadcastState: (state) => this.broadcastState(state),
+      broadcastState: (state: unknown) => {
+        if (state && typeof state === 'object' && 'models' in state) {
+          this.broadcastState(state as LlamaServiceState);
+        }
+      },
     };
 
     setupMetricsHandlers(socket, dependencies);

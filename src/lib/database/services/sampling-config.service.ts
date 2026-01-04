@@ -1,5 +1,5 @@
 import { initDatabase, closeDatabase } from "../database-client";
-import type { ModelSamplingConfig } from "../types/model-config.types";
+import type { ModelSamplingConfig } from "@/types/model-config-types";
 
 export function saveModelSamplingConfig(
   modelId: number,

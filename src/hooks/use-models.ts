@@ -18,7 +18,15 @@ interface UseModelsOptions {
   enableWebSocket?: boolean;
 }
 
-export function useModels(options: UseModelsOptions = {}) {
+export function useModels(options: UseModelsOptions = {}): {
+  models: Model[];
+  loadingStates: Record<string, boolean>;
+  startModel: (modelName: string) => Promise<void>;
+  stopModel: (modelName: string) => Promise<void>;
+  discoverModels: () => Promise<void>;
+  rescanModels: () => Promise<void>;
+  setModels: (models: Model[]) => void;
+} {
   const { enableWebSocket = true } = options;
   const [models, setModels] = useState<Model[]>([]);
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
@@ -147,24 +155,26 @@ export function useModels(options: UseModelsOptions = {}) {
   useEffect(() => {
     loadModels();
 
-    if (enableWebSocket) {
-      try {
-        websocketServer.connect();
-        websocketServer.on("message", handleModelsUpdate);
-        websocketServer.on("connect", handleConnect);
-      } catch (error) {
-        console.error("WebSocket connection error:", error);
-      }
-
-      return () => {
-        try {
-          websocketServer.off("message", handleModelsUpdate);
-          websocketServer.off("connect", handleConnect);
-        } catch (error) {
-          // Ignore cleanup errors
-        }
-      };
+    if (!enableWebSocket) {
+      return;
     }
+
+    try {
+      websocketServer.connect();
+      websocketServer.on("message", handleModelsUpdate);
+      websocketServer.on("connect", handleConnect);
+    } catch (error) {
+      console.error("WebSocket connection error:", error);
+    }
+
+    return () => {
+      try {
+        websocketServer.off("message", handleModelsUpdate);
+        websocketServer.off("connect", handleConnect);
+      } catch (error) {
+        // Ignore cleanup errors
+      }
+    };
   }, [loadModels, handleModelsUpdate, handleConnect, enableWebSocket]);
 
   return {

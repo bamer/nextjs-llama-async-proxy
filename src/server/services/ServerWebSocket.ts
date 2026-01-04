@@ -1,5 +1,7 @@
 import type { Socket } from "socket.io";
-import type { LlamaServiceState, SystemMetrics } from "../server.types";
+import type { LlamaService } from "./llama/LlamaService";
+import type { LlamaServiceState } from "./llama/types";
+import type { SystemMetrics } from "@/types/monitoring";
 import { setupMetricsHandlers } from "./modules/handlers-metrics";
 import { setupModelsHandlers } from "./modules/handlers-models";
 import { setupLogsHandlers } from "./modules/handlers-logs";
@@ -18,7 +20,7 @@ export function setupWebSocketHandlers(
     llamaService: LlamaService | null;
     modelImportService: any;
     collectMetrics: () => Promise<SystemMetrics>;
-    broadcastState: (state: LlamaServiceState) => void;
+    broadcastState: (state: unknown) => void;
   }
 ): void {
   const dependencies = {

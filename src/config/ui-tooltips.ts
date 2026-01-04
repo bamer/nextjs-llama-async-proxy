@@ -10,3 +10,5 @@ export const uiTooltips: Record<string, TooltipContent> = {
   ...gpuTooltips,
   ...advancedTooltips,
 };
+
+export { gpuTooltips, advancedTooltips };

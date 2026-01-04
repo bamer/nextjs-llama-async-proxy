@@ -1,5 +1,5 @@
 import { initDatabase, closeDatabase } from "../database-client";
-import type { ModelMultimodalConfig } from "../types/model-config.types";
+import type { ModelMultimodalConfig } from "@/types/model-config-types";
 
 export function saveModelMultimodalConfig(
   modelId: number,

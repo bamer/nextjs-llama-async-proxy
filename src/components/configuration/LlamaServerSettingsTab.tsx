@@ -33,7 +33,14 @@ export function LlamaServerSettingsTab({
 
   const autoStartValue = getNestedValue("llamaServer.autoStart", false) as boolean;
 
-  const serverBindingFields = [
+  const serverBindingFields: Array<{
+    name: string;
+    label: string;
+    value: string | number;
+    helperText: string;
+    error?: string;
+    type?: "text" | "number";
+  }> = [
     {
       name: "llamaServer.host",
       label: "Host",
@@ -51,7 +58,14 @@ export function LlamaServerSettingsTab({
     },
   ];
 
-  const basicOptionsFields = [
+  const basicOptionsFields: Array<{
+    name: string;
+    label: string;
+    type: "number";
+    value: number;
+    helperText: string;
+    error?: string;
+  }> = [
     {
       name: "llamaServer.ctx_size",
       label: "Context Size",
@@ -86,7 +100,14 @@ export function LlamaServerSettingsTab({
     },
   ];
 
-  const gpuOptionsFields = [
+  const gpuOptionsFields: Array<{
+    name: string;
+    label: string;
+    type: "number";
+    value: number;
+    helperText: string;
+    error?: string;
+  }> = [
     {
       name: "llamaServer.gpu_layers",
       label: "GPU Layers",
@@ -105,7 +126,13 @@ export function LlamaServerSettingsTab({
     },
   ];
 
-  const samplingFields = [
+  const samplingFields: Array<{
+    name: string;
+    label: string;
+    type: "number";
+    value: number;
+    helperText: string;
+  }> = [
     {
       name: "llamaServer.temperature",
       label: "Temperature",
@@ -142,7 +169,7 @@ export function LlamaServerSettingsTab({
             control={
               <Checkbox
                 checked={autoStartValue}
-                onChange={(e, checked) => handleChange("llamaServer.autoStart", checked)}
+                onChange={(_, checked) => handleChange("llamaServer.autoStart", checked)}
                 name="llamaServer-autoStart"
                 color="primary"
               />

@@ -1,5 +1,5 @@
 import { initDatabase, closeDatabase } from "../database-client";
-import type { ModelGpuConfig } from "../types/model-config.types";
+import type { ModelGpuConfig } from "@/types/model-config-types";
 
 export function saveModelGpuConfig(
   modelId: number,

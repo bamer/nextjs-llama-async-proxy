@@ -10,10 +10,10 @@ import type {
   ModelSamplingConfig,
   ModelMemoryConfig,
   ModelGpuConfig,
-  ModelAdvancedConfig,
   ModelLoraConfig,
   ModelMultimodalConfig,
-} from "../types/model-config.types";
+} from "@/types/model-config-types";
+import type { ModelAdvancedConfig } from "@/types/model-inference-types";
 
 export function getCompleteModelConfig(modelId: number): {
   model: ModelConfig;

@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import { initDatabase, closeDatabase } from "../database-client";
-import type { ModelFitParams } from "../types/model-config.types";
+import type { ModelFitParams } from "@/types/model-metadata-types";
 
 export function saveModelFitParams(
   modelId: number,

@@ -31,8 +31,8 @@ export class ModelDownloader {
       }
 
       const fileConfig = loadConfig();
-      if (fileConfig?.basePath) {
-        this.modelsDir = fileConfig.basePath;
+      if (fileConfig?.baseModelsPath) {
+        this.modelsDir = fileConfig.baseModelsPath;
         logger.info(`[ModelImport] Models directory from config file: ${this.modelsDir}`);
         return;
       }

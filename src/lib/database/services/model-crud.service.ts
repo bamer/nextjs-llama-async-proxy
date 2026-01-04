@@ -1,5 +1,5 @@
 import { initDatabase, closeDatabase } from "../database-client";
-import type { ModelConfig } from "../types/model-config.types";
+import type { ModelConfig } from "@/types/model-config-types";
 
 export function saveModel(
   config: Omit<ModelConfig, "id" | "created_at" | "updated_at">

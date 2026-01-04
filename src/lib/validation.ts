@@ -106,7 +106,7 @@ export class FormValidator {
       const server = (config.llamaServer as LlamaServerSettings) || ({
         host: config.host as string,
         port: config.port as number,
-        basePath: config.basePath as string,
+        baseModelsPath: config.baseModelsPath as string,
         serverPath: config.serverPath as string,
         ctx_size: config.ctx_size as number,
         batch_size: config.batch_size as number,

@@ -1,5 +1,5 @@
 import { initDatabase, closeDatabase } from "../database-client";
-import type { ModelAdvancedConfig } from "../types/model-config.types";
+import type { ModelAdvancedConfig } from "@/types/model-inference-types";
 
 export function saveModelAdvancedConfig(
   modelId: number,

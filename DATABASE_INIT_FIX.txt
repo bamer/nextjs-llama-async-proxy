@@ -1,7 +1,0 @@
-// Remove initDatabase() calls from config handlers - database is already initialized globally
-
-// Line 29 in load_config handler
-await initDatabase();  // ❌ REMOVE - database already initialized globally
-
-// Line 86 in save_config handler  
-await initDatabase();  // ❌ REMOVE - database already initialized globally

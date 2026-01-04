@@ -1,4 +1,4 @@
-import { TooltipContent } from "./tooltip-config.types";
+import { TooltipContent } from "../tooltip-config.types";
 
 /**
  * GPU-related configuration tooltips

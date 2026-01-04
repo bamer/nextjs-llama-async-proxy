@@ -42,5 +42,4 @@ export const designTokens = {
 };
 
 export type { ThemeOptions };
-export { lightTheme, darkTheme, designTokens };
 export default { lightTheme, darkTheme, designTokens };

@@ -3,7 +3,7 @@ import path from "path";
 import { getLogger } from "@/lib/logger";
 import { getServerConfig } from "@/lib/database";
 import { loadConfig } from "@/lib/server-config";
-import { DiscoveredModel } from "./model-import-service";
+import { DiscoveredModel } from "./model-downloader";
 
 const logger = getLogger();
 
@@ -24,8 +24,8 @@ export class ModelDirectoryService {
       }
 
       const fileConfig = loadConfig();
-      if (fileConfig?.basePath) {
-        this.modelsDir = fileConfig.basePath;
+      if (fileConfig?.baseModelsPath) {
+        this.modelsDir = fileConfig.baseModelsPath;
         logger.info(`[ModelDirectory] Models directory from config file: ${this.modelsDir}`);
         return;
       }

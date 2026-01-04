@@ -1,5 +1,5 @@
 import { initDatabase, closeDatabase } from "../database-client";
-import type { ModelMemoryConfig } from "../types/model-config.types";
+import type { ModelMemoryConfig } from "@/types/model-config-types";
 
 export function saveModelMemoryConfig(
   modelId: number,

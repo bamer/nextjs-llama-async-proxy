@@ -1,5 +1,5 @@
 import { initDatabase, closeDatabase } from "../database-client";
-import type { ModelLoraConfig } from "../types/model-config.types";
+import type { ModelLoraConfig } from "@/types/model-config-types";
 
 export function saveModelLoraConfig(
   modelId: number,

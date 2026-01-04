@@ -62,7 +62,7 @@ export function ConfigFooter({
   );
 }
 
-function ConfigField(props: any) {
+function ConfigField(_props: any) {
   return null;
 }
 

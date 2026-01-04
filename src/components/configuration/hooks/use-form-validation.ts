@@ -23,7 +23,7 @@ export function useFormValidation({
 
     // Validate General Settings using Zod
     const generalSettings = {
-      basePath: configToValidate.basePath || "",
+      baseModelsPath: configToValidate.baseModelsPath || "",
       logLevel: (configToValidate.logLevel || "info") as "error" | "warn" | "info" | "debug",
       maxConcurrentModels: configToValidate.maxConcurrentModels || 1,
       autoUpdate: configToValidate.autoUpdate || false,
@@ -49,11 +49,11 @@ export function useFormValidation({
       field => configToValidate[field as keyof FormConfig] !== undefined && field !== "basePath"
     );
 
-    // Note: basePath is a general setting, not a llama server field
+    // Note: baseModelsPath is a general setting, not a llama server field
     const llamaServerSettings = {
       host: llamaServer?.host || configToValidate.host || "",
       port: llamaServer?.port || configToValidate.port || 8080,
-      basePath: llamaServer?.basePath || "",
+      baseModelsPath: llamaServer?.baseModelsPath || configToValidate.baseModelsPath || "",
       serverPath: llamaServer?.serverPath || configToValidate.serverPath || "",
       ctx_size: llamaServer?.ctx_size || configToValidate.ctx_size || 0,
       batch_size: llamaServer?.batch_size || configToValidate.batch_size || 512,

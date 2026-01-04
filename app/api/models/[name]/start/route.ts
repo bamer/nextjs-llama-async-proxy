@@ -11,8 +11,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ name: string }> }
 ): Promise<NextResponse> {
+  let modelName = 'unknown';
   try {
     const { name } = await params;
+    modelName = name;
 
     const body = await request.json().catch(() => ({}));
 
@@ -22,7 +24,7 @@ export async function POST(
       return validation.errorResponse;
     }
 
-    const template = validation.success ? validation.template : undefined;
+    const template = validation.success ? validation.selectedTemplate : undefined;
 
     logger.info(`[API] Loading model: ${name}${template ? ` with template: ${template}` : ''}`);
 
@@ -53,7 +55,7 @@ export async function POST(
       return NextResponse.json(
         {
           error: "Llama service not initialized",
-          model: name,
+          model: modelName,
           status: "error",
         },
         { status: 503 }
@@ -65,18 +67,18 @@ export async function POST(
     const maxConcurrent = appConfig.maxConcurrentModels || 1;
     logger.info(`[API] Max concurrent models setting: ${maxConcurrent}`);
 
-    const constraints = checkModelLoadingConstraints(llamaService, name, maxConcurrent);
+    const constraints = checkModelLoadingConstraints(llamaService, modelName, maxConcurrent);
     if (!constraints.canLoad && constraints.errorResponse) {
       return NextResponse.json(constraints.errorResponse, { status: 409 });
     }
 
     // Find model data
-    const modelData = findModelData(llamaService, name);
+    const modelData = findModelData(llamaService, modelName);
     if (!modelData) {
       return NextResponse.json(
         {
           error: "Model not found",
-          model: name,
+          model: modelName,
           status: "not_found",
           message: "This model is not in the discovered models list. Ensure the model file exists in the models directory.",
         },
@@ -84,12 +86,12 @@ export async function POST(
       );
     }
 
-    const modelName = modelData.name || name;
+    const resolvedModelName = modelData.name || modelName;
 
-    logger.info(`[API] Loading model: ${modelName} ${template ? `with template: ${template}` : ''}`);
+    logger.info(`[API] Loading model: ${resolvedModelName} ${template ? `with template: ${template}` : ''}`);
 
     // Load model
-    const loadResult = await loadModelViaServer(modelName, template);
+    const loadResult = await loadModelViaServer(resolvedModelName, template);
 
     if (!loadResult) {
       const llamaServerHost = process.env.LLAMA_SERVER_HOST || "localhost";
@@ -97,7 +99,7 @@ export async function POST(
       return NextResponse.json(
         {
           error: "Failed to connect to llama-server. Make sure it's running on the configured host and port.",
-          model: name,
+          model: modelName,
           status: "error",
           debug: {
             host: llamaServerHost,
@@ -116,7 +118,7 @@ export async function POST(
       return NextResponse.json(
         {
           error: loadResult.error || `Failed to load model (HTTP ${loadResult.status})`,
-          model: name,
+          model: modelName,
           status: "error",
           detail: loadResult.data,
         },
@@ -124,10 +126,11 @@ export async function POST(
       );
     }
 
-    return createLoadSuccessResponse(name, loadResult.data);
+    return createLoadSuccessResponse(modelName, loadResult.data);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     logger.error(`[API] Error loading model: ${message}`, error);
-    return createLoadErrorResponse(name, `Failed to load model: ${message}`, error);
+    const errorDetail = error instanceof Error ? error : undefined;
+    return createLoadErrorResponse(modelName, `Failed to load model: ${message}`, errorDetail);
   }
 }

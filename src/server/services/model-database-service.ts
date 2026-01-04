@@ -1,6 +1,6 @@
 import { getLogger } from "@/lib/logger";
 import { saveModel, saveModelFitParams, getModelByName, updateModel } from "@/lib/database";
-import { ModelWithMetadata } from "./model-import-service";
+import { ModelWithMetadata } from "./model-validator";
 
 const logger = getLogger();
 
