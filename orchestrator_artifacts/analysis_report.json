@@ -1,9 +1,0 @@
-{
-  "pipelineId": "p-2026-01-01-002",
-  "taskId": "T-001",
-  "overallCoverage": "0.00",
-  "totalFiles": 50,
-  "filesBelowThreshold": 0,
-  "filesAboveThreshold": 50,
-  "details": []
-}
