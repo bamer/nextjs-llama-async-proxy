@@ -7,6 +7,7 @@ jest.mock("@/contexts/ThemeContext", () => ({
   ThemeProvider: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="theme-provider">{children}</div>
   ),
+  useTheme: () => ({ isDark: false }),
 }));
 
 jest.mock("@/components/animate/motion-lazy-container", () => ({
@@ -27,6 +28,18 @@ jest.mock("@mui/x-date-pickers/AdapterDateFns", () => ({
 
 jest.mock("@tanstack/react-query-devtools", () => ({
   ReactQueryDevtools: () => <div data-testid="react-query-devtools" />,
+}));
+
+jest.mock("@/providers/websocket-provider", () => ({
+  WebSocketProvider: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="websocket-provider">{children}</div>
+  ),
+}));
+
+jest.mock("@/components/ui/error-boundary", () => ({
+  ErrorBoundary: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="error-boundary">{children}</div>
+  ),
 }));
 
 describe("AppProvider", () => {

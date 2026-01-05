@@ -6,11 +6,17 @@ import { Dns as ServerIcon, Tune as AdvancedIcon, Memory as GpuIcon } from "@mui
 import { m } from "framer-motion";
 import { FormSection } from "@/components/ui/FormSection";
 import { FormField } from "@/components/ui/FormField";
+import { ServerBindingSection } from "./LlamaServerSettings/ServerBindingSection";
+import { BasicOptionsSection } from "./LlamaServerSettings/BasicOptionsSection";
+import { GpuOptionsSection } from "./LlamaServerSettings/GpuOptionsSection";
+import { SamplingSection } from "./LlamaServerSettings/SamplingSection";
+import { AutoStartSection } from "./LlamaServerSettings/AutoStartSection";
 
 interface LlamaServerSettingsTabProps {
   formConfig: any;
   onLlamaServerChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   fieldErrors: Record<string, string>;
+  showAdvanced?: boolean;
 }
 
 export function LlamaServerSettingsTab({
@@ -163,59 +169,31 @@ export function LlamaServerSettingsTab({
       transition={{ delay: 0.2, duration: 0.5 }}
     >
       {/* Auto-start checkbox */}
-      <Box sx={{ mb: 3 }}>
-        <FormControl>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={autoStartValue}
-                onChange={(_, checked) => handleChange("llamaServer.autoStart", checked)}
-                name="llamaServer-autoStart"
-                color="primary"
-              />
-            }
-            label="Auto-start llama-server on application startup"
-          />
-          <Typography
-            variant="caption"
-            sx={{ ml: 2, color: fieldErrors.autoStart ? "error.main" : "text.secondary" }}
-          >
-            {fieldErrors.autoStart || "Automatically start llama-server when application starts"}
-          </Typography>
-        </FormControl>
-      </Box>
+      <AutoStartSection
+        autoStartValue={autoStartValue}
+        handleChange={handleChange}
+        fieldErrors={fieldErrors}
+      />
 
-      <FormSection title="Server Binding" icon={<ServerIcon />} spacing={2}>
-        {serverBindingFields.map((field) => (
-          <Grid key={field.name} size={{ xs: 12, md: 6 }}>
-            <FormField {...field} onChange={handleChange} fullWidth />
-          </Grid>
-        ))}
-      </FormSection>
+      <ServerBindingSection
+        serverBindingFields={serverBindingFields}
+        handleChange={handleChange}
+      />
 
-      <FormSection title="Basic Options" icon={<AdvancedIcon />} spacing={2}>
-        {basicOptionsFields.map((field) => (
-          <Grid key={field.name} size={{ xs: 12, md: 6 }}>
-            <FormField {...field} onChange={handleChange} fullWidth />
-          </Grid>
-        ))}
-      </FormSection>
+      <BasicOptionsSection
+        basicOptionsFields={basicOptionsFields}
+        handleChange={handleChange}
+      />
 
-      <FormSection title="GPU Options" icon={<GpuIcon />} spacing={2}>
-        {gpuOptionsFields.map((field) => (
-          <Grid key={field.name} size={{ xs: 12, md: 6 }}>
-            <FormField {...field} onChange={handleChange} fullWidth />
-          </Grid>
-        ))}
-      </FormSection>
+      <GpuOptionsSection
+        gpuOptionsFields={gpuOptionsFields}
+        handleChange={handleChange}
+      />
 
-      <FormSection title="Sampling Parameters" icon={<AdvancedIcon />} spacing={2} divider={false}>
-        {samplingFields.map((field) => (
-          <Grid key={field.name} size={{ xs: 12, md: 6 }}>
-            <FormField {...field} onChange={handleChange} fullWidth />
-          </Grid>
-        ))}
-      </FormSection>
+      <SamplingSection
+        samplingFields={samplingFields}
+        handleChange={handleChange}
+      />
     </m.div>
   );
 }

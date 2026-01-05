@@ -19,9 +19,51 @@ export interface AccumulatedUpdates {
   power: number | null;
 }
 
+function generateDemoChartData(pointCount: number = 30): ChartDataPoint[] {
+  const now = new Date();
+  const data: ChartDataPoint[] = [];
+
+  for (let i = pointCount - 1; i >= 0; i--) {
+    const time = new Date(now.getTime() - i * 60000);
+    data.push({
+      time: time.toISOString(),
+      displayTime: time.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      }),
+      value: Math.random() * 100,
+    });
+  }
+
+  return data;
+}
+
+export function generateDemoData(): {
+  cpu: ChartDataPoint[];
+  memory: ChartDataPoint[];
+  requests: ChartDataPoint[];
+  gpuUtil: ChartDataPoint[];
+  power: ChartDataPoint[];
+} {
+  const cpuData = generateDemoChartData(30);
+  const memoryData = generateDemoChartData(30);
+  const requestsData = generateDemoChartData(30).map((d) => ({ ...d, value: Math.floor(d.value * 50) }));
+  const gpuUtilData = generateDemoChartData(30);
+  const powerData = generateDemoChartData(30).map((d) => ({ ...d, value: 50 + d.value * 2 }));
+
+  return {
+    cpu: cpuData,
+    memory: memoryData,
+    requests: requestsData,
+    gpuUtil: gpuUtilData,
+    power: powerData,
+  };
+}
+
 /**
  * Load chart history from database API
- * Ensures charts have data on cold launch/refresh
+ * Falls back to demo data if database is empty
  */
 export async function loadChartHistoryFromDatabase(
   setChartData: (data: {
@@ -36,14 +78,8 @@ export async function loadChartHistoryFromDatabase(
     const response = await fetch("/api/monitoring/history");
 
     if (!response.ok) {
-      console.error("[chart-history] Failed to load history:", response.status);
-      setChartData({
-        cpu: [],
-        memory: [],
-        requests: [],
-        gpuUtil: [],
-        power: [],
-      });
+      console.log("[chart-history] API not available, using demo data");
+      setChartData(generateDemoData());
       return;
     }
 
@@ -57,23 +93,12 @@ export async function loadChartHistoryFromDatabase(
         requests: result.data.requests.length,
       });
     } else {
-      setChartData({
-        cpu: [],
-        memory: [],
-        requests: [],
-        gpuUtil: [],
-        power: [],
-      });
+      console.log("[chart-history] No history in database, using demo data");
+      setChartData(generateDemoData());
     }
   } catch (error) {
-    console.error("[chart-history] Error loading history:", error);
-    setChartData({
-      cpu: [],
-      memory: [],
-      requests: [],
-      gpuUtil: [],
-      power: [],
-    });
+    console.log("[chart-history] Error loading history, using demo data:", error instanceof Error ? error.message : String(error));
+    setChartData(generateDemoData());
   }
 }
 

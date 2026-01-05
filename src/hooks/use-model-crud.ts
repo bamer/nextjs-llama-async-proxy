@@ -10,6 +10,7 @@ import {
   getNumericParameter,
   getStringParameter,
 } from "./model-operation-utils";
+import { showSuccess, showError } from "@/utils/toast-helpers";
 
 interface UseModelCRUDReturn {
   handleRefresh: () => void;
@@ -33,9 +34,9 @@ export function useModelCRUD(): UseModelCRUDReturn {
   }, [sendMessage]);
 
   /**
-   * Save or update a model configuration
-   * @param config - Partial model configuration to save
-   */
+    * Save or update a model configuration
+    * @param config - Partial model configuration to save
+    */
   const handleSaveModel = useCallback(
     async (config: Partial<import("@/types").ModelConfig>) => {
       const allModels = useStore.getState().models;
@@ -45,6 +46,7 @@ export function useModelCRUD(): UseModelCRUDReturn {
         // Update existing model
         const updatedModel = { ...existing, ...config };
         updateStoreModel(existing.id, config);
+        showSuccess("Model Updated", `${existing.name} configuration has been saved`);
 
         if (isValidDbId(existing.id)) {
           const dbId = parseModelIdToDbId(existing.id);
@@ -72,24 +74,28 @@ export function useModelCRUD(): UseModelCRUDReturn {
         console.log("[useModelCRUD] Creating new model:", newModel.name);
 
         useStore.getState().addModel(newModel);
+        showSuccess("Model Added", `${newModel.name} has been added to the library`);
       }
     },
     [updateStoreModel, sendMessage],
   );
 
   /**
-   * Delete a model by its ID
-   * @param modelId - Model identifier
-   */
+    * Delete a model by its ID
+    * @param modelId - Model identifier
+    */
   const handleDeleteModel = useCallback(
     async (modelId: string) => {
       const model = useStore.getState().models.find((m) => m.id === modelId);
       if (!model) {
         console.error("[useModelCRUD] Model not found:", modelId);
+        showError("Model Not Found", "The specified model could not be found");
         return;
       }
 
+      const modelName = model.name;
       useStore.getState().removeModel(modelId);
+      showSuccess("Model Deleted", `${modelName} has been removed from the library`);
 
       if (isValidDbId(modelId)) {
         const dbId = parseModelIdToDbId(modelId);

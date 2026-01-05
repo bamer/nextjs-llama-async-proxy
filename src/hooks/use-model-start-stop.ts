@@ -5,6 +5,7 @@ import {
   parseModelIdToDbId,
   isValidDbId,
 } from "./model-operation-utils";
+import { showSuccess, showError, showProgress } from "@/utils/toast-helpers";
 
 interface UseModelStartStopOptions {
   setLoading: React.Dispatch<React.SetStateAction<string | null>>;
@@ -28,18 +29,21 @@ export function useModelStartStop(
   const { setLoading, setError } = options;
 
   /**
-   * Start a model by its ID
-   * @param modelId - Model identifier
-   */
+    * Start a model by its ID
+    * @param modelId - Model identifier
+    */
   const handleStartModel = useCallback(async (modelId: string) => {
     const model = useStore.getState().models.find((m) => m.id === modelId);
     if (!model) {
       setError(`Model ${modelId} not found`);
+      showError("Model Not Found", `Model ${modelId} could not be found`);
       return;
     }
 
     setLoading(modelId);
     setError(null);
+
+    showProgress(`Starting ${model.name}...`);
 
     try {
       updateStoreModel(modelId, { status: "loading" });
@@ -65,6 +69,7 @@ export function useModelStartStop(
       }
 
       updateStoreModel(modelId, { status: "running" });
+      showSuccess("Model Started", `${model.name} is now running`);
 
       if (isValidDbId(modelId)) {
         const dbId = parseModelIdToDbId(modelId);
@@ -73,6 +78,7 @@ export function useModelStartStop(
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
+      showError("Failed to Start Model", message);
       updateStoreModel(modelId, { status: "idle" });
 
       if (isValidDbId(modelId)) {
@@ -85,18 +91,21 @@ export function useModelStartStop(
   }, [updateStoreModel, sendMessage, setLoading, setError]);
 
   /**
-   * Stop a model by its ID
-   * @param modelId - Model identifier
-   */
+    * Stop a model by its ID
+    * @param modelId - Model identifier
+    */
   const handleStopModel = useCallback(async (modelId: string) => {
     const model = useStore.getState().models.find((m) => m.id === modelId);
     if (!model) {
       setError(`Model ${modelId} not found`);
+      showError("Model Not Found", `Model ${modelId} could not be found`);
       return;
     }
 
     setLoading(modelId);
     setError(null);
+
+    showProgress(`Stopping ${model.name}...`);
 
     try {
       updateStoreModel(modelId, { status: "loading" });
@@ -121,6 +130,7 @@ export function useModelStartStop(
       }
 
       updateStoreModel(modelId, { status: "idle" });
+      showSuccess("Model Stopped", `${model.name} has been stopped`);
 
       if (isValidDbId(modelId)) {
         const dbId = parseModelIdToDbId(modelId);
@@ -129,6 +139,7 @@ export function useModelStartStop(
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
+      showError("Failed to Stop Model", message);
       updateStoreModel(modelId, { status: "running" });
 
       if (isValidDbId(modelId)) {

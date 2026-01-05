@@ -168,7 +168,12 @@ export default function ModernDashboard() {
         Dashboard Overview
       </Typography>
 
-      <MetricsGrid metrics={safeMetrics} activeModelsCount={activeModelsCount} isDark={isDark} />
+      <MetricsGrid
+        metrics={safeMetrics}
+        activeModelsCount={activeModelsCount}
+        isDark={isDark}
+        chartHistory={deferredChartHistory}
+      />
 
       <Box sx={{ mb: 4 }} />
 

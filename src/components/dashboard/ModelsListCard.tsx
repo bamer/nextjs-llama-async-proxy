@@ -5,21 +5,10 @@ import { Card, CardContent, Typography, Box, Grid } from "@mui/material";
 import { loadModelTemplates, saveModelTemplate } from '@/lib/client-model-templates';
 import { useStore } from '@/lib/store';
 import type { AppStore } from '@/lib/store/types';
-import { MemoizedModelItem } from './MemoizedModelItem';
-import { detectModelType, getModelTypeTemplates } from './MemoizedModelItem';
-
-interface ModelConfig {
-  id: string;
-  name: string;
-  status: 'idle' | 'loading' | 'running' | 'error';
-  type: "llama" | "mistral" | "other";
-  progress?: number;
-  template?: string;
-  availableTemplates?: string[];
-}
+import { ModelCard, type UnifiedModelData } from '@/components/ui/ModelCard';
 
 interface ModelsListCardProps {
-  models: ModelConfig[];
+  models: UnifiedModelData[];
   isDark: boolean;
   onToggleModel: (modelId: string) => void;
 }
@@ -34,16 +23,12 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
   const lastModelsHashRef = useRef('');
   const isInitializedRef = useRef(false);
 
-  // Compute hash of models for change detection
-  const computeModelsHash = useCallback((models: ModelConfig[]): string => {
+  const computeModelsHash = useCallback((models: UnifiedModelData[]): string => {
     return models.map(m => `${m.name}:${m.availableTemplates?.join(',')}`).join('|');
   }, []);
 
-  // Selected templates stored in memory only
   const [selectedTemplates, setSelectedTemplates] = useState<Record<string, string>>({});
 
-  // Load model templates when models list changes (after initialization)
-  // Skip initial render to avoid hydration issues
   useEffect(() => {
     if (!isInitializedRef.current) {
       isInitializedRef.current = true;
@@ -70,7 +55,6 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
       } else {
         updated[modelName] = template;
       }
-
       return updated;
     });
   };
@@ -78,7 +62,6 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
   const saveTemplateToConfigFile = async (modelName: string, template: string) => {
     try {
       await saveModelTemplate(modelName, template);
-      // The config is saved to disk, no need for local state cache
     } catch (error) {
       console.error('Failed to save template to config file:', error);
       alert(error instanceof Error ? error.message : 'Failed to save template');
@@ -87,6 +70,10 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
 
   const handleToggleModelOptimistic = useCallback((modelId: string, status: string) => {
     setOptimisticStatus((prev: Record<string, string>) => ({ ...prev, [modelId]: status }));
+  }, []);
+
+  const handleMenu = useCallback((action: string) => {
+    console.log('Menu action:', action);
   }, []);
 
   return (
@@ -107,27 +94,18 @@ export function ModelsListCard({ models, isDark, onToggleModel }: ModelsListCard
         </Box>
 
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          {models?.map((model) => {
-            const modelType = detectModelType(model.name);
-            const currentTemplate = selectedTemplates[model.name] || model.template || (model.availableTemplates?.[0] || '');
-
-            return (
-              <MemoizedModelItem
-                key={model.id}
-                model={model}
+          {models?.map((model) => (
+            <Grid key={model.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+              <ModelCard
+                model={model as UnifiedModelData}
                 isDark={isDark}
-                currentTemplate={currentTemplate}
-                loadingModels={loadingModels}
-                setLoadingModels={setLoadingModels}
-                selectedTemplates={selectedTemplates}
-                onSaveTemplate={saveSelectedTemplate}
-                onSaveTemplateToConfig={saveTemplateToConfigFile}
-                onToggleModel={onToggleModel}
-                onToggleModelOptimistic={handleToggleModelOptimistic}
-                optimisticStatus={optimisticStatus[model.id]}
+                loading={loadingModels[model.id]}
+                onStart={() => onToggleModel(model.id)}
+                onStop={() => onToggleModel(model.id)}
+                onMenu={handleMenu}
               />
-            );
-          })}
+            </Grid>
+          ))}
         </Grid>
       </CardContent>
     </Card>

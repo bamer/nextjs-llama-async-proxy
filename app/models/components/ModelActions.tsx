@@ -33,23 +33,6 @@ export function ModelActions({
         mt: 2,
       }}
     >
-      <Tooltip title="Configure model parameters">
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<SettingsIcon />}
-          size="small"
-          onClick={() => onConfigure(model)}
-          sx={{
-            minWidth: 80,
-            "&:hover": {
-              transform: "translateY(-1px)",
-            },
-          }}
-        >
-          Config
-        </Button>
-      </Tooltip>
       {normalizeStatus(status) === "running" ? (
         <Button
           variant="outlined"
@@ -73,6 +56,23 @@ export function ModelActions({
           {loading === modelId ? "Starting..." : "Start"}
         </Button>
       )}
+      <Tooltip title="Configure model parameters">
+        <Button
+          variant="outlined"
+          color="primary"
+          startIcon={<SettingsIcon />}
+          size="small"
+          onClick={() => onConfigure(model)}
+          sx={{
+            minWidth: 80,
+            "&:hover": {
+              transform: "translateY(-1px)",
+            },
+          }}
+        >
+          Config
+        </Button>
+      </Tooltip>
     </Box>
   );
 }

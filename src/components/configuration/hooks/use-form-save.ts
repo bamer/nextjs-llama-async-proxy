@@ -1,4 +1,5 @@
 import type { FormConfig } from "./use-form-state";
+import { showSuccess, showError } from "@/utils/toast-helpers";
 
 interface UseFormSaveProps {
   formConfig: FormConfig;
@@ -30,6 +31,7 @@ export function useFormSave({
       const validation = validateConfig(formConfig);
       if (!validation.valid) {
         setValidationErrors(validation.errors || []);
+        showError("Validation Failed", "Please fix the errors before saving");
         return; // Don't proceed with save if validation fails
       }
 
@@ -67,9 +69,11 @@ export function useFormSave({
       applyToLogger();
 
       setSaveSuccess(true);
+      showSuccess("Configuration Saved", "Your settings have been saved successfully");
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
       console.error("Save error:", err);
+      showError("Save Failed", err instanceof Error ? err.message : "Unknown error occurred");
     } finally {
       setIsSaving(false);
     }

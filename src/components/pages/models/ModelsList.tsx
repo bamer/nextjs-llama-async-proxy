@@ -1,10 +1,15 @@
-'use client';
+"use client";
 
-interface Model {
+import { useCallback } from "react";
+import { Box, Button, Typography } from "@mui/material";
+import { EmptyState } from "@/components/ui/EmptyState/EmptyState";
+import SearchIcon from "@mui/icons-material/Search";
+
+export interface Model {
   id?: string;
   name: string;
   description?: string;
-  status: 'running' | 'idle' | 'loading';
+  status: "running" | "idle" | "loading";
   version?: string;
   path?: string;
   type?: string;
@@ -18,77 +23,135 @@ interface ModelsListProps {
   loadingStates: Record<string, boolean>;
   onStartModel: (modelName: string) => void;
   onStopModel: (modelName: string) => void;
+  onDiscover?: () => void;
 }
+
+const MODELS_TIPS = [
+  "Models are stored in common directories like ~/.cache/lm-studio/models or /usr/local/share/models",
+  "Supported formats: .gguf, .safetensors",
+  "Larger models (7B+) require more system memory or GPU VRAM",
+  "Use the Discover Models button to scan for available models",
+  "Model files can be downloaded from Hugging Face or LM Studio",
+];
+
+const MODELS_DOCS_URL = "/docs/models";
 
 const ModelsList = ({
   models,
   loadingStates,
   onStartModel,
   onStopModel,
+  onDiscover,
 }: ModelsListProps) => {
+  const handleDiscover = useCallback(() => {
+    onDiscover?.();
+  }, [onDiscover]);
+
   if (models.length === 0) {
+    const primaryAction = onDiscover
+      ? { label: "Discover Models", onClick: handleDiscover }
+      : null;
+
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground text-lg">No models found</p>
-        <p className="text-muted-foreground text-sm mt-2">
-          Click "Discover Models" to scan for available models
-        </p>
-      </div>
+      <EmptyState
+        illustration="models"
+        title="No Models Found"
+        description="Get started by discovering or adding your first AI model."
+        primaryAction={primaryAction}
+        tips={MODELS_TIPS}
+        documentationUrl={MODELS_DOCS_URL}
+      />
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: {
+          xs: "1fr",
+          md: "repeat(2, 1fr)",
+          lg: "repeat(3, 1fr)",
+        },
+        gap: 3,
+      }}
+    >
       {models.map((model) => (
-        <div
+        <Box
           key={model.name}
           className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-all duration-300"
+          sx={{ mb: 0 }}
         >
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-foreground">{model.name}</h3>
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-medium text-white ${
-                model.status === 'running'
-                  ? 'bg-success'
-                  : model.status === 'loading'
-                    ? 'bg-warning'
-                    : 'bg-info'
-              }`}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Typography
+              variant="h6"
+              component="h3"
+              sx={{ fontWeight: "bold" }}
             >
-              {loadingStates[model.name] ? 'loading' : model.status}
-            </span>
-          </div>
+              {model.name}
+            </Typography>
+            <Box
+              sx={{
+                px: 1.5,
+                py: 0.5,
+                borderRadius: "999px",
+                fontSize: "0.75rem",
+                fontWeight: "medium",
+                color: "white",
+                bgcolor:
+                  model.status === "running"
+                    ? "success.main"
+                    : model.status === "loading"
+                      ? "warning.main"
+                      : "info.main",
+              }}
+            >
+              {loadingStates[model.name] ? "loading" : model.status}
+            </Box>
+          </Box>
 
-          <div className="mb-6">
-            <p className="text-muted-foreground mb-2">{model.description}</p>
-            <p className="text-sm text-muted-foreground">Version: {model.version}</p>
-          </div>
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              {model.description}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.875rem" }}>
+              Version: {model.version}
+            </Typography>
+          </Box>
 
-          <div className="flex gap-3">
-            {model.status !== 'running' ? (
-              <button
+          <Box sx={{ display: "flex", gap: 1.5 }}>
+            {model.status !== "running" ? (
+              <Button
+                variant="contained"
+                size="small"
                 onClick={() => onStartModel(model.name)}
-                disabled={loadingStates[model.name] || model.status === 'loading'}
-                className="bg-primary text-primary-foreground hover:bg-primary/80 disabled:opacity-50 px-4 py-2 rounded-lg transition-colors font-medium"
+                disabled={loadingStates[model.name] || model.status === "loading"}
+                sx={{ textTransform: "none" }}
               >
-                {model.status === 'loading' ? 'Loading...' : 'Start'}
-              </button>
+                {model.status === "loading" ? "Loading..." : "Start"}
+              </Button>
             ) : (
-              <button
+              <Button
+                variant="outlined"
+                size="small"
                 onClick={() => onStopModel(model.name)}
                 disabled={loadingStates[model.name]}
-                className="border border-border hover:bg-muted disabled:opacity-50 px-4 py-2 rounded-lg transition-colors text-foreground font-medium"
+                sx={{ textTransform: "none" }}
               >
                 Stop
-              </button>
+              </Button>
             )}
-            <button className="border border-border hover:bg-muted px-4 py-2 rounded-lg transition-colors text-foreground font-medium">
+            <Button
+              variant="outlined"
+              size="small"
+              sx={{ textTransform: "none" }}
+            >
               Details
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Box>
+        </Box>
       ))}
-    </div>
+    </Box>
   );
 };
 

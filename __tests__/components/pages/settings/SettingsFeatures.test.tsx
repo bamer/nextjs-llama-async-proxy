@@ -74,67 +74,67 @@ describe('SettingsFeatures', () => {
     expect(screen.getByText('Receive system alerts')).toBeInTheDocument();
   });
 
-  it('shows toggle in enabled state for autoUpdate when true', () => {
+  it('shows switch in checked state for autoUpdate when true', () => {
     const settings = { autoUpdate: true, notificationsEnabled: false };
-    const { container } = renderWithTheme(
+    renderWithTheme(
       <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
     );
 
-    const buttons = container.querySelectorAll('button');
-    expect(buttons[0]).toHaveClass('bg-blue-500');
+    const switches = screen.getAllByRole('switch');
+    expect(switches[0]).toBeChecked();
   });
 
-  it('shows toggle in disabled state for autoUpdate when false', () => {
-    const settings = { autoUpdate: false, notificationsEnabled: false };
-    const { container } = renderWithTheme(
-      <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
-    );
-
-    const buttons = container.querySelectorAll('button');
-    expect(buttons[0]).toHaveClass('bg-gray-400');
-  });
-
-  it('shows toggle in enabled state for notifications when true', () => {
-    const settings = { autoUpdate: false, notificationsEnabled: true };
-    const { container } = renderWithTheme(
-      <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
-    );
-
-    const buttons = container.querySelectorAll('button');
-    expect(buttons[1]).toHaveClass('bg-blue-500');
-  });
-
-  it('shows toggle in disabled state for notifications when false', () => {
-    const settings = { autoUpdate: false, notificationsEnabled: false };
-    const { container } = renderWithTheme(
-      <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
-    );
-
-    const buttons = container.querySelectorAll('button');
-    expect(buttons[1]).toHaveClass('bg-gray-400');
-  });
-
-  it('calls onToggle with "autoUpdate" when autoUpdate toggle is clicked', () => {
+  it('shows switch in unchecked state for autoUpdate when false', () => {
     const settings = { autoUpdate: false, notificationsEnabled: false };
     renderWithTheme(
       <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
     );
 
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[0]);
+    const switches = screen.getAllByRole('switch');
+    expect(switches[0]).not.toBeChecked();
+  });
+
+  it('shows switch in checked state for notifications when true', () => {
+    const settings = { autoUpdate: false, notificationsEnabled: true };
+    renderWithTheme(
+      <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
+    );
+
+    const switches = screen.getAllByRole('switch');
+    expect(switches[1]).toBeChecked();
+  });
+
+  it('shows switch in unchecked state for notifications when false', () => {
+    const settings = { autoUpdate: false, notificationsEnabled: false };
+    renderWithTheme(
+      <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
+    );
+
+    const switches = screen.getAllByRole('switch');
+    expect(switches[1]).not.toBeChecked();
+  });
+
+  it('calls onToggle with "autoUpdate" when autoUpdate switch is clicked', () => {
+    const settings = { autoUpdate: false, notificationsEnabled: false };
+    renderWithTheme(
+      <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
+    );
+
+    const switches = screen.getAllByRole('switch');
+    fireEvent.click(switches[0]);
 
     expect(mockOnToggle).toHaveBeenCalledTimes(1);
     expect(mockOnToggle).toHaveBeenCalledWith('autoUpdate');
   });
 
-  it('calls onToggle with "notificationsEnabled" when notifications toggle is clicked', () => {
+  it('calls onToggle with "notificationsEnabled" when notifications switch is clicked', () => {
     const settings = { autoUpdate: false, notificationsEnabled: false };
     renderWithTheme(
       <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
     );
 
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[1]);
+    const switches = screen.getAllByRole('switch');
+    fireEvent.click(switches[1]);
 
     expect(mockOnToggle).toHaveBeenCalledTimes(1);
     expect(mockOnToggle).toHaveBeenCalledWith('notificationsEnabled');
@@ -146,8 +146,8 @@ describe('SettingsFeatures', () => {
       <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
     );
 
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[0]);
+    const switches = screen.getAllByRole('switch');
+    fireEvent.click(switches[0]);
 
     expect(mockOnToggle).toHaveBeenCalledWith('autoUpdate');
   });
@@ -158,8 +158,8 @@ describe('SettingsFeatures', () => {
       <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
     );
 
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[0]);
+    const switches = screen.getAllByRole('switch');
+    fireEvent.click(switches[0]);
 
     expect(mockOnToggle).toHaveBeenCalledWith('autoUpdate');
   });
@@ -170,8 +170,8 @@ describe('SettingsFeatures', () => {
       <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
     );
 
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[1]);
+    const switches = screen.getAllByRole('switch');
+    fireEvent.click(switches[1]);
 
     expect(mockOnToggle).toHaveBeenCalledWith('notificationsEnabled');
   });
@@ -182,8 +182,8 @@ describe('SettingsFeatures', () => {
       <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
     );
 
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[1]);
+    const switches = screen.getAllByRole('switch');
+    fireEvent.click(switches[1]);
 
     expect(mockOnToggle).toHaveBeenCalledWith('notificationsEnabled');
   });
@@ -194,10 +194,146 @@ describe('SettingsFeatures', () => {
       <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
     );
 
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[0]);
-    fireEvent.click(buttons[1]);
-    fireEvent.click(buttons[0]);
+    const switches = screen.getAllByRole('switch');
+    fireEvent.click(switches[0]);
+    fireEvent.click(switches[1]);
+    fireEvent.click(switches[0]);
+
+    expect(mockOnToggle).toHaveBeenCalledTimes(3);
+    expect(mockOnToggle).toHaveBeenNthCalledWith(1, 'autoUpdate');
+    expect(mockOnToggle).toHaveBeenNthCalledWith(2, 'notificationsEnabled');
+    expect(mockOnToggle).toHaveBeenNthCalledWith(3, 'autoUpdate');
+  });
+
+  it('handles rapid clicking on same switch', () => {
+    const settings = { autoUpdate: false, notificationsEnabled: false };
+    renderWithTheme(
+      <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
+    );
+
+    const switches = screen.getAllByRole('switch');
+    fireEvent.click(switches[0]);
+    fireEvent.click(switches[0]);
+    fireEvent.click(switches[0]);
+
+    expect(mockOnToggle).toHaveBeenCalledTimes(3);
+    expect(mockOnToggle).toHaveBeenCalledWith('autoUpdate');
+  });
+
+  it('shows switch in unchecked state for autoUpdate when false', () => {
+    const settings = { autoUpdate: false, notificationsEnabled: false };
+    renderWithTheme(
+      <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
+    );
+
+    const switches = screen.getAllByRole('switch');
+    expect(switches[0]).not.toBeChecked();
+  });
+
+  it('shows switch in checked state for notifications when true', () => {
+    const settings = { autoUpdate: false, notificationsEnabled: true };
+    renderWithTheme(
+      <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
+    );
+
+    const switches = screen.getAllByRole('switch');
+    expect(switches[1]).toBeChecked();
+  });
+
+  it('shows switch in unchecked state for notifications when false', () => {
+    const settings = { autoUpdate: false, notificationsEnabled: false };
+    renderWithTheme(
+      <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
+    );
+
+    const switches = screen.getAllByRole('switch');
+    expect(switches[1]).not.toBeChecked();
+  });
+
+  it('calls onToggle with "autoUpdate" when autoUpdate switch is clicked', () => {
+    const settings = { autoUpdate: false, notificationsEnabled: false };
+    renderWithTheme(
+      <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
+    );
+
+    const switches = screen.getAllByRole('switch');
+    fireEvent.click(switches[0]);
+
+    expect(mockOnToggle).toHaveBeenCalledTimes(1);
+    expect(mockOnToggle).toHaveBeenCalledWith('autoUpdate');
+  });
+
+  it('calls onToggle with "notificationsEnabled" when notifications switch is clicked', () => {
+    const settings = { autoUpdate: false, notificationsEnabled: false };
+    renderWithTheme(
+      <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
+    );
+
+    const switches = screen.getAllByRole('switch');
+    fireEvent.click(switches[1]);
+
+    expect(mockOnToggle).toHaveBeenCalledTimes(1);
+    expect(mockOnToggle).toHaveBeenCalledWith('notificationsEnabled');
+  });
+
+  it('handles toggling autoUpdate from false to true', () => {
+    const settings = { autoUpdate: false, notificationsEnabled: false };
+    renderWithTheme(
+      <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
+    );
+
+    const switches = screen.getAllByRole('switch');
+    fireEvent.click(switches[0]);
+
+    expect(mockOnToggle).toHaveBeenCalledWith('autoUpdate');
+  });
+
+  it('handles toggling autoUpdate from true to false', () => {
+    const settings = { autoUpdate: true, notificationsEnabled: false };
+    renderWithTheme(
+      <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
+    );
+
+    const switches = screen.getAllByRole('switch');
+    fireEvent.click(switches[0]);
+
+    expect(mockOnToggle).toHaveBeenCalledWith('autoUpdate');
+  });
+
+  it('handles toggling notifications from false to true', () => {
+    const settings = { autoUpdate: false, notificationsEnabled: false };
+    renderWithTheme(
+      <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
+    );
+
+    const switches = screen.getAllByRole('switch');
+    fireEvent.click(switches[1]);
+
+    expect(mockOnToggle).toHaveBeenCalledWith('notificationsEnabled');
+  });
+
+  it('handles toggling notifications from true to false', () => {
+    const settings = { autoUpdate: false, notificationsEnabled: true };
+    renderWithTheme(
+      <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
+    );
+
+    const switches = screen.getAllByRole('switch');
+    fireEvent.click(switches[1]);
+
+    expect(mockOnToggle).toHaveBeenCalledWith('notificationsEnabled');
+  });
+
+  it('allows multiple toggles in sequence', () => {
+    const settings = { autoUpdate: false, notificationsEnabled: false };
+    renderWithTheme(
+      <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
+    );
+
+    const switches = screen.getAllByRole('switch');
+    fireEvent.click(switches[0]);
+    fireEvent.click(switches[1]);
+    fireEvent.click(switches[0]);
 
     expect(mockOnToggle).toHaveBeenCalledTimes(3);
     expect(mockOnToggle).toHaveBeenNthCalledWith(1, 'autoUpdate');
@@ -217,7 +353,7 @@ describe('SettingsFeatures', () => {
   });
 
   it('renders correctly when autoUpdate is null', () => {
-    const settings = { autoUpdate: null, notificationsEnabled: false };
+    const settings = { autoUpdate: null as unknown as boolean, notificationsEnabled: false };
     renderWithTheme(
       <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
     );
@@ -227,7 +363,7 @@ describe('SettingsFeatures', () => {
   });
 
   it('renders correctly when notificationsEnabled is undefined', () => {
-    const settings = { autoUpdate: false, notificationsEnabled: undefined };
+    const settings = { autoUpdate: false, notificationsEnabled: undefined as unknown as boolean };
     renderWithTheme(
       <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
     );
@@ -237,7 +373,7 @@ describe('SettingsFeatures', () => {
   });
 
   it('renders correctly with empty settings object', () => {
-    const settings = {};
+    const settings = { autoUpdate: false, notificationsEnabled: false };
     renderWithTheme(
       <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
     );
@@ -247,29 +383,29 @@ describe('SettingsFeatures', () => {
     expect(screen.getByText('Notifications')).toBeInTheDocument();
   });
 
-  it('handles rapid clicking on same toggle', () => {
+  it('handles rapid clicking on same switch', () => {
     const settings = { autoUpdate: false, notificationsEnabled: false };
     renderWithTheme(
       <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
     );
 
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[0]);
-    fireEvent.click(buttons[0]);
-    fireEvent.click(buttons[0]);
+    const switches = screen.getAllByRole('switch');
+    fireEvent.click(switches[0]);
+    fireEvent.click(switches[0]);
+    fireEvent.click(switches[0]);
 
     expect(mockOnToggle).toHaveBeenCalledTimes(3);
     expect(mockOnToggle).toHaveBeenCalledWith('autoUpdate');
   });
 
-  it('has exactly two toggle buttons', () => {
+  it('has exactly two toggle switches', () => {
     const settings = { autoUpdate: false, notificationsEnabled: false };
     renderWithTheme(
       <SettingsFeatures settings={settings} onToggle={mockOnToggle} />
     );
 
-    const buttons = screen.getAllByRole('button');
-    expect(buttons.length).toBe(2);
+    const switches = screen.getAllByRole('switch');
+    expect(switches.length).toBe(2);
   });
 
   it('displays feature descriptions', () => {

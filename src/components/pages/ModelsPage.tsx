@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useMemo, useEffectEvent as ReactUseEffectEvent } from 'react';
 import { websocketServer } from '@/lib/websocket-client';
-import { ModelsTable, Model } from './models/ModelsTable';
 import { ModelsFilters } from './models/ModelsFilters';
 import { ModelsControls } from './models/ModelsControls';
+import ModelsList, { type Model } from './models/ModelsList';
+import { showSuccess, showError, showInfo } from '@/utils/toast-helpers';
 
 const ModelsPage = () => {
   const [models, setModels] = useState<Model[]>([]);
@@ -99,7 +100,7 @@ const ModelsPage = () => {
       try {
         websocketServer.off('message', handleModelsUpdate);
         websocketServer.off('connect', handleConnect);
-      } catch (error) {
+      } catch {
         // Ignore cleanup errors
       }
     };
@@ -107,6 +108,7 @@ const ModelsPage = () => {
 
   const discoverModels = async () => {
     setIsDiscovering(true);
+
     try {
       const configResponse = await fetch('/api/config');
       let configuredPaths = ['/media/bamer/crucial MX300/llm/llama/models'];
@@ -128,10 +130,17 @@ const ModelsPage = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setModels(prev => [...prev, ...data.discovered]);
+        const newModels = data.discovered || [];
+        setModels(prev => [...prev, ...newModels]);
+        if (newModels.length > 0) {
+          showSuccess('Models Discovered', `Found ${newModels.length} new model(s)`);
+        } else {
+          showInfo('No New Models', 'No new models were found in the specified paths');
+        }
       }
     } catch (error) {
       console.error('Failed to discover models:', error);
+      showError('Discovery Failed', error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setIsDiscovering(false);
     }
@@ -139,10 +148,13 @@ const ModelsPage = () => {
 
   const rescanModels = async () => {
     setIsRescanning(true);
+
     try {
       websocketServer.rescanModels();
+      showSuccess('Rescan Started', 'Model rescanning has been initiated');
     } catch (error) {
       console.error('Failed to rescan models:', error);
+      showError('Rescan Failed', error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setIsRescanning(false);
     }
@@ -170,11 +182,12 @@ const ModelsPage = () => {
         />
       </div>
 
-      <ModelsTable
+      <ModelsList
         models={filteredModels}
         loadingStates={loadingStates}
         onStartModel={startModel}
         onStopModel={stopModel}
+        onDiscover={discoverModels}
       />
     </div>
   );

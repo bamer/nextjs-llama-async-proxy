@@ -1,7 +1,13 @@
+"use client";
 
+import React from 'react';
+import { Box, Typography, Card, CardContent, Switch, FormControlLabel } from '@mui/material';
 
 interface SettingsFeaturesProps {
-  settings: any;
+  settings: {
+    autoUpdate: boolean;
+    notificationsEnabled: boolean;
+  };
   onToggle: (key: 'autoUpdate' | 'notificationsEnabled') => void;
 }
 
@@ -10,60 +16,74 @@ export function SettingsFeatures({
   onToggle,
 }: SettingsFeaturesProps) {
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-        Features
-      </h2>
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" fontWeight="bold" sx={{ mb: 3, color: 'text.primary' }}>
+          Features
+        </Typography>
 
-      <div className="space-y-4">
-        {/* Auto Update */}
-        <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
-          <div>
-            <label className="font-medium text-gray-900 dark:text-white block">
-              Auto Update
-            </label>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Auto-update models and dependencies
-            </p>
-          </div>
-          <button
-            onClick={() => onToggle('autoUpdate')}
-            className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ${
-              settings.autoUpdate ? 'bg-blue-500' : 'bg-gray-400'
-            }`}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              p: 2,
+              borderRadius: 2,
+              backgroundColor: 'action.hover',
+            }}
           >
-            <div
-              className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                settings.autoUpdate ? 'translate-x-6' : 'translate-x-1'
-              }`}
+            <Box>
+              <Typography variant="body1" fontWeight="medium" sx={{ color: 'text.primary' }}>
+                Auto Update
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                Auto-update models and dependencies
+              </Typography>
+            </Box>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={settings.autoUpdate}
+                  onChange={() => onToggle('autoUpdate')}
+                  color="primary"
+                />
+              }
+              label=""
             />
-          </button>
-        </div>
+          </Box>
 
-        {/* Notifications */}
-        <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
-          <div>
-            <label className="font-medium text-gray-900 dark:text-white block">
-              Notifications
-            </label>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Receive system alerts
-            </p>
-          </div>
-          <button
-            onClick={() => onToggle('notificationsEnabled')}
-            className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ${
-              settings.notificationsEnabled ? 'bg-blue-500' : 'bg-gray-400'
-            }`}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              p: 2,
+              borderRadius: 2,
+              backgroundColor: 'action.hover',
+            }}
           >
-            <div
-              className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                settings.notificationsEnabled ? 'translate-x-6' : 'translate-x-1'
-              }`}
+            <Box>
+              <Typography variant="body1" fontWeight="medium" sx={{ color: 'text.primary' }}>
+                Notifications
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                Receive system alerts
+              </Typography>
+            </Box>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={settings.notificationsEnabled}
+                  onChange={() => onToggle('notificationsEnabled')}
+                  color="primary"
+                />
+              }
+              label=""
             />
-          </button>
-        </div>
-      </div>
-    </div>
+          </Box>
+        </Box>
+      </CardContent>
+    </Card>
   );
 }

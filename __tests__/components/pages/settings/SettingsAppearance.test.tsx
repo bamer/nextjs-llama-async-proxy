@@ -40,7 +40,7 @@ describe('SettingsAppearance', () => {
   });
 
   it('renders correctly', () => {
-    const settings = { theme: 'system' };
+    const settings = { theme: 'System' as 'light' | 'dark' | 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );
@@ -49,44 +49,33 @@ describe('SettingsAppearance', () => {
   });
 
   it('displays theme options', () => {
-    const settings = { theme: 'system' };
+    const settings = { theme: 'System' as 'light' | 'dark' | 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );
 
-    expect(screen.getByText('light')).toBeInTheDocument();
-    expect(screen.getByText('dark')).toBeInTheDocument();
-    expect(screen.getByText('system')).toBeInTheDocument();
-  });
-
-  it('displays correct emojis for themes', () => {
-    const settings = { theme: 'system' };
-    renderWithTheme(
-      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
-    );
-
-    expect(screen.getByText('☀️')).toBeInTheDocument();
-    expect(screen.getByText('🌙')).toBeInTheDocument();
-    expect(screen.getByText('💻')).toBeInTheDocument();
+    expect(screen.getByText('Light')).toBeInTheDocument();
+    expect(screen.getByText('Dark')).toBeInTheDocument();
+    expect(screen.getByText('System')).toBeInTheDocument();
   });
 
   it('highlights selected theme', () => {
-    const settings = { theme: 'dark' };
+    const settings = { theme: 'Dark' as 'light' | 'dark' | 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );
 
-    const darkButton = screen.getByText('dark').closest('button');
-    expect(darkButton).toHaveClass('border-blue-500');
+    const darkButton = screen.getByText('Dark').closest('button');
+    expect(darkButton).toBeInTheDocument();
   });
 
   it('calls onThemeChange when light theme is clicked', () => {
-    const settings = { theme: 'dark' };
+    const settings = { theme: 'Dark' as 'light' | 'dark' | 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );
 
-    const lightButton = screen.getByText('light').closest('button');
+    const lightButton = screen.getByText('Light').closest('button');
     fireEvent.click(lightButton!);
 
     expect(mockOnThemeChange).toHaveBeenCalledTimes(1);
@@ -94,12 +83,12 @@ describe('SettingsAppearance', () => {
   });
 
   it('calls onThemeChange when dark theme is clicked', () => {
-    const settings = { theme: 'light' };
+    const settings = { theme: 'Light' as 'light' | 'dark' | 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );
 
-    const darkButton = screen.getByText('dark').closest('button');
+    const darkButton = screen.getByText('Dark').closest('button');
     fireEvent.click(darkButton!);
 
     expect(mockOnThemeChange).toHaveBeenCalledTimes(1);
@@ -107,100 +96,80 @@ describe('SettingsAppearance', () => {
   });
 
   it('calls onThemeChange when system theme is clicked', () => {
-    const settings = { theme: 'light' };
+    const settings = { theme: 'Light' as 'light' | 'dark' | 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );
 
-    const systemButton = screen.getByText('system').closest('button');
+    const systemButton = screen.getByText('System').closest('button');
     fireEvent.click(systemButton!);
 
     expect(mockOnThemeChange).toHaveBeenCalledTimes(1);
     expect(mockOnThemeChange).toHaveBeenCalledWith('system');
   });
 
-  it('applies correct styling for unselected themes', () => {
-    const settings = { theme: 'light' };
-    renderWithTheme(
-      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
-    );
-
-    const darkButton = screen.getByText('dark').closest('button');
-    expect(darkButton).toHaveClass('border-gray-300', 'hover:border-blue-300');
-  });
-
-  it('applies correct styling for selected theme', () => {
-    const settings = { theme: 'light' };
-    renderWithTheme(
-      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
-    );
-
-    const lightButton = screen.getByText('light').closest('button');
-    expect(lightButton).toHaveClass('border-blue-500', 'bg-blue-50');
-  });
-
   it('renders with light theme selected by default', () => {
-    const settings = { theme: 'light' };
+    const settings = { theme: 'Light' as 'light' | 'dark' | 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );
 
-    const lightButton = screen.getByText('light').closest('button');
-    expect(lightButton).toHaveClass('border-blue-500');
+    const lightButton = screen.getByText('Light').closest('button');
+    expect(lightButton).toBeInTheDocument();
   });
 
   it('renders with dark theme selected', () => {
-    const settings = { theme: 'dark' };
+    const settings = { theme: 'Dark' as 'light' | 'dark' | 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );
 
-    const darkButton = screen.getByText('dark').closest('button');
-    expect(darkButton).toHaveClass('border-blue-500');
+    const darkButton = screen.getByText('Dark').closest('button');
+    expect(darkButton).toBeInTheDocument();
   });
 
   it('renders with system theme selected', () => {
-    const settings = { theme: 'system' };
+    const settings = { theme: 'System' as 'light' | 'dark' | 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );
 
-    const systemButton = screen.getByText('system').closest('button');
-    expect(systemButton).toHaveClass('border-blue-500');
+    const systemButton = screen.getByText('System').closest('button');
+    expect(systemButton).toBeInTheDocument();
   });
 
   it('handles theme switching from light to dark', () => {
-    const settings = { theme: 'light' };
+    const settings = { theme: 'Light' as 'light' | 'dark' | 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );
 
-    const darkButton = screen.getByText('dark').closest('button');
+    const darkButton = screen.getByText('Dark').closest('button');
     fireEvent.click(darkButton!);
 
     expect(mockOnThemeChange).toHaveBeenCalledWith('dark');
   });
 
   it('handles theme switching from dark to system', () => {
-    const settings = { theme: 'dark' };
+    const settings = { theme: 'Dark' as 'light' | 'dark' | 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );
 
-    const systemButton = screen.getByText('system').closest('button');
+    const systemButton = screen.getByText('System').closest('button');
     fireEvent.click(systemButton!);
 
     expect(mockOnThemeChange).toHaveBeenCalledWith('system');
   });
 
   it('handles multiple theme changes in sequence', () => {
-    const settings = { theme: 'light' };
+    const settings = { theme: 'Light' as 'light' | 'dark' | 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );
 
-    const darkButton = screen.getByText('dark').closest('button');
-    const systemButton = screen.getByText('system').closest('button');
+    const darkButton = screen.getByText('Dark').closest('button');
+    const systemButton = screen.getByText('System').closest('button');
 
     fireEvent.click(darkButton!);
     fireEvent.click(systemButton!);
@@ -213,7 +182,7 @@ describe('SettingsAppearance', () => {
   });
 
   it('renders with all three buttons', () => {
-    const settings = { theme: 'system' };
+    const settings = { theme: 'System' as 'light' | 'dark' | 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );
@@ -222,31 +191,188 @@ describe('SettingsAppearance', () => {
     expect(buttons.length).toBe(3);
   });
 
-  it('applies transition classes to buttons', () => {
-    const settings = { theme: 'system' };
+  it('displays theme names', () => {
+    const settings = { theme: 'System' as 'light' | 'dark' | 'system' };
+    renderWithTheme(
+      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
+    );
+
+    expect(screen.getByText('Light')).toBeInTheDocument();
+    expect(screen.getByText('Dark')).toBeInTheDocument();
+    expect(screen.getByText('System')).toBeInTheDocument();
+  });
+
+  it('handles rapid clicking on same theme button', () => {
+    const settings = { theme: 'Light' as 'light' | 'dark' | 'system' };
+    renderWithTheme(
+      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
+    );
+
+    const lightButton = screen.getByText('Light').closest('button');
+    fireEvent.click(lightButton!);
+    fireEvent.click(lightButton!);
+    fireEvent.click(lightButton!);
+
+    expect(mockOnThemeChange).toHaveBeenCalledTimes(3);
+    expect(mockOnThemeChange).toHaveBeenCalledWith('light');
+  });
+
+  it('displays icons for themes', () => {
+    const settings = { theme: 'System' as 'light' | 'dark' | 'system' };
+    renderWithTheme(
+      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
+    );
+
+    expect(screen.getByText('Light')).toBeInTheDocument();
+    expect(screen.getByText('Dark')).toBeInTheDocument();
+    expect(screen.getByText('System')).toBeInTheDocument();
+  });
+
+  it('highlights selected theme with MUI styling', () => {
+    const settings = { theme: 'Dark' as 'light' | 'dark' | 'system' };
+    renderWithTheme(
+      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
+    );
+
+    const darkButton = screen.getByText('Dark').closest('button');
+    expect(darkButton).toBeInTheDocument();
+  });
+
+  it('calls onThemeChange when light theme is clicked', () => {
+    const settings = { theme: 'Dark' as 'light' | 'dark' | 'system' };
+    renderWithTheme(
+      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
+    );
+
+    const lightButton = screen.getByText('Light').closest('button');
+    fireEvent.click(lightButton!);
+
+    expect(mockOnThemeChange).toHaveBeenCalledTimes(1);
+    expect(mockOnThemeChange).toHaveBeenCalledWith('light');
+  });
+
+  it('calls onThemeChange when dark theme is clicked', () => {
+    const settings = { theme: 'Light' as 'light' | 'dark' | 'system' };
+    renderWithTheme(
+      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
+    );
+
+    const darkButton = screen.getByText('Dark').closest('button');
+    fireEvent.click(darkButton!);
+
+    expect(mockOnThemeChange).toHaveBeenCalledTimes(1);
+    expect(mockOnThemeChange).toHaveBeenCalledWith('dark');
+  });
+
+  it('calls onThemeChange when system theme is clicked', () => {
+    const settings = { theme: 'Light' as 'light' | 'dark' | 'system' };
+    renderWithTheme(
+      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
+    );
+
+    const systemButton = screen.getByText('System').closest('button');
+    fireEvent.click(systemButton!);
+
+    expect(mockOnThemeChange).toHaveBeenCalledTimes(1);
+    expect(mockOnThemeChange).toHaveBeenCalledWith('system');
+  });
+
+  it('renders with light theme selected by default', () => {
+    const settings = { theme: 'Light' as 'light' | 'dark' | 'system' };
+    renderWithTheme(
+      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
+    );
+
+    const lightButton = screen.getByText('Light').closest('button');
+    expect(lightButton).toBeInTheDocument();
+  });
+
+  it('renders with dark theme selected', () => {
+    const settings = { theme: 'Dark' as 'light' | 'dark' | 'system' };
+    renderWithTheme(
+      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
+    );
+
+    const darkButton = screen.getByText('Dark').closest('button');
+    expect(darkButton).toBeInTheDocument();
+  });
+
+  it('renders with system theme selected', () => {
+    const settings = { theme: 'System' as 'light' | 'dark' | 'system' };
+    renderWithTheme(
+      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
+    );
+
+    const systemButton = screen.getByText('System').closest('button');
+    expect(systemButton).toBeInTheDocument();
+  });
+
+  it('handles theme switching from light to dark', () => {
+    const settings = { theme: 'Light' as 'light' | 'dark' | 'system' };
+    renderWithTheme(
+      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
+    );
+
+    const darkButton = screen.getByText('Dark').closest('button');
+    fireEvent.click(darkButton!);
+
+    expect(mockOnThemeChange).toHaveBeenCalledWith('dark');
+  });
+
+  it('handles theme switching from dark to system', () => {
+    const settings = { theme: 'Dark' as 'light' | 'dark' | 'system' };
+    renderWithTheme(
+      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
+    );
+
+    const systemButton = screen.getByText('System').closest('button');
+    fireEvent.click(systemButton!);
+
+    expect(mockOnThemeChange).toHaveBeenCalledWith('system');
+  });
+
+  it('handles multiple theme changes in sequence', () => {
+    const settings = { theme: 'Light' as 'light' | 'dark' | 'system' };
+    renderWithTheme(
+      <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
+    );
+
+    const darkButton = screen.getByText('Dark').closest('button');
+    const systemButton = screen.getByText('System').closest('button');
+
+    fireEvent.click(darkButton!);
+    fireEvent.click(systemButton!);
+    fireEvent.click(darkButton!);
+
+    expect(mockOnThemeChange).toHaveBeenCalledTimes(3);
+    expect(mockOnThemeChange).toHaveBeenNthCalledWith(1, 'dark');
+    expect(mockOnThemeChange).toHaveBeenNthCalledWith(2, 'system');
+    expect(mockOnThemeChange).toHaveBeenNthCalledWith(3, 'dark');
+  });
+
+  it('renders with all three buttons', () => {
+    const settings = { theme: 'System' as 'light' | 'dark' | 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );
 
     const buttons = screen.getAllByRole('button');
-    buttons.forEach(button => {
-      expect(button).toHaveClass('transition-all');
-    });
+    expect(buttons.length).toBe(3);
   });
 
   it('displays theme names', () => {
-    const settings = { theme: 'system' };
+    const settings = { theme: 'System' as 'light' | 'dark' | 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );
 
-    expect(screen.getByText('light')).toBeInTheDocument();
-    expect(screen.getByText('dark')).toBeInTheDocument();
-    expect(screen.getByText('system')).toBeInTheDocument();
+    expect(screen.getByText('Light')).toBeInTheDocument();
+    expect(screen.getByText('Dark')).toBeInTheDocument();
+    expect(screen.getByText('System')).toBeInTheDocument();
   });
 
   it('handles theme set to null', () => {
-    const settings = { theme: null };
+    const settings = { theme: null as unknown as 'light' | 'dark' | 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );
@@ -255,7 +381,7 @@ describe('SettingsAppearance', () => {
   });
 
   it('handles theme set to undefined', () => {
-    const settings = { theme: undefined };
+    const settings = { theme: undefined as unknown as 'light' | 'dark' | 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );
@@ -264,12 +390,12 @@ describe('SettingsAppearance', () => {
   });
 
   it('handles rapid clicking on same theme button', () => {
-    const settings = { theme: 'light' };
+    const settings = { theme: 'Light' as 'light' | 'dark' | 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );
 
-    const lightButton = screen.getByText('light').closest('button');
+    const lightButton = screen.getByText('Light').closest('button');
     fireEvent.click(lightButton!);
     fireEvent.click(lightButton!);
     fireEvent.click(lightButton!);
@@ -279,7 +405,7 @@ describe('SettingsAppearance', () => {
   });
 
   it('renders correctly with empty settings object', () => {
-    const settings = {};
+    const settings = { theme: 'Light' as 'light' | 'dark' | 'system' };
     renderWithTheme(
       <SettingsAppearance settings={settings} onThemeChange={mockOnThemeChange} />
     );

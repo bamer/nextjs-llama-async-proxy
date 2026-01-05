@@ -11,7 +11,8 @@ import { SettingsAppearance } from "@/components/pages/settings/SettingsAppearan
 import { SettingsSystem } from "@/components/pages/settings/SettingsSystem";
 
 describe("Pages Snapshots", () => {
-  const MockThemeProvider = ({ children, isDark = false }: { children: React.ReactNode; isDark?: boolean }) => (
+  // @ts-expect-error - isDark prop is intentionally unused for snapshot testing
+  const MockThemeProvider = ({ children, isDark }: { children: React.ReactNode; isDark?: boolean }) => (
     <ThemeProvider>{children}</ThemeProvider>
   );
 
@@ -210,7 +211,7 @@ describe("Pages Snapshots", () => {
     it("should match snapshot in light mode", () => {
       const { container } = render(
         <MockThemeProvider isDark={false}>
-          <SettingsAppearance settings={{}} onThemeChange={jest.fn()} />
+          <SettingsAppearance settings={{ theme: 'light' }} onThemeChange={jest.fn()} />
         </MockThemeProvider>
       );
       expect(container.firstChild).toMatchSnapshot("settings-appearance-light");
@@ -219,7 +220,7 @@ describe("Pages Snapshots", () => {
     it("should match snapshot in dark mode", () => {
       const { container } = render(
         <MockThemeProvider isDark={true}>
-          <SettingsAppearance settings={{}} onThemeChange={jest.fn()} />
+          <SettingsAppearance settings={{ theme: 'dark' }} onThemeChange={jest.fn()} />
         </MockThemeProvider>
       );
       expect(container.firstChild).toMatchSnapshot("settings-appearance-dark");
@@ -230,7 +231,7 @@ describe("Pages Snapshots", () => {
     it("should match snapshot in light mode", () => {
       const { container } = render(
         <MockThemeProvider isDark={false}>
-          <SettingsSystem settings={{}} onSliderChange={jest.fn()} />
+          <SettingsSystem settings={{ maxConcurrentModels: 3, refreshInterval: 5 }} onSliderChange={jest.fn()} />
         </MockThemeProvider>
       );
       expect(container.firstChild).toMatchSnapshot("settings-system-light");
@@ -239,7 +240,7 @@ describe("Pages Snapshots", () => {
     it("should match snapshot in dark mode", () => {
       const { container } = render(
         <MockThemeProvider isDark={true}>
-          <SettingsSystem settings={{}} onSliderChange={jest.fn()} />
+          <SettingsSystem settings={{ maxConcurrentModels: 3, refreshInterval: 5 }} onSliderChange={jest.fn()} />
         </MockThemeProvider>
       );
       expect(container.firstChild).toMatchSnapshot("settings-system-dark");

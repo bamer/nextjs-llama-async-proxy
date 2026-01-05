@@ -1,7 +1,14 @@
+"use client";
+
 import React from 'react';
+import { Box, Typography, Slider, Card, CardContent } from '@mui/material';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface SettingsSystemProps {
-  settings: any;
+  settings: {
+    maxConcurrentModels: number;
+    refreshInterval: number;
+  };
   onSliderChange: (
     key: 'maxConcurrentModels' | 'refreshInterval',
     value: number
@@ -12,68 +19,75 @@ export function SettingsSystem({
   settings,
   onSliderChange,
 }: SettingsSystemProps) {
+  const { isDark } = useTheme();
+
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
-        System Settings
-      </h2>
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" fontWeight="bold" sx={{ mb: 3, color: 'text.primary' }}>
+          System Settings
+        </Typography>
 
-      <div className="space-y-8">
-        {/* Max Concurrent Models */}
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <label className="font-medium text-gray-900 dark:text-white">
+        <Box sx={{ mb: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="body1" fontWeight="medium" sx={{ color: 'text.primary' }}>
               Max Concurrent Models
-            </label>
-            <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+            </Typography>
+            <Typography variant="h6" fontWeight="bold" sx={{ color: 'primary.main' }}>
               {settings.maxConcurrentModels}
-            </span>
-          </div>
-          <input
-            type="range"
-            min="1"
-            max="10"
+            </Typography>
+          </Box>
+          <Slider
             value={settings.maxConcurrentModels}
-            onChange={(e) =>
-              onSliderChange(
-                'maxConcurrentModels',
-                parseInt(e.target.value)
-              )
-            }
-            className="w-full h-2 bg-gray-300 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+            onChange={(_, value) => onSliderChange('maxConcurrentModels', value as number)}
+            min={1}
+            max={10}
+            step={1}
+            sx={{
+              color: 'primary.main',
+              '& .MuiSlider-thumb': {
+                '&:hover, &.Mui-focusVisible': {
+                  boxShadow: '0 0 0 8px rgba(59, 130, 246, 0.16)',
+                },
+              },
+            }}
           />
-          <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-            <span>1 model</span>
-            <span>10 models</span>
-          </div>
-        </div>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Typography variant="caption" color="text.secondary">1 model</Typography>
+            <Typography variant="caption" color="text.secondary">10 models</Typography>
+          </Box>
+        </Box>
 
-        {/* Refresh Interval */}
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <label className="font-medium text-gray-900 dark:text-white">
+        <Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="body1" fontWeight="medium" sx={{ color: 'text.primary' }}>
               Refresh Interval (seconds)
-            </label>
-            <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+            </Typography>
+            <Typography variant="h6" fontWeight="bold" sx={{ color: 'primary.main' }}>
               {settings.refreshInterval}s
-            </span>
-          </div>
-          <input
-            type="range"
-            min="1"
-            max="10"
+            </Typography>
+          </Box>
+          <Slider
             value={settings.refreshInterval}
-            onChange={(e) =>
-              onSliderChange('refreshInterval', parseInt(e.target.value))
-            }
-            className="w-full h-2 bg-gray-300 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+            onChange={(_, value) => onSliderChange('refreshInterval', value as number)}
+            min={1}
+            max={10}
+            step={1}
+            sx={{
+              color: 'primary.main',
+              '& .MuiSlider-thumb': {
+                '&:hover, &.Mui-focusVisible': {
+                  boxShadow: '0 0 0 8px rgba(59, 130, 246, 0.16)',
+                },
+              },
+            }}
           />
-          <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-            <span>1 second</span>
-            <span>10 seconds</span>
-          </div>
-        </div>
-      </div>
-    </div>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Typography variant="caption" color="text.secondary">1 second</Typography>
+            <Typography variant="caption" color="text.secondary">10 seconds</Typography>
+          </Box>
+        </Box>
+      </CardContent>
+    </Card>
   );
 }

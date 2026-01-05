@@ -4,6 +4,7 @@ import "./globals.css";
 import { AppProvider } from "@/providers/app-provider";
 import { APP_CONFIG } from "@/config/app.config";
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
+import { KeyboardNavListener } from "@/hooks/use-keyboard-nav";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -56,10 +57,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} antialiased`}>
-         <AppRouterCacheProvider>
-           <AppProvider>{children}</AppProvider>
-         </AppRouterCacheProvider>
-       </body>
+        <AppRouterCacheProvider>
+          <AppProvider>
+            <KeyboardNavListener />
+            {children}
+          </AppProvider>
+        </AppRouterCacheProvider>
+      </body>
     </html>
   );
 }

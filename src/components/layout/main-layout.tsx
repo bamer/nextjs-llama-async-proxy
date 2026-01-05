@@ -1,38 +1,63 @@
 'use client';
 
-import { Header } from "@/components/layout/Header";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { SidebarProvider } from "@/components/layout/SidebarProvider";
-import { Box } from "@mui/material";
-import { useTheme } from "@/contexts/ThemeContext";
+import React from 'react';
+import { Box, CssBaseline, useMediaQuery, useTheme } from '@mui/material';
+import { Header } from '@/components/layout/Header';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { SidebarProvider, useSidebar, DRAWER_WIDTH, COLLAPSED_DRAWER_WIDTH } from '@/components/layout/SidebarProvider';
+import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 
 interface MainLayoutProps {
   children: React.ReactNode;
 }
 
-export function MainLayout({ children }: MainLayoutProps) {
-  const { isDark } = useTheme();
+function MainLayoutContent({ children }: MainLayoutProps) {
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
+  const { isCollapsed } = useSidebar();
+  const sidebarWidth = isCollapsed ? COLLAPSED_DRAWER_WIDTH : DRAWER_WIDTH;
 
   return (
-    <SidebarProvider>
-      <Box data-testid="main-layout" sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        background: isDark ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' : 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)'
-      }}>
+    <>
+      <CssBaseline />
+      <Box
+        data-testid="main-layout"
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          background: 'background.default',
+        }}
+      >
         <Header />
         <Box sx={{ display: 'flex', flex: 1, pt: '64px' }}>
-          <Sidebar />
-          <Box sx={{
-            flex: 1,
-            width: '100%',
-            p: { xs: 2, sm: 3, md: 4 }
-          }}>
+          <Sidebar isMobile={isMobile} />
+          <Box
+            component="main"
+            sx={{
+              flex: 1,
+              width: { md: `calc(100% - ${sidebarWidth}px)` },
+              ml: { md: 0 },
+              p: { xs: 2, sm: 3, md: 4 },
+              transition: 'all 0.3s ease',
+              overflow: 'auto',
+            }}
+          >
+            <Box sx={{ mb: 3 }}>
+              <Breadcrumbs />
+            </Box>
             {children}
           </Box>
         </Box>
       </Box>
+    </>
+  );
+}
+
+export function MainLayout({ children }: MainLayoutProps) {
+  return (
+    <SidebarProvider>
+      <MainLayoutContent>{children}</MainLayoutContent>
     </SidebarProvider>
   );
 }

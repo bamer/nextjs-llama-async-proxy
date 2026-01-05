@@ -3,6 +3,7 @@
 import { memo, useMemo } from "react";
 import { Card, CardContent, Typography, Box, LinearProgress, Chip } from "@mui/material";
 import { CircularGauge } from "./CircularGauge";
+import { Sparkline } from "@/components/charts/Sparkline";
 
 interface MetricCardProps {
   title: string;
@@ -13,6 +14,8 @@ interface MetricCardProps {
   isDark: boolean;
   threshold?: number;
   showGauge?: boolean;
+  sparklineData?: number[];
+  sparklineColor?: string;
 }
 
 // Helper function defined outside component (created once)
@@ -30,7 +33,9 @@ const MemoizedMetricCard = memo(function MetricCard({
   icon,
   isDark,
   threshold = 80,
-  showGauge = false
+  showGauge = false,
+  sparklineData,
+  sparklineColor = "#10b981",
 }: MetricCardProps) {
   // Memoize status color calculation
   const statusColor = useMemo(() => getStatusColor(value, threshold), [value, threshold]);
@@ -43,9 +48,6 @@ const MemoizedMetricCard = memo(function MetricCard({
 
   // Memoize progress value (clamped to 0-100)
   const progressValue = useMemo(() => Math.min(100, Math.max(0, value)), [value]);
-
-  // Memoize formatted value for progress
-  const formattedValue = useMemo(() => Number.isInteger(value) ? value : value.toFixed(1), [value]);
 
   // Memoize status label
   const statusLabel = useMemo(() => {
@@ -61,12 +63,20 @@ const MemoizedMetricCard = memo(function MetricCard({
   }, [trend]);
 
   // Memoize trend color
-  const trendColor = useMemo(() => {
+  const trendColor = useMemo((): "error" | "success" | "default" => {
     if (trend === undefined) return 'default';
     if (trend > 0) return 'error';
     if (trend < 0) return 'success';
     return 'default';
   }, [trend]);
+
+  // Memoize sparkline color based on status
+  const effectiveSparklineColor = useMemo(() => {
+    if (sparklineColor) return sparklineColor;
+    if (statusColor === 'error') return '#ef4444';
+    if (statusColor === 'warning') return '#f59e0b';
+    return '#10b981';
+  }, [sparklineColor, statusColor]);
 
   return (
     <Card sx={{
@@ -100,7 +110,7 @@ const MemoizedMetricCard = memo(function MetricCard({
             <Chip
               label={trendLabel}
               size="small"
-              color={trendColor as any}
+              color={trendColor}
               sx={{ fontWeight: 600 }}
             />
           )}
@@ -120,6 +130,19 @@ const MemoizedMetricCard = memo(function MetricCard({
           </Box>
         ) : (
           <>
+            {/* Sparkline container */}
+            {sparklineData && sparklineData.length > 0 && (
+              <Box sx={{ mb: 1 }}>
+                <Sparkline
+                  data={sparklineData}
+                  width={180}
+                  height={40}
+                  color={effectiveSparklineColor}
+                  showAxis={false}
+                />
+              </Box>
+            )}
+
             <LinearProgress
               variant="determinate"
               value={progressValue}
@@ -155,7 +178,9 @@ const MemoizedMetricCard = memo(function MetricCard({
     prevProps.icon === nextProps.icon &&
     prevProps.isDark === nextProps.isDark &&
     prevProps.threshold === nextProps.threshold &&
-    prevProps.showGauge === nextProps.showGauge
+    prevProps.showGauge === nextProps.showGauge &&
+    JSON.stringify(prevProps.sparklineData) === JSON.stringify(nextProps.sparklineData) &&
+    prevProps.sparklineColor === nextProps.sparklineColor
   );
 });
 
