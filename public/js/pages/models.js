@@ -8,21 +8,36 @@ class ModelsController {
     this.unsubs = [];
     this.comp = null;
     this.filters = { status: "all", search: "" };
+    console.log("[DEBUG] ModelsController created");
   }
 
   init() {
-    this.unsubs.push(stateManager.subscribe("models", m => this.comp?.setState({ models: m })));
+    console.log("[DEBUG] ModelsController init");
+    this.unsubs.push(stateManager.subscribe("models", m => {
+      console.log("[DEBUG] Models state changed, count:", m?.length);
+      this.comp?.setState({ models: m });
+    }));
     this.load();
   }
 
   async load() {
+    console.log("[DEBUG] ModelsController load");
     try {
       const d = await stateManager.getModels();
+      console.log("[DEBUG] Models loaded:", d.models?.length, "models");
       stateManager.set("models", d.models || []);
-    } catch (e) { console.error("[Models] Load error:", e); showNotification("Failed to load models", "error"); }
+    } catch (e) {
+      console.error("[DEBUG] Models load error:", e);
+      showNotification("Failed to load models", "error");
+    }
   }
 
-  willUnmount() { this.unsubs.forEach(u => u()); this.unsubs = []; if (this.comp) this.comp.destroy(); }
+  willUnmount() {
+    console.log("[DEBUG] ModelsController willUnmount");
+    this.unsubs.forEach(u => u());
+    this.unsubs = [];
+    if (this.comp) this.comp.destroy();
+  }
   destroy() { this.willUnmount(); }
 
   render() {
@@ -41,18 +56,34 @@ class ModelsPage extends Component {
   constructor(props) {
     super(props);
     this.state = { models: props.models || [], filters: props.filters || { status: "all", search: "" } };
+    console.log("[DEBUG] ModelsPage created, props.models:", props.models?.length);
   }
 
   willReceiveProps(props) {
+    console.log("[DEBUG] ModelsPage willReceiveProps, new models:", props.models?.length);
     this.setState({ models: props.models || [], filters: props.filters || { status: "all", search: "" } });
   }
 
   render() {
     const filtered = this._getFiltered();
-    return Component.h("div", { className: "models-page" },
+    console.log("[DEBUG] ModelsPage.render, filtered count:", filtered.length);
+    const tbodyContent = filtered.length === 0
+      ? Component.h("tr", {}, Component.h("td", { colSpan: 6 }, "No models"))
+      : filtered.map(m => Component.h("tr", { "data-id": m.id },
+          Component.h("td", {}, m.name),
+          Component.h("td", {}, Component.h("span", { className: `badge ${m.status}` }, m.status)),
+          Component.h("td", {}, m.params || "-"),
+          Component.h("td", {}, m.quantization || "-"),
+          Component.h("td", {}, m.file_size ? formatBytes(m.file_size) : "-"),
+          Component.h("td", {},
+            m.status === "running"
+              ? Component.h("button", { className: "btn btn-sm", "data-action": "stop" }, "Stop")
+              : Component.h("button", { className: "btn btn-sm btn-primary", "data-action": "start" }, "Start")
+          )
+        ));
+    const result = Component.h("div", { className: "models-page" },
       Component.h("div", { className: "toolbar" },
-        Component.h("button", { className: "btn btn-primary", "data-action": "import" }, "Import"),
-        Component.h("button", { className: "btn btn-secondary", "data-action": "refresh" }, "Refresh")
+        Component.h("button", { className: "btn btn-primary", "data-action": "scan" }, "Scan Filesystem")
       ),
       Component.h("div", { className: "filters" },
         Component.h("input", { type: "text", placeholder: "Search...", "data-field": "search", value: this.state.filters.search }),
@@ -64,22 +95,21 @@ class ModelsPage extends Component {
       ),
       Component.h("table", { className: "models-table" },
         Component.h("thead", {},
-          Component.h("tr", {}, Component.h("th", {}, "Name"), Component.h("th", {}, "Status"), Component.h("th", {}, "Actions"))
+          Component.h("tr", {},
+            Component.h("th", {}, "Name"),
+            Component.h("th", {}, "Status"),
+            Component.h("th", {}, "Params"),
+            Component.h("th", {}, "Quant"),
+            Component.h("th", {}, "Size"),
+            Component.h("th", {}, "Actions")
+          )
         ),
-        Component.h("tbody", {},
-          filtered.length === 0 ? Component.h("tr", {}, Component.h("td", { colSpan: 3 }, "No models")) :
-            filtered.map(m => Component.h("tr", { "data-id": m.id },
-              Component.h("td", {}, m.name),
-              Component.h("td", {}, Component.h("span", { className: `badge ${m.status}` }, m.status)),
-              Component.h("td", {},
-                m.status === "running" ?
-                  Component.h("button", { className: "btn btn-sm", "data-action": "stop" }, "Stop") :
-                  Component.h("button", { className: "btn btn-sm btn-primary", "data-action": "start" }, "Start")
-              )
-            ))
-        )
+        Component.h("tbody", {}, ...(Array.isArray(tbodyContent) ? tbodyContent : [tbodyContent]))
       )
     );
+    const tbody = result.querySelector ? result.querySelector('tbody') : null;
+    console.log("[DEBUG] Rendered tbody rows:", tbody?.childElementCount);
+    return result;
   }
 
   _getFiltered() {
@@ -96,26 +126,39 @@ class ModelsPage extends Component {
     return {
       "input [data-field=search]": (e) => this.setState({ filters: { ...this.state.filters, search: e.target.value } }),
       "change [data-field=status]": (e) => this.setState({ filters: { ...this.state.filters, status: e.target.value } }),
-      "click [data-action=refresh]": () => this.load(),
-      "click [data-action=import]": () => this.importModel(),
+      "click [data-action=scan]": () => this.scanModels(),
       "click [data-action=start]": (e) => stateManager.startModel(e.target.closest("tr").dataset.id).then(() => showNotification("Model started", "success")).catch(err => showNotification(err.message, "error")),
       "click [data-action=stop]": (e) => stateManager.stopModel(e.target.closest("tr").dataset.id).then(() => showNotification("Model stopped", "success")).catch(err => showNotification(err.message, "error"))
     };
   }
 
-  importModel() {
-    const name = prompt("Enter model name:");
-    if (name) {
-      stateManager.createModel({ name }).then(() => {
-        showNotification("Model created", "success");
-      }).catch(err => showNotification(err.message, "error"));
-    }
+  scanModels() {
+    console.log("[DEBUG] scanModels clicked");
+    showNotification("Scanning filesystem...", "info");
+    stateManager.scanModels().then(data => {
+      console.log("[DEBUG] scanModels result:", data);
+      // Update models list from scan result
+      stateManager.set("models", data.models || []);
+      const msg = `Scanned: ${data.scanned} new, Total: ${data.models.length} models`;
+      showNotification(msg, "success");
+    }).catch(err => {
+      console.error("[DEBUG] scanModels error:", err);
+      showNotification("Scan failed: " + err.message, "error");
+    });
   }
 
   load() { this._controller?.load(); }
 
-  // Called from controller init
   _setController(c) { this._controller = c; }
+}
+
+// Utility: format bytes
+function formatBytes(bytes) {
+  if (!bytes || bytes === 0) return "-";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }
 
 window.ModelsController = ModelsController;

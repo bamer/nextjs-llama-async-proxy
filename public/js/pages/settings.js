@@ -3,9 +3,16 @@
  */
 
 class SettingsController {
-  constructor(options = {}) { this.router = options.router || window.router; this.comp = null; this.unsub = null; }
+  constructor(options = {}) {
+    this.router = options.router || window.router;
+    this.comp = null;
+    this.unsub = null;
+    console.log("[DEBUG] SettingsController created");
+  }
   init() {
+    console.log("[DEBUG] SettingsController init");
     this.unsub = stateManager.subscribe("config", () => {
+      console.log("[DEBUG] Config state changed");
       if (this.comp) {
         this.comp.setState({ updated: Date.now() });
       }
@@ -13,12 +20,17 @@ class SettingsController {
     this.load();
   }
   async load() {
+    console.log("[DEBUG] SettingsController load");
     try {
       const c = await stateManager.getConfig();
+      console.log("[DEBUG] Config loaded:", JSON.stringify(c.config).substring(0, 100) + "...");
       stateManager.set("config", c.config || {});
-    } catch (e) { console.error("[Settings] Load error:", e); }
+    } catch (e) { console.error("[DEBUG] Settings load error:", e); }
   }
-  willUnmount() { this.unsub?.(); }
+  willUnmount() {
+    console.log("[DEBUG] SettingsController willUnmount");
+    this.unsub?.();
+  }
   destroy() { this.willUnmount(); }
   render() {
     this.comp = new SettingsPage({});
@@ -84,7 +96,7 @@ class SettingsPage extends Component {
         const v = type === "number" ? parseInt(e.target.value) : e.target.value;
         stateManager.set("config", { ...stateManager.get("config"), [key]: v });
         this.setState({ updated: Date.now() });
-      }})
+      } })
     );
   }
 
@@ -94,21 +106,30 @@ class SettingsPage extends Component {
   }
 
   async _save() {
+    console.log("[DEBUG] Settings _save clicked");
     try {
       const config = stateManager.get("config") || {};
+      console.log("[DEBUG] Saving config:", JSON.stringify(config).substring(0, 100));
       await stateManager.updateConfig(config);
       showNotification("Settings saved", "success");
-    } catch (e) { showNotification("Save failed: " + e.message, "error"); }
+    } catch (e) {
+      console.error("[DEBUG] Save error:", e);
+      showNotification("Save failed: " + e.message, "error");
+    }
   }
 
   async _reset() {
+    console.log("[DEBUG] Settings _reset clicked");
     if (confirm("Reset all settings to defaults?")) {
       try {
         const c = await stateManager.getConfig();
         stateManager.set("config", c.config || {});
         this.setState({ updated: Date.now() });
         showNotification("Settings reset to defaults", "info");
-      } catch (e) { showNotification("Reset failed: " + e.message, "error"); }
+      } catch (e) {
+        console.error("[DEBUG] Reset error:", e);
+        showNotification("Reset failed: " + e.message, "error");
+      }
     }
   }
 }

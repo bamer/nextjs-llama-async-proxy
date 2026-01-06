@@ -13,23 +13,32 @@ This document provides guidelines for agentic coding assistants working in this 
 
 ## Build / Run Commands
 
+**IMPORTANT: Always use `pnpm` instead of `npm`. This project uses pnpm for all package management.**
+
 ```bash
 # Start development server
-npm start                    # Start server with node
-npm run dev                  # Start with file watching
+pnpm start                    # Start server with node
+pnpm dev                      # Start with file watching (uses --watch flag)
 
 # Database operations
-npm run db:export            # Export database backup
-npm run db:reset             # Reset database
+pnpm db:export                # Export database backup
+pnpm db:reset                 # Reset database
 
 # Testing
-npm test                     # Run all tests
-npm run test:watch           # Run tests in watch mode
-npm run test:coverage        # Generate coverage report
+pnpm test                     # Run all tests
+pnpm test:watch               # Run tests in watch mode
+pnpm test:coverage            # Generate coverage report (100% coverage required)
 
 # Linting
-npm run lint                 # Run ESLint
-npm run lint:fix             # Auto-fix lint issues
+pnpm lint                     # Run ESLint
+pnpm lint:fix                 # Auto-fix lint issues
+
+# Package management (ALWAYS use pnpm)
+pnpm add <package>            # Add a dependency
+pnpm add -D <package>         # Add a dev dependency
+pnpm remove <package>         # Remove a dependency
+pnpm install                  # Install all dependencies
+pnpm update                   # Update all dependencies
 ```
 
 ## Code Style Guidelines
@@ -384,51 +393,167 @@ socket.emit('logs:entry', {
 });
 ```
 
-## Testing Patterns
+## Testing Guidelines
 
-### Jest Configuration
+**Critical Principle**: If tests fail, the code is broken - fix the code, not the tests.
 
-Tests use Jest with jsdom environment:
+### Coverage Requirements
 
-```javascript
-// jest.config.js
-export default {
-  testEnvironment: 'jsdom',
-  testMatch: ['**/__tests__/**/*.test.js'],
-  collectCoverageFrom: [
-    'public/js/**/*.js',
-    '!public/js/**/*.test.js'
-  ]
-};
+- **100% code coverage is required** for all new code
+- Tests must cover all branches, functions, and lines
+- Coverage threshold: 100% for statements, branches, functions, and lines
+
+### Test Organization
+
+```bash
+__tests__/
+├── server/                    # Server-side tests
+│   ├── db.test.js            # Database layer tests
+│   ├── metadata.test.js      # GGUF metadata parsing tests
+│   └── handlers.test.js      # Socket handler tests
+└── utils/                     # Utility tests
+    ├── validation.test.js    # Validation function tests
+    └── format.test.js        # Formatting function tests
 ```
 
-### Test Example
+### Test Principles
+
+1. **Write tests first (TDD)** - Define expected behavior before implementing
+2. **Test behavior, not implementation** - Focus on what the function does, not how
+3. **Use descriptive test names** - Test names should describe the expected behavior
+4. **Each test one assertion** - Makes debugging easier
+5. **Mock external dependencies** - Database, file system, network calls
+
+### Server Testing Example
 
 ```javascript
-// __tests__/core/component.test.js
-describe('Component', () => {
-  let container;
+// __tests__/server/db.test.js
+import Database from 'better-sqlite3';
+import path from 'path';
+import fs from 'fs';
 
-  beforeEach(() => {
-    container = document.createElement('div');
+describe('DB class', () => {
+  let db;
+  const testDbPath = '/tmp/test-db-' + Date.now() + '.db';
+
+  beforeAll(() => {
+    db = new DB(testDbPath);
   });
 
-  afterEach(() => {
-    container = null;
+  afterAll(() => {
+    db.db.close();
+    fs.unlinkSync(testDbPath);
   });
 
-  describe('render', () => {
-    it('should create element with correct tag', () => {
-      const comp = new TestComponent({});
-      const el = comp.render();
-      expect(el.tagName).toBe('DIV');
+  describe('getModels', () => {
+    it('should return empty array when no models exist', () => {
+      const models = db.getModels();
+      expect(Array.isArray(models)).toBe(true);
+      expect(models.length).toBe(0);
+    });
+
+    it('should return saved model after saveModel', () => {
+      const model = db.saveModel({
+        name: 'test-model',
+        type: 'llama',
+        status: 'idle'
+      });
+      expect(model).toBeDefined();
+      expect(model.name).toBe('test-model');
+    });
+  });
+
+  describe('updateModel', () => {
+    it('should update model status', () => {
+      const model = db.saveModel({ name: 'test-update' });
+      const updated = db.updateModel(model.id, { status: 'running' });
+      expect(updated.status).toBe('running');
+    });
+
+    it('should return null for non-existent model', () => {
+      const result = db.updateModel('non-existent-id', { status: 'running' });
+      expect(result).toBeNull();
     });
   });
 });
+```
 
-class TestComponent extends Component {
-  render() {
-    return Component.h('div', {}, 'Test');
+### Metadata Parsing Tests
+
+```javascript
+// __tests__/server/metadata.test.js
+describe('GGUF Metadata Parsing', () => {
+  describe('extractArchitecture', () => {
+    it('should extract llama architecture', () => {
+      expect(extractArchitecture('llama-2-7b.gguf')).toBe('Llama');
+    });
+
+    it('should extract qwen architecture', () => {
+      expect(extractArchitecture('Qwen3-14B.gguf')).toBe('Qwen');
+    });
+
+    it('should return LLM for unknown architecture', () => {
+      expect(extractArchitecture('unknown-model.gguf')).toBe('LLM');
+    });
+  });
+
+  describe('extractParams', () => {
+    it('should extract 7B parameters', () => {
+      expect(extractParams('model-7B.gguf')).toBe('7B');
+    });
+
+    it('should extract 30B parameters', () => {
+      expect(extractParams('model-30B.gguf')).toBe('30B');
+    });
+  });
+
+  describe('extractQuantization', () => {
+    it('should extract Q4_K_M quantization', () => {
+      expect(extractQuantization('model-Q4_K_M.gguf')).toBe('Q4_K_M');
+    });
+
+    it('should extract Q8_0 quantization', () => {
+      expect(extractQuantization('model-Q8_0.gguf')).toBe('Q8_0');
+    });
+  });
+});
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+pnpm test
+
+# Run with coverage
+pnpm test:coverage
+
+# Run in watch mode
+pnpm test:watch
+
+# Run specific test file
+pnpm test -- utils/validation.test.js
+```
+
+### Coverage Enforcement
+
+The project enforces 100% coverage via Jest configuration:
+
+```javascript
+// jest.config.js (inline in package.json)
+{
+  collectCoverageFrom: [
+    'server.js',
+    '__tests__/**/*.js',
+    '!node_modules/**'
+  ],
+  coverageThreshold: {
+    global: {
+      statements: 100,
+      branches: 100,
+      functions: 100,
+      lines: 100
+    }
   }
 }
 ```
@@ -446,6 +571,74 @@ class TestComponent extends Component {
 - `console.warn()` - Warnings (non-critical issues)
 - `console.error()` - Errors (action required)
 - Prefix logs with component name: `[Dashboard]`, `[Models]`, `[Router]`
+
+## Debug Logging (Development Mode)
+
+This project uses comprehensive debug logging to aid development. **Do NOT remove debug logs** - they stay in the codebase permanently.
+
+### Backend (server.js)
+
+Use `[DEBUG]` prefix for all debug output:
+
+```javascript
+// In socket handlers
+console.log("[DEBUG] Event received:", { event: "models:scan", data: req });
+console.log("[DEBUG] Scan result:", { found: files.length, path: modelsDir });
+console.error("[DEBUG] Error details:", error.message);
+
+// In scan/discover operations
+console.log("[DEBUG] Directory exists:", dirExists);
+console.log("[DEBUG] Files in directory:", files.length, files);
+```
+
+### Frontend (public/js/)
+
+Use `[DEBUG]` prefix consistently:
+
+```javascript
+// Controllers
+console.log("[DEBUG] Controller created");
+console.log("[DEBUG] Controller init");
+console.log("[DEBUG] Controller willUnmount");
+
+// State operations
+console.log("[DEBUG] State changed:", key, value);
+console.log("[DEBUG] API request:", event, data);
+console.log("[DEBUG] API response:", data);
+
+// Component lifecycle
+console.log("[DEBUG] Component created, props:", props);
+console.log("[DEBUG] Component willReceiveProps:", newProps);
+console.log("[DEBUG] Button clicked:", action);
+
+// Error handling
+console.error("[DEBUG] Error:", error);
+```
+
+### What to Debug
+
+Always log:
+1. **Lifecycle events**: constructor, init, willUnmount, destroy
+2. **API requests/responses**: what was sent, what was received
+3. **State changes**: before/after values
+4. **User actions**: button clicks, form submissions
+5. **Scan/discover operations**: paths, file counts, results
+6. **Errors**: full error details with stack trace
+
+### Debug Log Format
+
+```
+[DEBUG] <Component/Module> <Action> [details as JSON]
+```
+
+Examples:
+```
+[DEBUG] ModelsController init
+[DEBUG] API getConfig { requestId: "req_123_abc" }
+[DEBUG] Scan result: { new: 5, total: 10 }
+[DEBUG] File check: { name: "model.gguf", isFile: true, extMatch: true }
+[DEBUG] models:list request { requestId: 123456789 }
+```
 
 ## Best Practices
 

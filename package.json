@@ -17,8 +17,10 @@
     "db:reset": "node scripts/db-reset.js"
   },
   "dependencies": {
+    "@huggingface/gguf": "^0.3.2",
     "better-sqlite3": "^12.5.0",
     "express": "^5.2.1",
+    "gguf": "^1.0.7",
     "socket.io": "^4.8.3"
   },
   "devDependencies": {

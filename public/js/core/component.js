@@ -25,46 +25,62 @@ class Component {
     if (typeof rendered === "string") {
       const div = document.createElement("div");
       div.innerHTML = rendered;
-      this._el = div.firstChild;
+      this._el = div.firstChild || div;
     } else if (rendered instanceof HTMLElement) {
       this._el = rendered;
     }
-    this._el._component = this;
 
-    this.bindEvents();  // Bind BEFORE appending
-    parent.appendChild(this._el);
-    this._mounted = true;
-    this.didMount && this.didMount();
+    if (this._el) {
+      this._el._component = this;
+      this.bindEvents();
+      parent.appendChild(this._el);
+      this._mounted = true;
+      this.didMount && this.didMount();
+    }
     return this;
   }
 
   // Update state and re-render
   setState(updates) {
+    console.log("[DEBUG] Component.setState called:", this.constructor.name, updates);
     this.state = { ...this.state, ...updates };
     if (this._el) {
+      console.log("[DEBUG] Component.update called for:", this.constructor.name);
       this.update();
+    } else {
+      console.warn("[DEBUG] Component has no _el, cannot update:", this.constructor.name);
     }
     return this;
   }
 
   // Re-render
   update() {
+    console.log("[DEBUG] Component.update START for:", this.constructor.name);
     const oldEl = this._el;
+    console.log("[DEBUG] Old element tag:", oldEl?.tagName, "class:", oldEl?.className);
     const rendered = this.render();
+    console.log("[DEBUG] Rendered type:", typeof rendered);
 
     if (typeof rendered === "string") {
       const div = document.createElement("div");
       div.innerHTML = rendered;
-      const newEl = div.firstChild;
+      const newEl = div.firstChild || div;
+      console.log("[DEBUG] New element tag:", newEl?.tagName, "class:", newEl?.className);
+      console.log("[DEBUG] Replacing element...");
       oldEl.replaceWith(newEl);
       this._el = newEl;
+      console.log("[DEBUG] Element replaced successfully");
     } else if (rendered instanceof HTMLElement) {
+      console.log("[DEBUG] Rendered is HTMLElement");
       oldEl.replaceWith(rendered);
       this._el = rendered;
     }
-    this._el._component = this;
-    this.bindEvents();
-    this.didUpdate && this.didUpdate();
+    if (this._el) {
+      this._el._component = this;
+      this.bindEvents();
+      this.didUpdate && this.didUpdate();
+    }
+    console.log("[DEBUG] Component.update END for:", this.constructor.name);
   }
 
   // Get/Set state
