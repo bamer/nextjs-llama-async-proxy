@@ -1,9 +1,10 @@
 /**
- * Simple Router - History API based routing
+ * Simple Router - History API based routing - With Debug Logging
  */
 
 class Router {
   constructor(options = {}) {
+    console.log("[ROUTER] Router constructor called");
     this.routes = new Map();
     this.currentController = null;
     this.rootEl = options.root || document.getElementById("app");
@@ -11,11 +12,16 @@ class Router {
     this.layout = null;
     this.initialized = false;
     this.afterHooks = [];
-
-    window.addEventListener("popstate", () => this._handle(window.location.pathname, false));
+    console.log("[ROUTER] Router initialized");
+    
+    window.addEventListener("popstate", () => {
+      console.log("[ROUTER] Popstate event, path:", window.location.pathname);
+      this._handle(window.location.pathname, false);
+    });
   }
 
   register(path, handler) {
+    console.log("[ROUTER] Registering route:", path);
     const pattern = this._toRegex(path);
     this.routes.set(pattern, {
       path,
@@ -25,15 +31,18 @@ class Router {
   }
 
   afterEach(hook) {
+    console.log("[ROUTER] Adding afterEach hook");
     this.afterHooks.push(hook);
     return this;
   }
 
   navigate(path, data = {}) {
+    console.log("[ROUTER] navigate() called:", path, data);
     const url = new URL(path, window.location.origin);
     Object.entries(data).forEach(([k, v]) => url.searchParams.set(k, v));
     const newPath = url.pathname + url.search;
     if (newPath !== window.location.pathname + window.location.search) {
+      console.log("[ROUTER] Pushing state:", newPath);
       window.history.pushState(data, "", newPath);
     }
     this._handle(newPath, false);
@@ -44,14 +53,22 @@ class Router {
   getPath() {
     return window.location.pathname;
   }
+  
   getQuery() {
     return Object.fromEntries(new URLSearchParams(window.location.search));
   }
 
   start() {
-    if (this.initialized) return this;
+    console.log("[ROUTER] start() called");
+    if (this.initialized) {
+      console.log("[ROUTER] Already initialized, skipping");
+      return this;
+    }
+    
+    console.log("[ROUTER] Clearing root element");
     this.rootEl.innerHTML = "";
 
+    console.log("[ROUTER] Creating layout");
     this.layout = new Layout({});
     const layoutEl = this.layout.render();
     this.rootEl.appendChild(layoutEl);
@@ -60,9 +77,13 @@ class Router {
     this._callDidMount(layoutEl);
 
     this.contentEl = document.getElementById("page-content") || this.rootEl;
+    console.log("[ROUTER] Content element:", this.contentEl?.tagName);
+    
     this.initialized = true;
+    console.log("[ROUTER] Router initialized");
 
     const path = window.location.pathname;
+    console.log("[ROUTER] Handling initial path:", path);
     this._handle(path, true);
     this._dispatchTitle(path);
 
@@ -70,54 +91,82 @@ class Router {
   }
 
   async _handle(path) {
-    const route = this._match(path);
-
+    console.log("[ROUTER] _handle() called with path:", path);
+    
+    // Cleanup previous controller
     if (this.currentController) {
+      console.log("[ROUTER] Destroying previous controller:", this.currentController?.constructor?.name);
       this.currentController.willUnmount && this.currentController.willUnmount();
       this.currentController.destroy && this.currentController.destroy();
       this.currentController = null;
     }
 
-    if (!route) return;
+    const route = this._match(path);
+    console.log("[ROUTER] Matched route:", route?.path || "null");
 
+    if (!route) {
+      console.log("[ROUTER] No route found for:", path);
+      return;
+    }
+
+    console.log("[ROUTER] Creating controller for:", route.path);
     this.currentController = this._create(route.handler, path, route.params);
 
-    if (!this.contentEl) return;
+    if (!this.contentEl) {
+      console.log("[ROUTER] No content element found");
+      return;
+    }
+    
+    console.log("[ROUTER] Clearing content element");
     this.contentEl.innerHTML = "";
 
+    console.log("[ROUTER] Calling controller.render()");
     const result = this.currentController.render();
 
     // Handle both sync and async render
     if (result instanceof Promise) {
+      console.log("[ROUTER] Render returned Promise, awaiting...");
       const el = await result;
       if (el) {
+        console.log("[ROUTER] Appending async element:", el.className);
         this.contentEl.appendChild(el);
         this._callDidMount(el);
       }
     } else if (result) {
+      console.log("[ROUTER] Appending element:", result.className);
       this.contentEl.appendChild(result);
       this._callDidMount(result);
     }
 
     if (this.currentController.didMount) {
+      console.log("[ROUTER] Calling didMount");
       this.currentController.didMount();
     }
 
     // Run after hooks
+    console.log("[ROUTER] Running", this.afterHooks.length, "after hooks");
     this.afterHooks.forEach((h) => h(path, route));
+    console.log("[ROUTER] _handle() complete");
   }
 
   _create(handler, path, params) {
+    console.log("[ROUTER] _create() called with path:", path, "params:", params);
     let ctrl;
+    
     if (typeof handler === "function") {
       ctrl = handler({ path, params });
+      console.log("[ROUTER] Created controller from function:", ctrl?.constructor?.name);
     } else if (handler.render && typeof handler.render === "function") {
       ctrl = handler.render({ path, params });
+      console.log("[ROUTER] Created controller from render:", ctrl?.constructor?.name);
     } else if (handler.controller) {
       ctrl = new handler.controller(handler.options || {});
+      console.log("[ROUTER] Created controller from class:", ctrl?.constructor?.name);
     } else {
+      console.log("[ROUTER] No valid handler found");
       return null;
     }
+    
     ctrl.router = this;
     ctrl.path = path;
     ctrl.params = params;
@@ -126,9 +175,11 @@ class Router {
   }
 
   _match(path) {
+    console.log("[ROUTER] _match() looking for:", path);
     for (const [pattern, route] of this.routes) {
       const m = pattern.exec(path);
       if (m) {
+        console.log("[ROUTER] Found match:", route.path);
         const params = {};
         route.path.split("/").forEach((seg, i) => {
           if (seg.startsWith(":")) {
@@ -138,6 +189,7 @@ class Router {
         return { ...route, params };
       }
     }
+    console.log("[ROUTER] No match found");
     return null;
   }
 
@@ -166,3 +218,4 @@ class Router {
 }
 
 window.Router = Router;
+console.log("[ROUTER] Router class loaded");

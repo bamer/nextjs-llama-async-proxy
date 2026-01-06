@@ -1,14 +1,16 @@
 /**
- * Simple Component Base Class
+ * Simple Component Base Class - With Debug Logging
  */
 
 class Component {
   constructor(props = {}) {
+    console.log("[DEBUG] Component constructor called:", this.constructor.name);
     this.props = props;
     this.state = {};
     this._el = null;
     this._mounted = false;
     this._events = {};
+    console.log("[DEBUG] Component constructor END:", this.constructor.name);
   }
 
   // Override in subclasses
@@ -18,11 +20,15 @@ class Component {
 
   // Mount to DOM
   mount(parent) {
+    console.log("[DEBUG] Component.mount() called:", this.constructor.name);
     if (typeof parent === "string") parent = document.querySelector(parent);
     if (!parent) throw new Error("Parent not found");
 
     this.willMount && this.willMount();
+    console.log("[DEBUG] Component willMount called:", this.constructor.name);
+    
     const rendered = this.render();
+    console.log("[DEBUG] Component render returned:", typeof rendered);
 
     if (typeof rendered === "string") {
       const div = document.createElement("div");
@@ -33,44 +39,57 @@ class Component {
     }
 
     if (this._el) {
+      console.log("[DEBUG] Element created:", this._el.tagName, this._el.className);
       this._el._component = this;
       this.bindEvents();
       parent.appendChild(this._el);
       this._mounted = true;
       this.didMount && this.didMount();
+      console.log("[DEBUG] Component mounted:", this.constructor.name);
     }
     return this;
   }
 
   // Update state and re-render
   setState(updates) {
+    console.log("[DEBUG] Component.setState() called:", this.constructor.name, Object.keys(updates));
     this.state = { ...this.state, ...updates };
     if (this._el) {
+      console.log("[DEBUG] Component.update() called:", this.constructor.name);
       this.update();
+    } else {
+      console.warn("[DEBUG] Component has no _el, cannot update:", this.constructor.name);
     }
     return this;
   }
 
   // Re-render - simple full replacement (native approach)
   update() {
+    console.log("[DEBUG] Component.update() START:", this.constructor.name);
     const oldEl = this._el;
+    console.log("[DEBUG] Old element:", oldEl?.tagName, oldEl?.className);
+    
     const rendered = this.render();
+    console.log("[DEBUG] Rendered:", typeof rendered);
 
     if (typeof rendered === "string") {
       const div = document.createElement("div");
       div.innerHTML = rendered;
       const newEl = div.firstChild || div;
+      console.log("[DEBUG] New element:", newEl.tagName, newEl.className);
       oldEl.replaceWith(newEl);
       this._el = newEl;
     } else if (rendered instanceof HTMLElement) {
       oldEl.replaceWith(rendered);
       this._el = rendered;
     }
+    
     if (this._el) {
       this._el._component = this;
       this.bindEvents();
       this.didUpdate && this.didUpdate();
     }
+    console.log("[DEBUG] Component.update() END:", this.constructor.name);
   }
 
   // Get/Set state
@@ -84,10 +103,15 @@ class Component {
   }
 
   bindEvents() {
+    console.log("[DEBUG] Component.bindEvents() called:", this.constructor.name);
     const map = this.getEventMap();
+    console.log("[DEBUG] Event map:", Object.keys(map).length, "events");
+    
     Object.entries(map).forEach(([spec, handler]) => {
       const [event, selector] = spec.split(" ");
       const fn = typeof handler === "string" ? this[handler].bind(this) : handler.bind(this);
+      console.log("[DEBUG] Binding event:", event, selector || "(no selector)");
+      
       if (selector) {
         this._el.addEventListener(event, (e) => {
           const target = e.target.closest(selector);
@@ -101,6 +125,7 @@ class Component {
 
   // Cleanup
   destroy() {
+    console.log("[DEBUG] Component.destroy() called:", this.constructor.name);
     this.willDestroy && this.willDestroy();
     if (this._el && this._el.parentNode) {
       this._el.parentNode.removeChild(this._el);
@@ -108,10 +133,13 @@ class Component {
     this._el = null;
     this._mounted = false;
     this.didDestroy && this.didDestroy();
+    console.log("[DEBUG] Component destroyed:", this.constructor.name);
   }
 
   // Element creator (h)
   static h(tag, attrs = {}, ...children) {
+    console.log("[DEBUG] Component.h() called:", tag, Object.keys(attrs || {}).length, "attrs");
+    
     // Handle Component classes
     if (typeof tag === "function" && tag.prototype instanceof Component) {
       const comp = new tag(attrs);
@@ -170,3 +198,4 @@ class Component {
 }
 
 window.Component = Component;
+console.log("[DEBUG] Component class loaded");

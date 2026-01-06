@@ -152,11 +152,11 @@ async function llamaApiRequest(endpoint, method = "GET", body = null) {
   });
 }
 
-// Start llama-server in ROUTER MODE (multi-model support)
-async function startLlamaServerRouter(modelsDir, options = {}) {
-  console.log("[LLAMA] === STARTING LLAMA-SERVER IN ROUTER MODE ===");
-  console.log("[LLAMA] Models directory:", modelsDir);
-  console.log("[LLAMA] Options:", options);
+  // Start llama-server in ROUTER MODE (multi-model support)
+  async function startLlamaServerRouter(modelsDir, db, options = {}) {
+    console.log("[LLAMA] === STARTING LLAMA-SERVER IN ROUTER MODE ===");
+    console.log("[LLAMA] Models directory:", modelsDir);
+    console.log("[LLAMA] Options:", options);
 
   // Find llama-server binary
   const llamaBin = findLlamaServer();
@@ -174,10 +174,23 @@ async function startLlamaServerRouter(modelsDir, options = {}) {
     killLlamaOnPort(p);
   }
 
-  // Find available port
-  llamaServerPort = await findAvailablePort();
+  // Get port from config, or find available port
+  const config = db.getConfig();
+  const configuredPort = config.port || 8080;
+  console.log("[LLAMA] Configured port:", configuredPort);
+  
+  // Check if configured port is available, otherwise find another
+  let llamaServerPort;
+  if (!(await isPortInUse(configuredPort))) {
+    llamaServerPort = configuredPort;
+    console.log("[LLAMA] Using configured port:", llamaServerPort);
+  } else {
+    llamaServerPort = await findAvailablePort();
+    console.log("[LLAMA] Configured port not available, using:", llamaServerPort);
+  }
+  
   llamaServerUrl = `http://127.0.0.1:${llamaServerPort}`;
-  console.log("[LLAMA] Using port:", llamaServerPort);
+  console.log("[LLAMA] Final port:", llamaServerPort);
 
   // Check if models directory exists
   if (!fs.existsSync(modelsDir)) {
@@ -1078,7 +1091,7 @@ export function registerHandlers(io, db, ggufParser) {
         console.log("[DEBUG] llama:start: Starting router with dir:", modelsDir);
 
         // Start llama-server in router mode
-        startLlamaServerRouter(modelsDir, {
+        startLlamaServerRouter(modelsDir, db, {
           maxModels: settings.maxModelsLoaded || 4,
           slots: settings.parallelSlots || 1,
           threadsHttp: settings.parallelSlots || 1,
