@@ -180,7 +180,6 @@ async function llamaApiRequest(endpoint, method = "GET", body = null) {
   console.log("[LLAMA] Configured port:", configuredPort);
   
   // Check if configured port is available, otherwise find another
-  let llamaServerPort;
   if (!(await isPortInUse(configuredPort))) {
     llamaServerPort = configuredPort;
     console.log("[LLAMA] Using configured port:", llamaServerPort);
@@ -1082,8 +1081,13 @@ export function registerHandlers(io, db, ggufParser) {
         const config = db.getConfig();
         const settings = db.getMeta("user_settings") || {};
 
+        console.log("[DEBUG] llama:start: config.port =", config.port);
+        console.log("[DEBUG] llama:start: config.baseModelsPath =", config.baseModelsPath);
+        console.log("[DEBUG] llama:start: settings =", JSON.stringify(settings).substring(0, 200));
+
         const modelsDir = config.baseModelsPath;
         if (!modelsDir) {
+          console.log("[DEBUG] llama:start: ERROR - No models directory configured");
           err(socket, "llama:start:result", "No models directory configured", id);
           return;
         }
