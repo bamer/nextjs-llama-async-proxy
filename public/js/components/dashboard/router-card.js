@@ -35,7 +35,7 @@ class RouterCard extends Component {
   }
 
   render() {
-    const isRunning = this.state.status?.status === "running";
+    const isRunning = this.state.status?.port;
     const displayPort = this.state.status?.port || this.state.configPort || 8080;
     const routerModels = this.state.routerStatus?.models || [];
     const loadedCount = routerModels.filter((x) => x.state === "loaded").length;

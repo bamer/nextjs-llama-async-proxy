@@ -124,11 +124,14 @@ class ChartsSection extends Component {
     );
     if (!canvas) return;
 
+    let retries = 0;
+    const maxRetries = 20; // Max 1 second of retries (20 * 50ms)
+
     const checkDimensions = () => {
       const rect = canvas.getBoundingClientRect();
-      console.log("[CHARTS-SECTION] Canvas " + type + " dimensions:", rect.width, "x", rect.height);
-
+      
       if (rect.width > 0 && rect.height > 0) {
+        console.log("[CHARTS-SECTION] Canvas " + type + " dimensions:", rect.width, "x", rect.height);
         // Explicitly set canvas width/height attributes
         canvas.width = Math.round(rect.width * (window.devicePixelRatio || 1));
         canvas.height = Math.round(rect.height * (window.devicePixelRatio || 1));
@@ -146,14 +149,18 @@ class ChartsSection extends Component {
 
         // Update visibility
         this._updateVisibility();
-      } else {
+      } else if (retries < maxRetries) {
         // Canvas doesn't have dimensions yet, retry
+        retries++;
         setTimeout(checkDimensions, 50);
+      } else {
+        // Give up after max retries
+        console.warn("[CHARTS-SECTION] Canvas " + type + " failed to get dimensions after " + maxRetries + " retries");
       }
     };
 
-    // Start checking dimensions
-    setTimeout(checkDimensions, 50);
+    // Start checking dimensions immediately
+    checkDimensions();
   }
 
   /**
