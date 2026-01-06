@@ -134,7 +134,7 @@ class Component {
 
   _cleanupEvents() {
     if (!this._delegatedHandlers) return;
-    
+
     Object.entries(this._delegatedHandlers).forEach(([key, handler]) => {
       const [event] = key.split("|");
       document.removeEventListener(event, handler, false);
