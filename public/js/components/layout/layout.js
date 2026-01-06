@@ -4,7 +4,9 @@
 
 class Layout extends Component {
   render() {
-    return Component.h("div", { className: "app-container" },
+    return Component.h(
+      "div",
+      { className: "app-container" },
       Component.h(Sidebar, {}),
       Component.h(MainContent, {})
     );
@@ -12,21 +14,52 @@ class Layout extends Component {
 }
 
 class Sidebar extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { collapsed: localStorage.getItem("sidebarCollapsed") === "true" };
+  }
+
   render() {
-    return Component.h("aside", { className: "sidebar" },
-      Component.h("div", { className: "sidebar-header" },
+    return Component.h(
+      "aside",
+      { className: `sidebar ${this.state.collapsed ? "collapsed" : ""}` },
+      Component.h(
+        "div",
+        { className: "sidebar-header" },
         Component.h("span", { className: "logo-icon" }, "🦙"),
         Component.h("span", { className: "logo-text" }, "Llama Proxy")
       ),
-      Component.h("nav", { className: "sidebar-nav" },
-        Component.h("a", { href: "/", className: "nav-link", "data-page": "dashboard" }, "📊 Dashboard"),
-        Component.h("a", { href: "/models", className: "nav-link", "data-page": "models" }, "📁 Models"),
-        Component.h("a", { href: "/monitoring", className: "nav-link", "data-page": "monitoring" }, "📈 Monitoring"),
+      Component.h(
+        "nav",
+        { className: "sidebar-nav" },
+        Component.h(
+          "a",
+          { href: "/", className: "nav-link", "data-page": "dashboard" },
+          "📊 Dashboard"
+        ),
+        Component.h(
+          "a",
+          { href: "/models", className: "nav-link", "data-page": "models" },
+          "📁 Models"
+        ),
+        Component.h(
+          "a",
+          { href: "/monitoring", className: "nav-link", "data-page": "monitoring" },
+          "📈 Monitoring"
+        ),
         Component.h("a", { href: "/logs", className: "nav-link", "data-page": "logs" }, "📋 Logs"),
-        Component.h("a", { href: "/settings", className: "nav-link", "data-page": "settings" }, "⚙️ Settings")
+        Component.h(
+          "a",
+          { href: "/settings", className: "nav-link", "data-page": "settings" },
+          "⚙️ Settings"
+        )
       ),
-      Component.h("div", { className: "sidebar-footer" },
-        Component.h("div", { className: "connection-status", id: "connection-status" },
+      Component.h(
+        "div",
+        { className: "sidebar-footer" },
+        Component.h(
+          "div",
+          { className: "connection-status", id: "connection-status" },
           Component.h("span", { className: "dot disconnected" }),
           Component.h("span", { className: "text" }, "Disconnected")
         )
@@ -43,17 +76,31 @@ class Sidebar extends Component {
     if (t) {
       e.preventDefault();
       const p = t.dataset.page;
-      window.router.navigate(`/${  p === "dashboard" ? "" : p}`);
+      window.router.navigate(`/${p === "dashboard" ? "" : p}`);
+    }
+  }
+
+  didMount() {
+    // Restore collapsed state
+    const collapsed = localStorage.getItem("sidebarCollapsed") === "true";
+    if (collapsed) {
+      document.querySelector(".sidebar")?.classList.add("collapsed");
     }
   }
 }
 
 class MainContent extends Component {
   render() {
-    return Component.h("main", { className: "main-content" },
+    return Component.h(
+      "main",
+      { className: "main-content" },
       Component.h(Header, {}),
-      Component.h("div", { id: "page-content", className: "page-content" },
-        Component.h("div", { className: "loading-screen" },
+      Component.h(
+        "div",
+        { id: "page-content", className: "page-content" },
+        Component.h(
+          "div",
+          { className: "loading-screen" },
           Component.h("div", { className: "spinner" }),
           Component.h("p", {}, "Connecting...")
         )
@@ -70,25 +117,44 @@ class Header extends Component {
   }
 
   render() {
-    return Component.h("header", { className: "page-header" },
+    return Component.h(
+      "header",
+      { className: "page-header" },
       Component.h("button", { className: "menu-btn", "data-action": "toggle" }, "☰"),
       Component.h("h1", { id: "page-title" }, this._getTitle()),
-      Component.h("div", { className: "header-status" },
-        this.state.online ?
-          Component.h("span", { className: "badge online" }, "● Online") :
-          Component.h("span", { className: "badge offline" }, "● Offline")
+      Component.h(
+        "div",
+        { className: "header-status" },
+        this.state.online
+          ? Component.h("span", { className: "badge online" }, "● Online")
+          : Component.h("span", { className: "badge offline" }, "● Offline")
       )
     );
   }
 
   _getTitle() {
     const p = window.location.pathname;
-    const titles = { "/": "Dashboard", "/models": "Models", "/monitoring": "Monitoring", "/logs": "Logs", "/settings": "Settings" };
+    const titles = {
+      "/": "Dashboard",
+      "/models": "Models",
+      "/monitoring": "Monitoring",
+      "/logs": "Logs",
+      "/settings": "Settings",
+    };
     return titles[p] || "Dashboard";
   }
 
   getEventMap() {
-    return { "click [data-action=toggle]": () => document.querySelector(".sidebar")?.classList.toggle("open") };
+    return {
+      "click [data-action=toggle]": () => {
+        const sidebar = document.querySelector(".sidebar");
+        if (sidebar) {
+          sidebar.classList.toggle("collapsed");
+          const isCollapsed = sidebar.classList.contains("collapsed");
+          localStorage.setItem("sidebarCollapsed", isCollapsed);
+        }
+      },
+    };
   }
 
   didMount() {
@@ -106,21 +172,26 @@ class Header extends Component {
   }
 
   willDestroy() {
-    if (this._route) { window.removeEventListener("routechange", this._route); window.removeEventListener("popstate", this._route); }
+    if (this._route) {
+      window.removeEventListener("routechange", this._route);
+      window.removeEventListener("popstate", this._route);
+    }
   }
 
   _updateUI(s) {
     const st = document.getElementById("connection-status");
     if (st) {
-      const dot = st.querySelector(".dot"), txt = st.querySelector(".text");
+      const dot = st.querySelector(".dot"),
+        txt = st.querySelector(".text");
       if (dot) dot.className = `dot ${s === "connected" ? "connected" : "disconnected"}`;
       if (txt) txt.textContent = s === "connected" ? "Connected" : "Disconnected";
     }
     const hs = this._el?.querySelector(".header-status");
     if (hs) {
-      hs.innerHTML = s === "connected" ?
-        "<span class=\"badge online\">● Online</span>" :
-        "<span class=\"badge offline\">● Offline</span>";
+      hs.innerHTML =
+        s === "connected"
+          ? "<span class=\"badge online\">● Online</span>"
+          : "<span class=\"badge offline\">● Offline</span>";
     }
   }
 }

@@ -134,10 +134,41 @@ select {
   background: var(--success);
 }
 
+/* Sidebar collapsed state */
+.sidebar.collapsed {
+  width: 70px;
+}
+
+.sidebar.collapsed .logo-text,
+.sidebar.collapsed .nav-link span,
+.sidebar.collapsed .text {
+  display: none;
+}
+
+.sidebar.collapsed .sidebar-header {
+  justify-content: center;
+  padding: var(--lg) var(--sm);
+}
+
+.sidebar.collapsed .sidebar-nav .nav-link {
+  text-align: center;
+  padding: var(--sm);
+}
+
+.sidebar.collapsed .sidebar-footer {
+  padding: var(--sm);
+}
+
+.sidebar.collapsed + .main-content,
+.sidebar.collapsed ~ .main-content {
+  margin-left: 70px;
+}
+
 .main-content {
   margin-left: var(--sidebar);
   flex: 1;
   min-height: 100vh;
+  transition: margin-left 0.3s ease;
 }
 
 .page-header {
@@ -316,18 +347,70 @@ select:focus {
 table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 th,
 td {
-  padding: var(--md);
+  padding: var(--sm) var(--md);
   text-align: left;
   border-bottom: 1px solid var(--gray-200);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 th {
   font-weight: 600;
   color: var(--gray-600);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
+}
+/* Models table specific column widths */
+.models-table th:nth-child(1),
+.models-table td:nth-child(1) {
+  width: 25%;
+}
+.models-table th:nth-child(2),
+.models-table td:nth-child(2) {
+  width: 80px;
+}
+.models-table th:nth-child(3),
+.models-table td:nth-child(3) {
+  width: 80px;
+}
+.models-table th:nth-child(4),
+.models-table td:nth-child(4) {
+  width: 70px;
+}
+.models-table th:nth-child(5),
+.models-table td:nth-child(5) {
+  width: 80px;
+}
+.models-table th:nth-child(6),
+.models-table td:nth-child(6) {
+  width: 70px;
+}
+.models-table th:nth-child(7),
+.models-table td:nth-child(7) {
+  width: 70px;
+}
+.models-table th:nth-child(8),
+.models-table td:nth-child(8) {
+  width: 60px;
+}
+.models-table th:nth-child(9),
+.models-table td:nth-child(9) {
+  width: 60px;
+}
+.models-table th:nth-child(10),
+.models-table td:nth-child(10) {
+  width: 80px;
+}
+.models-table th:nth-child(11),
+.models-table td:nth-child(11) {
+  width: 80px;
+}
+.models-page .models-table {
+  min-width: 900px;
 }
 
 /* Tabs */

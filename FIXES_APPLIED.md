@@ -159,7 +159,7 @@ Tests:       406 passed, 406 total ✅
    - Line 262: extractQuantization() regex fix (3 occurrences)
    - Line 427: models:scan DB query optimization
 
-2. ****tests**/server/metadata.test.js** (4 changes)
+2. \***\*tests**/server/metadata.test.js\*\* (4 changes)
    - Line 88: formatBytes() fix (test copy)
    - Lines 46-48: extractArchitecture() cleanup (test copy)
    - Line 67: extractQuantization() regex fix (test copy, 3 occurrences)

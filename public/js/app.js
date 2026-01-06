@@ -53,7 +53,10 @@ function showNotification(msg, type = "info") {
   n.className = `notification notification-${type}`;
   n.innerHTML = `<span>${msg}</span><button onclick="this.parentElement.remove()">×</button>`;
   c.appendChild(n);
-  setTimeout(() => n.remove(), 5000);
+  // Remove after 10 seconds (increased for debugging)
+  setTimeout(() => {
+    if (n.parentElement) n.remove();
+  }, 10000);
 }
 
 // Utils

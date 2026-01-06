@@ -37,6 +37,12 @@ class DB {
         params TEXT,
         quantization TEXT,
         ctx_size INTEGER DEFAULT 4096,
+        embedding_size INTEGER DEFAULT 0,
+        block_count INTEGER DEFAULT 0,
+        head_count INTEGER DEFAULT 0,
+        head_count_kv INTEGER DEFAULT 0,
+        ffn_dim INTEGER DEFAULT 0,
+        file_type INTEGER DEFAULT 0,
         batch_size INTEGER DEFAULT 512,
         threads INTEGER DEFAULT 4,
         created_at INTEGER,
@@ -65,6 +71,35 @@ class DB {
         updated_at INTEGER
       );
     `);
+
+    // Migration: Add missing columns to existing models table
+    this._migrateModelsTable();
+  }
+
+  _migrateModelsTable() {
+    try {
+      // Check if column exists
+      const columns = this.db.prepare("PRAGMA table_info(models)").all();
+      const columnNames = columns.map(c => c.name);
+
+      const migrations = [
+        { name: "embedding_size", type: "INTEGER DEFAULT 0" },
+        { name: "block_count", type: "INTEGER DEFAULT 0" },
+        { name: "head_count", type: "INTEGER DEFAULT 0" },
+        { name: "head_count_kv", type: "INTEGER DEFAULT 0" },
+        { name: "ffn_dim", type: "INTEGER DEFAULT 0" },
+        { name: "file_type", type: "INTEGER DEFAULT 0" },
+      ];
+
+      for (const mig of migrations) {
+        if (!columnNames.includes(mig.name)) {
+          console.log(`[MIGRATION] Adding column: ${mig.name}`);
+          this.db.exec(`ALTER TABLE models ADD COLUMN ${mig.name} ${mig.type}`);
+        }
+      }
+    } catch (e) {
+      console.warn("[MIGRATION] Failed:", e.message);
+    }
   }
 
   // Models
@@ -77,10 +112,19 @@ class DB {
   saveModel(model) {
     const id = model.id || `model_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const now = Math.floor(Date.now() / 1000);
+    // Columns in same order as table schema
     const query = `INSERT OR REPLACE INTO models (id, name, type, status,
       parameters, model_path, file_size, params, quantization, ctx_size,
-      batch_size, threads, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      batch_size, threads, created_at, updated_at,
+      embedding_size, block_count, head_count, head_count_kv, ffn_dim, file_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    // Helper to handle array values
+    const getValue = (val, defaultVal = 0) => {
+      if (Array.isArray(val)) return val[0] || defaultVal;
+      if (val === undefined || val === null) return defaultVal;
+      return val;
+    };
+
     this.db
       .prepare(query)
       .run(
@@ -97,11 +141,18 @@ class DB {
         model.batch_size || 512,
         model.threads || 4,
         model.created_at || now,
-        now
+        now,
+        model.embedding_size || 0,
+        model.block_count || 0,
+        model.head_count || 0,
+        model.head_count_kv || 0,
+        model.ffn_dim || 0,
+        model.file_type || 0
       );
     return this.getModel(id);
   }
   updateModel(id, updates) {
+    // Columns in table schema order
     const allowed = [
       "name",
       "type",
@@ -114,13 +165,26 @@ class DB {
       "ctx_size",
       "batch_size",
       "threads",
+      "embedding_size",
+      "block_count",
+      "head_count",
+      "head_count_kv",
+      "ffn_dim",
+      "file_type",
     ];
     const set = [];
     const vals = [];
     for (const [k, v] of Object.entries(updates)) {
       if (allowed.includes(k)) {
         set.push(`${k} = ?`);
-        vals.push(k === "parameters" ? JSON.stringify(v) : v);
+        // Handle array values (store as JSON string)
+        if (Array.isArray(v)) {
+          vals.push(JSON.stringify(v));
+        } else if (k === "parameters") {
+          vals.push(JSON.stringify(v));
+        } else {
+          vals.push(v);
+        }
       }
     }
     if (set.length === 0) return null;
@@ -131,6 +195,21 @@ class DB {
   }
   deleteModel(id) {
     return this.db.prepare("DELETE FROM models WHERE id = ?").run(id).changes > 0;
+  }
+  
+  // Delete models whose files no longer exist
+  cleanupMissingFiles() {
+    const models = this.getModels();
+    let deleted = 0;
+    for (const m of models) {
+      if (m.model_path && !fs.existsSync(m.model_path)) {
+        console.log("[DEBUG] Removing missing model:", m.name);
+        this.deleteModel(m.id);
+        deleted++;
+      }
+    }
+    console.log("[DEBUG] Cleaned up", deleted, "missing models");
+    return deleted;
   }
 
   // Metrics
@@ -211,7 +290,118 @@ class DB {
 }
 
 // GGUF Metadata Parser using @huggingface/gguf
-import { gguf } from "@huggingface/gguf";
+import { gguf, ggufAllShards } from "@huggingface/gguf";
+
+// Simple GGUF parser that doesn't depend on the buggy library
+function parseGgufHeaderSync(filePath) {
+  const metadata = {
+    architecture: "",
+    params: "",
+    ctxSize: 4096,
+    embeddingLength: 0,
+    blockCount: 0,
+    headCount: 0,
+    headCountKv: 0,
+    ffnDim: 0,
+    fileType: 0,
+  };
+
+  try {
+    const fd = fs.openSync(filePath, "r");
+    
+    // Read header (24 bytes)
+    const headerBuf = Buffer.alloc(24);
+    fs.readSync(fd, headerBuf, 0, 24, 0);
+    const headerView = new DataView(headerBuf.buffer, headerBuf.byteOffset, headerBuf.byteLength);
+    
+    // Check magic number (GGUF = 0x46554747)
+    const magic = headerView.getUint32(0, true);
+    if (magic !== 0x46554747) {
+      fs.closeSync(fd);
+      return null; // Not a GGUF file
+    }
+    
+    const version = headerView.getUint32(4, true);
+    const tensorCount = Number(headerView.getBigUint64(8, true));
+    const metadataCount = Number(headerView.getBigUint64(16, true));
+    
+    // Read metadata
+    let offset = 24;
+    const ggufMeta = {};
+    
+    for (let i = 0; i < metadataCount; i++) {
+      // Key length (uint64)
+      const lenBuf = Buffer.alloc(8);
+      fs.readSync(fd, lenBuf, 0, 8, offset);
+      const keyLen = Number(new DataView(lenBuf.buffer).getBigUint64(0, true));
+      offset += 8;
+      
+      // Key string (including null terminator)
+      const keyBuf = Buffer.alloc(keyLen);
+      fs.readSync(fd, keyBuf, 0, keyLen, offset);
+      const key = keyBuf.toString("utf8", 0, keyLen - 1);
+      offset += keyLen;
+      
+      // Value type (uint32)
+      const typeBuf = Buffer.alloc(4);
+      fs.readSync(fd, typeBuf, 0, 4, offset);
+      const type = new DataView(typeBuf.buffer).getUint32(0, true);
+      offset += 4;
+      
+      // Value based on type
+      if (type === 0) { // uint32
+        const valBuf = Buffer.alloc(4);
+        fs.readSync(fd, valBuf, 0, 4, offset);
+        ggufMeta[key] = new DataView(valBuf.buffer).getUint32(0, true);
+        offset += 4;
+      } else if (type === 8) { // string
+        const strLenBuf = Buffer.alloc(8);
+        fs.readSync(fd, strLenBuf, 0, 8, offset);
+        const strLen = Number(new DataView(strLenBuf.buffer).getBigUint64(0, true));
+        offset += 8;
+        const strBuf = Buffer.alloc(strLen);
+        fs.readSync(fd, strBuf, 0, strLen, offset);
+        ggufMeta[key] = strBuf.toString("utf8", 0, strLen - 1);
+        offset += strLen;
+      } else if (type === 4) { // float32
+        const valBuf = Buffer.alloc(4);
+        fs.readSync(fd, valBuf, 0, 4, offset);
+        ggufMeta[key] = new DataView(valBuf.buffer).getFloat32(0, true);
+        offset += 4;
+      } else {
+        // Skip unknown types
+        ggufMeta[key] = `<type:${type}>`;
+      }
+    }
+    
+    fs.closeSync(fd);
+    
+    // Extract key metadata
+    metadata.architecture = ggufMeta["general.architecture"] || "";
+    metadata.params = ggufMeta["general.size_label"] || "";
+    const arch = metadata.architecture;
+    
+    // Access metadata using flat key format with architecture prefix
+    const getMetaValue = (key, defaultVal = 0) => {
+      const val = ggufMeta[key];
+      if (Array.isArray(val)) return val[0] || defaultVal;
+      if (val === undefined || val === null) return defaultVal;
+      return val;
+    };
+    
+    metadata.ctxSize = getMetaValue(`${arch}.context_length`, 4096);
+    metadata.embeddingLength = getMetaValue(`${arch}.embedding_length`, 0);
+    metadata.blockCount = getMetaValue(`${arch}.block_count`, 0);
+    metadata.headCount = getMetaValue(`${arch}.attention.head_count`, 0);
+    metadata.headCountKv = getMetaValue(`${arch}.attention.head_count_kv`, 0);
+    metadata.ffnDim = getMetaValue(`${arch}.feed_forward_length`, 0);
+    metadata.fileType = ggufMeta["general.file_type"] || 0;
+    
+    return metadata;
+  } catch (e) {
+    return null;
+  }
+}
 
 // Map file_type integer to quantization string
 const fileTypeMap = {
@@ -244,27 +434,105 @@ async function parseGgufMetadata(filePath) {
     ctxSize: 0,
     embeddingLength: 0,
     blockCount: 0,
+    headCount: 0,
+    headCountKv: 0,
+    ffnDim: 0,
+    fileType: 0,
   };
 
   try {
     const stats = fs.statSync(filePath);
     metadata.size = stats.size;
 
-    // Read metadata from GGUF file
-    const { metadata: ggufMeta, tensorInfos } = await gguf(filePath, { allowLocalFile: true });
+    // Try our simple synchronous parser first (handles all cases)
+    const simpleResult = parseGgufHeaderSync(filePath);
+    
+    if (simpleResult && simpleResult.architecture) {
+      // Successfully parsed with simple parser
+      Object.assign(metadata, simpleResult);
+      
+      // Map file_type to quantization
+      if (metadata.fileType !== undefined && fileTypeMap[metadata.fileType]) {
+        metadata.quantization = fileTypeMap[metadata.fileType];
+      }
+      
+      console.log("[DEBUG] Used simple GGUF parser for:", path.basename(filePath));
+      console.log("[DEBUG] GGUF metadata extracted:", {
+        architecture: metadata.architecture,
+        params: metadata.params,
+        ctxSize: metadata.ctxSize,
+        blockCount: metadata.blockCount,
+        headCount: metadata.headCount,
+      });
+      
+      return metadata;
+    }
+    
+    // Fallback to @huggingface/gguf library for advanced features
+    console.log("[DEBUG] Simple parser failed or no architecture, trying @huggingface/gguf for:", path.basename(filePath));
+    
+    let ggufMeta = {};
+    let tensorInfos = [];
 
-    // Extract key metadata
+    try {
+      const info = await gguf(filePath, { allowLocalFile: true });
+      if (info.metadata && Object.keys(info.metadata).length > 0) {
+        ggufMeta = info.metadata;
+        tensorInfos = info.tensorInfos || [];
+        console.log("[DEBUG] Used gguf() for:", path.basename(filePath));
+      } else {
+        throw new Error("Empty metadata from gguf()");
+      }
+    } catch (ggufErr) {
+      console.log("[DEBUG] gguf() failed, trying ggufAllShards() for:", path.basename(filePath), ggufErr.message);
+      try {
+        const allShardsInfo = await ggufAllShards(filePath, { allowLocalFile: true });
+        if (allShardsInfo.shards && allShardsInfo.shards.length > 0) {
+          const firstShard = allShardsInfo.shards[0];
+          ggufMeta = firstShard.metadata || {};
+          tensorInfos = firstShard.tensorInfos || [];
+          console.log("[DEBUG] Used ggufAllShards() for:", path.basename(filePath));
+        } else {
+          throw new Error("No shards found");
+        }
+      } catch (shardsErr) {
+        // Both failed, use regex fallback
+        console.log("[DEBUG] Both gguf() and ggufAllShards() failed, using filename fallback for:", path.basename(filePath));
+        const fileName = path.basename(filePath);
+        metadata.architecture = extractArchitecture(fileName);
+        metadata.params = extractParams(fileName);
+        metadata.quantization = extractQuantization(fileName);
+        const ctxMatch = fileName.match(/(\d+)k?ctx/i) || fileName.match(/ctx[-_]?(\d+)/i);
+        if (ctxMatch) metadata.ctxSize = parseInt(ctxMatch[1]) * 1000;
+        return metadata;
+      }
+    }
+
+    // Extract key metadata - GGUF stores keys with architecture prefix as flat keys
+    // e.g., "llama.block_count", "llama.context_length", not nested objects
     metadata.architecture = ggufMeta["general.architecture"] || "";
     metadata.params = ggufMeta["general.size_label"] || "";
-    const archMeta = ggufMeta[metadata.architecture] || {};
-    metadata.ctxSize = archMeta.context_length || 4096;
-    metadata.embeddingLength = archMeta.embedding_length || 0;
-    metadata.blockCount = archMeta.block_count || 0;
+    const arch = metadata.architecture;
+
+    // Access metadata using flat key format with architecture prefix
+    // Handle array values (convert to first element or JSON string)
+    const getMetaValue = (key, defaultVal = 0) => {
+      const val = ggufMeta[key];
+      if (Array.isArray(val)) return val[0] || defaultVal; // Take first element for arrays
+      if (val === undefined || val === null) return defaultVal;
+      return val;
+    };
+    metadata.ctxSize = getMetaValue(`${arch}.context_length`, 4096);
+    metadata.embeddingLength = getMetaValue(`${arch}.embedding_length`, 0);
+    metadata.blockCount = getMetaValue(`${arch}.block_count`, 0);
+    metadata.headCount = getMetaValue(`${arch}.attention.head_count`, 0);
+    metadata.headCountKv = getMetaValue(`${arch}.attention.head_count_kv`, 0);
+    metadata.ffnDim = getMetaValue(`${arch}.feed_forward_length`, 0);
+    metadata.fileType = ggufMeta["general.file_type"] || 0;
 
     // Map file_type to quantization
-    const fileType = ggufMeta["general.file_type"];
-    if (fileType !== undefined && fileTypeMap[fileType]) {
-      metadata.quantization = fileTypeMap[fileType];
+    if (metadata.fileType !== undefined && fileTypeMap[metadata.fileType]) {
+      metadata.quantization = fileTypeMap[metadata.fileType];
     }
 
     console.log("[DEBUG] GGUF metadata extracted:", {
@@ -273,7 +541,12 @@ async function parseGgufMetadata(filePath) {
       params: metadata.params,
       quantization: metadata.quantization,
       ctxSize: metadata.ctxSize,
-      totalTensors: tensorInfos.length,
+      embeddingLength: metadata.embeddingLength,
+      blockCount: metadata.blockCount,
+      headCount: metadata.headCount,
+      headCountKv: metadata.headCountKv,
+      ffnDim: metadata.ffnDim,
+      totalTensors: tensorInfos?.length || 0,
     });
   } catch (e) {
     console.warn("[DEBUG] Failed to parse GGUF metadata:", e.message);
@@ -479,6 +752,18 @@ function setupHandlers(io, db) {
         err(socket, "models:delete:result", e.message, id);
       }
     });
+    socket.on("models:cleanup", (req) => {
+      const id = req?.requestId || Date.now();
+      console.log("[DEBUG] models:cleanup request received", { requestId: id });
+      try {
+        const deletedCount = db.cleanupMissingFiles();
+        console.log("[DEBUG] Cleanup complete:", deletedCount, "models removed");
+        ok(socket, "models:cleanup:result", { deletedCount }, id);
+      } catch (e) {
+        console.error("[DEBUG] models:cleanup error:", e.message);
+        err(socket, "models:cleanup:result", e.message, id);
+      }
+    });
     socket.on("models:start", (req) => {
       const id = req?.requestId || Date.now();
       console.log("[DEBUG] models:start request", { requestId: id, modelId: req?.modelId });
@@ -510,17 +795,63 @@ function setupHandlers(io, db) {
       console.log("[DEBUG] models:scan request received", { requestId: id });
       try {
         const config = db.getConfig();
-        const modelsDir = config.baseModelsPath || path.join(os.homedir(), "models");
-        console.log("[DEBUG] === SCAN DEBUG ===");
-        console.log("[DEBUG] Config baseModelsPath:", config.baseModelsPath);
-        console.log("[DEBUG] Resolved modelsDir:", modelsDir);
-        console.log("[DEBUG] Current DB models count:", db.getModels().length);
-        const exts = [".gguf", ".bin", ".safetensors", ".pt", ".pth"];
-        let scanned = 0;
-        let existingCount = 0;
+        const modelsDir = config.baseModelsPath;
+        console.log("[DEBUG] === SCAN START ===");
+        console.log("[DEBUG] requestId:", id);
+        console.log("[DEBUG] baseModelsPath:", modelsDir);
         const dirExists = fs.existsSync(modelsDir);
-        console.log("[DEBUG] Directory exists:", dirExists);
+        console.log("[DEBUG] dirExists:", dirExists);
+
+        // Scan can take a while with many models - no timeout
+        // const timeoutMs = 90000;
+        // const timeoutPromise = new Promise((_, reject) => {
+        //   setTimeout(() => reject(new Error("Scan timeout")), timeoutMs);
+        // });
+
+        let scanned = 0;
+        let updated = 0;
+        let existingCount = 0;
+        let scanError = null;
+
         if (dirExists) {
+          console.log("[DEBUG] Starting file search...");
+          const exts = [".gguf", ".bin", ".safetensors", ".pt", ".pth"];
+          
+          // Patterns to exclude (non-model files)
+          const excludePatterns = [
+            /mmproj/i,           // Multimodal projector files
+            /-proj$/i,           // Projector files ending with -proj
+            /\.factory$/i,       // Factory config files
+            /^\_/i,              // Files starting with underscore
+          ];
+
+          const isValidModelFile = (fileName, fullPath) => {
+            // Check exclude patterns
+            if (excludePatterns.some(p => p.test(fileName))) {
+              console.log("[DEBUG] Excluding:", fileName);
+              return false;
+            }
+            
+            // For .gguf files, verify they have valid GGUF magic bytes
+            if (fileName.toLowerCase().endsWith(".gguf")) {
+              try {
+                const fd = fs.openSync(fullPath, "r");
+                const magicBuf = Buffer.alloc(4);
+                fs.readSync(fd, magicBuf, 0, 4, 0);
+                fs.closeSync(fd);
+                const magic = new DataView(magicBuf.buffer).getUint32(0, true);
+                if (magic !== 0x46554747) { // GGUF magic
+                  console.log("[DEBUG] Excluding non-GGUF file:", fileName);
+                  return false;
+                }
+              } catch (e) {
+                return false;
+              }
+            }
+            
+            return true;
+          };
+
           const findModelFiles = (dir) => {
             const results = [];
             try {
@@ -531,7 +862,8 @@ function setupHandlers(io, db) {
                   results.push(...findModelFiles(fullPath));
                 } else if (
                   entry.isFile() &&
-                  exts.some((e) => entry.name.toLowerCase().endsWith(e))
+                  exts.some((e) => entry.name.toLowerCase().endsWith(e)) &&
+                  isValidModelFile(entry.name, fullPath)
                 ) {
                   results.push(fullPath);
                 }
@@ -542,48 +874,92 @@ function setupHandlers(io, db) {
             return results;
           };
 
-          const modelFiles = findModelFiles(modelsDir);
-          console.log("[DEBUG] Found model files:", modelFiles.length);
-          const existingModels = db.getModels();
+          const scanPromise = (async () => {
+            const modelFiles = findModelFiles(modelsDir);
+            console.log("[DEBUG] Found", modelFiles.length, "model files");
+            const existingModels = db.getModels();
 
-          for (const fullPath of modelFiles) {
-            const fileName = path.basename(fullPath);
-            const existing = existingModels.find((m) => m.model_path === fullPath);
-            if (!existing) {
-              console.log("[DEBUG] Adding NEW model:", fileName);
-              // Use async GGUF parser
-              const meta = await parseGgufMetadata(fullPath);
-              console.log("[DEBUG] Model metadata:", meta);
-              db.saveModel({
-                name: fileName.replace(/\.[^/.]+$/, ""),
-                type: meta.architecture || "llama",
-                status: "idle",
-                model_path: fullPath,
-                file_size: meta.size,
-                params: meta.params,
-                quantization: meta.quantization,
-                ctx_size: meta.ctxSize || 4096,
-              });
-              scanned++;
-            } else {
-              existingCount++;
+            for (const fullPath of modelFiles) {
+              try {
+                const fileName = path.basename(fullPath);
+                const existing = existingModels.find((m) => m.model_path === fullPath);
+                if (!existing) {
+                  console.log("[DEBUG] Adding NEW model:", fileName);
+                  const meta = await parseGgufMetadata(fullPath);
+                  db.saveModel({
+                    name: fileName.replace(/\.[^/.]+$/, ""),
+                    type: meta.architecture || "llama",
+                    status: "idle",
+                    model_path: fullPath,
+                    file_size: meta.size,
+                    params: meta.params,
+                    quantization: meta.quantization,
+                    ctx_size: meta.ctxSize || 4096,
+                    embedding_size: meta.embeddingLength || 0,
+                    block_count: meta.blockCount || 0,
+                    head_count: meta.headCount || 0,
+                    head_count_kv: meta.headCountKv || 0,
+                    ffn_dim: meta.ffnDim || 0,
+                    file_type: meta.fileType || 0,
+                  });
+                  scanned++;
+                } else {
+                  const meta = await parseGgufMetadata(fullPath);
+                  const needsBasicUpdate = !existing.params || !existing.quantization || !existing.file_size;
+                  const needsGgufUpdate = !existing.ctx_size || !existing.block_count || existing.ctx_size === 4096;
+                  if (needsBasicUpdate || needsGgufUpdate) {
+                    db.updateModel(existing.id, {
+                      file_size: meta.size || existing.file_size,
+                      params: meta.params || existing.params,
+                      quantization: meta.quantization || existing.quantization,
+                      type: meta.architecture || existing.type,
+                      ctx_size: meta.ctxSize || existing.ctx_size,
+                      embedding_size: meta.embeddingLength || existing.embedding_size,
+                      block_count: meta.blockCount || existing.block_count,
+                      head_count: meta.headCount || existing.head_count,
+                      head_count_kv: meta.headCountKv || existing.head_count_kv,
+                      ffn_dim: meta.ffnDim || existing.ffn_dim,
+                      file_type: meta.fileType || existing.file_type,
+                    });
+                    updated++;
+                  }
+                  existingCount++;
+                }
+              } catch (fileError) {
+                console.warn("[DEBUG] Error processing file", fullPath, ":", fileError.message);
+              }
             }
-          }
+          })();
+
+          // Wait for scan to complete (no timeout)
+          await scanPromise;
         } else {
-          console.log("[DEBUG] ERROR: Directory does not exist!");
+          console.log("[DEBUG] Directory does not exist:", modelsDir);
         }
+
         const allModels = db.getModels();
-        console.log("[DEBUG] Scan complete:", {
-          new: scanned,
-          existing: existingCount,
-          total: allModels.length,
-        });
-        console.log("[DEBUG] === END SCAN DEBUG ===");
-        io.emit("models:scanned", { scanned, total: allModels.length });
-        ok(socket, "models:scan:result", { scanned, models: allModels }, id);
+        console.log("[DEBUG] Scan complete:");
+        console.log("[DEBUG]   scanned:", scanned);
+        console.log("[DEBUG]   updated:", updated);
+        console.log("[DEBUG]   total in DB:", allModels.length);
+        console.log("[DEBUG] === SCAN END ===");
+
+        // Send response FIRST, before broadcast
+        console.log("[DEBUG] Sending models:scan:result response...");
+        ok(socket, "models:scan:result", { scanned, updated, total: allModels.length }, id);
+        console.log("[DEBUG] Response sent!");
+
+        // Then broadcast
+        console.log("[DEBUG] Emitting models:scanned broadcast...");
+        io.emit("models:scanned", { scanned, updated, total: allModels.length });
       } catch (e) {
-        console.error("[DEBUG] Scan error:", e.message, e.stack);
-        err(socket, "models:scan:result", e.message, id);
+        console.error("[DEBUG] Scan error:", e.message);
+        console.error("[DEBUG] Scan stack:", e.stack);
+        try {
+          err(socket, "models:scan:result", e.message, id);
+        } catch (sendErr) {
+          console.error("[DEBUG] Failed to send error response:", sendErr.message);
+        }
       }
     });
 

@@ -104,7 +104,7 @@ Time:        1.95s
 ## Files Modified
 
 1. **server.js** - 4 functions updated
-2. ****tests**/server/metadata.test.js** - Test copy updated + expectations aligned
+2. \***\*tests**/server/metadata.test.js\*\* - Test copy updated + expectations aligned
 
 ---
 
