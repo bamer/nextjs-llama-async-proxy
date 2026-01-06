@@ -1,5 +1,5 @@
 /**
- * Unified Dashboard Page
+ * Unified Dashboard Page with Chart.js
  * Combines Dashboard and Monitoring functionality
  */
 
@@ -7,14 +7,14 @@ class DashboardController {
   constructor(options = {}) {
     this.router = options.router || window.router;
     this.comp = null;
-    this.chartInterval = null;
+    this.chartUpdateInterval = null;
   }
 
   init() {}
 
   willUnmount() {
-    if (this.chartInterval) {
-      clearInterval(this.chartInterval);
+    if (this.chartUpdateInterval) {
+      clearInterval(this.chartUpdateInterval);
     }
   }
 
@@ -33,20 +33,30 @@ class DashboardController {
       const config = stateManager.get("config") || {};
       const history = stateManager.get("metricsHistory") || [];
 
-      this.comp = new DashboardPage({ models, metrics, status, routerStatus, config, history });
+      this.comp = new DashboardPage({
+        models,
+        metrics,
+        status,
+        routerStatus,
+        config,
+        history,
+        controller: this,
+      });
 
       const el = this.comp.render();
 
       this.comp._el = el;
-      this.comp._controller = this;
       el._component = this.comp;
 
       this.comp.bindEvents();
 
-      // Initialize real-time chart updates
-      setTimeout(() => {
-        this._initChartUpdates();
-      }, 1000);
+      // Initialize charts after DOM is ready
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          this.comp.initCharts();
+          this._startChartUpdates();
+        }, 50);
+      });
 
       return el;
     } catch (e) {
@@ -55,9 +65,8 @@ class DashboardController {
     }
   }
 
-  _initChartUpdates() {
-    // Update charts every 3 seconds
-    this.chartInterval = setInterval(async () => {
+  _startChartUpdates() {
+    this.chartUpdateInterval = setInterval(async () => {
       try {
         const d = await stateManager.getMetrics();
         const h = await stateManager.getMetricsHistory({ limit: 60 });
@@ -65,7 +74,7 @@ class DashboardController {
         stateManager.set("metricsHistory", h.history || []);
 
         if (this.comp) {
-          this.comp.updateCharts(d.metrics || null, h.history || []);
+          this.comp.updateChartsDirectly(d.metrics || null, h.history || []);
         }
       } catch (e) {
         // Silently handle update errors
@@ -118,6 +127,11 @@ class DashboardPage extends Component {
     };
     const gpuMetrics = metrics.gpu || { usage: 0, memoryUsed: 0, memoryTotal: 0 };
 
+    // Chart instances stored as instance variables
+    this.cpuChart = null;
+    this.gpuChart = null;
+    this.chartsReady = false;
+
     this.state = {
       models: props.models || [],
       metrics: metrics,
@@ -128,7 +142,19 @@ class DashboardPage extends Component {
       history: props.history || [],
       loading: false,
       chartType: "cpu",
+      chartStats: this._calculateStats(props.history || []),
     };
+  }
+
+  _calculateStats(history) {
+    if (history.length === 0) {
+      return { current: 0, avg: 0, max: 0 };
+    }
+    const values = history.map((h) => h.cpu?.usage || 0);
+    const current = values[values.length - 1] || 0;
+    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    const max = Math.max(...values);
+    return { current, avg, max };
   }
 
   didMount() {
@@ -143,20 +169,229 @@ class DashboardPage extends Component {
         this.setState({ routerStatus: rs });
       })
     );
-    this.unsubscribers.push(
-      stateManager.subscribe("metrics", (metrics) => {
-        const gpuMetrics = metrics?.gpu || { usage: 0, memoryUsed: 0, memoryTotal: 0 };
-        this.setState({ metrics, gpuMetrics });
-      })
-    );
   }
 
   willDestroy() {
+    this.destroyCharts();
     this.unsubscribers?.forEach((unsub) => unsub());
   }
 
-  updateCharts(metrics, history) {
-    this.setState({ metrics: metrics || this.state.metrics, history });
+  destroyCharts() {
+    if (this.cpuChart) {
+      try {
+        this.cpuChart.destroy();
+      } catch (e) {
+        // Ignore
+      }
+      this.cpuChart = null;
+    }
+    if (this.gpuChart) {
+      try {
+        this.gpuChart.destroy();
+      } catch (e) {
+        // Ignore
+      }
+      this.gpuChart = null;
+    }
+    this.chartsReady = false;
+  }
+
+  initCharts() {
+    if (this.chartsReady) return;
+
+    // Get CPU canvas
+    const cpuCanvas = document.getElementById("cpuChart");
+    if (!cpuCanvas) {
+      setTimeout(() => this.initCharts(), 100);
+      return;
+    }
+
+    // Create CPU chart
+    this._createCpuChart(cpuCanvas);
+
+    // Try to create GPU chart (might not exist yet in DOM)
+    // We'll create it lazily when needed
+    this.chartsReady = true;
+
+    // Pre-create GPU chart after a short delay
+    setTimeout(() => {
+      const gpuCanvas = document.getElementById("gpuChart");
+      if (gpuCanvas && !this.gpuChart) {
+        this._createGpuChart(gpuCanvas);
+      }
+    }, 200);
+  }
+
+  _createCpuChart(canvas) {
+    if (this.cpuChart) return;
+
+    const ctx = canvas.getContext("2d");
+    const gradient = ctx.createLinearGradient(0, 0, 0, 180);
+    gradient.addColorStop(0, "rgba(59, 130, 246, 0.4)");
+    gradient.addColorStop(1, "rgba(59, 130, 246, 0)");
+
+    const history = this.state.history || [];
+    const labels = history.map((_, i) => i.toString());
+    const data = history.map((h) => h.cpu?.usage || 0);
+
+    this.cpuChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: "CPU %",
+            data: data,
+            borderColor: "#3b82f6",
+            backgroundColor: gradient,
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 300 },
+        interaction: { intersect: false, mode: "index" },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            padding: 12,
+            titleFont: { size: 13 },
+            bodyFont: { size: 12 },
+            displayColors: false,
+            callbacks: {
+              label: (context) => `CPU: ${context.parsed.y.toFixed(1)}%`,
+            },
+          },
+        },
+        scales: {
+          x: { display: true, grid: { display: false }, ticks: { display: false } },
+          y: {
+            min: 0,
+            max: 100,
+            grid: { color: "rgba(0, 0, 0, 0.05)" },
+            ticks: { stepSize: 25, font: { size: 11 }, color: "#6b7280" },
+          },
+        },
+      },
+    });
+  }
+
+  _createGpuChart() {
+    const canvas = document.getElementById("gpuChart");
+    if (!canvas || this.gpuChart) return;
+
+    const ctx = canvas.getContext("2d");
+    const gradient = ctx.createLinearGradient(0, 0, 0, 180);
+    gradient.addColorStop(0, "rgba(139, 92, 246, 0.4)");
+    gradient.addColorStop(1, "rgba(139, 92, 246, 0)");
+
+    const history = this.state.history || [];
+    const labels = history.map((_, i) => i.toString());
+    const data = history.map((h) => h.gpu?.usage || 0);
+
+    this.gpuChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: "GPU %",
+            data: data,
+            borderColor: "#8b5cf6",
+            backgroundColor: gradient,
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 300 },
+        interaction: { intersect: false, mode: "index" },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            padding: 12,
+            titleFont: { size: 13 },
+            bodyFont: { size: 12 },
+            displayColors: false,
+            callbacks: {
+              label: (context) => `GPU: ${context.parsed.y.toFixed(1)}%`,
+            },
+          },
+        },
+        scales: {
+          x: { display: true, grid: { display: false }, ticks: { display: false } },
+          y: {
+            min: 0,
+            max: 100,
+            grid: { color: "rgba(0, 0, 0, 0.05)" },
+            ticks: { stepSize: 25, font: { size: 11 }, color: "#6b7280" },
+          },
+        },
+      },
+    });
+  }
+
+  updateChartsDirectly(metrics, history) {
+    if (!history || history.length === 0) return;
+
+    // Update CPU chart if it exists and is visible
+    if (this.cpuChart && this.state.chartType === "cpu") {
+      const labels = history.map((_, i) => i.toString());
+      const data = history.map((h) => h.cpu?.usage || 0);
+      this.cpuChart.data.labels = labels;
+      this.cpuChart.data.datasets[0].data = data;
+      this.cpuChart.update("none");
+    }
+
+    // Update GPU chart if it exists and is visible
+    if (this.gpuChart && this.state.chartType === "gpu") {
+      const labels = history.map((_, i) => i.toString());
+      const data = history.map((h) => h.gpu?.usage || 0);
+      this.gpuChart.data.labels = labels;
+      this.gpuChart.data.datasets[0].data = data;
+      this.gpuChart.update("none");
+    }
+
+    // Update chart stats without triggering full re-render
+    const stats = this._calculateStatsForType(history, this.state.chartType);
+    this._updateChartStatsDOM(stats);
+  }
+
+  _calculateStatsForType(history, type) {
+    if (history.length === 0) {
+      return { current: 0, avg: 0, max: 0 };
+    }
+    const values = history.map((h) => (type === "gpu" ? h.gpu?.usage || 0 : h.cpu?.usage || 0));
+    const current = values[values.length - 1] || 0;
+    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    const max = Math.max(...values);
+    return { current, avg, max };
+  }
+
+  _updateChartStatsDOM(stats) {
+    const statsEl = this._el?.querySelector(".chart-stats");
+    if (!statsEl) return;
+
+    const statValues = statsEl.querySelectorAll(".chart-stat-value");
+    if (statValues.length >= 3) {
+      statValues[0].textContent = `${stats.current.toFixed(1)}%`;
+      statValues[1].textContent = `${stats.avg.toFixed(1)}%`;
+      statValues[2].textContent = `${stats.max.toFixed(1)}%`;
+    }
   }
 
   _fmtUptime(s) {
@@ -164,12 +399,8 @@ class DashboardPage extends Component {
     const h = Math.floor((s % 86400) / 3600);
     const m = Math.floor((s % 3600) / 60);
 
-    if (d > 0) {
-      return `${d}d ${h}h ${m}m`;
-    }
-    if (h > 0) {
-      return `${h}h ${m}m`;
-    }
+    if (d > 0) return `${d}d ${h}h ${m}m`;
+    if (h > 0) return `${h}h ${m}m`;
     return `${m}m`;
   }
 
@@ -201,134 +432,78 @@ class DashboardPage extends Component {
       uptime: 0,
     };
     const gpu = this.state.gpuMetrics || { usage: 0, memoryUsed: 0, memoryTotal: 0 };
-    const isRunning = this.state.status?.status === "running";
-    const routerModels = this.state.routerStatus?.models || [];
-    const loadedCount = routerModels.filter((x) => x.state === "loaded").length;
+
+    const stats = [
+      {
+        icon: "🖥️",
+        label: "CPU Usage",
+        value: `${(m.cpu?.usage || 0).toFixed(1)}%`,
+        percent: Math.min(m.cpu?.usage || 0, 100),
+        warning: m.cpu?.usage > 80,
+      },
+      {
+        icon: "🧠",
+        label: "Memory",
+        value: window.AppUtils?.formatBytes?.(m.memory?.used || 0) || "0 B",
+        percent: Math.min(m.memory?.used || 0, 100),
+        warning: m.memory?.used > 85,
+      },
+      {
+        icon: "🎮",
+        label: "GPU Usage",
+        value: `${(gpu?.usage || 0).toFixed(1)}%`,
+        percent: Math.min(gpu?.usage || 0, 100),
+        warning: gpu?.usage > 85,
+        isGpu: true,
+      },
+      {
+        icon: "💾",
+        label: "GPU Memory",
+        value:
+          gpu?.memoryTotal > 0
+            ? `${window.AppUtils?.formatBytes?.(gpu?.memoryUsed || 0)} / ${window.AppUtils?.formatBytes?.(gpu?.memoryTotal || 0)}`
+            : "N/A",
+        percent: gpu?.memoryTotal > 0 ? (gpu?.memoryUsed / gpu?.memoryTotal) * 100 : 0,
+        isGpu: true,
+      },
+      {
+        icon: "💿",
+        label: "Disk Usage",
+        value: `${(m.disk?.used || 0).toFixed(1)}%`,
+        percent: Math.min(m.disk?.used || 0, 100),
+        warning: m.disk?.used > 90,
+      },
+      {
+        icon: "⏱️",
+        label: "Uptime",
+        value: this._fmtUptime(m.uptime || 0),
+        percent: 0,
+      },
+    ];
 
     return Component.h(
       "div",
       { className: "stats-grid" },
-      // CPU Card
-      Component.h(
-        "div",
-        { className: `stat-card ${m.cpu?.usage > 80 ? "warning" : "good"}` },
-        Component.h("div", { className: "stat-icon" }, "🖥️"),
+      stats.map((stat) =>
         Component.h(
           "div",
-          { className: "stat-content" },
-          Component.h("span", { className: "stat-label" }, "CPU Usage"),
-          Component.h("span", { className: "stat-value" }, `${(m.cpu?.usage || 0).toFixed(1)}%`),
+          { key: stat.label, className: `stat-card ${stat.warning ? "warning" : ""}` },
+          Component.h("div", { className: "stat-icon" }, stat.icon),
           Component.h(
             "div",
-            { className: "stat-bar" },
-            Component.h("div", {
-              className: "stat-bar-fill",
-              style: `width: ${Math.min(m.cpu?.usage || 0, 100)}%`,
-            })
+            { className: "stat-content" },
+            Component.h("span", { className: "stat-label" }, stat.label),
+            Component.h("span", { className: "stat-value" }, stat.value),
+            stat.percent > 0 &&
+              Component.h(
+                "div",
+                { className: "stat-bar" },
+                Component.h("div", {
+                  className: `stat-bar-fill ${stat.isGpu ? "gpu" : ""}`,
+                  style: `width: ${stat.percent}%`,
+                })
+              )
           )
-        )
-      ),
-      // Memory Card
-      Component.h(
-        "div",
-        { className: `stat-card ${m.memory?.used > 85 ? "warning" : "good"}` },
-        Component.h("div", { className: "stat-icon" }, "🧠"),
-        Component.h(
-          "div",
-          { className: "stat-content" },
-          Component.h("span", { className: "stat-label" }, "Memory"),
-          Component.h(
-            "span",
-            { className: "stat-value" },
-            window.AppUtils?.formatBytes?.(m.memory?.used || 0) || "0 B"
-          ),
-          Component.h(
-            "div",
-            { className: "stat-bar" },
-            Component.h("div", {
-              className: "stat-bar-fill",
-              style: `width: ${Math.min(m.memory?.used || 0, 100)}%`,
-            })
-          )
-        )
-      ),
-      // GPU Card
-      Component.h(
-        "div",
-        { className: `stat-card ${(gpu?.usage || 0) > 85 ? "warning" : "good"}` },
-        Component.h("div", { className: "stat-icon" }, "🎮"),
-        Component.h(
-          "div",
-          { className: "stat-content" },
-          Component.h("span", { className: "stat-label" }, "GPU Usage"),
-          Component.h("span", { className: "stat-value" }, `${(gpu?.usage || 0).toFixed(1)}%`),
-          Component.h(
-            "div",
-            { className: "stat-bar" },
-            Component.h("div", {
-              className: "stat-bar-fill gpu",
-              style: `width: ${Math.min(gpu?.usage || 0, 100)}%`,
-            })
-          )
-        )
-      ),
-      // GPU Memory Card
-      Component.h(
-        "div",
-        { className: "stat-card" },
-        Component.h("div", { className: "stat-icon" }, "💾"),
-        Component.h(
-          "div",
-          { className: "stat-content" },
-          Component.h("span", { className: "stat-label" }, "GPU Memory"),
-          Component.h(
-            "span",
-            { className: "stat-value" },
-            gpu?.memoryTotal > 0
-              ? `${window.AppUtils?.formatBytes?.(gpu?.memoryUsed || 0) || "0 B"} / ${window.AppUtils?.formatBytes?.(gpu?.memoryTotal || 0) || "0 B"}`
-              : "N/A"
-          ),
-          gpu?.memoryTotal > 0 &&
-            Component.h(
-              "div",
-              { className: "stat-bar" },
-              Component.h("div", {
-                className: "stat-bar-fill gpu",
-                style: `width: ${(((gpu?.memoryUsed || 0) / (gpu?.memoryTotal || 1)) * 100).toFixed(1)}%`,
-              })
-            )
-        )
-      ),
-      // Disk Card
-      Component.h(
-        "div",
-        { className: `stat-card ${m.disk?.used > 90 ? "warning" : "good"}` },
-        Component.h("div", { className: "stat-icon" }, "💿"),
-        Component.h(
-          "div",
-          { className: "stat-content" },
-          Component.h("span", { className: "stat-label" }, "Disk Usage"),
-          Component.h("span", { className: "stat-value" }, `${(m.disk?.used || 0).toFixed(1)}%`),
-          Component.h(
-            "div",
-            { className: "stat-bar" },
-            Component.h("div", {
-              className: "stat-bar-fill",
-              style: `width: ${Math.min(m.disk?.used || 0, 100)}%`,
-            })
-          )
-        )
-      ),
-      // Uptime Card
-      Component.h(
-        "div",
-        { className: "stat-card" },
-        Component.h("div", { className: "stat-icon" }, "⏱️"),
-        Component.h(
-          "div",
-          { className: "stat-content" },
-          Component.h("span", { className: "stat-label" }, "Uptime"),
-          Component.h("span", { className: "stat-value" }, this._fmtUptime(m.uptime || 0))
         )
       )
     );
@@ -337,6 +512,8 @@ class DashboardPage extends Component {
   _renderCharts() {
     const history = this.state.history || [];
     const chartType = this.state.chartType;
+    const hasData = history.length > 0;
+    const stats = this.state.chartStats;
 
     return Component.h(
       "div",
@@ -350,18 +527,12 @@ class DashboardPage extends Component {
           { className: "chart-tabs" },
           Component.h(
             "button",
-            {
-              className: `chart-tab ${chartType === "cpu" ? "active" : ""}`,
-              "data-chart": "cpu",
-            },
+            { className: `chart-tab ${chartType === "cpu" ? "active" : ""}`, "data-chart": "cpu" },
             "CPU"
           ),
           Component.h(
             "button",
-            {
-              className: `chart-tab ${chartType === "gpu" ? "active" : ""}`,
-              "data-chart": "gpu",
-            },
+            { className: `chart-tab ${chartType === "gpu" ? "active" : ""}`, "data-chart": "gpu" },
             "GPU"
           )
         )
@@ -369,8 +540,12 @@ class DashboardPage extends Component {
       Component.h(
         "div",
         { className: "chart-container" },
-        history.length > 0
-          ? this._renderChart(history, chartType)
+        hasData
+          ? Component.h(
+            "div",
+            { className: "chart-wrapper" },
+            Component.h("canvas", { id: `${chartType}Chart`, className: "chart-canvas" })
+          )
           : Component.h(
             "div",
             { className: "chart-empty" },
@@ -383,193 +558,38 @@ class DashboardPage extends Component {
             )
           )
       ),
-      Component.h(
-        "div",
-        { className: "chart-stats" },
+      hasData &&
         Component.h(
           "div",
-          { className: "chart-stat" },
-          Component.h("span", { className: "chart-stat-label" }, "Current"),
+          { className: "chart-stats" },
           Component.h(
-            "span",
-            { className: "chart-stat-value" },
-            `${this._getCurrentValue(history, chartType).toFixed(1)}%`
-          )
-        ),
-        Component.h(
-          "div",
-          { className: "chart-stat" },
-          Component.h("span", { className: "chart-stat-label" }, "Avg"),
+            "div",
+            { className: "chart-stat" },
+            Component.h("span", { className: "chart-stat-label" }, "Current"),
+            Component.h("span", { className: "chart-stat-value" }, `${stats.current.toFixed(1)}%`)
+          ),
           Component.h(
-            "span",
-            { className: "chart-stat-value" },
-            `${this._getAvgValue(history, chartType).toFixed(1)}%`
-          )
-        ),
-        Component.h(
-          "div",
-          { className: "chart-stat" },
-          Component.h("span", { className: "chart-stat-label" }, "Max"),
+            "div",
+            { className: "chart-stat" },
+            Component.h("span", { className: "chart-stat-label" }, "Average"),
+            Component.h("span", { className: "chart-stat-value" }, `${stats.avg.toFixed(1)}%`)
+          ),
           Component.h(
-            "span",
-            { className: "chart-stat-value" },
-            `${this._getMaxValue(history, chartType).toFixed(1)}%`
+            "div",
+            { className: "chart-stat" },
+            Component.h("span", { className: "chart-stat-label" }, "Max"),
+            Component.h("span", { className: "chart-stat-value" }, `${stats.max.toFixed(1)}%`)
           )
         )
-      )
     );
-  }
-
-  _getCurrentValue(history, type) {
-    if (history.length === 0) return 0;
-    const last = history[history.length - 1];
-    return type === "gpu" ? last.gpu?.usage || 0 : last.cpu?.usage || 0;
-  }
-
-  _getAvgValue(history, type) {
-    if (history.length === 0) return 0;
-    const values = history.map((h) => (type === "gpu" ? h.gpu?.usage || 0 : h.cpu?.usage || 0));
-    return values.reduce((a, b) => a + b, 0) / values.length;
-  }
-
-  _getMaxValue(history, type) {
-    if (history.length === 0) return 0;
-    const values = history.map((h) => (type === "gpu" ? h.gpu?.usage || 0 : h.cpu?.usage || 0));
-    return Math.max(...values);
-  }
-
-  _renderChart(data, type) {
-    const max = 100;
-    const width = 800;
-    const height = 200;
-    const padding = { top: 20, right: 20, bottom: 30, left: 50 };
-    const chartWidth = width - padding.left - padding.right;
-    const chartHeight = height - padding.top - padding.bottom;
-
-    const values = data.map((d) => (type === "gpu" ? d.gpu?.usage || 0 : d.cpu?.usage || 0));
-
-    // Generate smooth curve points
-    const points = values.map((val, i) => {
-      const x = padding.left + (i / Math.max(values.length - 1, 1)) * chartWidth;
-      const y = padding.top + chartHeight - (val / max) * chartHeight;
-      return { x, y, val };
-    });
-
-    // Create smooth SVG path
-    const pathD = this._createSmoothPath(points, chartWidth, chartHeight);
-
-    // Generate grid lines
-    const gridLines = [0, 25, 50, 75, 100].map((tick) => {
-      const y = padding.top + chartHeight - (tick / max) * chartHeight;
-      return Component.h(
-        "g",
-        { key: `grid-${tick}` },
-        Component.h("line", {
-          x1: padding.left,
-          y1: y,
-          x2: width - padding.right,
-          y2: y,
-          stroke: "var(--gray-200)",
-        }),
-        Component.h(
-          "text",
-          {
-            x: padding.left - 8,
-            y: y + 4,
-            fill: "var(--gray-400)",
-            "text-anchor": "end",
-            "font-size": "11",
-          },
-          `${tick}%`
-        )
-      );
-    });
-
-    // Generate area fill
-    const areaD = `${pathD} L${padding.left + chartWidth},${padding.top + chartHeight} L${padding.left},${padding.top + chartHeight} Z`;
-
-    return Component.h(
-      "div",
-      { className: "chart-wrapper" },
-      Component.h(
-        "svg",
-        { viewBox: `0 0 ${width} ${height}`, className: "modern-chart" },
-        Component.h(
-          "defs",
-          {},
-          Component.h(
-            "linearGradient",
-            {
-              id: `chartGradient-${type}`,
-              x1: "0%",
-              y1: "0%",
-              x2: "0%",
-              y2: "100%",
-            },
-            Component.h("stop", {
-              offset: "0%",
-              "stop-color": "var(--primary)",
-              "stop-opacity": 0.3,
-            }),
-            Component.h("stop", {
-              offset: "100%",
-              "stop-color": "var(--primary)",
-              "stop-opacity": 0,
-            })
-          )
-        ),
-        gridLines,
-        Component.h("path", {
-          d: areaD,
-          fill: `url(#chartGradient-${type})`,
-        }),
-        Component.h("path", {
-          d: pathD,
-          fill: "none",
-          stroke: "var(--primary)",
-          "stroke-width": "2.5",
-          "stroke-linecap": "round",
-          "stroke-linejoin": "round",
-        }),
-        // Add dots for last few data points
-        points.slice(-10).map((p, i) =>
-          Component.h("circle", {
-            key: i,
-            cx: p.x,
-            cy: p.y,
-            r: i === points.slice(-10).length - 1 ? 5 : 0,
-            fill: "var(--primary)",
-            stroke: "#fff",
-            "stroke-width": 2,
-          })
-        )
-      )
-    );
-  }
-
-  _createSmoothPath(points, chartWidth, chartHeight) {
-    if (points.length < 2) return "";
-
-    let path = `M ${points[0].x},${points[0].y}`;
-
-    for (let i = 1; i < points.length; i++) {
-      const prev = points[i - 1];
-      const curr = points[i];
-      const tension = 0.3;
-
-      const cp1x = prev.x + (curr.x - prev.x) * tension;
-      const cp1y = prev.y;
-      const cp2x = curr.x - (curr.x - prev.x) * tension;
-      const cp2y = curr.y;
-
-      path += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${curr.x},${curr.y}`;
-    }
-
-    return path;
   }
 
   _renderSystemHealth() {
-    const m = this.state.metrics || { cpu: { usage: 0 }, memory: { used: 0 }, disk: { used: 0 } };
+    const m = this.state.metrics || {
+      cpu: { usage: 0 },
+      memory: { used: 0 },
+      disk: { used: 0 },
+    };
     const gpu = this.state.gpuMetrics || { usage: 0 };
     const health = this._getHealthStatus(m);
 
@@ -693,11 +713,7 @@ class DashboardPage extends Component {
               ),
             Component.h(
               "button",
-              {
-                className: "btn btn-secondary",
-                "data-action": "restart",
-                disabled: !isRunning,
-              },
+              { className: "btn btn-secondary", "data-action": "restart", disabled: !isRunning },
               "🔄 Restart"
             )
           )
@@ -758,7 +774,42 @@ class DashboardPage extends Component {
   handleChartTab(event) {
     const tab = event.target.closest("[data-chart]");
     if (tab) {
-      this.setState({ chartType: tab.dataset.chart });
+      const newType = tab.dataset.chart;
+      if (newType !== this.state.chartType) {
+        this.setState({ chartType: newType });
+
+        // Ensure the chart for the new type exists
+        setTimeout(() => {
+          if (newType === "cpu") {
+            if (!this.cpuChart) {
+              const canvas = document.getElementById("cpuChart");
+              if (canvas) {
+                this._createCpuChart(canvas);
+              }
+            }
+          } else {
+            if (!this.gpuChart) {
+              const canvas = document.getElementById("gpuChart");
+              if (canvas) {
+                this._createGpuChart(canvas);
+              } else {
+                // Retry a few times if canvas not ready
+                let attempts = 0;
+                const tryCreate = () => {
+                  attempts++;
+                  const c = document.getElementById("gpuChart");
+                  if (c) {
+                    this._createGpuChart(c);
+                  } else if (attempts < 5) {
+                    setTimeout(tryCreate, 100);
+                  }
+                };
+                setTimeout(tryCreate, 100);
+              }
+            }
+          }
+        }, 50);
+      }
     }
   }
 
@@ -785,7 +836,7 @@ class DashboardPage extends Component {
   async _refresh() {
     this.setState({ loading: true });
     try {
-      await this._controller?.load();
+      await this.props.controller?.load();
       showNotification("Dashboard refreshed", "success");
     } catch (e) {
       showNotification("Refresh failed", "error");
@@ -857,7 +908,7 @@ class DashboardPage extends Component {
   }
 
   _setController(c) {
-    this._controller = c;
+    // No-op, controller passed via props
   }
 }
 

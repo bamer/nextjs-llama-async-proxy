@@ -5,8 +5,8 @@
 
 export default [
   {
-    files: ["**/*.js"],
-    ignores: ["node_modules/", "data/", "coverage/", "dist/", "__tests__/", "*.min.js"],
+    files: ["public/js/**/*.js", "server.js"],
+    ignores: ["**/libs/**"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "module",
@@ -20,6 +20,8 @@ export default [
         setInterval: "readonly",
         clearTimeout: "readonly",
         clearInterval: "readonly",
+        requestAnimationFrame: "readonly",
+        cancelAnimationFrame: "readonly",
         fetch: "readonly",
         URL: "readonly",
         CustomEvent: "readonly",
@@ -30,6 +32,9 @@ export default [
         Blob: "readonly",
         confirm: "readonly",
         alert: "readonly",
+
+        // Chart.js global
+        Chart: "readonly",
 
         // Project globals
         Component: "readonly",
@@ -49,7 +54,6 @@ export default [
         // Page Controllers
         DashboardController: "readonly",
         ModelsController: "readonly",
-        MonitoringController: "readonly",
         ConfigurationController: "readonly",
         SettingsController: "readonly",
         LogsController: "readonly",

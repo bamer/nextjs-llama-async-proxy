@@ -1388,12 +1388,13 @@ th {
 
 .chart-wrapper {
   width: 100%;
-  overflow: hidden;
+  height: 200px;
+  position: relative;
 }
 
-.modern-chart {
-  width: 100%;
-  height: 200px;
+.chart-canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .chart-empty {
