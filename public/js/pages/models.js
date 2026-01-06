@@ -115,68 +115,128 @@ class ModelsPage extends Component {
 
     const statusBadge = (status) => {
       console.log("[MODELS] Creating badge for status:", status);
-      const cls = status === "loaded" || status === "running" ? "success" : status === "loading" ? "warning" : status === "error" ? "danger" : "default";
-      return Component.h("span", { className: `badge ${  cls}` }, status);
+      const cls =
+        status === "loaded" || status === "running"
+          ? "success"
+          : status === "loading"
+            ? "warning"
+            : status === "error"
+              ? "danger"
+              : "default";
+      return Component.h("span", { className: `badge ${cls}` }, status);
     };
 
     const actionBtn = (m) => {
       console.log("[MODELS] Creating action button for:", m.name, "status:", m.status);
       if (m.status === "loaded" || m.status === "running") {
-        return Component.h("button", { className: "btn btn-sm", "data-action": "unload" }, "Unload");
+        return Component.h(
+          "button",
+          { className: "btn btn-sm", "data-action": "unload" },
+          "Unload"
+        );
       }
       if (m.status === "loading") {
         return Component.h("button", { className: "btn btn-sm", disabled: true }, "Loading...");
       }
-      return Component.h("button", { className: "btn btn-sm btn-primary", "data-action": "load" }, "Load");
+      return Component.h(
+        "button",
+        { className: "btn btn-sm btn-primary", "data-action": "load" },
+        "Load"
+      );
     };
 
-    const rows = filtered.length === 0
-      ? Component.h("tr", {}, Component.h("td", { colSpan: 11 }, "No models"))
-      : filtered.map((m) => {
-        console.log("[MODELS] Rendering row for:", m.name);
-        return Component.h("tr", { "data-name": m.name },
-          Component.h("td", {}, m.name),
-          Component.h("td", {}, statusBadge(m.status)),
-          Component.h("td", {}, m.type || "-"),
-          Component.h("td", {}, m.params || "-"),
-          Component.h("td", {}, m.quantization || "-"),
-          Component.h("td", {}, this._fmtCtx(m.ctx_size)),
-          Component.h("td", {}, m.embedding_size || "-"),
-          Component.h("td", {}, m.block_count || "-"),
-          Component.h("td", {}, m.head_count || "-"),
-          Component.h("td", {}, m.file_size ? this._fmtBytes(m.file_size) : "-"),
-          Component.h("td", {}, actionBtn(m))
-        );
-      });
+    const rows =
+      filtered.length === 0
+        ? Component.h("tr", {}, Component.h("td", { colSpan: 11 }, "No models"))
+        : filtered.map((m) => {
+            console.log("[MODELS] Rendering row for:", m.name);
+            return Component.h(
+              "tr",
+              { "data-name": m.name },
+              Component.h("td", {}, m.name),
+              Component.h("td", {}, statusBadge(m.status)),
+              Component.h("td", {}, m.type || "-"),
+              Component.h("td", {}, m.params || "-"),
+              Component.h("td", {}, m.quantization || "-"),
+              Component.h("td", {}, this._fmtCtx(m.ctx_size)),
+              Component.h("td", {}, m.embedding_size || "-"),
+              Component.h("td", {}, m.block_count || "-"),
+              Component.h("td", {}, m.head_count || "-"),
+              Component.h("td", {}, m.file_size ? this._fmtBytes(m.file_size) : "-"),
+              Component.h("td", {}, actionBtn(m))
+            );
+          });
 
     console.log("[MODELS] Total rows to render:", Array.isArray(rows) ? rows.length : 1);
 
-    const result = Component.h("div", { className: "models-page" },
-      Component.h("div", { className: "toolbar" },
-        Component.h("button", { className: "btn btn-primary", "data-action": "scan" }, "Scan Filesystem"),
+    const result = Component.h(
+      "div",
+      { className: "models-page" },
+      Component.h(
+        "div",
+        { className: "toolbar" },
+        Component.h(
+          "button",
+          { className: "btn btn-primary", "data-action": "scan" },
+          "Scan Filesystem"
+        ),
         Component.h("button", { className: "btn", "data-action": "cleanup" }, "Cleanup"),
         routerRunning
-          ? Component.h("span", { className: "router-indicator success" }, `Router Active (${  port  })`)
-          : Component.h("span", { className: "router-indicator default" }, `Router Not Running (Port: ${  port  })`)
+          ? Component.h(
+              "span",
+              { className: "router-indicator success" },
+              `Router Active (${port})`
+            )
+          : Component.h(
+              "span",
+              { className: "router-indicator default" },
+              `Router Not Running (Port: ${port})`
+            )
       ),
-      Component.h("div", { className: "filters" },
-        Component.h("input", { type: "text", placeholder: "Search...", "data-field": "search", value: this.state.filters.search }),
-        Component.h("select", { "data-field": "status" },
+      Component.h(
+        "div",
+        { className: "filters" },
+        Component.h("input", {
+          type: "text",
+          placeholder: "Search...",
+          "data-field": "search",
+          value: this.state.filters.search,
+        }),
+        Component.h(
+          "select",
+          { "data-field": "status" },
           Component.h("option", { value: "all" }, "All"),
           Component.h("option", { value: "loaded" }, "Loaded"),
           Component.h("option", { value: "unloaded" }, "Unloaded")
         )
       ),
-      Component.h("table", { className: "models-table" },
-        Component.h("thead", {},
-          Component.h("tr", {},
-            Component.h("th", {}, "Name"), Component.h("th", {}, "Status"), Component.h("th", {}, "Arch"),
-            Component.h("th", {}, "Params"), Component.h("th", {}, "Quant"), Component.h("th", {}, "Ctx"),
-            Component.h("th", {}, "Embed"), Component.h("th", {}, "Blocks"), Component.h("th", {}, "Heads"),
-            Component.h("th", {}, "Size"), Component.h("th", {}, "Actions")
+      Component.h(
+        "table",
+        { className: "models-table" },
+        Component.h(
+          "thead",
+          {},
+          Component.h(
+            "tr",
+            {},
+            Component.h("th", {}, "Name"),
+            Component.h("th", {}, "Status"),
+            Component.h("th", {}, "Arch"),
+            Component.h("th", {}, "Params"),
+            Component.h("th", {}, "Quant"),
+            Component.h("th", {}, "Ctx"),
+            Component.h("th", {}, "Embed"),
+            Component.h("th", {}, "Blocks"),
+            Component.h("th", {}, "Heads"),
+            Component.h("th", {}, "Size"),
+            Component.h("th", {}, "Actions")
           )
         ),
-        Component.h("tbody", { className: "models-tbody" }, ...(Array.isArray(rows) ? rows : [rows]))
+        Component.h(
+          "tbody",
+          { className: "models-tbody" },
+          ...(Array.isArray(rows) ? rows : [rows])
+        )
       )
     );
 
@@ -204,7 +264,7 @@ class ModelsPage extends Component {
   }
 
   _fmtCtx(v) {
-    const result = !v || v === 0 ? "-" : v >= 1000 ? `${(v / 1000).toFixed(0)  }k` : String(v);
+    const result = !v || v === 0 ? "-" : v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v);
     console.log("[MODELS] _fmtCtx:", v, "->", result);
     return result;
   }
@@ -214,7 +274,7 @@ class ModelsPage extends Component {
     const k = 1024;
     const sizes = ["B", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(v) / Math.log(k));
-    const result = `${parseFloat((v / Math.pow(k, i)).toFixed(1))  } ${  sizes[i]}`;
+    const result = `${parseFloat((v / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
     console.log("[MODELS] _fmtBytes:", v, "->", result);
     return result;
   }
@@ -255,7 +315,7 @@ class ModelsPage extends Component {
       stateManager.set("models", updated);
       this.setState({
         models: updated,
-        port: rs.routerStatus?.port || config.port || 8080
+        port: rs.routerStatus?.port || config.port || 8080,
       });
       console.log("[MODELS] Refreshed", updated.length, "models");
     } catch (e) {
@@ -267,7 +327,7 @@ class ModelsPage extends Component {
       stateManager.set("routerStatus", null);
       this.setState({
         models: updated,
-        port: config.port || 8080
+        port: config.port || 8080,
       });
     }
   }
@@ -304,13 +364,13 @@ class ModelsPage extends Component {
     try {
       const d = await stateManager.scanModels();
       console.log("[MODELS] Scan result:", d);
-      showNotification(`Scanned: ${  d.scanned || 0  } new, ${  d.updated || 0  } updated`, "success");
+      showNotification(`Scanned: ${d.scanned || 0} new, ${d.updated || 0} updated`, "success");
       const d2 = await stateManager.getModels();
       this.setState({ models: d2.models || [] });
       console.log("[MODELS] Reloaded", d2.models?.length, "models");
     } catch (e) {
       console.log("[MODELS] Scan error:", e.message);
-      showNotification(`Scan failed: ${  e.message}`, "error");
+      showNotification(`Scan failed: ${e.message}`, "error");
     }
   }
 
@@ -320,10 +380,10 @@ class ModelsPage extends Component {
     try {
       const d = await stateManager.cleanupModels();
       console.log("[MODELS] Cleanup result:", d);
-      showNotification(`Removed ${  d.deletedCount || 0  } models`, "success");
+      showNotification(`Removed ${d.deletedCount || 0} models`, "success");
     } catch (e) {
       console.log("[MODELS] Cleanup error:", e.message);
-      showNotification(`Cleanup failed: ${  e.message}`, "error");
+      showNotification(`Cleanup failed: ${e.message}`, "error");
     }
   }
 }

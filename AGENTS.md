@@ -36,18 +36,19 @@ llama-server --models-dir ./models --models-max 4 -c 8192 -ngl 99 --np 4
 
 ### Important CLI Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--models-dir` | `~/.cache/llama.cpp` | Directory containing GGUF files |
-| `--models-max` | 4 | Max models loaded simultaneously |
-| `-c` | 512 | Context size per model |
-| `-ngl` | 0 | GPU layers to offload |
-| `--np` | 1 | Parallel processing slots |
-| `--threads-http` | 1 | HTTP threads for parallel requests |
+| Flag             | Default              | Description                        |
+| ---------------- | -------------------- | ---------------------------------- |
+| `--models-dir`   | `~/.cache/llama.cpp` | Directory containing GGUF files    |
+| `--models-max`   | 4                    | Max models loaded simultaneously   |
+| `-c`             | 512                  | Context size per model             |
+| `-ngl`           | 0                    | GPU layers to offload              |
+| `--np`           | 1                    | Parallel processing slots          |
+| `--threads-http` | 1                    | HTTP threads for parallel requests |
 
 ### Model Status Values
 
 When working with models, use these status values:
+
 - `loaded` - Model is loaded and ready
 - `loading` - Model is being loaded
 - `unloaded` - Model is on disk, not in memory
@@ -56,6 +57,7 @@ When working with models, use these status values:
 ### API Endpoints
 
 The router exposes these endpoints:
+
 - `GET /models` - List all models with status
 - `POST /models/load` - Load a specific model
 - `POST /models/unload` - Unload a model

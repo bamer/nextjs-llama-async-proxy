@@ -3,9 +3,11 @@
 ## Fix #1: Reduce Debug Logging (5 min, Biggest Impact)
 
 ### Problem
+
 State manager logs every operation with JSON serialization, adding 50-100ms per API call.
 
 ### Solution
+
 Replace eager logging with conditional debug mode in `public/js/core/state.js`:
 
 ```javascript
@@ -18,9 +20,9 @@ class StateManager {
     this.connected = false;
     this.queue = [];
     this.pending = new Map();
-    this.DEBUG = localStorage.getItem('DEBUG_STATE') === 'true'; // Opt-in debug
+    this.DEBUG = localStorage.getItem("DEBUG_STATE") === "true"; // Opt-in debug
   }
-  
+
   _log(msg, data) {
     if (!this.DEBUG) return;
     console.log(msg, data);
@@ -29,6 +31,7 @@ class StateManager {
 ```
 
 ### Replace in key methods:
+
 - Line 13-14: ✂️ Remove `console.log("[STATE] StateManager constructor called")`
 - Line 17-20: Replace with `this._log("[STATE] init()", { socket: !!socket })`
 - Lines 174-176 (get method): Replace with `this._log("[STATE] get", { key, length: JSON.stringify(value)?.length })`
@@ -36,13 +39,14 @@ class StateManager {
 - Remove all substring(0, X) truncations - just use `this._log()`
 
 ### Enable debug when needed:
+
 ```javascript
 // In browser console:
-localStorage.setItem('DEBUG_STATE', 'true');
+localStorage.setItem("DEBUG_STATE", "true");
 location.reload();
 
 // Disable:
-localStorage.removeItem('DEBUG_STATE');
+localStorage.removeItem("DEBUG_STATE");
 ```
 
 **Expected improvement**: 40-60ms latency reduction per state change
@@ -52,9 +56,11 @@ localStorage.removeItem('DEBUG_STATE');
 ## Fix #2: Add Database Indexes (3 min, High Impact)
 
 ### Problem
+
 No indexes on frequently queried columns causes full table scans.
 
 ### Solution
+
 Update `server/db.js` init() method:
 
 ```javascript
@@ -104,7 +110,7 @@ init() {
       value TEXT NOT NULL,
       updated_at INTEGER
     );
-    
+
     -- Add indexes for performance
     CREATE INDEX IF NOT EXISTS idx_models_status ON models(status);
     CREATE INDEX IF NOT EXISTS idx_models_name ON models(name);
@@ -127,9 +133,11 @@ init() {
 ## Fix #3: Improve CPU Metrics Collection (5 min)
 
 ### Problem
+
 CPU calculation happens every 10 seconds, recalculates from scratch each time, unreliable.
 
 ### Solution
+
 Track deltas in `server.js`:
 
 ```javascript
@@ -140,55 +148,55 @@ let lastMetricsTime = null;
 function startMetrics(io, db) {
   lastCpuTimes = null;
   lastMetricsTime = Date.now();
-  
+
   setInterval(() => {
     try {
       const mem = process.memoryUsage();
       const now = Date.now();
-      
+
       // Calculate CPU usage using delta
       let cpuUsage = 0;
       const cpus = os.cpus();
-      
+
       if (lastCpuTimes) {
         let userDelta = 0;
         let sysDelta = 0;
         let idleDelta = 0;
-        
+
         for (let i = 0; i < cpus.length; i++) {
           userDelta += cpus[i].times.user - (lastCpuTimes[i]?.user || 0);
           sysDelta += cpus[i].times.sys - (lastCpuTimes[i]?.sys || 0);
           idleDelta += cpus[i].times.idle - (lastCpuTimes[i]?.idle || 0);
         }
-        
+
         const totalDelta = userDelta + sysDelta + idleDelta;
         if (totalDelta > 0) {
           cpuUsage = ((userDelta + sysDelta) / totalDelta) * 100;
         }
       }
-      
+
       // Store current times for next iteration
-      lastCpuTimes = cpus.map(c => ({
+      lastCpuTimes = cpus.map((c) => ({
         user: c.times.user,
         sys: c.times.sys,
         idle: c.times.idle,
       }));
-      
-      db.saveMetrics({ 
-        cpu_usage: Math.round(cpuUsage * 10) / 10, 
-        memory_usage: mem.heapUsed, 
-        uptime: process.uptime() 
+
+      db.saveMetrics({
+        cpu_usage: Math.round(cpuUsage * 10) / 10,
+        memory_usage: mem.heapUsed,
+        uptime: process.uptime(),
       });
-      
-      io.emit("metrics:update", { 
+
+      io.emit("metrics:update", {
         type: "broadcast",
-        data: { 
-          metrics: { 
-            cpu: { usage: cpuUsage }, 
-            memory: { used: mem.heapUsed }, 
-            uptime: process.uptime() 
-          } 
-        }
+        data: {
+          metrics: {
+            cpu: { usage: cpuUsage },
+            memory: { used: mem.heapUsed },
+            uptime: process.uptime(),
+          },
+        },
       });
     } catch (e) {
       console.error("[METRICS] Error:", e.message);
@@ -204,20 +212,22 @@ function startMetrics(io, db) {
 ## Fix #4: Reduce Unnecessary Re-renders (5 min)
 
 ### Problem
+
 Every state change notifies all listeners, triggering unnecessary re-renders.
 
 ### Solution
+
 Add shallow comparison in `public/js/core/state.js` set() method:
 
 ```javascript
 set(key, value) {
   const old = this.state[key];
-  
+
   // Skip notification if value hasn't actually changed
   if (old === value) {
     return this;
   }
-  
+
   // For objects, do shallow comparison
   if (typeof old === 'object' && typeof value === 'object' && old !== null && value !== null) {
     // Quick shallow check: same keys and same primitive values
@@ -227,7 +237,7 @@ set(key, value) {
       return this;
     }
   }
-  
+
   this._log("[STATE] set", { key, changed: old !== value });
   this.state[key] = value;
   this._notify(key, value, old);
@@ -242,9 +252,11 @@ set(key, value) {
 ## Fix #5: Optimize GGUF Buffer Allocation (3 min)
 
 ### Problem
+
 Allocates new buffers in loop, causes GC overhead.
 
 ### Solution
+
 In `server/gguf-parser.js`, replace the loop in parseGgufHeaderSync():
 
 ```javascript
@@ -252,7 +264,7 @@ In `server/gguf-parser.js`, replace the loop in parseGgufHeaderSync():
 
 const lenBuf = Buffer.alloc(8);
 const typeBuf = Buffer.alloc(4);
-let keyBuf = Buffer.alloc(256);  // Pre-allocated, reusable
+let keyBuf = Buffer.alloc(256); // Pre-allocated, reusable
 let strLenBuf = Buffer.alloc(8);
 let valBuf = Buffer.alloc(4);
 let strBuf = null;
@@ -267,7 +279,7 @@ for (let i = 0; i < metadataCount; i++) {
   if (keyLen > keyBuf.length) {
     keyBuf = Buffer.alloc(keyLen);
   }
-  
+
   // Read key
   fs.readSync(fd, keyBuf, 0, keyLen, offset);
   const key = keyBuf.toString("utf8", 0, keyLen - 1);
@@ -289,11 +301,11 @@ for (let i = 0; i < metadataCount; i++) {
     fs.readSync(fd, strLenBuf, 0, 8, offset);
     const strLen = Number(new DataView(strLenBuf.buffer).getBigUint64(0, true));
     offset += 8;
-    
+
     if (!strBuf || strLen > strBuf.length) {
       strBuf = Buffer.alloc(strLen);
     }
-    
+
     fs.readSync(fd, strBuf, 0, strLen, offset);
     ggufMeta[key] = strBuf.toString("utf8", 0, strLen - 1);
     offset += strLen;
@@ -315,9 +327,11 @@ for (let i = 0; i < metadataCount; i++) {
 ## Fix #6: Add Metrics Retention Policy (2 min)
 
 ### Problem
+
 Metrics grow unbounded, queries slow down over time.
 
 ### Solution
+
 In `server/db.js`, add pruning method:
 
 ```javascript
@@ -327,7 +341,7 @@ pruneMetrics(maxRecords = 10000) {
     const result = this.db
       .prepare("SELECT COUNT(*) as cnt FROM metrics")
       .get();
-    
+
     if (result.cnt > maxRecords) {
       const toDelete = result.cnt - maxRecords;
       this.db
@@ -350,9 +364,10 @@ let metricsCallCount = 0;
 setInterval(() => {
   try {
     // ... existing metrics code ...
-    
+
     metricsCallCount++;
-    if (metricsCallCount % 36 === 0) { // Every 6 minutes (36 * 10s)
+    if (metricsCallCount % 36 === 0) {
+      // Every 6 minutes (36 * 10s)
       db.pruneMetrics(10000); // Keep last 10000 records (~7 days)
     }
   } catch (e) {
@@ -367,14 +382,14 @@ setInterval(() => {
 
 ## Quick Wins Summary
 
-| Fix | File | Time | Impact |
-|-----|------|------|--------|
-| 1. Conditional logging | state.js | 5 min | 40-60ms faster API |
-| 2. Database indexes | db.js | 3 min | 10-100x faster queries |
-| 3. CPU delta calculation | server.js | 5 min | More accurate metrics |
-| 4. Shallow comparison | state.js | 5 min | 30-50% fewer renders |
-| 5. Buffer reuse | gguf-parser.js | 3 min | 20-30% faster GGUF |
-| 6. Metrics retention | db.js + server.js | 2 min | Bounded DB size |
+| Fix                      | File              | Time  | Impact                 |
+| ------------------------ | ----------------- | ----- | ---------------------- |
+| 1. Conditional logging   | state.js          | 5 min | 40-60ms faster API     |
+| 2. Database indexes      | db.js             | 3 min | 10-100x faster queries |
+| 3. CPU delta calculation | server.js         | 5 min | More accurate metrics  |
+| 4. Shallow comparison    | state.js          | 5 min | 30-50% fewer renders   |
+| 5. Buffer reuse          | gguf-parser.js    | 3 min | 20-30% faster GGUF     |
+| 6. Metrics retention     | db.js + server.js | 2 min | Bounded DB size        |
 
 **Total time: ~23 minutes**
 **Expected latency reduction: 40-100ms per operation**
@@ -420,4 +435,3 @@ git checkout -- public/js/core/state.js
 git checkout -- server/db.js
 # etc.
 ```
-

@@ -63,44 +63,44 @@ The application follows a clean client-server architecture with all communicatio
 
 ### Key Features
 
-| Feature | Description | CLI Flag |
-|---------|-------------|----------|
-| **Model Discovery** | Auto-discovers GGUF files from directory | `--models-dir` |
-| **Multiple Models** | Load multiple models simultaneously | `--models-max N` (default: 4) |
-| **Parallel Requests** | Handle concurrent requests | `--np N`, `--threads-http N` |
-| **LRU Eviction** | Least-recently-used model unloaded when max reached | Automatic |
-| **On-Demand Loading** | Models load when first requested | `/models/load` |
+| Feature               | Description                                         | CLI Flag                      |
+| --------------------- | --------------------------------------------------- | ----------------------------- |
+| **Model Discovery**   | Auto-discovers GGUF files from directory            | `--models-dir`                |
+| **Multiple Models**   | Load multiple models simultaneously                 | `--models-max N` (default: 4) |
+| **Parallel Requests** | Handle concurrent requests                          | `--np N`, `--threads-http N`  |
+| **LRU Eviction**      | Least-recently-used model unloaded when max reached | Automatic                     |
+| **On-Demand Loading** | Models load when first requested                    | `/models/load`                |
 
 ### API Endpoints
 
 Router mode exposes these HTTP endpoints:
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/models` | GET | List all models with status (loaded/loading/unloaded) |
-| `/models/load` | POST | Manually load a model |
-| `/models/unload` | POST | Unload a model |
-| `/v1/chat/completions` | POST | OpenAI-compatible chat completions |
+| Endpoint               | Method | Description                                           |
+| ---------------------- | ------ | ----------------------------------------------------- |
+| `/models`              | GET    | List all models with status (loaded/loading/unloaded) |
+| `/models/load`         | POST   | Manually load a model                                 |
+| `/models/unload`       | POST   | Unload a model                                        |
+| `/v1/chat/completions` | POST   | OpenAI-compatible chat completions                    |
 
 ### Configuration Options
 
-| Setting | CLI Flag | Default | Description |
-|---------|----------|---------|-------------|
-| Models Directory | `--models-dir` | `~/.cache/llama.cpp` | Directory containing GGUF files |
-| Max Models Loaded | `--models-max` | 4 | Maximum models in memory |
-| Parallel Slots | `--np` | 1 | Number of parallel processing slots |
-| HTTP Threads | `--threads-http` | 1 | HTTP threads for parallel requests |
-| Context Size | `-c` | 512 | Default context window size |
-| GPU Layers | `-ngl` | 0 | Layers to offload to GPU |
+| Setting           | CLI Flag         | Default              | Description                         |
+| ----------------- | ---------------- | -------------------- | ----------------------------------- |
+| Models Directory  | `--models-dir`   | `~/.cache/llama.cpp` | Directory containing GGUF files     |
+| Max Models Loaded | `--models-max`   | 4                    | Maximum models in memory            |
+| Parallel Slots    | `--np`           | 1                    | Number of parallel processing slots |
+| HTTP Threads      | `--threads-http` | 1                    | HTTP threads for parallel requests  |
+| Context Size      | `-c`             | 512                  | Default context window size         |
+| GPU Layers        | `-ngl`           | 0                    | Layers to offload to GPU            |
 
 ### Model Status Values
 
-| Status | Description |
-|--------|-------------|
-| `loaded` | Model is loaded in memory, ready for inference |
-| `loading` | Model is currently being loaded |
-| `unloaded` | Model is on disk, not in memory |
-| `error` | Model failed to load |
+| Status     | Description                                    |
+| ---------- | ---------------------------------------------- |
+| `loaded`   | Model is loaded in memory, ready for inference |
+| `loading`  | Model is currently being loaded                |
+| `unloaded` | Model is on disk, not in memory                |
+| `error`    | Model failed to load                           |
 
 ## Key Architectural Decisions
 
@@ -504,22 +504,22 @@ The application has been simplified to remove redundant workflows and improve pe
 
 ### Simplifications Applied
 
-| Category | Change | Impact |
-|----------|--------|--------|
-| **Backend** | Removed deprecated `models:start` and `models:stop` handlers | -37 lines, cleaner API |
-| **Backend** | Consolidated `llama:status` and `models:router:status` endpoints | Single source of truth |
-| **Frontend** | Removed unused components (`ModelTableRow`, `ModelDetailsPanel`) | -209 lines dead code |
-| **Frontend** | Reduced debug logging by 94% in StateManager | Faster execution, cleaner console |
-| **Frontend** | Removed queue logic from StateManager | Simplified request flow |
-| **Settings** | Fixed direct DOM reading - now uses component state | Better state management |
-| **Utils** | Removed duplicate `formatFileSize` and unused `formatCurrency` | -14 lines |
-| **DB** | Removed duplicate `updateConfig` method | No-op cleanup |
+| Category     | Change                                                           | Impact                            |
+| ------------ | ---------------------------------------------------------------- | --------------------------------- |
+| **Backend**  | Removed deprecated `models:start` and `models:stop` handlers     | -37 lines, cleaner API            |
+| **Backend**  | Consolidated `llama:status` and `models:router:status` endpoints | Single source of truth            |
+| **Frontend** | Removed unused components (`ModelTableRow`, `ModelDetailsPanel`) | -209 lines dead code              |
+| **Frontend** | Reduced debug logging by 94% in StateManager                     | Faster execution, cleaner console |
+| **Frontend** | Removed queue logic from StateManager                            | Simplified request flow           |
+| **Settings** | Fixed direct DOM reading - now uses component state              | Better state management           |
+| **Utils**    | Removed duplicate `formatFileSize` and unused `formatCurrency`   | -14 lines                         |
+| **DB**       | Removed duplicate `updateConfig` method                          | No-op cleanup                     |
 
 ### Lines of Code Removed
 
 ```
 Backend handlers.js:    ~60 lines removed
-Frontend components:    ~209 lines removed  
+Frontend components:    ~209 lines removed
 Frontend state.js:      ~75 lines removed (logging + queue)
 Frontend settings.js:   ~35 lines removed (logging)
 Utils format.js:        ~14 lines removed
@@ -530,11 +530,11 @@ Total:                  ~400 lines removed
 
 ### API Changes
 
-| Old Endpoint | New Endpoint | Notes |
-|--------------|--------------|-------|
-| `models:start` (deprecated) | `models:load` | Forward removed |
-| `models:stop` (deprecated) | `models:unload` | Forward removed |
-| `models:router:status` | `llama:status` | Consolidated |
+| Old Endpoint                | New Endpoint    | Notes           |
+| --------------------------- | --------------- | --------------- |
+| `models:start` (deprecated) | `models:load`   | Forward removed |
+| `models:stop` (deprecated)  | `models:unload` | Forward removed |
+| `models:router:status`      | `llama:status`  | Consolidated    |
 
 ## Security Considerations
 

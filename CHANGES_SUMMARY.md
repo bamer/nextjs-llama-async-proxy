@@ -1,6 +1,7 @@
 # Performance Optimization - Changes Summary
 
 ## Overview
+
 All 5 critical performance fixes have been applied to the Llama Proxy Dashboard. All tests pass (473/473), code is linted and formatted.
 
 ---
@@ -8,9 +9,11 @@ All 5 critical performance fixes have been applied to the Llama Proxy Dashboard.
 ## 1. Database Indexes (server/db.js)
 
 ### New Method: `_createIndexes()`
+
 Added after table creation to improve query performance.
 
 **Indexes Created:**
+
 ```sql
 CREATE INDEX idx_models_status ON models(status)
 CREATE INDEX idx_models_name ON models(name)
@@ -23,6 +26,7 @@ CREATE INDEX idx_metadata_key ON metadata(key)
 ```
 
 **Performance Impact:**
+
 - Query time: O(n) → O(log n)
 - Improvement: 10-100x faster depending on dataset size
 
@@ -40,6 +44,7 @@ pruneMetrics(maxRecords = 10000) {
 ```
 
 **Features:**
+
 - Called every 6 minutes from server.js
 - Keeps last 10,000 records (~7 days at 10s intervals)
 - Database stays <10MB even after months of operation
@@ -50,21 +55,28 @@ pruneMetrics(maxRecords = 10000) {
 ## 3. Improved CPU Metrics (server.js)
 
 ### Changed From:
+
 ```javascript
-const cpu = (os.cpus().reduce((a, c) => {
-  const t = c.times.user + c.times.nice + c.times.sys + c.times.idle;
-  return a + (c.times.user + c.times.nice + c.times.sys) / t;
-}, 0) / os.cpus().length) * 100;
+const cpu =
+  (os.cpus().reduce((a, c) => {
+    const t = c.times.user + c.times.nice + c.times.sys + c.times.idle;
+    return a + (c.times.user + c.times.nice + c.times.sys) / t;
+  }, 0) /
+    os.cpus().length) *
+  100;
 ```
 
 ### Changed To:
+
 Delta-based calculation that tracks CPU usage between measurements.
 
 **New Variables:**
+
 - `lastCpuTimes` - Stores CPU times from previous interval
 - `metricsCallCount` - Counts calls for pruning trigger
 
 **Calculation:**
+
 - Measures actual delta: `(userDelta + sysDelta) / totalDelta`
 - More accurate: ±10% → ±2%
 - More efficient: os.cpus() called once per 10s instead of in loop
@@ -74,16 +86,18 @@ Delta-based calculation that tracks CPU usage between measurements.
 ## 4. Optimized GGUF Parser Buffer Allocation (server/gguf-parser.js)
 
 ### Changed From:
+
 ```javascript
 for (let i = 0; i < metadataCount; i++) {
-  const lenBuf = Buffer.alloc(8);      // New buffer each iteration
-  const keyBuf = Buffer.alloc(keyLen);  // New buffer each iteration
-  const typeBuf = Buffer.alloc(4);      // New buffer each iteration
+  const lenBuf = Buffer.alloc(8); // New buffer each iteration
+  const keyBuf = Buffer.alloc(keyLen); // New buffer each iteration
+  const typeBuf = Buffer.alloc(4); // New buffer each iteration
   // ... more allocations
 }
 ```
 
 ### Changed To:
+
 Pre-allocated reusable buffers that expand only when necessary.
 
 ```javascript
@@ -102,6 +116,7 @@ for (let i = 0; i < metadataCount; i++) {
 ```
 
 **Impact:**
+
 - Reduces GC pressure
 - Parsing: 500ms → 350-400ms (30% faster)
 - Less memory churn
@@ -111,6 +126,7 @@ for (let i = 0; i < metadataCount; i++) {
 ## 5. Shallow Equality Check (public/js/core/state.js)
 
 ### Changed From:
+
 ```javascript
 set(key, value) {
   this.state[key] = value;
@@ -119,6 +135,7 @@ set(key, value) {
 ```
 
 ### Changed To:
+
 ```javascript
 set(key, value) {
   const old = this.state[key];
@@ -129,7 +146,7 @@ set(key, value) {
   }
 
   // Skip if shallow equal (same keys and values)
-  if (typeof old === "object" && typeof value === "object" && 
+  if (typeof old === "object" && typeof value === "object" &&
       old !== null && value !== null) {
     const oldKeys = Object.keys(old);
     const newKeys = Object.keys(value);
@@ -145,6 +162,7 @@ set(key, value) {
 ```
 
 **Impact:**
+
 - Prevents unnecessary re-renders
 - Reduces: 5-10 renders → 1-2 per action (80% reduction)
 
@@ -162,6 +180,7 @@ set(key, value) {
 ```
 
 ### Test Files
+
 - `__tests__/server/db.test.js` - 84 tests
 - `__tests__/server/metadata.test.js` - 60 tests
 - `__tests__/utils/validation.test.js` - 230 tests
@@ -182,14 +201,14 @@ set(key, value) {
 
 ## Performance Summary
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| DB Queries | 200-500ms | 20-50ms | 90-95% faster |
-| API Latency | 150-300ms | 100-150ms | 30-40% faster |
-| Memory (24h) | ~500MB | ~250MB | 50% reduction |
-| GGUF Parsing | 500ms | 350ms | 30% faster |
-| Re-renders | 5-10 | 1-2 | 80% reduction |
-| CPU Accuracy | ±10% | ±2% | 5x better |
+| Metric       | Before    | After     | Improvement   |
+| ------------ | --------- | --------- | ------------- |
+| DB Queries   | 200-500ms | 20-50ms   | 90-95% faster |
+| API Latency  | 150-300ms | 100-150ms | 30-40% faster |
+| Memory (24h) | ~500MB    | ~250MB    | 50% reduction |
+| GGUF Parsing | 500ms     | 350ms     | 30% faster    |
+| Re-renders   | 5-10      | 1-2       | 80% reduction |
+| CPU Accuracy | ±10%      | ±2%       | 5x better     |
 
 ---
 
@@ -236,6 +255,7 @@ All debug logs are **PRESERVED** as requested for development mode.
 ## How to Verify
 
 ### Test Database Performance
+
 ```bash
 node -e "
 const DB = require('./server/db.js').default;
@@ -248,16 +268,18 @@ console.log('Models:', models.length);
 ```
 
 ### Check Database Size
+
 ```bash
 du -sh data/llama-dashboard.db
 ```
 
 ### Monitor API Latency
+
 ```javascript
 // In browser console:
-console.time('getModels');
+console.time("getModels");
 await stateManager.getModels();
-console.timeEnd('getModels');
+console.timeEnd("getModels");
 ```
 
 ---
@@ -279,14 +301,17 @@ git checkout -- server/ public/js/
 ## Next Steps (Optional)
 
 ### Low Priority (Quick wins)
+
 - Debounce window resize and input events
 - Implement subscription-based Socket.IO broadcasts
 
 ### Medium Priority
+
 - Component cleanup for memory leaks
 - Async-first GGUF parsing
 
 ### Advanced
+
 - Redis caching for frequently accessed queries
 - Performance monitoring dashboard
 - Load testing with 1000+ models

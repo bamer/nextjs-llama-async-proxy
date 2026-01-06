@@ -1,16 +1,15 @@
 /**
- * Simple Component Base Class - With Debug Logging
+ * Simple Component Base Class
  */
 
 class Component {
   constructor(props = {}) {
-    console.log("[DEBUG] Component constructor called:", this.constructor.name);
     this.props = props;
     this.state = {};
     this._el = null;
     this._mounted = false;
     this._events = {};
-    console.log("[DEBUG] Component constructor END:", this.constructor.name);
+    this._delegatedHandlers = {};
   }
 
   // Override in subclasses
@@ -20,15 +19,12 @@ class Component {
 
   // Mount to DOM
   mount(parent) {
-    console.log("[DEBUG] Component.mount() called:", this.constructor.name);
     if (typeof parent === "string") parent = document.querySelector(parent);
     if (!parent) throw new Error("Parent not found");
 
     this.willMount && this.willMount();
-    console.log("[DEBUG] Component willMount called:", this.constructor.name);
 
     const rendered = this.render();
-    console.log("[DEBUG] Component render returned:", typeof rendered);
 
     if (typeof rendered === "string") {
       const div = document.createElement("div");
@@ -39,48 +35,34 @@ class Component {
     }
 
     if (this._el) {
-      console.log("[DEBUG] Element created:", this._el.tagName, this._el.className);
       this._el._component = this;
       this.bindEvents();
       parent.appendChild(this._el);
       this._mounted = true;
       this.didMount && this.didMount();
-      console.log("[DEBUG] Component mounted:", this.constructor.name);
     }
     return this;
   }
 
   // Update state and re-render
   setState(updates) {
-    console.log(
-      "[DEBUG] Component.setState() called:",
-      this.constructor.name,
-      Object.keys(updates)
-    );
     this.state = { ...this.state, ...updates };
     if (this._el) {
-      console.log("[DEBUG] Component.update() called:", this.constructor.name);
       this.update();
-    } else {
-      console.warn("[DEBUG] Component has no _el, cannot update:", this.constructor.name);
     }
     return this;
   }
 
   // Re-render - simple full replacement (native approach)
   update() {
-    console.log("[DEBUG] Component.update() START:", this.constructor.name);
     const oldEl = this._el;
-    console.log("[DEBUG] Old element:", oldEl?.tagName, oldEl?.className);
 
     const rendered = this.render();
-    console.log("[DEBUG] Rendered:", typeof rendered);
 
     if (typeof rendered === "string") {
       const div = document.createElement("div");
       div.innerHTML = rendered;
       const newEl = div.firstChild || div;
-      console.log("[DEBUG] New element:", newEl.tagName, newEl.className);
       oldEl.replaceWith(newEl);
       this._el = newEl;
     } else if (rendered instanceof HTMLElement) {
@@ -90,10 +72,11 @@ class Component {
 
     if (this._el) {
       this._el._component = this;
+      // Call willReceiveProps before bindEvents when updating
+      this.willReceiveProps && this.willReceiveProps(this.props);
       this.bindEvents();
       this.didUpdate && this.didUpdate();
     }
-    console.log("[DEBUG] Component.update() END:", this.constructor.name);
   }
 
   // Get/Set state
@@ -107,81 +90,79 @@ class Component {
   }
 
   bindEvents() {
-    console.log("[DEBUG] Component.bindEvents() called:", this.constructor.name);
-    const map = this.getEventMap();
-    console.log("[DEBUG] Event map:", Object.keys(map).length, "events");
+    if (!this._el) return;
 
-    if (!this._el) {
-      console.error("[DEBUG] ERROR: No _el element for binding events!");
-      return;
+    const map = this.getEventMap();
+    if (Object.keys(map).length === 0) return;
+
+    // Remove old delegated listeners before adding new ones
+    if (this._delegatedHandlers) {
+      Object.entries(this._delegatedHandlers).forEach(([key, handler]) => {
+        const [event] = key.split("|");
+        document.removeEventListener(event, handler, false);
+      });
+      this._delegatedHandlers = {};
+    } else {
+      this._delegatedHandlers = {};
     }
 
+    // Use event delegation on document for stable event handling
     Object.entries(map).forEach(([spec, handler]) => {
       const [event, selector] = spec.split(" ");
-      let fn;
 
+      let fn;
       if (typeof handler === "string") {
-        if (!this[handler]) {
-          console.error(`[DEBUG] ERROR: Method '${handler}' not found on ${this.constructor.name}`);
-          console.error(
-            "[DEBUG] Available methods:",
-            Object.getOwnPropertyNames(Object.getPrototypeOf(this))
-          );
-          return;
-        }
+        if (!this[handler]) return;
         fn = this[handler].bind(this);
       } else if (typeof handler === "function") {
         fn = handler.bind(this);
       } else {
-        console.error("[DEBUG] ERROR: Invalid handler type:", typeof handler);
         return;
       }
 
-      console.log(
-        "[DEBUG] Binding event:",
-        event,
-        selector || "(no selector)",
-        "-> handler:",
-        typeof handler === "string" ? handler : "function"
-      );
+      // Create a unique key for this specific event+selector combination
+      const delegationKey = `${event}|${selector || "none"}|${this.constructor.name}`;
 
-      if (selector) {
-        this._el.addEventListener(event, (e) => {
-          console.log(
-            "[DEBUG] Event triggered:",
-            event,
-            "target matches:",
-            e.target.closest(selector) ? "YES" : "NO"
-          );
-          const target = e.target.closest(selector);
-          if (target) {
-            console.log("[DEBUG] Calling handler for:", event);
-            fn(e, target);
-          }
-        });
-      } else {
-        this._el.addEventListener(event, fn);
-      }
+      // Create delegated handler
+      const delegatedHandler = (e) => {
+        const target = selector ? e.target.closest(selector) : e.target;
+        if (target && this._el && (this._el === target || this._el.contains(target))) {
+          fn(e, target);
+        }
+      };
+
+      // Store for cleanup
+      this._delegatedHandlers[delegationKey] = delegatedHandler;
+
+      // Attach to document
+      document.addEventListener(event, delegatedHandler, false);
     });
   }
 
   // Cleanup
   destroy() {
-    console.log("[DEBUG] Component.destroy() called:", this.constructor.name);
     this.willDestroy && this.willDestroy();
+
+    // Remove delegated event listeners from document
+    if (this._delegatedHandlers) {
+      Object.entries(this._delegatedHandlers).forEach(([key, handler]) => {
+        const [event] = key.split("|");
+        document.removeEventListener(event, handler, false);
+      });
+      this._delegatedHandlers = null;
+    }
+
     if (this._el && this._el.parentNode) {
       this._el.parentNode.removeChild(this._el);
     }
     this._el = null;
     this._mounted = false;
+    this._events = {};
     this.didDestroy && this.didDestroy();
-    console.log("[DEBUG] Component destroyed:", this.constructor.name);
   }
 
   // Element creator (h)
   static h(tag, attrs = {}, ...children) {
-    console.log("[DEBUG] Component.h() called:", tag, Object.keys(attrs || {}).length, "attrs");
-
     // Handle Component classes
     if (typeof tag === "function" && tag.prototype instanceof Component) {
       const comp = new tag(attrs);
@@ -189,6 +170,8 @@ class Component {
       if (el instanceof HTMLElement) {
         el._component = comp;
         comp._el = el;
+        // Call bindEvents on the child component to attach event listeners
+        comp.bindEvents();
         children.forEach((c) => {
           if (typeof c === "string") {
             el.appendChild(document.createTextNode(c));
@@ -199,6 +182,7 @@ class Component {
             if (cel instanceof HTMLElement) {
               el.appendChild(cel);
               c._el = cel;
+              c.bindEvents();
             }
           }
         });
@@ -237,6 +221,7 @@ class Component {
         if (cel instanceof HTMLElement) {
           el.appendChild(cel);
           c._el = cel;
+          c.bindEvents();
         }
       }
     });
@@ -245,4 +230,3 @@ class Component {
 }
 
 window.Component = Component;
-console.log("[DEBUG] Component class loaded");

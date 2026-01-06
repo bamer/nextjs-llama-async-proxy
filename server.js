@@ -91,8 +91,14 @@ function startMetrics(io, db) {
 function setupShutdown(server) {
   const shutdown = (sig) => {
     console.log(`\n${sig} received, shutting down...`);
-    server.close(() => { console.log("Server closed"); process.exit(0); });
-    setTimeout(() => { console.error("Forced shutdown"); process.exit(1); }, 10000);
+    server.close(() => {
+      console.log("Server closed");
+      process.exit(0);
+    });
+    setTimeout(() => {
+      console.error("Forced shutdown");
+      process.exit(1);
+    }, 10000);
   };
   process.on("SIGTERM", () => shutdown("SIGTERM"));
   process.on("SIGINT", () => shutdown("SIGINT"));
@@ -116,9 +122,16 @@ async function main() {
   startMetrics(io, db);
 
   app.use(express.static(path.join(__dirname, "public")));
-  app.use("/socket.io", express.static(path.join(__dirname, "node_modules", "socket.io", "client-dist")));
+  app.use(
+    "/socket.io",
+    express.static(path.join(__dirname, "node_modules", "socket.io", "client-dist"))
+  );
   app.use((req, res, next) => {
-    if (req.method === "GET" && !req.path.startsWith("/socket.io") && !req.path.startsWith("/llamaproxws")) {
+    if (
+      req.method === "GET" &&
+      !req.path.startsWith("/socket.io") &&
+      !req.path.startsWith("/llamaproxws")
+    ) {
       res.sendFile(path.join(__dirname, "public", "index.html"));
     } else {
       next();
@@ -126,7 +139,9 @@ async function main() {
   });
 
   server.listen(PORT, () => {
-    console.log(`\n== Llama Async Proxy ==\n> http://localhost:${PORT}\n> Socket.IO: ws://localhost:${PORT}/llamaproxws\n`);
+    console.log(
+      `\n== Llama Async Proxy ==\n> http://localhost:${PORT}\n> Socket.IO: ws://localhost:${PORT}/llamaproxws\n`
+    );
   });
 
   setupShutdown(server);

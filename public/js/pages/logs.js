@@ -70,29 +70,48 @@ class LogsPage extends Component {
     const filtered = this._getFiltered();
     console.log("[LOGS] Filtered logs:", filtered.length);
 
-    const result = Component.h("div", { className: "logs-page" },
-      Component.h("div", { className: "toolbar" },
-        Component.h("button", { className: "btn btn-secondary", "data-action": "export" }, "Export"),
+    const result = Component.h(
+      "div",
+      { className: "logs-page" },
+      Component.h(
+        "div",
+        { className: "toolbar" },
+        Component.h(
+          "button",
+          { className: "btn btn-secondary", "data-action": "export" },
+          "Export"
+        ),
         Component.h("button", { className: "btn btn-danger", "data-action": "clear" }, "Clear"),
-        Component.h("select", { "data-field": "level" },
+        Component.h(
+          "select",
+          { "data-field": "level" },
           Component.h("option", { value: "all" }, "All"),
           Component.h("option", { value: "info" }, "Info"),
           Component.h("option", { value: "warn" }, "Warning"),
           Component.h("option", { value: "error" }, "Error")
         ),
-        Component.h("input", { type: "text", placeholder: "Search...", "data-field": "search", value: this.state.filters.search })
+        Component.h("input", {
+          type: "text",
+          placeholder: "Search...",
+          "data-field": "search",
+          value: this.state.filters.search,
+        })
       ),
-      Component.h("div", { className: "logs-container" },
+      Component.h(
+        "div",
+        { className: "logs-container" },
         filtered.length === 0
           ? Component.h("p", { className: "empty" }, "No logs")
           : filtered.map((l) => {
-            console.log("[LOGS] Rendering log:", l.level, l.message?.substring(0, 30));
-            return Component.h("div", { className: `log-entry level-${  l.level || "info"}` },
-              Component.h("span", { className: "log-time" }, this._time(l.timestamp)),
-              Component.h("span", { className: "log-level" }, (l.level || "info").toUpperCase()),
-              Component.h("span", { className: "log-msg" }, String(l.message))
-            );
-          })
+              console.log("[LOGS] Rendering log:", l.level, l.message?.substring(0, 30));
+              return Component.h(
+                "div",
+                { className: `log-entry level-${l.level || "info"}` },
+                Component.h("span", { className: "log-time" }, this._time(l.timestamp)),
+                Component.h("span", { className: "log-level" }, (l.level || "info").toUpperCase()),
+                Component.h("span", { className: "log-msg" }, String(l.message))
+              );
+            })
       )
     );
 
@@ -123,7 +142,7 @@ class LogsPage extends Component {
   _time(ts) {
     if (!ts) return "--:--:--";
     const d = new Date(ts);
-    const result = `${d.toLocaleTimeString()  }.${  String(d.getMilliseconds()).padStart(3, "0")}`;
+    const result = `${d.toLocaleTimeString()}.${String(d.getMilliseconds()).padStart(3, "0")}`;
     console.log("[LOGS] _time:", ts, "->", result);
     return result;
   }
@@ -155,7 +174,7 @@ class LogsPage extends Component {
         const b = new Blob([d], { type: "application/json" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(b);
-        a.download = `logs-${  new Date().toISOString()  }.json`;
+        a.download = `logs-${new Date().toISOString()}.json`;
         a.click();
         showNotification("Logs exported", "success");
         console.log("[LOGS] Logs exported");

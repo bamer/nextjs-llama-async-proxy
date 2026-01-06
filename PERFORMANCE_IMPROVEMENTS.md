@@ -1,6 +1,7 @@
 # Performance Improvements for Llama Proxy Dashboard
 
 ## Executive Summary
+
 This application has **several critical performance bottlenecks** affecting response times, memory usage, and frontend interactivity. Below are prioritized improvements grouped by impact.
 
 ---
@@ -8,19 +9,22 @@ This application has **several critical performance bottlenecks** affecting resp
 ## 🔴 CRITICAL IMPROVEMENTS (High Impact)
 
 ### 1. **Excessive Debug Logging (Affects All Layers)**
+
 **Issue**: State manager and handlers have verbose debug logging on every operation
+
 - Lines 13-210 in `state.js`: Every getter/setter logs with JSON stringification
 - Each log call serializes entire objects including deep structures (models lists, configs)
 - **Impact**: 50-100ms overhead per API call due to JSON serialization for logging
 
 **Fix**:
+
 ```javascript
 // Instead of:
 console.log("[STATE] set('" + key + "') called");
 console.log("[STATE]   Old value:", JSON.stringify(this.state[key])?.substring(0, 200));
 
 // Use conditional debug:
-if (process.env.DEBUG === 'true') {
+if (process.env.DEBUG === "true") {
   console.log("[STATE] set('" + key + "')", { changed: old !== value });
 }
 ```
@@ -30,20 +34,23 @@ if (process.env.DEBUG === 'true') {
 ---
 
 ### 2. **GGUF Parser: Inefficient Buffer Allocation**
+
 **File**: `server/gguf-parser.js` (lines 55-101)
 
 **Issue**: Allocates 4-8 separate buffers per metadata entry in loop
+
 ```javascript
 for (let i = 0; i < metadataCount; i++) {
-  const lenBuf = Buffer.alloc(8);        // New buffer each iteration
+  const lenBuf = Buffer.alloc(8); // New buffer each iteration
   fs.readSync(fd, lenBuf, 0, 8, offset);
-  const keyBuf = Buffer.alloc(keyLen);   // Another new buffer
-  const typeBuf = Buffer.alloc(4);       // Another
+  const keyBuf = Buffer.alloc(keyLen); // Another new buffer
+  const typeBuf = Buffer.alloc(4); // Another
   // ... more allocations
 }
 ```
 
 **Fix**: Pre-allocate reusable buffers
+
 ```javascript
 const lenBuf = Buffer.alloc(8);
 const typeBuf = Buffer.alloc(4);
@@ -54,7 +61,7 @@ for (let i = 0; i < metadataCount; i++) {
   fs.readSync(fd, lenBuf, 0, 8, offset);
   const keyLen = Number(new DataView(lenBuf.buffer).getBigUint64(0, true));
   offset += 8;
-  
+
   if (keyLen > keyBuf.length) keyBuf = Buffer.alloc(keyLen);
   fs.readSync(fd, keyBuf, 0, keyLen, offset);
   // ...
@@ -66,22 +73,29 @@ for (let i = 0; i < metadataCount; i++) {
 ---
 
 ### 3. **Metrics Collection: CPU Intensive Calculation**
+
 **File**: `server.js` (lines 22-36)
 
 **Issue**: Recalculates CPU usage every 10 seconds with expensive operations
+
 ```javascript
-const cpu = (os.cpus().reduce((a, c) => {
-  const t = c.times.user + c.times.nice + c.times.sys + c.times.idle;
-  return a + (c.times.user + c.times.nice + c.times.sys) / t;  // Math per CPU
-}, 0) / os.cpus().length) * 100;
+const cpu =
+  (os.cpus().reduce((a, c) => {
+    const t = c.times.user + c.times.nice + c.times.sys + c.times.idle;
+    return a + (c.times.user + c.times.nice + c.times.sys) / t; // Math per CPU
+  }, 0) /
+    os.cpus().length) *
+  100;
 ```
 
 **Problems**:
+
 - `os.cpus()` called twice per metric (6+ times per 10s with logging)
 - CPU usage calculation unreliable (doesn't track delta between measurements)
 - Blocks event loop during interval
 
 **Fix**:
+
 ```javascript
 let lastCpuTimes = null;
 
@@ -91,11 +105,14 @@ function startMetrics(io, db) {
       const mem = process.memoryUsage();
       const now = Date.now();
       const cpus = os.cpus();
-      const totalTimes = cpus.reduce((acc, cpu) => ({
-        user: acc.user + cpu.times.user,
-        sys: acc.sys + cpu.times.sys,
-        idle: acc.idle + cpu.times.idle,
-      }), { user: 0, sys: 0, idle: 0 });
+      const totalTimes = cpus.reduce(
+        (acc, cpu) => ({
+          user: acc.user + cpu.times.user,
+          sys: acc.sys + cpu.times.sys,
+          idle: acc.idle + cpu.times.idle,
+        }),
+        { user: 0, sys: 0, idle: 0 }
+      );
 
       let cpuUsage = 0;
       if (lastCpuTimes) {
@@ -103,21 +120,26 @@ function startMetrics(io, db) {
         const sysDelta = totalTimes.sys - lastCpuTimes.sys;
         const idleDelta = totalTimes.idle - lastCpuTimes.idle;
         const total = userDelta + sysDelta + idleDelta;
-        cpuUsage = (total > 0) ? ((userDelta + sysDelta) / total) * 100 : 0;
+        cpuUsage = total > 0 ? ((userDelta + sysDelta) / total) * 100 : 0;
       }
       lastCpuTimes = totalTimes;
 
       db.saveMetrics({ cpu_usage: cpuUsage, memory_usage: mem.heapUsed, uptime: process.uptime() });
-      io.emit("metrics:update", { type: "broadcast", data: { metrics: { 
-        cpu: { usage: cpuUsage }, 
-        memory: { used: mem.heapUsed }, 
-        uptime: process.uptime() 
-      }}});
+      io.emit("metrics:update", {
+        type: "broadcast",
+        data: {
+          metrics: {
+            cpu: { usage: cpuUsage },
+            memory: { used: mem.heapUsed },
+            uptime: process.uptime(),
+          },
+        },
+      });
     } catch (e) {
       console.error("[METRICS] Error:", e.message);
     }
   }, 10000);
-  
+
   return metricsInterval;
 }
 ```
@@ -127,9 +149,11 @@ function startMetrics(io, db) {
 ---
 
 ### 4. **Frontend: Excessive Re-renders Due to State Changes**
+
 **File**: `public/js/core/state.js` (lines 180-210)
 
 **Issue**: Every state change notifies ALL listeners, triggering re-renders
+
 ```javascript
 set(key, value) {
   const old = this.state[key];
@@ -149,18 +173,19 @@ _notify(key, value, old) {
 **Impact**: When models list updates, every component subscribed to `*` re-renders
 
 **Fix**: Add shallow comparison
+
 ```javascript
 set(key, value) {
   const old = this.state[key];
-  
+
   // Skip notify if value unchanged
   if (old === value || (
-    typeof value === 'object' && 
+    typeof value === 'object' &&
     JSON.stringify(old) === JSON.stringify(value)
   )) {
     return this;
   }
-  
+
   this.state[key] = value;
   this._notify(key, value, old);
   return this;
@@ -174,9 +199,11 @@ set(key, value) {
 ## 🟡 HIGH PRIORITY IMPROVEMENTS
 
 ### 5. **Database: No Indexes on Frequently Queried Columns**
+
 **File**: `server/db.js` (lines 30-75)
 
 **Issue**: Tables created without indexes
+
 ```sql
 CREATE TABLE IF NOT EXISTS models (
   id TEXT PRIMARY KEY,
@@ -200,10 +227,11 @@ CREATE TABLE IF NOT EXISTS logs (
 ```
 
 **Fix**: Add indexes in init method
+
 ```javascript
 init() {
   this.db.exec(`...table creation...`);
-  
+
   // Add indexes for frequently queried columns
   const indexes = [
     "CREATE INDEX IF NOT EXISTS idx_models_status ON models(status)",
@@ -213,13 +241,14 @@ init() {
     "CREATE INDEX IF NOT EXISTS idx_logs_source ON logs(source)",
     "CREATE INDEX IF NOT EXISTS idx_metadata_key ON metadata(key)",
   ];
-  
+
   indexes.forEach(idx => this.db.exec(idx));
   this._migrateModelsTable();
 }
 ```
 
 **Queries Affected**:
+
 - `getLogs(limit)`: O(n) → O(log n)
 - `getMetricsHistory(limit)`: O(n) → O(log n)
 - Model queries with status filters: O(n) → O(log n)
@@ -229,11 +258,13 @@ init() {
 ---
 
 ### 6. **Frontend: No Debouncing on Input/Window Resize**
+
 **File**: `public/js/utils/format.js` and page components
 
 **Issue**: If users resize window or type rapidly, components re-render excessively
 
 **Fix**: Add debounce utility (if missing)
+
 ```javascript
 // In utils/format.js or utils/debounce.js
 export function debounce(func, wait) {
@@ -253,7 +284,7 @@ const handleResize = debounce(() => {
   this.setState({ width: window.innerWidth });
 }, 300);
 
-window.addEventListener('resize', handleResize);
+window.addEventListener("resize", handleResize);
 ```
 
 **Benefit**: Smoother UI, reduced CPU/GPU usage during rapid changes
@@ -261,14 +292,17 @@ window.addEventListener('resize', handleResize);
 ---
 
 ### 7. **Metrics Storage: Unbounded Growth**
+
 **File**: `server/db.js` and `server.js`
 
 **Issue**: Metrics saved every 10 seconds indefinitely
+
 - 8,640 records per day
 - 259,200 records per month
 - Queries get slower as table grows
 
 **Fix**: Add retention policy
+
 ```javascript
 // In db.js
 pruneMetrics(maxRecords = 10000) {
@@ -290,14 +324,17 @@ if (i % 36 === 0) { // Every 6 minutes
 ---
 
 ### 8. **Socket.IO: Inefficient Event Broadcasting**
+
 **File**: `server/handlers.js` (multiple locations)
 
 **Issue**: Broadcasting to all clients even when not needed
+
 ```javascript
 io.emit("llama:status", { status: "running", ... });  // Goes to everyone
 ```
 
 **Better approach**: Broadcast only to interested clients
+
 ```javascript
 // Track subscriptions
 const subscriptions = new Map(); // clientId -> Set of topics
@@ -324,19 +361,22 @@ function broadcast(topic, data) {
 ## 🟢 MEDIUM PRIORITY IMPROVEMENTS
 
 ### 9. **Frontend Component Lifecycle: Memory Leaks**
+
 **File**: `public/js/core/component.js` and page controllers
 
 **Issue**: Event listeners not cleaned up on unmount
+
 ```javascript
 class Component {
   didMount() {
-    window.addEventListener('resize', this.handleResize);  // Never unsubscribed
-    stateManager.subscribe('models', this.onModelsChange); // Not unsubscribed on unmount
+    window.addEventListener("resize", this.handleResize); // Never unsubscribed
+    stateManager.subscribe("models", this.onModelsChange); // Not unsubscribed on unmount
   }
 }
 ```
 
 **Fix**: Track unsubscribers
+
 ```javascript
 class Component {
   constructor(props) {
@@ -348,7 +388,7 @@ class Component {
     this.unsubscribers.push(
       stateManager.subscribe('models', this.onModelsChange.bind(this))
     );
-    
+
     const handler = this.handleResize.bind(this);
     window.addEventListener('resize', handler);
     this.unsubscribers.push(() => window.removeEventListener('resize', handler));
@@ -365,9 +405,11 @@ class Component {
 ---
 
 ### 10. **GGUF Parsing: Unnecessary Fallback Chain**
+
 **File**: `server/gguf-parser.js` (lines 162-310)
 
 **Issue**: Tries 3 different parsing methods sequentially
+
 1. `parseGgufHeaderSync()` - always runs first
 2. `gguf()` - if first fails
 3. `ggufAllShards()` - if second fails
@@ -376,10 +418,13 @@ class Component {
 **Problem**: Step 1 is synchronous and blocks, then we try async methods
 
 **Fix**: Start with async, fail to sync only if needed
+
 ```javascript
 export async function parseGgufMetadata(filePath) {
-  const metadata = { /* ... */ };
-  
+  const metadata = {
+    /* ... */
+  };
+
   try {
     const stats = fs.statSync(filePath);
     metadata.size = stats.size;
@@ -399,7 +444,7 @@ export async function parseGgufMetadata(filePath) {
         return metadata;
       }
     }
-    
+
     // Last resort: filename parsing
     const fileName = path.basename(filePath);
     metadata.architecture = extractArchitecture(fileName);
@@ -417,35 +462,38 @@ export async function parseGgufMetadata(filePath) {
 ---
 
 ### 11. **Models Scan: Unnecessary Sequential Processing**
+
 **File**: `server/handlers.js` (model scan handlers)
 
 **Issue**: Models scanned sequentially one by one if implementation exists
 
 **Fix**: Use Promise.all() for parallel operations
+
 ```javascript
 async function scanModels(directory) {
   const files = await fs.promises.readdir(directory);
-  
+
   const modelPromises = files
-    .filter(f => f.toLowerCase().endsWith('.gguf'))
-    .map(file => 
+    .filter((f) => f.toLowerCase().endsWith(".gguf"))
+    .map((file) =>
       parseGgufMetadata(path.join(directory, file))
-        .then(meta => ({ file, meta }))
-        .catch(err => ({ file, meta: null, error: err.message }))
+        .then((meta) => ({ file, meta }))
+        .catch((err) => ({ file, meta: null, error: err.message }))
     );
-  
+
   const results = await Promise.all(modelPromises);
   // ... process all at once
 }
 ```
 
-**Benefit**: Scan time from O(n*t) → O(t) where n = file count
+**Benefit**: Scan time from O(n\*t) → O(t) where n = file count
 
 ---
 
 ## 📊 Performance Monitoring
 
 ### Add Performance Metrics
+
 ```javascript
 // In handlers.js
 function measureAsync(name, fn) {
@@ -467,7 +515,7 @@ function measureAsync(name, fn) {
 }
 
 // Usage:
-const parseModel = measureAsync('parseGgufMetadata', parseGgufMetadata);
+const parseModel = measureAsync("parseGgufMetadata", parseGgufMetadata);
 ```
 
 ---
@@ -512,11 +560,10 @@ observer.observe({ entryTypes: ['longtask'] });
 
 ## Expected Improvements
 
-| Issue | Before | After | Impact |
-|-------|--------|-------|--------|
-| API latency | 150-300ms | 80-120ms | -50% |
-| Memory (1hr) | ~200MB | ~100MB | -50% |
-| DB query time | 500-1000ms | 10-50ms | -90% |
-| GGUF parse | 500ms | 350ms | -30% |
-| Re-renders per action | 5-10 | 1-2 | -80% |
-
+| Issue                 | Before     | After    | Impact |
+| --------------------- | ---------- | -------- | ------ |
+| API latency           | 150-300ms  | 80-120ms | -50%   |
+| Memory (1hr)          | ~200MB     | ~100MB   | -50%   |
+| DB query time         | 500-1000ms | 10-50ms  | -90%   |
+| GGUF parse            | 500ms      | 350ms    | -30%   |
+| Re-renders per action | 5-10       | 1-2      | -80%   |

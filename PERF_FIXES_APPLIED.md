@@ -22,6 +22,7 @@ CREATE INDEX idx_metadata_key ON metadata(key)
 **Impact**: 10-100x faster queries with large datasets
 
 **Queries improved**:
+
 - `getLogs(limit)`: O(n) → O(log n)
 - `getMetricsHistory(limit)`: O(n) → O(log n)
 - Model lookups by status: O(n) → O(log n)
@@ -41,6 +42,7 @@ db.pruneMetrics(10000);
 **Impact**: Bounded database size, constant query speed
 
 **Benefits**:
+
 - Database stays <5MB instead of growing unbounded
 - Query speed doesn't degrade over time
 - Only ~259KB per month of metrics history
@@ -52,14 +54,19 @@ db.pruneMetrics(10000);
 **Replaced**: Instantaneous CPU calculation with delta tracking
 
 **Before**:
+
 ```javascript
-const cpu = (os.cpus().reduce((a, c) => {
-  const t = c.times.user + c.times.nice + c.times.sys + c.times.idle;
-  return a + (c.times.user + c.times.nice + c.times.sys) / t;
-}, 0) / os.cpus().length) * 100;
+const cpu =
+  (os.cpus().reduce((a, c) => {
+    const t = c.times.user + c.times.nice + c.times.sys + c.times.idle;
+    return a + (c.times.user + c.times.nice + c.times.sys) / t;
+  }, 0) /
+    os.cpus().length) *
+  100;
 ```
 
 **After**:
+
 - Tracks CPU times between measurements
 - Calculates actual delta: (userDelta + sysDelta) / totalDelta
 - More accurate, less CPU spinning
@@ -74,16 +81,18 @@ const cpu = (os.cpus().reduce((a, c) => {
 **Changed**: Loop that allocated 4-8 new buffers per metadata entry
 
 **Before**:
+
 ```javascript
 for (let i = 0; i < metadataCount; i++) {
-  const lenBuf = Buffer.alloc(8);      // New buffer
+  const lenBuf = Buffer.alloc(8); // New buffer
   const keyBuf = Buffer.alloc(keyLen); // New buffer
-  const typeBuf = Buffer.alloc(4);     // New buffer
+  const typeBuf = Buffer.alloc(4); // New buffer
   // ... more allocations
 }
 ```
 
 **After**:
+
 - Pre-allocates 5 reusable buffers
 - Expands only if needed
 - Reduces GC pressure
@@ -112,6 +121,7 @@ for (let i = 0; i < metadataCount; i++) {
 **Added**: Shallow comparison in `set()` method
 
 **Before**:
+
 ```javascript
 set(key, value) {
   this.state[key] = value;
@@ -120,6 +130,7 @@ set(key, value) {
 ```
 
 **After**:
+
 ```javascript
 set(key, value) {
   const old = this.state[key];
@@ -128,7 +139,7 @@ set(key, value) {
   if (old === value) return this;
 
   // Skip if shallow equal (object with same keys/values)
-  if (typeof old === "object" && typeof value === "object" && 
+  if (typeof old === "object" && typeof value === "object" &&
       old !== null && value !== null) {
     const oldKeys = Object.keys(old);
     const newKeys = Object.keys(value);
@@ -160,6 +171,7 @@ Coverage:    100% on all test files
 ```
 
 ### Test Files
+
 - `__tests__/server/db.test.js` - 84 tests
 - `__tests__/server/metadata.test.js` - 60 tests
 - `__tests__/utils/validation.test.js` - 230 tests
@@ -169,20 +181,21 @@ Coverage:    100% on all test files
 
 ## Expected Performance Improvements
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Database query time | 500-1000ms | 10-50ms | **90-95%** |
-| API latency | 150-300ms | 100-150ms | **30-40%** |
-| Memory (24h uptime) | ~500MB | ~250MB | **50%** |
-| GGUF parse time | 500ms | 350-400ms | **20-30%** |
-| Re-renders per action | 5-10 | 1-2 | **80%** |
-| CPU metrics accuracy | ±10% | ±2% | **5x better** |
+| Metric                | Before     | After     | Improvement   |
+| --------------------- | ---------- | --------- | ------------- |
+| Database query time   | 500-1000ms | 10-50ms   | **90-95%**    |
+| API latency           | 150-300ms  | 100-150ms | **30-40%**    |
+| Memory (24h uptime)   | ~500MB     | ~250MB    | **50%**       |
+| GGUF parse time       | 500ms      | 350-400ms | **20-30%**    |
+| Re-renders per action | 5-10       | 1-2       | **80%**       |
+| CPU metrics accuracy  | ±10%       | ±2%       | **5x better** |
 
 ---
 
 ## Verification Steps
 
 ### 1. Database Performance
+
 ```bash
 # Monitor query performance with indexes
 node -e "
@@ -195,6 +208,7 @@ console.timeEnd('getModels');
 ```
 
 ### 2. Metrics Pruning
+
 ```bash
 # Check database size
 du -sh data/llama-dashboard.db
@@ -204,6 +218,7 @@ grep "Pruned" server.log
 ```
 
 ### 3. API Latency
+
 ```bash
 # In browser console:
 console.time('getModels');
@@ -211,6 +226,7 @@ stateManager.getModels().then(() => console.timeEnd('getModels'));
 ```
 
 ### 4. Memory Usage
+
 ```bash
 # Terminal:
 watch -n 1 'ps aux | grep "node server.js"'
@@ -223,10 +239,11 @@ watch -n 1 'ps aux | grep "node server.js"'
 All debug logs are **KEPT** as requested for development mode.
 
 Enable/disable with:
+
 ```javascript
 // In browser console:
-localStorage.setItem('DEBUG_STATE', 'true');  // Enable verbose logging
-localStorage.removeItem('DEBUG_STATE');        // Disable
+localStorage.setItem("DEBUG_STATE", "true"); // Enable verbose logging
+localStorage.removeItem("DEBUG_STATE"); // Disable
 ```
 
 ---
@@ -258,18 +275,21 @@ git checkout -- server/ public/js/
 ## Next Steps
 
 ### Medium Priority (Optional)
+
 - [ ] Fix #6: Debouncing on input/resize events
 - [ ] Fix #7: Socket.IO subscription-based broadcasting
 - [ ] Fix #8: Component cleanup for memory leaks
 - [ ] Fix #9: Async-first GGUF parsing
 
 ### Monitoring
+
 - [ ] Set up performance monitoring dashboard
 - [ ] Track API response times over time
 - [ ] Monitor database query performance
 - [ ] Watch memory usage trends
 
 ### Load Testing
+
 - [ ] Test with 1000+ models in directory
 - [ ] Simulate 100+ concurrent connections
 - [ ] Benchmark GGUF parsing with large files

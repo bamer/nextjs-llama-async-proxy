@@ -105,9 +105,13 @@ async function testModelsScan() {
     console.log(`Errors: ${errors.length}`);
 
     // Check for key success/failure indicators
-    const scanSuccess = logs.some((l) => l.text.includes("SUCCESS") && l.text.includes("scanModels"));
+    const scanSuccess = logs.some(
+      (l) => l.text.includes("SUCCESS") && l.text.includes("scanModels")
+    );
     const scanError = logs.some((l) => l.text.includes("ERROR") && l.text.includes("scanModels"));
-    const modelsRefreshed = logs.some((l) => l.text.includes("refreshModels") && l.text.includes("complete"));
+    const modelsRefreshed = logs.some(
+      (l) => l.text.includes("refreshModels") && l.text.includes("complete")
+    );
 
     console.log("\nKey indicators:");
     console.log(`  Scan success: ${scanSuccess}`);
@@ -119,8 +123,9 @@ async function testModelsScan() {
       errors.forEach((err, i) => console.log(`  ${i + 1}. ${err}`));
     }
 
-    console.log("\n" + (errors.length === 0 && scanSuccess ? "✓ TEST PASSED" : "✗ TEST NEEDS INVESTIGATION"));
-
+    console.log(
+      "\n" + (errors.length === 0 && scanSuccess ? "✓ TEST PASSED" : "✗ TEST NEEDS INVESTIGATION")
+    );
   } catch (error) {
     console.error("\n[TEST ERROR]", error.message);
     errors.push(error.message);

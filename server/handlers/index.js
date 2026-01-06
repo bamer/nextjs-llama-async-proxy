@@ -4,13 +4,13 @@
  */
 
 // Response helpers
-export { ok, err } from "./handlers/response.js";
+export { ok, err } from "./response.js";
 
 // Constants
-export { fileTypeMap } from "./handlers/constants.js";
+export { fileTypeMap } from "./constants.js";
 
 // Logger
-export { logger } from "./handlers/logger.js";
+export { logger } from "./logger.js";
 
 // Router management
 export {
@@ -20,16 +20,16 @@ export {
   loadModel,
   unloadModel,
   getRouterState,
-} from "./handlers/llama-router/index.js";
+} from "./llama-router/index.js";
 
 // Handler modules
-import { registerConnectionHandlers } from "./handlers/connection.js";
-import { registerModelsHandlers } from "./handlers/models/index.js";
-import { registerMetricsHandlers } from "./handlers/metrics.js";
-import { registerLogsHandlers } from "./handlers/logs.js";
-import { registerConfigHandlers } from "./handlers/config.js";
-import { registerLlamaHandlers } from "./handlers/llama.js";
-import { logger } from "./handlers/logger.js";
+import { registerConnectionHandlers } from "./connection.js";
+import { registerModelsHandlers } from "./models/index.js";
+import { registerMetricsHandlers } from "./metrics.js";
+import { registerLogsHandlers } from "./logs.js";
+import { registerConfigHandlers } from "./config.js";
+import { registerLlamaHandlers } from "./llama.js";
+import { logger } from "./logger.js";
 
 /**
  * Register all Socket.IO event handlers

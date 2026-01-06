@@ -95,7 +95,10 @@ class Router {
 
     // Cleanup previous controller
     if (this.currentController) {
-      console.log("[ROUTER] Destroying previous controller:", this.currentController?.constructor?.name);
+      console.log(
+        "[ROUTER] Destroying previous controller:",
+        this.currentController?.constructor?.name
+      );
       this.currentController.willUnmount && this.currentController.willUnmount();
       this.currentController.destroy && this.currentController.destroy();
       this.currentController = null;
