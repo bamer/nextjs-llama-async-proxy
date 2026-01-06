@@ -185,19 +185,12 @@ class ChartManager {
    * @param {Array} history - Historical metrics data
    */
   createMemoryChart(canvas, history = []) {
-    console.log(
-      "[CHART-MANAGER] createMemoryChart called, canvas:",
-      !!canvas,
-      "history length:",
-      history.length
-    );
     // Destroy existing chart if it exists
     if (this.memoryChart) {
       try {
-        console.log("[CHART-MANAGER] Destroying existing memory chart");
         this.memoryChart.destroy();
       } catch (e) {
-        console.log("[CHART-MANAGER] Error destroying memory chart:", e.message);
+        // Ignore
       }
       this.memoryChart = null;
     }
@@ -206,8 +199,6 @@ class ChartManager {
       console.log("[CHART-MANAGER] No canvas for memory chart");
       return;
     }
-
-    console.log("[CHART-MANAGER] Creating memory chart with canvas dimensions:", canvas.width, "x", canvas.height);
 
     const ctx = canvas.getContext("2d");
 

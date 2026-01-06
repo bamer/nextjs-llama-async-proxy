@@ -125,24 +125,26 @@ class ChartsSection extends Component {
     if (!canvas) return;
 
     const checkDimensions = () => {
-      // Get dimensions from parent container since canvas might be hidden
-      const container = canvas.parentElement;
-      const rect = container.getBoundingClientRect();
-      console.log("[CHARTS-SECTION] Canvas " + type + " container dimensions:", rect.width, "x", rect.height);
+      const rect = canvas.getBoundingClientRect();
+      console.log("[CHARTS-SECTION] Canvas " + type + " dimensions:", rect.width, "x", rect.height);
 
       if (rect.width > 0 && rect.height > 0) {
         // Explicitly set canvas width/height attributes
         canvas.width = Math.round(rect.width * (window.devicePixelRatio || 1));
         canvas.height = Math.round(rect.height * (window.devicePixelRatio || 1));
 
-        // Create the chart synchronously (don't wait for context)
+        // Get context with device pixel ratio
+        const ctx = canvas.getContext("2d");
+        ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+
+        // Create the chart
         if (type === "usage") {
           chartManager.createUsageChart(canvas, this.state.history);
         } else {
           chartManager.createMemoryChart(canvas, this.state.history);
         }
 
-        // Update visibility after both charts are created
+        // Update visibility
         this._updateVisibility();
       } else {
         // Canvas doesn't have dimensions yet, retry
@@ -150,8 +152,8 @@ class ChartsSection extends Component {
       }
     };
 
-    // Start checking dimensions immediately
-    checkDimensions();
+    // Start checking dimensions
+    setTimeout(checkDimensions, 50);
   }
 
   /**
@@ -183,15 +185,35 @@ class ChartsSection extends Component {
 
     const newType = tab.dataset.chart;
 
-    console.log("[CHARTS-SECTION] Tab clicked:", newType);
+    // Use chartManager from props
+    const chartManager = this.props.chartManager || this.state.chartManager;
 
-    // Notify parent - parent will update chartType and visibility
+    if (chartManager) {
+      const canvas = this._el?.querySelector(newType === "usage" ? "#usageChart" : "#memoryChart");
+
+      if (canvas) {
+        // Get current dimensions
+        const rect = canvas.getBoundingClientRect();
+
+        if (rect.width > 0 && rect.height > 0) {
+          // Set canvas dimensions
+          canvas.width = Math.round(rect.width * (window.devicePixelRatio || 1));
+          canvas.height = Math.round(rect.height * (window.devicePixelRatio || 1));
+
+          // Create the chart for this type
+          if (newType === "usage") {
+            chartManager.createUsageChart(canvas, this.state.history);
+          } else {
+            chartManager.createMemoryChart(canvas, this.state.history);
+          }
+        }
+      }
+    }
+
+    // Notify parent - parent will update chartType
     if (this.props.onChartTypeChange) {
       this.props.onChartTypeChange(newType);
     }
-
-    // Update visibility immediately (charts already created)
-    this._updateVisibility();
   }
 
   render() {
