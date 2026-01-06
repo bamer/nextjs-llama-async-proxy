@@ -127,7 +127,9 @@ class DB {
 
   // Metadata
   getMeta(k, def = null) {
-    try { const r = this.db.prepare("SELECT value FROM metadata WHERE key = ?").get(k); if (r) return JSON.parse(r.value); } catch (e) {}
+    try { const r = this.db.prepare("SELECT value FROM metadata WHERE key = ?").get(k); if (r) return JSON.parse(r.value); } catch {
+      // Silently ignore JSON parse errors
+    }
     return def;
   }
   setMeta(k, v) {
@@ -244,7 +246,7 @@ function extractArchitecture(filename) {
 
 function extractParams(filename) {
   const match = filename.match(/(\d+(?:\.\d+)?)[bB](?=[-._\s]|$)/);
-  if (match) return match[1] + "B";
+  if (match) return `${match[1]  }B`;
   const lower = filename.toLowerCase();
   if (/phi[-_]?3/i.test(lower)) return "3B";
   if (/yi[-_]?34b/i.test(lower)) return "34B";
@@ -272,13 +274,14 @@ function extractQuantization(filename) {
   return "";
 }
 
-function formatBytes(bytes) {
-  if (bytes === 0) return "0 B";
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return (bytes / Math.pow(k, i)).toFixed(1) + " " + sizes[i];
-}
+// Utility function for formatting bytes (not currently used but kept for reference)
+// function formatBytesDb(bytes) {
+//   if (bytes === 0) return "0 B";
+//   const k = 1024;
+//   const sizes = ["B", "KB", "MB", "GB", "TB"];
+//   const i = Math.floor(Math.log(bytes) / Math.log(k));
+//   return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+// }
 
 // Simple Logger
 class Logger {
@@ -418,11 +421,11 @@ function setupHandlers(io, db) {
             }
             return results;
           };
-          
+
           const modelFiles = findModelFiles(modelsDir);
           console.log("[DEBUG] Found model files:", modelFiles.length);
           const existingModels = db.getModels();
-          
+
           for (const fullPath of modelFiles) {
             const fileName = path.basename(fullPath);
             const existing = existingModels.find(m => m.model_path === fullPath);
@@ -496,7 +499,7 @@ function setupHandlers(io, db) {
       console.log("[DEBUG] config:get request", { requestId: id });
       try {
         const config = db.getConfig();
-        console.log("[DEBUG] config:get result:", JSON.stringify(config).substring(0, 100) + "...");
+        console.log("[DEBUG] config:get result:", `${JSON.stringify(config).substring(0, 100)  }...`);
         ok(socket, "config:get:result", { config }, id);
       } catch (e) {
         console.error("[DEBUG] config:get error:", e.message);
@@ -558,7 +561,7 @@ function startMetrics(io, db) {
       const m = { cpu_usage: cpu, memory_usage: mem.heapUsed, disk_usage: 0, active_models: 0, uptime: process.uptime() };
       db.saveMetrics(m);
       io.emit("metrics:update", { metrics: { cpu: { usage: cpu }, memory: { used: mem.heapUsed }, disk: { used: 0 }, uptime: process.uptime() } });
-    } catch (e) { logger.error("Metrics error: " + e.message); }
+    } catch (e) { logger.error(`Metrics error: ${  e.message}`); }
   }, 10000);
 }
 

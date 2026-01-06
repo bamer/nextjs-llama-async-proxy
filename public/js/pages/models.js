@@ -70,17 +70,17 @@ class ModelsPage extends Component {
     const tbodyContent = filtered.length === 0
       ? Component.h("tr", {}, Component.h("td", { colSpan: 6 }, "No models"))
       : filtered.map(m => Component.h("tr", { "data-id": m.id },
-          Component.h("td", {}, m.name),
-          Component.h("td", {}, Component.h("span", { className: `badge ${m.status}` }, m.status)),
-          Component.h("td", {}, m.params || "-"),
-          Component.h("td", {}, m.quantization || "-"),
-          Component.h("td", {}, m.file_size ? formatBytes(m.file_size) : "-"),
-          Component.h("td", {},
-            m.status === "running"
-              ? Component.h("button", { className: "btn btn-sm", "data-action": "stop" }, "Stop")
-              : Component.h("button", { className: "btn btn-sm btn-primary", "data-action": "start" }, "Start")
-          )
-        ));
+        Component.h("td", {}, m.name),
+        Component.h("td", {}, Component.h("span", { className: `badge ${m.status}` }, m.status)),
+        Component.h("td", {}, m.params || "-"),
+        Component.h("td", {}, m.quantization || "-"),
+        Component.h("td", {}, m.file_size ? formatBytes(m.file_size) : "-"),
+        Component.h("td", {},
+          m.status === "running"
+            ? Component.h("button", { className: "btn btn-sm", "data-action": "stop" }, "Stop")
+            : Component.h("button", { className: "btn btn-sm btn-primary", "data-action": "start" }, "Start")
+        )
+      ));
     const result = Component.h("div", { className: "models-page" },
       Component.h("div", { className: "toolbar" },
         Component.h("button", { className: "btn btn-primary", "data-action": "scan" }, "Scan Filesystem")
@@ -107,7 +107,7 @@ class ModelsPage extends Component {
         Component.h("tbody", {}, ...(Array.isArray(tbodyContent) ? tbodyContent : [tbodyContent]))
       )
     );
-    const tbody = result.querySelector ? result.querySelector('tbody') : null;
+    const tbody = result.querySelector ? result.querySelector("tbody") : null;
     console.log("[DEBUG] Rendered tbody rows:", tbody?.childElementCount);
     return result;
   }
@@ -143,7 +143,7 @@ class ModelsPage extends Component {
       showNotification(msg, "success");
     }).catch(err => {
       console.error("[DEBUG] scanModels error:", err);
-      showNotification("Scan failed: " + err.message, "error");
+      showNotification(`Scan failed: ${  err.message}`, "error");
     });
   }
 
@@ -158,7 +158,7 @@ function formatBytes(bytes) {
   const k = 1024;
   const sizes = ["B", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))  } ${  sizes[i]}`;
 }
 
 window.ModelsController = ModelsController;

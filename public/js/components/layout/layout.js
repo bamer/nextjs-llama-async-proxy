@@ -43,7 +43,7 @@ class Sidebar extends Component {
     if (t) {
       e.preventDefault();
       const p = t.dataset.page;
-      window.router.navigate("/" + (p === "dashboard" ? "" : p));
+      window.router.navigate(`/${  p === "dashboard" ? "" : p}`);
     }
   }
 }

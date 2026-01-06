@@ -59,7 +59,7 @@ class Router {
     return this;
   }
 
-  async _handle(path, isInitial = false) {
+  async _handle(path) {
     const route = this._match(path);
 
     if (this.currentController) {

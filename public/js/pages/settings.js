@@ -23,7 +23,7 @@ class SettingsController {
     console.log("[DEBUG] SettingsController load");
     try {
       const c = await stateManager.getConfig();
-      console.log("[DEBUG] Config loaded:", JSON.stringify(c.config).substring(0, 100) + "...");
+      console.log("[DEBUG] Config loaded:", `${JSON.stringify(c.config).substring(0, 100)  }...`);
       stateManager.set("config", c.config || {});
     } catch (e) { console.error("[DEBUG] Settings load error:", e); }
   }
@@ -114,7 +114,7 @@ class SettingsPage extends Component {
       showNotification("Settings saved", "success");
     } catch (e) {
       console.error("[DEBUG] Save error:", e);
-      showNotification("Save failed: " + e.message, "error");
+      showNotification(`Save failed: ${  e.message}`, "error");
     }
   }
 
@@ -128,7 +128,7 @@ class SettingsPage extends Component {
         showNotification("Settings reset to defaults", "info");
       } catch (e) {
         console.error("[DEBUG] Reset error:", e);
-        showNotification("Reset failed: " + e.message, "error");
+        showNotification(`Reset failed: ${  e.message}`, "error");
       }
     }
   }

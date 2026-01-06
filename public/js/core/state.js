@@ -185,25 +185,27 @@ class StateManager {
   }
 
   // API
-  async getModels() { console.log("[DEBUG] API getModels"); return this.request("models:list"); }
-  async getModel(id) { console.log("[DEBUG] API getModel", id); return this.request("models:get", { modelId: id }); }
-  async createModel(m) { console.log("[DEBUG] API createModel", m); return this.request("models:create", { model: m }); }
-  async updateModel(id, u) { console.log("[DEBUG] API updateModel", id, u); return this.request("models:update", { modelId: id, updates: u }); }
-  async deleteModel(id) { console.log("[DEBUG] API deleteModel", id); return this.request("models:delete", { modelId: id }); }
-  async startModel(id) { console.log("[DEBUG] API startModel", id); return this.request("models:start", { modelId: id }); }
-  async stopModel(id) { console.log("[DEBUG] API stopModel", id); return this.request("models:stop", { modelId: id }); }
-  async scanModels() { console.log("[DEBUG] API scanModels"); return this.request("models:scan"); }
-  async getMetrics() { console.log("[DEBUG] API getMetrics"); return this.request("metrics:get"); }
-  async getMetricsHistory(p) { console.log("[DEBUG] API getMetricsHistory", p); return this.request("metrics:history", p); }
-  async getLogs(p) { console.log("[DEBUG] API getLogs", p); return this.request("logs:get", p); }
-  async clearLogs() { console.log("[DEBUG] API clearLogs"); return this.request("logs:clear"); }
-  async getConfig() { console.log("[DEBUG] API getConfig"); return this.request("config:get"); }
-  async updateConfig(c) { console.log("[DEBUG] API updateConfig", c); return this.request("config:update", { config: c }); }
-  async getSettings() { console.log("[DEBUG] API getSettings"); return this.request("settings:get"); }
-  async updateSettings(s) { console.log("[DEBUG] API updateSettings", s); return this.request("settings:update", { settings: s }); }
-  async getLlamaStatus() { console.log("[DEBUG] API getLlamaStatus"); return this.request("llama:status"); }
-  async startLlama() { console.log("[DEBUG] API startLlama"); return this.request("llama:start"); }
-  async stopLlama() { console.log("[DEBUG] API stopLlama"); return this.request("llama:stop"); }
+  async getModels() { return this.request("models:list"); }
+  async getModel(id) { return this.request("models:get", { modelId: id }); }
+  async createModel(m) { return this.request("models:create", { model: m }); }
+  async updateModel(id, u) {
+    return this.request("models:update", { modelId: id, updates: u });
+  }
+  async deleteModel(id) { return this.request("models:delete", { modelId: id }); }
+  async startModel(id) { return this.request("models:start", { modelId: id }); }
+  async stopModel(id) { return this.request("models:stop", { modelId: id }); }
+  async scanModels() { return this.request("models:scan"); }
+  async getMetrics() { return this.request("metrics:get"); }
+  async getMetricsHistory(p) { return this.request("metrics:history", p); }
+  async getLogs(p) { return this.request("logs:get", p); }
+  async clearLogs() { return this.request("logs:clear"); }
+  async getConfig() { return this.request("config:get"); }
+  async updateConfig(c) { return this.request("config:update", { config: c }); }
+  async getSettings() { return this.request("settings:get"); }
+  async updateSettings(s) { return this.request("settings:update", { settings: s }); }
+  async getLlamaStatus() { return this.request("llama:status"); }
+  async startLlama() { return this.request("llama:start"); }
+  async stopLlama() { return this.request("llama:stop"); }
 }
 
 const stateManager = new StateManager();

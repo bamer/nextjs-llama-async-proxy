@@ -61,7 +61,7 @@ class MonitoringPage extends Component {
       Component.h("div", { className: "tabs" },
         tabs.map(t =>
           Component.h("button", {
-            className: "tab " + (this.state.tab === t ? "active" : ""),
+            className: `tab ${  this.state.tab === t ? "active" : ""}`,
             "data-tab": t
           }, t.toUpperCase())
         )
@@ -86,18 +86,18 @@ class MetricCards extends Component {
   render() {
     const m = this.props.metrics || { cpu: { usage: 0 }, memory: { used: 0 }, disk: { used: 0 }, uptime: 0 };
     const cards = [
-      { title: "CPU", val: (m.cpu?.usage || 0).toFixed(1) + "%", icon: "💻", color: m.cpu?.usage > 80 ? "danger" : "success" },
+      { title: "CPU", val: `${(m.cpu?.usage || 0).toFixed(1)  }%`, icon: "💻", color: m.cpu?.usage > 80 ? "danger" : "success" },
       { title: "Memory", val: window.AppUtils?.formatBytes?.(m.memory?.used || 0) || "0 B", icon: "🧠", color: "info" },
-      { title: "Disk", val: (m.disk?.used || 0).toFixed(1) + "%", icon: "💾", color: m.disk?.used > 80 ? "danger" : "info" },
+      { title: "Disk", val: `${(m.disk?.used || 0).toFixed(1)  }%`, icon: "💾", color: m.disk?.used > 80 ? "danger" : "info" },
       { title: "Uptime", val: this._fmtUptime(m.uptime || 0), icon: "⏱️", color: "success" }
     ];
     if (m.gpu) {
       cards.push({ title: "GPU Memory", val: window.AppUtils?.formatBytes?.(m.gpu.memoryUsed || 0) || "0 B", icon: "🎮", color: "info" });
-      cards.push({ title: "GPU Usage", val: (m.gpu.usage || 0).toFixed(1) + "%", icon: "🎯", color: m.gpu.usage > 80 ? "danger" : "info" });
+      cards.push({ title: "GPU Usage", val: `${(m.gpu.usage || 0).toFixed(1)  }%`, icon: "🎯", color: m.gpu.usage > 80 ? "danger" : "info" });
     }
 
     return Component.h("div", { className: "metric-cards" },
-      cards.map(c => Component.h("div", { className: "card color-" + c.color },
+      cards.map(c => Component.h("div", { className: `card color-${  c.color}` },
         Component.h("span", { className: "icon" }, c.icon),
         Component.h("div", { className: "content" },
           Component.h("span", { className: "title" }, c.title),
@@ -109,7 +109,7 @@ class MetricCards extends Component {
 
   _fmtUptime(s) {
     const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
-    return h + "h " + m + "m";
+    return `${h  }h ${  m  }m`;
   }
 }
 
@@ -117,7 +117,7 @@ class PerformanceChart extends Component {
   render() {
     const data = this.state.data || [];
     return Component.h("div", { className: "card chart-card" },
-      Component.h("h3", {}, "Performance - " + (this.state.metric?.toUpperCase() || "CPU")),
+      Component.h("h3", {}, `Performance - ${  this.state.metric?.toUpperCase() || "CPU"}`),
       Component.h("div", { className: "chart" },
         data.length > 0 ? Component.h("svg", { viewBox: "0 0 800 200", className: "line-chart" },
           Component.h("polyline", {
@@ -137,7 +137,7 @@ class PerformanceChart extends Component {
     return data.map((d, i) => {
       const x = p + (i / (data.length - 1)) * (w - p * 2);
       const y = h - p - (this._val(d) / max) * (h - p * 2);
-      return x + "," + y;
+      return `${x  },${  y}`;
     }).join(" ");
   }
 
@@ -156,7 +156,7 @@ class SystemHealth extends Component {
     const healthy = this._check(m);
     return Component.h("div", { className: "card health-card" },
       Component.h("h3", {}, "System Health"),
-      Component.h("div", { className: "status " + (healthy ? "good" : "warning") },
+      Component.h("div", { className: `status ${  healthy ? "good" : "warning"}` },
         healthy ? "✓ All systems operational" : "⚠ Some systems need attention"
       ),
       Component.h("div", { className: "checks" },
@@ -170,9 +170,9 @@ class SystemHealth extends Component {
   _check(m) { return !m || (m.cpu?.usage || 0) <= 80 && (m.memory?.used || 0) <= 85 && (m.disk?.used || 0) <= 90; }
   _checkItem(name, val, thresh) {
     const ok = (val || 0) <= thresh;
-    return Component.h("div", { className: "check " + (ok ? "good" : "warning") },
+    return Component.h("div", { className: `check ${  ok ? "good" : "warning"}` },
       Component.h("span", {}, name),
-      Component.h("span", {}, (typeof val === "number" ? val.toFixed(1) : val) + "%"),
+      Component.h("span", {}, `${typeof val === "number" ? val.toFixed(1) : val  }%`),
       Component.h("span", {}, ok ? "✓" : "⚠")
     );
   }
