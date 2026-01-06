@@ -149,23 +149,23 @@ class ModelsPage extends Component {
       filtered.length === 0
         ? Component.h("tr", {}, Component.h("td", { colSpan: 11 }, "No models"))
         : filtered.map((m) => {
-            console.log("[MODELS] Rendering row for:", m.name);
-            return Component.h(
-              "tr",
-              { "data-name": m.name },
-              Component.h("td", {}, m.name),
-              Component.h("td", {}, statusBadge(m.status)),
-              Component.h("td", {}, m.type || "-"),
-              Component.h("td", {}, m.params || "-"),
-              Component.h("td", {}, m.quantization || "-"),
-              Component.h("td", {}, this._fmtCtx(m.ctx_size)),
-              Component.h("td", {}, m.embedding_size || "-"),
-              Component.h("td", {}, m.block_count || "-"),
-              Component.h("td", {}, m.head_count || "-"),
-              Component.h("td", {}, m.file_size ? this._fmtBytes(m.file_size) : "-"),
-              Component.h("td", {}, actionBtn(m))
-            );
-          });
+          console.log("[MODELS] Rendering row for:", m.name);
+          return Component.h(
+            "tr",
+            { "data-name": m.name },
+            Component.h("td", {}, m.name),
+            Component.h("td", {}, statusBadge(m.status)),
+            Component.h("td", {}, m.type || "-"),
+            Component.h("td", {}, m.params || "-"),
+            Component.h("td", {}, m.quantization || "-"),
+            Component.h("td", {}, this._fmtCtx(m.ctx_size)),
+            Component.h("td", {}, m.embedding_size || "-"),
+            Component.h("td", {}, m.block_count || "-"),
+            Component.h("td", {}, m.head_count || "-"),
+            Component.h("td", {}, m.file_size ? this._fmtBytes(m.file_size) : "-"),
+            Component.h("td", {}, actionBtn(m))
+          );
+        });
 
     console.log("[MODELS] Total rows to render:", Array.isArray(rows) ? rows.length : 1);
 
@@ -183,15 +183,15 @@ class ModelsPage extends Component {
         Component.h("button", { className: "btn", "data-action": "cleanup" }, "Cleanup"),
         routerRunning
           ? Component.h(
-              "span",
-              { className: "router-indicator success" },
-              `Router Active (${port})`
-            )
+            "span",
+            { className: "router-indicator success" },
+            `Router Active (${port})`
+          )
           : Component.h(
-              "span",
-              { className: "router-indicator default" },
-              `Router Not Running (Port: ${port})`
-            )
+            "span",
+            { className: "router-indicator default" },
+            `Router Not Running (Port: ${port})`
+          )
       ),
       Component.h(
         "div",

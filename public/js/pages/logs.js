@@ -103,15 +103,15 @@ class LogsPage extends Component {
         filtered.length === 0
           ? Component.h("p", { className: "empty" }, "No logs")
           : filtered.map((l) => {
-              console.log("[LOGS] Rendering log:", l.level, l.message?.substring(0, 30));
-              return Component.h(
-                "div",
-                { className: `log-entry level-${l.level || "info"}` },
-                Component.h("span", { className: "log-time" }, this._time(l.timestamp)),
-                Component.h("span", { className: "log-level" }, (l.level || "info").toUpperCase()),
-                Component.h("span", { className: "log-msg" }, String(l.message))
-              );
-            })
+            console.log("[LOGS] Rendering log:", l.level, l.message?.substring(0, 30));
+            return Component.h(
+              "div",
+              { className: `log-entry level-${l.level || "info"}` },
+              Component.h("span", { className: "log-time" }, this._time(l.timestamp)),
+              Component.h("span", { className: "log-level" }, (l.level || "info").toUpperCase()),
+              Component.h("span", { className: "log-msg" }, String(l.message))
+            );
+          })
       )
     );
 

@@ -66,8 +66,8 @@ class StatsGrid extends Component {
         value:
           gpu?.memoryTotal > 0
             ? `${window.AppUtils?.formatBytes?.(gpu?.memoryUsed || 0)} / ${window.AppUtils?.formatBytes?.(
-                gpu?.memoryTotal || 0
-              )}`
+              gpu?.memoryTotal || 0
+            )}`
             : "N/A",
         percent: gpu?.memoryTotal > 0 ? (gpu?.memoryUsed / gpu?.memoryTotal) * 100 : 0,
         isGpu: true,
