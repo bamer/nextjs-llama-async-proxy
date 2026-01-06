@@ -95,16 +95,9 @@ class Component {
     const map = this.getEventMap();
     if (Object.keys(map).length === 0) return;
 
-    // Remove old delegated listeners before adding new ones
-    if (this._delegatedHandlers) {
-      Object.entries(this._delegatedHandlers).forEach(([key, handler]) => {
-        const [event] = key.split("|");
-        document.removeEventListener(event, handler, false);
-      });
-      this._delegatedHandlers = {};
-    } else {
-      this._delegatedHandlers = {};
-    }
+    // Always clean up old listeners first
+    this._cleanupEvents();
+    this._delegatedHandlers = {};
 
     // Use event delegation on document for stable event handling
     Object.entries(map).forEach(([spec, handler]) => {
@@ -121,7 +114,7 @@ class Component {
       }
 
       // Create a unique key for this specific event+selector combination
-      const delegationKey = `${event}|${selector || "none"}|${this.constructor.name}`;
+      const delegationKey = `${event}|${selector || "none"}`;
 
       // Create delegated handler
       const delegatedHandler = (e) => {
@@ -139,18 +132,22 @@ class Component {
     });
   }
 
+  _cleanupEvents() {
+    if (!this._delegatedHandlers) return;
+    
+    Object.entries(this._delegatedHandlers).forEach(([key, handler]) => {
+      const [event] = key.split("|");
+      document.removeEventListener(event, handler, false);
+    });
+  }
+
   // Cleanup
   destroy() {
     this.willDestroy && this.willDestroy();
 
     // Remove delegated event listeners from document
-    if (this._delegatedHandlers) {
-      Object.entries(this._delegatedHandlers).forEach(([key, handler]) => {
-        const [event] = key.split("|");
-        document.removeEventListener(event, handler, false);
-      });
-      this._delegatedHandlers = null;
-    }
+    this._cleanupEvents();
+    this._delegatedHandlers = null;
 
     if (this._el && this._el.parentNode) {
       this._el.parentNode.removeChild(this._el);
