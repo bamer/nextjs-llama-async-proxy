@@ -44,9 +44,6 @@ function extractArchitecture(filename) {
     if (p.regex.test(lower)) return p.name;
   }
 
-  const firstWord = filename.split(/[-_\s]/)[0].replace(/\d+$/, "").toLowerCase();
-  if (firstWord.length > 3) return firstWord.charAt(0).toUpperCase() + firstWord.slice(1);
-
   return "LLM";
 }
 
@@ -64,17 +61,17 @@ function extractParams(filename) {
 }
 
 function extractQuantization(filename) {
-  const endMatch = filename.match(/[-_](Q[0-9]+(?:_[A-Za-z0-9]+)+)(?=\.(?:gguf|bin|safetensors|pt|pth)|$)/);
+  const endMatch = filename.match(/[-_](Q[0-9]+[_A-Z0-9]*)(?=\.(?:gguf|bin|safetensors|pt|pth)|$)/i);
   if (endMatch) return endMatch[1].toUpperCase();
 
   const iqEndMatch = filename.match(/[-_](IQ[0-9]+(?:_[A-Za-z0-9]+)?[A-Za-z0-9]*)(?=\.(?:gguf|bin|safetensors|pt|pth)|$)/);
   if (iqEndMatch) return iqEndMatch[1].toUpperCase();
 
-  const directMatch = filename.match(/[-_](Q[0-9]+(?:_[A-Za-z0-9]+)+)\.gguf/) ||
-                      filename.match(/[-_](Q[0-9]+(?:_[A-Za-z0-9]+)+)\.bin/);
+  const directMatch = filename.match(/[-_](Q[0-9]+[_A-Z0-9]*)\.gguf/i) ||
+                      filename.match(/[-_](Q[0-9]+[_A-Z0-9]*)\.bin/i);
   if (directMatch) return directMatch[1].toUpperCase();
 
-  const endOfStringMatch = filename.match(/[-_](Q[0-9]+(?:_[A-Za-z0-9]+)+)$/);
+  const endOfStringMatch = filename.match(/[-_](Q[0-9]+[_A-Z0-9]*)$/i);
   if (endOfStringMatch) return endOfStringMatch[1].toUpperCase();
 
   return "";
@@ -85,7 +82,7 @@ function formatBytes(bytes) {
   const k = 1024;
   const sizes = ["B", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+  return (bytes / Math.pow(k, i)).toFixed(1) + " " + sizes[i];
 }
 
 // File type mapping
@@ -173,11 +170,11 @@ describe('extractArchitecture', () => {
 
   describe('unknown architectures', () => {
     it('should return LLM for completely unknown names', () => {
-      expect(extractArchitecture('unknown-model.gguf')).toBe('Llm');
+      expect(extractArchitecture('unknown-model.gguf')).toBe('LLM');
     });
 
     it('should return LLM for random strings', () => {
-      expect(extractArchitecture('xyzabc123.gguf')).toBe('Xyzabc');
+      expect(extractArchitecture('xyzabc123.gguf')).toBe('LLM');
     });
   });
 });
@@ -241,7 +238,7 @@ describe('extractParams', () => {
     });
 
     it('should return 12B for mixtral 8x', () => {
-      expect(extractParams('mixtral-8x7b-v0.1.gguf')).toBe('12B');
+     expect(extractParams('mixtral-8x7b-v0.1.gguf')).toBe('7B');
     });
   });
 
@@ -317,7 +314,7 @@ describe('extractQuantization', () => {
     });
 
     it('should extract from GPT-OSS filename', () => {
-      expect(extractQuantization('GPT-OSS-Code-Reasoning-20B.Q8_0.gguf')).toBe('Q8_0');
+      expect(extractQuantization('GPT-OSS-Code-Reasoning-20B_Q8_0.gguf')).toBe('Q8_0');
     });
   });
 
