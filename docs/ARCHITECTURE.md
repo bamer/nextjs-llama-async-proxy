@@ -17,9 +17,9 @@ The application follows a clean client-server architecture with all communicatio
 │  └───────────┬───────────────┘   │
 │              │ Socket.IO         │
 └──────────────│──────────────────┘
-               │
-        WebSocket / HTTP
-               │
+                │
+         WebSocket / HTTP
+                │
 ┌──────────────│──────────────────┐
 │     Node.js Server             │
 │  ┌───────────────┬───────────┐ │
@@ -33,6 +33,74 @@ The application follows a clean client-server architecture with all communicatio
 │  └──────────────────────────┘  │
 └───────────────────────────────┘
 ```
+
+## Llama.cpp Router Mode (Multi-Model Support)
+
+**NEW (December 2025)**: The application now uses llama.cpp's **router mode** to support multiple models in a single server instance.
+
+### Router Mode Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│           llama-server --models-dir ./models                │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │                    Router                            │   │
+│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌───────┐  │   │
+│  │  │ Slot 0  │  │ Slot 1  │  │ Slot 2  │  │ Slot  │  │   │
+│  │  │ Model A │  │ Model B │  │ Model C │  │ ...   │  │   │
+│  │  └─────────┘  └─────────┘  └─────────┘  └───────┘  │   │
+│  │         │          │          │                    │   │
+│  │         └──────────┴──────────┘                    │   │
+│  │                      │                             │   │
+│  │              Request Routing                        │   │
+│  │         (model field in request)                    │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                          │                                │
+│              Single Port (8080 by default)                 │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key Features
+
+| Feature | Description | CLI Flag |
+|---------|-------------|----------|
+| **Model Discovery** | Auto-discovers GGUF files from directory | `--models-dir` |
+| **Multiple Models** | Load multiple models simultaneously | `--models-max N` (default: 4) |
+| **Parallel Requests** | Handle concurrent requests | `--np N`, `--threads-http N` |
+| **LRU Eviction** | Least-recently-used model unloaded when max reached | Automatic |
+| **On-Demand Loading** | Models load when first requested | `/models/load` |
+
+### API Endpoints
+
+Router mode exposes these HTTP endpoints:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/models` | GET | List all models with status (loaded/loading/unloaded) |
+| `/models/load` | POST | Manually load a model |
+| `/models/unload` | POST | Unload a model |
+| `/v1/chat/completions` | POST | OpenAI-compatible chat completions |
+
+### Configuration Options
+
+| Setting | CLI Flag | Default | Description |
+|---------|----------|---------|-------------|
+| Models Directory | `--models-dir` | `~/.cache/llama.cpp` | Directory containing GGUF files |
+| Max Models Loaded | `--models-max` | 4 | Maximum models in memory |
+| Parallel Slots | `--np` | 1 | Number of parallel processing slots |
+| HTTP Threads | `--threads-http` | 1 | HTTP threads for parallel requests |
+| Context Size | `-c` | 512 | Default context window size |
+| GPU Layers | `-ngl` | 0 | Layers to offload to GPU |
+
+### Model Status Values
+
+| Status | Description |
+|--------|-------------|
+| `loaded` | Model is loaded in memory, ready for inference |
+| `loading` | Model is currently being loaded |
+| `unloaded` | Model is on disk, not in memory |
+| `error` | Model failed to load |
 
 ## Key Architectural Decisions
 

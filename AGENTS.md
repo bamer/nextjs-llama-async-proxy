@@ -10,6 +10,55 @@ This document provides guidelines for agentic coding assistants working in this 
 - **Database**: SQLite with better-sqlite3
 - **Real-time**: Socket.IO for live updates
 - **Architecture**: Component-based with custom router and state manager
+- **LLM Backend**: llama.cpp server in **router mode** (multi-model support)
+
+## Llama.cpp Router Mode
+
+**Important**: The application uses llama.cpp's router mode to support multiple models in a single server.
+
+### Router Mode Key Facts
+
+- **Single llama-server process** manages all models
+- **Auto-discovery** of models from `--models-dir` directory
+- **On-demand loading** - models load when first requested
+- **LRU eviction** - least-recently-used model unloaded when `--models-max` reached
+- **Single port** - all models accessed through the same endpoint
+
+### CLI Options
+
+```bash
+# Start router mode (auto-discovers models)
+llama-server --models-dir ./models --models-max 4
+
+# With custom settings
+llama-server --models-dir ./models --models-max 4 -c 8192 -ngl 99 --np 4
+```
+
+### Important CLI Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--models-dir` | `~/.cache/llama.cpp` | Directory containing GGUF files |
+| `--models-max` | 4 | Max models loaded simultaneously |
+| `-c` | 512 | Context size per model |
+| `-ngl` | 0 | GPU layers to offload |
+| `--np` | 1 | Parallel processing slots |
+| `--threads-http` | 1 | HTTP threads for parallel requests |
+
+### Model Status Values
+
+When working with models, use these status values:
+- `loaded` - Model is loaded and ready
+- `loading` - Model is being loaded
+- `unloaded` - Model is on disk, not in memory
+- `error` - Model failed to load
+
+### API Endpoints
+
+The router exposes these endpoints:
+- `GET /models` - List all models with status
+- `POST /models/load` - Load a specific model
+- `POST /models/unload` - Unload a model
 
 ## Build / Run Commands
 

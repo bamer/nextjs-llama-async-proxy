@@ -141,6 +141,7 @@ class StateManager {
       "models:start:result",
       "models:stop:result",
       "models:scan:result",
+      "models:cleanup:result",
       "metrics:get:result",
       "metrics:history:result",
       "logs:get:result",

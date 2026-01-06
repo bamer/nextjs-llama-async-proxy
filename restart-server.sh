@@ -1,28 +1,43 @@
 #!/bin/bash
 
-echo "🛑 Stopping Next.js server..."
+# ================================================
+# Llama Proxy Dashboard - Server Restart Script
+# ================================================
 
-# Kill all processes related to the app
-pkill -9 -f "nextjs-llama-async-proxy" 2>/dev/null
-pkill -9 -f "tsx.*server.js" 2>/dev/null
-pkill -9 -f "llama-server" 2>/dev/null
+echo "🛑 Stopping servers..."
 
-# Wait for processes to stop
+# Kill llama-server processes (llama.cpp inference server)
+echo "   Killing llama-server..."
+pkill -9 -f "llama-server" 2>/dev/null || true
+
+# Kill node server.js processes (our dashboard)
+echo "   Killing node server.js..."
+pkill -9 -f "node.*server.js" 2>/dev/null || true
+
+# Kill any remaining processes on our ports
+echo "   Freeing port 3000..."
+lsof -ti:3000 2>/dev/null | xargs kill -9 2>/dev/null || true
+
+# Wait for cleanup
 sleep 2
 
-# Remove lock files
-rm -f /home/bamer/nextjs-llama-async-proxy/.next/dev/lock
-rm -f /home/bamer/nextjs-llama-async-proxy/.next/turbo/
+# Verify processes are stopped
+if pgrep -f "node.*server.js" > /dev/null; then
+    echo "⚠️  Node server still running, forcing..."
+    pkill -9 -f "node.*server" 2>/dev/null || true
+    sleep 1
+fi
 
-# Kill any remaining node processes on port 3000
-lsof -ti:3000 | xargs kill -9 2>/dev/null
+if pgrep -f "llama-server" > /dev/null; then
+    echo "⚠️  llama-server still running, forcing..."
+    pkill -9 -f "llama-server" 2>/dev/null || true
+    sleep 1
+fi
 
-# Kill any remaining node processes on port 8134
-lsof -ti:8134 | xargs kill -9 2>/dev/null
+echo "✅ All servers stopped"
 
-echo "✅ Server stopped"
-echo "🚀 Starting Next.js server..."
-
-# Start fresh
+# Start the dashboard server
+echo ""
+echo "🚀 Starting Llama Proxy Dashboard..."
 cd /home/bamer/nextjs-llama-async-proxy
-pnpm dev
+pnpm start
