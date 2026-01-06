@@ -5,6 +5,7 @@
 **File**: `server.js`, line 278-285
 
 **Current**:
+
 ```javascript
 function formatBytes(bytes) {
   if (bytes === 0) return "0 B";
@@ -16,13 +17,14 @@ function formatBytes(bytes) {
 ```
 
 **Fix** (1 line change):
+
 ```javascript
 function formatBytes(bytes) {
   if (bytes === 0) return "0 B";
   const k = 1024;
   const sizes = ["B", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return (bytes / Math.pow(k, i)).toFixed(1) + " " + sizes[i];  // Remove parseFloat()
+  return (bytes / Math.pow(k, i)).toFixed(1) + " " + sizes[i]; // Remove parseFloat()
 }
 ```
 
@@ -35,28 +37,33 @@ function formatBytes(bytes) {
 **File**: `server.js`, line 210-246
 
 **Current**:
+
 ```javascript
 function extractArchitecture(filename) {
   // ... patterns ...
   for (const p of patterns) {
     if (p.regex.test(lower)) return p.name;
   }
-  
-  const firstWord = filename.split(/[-_\s]/)[0].replace(/\d+$/, "").toLowerCase();
+
+  const firstWord = filename
+    .split(/[-_\s]/)[0]
+    .replace(/\d+$/, "")
+    .toLowerCase();
   if (firstWord.length > 3) return firstWord.charAt(0).toUpperCase() + firstWord.slice(1);
-  
+
   return "LLM";
 }
 ```
 
 **Fix** (simplify fallback):
+
 ```javascript
 function extractArchitecture(filename) {
   // ... patterns ...
   for (const p of patterns) {
     if (p.regex.test(lower)) return p.name;
   }
-  
+
   // Always return "LLM" for unknown architectures
   return "LLM";
 }
@@ -71,17 +78,23 @@ function extractArchitecture(filename) {
 **File**: `server.js`, line 261-276
 
 **Current**:
+
 ```javascript
 function extractQuantization(filename) {
-  const endMatch = filename.match(/[-_](Q[0-9]+(?:_[A-Za-z0-9]+)+)(?=\.(?:gguf|bin|safetensors|pt|pth)|$)/);
+  const endMatch = filename.match(
+    /[-_](Q[0-9]+(?:_[A-Za-z0-9]+)+)(?=\.(?:gguf|bin|safetensors|pt|pth)|$)/
+  );
   // ... rest ...
 }
 ```
 
 **Fix** (first regex change):
+
 ```javascript
 function extractQuantization(filename) {
-  const endMatch = filename.match(/[-_](Q[0-9]+[_A-Z0-9]*)(?=\.(?:gguf|bin|safetensors|pt|pth)|$)/i);
+  const endMatch = filename.match(
+    /[-_](Q[0-9]+[_A-Z0-9]*)(?=\.(?:gguf|bin|safetensors|pt|pth)|$)/i
+  );
   if (endMatch) return endMatch[1].toUpperCase();
   // ... rest unchanged ...
 }
@@ -96,6 +109,7 @@ function extractQuantization(filename) {
 **File**: `server.js`, line 391-463
 
 **Current** (line 425-450):
+
 ```javascript
 const modelFiles = findModelFiles(modelsDir);
 console.log("[DEBUG] Found model files:", modelFiles.length);
@@ -108,6 +122,7 @@ for (const fullPath of modelFiles) {
 ```
 
 **Fix** (3 line change):
+
 ```javascript
 const modelFiles = findModelFiles(modelsDir);
 console.log("[DEBUG] Found model files:", modelFiles.length);

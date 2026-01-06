@@ -1,0 +1,14 @@
+node_modules
+dist
+build
+coverage
+*.log
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+*.pdf
+*.db
+*.sqlite

@@ -118,7 +118,9 @@ class DB {
     }
     if (set.length === 0) return null;
     vals.push(Math.floor(Date.now() / 1000), id);
-    this.db.prepare(`UPDATE models SET ${set.join(", ")}, updated_at = ? WHERE id = ?`).run(...vals);
+    this.db
+      .prepare(`UPDATE models SET ${set.join(", ")}, updated_at = ? WHERE id = ?`)
+      .run(...vals);
     return this.getModel(id);
   }
 
@@ -129,7 +131,9 @@ class DB {
   // Metrics
   saveMetrics(m) {
     this.db
-      .prepare("INSERT INTO metrics (cpu_usage, memory_usage, disk_usage, active_models, uptime) VALUES (?, ?, ?, ?, ?)")
+      .prepare(
+        "INSERT INTO metrics (cpu_usage, memory_usage, disk_usage, active_models, uptime) VALUES (?, ?, ?, ?, ?)"
+      )
       .run(
         m.cpu_usage || 0,
         m.memory_usage || 0,
@@ -153,7 +157,9 @@ class DB {
   }
 
   addLog(level, msg, source = "server") {
-    this.db.prepare("INSERT INTO logs (level, message, source) VALUES (?, ?, ?)").run(level, String(msg), source);
+    this.db
+      .prepare("INSERT INTO logs (level, message, source) VALUES (?, ?, ?)")
+      .run(level, String(msg), source);
   }
 
   clearLogs() {
@@ -172,7 +178,9 @@ class DB {
       threads: 4,
     };
     try {
-      const saved = this.db.prepare("SELECT value FROM server_config WHERE key = ?").get("config")?.value;
+      const saved = this.db
+        .prepare("SELECT value FROM server_config WHERE key = ?")
+        .get("config")?.value;
       if (saved) return { ...def, ...JSON.parse(saved) };
     } catch (e) {
       console.error("Config load error:", e);
@@ -181,7 +189,9 @@ class DB {
   }
 
   saveConfig(c) {
-    this.db.prepare("INSERT OR REPLACE INTO server_config (key, value) VALUES (?, ?)").run("config", JSON.stringify(c));
+    this.db
+      .prepare("INSERT OR REPLACE INTO server_config (key, value) VALUES (?, ?)")
+      .run("config", JSON.stringify(c));
   }
 
   // Metadata
@@ -208,7 +218,8 @@ class DB {
 
 describe("DB class", () => {
   let db;
-  const testDbPath = "/tmp/test-db-" + Date.now() + "-" + Math.random().toString(36).substr(2, 9) + ".db";
+  const testDbPath =
+    "/tmp/test-db-" + Date.now() + "-" + Math.random().toString(36).substr(2, 9) + ".db";
 
   beforeAll(() => {
     db = new DB(testDbPath);
@@ -218,8 +229,10 @@ describe("DB class", () => {
     if (db) {
       // Clean up all test data
       try {
-        db.getModels().forEach(m => db.deleteModel(m.id));
-        db.getMetricsHistory(1000).forEach(m => db.db.prepare("DELETE FROM metrics WHERE id = ?").run(m.id));
+        db.getModels().forEach((m) => db.deleteModel(m.id));
+        db.getMetricsHistory(1000).forEach((m) =>
+          db.db.prepare("DELETE FROM metrics WHERE id = ?").run(m.id)
+        );
         db.clearLogs();
       } catch (e) {}
       db.close();
@@ -247,26 +260,26 @@ describe("DB class", () => {
     it("should return models ordered by created_at DESC", () => {
       // Create models with timestamps that are definitely different
       const now = Math.floor(Date.now() / 1000);
-      const model1 = db.saveModel({ 
-        id: "order-test-1", 
+      const model1 = db.saveModel({
+        id: "order-test-1",
         name: "order-first",
-        created_at: now 
+        created_at: now,
       });
-      const model2 = db.saveModel({ 
-        id: "order-test-2", 
-        name: "order-second", 
-        created_at: now + 1 
+      const model2 = db.saveModel({
+        id: "order-test-2",
+        name: "order-second",
+        created_at: now + 1,
       });
-      const model3 = db.saveModel({ 
-        id: "order-test-3", 
-        name: "order-third", 
-        created_at: now + 2 
+      const model3 = db.saveModel({
+        id: "order-test-3",
+        name: "order-third",
+        created_at: now + 2,
       });
 
       const models = db.getModels();
       // Find our test models in the results
-      const testModels = models.filter(m => 
-        m.id === model1.id || m.id === model2.id || m.id === model3.id
+      const testModels = models.filter(
+        (m) => m.id === model1.id || m.id === model2.id || m.id === model3.id
       );
       expect(testModels.length).toBe(3);
       // Most recent first (highest created_at first)
@@ -575,13 +588,33 @@ describe("DB class", () => {
       it("should return metrics ordered by timestamp DESC", () => {
         // Add multiple metrics with explicit timestamps
         const now = Math.floor(Date.now() / 1000);
-        
+
         // Insert with specific timestamps
-        db.db.prepare("INSERT INTO metrics (cpu_usage, memory_usage, disk_usage, active_models, uptime, timestamp) VALUES (?, ?, ?, ?, ?, ?)").run(10, 100, 50, 1, 100, now);
-        db.db.prepare("INSERT INTO metrics (cpu_usage, memory_usage, disk_usage, active_models, uptime, timestamp) VALUES (?, ?, ?, ?, ?, ?)").run(20, 200, 50, 1, 200, now + 1);
-        db.db.prepare("INSERT INTO metrics (cpu_usage, memory_usage, disk_usage, active_models, uptime, timestamp) VALUES (?, ?, ?, ?, ?, ?)").run(30, 300, 50, 1, 300, now + 2);
-        db.db.prepare("INSERT INTO metrics (cpu_usage, memory_usage, disk_usage, active_models, uptime, timestamp) VALUES (?, ?, ?, ?, ?, ?)").run(40, 400, 50, 1, 400, now + 3);
-        db.db.prepare("INSERT INTO metrics (cpu_usage, memory_usage, disk_usage, active_models, uptime, timestamp) VALUES (?, ?, ?, ?, ?, ?)").run(50, 500, 50, 1, 500, now + 4);
+        db.db
+          .prepare(
+            "INSERT INTO metrics (cpu_usage, memory_usage, disk_usage, active_models, uptime, timestamp) VALUES (?, ?, ?, ?, ?, ?)"
+          )
+          .run(10, 100, 50, 1, 100, now);
+        db.db
+          .prepare(
+            "INSERT INTO metrics (cpu_usage, memory_usage, disk_usage, active_models, uptime, timestamp) VALUES (?, ?, ?, ?, ?, ?)"
+          )
+          .run(20, 200, 50, 1, 200, now + 1);
+        db.db
+          .prepare(
+            "INSERT INTO metrics (cpu_usage, memory_usage, disk_usage, active_models, uptime, timestamp) VALUES (?, ?, ?, ?, ?, ?)"
+          )
+          .run(30, 300, 50, 1, 300, now + 2);
+        db.db
+          .prepare(
+            "INSERT INTO metrics (cpu_usage, memory_usage, disk_usage, active_models, uptime, timestamp) VALUES (?, ?, ?, ?, ?, ?)"
+          )
+          .run(40, 400, 50, 1, 400, now + 3);
+        db.db
+          .prepare(
+            "INSERT INTO metrics (cpu_usage, memory_usage, disk_usage, active_models, uptime, timestamp) VALUES (?, ?, ?, ?, ?, ?)"
+          )
+          .run(50, 500, 50, 1, 500, now + 4);
 
         const history = db.getMetricsHistory();
         expect(history.length).toBe(5);
@@ -625,9 +658,21 @@ describe("DB class", () => {
       it("should return most recent metrics", () => {
         // Add metrics with explicit timestamps
         const now = Math.floor(Date.now() / 1000);
-        db.db.prepare("INSERT INTO metrics (cpu_usage, memory_usage, disk_usage, active_models, uptime, timestamp) VALUES (?, ?, ?, ?, ?, ?)").run(10, 100, 50, 1, 100, now);
-        db.db.prepare("INSERT INTO metrics (cpu_usage, memory_usage, disk_usage, active_models, uptime, timestamp) VALUES (?, ?, ?, ?, ?, ?)").run(20, 200, 50, 1, 200, now + 1);
-        db.db.prepare("INSERT INTO metrics (cpu_usage, memory_usage, disk_usage, active_models, uptime, timestamp) VALUES (?, ?, ?, ?, ?, ?)").run(30, 300, 50, 1, 300, now + 2);
+        db.db
+          .prepare(
+            "INSERT INTO metrics (cpu_usage, memory_usage, disk_usage, active_models, uptime, timestamp) VALUES (?, ?, ?, ?, ?, ?)"
+          )
+          .run(10, 100, 50, 1, 100, now);
+        db.db
+          .prepare(
+            "INSERT INTO metrics (cpu_usage, memory_usage, disk_usage, active_models, uptime, timestamp) VALUES (?, ?, ?, ?, ?, ?)"
+          )
+          .run(20, 200, 50, 1, 200, now + 1);
+        db.db
+          .prepare(
+            "INSERT INTO metrics (cpu_usage, memory_usage, disk_usage, active_models, uptime, timestamp) VALUES (?, ?, ?, ?, ?, ?)"
+          )
+          .run(30, 300, 50, 1, 300, now + 2);
 
         const latest = db.getLatestMetrics();
         expect(latest.cpu_usage).toBe(30);
@@ -694,11 +739,21 @@ describe("DB class", () => {
         db.clearLogs();
         // Add logs with explicit timestamps
         const now = Math.floor(Date.now() / 1000);
-        db.db.prepare("INSERT INTO logs (level, message, source, timestamp) VALUES (?, ?, ?, ?)").run("info", "Info message 1", "test", now);
-        db.db.prepare("INSERT INTO logs (level, message, source, timestamp) VALUES (?, ?, ?, ?)").run("error", "Error message", "test", now + 1);
-        db.db.prepare("INSERT INTO logs (level, message, source, timestamp) VALUES (?, ?, ?, ?)").run("info", "Info message 2", "test", now + 2);
-        db.db.prepare("INSERT INTO logs (level, message, source, timestamp) VALUES (?, ?, ?, ?)").run("debug", "Debug message", "test", now + 3);
-        db.db.prepare("INSERT INTO logs (level, message, source, timestamp) VALUES (?, ?, ?, ?)").run("warn", "Warning message", "test", now + 4);
+        db.db
+          .prepare("INSERT INTO logs (level, message, source, timestamp) VALUES (?, ?, ?, ?)")
+          .run("info", "Info message 1", "test", now);
+        db.db
+          .prepare("INSERT INTO logs (level, message, source, timestamp) VALUES (?, ?, ?, ?)")
+          .run("error", "Error message", "test", now + 1);
+        db.db
+          .prepare("INSERT INTO logs (level, message, source, timestamp) VALUES (?, ?, ?, ?)")
+          .run("info", "Info message 2", "test", now + 2);
+        db.db
+          .prepare("INSERT INTO logs (level, message, source, timestamp) VALUES (?, ?, ?, ?)")
+          .run("debug", "Debug message", "test", now + 3);
+        db.db
+          .prepare("INSERT INTO logs (level, message, source, timestamp) VALUES (?, ?, ?, ?)")
+          .run("warn", "Warning message", "test", now + 4);
       });
 
       it("should return logs ordered by timestamp DESC", () => {
@@ -1052,10 +1107,9 @@ describe("DB class", () => {
     describe("Config edge cases", () => {
       it("should handle invalid JSON in config", () => {
         // Directly insert invalid JSON
-        db.db.prepare("INSERT OR REPLACE INTO server_config (key, value) VALUES (?, ?)").run(
-          "config",
-          "not-valid-json"
-        );
+        db.db
+          .prepare("INSERT OR REPLACE INTO server_config (key, value) VALUES (?, ?)")
+          .run("config", "not-valid-json");
 
         // Should not throw, should return defaults
         const config = db.getConfig();
@@ -1107,7 +1161,7 @@ describe("DB class", () => {
       const db2 = new DB(testDbPath);
       const models = db2.getModels();
       expect(models.length).toBeGreaterThanOrEqual(1);
-      expect(models.find(m => m.id === saved.id)).toBeDefined();
+      expect(models.find((m) => m.id === saved.id)).toBeDefined();
       db2.close();
     });
   });

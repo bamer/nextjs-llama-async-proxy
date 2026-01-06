@@ -91,6 +91,7 @@ Browser (Vanilla JS)
 ### Dashboard (`/` or `/dashboard`)
 
 Overview of system status with:
+
 - Server status indicator
 - CPU, Memory, Disk, GPU metrics cards
 - Models summary (running/loading/idle counts)
@@ -100,6 +101,7 @@ Overview of system status with:
 ### Models (`/models`)
 
 Model management interface with:
+
 - Model list with search and filtering
 - Start/Stop/Delete actions
 - Model details panel
@@ -108,6 +110,7 @@ Model management interface with:
 ### Monitoring (`/monitoring`)
 
 Real-time system monitoring with:
+
 - Metric cards with live updates
 - Performance charts
 - System health summary
@@ -116,6 +119,7 @@ Real-time system monitoring with:
 ### Configuration (`/configuration`)
 
 Server and model configuration:
+
 - General settings (auto-start)
 - Server settings (path, host, port)
 - Model defaults (context size, batch size, threads)
@@ -124,6 +128,7 @@ Server and model configuration:
 ### Settings (`/settings`)
 
 Application settings:
+
 - Appearance (theme, compact mode)
 - Logging (log level, max entries)
 - Features (auto-refresh, notifications)
@@ -132,6 +137,7 @@ Application settings:
 ### Logs (`/logs`)
 
 Real-time log viewer with:
+
 - Log entries with timestamps
 - Level filtering (info, warn, error, debug)
 - Search functionality
@@ -145,6 +151,7 @@ All communication happens via Socket.IO at `/llamaproxws`.
 ### Message Envelopes
 
 **Request:**
+
 ```javascript
 {
   type: 'request',
@@ -157,6 +164,7 @@ All communication happens via Socket.IO at `/llamaproxws`.
 ```
 
 **Response:**
+
 ```javascript
 {
   type: 'response',
@@ -170,6 +178,7 @@ All communication happens via Socket.IO at `/llamaproxws`.
 ```
 
 **Broadcast:**
+
 ```javascript
 {
   type: 'broadcast',
@@ -183,66 +192,66 @@ All communication happens via Socket.IO at `/llamaproxws`.
 
 #### Models
 
-| Event | Direction | Description |
-|-------|-----------|-------------|
-| `models:list` | Client → Server | List all models |
-| `models:list:result` | Server → Client | List response |
-| `models:get` | Client → Server | Get single model |
-| `models:create` | Client → Server | Create model |
-| `models:update` | Client → Server | Update model |
-| `models:delete` | Client → Server | Delete model |
-| `models:start` | Client → Server | Start model |
-| `models:stop` | Client → Server | Stop model |
-| `models:status` | Server → Client | Status broadcast |
-| `models:created` | Server → Client | Model created |
-| `models:updated` | Server → Client | Model updated |
-| `models:deleted` | Server → Client | Model deleted |
+| Event                | Direction       | Description      |
+| -------------------- | --------------- | ---------------- |
+| `models:list`        | Client → Server | List all models  |
+| `models:list:result` | Server → Client | List response    |
+| `models:get`         | Client → Server | Get single model |
+| `models:create`      | Client → Server | Create model     |
+| `models:update`      | Client → Server | Update model     |
+| `models:delete`      | Client → Server | Delete model     |
+| `models:start`       | Client → Server | Start model      |
+| `models:stop`        | Client → Server | Stop model       |
+| `models:status`      | Server → Client | Status broadcast |
+| `models:created`     | Server → Client | Model created    |
+| `models:updated`     | Server → Client | Model updated    |
+| `models:deleted`     | Server → Client | Model deleted    |
 
 #### Metrics
 
-| Event | Direction | Description |
-|-------|-----------|-------------|
-| `metrics:get` | Client → Server | Get current metrics |
-| `metrics:history` | Client → Server | Get metrics history |
-| `metrics:update` | Server → Client | Metrics broadcast (10s interval) |
+| Event             | Direction       | Description                      |
+| ----------------- | --------------- | -------------------------------- |
+| `metrics:get`     | Client → Server | Get current metrics              |
+| `metrics:history` | Client → Server | Get metrics history              |
+| `metrics:update`  | Server → Client | Metrics broadcast (10s interval) |
 
 #### Logs
 
-| Event | Direction | Description |
-|-------|-----------|-------------|
-| `logs:get` | Client → Server | Get logs |
-| `logs:clear` | Client → Server | Clear logs |
+| Event        | Direction       | Description         |
+| ------------ | --------------- | ------------------- |
+| `logs:get`   | Client → Server | Get logs            |
+| `logs:clear` | Client → Server | Clear logs          |
 | `logs:entry` | Server → Client | Log entry broadcast |
 
 #### Configuration
 
-| Event | Direction | Description |
-|-------|-----------|-------------|
-| `config:get` | Client → Server | Get config |
+| Event           | Direction       | Description   |
+| --------------- | --------------- | ------------- |
+| `config:get`    | Client → Server | Get config    |
 | `config:update` | Client → Server | Update config |
 
 #### Settings
 
-| Event | Direction | Description |
-|-------|-----------|-------------|
-| `settings:get` | Client → Server | Get settings |
+| Event             | Direction       | Description     |
+| ----------------- | --------------- | --------------- |
+| `settings:get`    | Client → Server | Get settings    |
 | `settings:update` | Client → Server | Update settings |
 
 #### Llama Server
 
-| Event | Direction | Description |
-|-------|-----------|-------------|
-| `llama:status` | Client → Server | Get Llama status |
-| `llama:start` | Client → Server | Start Llama server |
-| `llama:stop` | Client → Server | Stop Llama server |
-| `llama:rescan` | Client → Server | Rescan models |
+| Event          | Direction       | Description        |
+| -------------- | --------------- | ------------------ |
+| `llama:status` | Client → Server | Get Llama status   |
+| `llama:start`  | Client → Server | Start Llama server |
+| `llama:stop`   | Client → Server | Stop Llama server  |
+| `llama:rescan` | Client → Server | Rescan models      |
 
 #### System
 
-| Event | Direction | Description |
-|-------|-----------|-------------|
-| `system:info` | Client → Server | Get system info |
-| `system:health` | Client → Server | Health check |
+| Event           | Direction       | Description     |
+| --------------- | --------------- | --------------- |
+| `system:info`   | Client → Server | Get system info |
+| `system:health` | Client → Server | Health check    |
 
 ## Database Schema
 
@@ -311,22 +320,21 @@ This enables file watching and auto-restart on changes.
 ### Adding New Pages
 
 1. Create a new controller file in `public/js/pages/`:
+
 ```javascript
 class NewPageController {
   constructor(options) {
     this.router = options.router || window.router;
   }
-  
+
   init() {
     // Subscribe to state changes
   }
-  
+
   render() {
-    return Component.h('div', { className: 'new-page' },
-      Component.h('h1', {}, 'New Page')
-    );
+    return Component.h("div", { className: "new-page" }, Component.h("h1", {}, "New Page"));
   }
-  
+
   destroy() {
     // Cleanup
   }
@@ -336,11 +344,13 @@ window.NewPageController = NewPageController;
 ```
 
 2. Register the route in `public/js/app.js`:
+
 ```javascript
-router.register('/new-page', () => new NewPageController({}));
+router.register("/new-page", () => new NewPageController({}));
 ```
 
 3. Add to navigation in `public/js/components/layout/layout.js`:
+
 ```javascript
 Component.h('a', {
   href: '/new-page',
@@ -389,18 +399,20 @@ The application has no build step - it's pure JavaScript.
 
 ### Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | 3000 | Server port |
+| Variable   | Default     | Description      |
+| ---------- | ----------- | ---------------- |
+| `PORT`     | 3000        | Server port      |
 | `NODE_ENV` | development | Environment mode |
 
 ### Running Behind a Proxy
 
 Configure your reverse proxy to:
+
 1. Serve static files from `/public`
 2. Proxy WebSocket connections to `/llamaproxws`
 
 Example nginx configuration:
+
 ```nginx
 server {
     listen 80;

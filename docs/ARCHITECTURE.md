@@ -55,6 +55,7 @@ No REST APIs exist in this application. All data flows through Socket.IO:
 - **Broadcasts**: Server pushes updates to all connected clients
 
 This eliminates:
+
 - CORS issues
 - Separate API server requirements
 - REST endpoint maintenance
@@ -65,7 +66,7 @@ Components subscribe to state changes rather than polling:
 
 ```javascript
 // Frontend state manager
-stateManager.subscribe('models', (models) => {
+stateManager.subscribe("models", (models) => {
   // Called whenever models change
   this.updateModelList(models);
 });
@@ -76,11 +77,11 @@ The server broadcasts state changes automatically:
 ```javascript
 // Backend
 function broadcastState(models) {
-  io.emit('models:list', {
-    type: 'broadcast',
-    event: 'models:list',
+  io.emit("models:list", {
+    type: "broadcast",
+    event: "models:list",
     data: { models },
-    timestamp: Date.now()
+    timestamp: Date.now(),
   });
 }
 ```
@@ -89,13 +90,13 @@ function broadcastState(models) {
 
 No frameworks on the frontend:
 
-| Feature | Implementation |
-|---------|---------------|
+| Feature    | Implementation                |
+| ---------- | ----------------------------- |
 | Components | Custom `Component` base class |
-| Routing | History API-based `Router` |
-| State | Event-driven `StateManager` |
-| Styling | Pure CSS with CSS variables |
-| Templating | JavaScript template literals |
+| Routing    | History API-based `Router`    |
+| State      | Event-driven `StateManager`   |
+| Styling    | Pure CSS with CSS variables   |
+| Templating | JavaScript template literals  |
 
 ## Component Model
 
@@ -136,7 +137,7 @@ class DashboardPage extends Component {
     super(props);
     this.state = {
       models: props.models || [],
-      metrics: props.metrics || null
+      metrics: props.metrics || null,
     };
   }
 
@@ -145,15 +146,17 @@ class DashboardPage extends Component {
   }
 
   render() {
-    return Component.h('div', { className: 'dashboard-page' },
-      Component.h('h1', {}, 'Dashboard'),
+    return Component.h(
+      "div",
+      { className: "dashboard-page" },
+      Component.h("h1", {}, "Dashboard"),
       Component.h(MetricsGrid, { metrics: this.state.metrics })
     );
   }
 
   getEventMap() {
     return {
-      'click [data-action="refresh"]': 'handleRefresh'
+      'click [data-action="refresh"]': "handleRefresh",
     };
   }
 
@@ -199,7 +202,7 @@ class StateManager {
 
   // Request-response via Socket.IO
   async request(event, data) {
-    if (this.connectionStatus !== 'connected') {
+    if (this.connectionStatus !== "connected") {
       this.requestQueue.push({ event, data });
       return;
     }
@@ -251,12 +254,12 @@ class Router {
   }
 
   navigate(path) {
-    window.history.pushState({}, '', path);
+    window.history.pushState({}, "", path);
     this._handleRouteChange(path);
   }
 
   start() {
-    window.addEventListener('popstate', (e) => {
+    window.addEventListener("popstate", (e) => {
       this._handleRouteChange(window.location.pathname);
     });
   }
@@ -266,12 +269,12 @@ class Router {
 ### Route Definition
 
 ```javascript
-router.register('/', () => new DashboardController({}));
-router.register('/models', () => new ModelsController({}));
-router.register('/monitoring', () => new MonitoringController({}));
-router.register('/configuration', () => new ConfigurationController({}));
-router.register('/settings', () => new SettingsController({}));
-router.register('/logs', () => new LogsController({}));
+router.register("/", () => new DashboardController({}));
+router.register("/models", () => new ModelsController({}));
+router.register("/monitoring", () => new MonitoringController({}));
+router.register("/configuration", () => new ConfigurationController({}));
+router.register("/settings", () => new SettingsController({}));
+router.register("/logs", () => new LogsController({}));
 ```
 
 ## Server Architecture
@@ -306,28 +309,28 @@ router.register('/logs', () => new LogsController({}));
 
 ```javascript
 function setupEventHandlers(io, db) {
-  io.on('connection', (socket) => {
+  io.on("connection", (socket) => {
     // Handle request
-    socket.on('models:list', async (request) => {
+    socket.on("models:list", async (request) => {
       const requestId = request?.requestId || generateRequestId();
       try {
         const models = db.getModels();
-        socket.emit('models:list:result', {
-          type: 'response',
-          event: 'models:list',
+        socket.emit("models:list:result", {
+          type: "response",
+          event: "models:list",
           success: true,
           data: { models },
           requestId,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       } catch (error) {
-        socket.emit('models:list:result', {
-          type: 'response',
-          event: 'models:list',
+        socket.emit("models:list:result", {
+          type: "response",
+          event: "models:list",
           success: false,
-          error: { code: 'LIST_MODELS_FAILED', message: error.message },
+          error: { code: "LIST_MODELS_FAILED", message: error.message },
           requestId,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       }
     });
@@ -344,16 +347,16 @@ function startMetricsCollection(io, db) {
       cpu_usage: getCpuUsage(),
       memory_usage: getMemoryUsage(),
       disk_usage: getDiskUsage(),
-      uptime: process.uptime()
+      uptime: process.uptime(),
     };
-    
+
     db.saveMetrics(metrics);
-    
-    io.emit('metrics:update', {
-      type: 'broadcast',
-      event: 'metrics:update',
+
+    io.emit("metrics:update", {
+      type: "broadcast",
+      event: "metrics:update",
       data: { metrics },
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }, 10000); // Every 10 seconds
 }
@@ -419,11 +422,11 @@ class Database {
 
 ```javascript
 const io = new Server(server, {
-  path: '/llamaproxws',
-  pingTimeout: 60000,      // 60s ping timeout
-  pingInterval: 25000,     // 25s ping interval
+  path: "/llamaproxws",
+  pingTimeout: 60000, // 60s ping timeout
+  pingInterval: 25000, // 25s ping interval
   maxHttpBufferSize: 1e8, // 100MB max message
-  transports: ['websocket'] // WebSocket only
+  transports: ["websocket"], // WebSocket only
 });
 ```
 
@@ -435,6 +438,7 @@ const io = new Server(server, {
 4. **No Rate Limiting**: Could be added for production
 
 For production deployment, consider:
+
 - Adding authentication middleware
 - Implementing rate limiting
 - Adding input validation
@@ -454,15 +458,15 @@ For production deployment, consider:
 class Database {
   // Check current version
   getVersion() {
-    return this.db.prepare('PRAGMA user_version').get()?.version || 0;
+    return this.db.prepare("PRAGMA user_version").get()?.version || 0;
   }
 
   migrate() {
     const current = this.getVersion();
     if (current < 1) {
       // Run migration to version 1
-      this.db.exec('ALTER TABLE models ADD COLUMN new_field TEXT');
-      this.db.pragma('user_version = 1');
+      this.db.exec("ALTER TABLE models ADD COLUMN new_field TEXT");
+      this.db.pragma("user_version = 1");
     }
   }
 }

@@ -12,7 +12,9 @@ class Component {
   }
 
   // Override in subclasses
-  render() { throw new Error("render() must be implemented"); }
+  render() {
+    throw new Error("render() must be implemented");
+  }
 
   // Mount to DOM
   mount(parent) {
@@ -84,10 +86,14 @@ class Component {
   }
 
   // Get/Set state
-  get initialState() { return {}; }
+  get initialState() {
+    return {};
+  }
 
   // Event handling
-  getEventMap() { return {}; }
+  getEventMap() {
+    return {};
+  }
 
   bindEvents() {
     const map = this.getEventMap();
@@ -125,12 +131,17 @@ class Component {
       if (el instanceof HTMLElement) {
         el._component = comp;
         comp._el = el;
-        children.forEach(c => {
-          if (typeof c === "string") el.appendChild(document.createTextNode(c));
-          else if (c instanceof HTMLElement) el.appendChild(c);
-          else if (c instanceof Component) {
+        children.forEach((c) => {
+          if (typeof c === "string") {
+            el.appendChild(document.createTextNode(c));
+          } else if (c instanceof HTMLElement) {
+            el.appendChild(c);
+          } else if (c instanceof Component) {
             const cel = c.render();
-            if (cel instanceof HTMLElement) { el.appendChild(cel); c._el = cel; }
+            if (cel instanceof HTMLElement) {
+              el.appendChild(cel);
+              c._el = cel;
+            }
           }
         });
       }
@@ -139,18 +150,31 @@ class Component {
 
     const el = document.createElement(tag);
     Object.entries(attrs).forEach(([k, v]) => {
-      if (k === "className") el.className = v;
-      else if (k === "style" && typeof v === "object") Object.assign(el.style, v);
-      else if (k.startsWith("on") && typeof v === "function") el.addEventListener(k.slice(2).toLowerCase(), v);
-      else if (k === "dataset") Object.entries(v).forEach(([dk, dv]) => el.dataset[dk] = dv);
-      else if (v !== null && v !== undefined) el.setAttribute(k, v);
+      if (k === "className") {
+        el.className = v;
+      } else if (k === "style" && typeof v === "object") {
+        Object.assign(el.style, v);
+      } else if (k.startsWith("on") && typeof v === "function") {
+        el.addEventListener(k.slice(2).toLowerCase(), v);
+      } else if (k === "dataset") {
+        Object.entries(v).forEach(([dk, dv]) => {
+          el.dataset[dk] = dv;
+        });
+      } else if (v !== null && v !== undefined) {
+        el.setAttribute(k, v);
+      }
     });
-    children.forEach(c => {
-      if (typeof c === "string" || typeof c === "number") el.appendChild(document.createTextNode(String(c)));
-      else if (c instanceof HTMLElement) el.appendChild(c);
-      else if (c instanceof Component) {
+    children.forEach((c) => {
+      if (typeof c === "string" || typeof c === "number") {
+        el.appendChild(document.createTextNode(String(c)));
+      } else if (c instanceof HTMLElement) {
+        el.appendChild(c);
+      } else if (c instanceof Component) {
         const cel = c.render();
-        if (cel instanceof HTMLElement) { el.appendChild(cel); c._el = cel; }
+        if (cel instanceof HTMLElement) {
+          el.appendChild(cel);
+          c._el = cel;
+        }
       }
     });
     return el;

@@ -3,7 +3,7 @@
  * Tests for ValidationUtils - pure JavaScript, no DOM required
  */
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from "@jest/globals";
 
 // Inline ValidationUtils for testing (copied from public/js/utils/validation.js)
 const ValidationUtils = {
@@ -55,7 +55,7 @@ const ValidationUtils = {
     const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
     if (!ipv4Regex.test(ip)) return false;
     const parts = ip.split(".").map(Number);
-    return parts.every(part => part >= 0 && part <= 255);
+    return parts.every((part) => part >= 0 && part <= 255);
   },
 
   isPort(port) {
@@ -106,7 +106,7 @@ const ValidationUtils = {
   hasRequiredKeys(obj, requiredKeys) {
     if (typeof obj !== "object" || obj === null || Array.isArray(obj)) return false;
     if (!Array.isArray(requiredKeys)) return false;
-    return requiredKeys.every(key => key in obj);
+    return requiredKeys.every((key) => key in obj);
   },
 
   validateAllValues(obj, predicate) {
@@ -123,7 +123,7 @@ const ValidationUtils = {
   isValidLogLevel(level) {
     const validLevels = ["debug", "info", "warn", "error"];
     return validLevels.includes(level);
-  }
+  },
 };
 
 describe("ValidationUtils", () => {
@@ -715,7 +715,7 @@ describe("ValidationUtils", () => {
     });
 
     it("should return true for valid JSON array", () => {
-      expect(ValidationUtils.isJson('[1, 2, 3]')).toBe(true);
+      expect(ValidationUtils.isJson("[1, 2, 3]")).toBe(true);
     });
 
     it("should return true for nested JSON", () => {
@@ -764,7 +764,7 @@ describe("ValidationUtils", () => {
     });
 
     it("should return false for trailing comma", () => {
-      expect(ValidationUtils.isJson('[1, 2, 3,]')).toBe(false);
+      expect(ValidationUtils.isJson("[1, 2, 3,]")).toBe(false);
     });
 
     it("should return false for array input", () => {
@@ -803,8 +803,7 @@ describe("ValidationUtils", () => {
     });
 
     it("should escape XSS script tag", () => {
-      expect(ValidationUtils.sanitize('<script>alert("xss")</script>'))
-        .toContain("&lt;script&gt;");
+      expect(ValidationUtils.sanitize('<script>alert("xss")</script>')).toContain("&lt;script&gt;");
     });
 
     // Negative tests - non-string and empty inputs
@@ -980,9 +979,9 @@ describe("ValidationUtils", () => {
 
   describe("validateAllValues", () => {
     // Helper predicates for testing
-    const isNumber = val => typeof val === "number";
-    const isString = val => typeof val === "string";
-    const isPositive = val => typeof val === "number" && val > 0;
+    const isNumber = (val) => typeof val === "number";
+    const isString = (val) => typeof val === "string";
+    const isPositive = (val) => typeof val === "number" && val > 0;
 
     // Positive tests - all values pass predicate
     it("should return true when all values pass predicate", () => {

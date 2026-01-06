@@ -16,7 +16,7 @@ async function runTests() {
   const logs = [];
 
   // Capture console messages
-  page.on("console", msg => {
+  page.on("console", (msg) => {
     const text = msg.text();
     logs.push({ type: msg.type(), text });
     if (msg.type() === "error") {
@@ -25,7 +25,7 @@ async function runTests() {
   });
 
   // Capture page errors
-  page.on("pageerror", error => {
+  page.on("pageerror", (error) => {
     errors.push(error.message);
   });
 
@@ -36,11 +36,12 @@ async function runTests() {
 
     // Wait for app to initialize and Socket.IO to connect
     console.log("   Waiting for app initialization...");
-    await page.waitForFunction(() => {
-      return window.router &&
-             window.stateManager &&
-             document.querySelector(".dashboard-page");
-    }, { timeout: 10000 });
+    await page.waitForFunction(
+      () => {
+        return window.router && window.stateManager && document.querySelector(".dashboard-page");
+      },
+      { timeout: 10000 }
+    );
 
     // Wait a bit more for Socket.IO connection
     await page.waitForTimeout(2000);
@@ -118,7 +119,6 @@ async function runTests() {
     }
 
     console.log("\n" + (errors.length === 0 ? "✓ ALL TESTS PASSED" : "✗ SOME TESTS FAILED"));
-
   } catch (error) {
     console.error("Test error:", error.message);
     errors.push(error.message);
@@ -130,10 +130,10 @@ async function runTests() {
 }
 
 runTests()
-  .then(success => {
+  .then((success) => {
     process.exit(success ? 0 : 1);
   })
-  .catch(err => {
+  .catch((err) => {
     console.error("Fatal error:", err);
     process.exit(1);
   });

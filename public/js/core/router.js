@@ -17,11 +17,17 @@ class Router {
 
   register(path, handler) {
     const pattern = this._toRegex(path);
-    this.routes.set(pattern, { path, handler: typeof handler === "function" ? { render: handler } : handler });
+    this.routes.set(pattern, {
+      path,
+      handler: typeof handler === "function" ? { render: handler } : handler,
+    });
     return this;
   }
 
-  afterEach(hook) { this.afterHooks.push(hook); return this; }
+  afterEach(hook) {
+    this.afterHooks.push(hook);
+    return this;
+  }
 
   navigate(path, data = {}) {
     const url = new URL(path, window.location.origin);
@@ -35,8 +41,12 @@ class Router {
     return this;
   }
 
-  getPath() { return window.location.pathname; }
-  getQuery() { return Object.fromEntries(new URLSearchParams(window.location.search)); }
+  getPath() {
+    return window.location.pathname;
+  }
+  getQuery() {
+    return Object.fromEntries(new URLSearchParams(window.location.search));
+  }
 
   start() {
     if (this.initialized) return this;
@@ -80,7 +90,7 @@ class Router {
     this.currentController.didMount && this.currentController.didMount();
 
     // Run after hooks
-    this.afterHooks.forEach(h => h(path, route));
+    this.afterHooks.forEach((h) => h(path, route));
   }
 
   _create(handler, path, params) {
@@ -106,7 +116,11 @@ class Router {
       const m = pattern.exec(path);
       if (m) {
         const params = {};
-        route.path.split("/").forEach((seg, i) => { if (seg.startsWith(":")) params[seg.slice(1)] = m[i + 1]; });
+        route.path.split("/").forEach((seg, i) => {
+          if (seg.startsWith(":")) {
+            params[seg.slice(1)] = m[i + 1];
+          }
+        });
         return { ...route, params };
       }
     }
@@ -114,7 +128,10 @@ class Router {
   }
 
   _toRegex(path) {
-    const rx = path.replace(/\//g, "\\/").replace(/:([^/]+)/g, "([^/]+)").replace(/\*$/, "(.*)");
+    const rx = path
+      .replace(/\//g, "\\/")
+      .replace(/:([^/]+)/g, "([^/]+)")
+      .replace(/\*$/, "(.*)");
     return new RegExp(`^${rx}$`);
   }
 
@@ -125,7 +142,7 @@ class Router {
       el._component.didMount();
     }
     if (el.children) {
-      Array.from(el.children).forEach(c => this._callDidMount(c));
+      Array.from(el.children).forEach((c) => this._callDidMount(c));
     }
   }
 

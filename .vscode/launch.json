@@ -6,12 +6,7 @@
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/jest",
-      "args": [
-        "--runInBand",
-        "--watchAll=false",
-        "--verbose",
-        "--colors"
-      ],
+      "args": ["--runInBand", "--watchAll=false", "--verbose", "--colors"],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
       "skipFiles": ["<node_internals>/**"]
@@ -38,11 +33,7 @@
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/jest",
-      "args": [
-        "--coverage",
-        "--colors",
-        "--verbose"
-      ],
+      "args": ["--coverage", "--colors", "--verbose"],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen"
     }

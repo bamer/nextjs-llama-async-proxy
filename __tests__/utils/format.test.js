@@ -9,32 +9,31 @@ import { describe, it, expect } from "@jest/globals";
 const FormatUtils = {
   formatBytes(bytes) {
     if (bytes === 0) return "0 B";
+    if (bytes < 0) return "NaN B";
     const k = 1024;
-    const sizes = ["B", "KB", "MB", "GB", "TB"];
+    const sizes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
   },
 
   formatPercent(value, decimals = 1) {
+    if (value === null || value === undefined || isNaN(value)) return "NaN%";
     return `${(value * 100).toFixed(decimals)}%`;
   },
 
   formatTimestamp(timestamp) {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString();
+    return new Date(timestamp).toLocaleTimeString();
   },
 
   formatRelativeTime(timestamp) {
-    const now = Date.now();
-    const diff = now - timestamp;
-    const seconds = Math.floor(diff / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (days > 0) return `${days}d ago`;
-    if (hours > 0) return `${hours}h ago`;
-    if (minutes > 0) return `${minutes}m ago`;
+    const diff = Date.now() - timestamp;
+    const s = Math.trunc(diff / 1000);
+    const m = Math.trunc(s / 60);
+    const h = Math.trunc(m / 60);
+    const d = Math.trunc(h / 24);
+    if (d !== 0) return `${Math.abs(d)}d ago`;
+    if (h !== 0) return `${Math.abs(h)}h ago`;
+    if (m !== 0) return `${Math.abs(m)}m ago`;
     return "Just now";
   },
 
@@ -54,9 +53,10 @@ const FormatUtils = {
 
   formatFileSize(bytes, decimals = 2) {
     if (bytes === 0) return "0 Bytes";
+    if (bytes < 0) return "NaN Bytes";
     const k = 1024;
     const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB"];
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
   },
@@ -119,15 +119,13 @@ describe("FormatUtils", () => {
 
     it("should format terabytes correctly", () => {
       // Tests TB boundary (i = 4)
-      expect(
-        FormatUtils.formatBytes(1024 * 1024 * 1024 * 1024)
-      ).toBe("1 TB");
+      expect(FormatUtils.formatBytes(1024 * 1024 * 1024 * 1024)).toBe("1 TB");
     });
 
     it("should handle very large numbers (petabytes range)", () => {
-      // Tests values beyond TB - uses TB as max size in array
+      // Tests values beyond TB - extended sizes array handles up to YB
       const pb = 1024 * 1024 * 1024 * 1024 * 1024;
-      expect(FormatUtils.formatBytes(pb)).toBe("1024 TB");
+      expect(FormatUtils.formatBytes(pb)).toBe("1 PB");
     });
 
     it("should handle negative values (returns NaN)", () => {
@@ -250,6 +248,12 @@ describe("FormatUtils", () => {
       expect(typeof result).toBe("string");
       expect(result.length).toBeGreaterThan(0);
     });
+
+    it("should handle invalid timestamp", () => {
+      // Tests with NaN - returns Invalid Date
+      const result = FormatUtils.formatTimestamp(NaN);
+      expect(result).toContain("Invalid Date");
+    });
   });
 
   describe("formatRelativeTime", () => {
@@ -262,8 +266,7 @@ describe("FormatUtils", () => {
     it("should format 30 seconds ago", () => {
       // Tests seconds < 60, minutes = 0
       const thirtySecondsAgo = Date.now() - 30000;
-      expect(FormatUtils.formatRelativeTime(thirtySecondsAgo))
-        .toBe("Just now");
+      expect(FormatUtils.formatRelativeTime(thirtySecondsAgo)).toBe("Just now");
     });
 
     it("should format 1 minute ago", () => {
@@ -281,9 +284,7 @@ describe("FormatUtils", () => {
     it("should format 59 minutes ago", () => {
       // Tests boundary before hours
       const fiftyNineMinutesAgo = Date.now() - 59 * 60 * 1000;
-      expect(
-        FormatUtils.formatRelativeTime(fiftyNineMinutesAgo)
-      ).toBe("59m ago");
+      expect(FormatUtils.formatRelativeTime(fiftyNineMinutesAgo)).toBe("59m ago");
     });
 
     it("should format 1 hour ago", () => {
@@ -301,9 +302,7 @@ describe("FormatUtils", () => {
     it("should format 23 hours ago", () => {
       // Tests boundary before days
       const twentyThreeHoursAgo = Date.now() - 23 * 3600000;
-      expect(
-        FormatUtils.formatRelativeTime(twentyThreeHoursAgo)
-      ).toBe("23h ago");
+      expect(FormatUtils.formatRelativeTime(twentyThreeHoursAgo)).toBe("23h ago");
     });
 
     it("should format 1 day ago", () => {
@@ -322,6 +321,28 @@ describe("FormatUtils", () => {
       // Tests large days value
       const oneYearAgo = Date.now() - 365 * 86400000;
       expect(FormatUtils.formatRelativeTime(oneYearAgo)).toBe("365d ago");
+    });
+
+    it("should handle future timestamps", () => {
+      // Tests future times - uses Math.abs so shows positive values
+      const tomorrow = Date.now() + 24 * 60 * 60 * 1000;
+      expect(FormatUtils.formatRelativeTime(tomorrow)).toContain("d ago");
+    });
+
+    it("should handle future hours", () => {
+      // Tests future hours - use fixed timestamp to avoid timing issues
+      // 2 hours in the future from a known point
+      const futureTime = Date.now() + 2 * 60 * 60 * 1000 + 1000; // +2h +1ms to avoid boundary
+      const result = FormatUtils.formatRelativeTime(futureTime);
+      expect(result).toContain("h ago");
+    });
+
+    it("should handle future minutes", () => {
+      // Tests future minutes - use fixed timestamp to avoid timing issues
+      // 5 minutes in the future from a known point
+      const futureTime = Date.now() + 5 * 60 * 1000 + 1000; // +5m +1ms to avoid boundary
+      const result = FormatUtils.formatRelativeTime(futureTime);
+      expect(result).toContain("m ago");
     });
   });
 
@@ -383,8 +404,7 @@ describe("FormatUtils", () => {
 
     it("should format 23 hours 59 minutes", () => {
       // Tests large hours value
-      expect(FormatUtils.formatUptime(23 * 3600 + 59 * 60))
-        .toBe("23h 59m");
+      expect(FormatUtils.formatUptime(23 * 3600 + 59 * 60)).toBe("23h 59m");
     });
 
     it("should handle negative values", () => {
@@ -421,13 +441,14 @@ describe("FormatUtils", () => {
     });
 
     it("should format with custom decimals", () => {
-      // Tests decimals parameter
-      expect(FormatUtils.formatFileSize(1024, 1)).toBe("1.0 KB");
+      // Tests decimals parameter - parseFloat removes trailing zeros
+      expect(FormatUtils.formatFileSize(1536, 1)).toBe("1.5 KB");
     });
 
     it("should handle negative decimals (sets to 0)", () => {
       // Tests the dm = decimals < 0 ? 0 : decimals branch
-      expect(FormatUtils.formatFileSize(1536, -1)).toBe("2 Bytes");
+      // 1536/1024 = 1.5, toFixed(0) = "2", parseFloat = 2
+      expect(FormatUtils.formatFileSize(1536, -1)).toBe("2 KB");
     });
 
     it("should format megabytes correctly", () => {
@@ -447,23 +468,17 @@ describe("FormatUtils", () => {
 
     it("should format terabytes correctly", () => {
       // Tests TB boundary
-      expect(
-        FormatUtils.formatFileSize(1024 * 1024 * 1024 * 1024)
-      ).toBe("1 TB");
+      expect(FormatUtils.formatFileSize(1024 * 1024 * 1024 * 1024)).toBe("1 TB");
     });
 
     it("should format petabytes correctly", () => {
       // Tests PB boundary (max in sizes array)
-      expect(
-        FormatUtils.formatFileSize(1024 * 1024 * 1024 * 1024 * 1024)
-      ).toBe("1 PB");
+      expect(FormatUtils.formatFileSize(1024 * 1024 * 1024 * 1024 * 1024)).toBe("1 PB");
     });
 
     it("should format very large values", () => {
-      // Tests beyond PB range
-      expect(
-        FormatUtils.formatFileSize(1024 * 1024 * 1024 * 1024 * 1024 * 1024)
-      ).toBe("1024 PB");
+      // Tests beyond PB range - extended sizes array handles up to YB
+      expect(FormatUtils.formatFileSize(1024 * 1024 * 1024 * 1024 * 1024 * 1024)).toBe("1 EB");
     });
 
     it("should handle negative values", () => {
@@ -536,12 +551,12 @@ describe("FormatUtils", () => {
 
     it("should format with default $ symbol", () => {
       // Tests basic formatting
-      expect(FormatUtils.formatCurrency(100.50)).toBe("$100.50");
+      expect(FormatUtils.formatCurrency(100.5)).toBe("$100.50");
     });
 
     it("should format with custom € symbol", () => {
       // Tests custom currency
-      expect(FormatUtils.formatCurrency(100.50, "€")).toBe("€100.50");
+      expect(FormatUtils.formatCurrency(100.5, "€")).toBe("€100.50");
     });
 
     it("should format with custom £ symbol", () => {

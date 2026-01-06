@@ -2,7 +2,7 @@
  * Main Application Entry Point - Simplified
  */
 
-(function() {
+(function () {
   "use strict";
 
   console.log("[App] Initializing...");
@@ -32,7 +32,7 @@
 
   // Navigation update
   router.afterEach((path) => {
-    document.querySelectorAll(".nav-link").forEach(l => {
+    document.querySelectorAll(".nav-link").forEach((l) => {
       const h = l.getAttribute("href");
       if (h === path || (path.startsWith(h) && h !== "/")) l.classList.add("active");
       else l.classList.remove("active");
@@ -62,9 +62,23 @@ window.AppUtils = {
   formatPercent: (v) => FormatUtils.formatPercent(v),
   formatTimestamp: (t) => FormatUtils.formatTimestamp(t),
   formatRelativeTime: (t) => FormatUtils.formatRelativeTime(t),
-  debounce: (f, w) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => f(...a), w); }; },
-  throttle: (f, l) => { let t; return (...a) => { if (!t) { f(...a); t = setTimeout(() => t = null, l); } }; },
+  debounce: (f, w) => {
+    let t;
+    return (...a) => {
+      clearTimeout(t);
+      t = setTimeout(() => f(...a), w);
+    };
+  },
+  throttle: (f, l) => {
+    let t;
+    return (...a) => {
+      if (!t) {
+        f(...a);
+        t = setTimeout(() => (t = null), l);
+      }
+    };
+  },
   generateId: () => `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
   deepClone: (o) => JSON.parse(JSON.stringify(o)),
-  isEmpty: (o) => !o || (Array.isArray(o) ? o.length : Object.keys(o).length) === 0
+  isEmpty: (o) => !o || (Array.isArray(o) ? o.length : Object.keys(o).length) === 0,
 };

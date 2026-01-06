@@ -51,7 +51,10 @@ class SocketClient {
   }
 
   disconnect() {
-    if (this.socket) { this.socket.disconnect(); this.socket = null; }
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+    }
     return this;
   }
 
@@ -78,17 +81,28 @@ class SocketClient {
   }
 
   once(event, handler) {
-    const w = (...args) => { this.off(event, w); handler(...args); };
+    const w = (...args) => {
+      this.off(event, w);
+      handler(...args);
+    };
     this.on(event, w);
     return this;
   }
 
-  get isConnected() { return this.socket?.connected || false; }
-  get id() { return this.socket?.id || null; }
+  get isConnected() {
+    return this.socket?.connected || false;
+  }
+  get id() {
+    return this.socket?.id || null;
+  }
 
   _emit(event, data) {
-    this.handlers.get(event)?.forEach(h => {
-      try { h(data); } catch (e) { console.error(`[Socket] Handler error (${event}):`, e); }
+    this.handlers.get(event)?.forEach((h) => {
+      try {
+        h(data);
+      } catch (e) {
+        console.error(`[Socket] Handler error (${event}):`, e);
+      }
     });
   }
 }
