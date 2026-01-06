@@ -1,12 +1,14 @@
 /**
  * Socket.IO Event Handlers
  * Extracts all Socket.IO event handlers from server.js into a modular structure.
+ * Supports llama.cpp router mode for multi-model management.
  */
 
 import fs from "fs";
 import path from "path";
 import os from "os";
 import { spawn, execSync } from "child_process";
+import http from "http";
 
 // Response helpers
 function ok(socket, event, data, reqId) {
@@ -22,16 +24,16 @@ function err(socket, event, message, reqId) {
   });
 }
 
-// ==================== LLAMA-SERVER MANAGER ====================
+// ==================== LLAMA-SERVER ROUTER MODE MANAGER ====================
 
 let llamaServerProcess = null;
 let llamaServerPort = 8080;
 const DEFAULT_LLAMA_PORT = 8080;
 const MAX_PORT = 8090;
+let llamaServerUrl = null;
 
 // Find available port for llama-server using a simple TCP connection test
 async function findAvailablePort() {
-  // Use a simple approach - try ports sequentially
   for (let port = DEFAULT_LLAMA_PORT; port <= MAX_PORT; port++) {
     if (!isPortInUse(port)) {
       return port;
@@ -107,11 +109,54 @@ function findLlamaServer() {
   }
 }
 
-// Start llama-server with a model
-async function startLlamaServer(modelPath, modelName) {
-  console.log("[LLAMA] === STARTING LLAMA-SERVER ===");
-  console.log("[LLAMA] Model path:", modelPath);
-  console.log("[LLAMA] Model name:", modelName);
+// Make HTTP request to llama-server API
+async function llamaApiRequest(endpoint, method = "GET", body = null) {
+  if (!llamaServerUrl) {
+    throw new Error("llama-server not running");
+  }
+
+  return new Promise((resolve, reject) => {
+    const url = new URL(endpoint, llamaServerUrl);
+    const options = {
+      hostname: url.hostname,
+      port: url.port,
+      path: url.pathname,
+      method: method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    const req = http.request(options, (res) => {
+      let data = "";
+      res.on("data", (chunk) => (data += chunk));
+      res.on("end", () => {
+        try {
+          resolve(JSON.parse(data));
+        } catch {
+          resolve(data);
+        }
+      });
+    });
+
+    req.on("error", reject);
+    req.setTimeout(30000, () => {
+      req.destroy();
+      reject(new Error("Request timeout"));
+    });
+
+    if (body) {
+      req.write(JSON.stringify(body));
+    }
+    req.end();
+  });
+}
+
+// Start llama-server in ROUTER MODE (multi-model support)
+async function startLlamaServerRouter(modelsDir, options = {}) {
+  console.log("[LLAMA] === STARTING LLAMA-SERVER IN ROUTER MODE ===");
+  console.log("[LLAMA] Models directory:", modelsDir);
+  console.log("[LLAMA] Options:", options);
 
   // Find llama-server binary
   const llamaBin = findLlamaServer();
@@ -131,30 +176,43 @@ async function startLlamaServer(modelPath, modelName) {
 
   // Find available port
   llamaServerPort = await findAvailablePort();
+  llamaServerUrl = `http://127.0.0.1:${llamaServerPort}`;
   console.log("[LLAMA] Using port:", llamaServerPort);
 
-  // Check if model file exists
-  if (!fs.existsSync(modelPath)) {
-    const error = `Model file not found: ${modelPath}`;
+  // Check if models directory exists
+  if (!fs.existsSync(modelsDir)) {
+    const error = `Models directory not found: ${modelsDir}`;
     console.error("[LLAMA] ERROR:", error);
     return { success: false, error };
   }
-  console.log("[LLAMA] Model file exists");
+  console.log("[LLAMA] Models directory exists");
 
-  // Build command arguments
+  // Build command arguments for router mode
   const args = [
-    "-m", modelPath,
     "--port", String(llamaServerPort),
     "--host", "127.0.0.1",
-    "--threads", "4",
-    "--ctx-size", "4096",
-    "--temp", "0.7",
-    "--repeat-penalty", "1.1",
+    "--models-dir", modelsDir,
+    "--models-max", String(options.maxModels || 4),
+    "--threads", String(options.threads || 4),
+    "--ctx-size", String(options.ctxSize || 4096),
   ];
+
+  // Add parallel processing options
+  if (options.slots) {
+    args.push("--np", String(options.slots));
+  }
+  if (options.threadsHttp) {
+    args.push("--threads-http", String(options.threadsHttp));
+  }
+
+  // Disable auto-load if specified
+  if (options.noAutoLoad) {
+    args.push("--no-models-autoload");
+  }
 
   console.log("[LLAMA] Command:", llamaBin, args.join(" "));
 
-  // Spawn llama-server
+  // Spawn llama-server in router mode
   try {
     llamaServerProcess = spawn(llamaBin, args, {
       stdio: ["pipe", "pipe", "pipe"],
@@ -188,24 +246,35 @@ async function startLlamaServer(modelPath, modelName) {
       }
     });
 
-    // Wait for server to be ready (check port)
-    console.log("[LLAMA] Waiting for server to start...");
+    // Wait for server to be ready
+    console.log("[LLAMA] Waiting for router server to start...");
     let attempts = 0;
-    const maxAttempts = 30;
-    
+    const maxAttempts = 60;
+
     while (attempts < maxAttempts) {
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise((r) => setTimeout(r, 1000));
       attempts++;
-      
+
       if (isPortInUse(llamaServerPort)) {
-        console.log("[LLAMA] Server is ready on port", llamaServerPort);
+        console.log("[LLAMA] Router server is ready on port", llamaServerPort);
+
+        // Try to get models list to confirm API is working
+        try {
+          await llamaApiRequest("/models");
+          console.log("[LLAMA] API confirmed working");
+        } catch {
+          console.log("[LLAMA] API not ready yet, waiting...");
+          continue;
+        }
+
         return {
           success: true,
           port: llamaServerPort,
-          url: `http://127.0.0.1:${llamaServerPort}`,
+          url: llamaServerUrl,
+          mode: "router",
         };
       }
-      
+
       // Check if process exited
       if (llamaServerProcess && llamaServerProcess.exitCode !== null) {
         const error = `llama-server exited with code ${llamaServerProcess.exitCode}`;
@@ -215,12 +284,12 @@ async function startLlamaServer(modelPath, modelName) {
       }
     }
 
-    const error = "Timeout waiting for llama-server to start";
+    const error = "Timeout waiting for llama-server router to start";
     console.error("[LLAMA] ERROR:", error);
     return { success: false, error };
 
   } catch (e) {
-    const error = `Failed to start llama-server: ${e.message}`;
+    const error = `Failed to start llama-server router: ${e.message}`;
     console.error("[LLAMA] ERROR:", error);
     return { success: false, error };
   }
@@ -229,36 +298,87 @@ async function startLlamaServer(modelPath, modelName) {
 // Stop llama-server
 function stopLlamaServer() {
   console.log("[LLAMA] === STOPPING LLAMA-SERVER ===");
-  
+
   const killed = killLlamaServer();
-  
+
   // Also kill by port
   for (let p = DEFAULT_LLAMA_PORT; p <= MAX_PORT; p++) {
     if (killLlamaOnPort(p)) {
       console.log("[LLAMA] Killed llama-server on port", p);
     }
   }
-  
+
+  llamaServerUrl = null;
+
   if (killed || isPortInUse(llamaServerPort)) {
     console.log("[LLAMA] Server stopped");
     return { success: true };
   }
-  
+
   console.log("[LLAMA] No server was running");
   return { success: true, message: "No server was running" };
 }
 
-// Get llama-server status
-function getLlamaStatus() {
+// Get llama-server status (router mode)
+async function getLlamaStatus() {
   const isRunning = llamaServerProcess !== null && llamaServerProcess.exitCode === null;
   const portInUse = isPortInUse(llamaServerPort);
-  
+
+  let modelsStatus = null;
+
+  if (isRunning || portInUse) {
+    try {
+      modelsStatus = await llamaApiRequest("/models");
+      console.log("[LLAMA] Models status:", modelsStatus);
+    } catch (e) {
+      console.warn("[LLAMA] Failed to get models status:", e.message);
+    }
+  }
+
   return {
     status: isRunning || portInUse ? "running" : "idle",
     port: isRunning || portInUse ? llamaServerPort : null,
-    url: isRunning || portInUse ? `http://127.0.0.1:${llamaServerPort}` : null,
+    url: isRunning || portInUse ? llamaServerUrl : null,
     processRunning: isRunning,
+    mode: "router",
+    models: modelsStatus?.models || [],
   };
+}
+
+// Load a model (router mode)
+async function loadModel(modelName) {
+  console.log("[LLAMA] Loading model:", modelName);
+
+  if (!llamaServerUrl) {
+    return { success: false, error: "llama-server not running" };
+  }
+
+  try {
+    const result = await llamaApiRequest("/models/load", "POST", { model: modelName });
+    console.log("[LLAMA] Load result:", result);
+    return { success: true, result };
+  } catch (e) {
+    console.error("[LLAMA] Failed to load model:", e.message);
+    return { success: false, error: e.message };
+  }
+}
+
+// Unload a model (router mode)
+async function unloadModel(modelName) {
+  console.log("[LLAMA] Unloading model:", modelName);
+
+  if (!llamaServerUrl) {
+    return { success: false, error: "llama-server not running" };
+  }
+
+  try {
+    const result = await llamaApiRequest("/models/unload", "POST", { model: modelName });
+    console.log("[LLAMA] Unload result:", result);
+    return { success: true, result };
+  } catch (e) {
+    console.error("[LLAMA] Failed to unload model:", e.message);
+    return { success: false, error: e.message };
+  }
 }
 
 // Simple Logger
@@ -426,117 +546,144 @@ export function registerHandlers(io, db, ggufParser) {
     });
 
     /**
-     * Start a model
+     * Load a model (router mode)
+     * Event: models:load
+     * Response: models:load:result
+     * Broadcast: models:status
+     */
+    socket.on("models:load", (req) => {
+      const id = req?.requestId || Date.now();
+      const modelName = req?.modelName || req?.modelId;
+      console.log("[DEBUG] models:load request", { requestId: id, modelName });
+
+      if (!llamaServerUrl) {
+        err(socket, "models:load:result", "llama-server not running", id);
+        return;
+      }
+
+      loadModel(modelName)
+        .then((result) => {
+          if (result.success) {
+            console.log("[DEBUG] models:load: SUCCESS");
+            io.emit("models:status", {
+              modelName,
+              status: "loaded",
+            });
+            ok(socket, "models:load:result", { modelName, status: "loaded" }, id);
+          } else {
+            console.error("[DEBUG] models:load: FAILED:", result.error);
+            io.emit("models:status", {
+              modelName,
+              status: "error",
+              error: result.error,
+            });
+            err(socket, "models:load:result", result.error, id);
+          }
+        })
+        .catch((e) => {
+          console.error("[DEBUG] models:load: Exception:", e.message);
+          err(socket, "models:load:result", e.message, id);
+        });
+    });
+
+    /**
+     * Unload a model (router mode)
+     * Event: models:unload
+     * Response: models:unload:result
+     * Broadcast: models:status
+     */
+    socket.on("models:unload", (req) => {
+      const id = req?.requestId || Date.now();
+      const modelName = req?.modelName || req?.modelId;
+      console.log("[DEBUG] models:unload request", { requestId: id, modelName });
+
+      if (!llamaServerUrl) {
+        err(socket, "models:unload:result", "llama-server not running", id);
+        return;
+      }
+
+      unloadModel(modelName)
+        .then((result) => {
+          if (result.success) {
+            console.log("[DEBUG] models:unload: SUCCESS");
+            io.emit("models:status", {
+              modelName,
+              status: "unloaded",
+            });
+            ok(socket, "models:unload:result", { modelName, status: "unloaded" }, id);
+          } else {
+            console.error("[DEBUG] models:unload: FAILED:", result.error);
+            err(socket, "models:unload:result", result.error, id);
+          }
+        })
+        .catch((e) => {
+          console.error("[DEBUG] models:unload: Exception:", e.message);
+          err(socket, "models:unload:result", e.message, id);
+        });
+    });
+
+    /**
+     * Start a model - DEPRECATED in router mode, use models:load instead
+     * Kept for backward compatibility
      * Event: models:start
      * Response: models:start:result
-     * Broadcast: models:status
      */
     socket.on("models:start", (req) => {
       const id = req?.requestId || Date.now();
       const modelId = req?.modelId;
-      console.log("[DEBUG] models:start request", { requestId: id, modelId });
+      console.log("[DEBUG] models:start request (deprecated, using load)", { requestId: id, modelId });
 
-      try {
-        // Get model from database
-        const model = db.getModel(modelId);
-        if (!model) {
-          console.error("[DEBUG] models:start: Model not found:", modelId);
-          err(socket, "models:start:result", "Model not found", id);
-          return;
-        }
-
-        console.log("[DEBUG] models:start: Starting model:", model.name);
-        console.log("[DEBUG] models:start: Model path:", model.model_path);
-
-        // Check if model is already running
-        const currentStatus = getLlamaStatus();
-        if (currentStatus.status === "running") {
-          console.log("[DEBUG] models:start: Another model is already running on port", currentStatus.port);
-          // Stop it first
-          stopLlamaServer();
-        }
-
-        // Start llama-server with the model
-        startLlamaServer(model.model_path, model.name)
-          .then((result) => {
-            if (result.success) {
-              console.log("[DEBUG] models:start: SUCCESS on port", result.port);
-              // Update model status in database
-              db.updateModel(modelId, { status: "running" });
-              const updatedModel = db.getModel(modelId);
-              // Broadcast status update
-              io.emit("models:status", {
-                modelId,
-                status: "running",
-                model: updatedModel,
-                llama: result
-              });
-              // Also emit llama:status update
-              io.emit("llama:status", {
-                status: "running",
-                port: result.port,
-                url: result.url,
-                modelId,
-                modelName: model.name,
-              });
-              ok(socket, "models:start:result", { model: updatedModel, llama: result }, id);
-            } else {
-              console.error("[DEBUG] models:start: FAILED:", result.error);
-              err(socket, "models:start:result", result.error, id);
-            }
-          })
-          .catch((e) => {
-            console.error("[DEBUG] models:start: Exception:", e.message);
-            err(socket, "models:start:result", e.message, id);
-          });
-
-      } catch (e) {
-        console.error("[DEBUG] models:start error:", e.message);
-        err(socket, "models:start:result", e.message, id);
+      // Get model name from database
+      const model = db.getModel(modelId);
+      if (!model) {
+        err(socket, "models:start:result", "Model not found", id);
+        return;
       }
+
+      // Forward to models:load
+      socket.emit("models:load", { modelName: model.name, requestId: id });
     });
 
     /**
-     * Stop a model
+     * Stop a model - DEPRECATED in router mode, use models:unload instead
+     * Kept for backward compatibility
      * Event: models:stop
      * Response: models:stop:result
-     * Broadcast: models:status
      */
     socket.on("models:stop", (req) => {
       const id = req?.requestId || Date.now();
       const modelId = req?.modelId;
-      console.log("[DEBUG] models:stop request", { requestId: id, modelId });
+      console.log("[DEBUG] models:stop request (deprecated, using unload)", { requestId: id, modelId });
 
-      try {
-        const model = db.getModel(modelId);
-        if (!model) {
-          err(socket, "models:stop:result", "Model not found", id);
-          return;
-        }
-
-        console.log("[DEBUG] models:stop: Stopping model:", model.name);
-
-        // Stop llama-server
-        const result = stopLlamaServer();
-
-        // Update model status
-        db.updateModel(modelId, { status: "idle" });
-        const updatedModel = db.getModel(modelId);
-
-        // Broadcast
-        io.emit("models:status", {
-          modelId,
-          status: "idle",
-          model: updatedModel,
-        });
-        io.emit("llama:status", { status: "idle" });
-
-        console.log("[DEBUG] models:stop: SUCCESS");
-        ok(socket, "models:stop:result", { model: updatedModel }, id);
-      } catch (e) {
-        console.error("[DEBUG] models:stop error:", e.message);
-        err(socket, "models:stop:result", e.message, id);
+      // Get model name from database
+      const model = db.getModel(modelId);
+      if (!model) {
+        err(socket, "models:stop:result", "Model not found", id);
+        return;
       }
+
+      // Forward to models:unload
+      socket.emit("models:unload", { modelName: model.name, requestId: id });
+    });
+
+    /**
+     * Get router mode status for all models
+     * Event: models:router:status
+     * Response: models:router:status:result
+     */
+    socket.on("models:router:status", (req) => {
+      const id = req?.requestId || Date.now();
+      console.log("[DEBUG] models:router:status request", { requestId: id });
+
+      getLlamaStatus()
+        .then((status) => {
+          console.log("[DEBUG] models:router:status result:", status);
+          ok(socket, "models:router:status:result", { routerStatus: status }, id);
+        })
+        .catch((e) => {
+          console.error("[DEBUG] models:router:status error:", e.message);
+          err(socket, "models:router:status:result", e.message, id);
+        });
     });
 
     /**
@@ -635,7 +782,7 @@ export function registerHandlers(io, db, ggufParser) {
                   db.saveModel({
                     name: fileName.replace(/\.[^/.]+$/, ""),
                     type: meta.architecture || "llama",
-                    status: "idle",
+                    status: "unloaded",
                     model_path: fullPath,
                     file_size: meta.size,
                     params: meta.params,
@@ -883,20 +1030,25 @@ export function registerHandlers(io, db, ggufParser) {
       }
     });
 
-    // ==================== LLAMA HANDLERS ====================
+    // ==================== LLAMA ROUTER HANDLERS ====================
 
     /**
-     * Get llama server status
+     * Get llama server status (router mode)
      * Event: llama:status
      * Response: llama:status:result
      */
     socket.on("llama:status", (req) => {
       const id = req?.requestId || Date.now();
       try {
-        const status = getLlamaStatus();
-        const models = db.getModels();
-        console.log("[DEBUG] llama:status:", status.status, "port:", status.port);
-        ok(socket, "llama:status:result", { status, models }, id);
+        getLlamaStatus()
+          .then((status) => {
+            console.log("[DEBUG] llama:status:", status.status, "port:", status.port);
+            ok(socket, "llama:status:result", { status }, id);
+          })
+          .catch((e) => {
+            console.error("[DEBUG] llama:status error:", e.message);
+            err(socket, "llama:status:result", e.message, id);
+          });
       } catch (e) {
         console.error("[DEBUG] llama:status error:", e.message);
         err(socket, "llama:status:result", e.message, id);
@@ -904,27 +1056,36 @@ export function registerHandlers(io, db, ggufParser) {
     });
 
     /**
-     * Start llama server (without specific model - uses default)
+     * Start llama server in router mode
      * Event: llama:start
      * Response: llama:start:result
      * Broadcast: llama:status
      */
     socket.on("llama:start", (req) => {
       const id = req?.requestId || Date.now();
-      console.log("[DEBUG] llama:start request", { requestId: id });
+      console.log("[DEBUG] llama:start request (router mode)", { requestId: id });
 
       try {
         const config = db.getConfig();
-        const defaultModel = db.getModels()[0];
+        const settings = db.getMeta("user_settings") || {};
 
-        if (!defaultModel) {
-          err(socket, "llama:start:result", "No models available", id);
+        const modelsDir = config.baseModelsPath;
+        if (!modelsDir) {
+          err(socket, "llama:start:result", "No models directory configured", id);
           return;
         }
 
-        console.log("[DEBUG] llama:start: Using default model:", defaultModel.name);
+        console.log("[DEBUG] llama:start: Starting router with dir:", modelsDir);
 
-        startLlamaServer(defaultModel.model_path, defaultModel.name)
+        // Start llama-server in router mode
+        startLlamaServerRouter(modelsDir, {
+          maxModels: settings.maxModelsLoaded || 4,
+          slots: settings.parallelSlots || 1,
+          threadsHttp: settings.parallelSlots || 1,
+          ctxSize: config.ctx_size || 4096,
+          threads: config.threads || 4,
+          noAutoLoad: !settings.autoLoadModels,
+        })
           .then((result) => {
             if (result.success) {
               console.log("[DEBUG] llama:start: SUCCESS on port", result.port);
@@ -932,8 +1093,7 @@ export function registerHandlers(io, db, ggufParser) {
                 status: "running",
                 port: result.port,
                 url: result.url,
-                modelId: defaultModel.id,
-                modelName: defaultModel.name,
+                mode: "router",
               });
               ok(socket, "llama:start:result", { success: true, ...result }, id);
             } else {
@@ -950,6 +1110,25 @@ export function registerHandlers(io, db, ggufParser) {
         console.error("[DEBUG] llama:start error:", e.message);
         err(socket, "llama:start:result", e.message, id);
       }
+    });
+
+    /**
+     * Restart llama server (router mode)
+     * Event: llama:restart
+     * Response: llama:restart:result
+     * Broadcast: llama:status
+     */
+    socket.on("llama:restart", (req) => {
+      const id = req?.requestId || Date.now();
+      console.log("[DEBUG] llama:restart request (router mode)", { requestId: id });
+
+      // First stop, then start
+      stopLlamaServer();
+
+      // Emit llama:start with same requestId
+      setTimeout(() => {
+        socket.emit("llama:start", { requestId: id });
+      }, 2000);
     });
 
     /**
@@ -970,6 +1149,27 @@ export function registerHandlers(io, db, ggufParser) {
       } catch (e) {
         console.error("[DEBUG] llama:stop error:", e.message);
         err(socket, "llama:stop:result", e.message, id);
+      }
+    });
+
+    /**
+     * Configure llama server settings
+     * Event: llama:config
+     * Response: llama:config:result
+     */
+    socket.on("llama:config", (req) => {
+      const id = req?.requestId || Date.now();
+      console.log("[DEBUG] llama:config request", { requestId: id, settings: req?.settings });
+
+      try {
+        // Save router settings to user_settings
+        const settings = req?.settings || {};
+        db.setMeta("router_settings", settings);
+        console.log("[DEBUG] llama:config: Settings saved");
+        ok(socket, "llama:config:result", { settings }, id);
+      } catch (e) {
+        console.error("[DEBUG] llama:config error:", e.message);
+        err(socket, "llama:config:result", e.message, id);
       }
     });
 

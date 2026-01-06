@@ -140,6 +140,9 @@ class StateManager {
       "models:delete:result",
       "models:start:result",
       "models:stop:result",
+      "models:load:result",
+      "models:unload:result",
+      "models:router:status:result",
       "models:scan:result",
       "models:cleanup:result",
       "metrics:get:result",
@@ -153,6 +156,8 @@ class StateManager {
       "llama:status:result",
       "llama:start:result",
       "llama:stop:result",
+      "llama:restart:result",
+      "llama:config:result",
     ];
 
     console.log("[STATE] Registering listeners for", responseEvents.length, "response events");
@@ -315,9 +320,34 @@ class StateManager {
     return this.request("models:start", { modelId: id });
   }
 
+  async loadModel(modelName) {
+    console.log("[STATE] loadModel() called for model:", modelName);
+    return this.request("models:load", { modelName });
+  }
+
+  async unloadModel(modelName) {
+    console.log("[STATE] unloadModel() called for model:", modelName);
+    return this.request("models:unload", { modelName });
+  }
+
   async stopModel(id) {
     console.log("[STATE] stopModel() called for id:", id);
     return this.request("models:stop", { modelId: id });
+  }
+
+  async getRouterStatus() {
+    console.log("[STATE] getRouterStatus() called");
+    return this.request("models:router:status");
+  }
+
+  async restartLlama() {
+    console.log("[STATE] restartLlama() called");
+    return this.request("llama:restart");
+  }
+
+  async configureLlama(settings) {
+    console.log("[STATE] configureLlama() called with:", settings);
+    return this.request("llama:config", { settings });
   }
 
   async scanModels() {

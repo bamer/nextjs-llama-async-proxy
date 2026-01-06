@@ -26,6 +26,15 @@ class ModelsController {
         }
       })
     );
+    // Also subscribe to router status updates
+    this.unsubs.push(
+      stateManager.subscribe("routerStatus", (status) => {
+        console.log("[MODELS] Router status changed:", status);
+        if (this.comp) {
+          this.comp._refreshFromRouter(status);
+        }
+      })
+    );
     console.log("[MODELS] Calling load()");
     this.load();
   }
@@ -39,6 +48,14 @@ class ModelsController {
       console.log("[MODELS] Models count:", d.models?.length);
       console.log("[MODELS] Setting models in stateManager");
       stateManager.set("models", d.models || []);
+      // Also get router status
+      try {
+        const routerStatus = await stateManager.getRouterStatus();
+        console.log("[MODELS] Router status:", routerStatus);
+        stateManager.set("routerStatus", routerStatus.routerStatus);
+      } catch (e) {
+        console.warn("[MODELS] Could not get router status:", e.message);
+      }
     } catch (e) {
       console.error("[MODELS] Models load error:", e);
       showNotification("Failed to load models", "error");
@@ -81,6 +98,7 @@ class ModelsPage extends Component {
     this.state = {
       models: props.models || [],
       filters: props.filters || { status: "all", search: "" },
+      routerModels: [], // Models loaded in router
     };
     console.log("[MODELS] ModelsPage constructor called");
     console.log("[MODELS] Props models count:", props.models?.length);
@@ -96,10 +114,53 @@ class ModelsPage extends Component {
     });
   }
 
+  _refreshFromRouter(routerStatus) {
+    console.log("[MODELS] _refreshFromRouter() called");
+    if (routerStatus?.models) {
+      this.setState({ routerModels: routerStatus.models });
+      // Update model statuses based on router state
+      const models = this.state.models.map((m) => {
+        const routerModel = routerStatus.models.find((rm) => rm.id === m.name || rm.id === m.id);
+        if (routerModel) {
+          return { ...m, status: routerModel.state || m.status };
+        }
+        return { ...m, status: "unloaded" };
+      });
+      this.setState({ models });
+    }
+  }
+
   render() {
     const filtered = this._getFiltered();
     console.log("[MODELS] ModelsPage.render() called");
     console.log("[MODELS] Total models:", this.state.models?.length, "Filtered:", filtered.length);
+
+    const getStatusBadge = (status) => {
+      const statusClass = status === "loaded" ? "success" : status === "loading" ? "warning" : status === "running" ? "success" : status === "error" ? "danger" : "default";
+      return Component.h("span", { className: `badge ${statusClass}` }, status);
+    };
+
+    const getActionButtons = (m) => {
+      if (m.status === "loaded" || m.status === "running") {
+        return Component.h(
+          "button",
+          { className: "btn btn-sm", "data-action": "unload" },
+          "Unload"
+        );
+      } else if (m.status === "loading") {
+        return Component.h(
+          "button",
+          { className: "btn btn-sm", disabled: true, "data-action": "loading" },
+          "Loading..."
+        );
+      } else {
+        return Component.h(
+          "button",
+          { className: "btn btn-sm btn-primary", "data-action": "load" },
+          "Load"
+        );
+      }
+    };
 
     const tbodyContent =
       filtered.length === 0
@@ -108,13 +169,9 @@ class ModelsPage extends Component {
             console.log(`[MODELS] Rendering row ${idx}:`, m.name, "ctx:", m.ctx_size, "blocks:", m.block_count);
             return Component.h(
               "tr",
-              { "data-id": m.id },
+              { "data-id": m.id, "data-name": m.name },
               Component.h("td", {}, m.name),
-              Component.h(
-                "td",
-                {},
-                Component.h("span", { className: `badge ${m.status}` }, m.status)
-              ),
+              Component.h("td", {}, getStatusBadge(m.status)),
               Component.h("td", {}, m.type || "-"),
               Component.h("td", {}, m.params || "-"),
               Component.h("td", {}, m.quantization || "-"),
@@ -123,23 +180,12 @@ class ModelsPage extends Component {
               Component.h("td", {}, this._formatNumber(m.block_count)),
               Component.h("td", {}, this._formatNumber(m.head_count)),
               Component.h("td", {}, m.file_size ? formatBytes(m.file_size) : "-"),
-              Component.h(
-                "td",
-                {},
-                m.status === "running"
-                  ? Component.h(
-                      "button",
-                      { className: "btn btn-sm", "data-action": "stop" },
-                      "Stop"
-                    )
-                  : Component.h(
-                      "button",
-                      { className: "btn btn-sm btn-primary", "data-action": "start" },
-                      "Start"
-                    )
-              )
+              Component.h("td", {}, getActionButtons(m))
             );
           });
+
+    const routerStatus = stateManager.get("routerStatus");
+    const routerRunning = routerStatus?.status === "running";
 
     const result = Component.h(
       "div",
@@ -156,7 +202,18 @@ class ModelsPage extends Component {
           "button",
           { className: "btn", "data-action": "cleanup" },
           "Cleanup"
-        )
+        ),
+        routerRunning
+          ? Component.h(
+              "span",
+              { className: "router-indicator success" },
+              `Router Active (${routerStatus?.port || 8080})`
+            )
+          : Component.h(
+              "span",
+              { className: "router-indicator default" },
+              "Router Not Running"
+            )
       ),
       Component.h(
         "div",
@@ -171,8 +228,10 @@ class ModelsPage extends Component {
           "select",
           { "data-field": "status" },
           Component.h("option", { value: "all" }, "All"),
-          Component.h("option", { value: "running" }, "Running"),
-          Component.h("option", { value: "idle" }, "Idle")
+          Component.h("option", { value: "loaded" }, "Loaded"),
+          Component.h("option", { value: "loading" }, "Loading"),
+          Component.h("option", { value: "unloaded" }, "Unloaded"),
+          Component.h("option", { value: "running" }, "Running")
         )
       ),
       Component.h(
@@ -249,29 +308,40 @@ class ModelsPage extends Component {
       },
       "click [data-action=scan]": () => this.scanModels(),
       "click [data-action=cleanup]": () => this.cleanupModels(),
-      "click [data-action=start]": (e) =>
+      "click [data-action=load]": (e) =>
         stateManager
-          .startModel(e.target.closest("tr").dataset.id)
+          .loadModel(e.target.closest("tr").dataset.name)
           .then(() => {
-            console.log("[MODELS] Model started successfully");
-            showNotification("Model started", "success");
+            console.log("[MODELS] Model loaded successfully");
+            showNotification("Model loaded", "success");
+            this._refreshRouterStatus();
           })
           .catch((err) => {
-            console.error("[MODELS] Start model error:", err);
+            console.error("[MODELS] Load model error:", err);
             showNotification(err.message, "error");
           }),
-      "click [data-action=stop]": (e) =>
+      "click [data-action=unload]": (e) =>
         stateManager
-          .stopModel(e.target.closest("tr").dataset.id)
+          .unloadModel(e.target.closest("tr").dataset.name)
           .then(() => {
-            console.log("[MODELS] Model stopped successfully");
-            showNotification("Model stopped", "success");
+            console.log("[MODELS] Model unloaded successfully");
+            showNotification("Model unloaded", "success");
+            this._refreshRouterStatus();
           })
           .catch((err) => {
-            console.error("[MODELS] Stop model error:", err);
+            console.error("[MODELS] Unload model error:", err);
             showNotification(err.message, "error");
           }),
     };
+  }
+
+  async _refreshRouterStatus() {
+    try {
+      const routerStatus = await stateManager.getRouterStatus();
+      stateManager.set("routerStatus", routerStatus.routerStatus);
+    } catch (e) {
+      console.warn("[MODELS] Could not refresh router status:", e.message);
+    }
   }
 
   scanModels() {
