@@ -13,7 +13,7 @@ class Router {
     this.initialized = false;
     this.afterHooks = [];
     console.log("[ROUTER] Router initialized");
-    
+
     window.addEventListener("popstate", () => {
       console.log("[ROUTER] Popstate event, path:", window.location.pathname);
       this._handle(window.location.pathname, false);
@@ -53,7 +53,7 @@ class Router {
   getPath() {
     return window.location.pathname;
   }
-  
+
   getQuery() {
     return Object.fromEntries(new URLSearchParams(window.location.search));
   }
@@ -64,7 +64,7 @@ class Router {
       console.log("[ROUTER] Already initialized, skipping");
       return this;
     }
-    
+
     console.log("[ROUTER] Clearing root element");
     this.rootEl.innerHTML = "";
 
@@ -78,7 +78,7 @@ class Router {
 
     this.contentEl = document.getElementById("page-content") || this.rootEl;
     console.log("[ROUTER] Content element:", this.contentEl?.tagName);
-    
+
     this.initialized = true;
     console.log("[ROUTER] Router initialized");
 
@@ -92,7 +92,7 @@ class Router {
 
   async _handle(path) {
     console.log("[ROUTER] _handle() called with path:", path);
-    
+
     // Cleanup previous controller
     if (this.currentController) {
       console.log("[ROUTER] Destroying previous controller:", this.currentController?.constructor?.name);
@@ -116,7 +116,7 @@ class Router {
       console.log("[ROUTER] No content element found");
       return;
     }
-    
+
     console.log("[ROUTER] Clearing content element");
     this.contentEl.innerHTML = "";
 
@@ -152,7 +152,7 @@ class Router {
   _create(handler, path, params) {
     console.log("[ROUTER] _create() called with path:", path, "params:", params);
     let ctrl;
-    
+
     if (typeof handler === "function") {
       ctrl = handler({ path, params });
       console.log("[ROUTER] Created controller from function:", ctrl?.constructor?.name);
@@ -166,7 +166,7 @@ class Router {
       console.log("[ROUTER] No valid handler found");
       return null;
     }
-    
+
     ctrl.router = this;
     ctrl.path = path;
     ctrl.params = params;

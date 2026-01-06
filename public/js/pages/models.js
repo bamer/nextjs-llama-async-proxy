@@ -23,27 +23,27 @@ class ModelsController {
 
   async render() {
     console.log("[MODELS] ModelsController.render() called - START");
-    
+
     // Load data first before rendering
     console.log("[MODELS] Calling load()...");
     await this.load();
     console.log("[MODELS] load() completed");
-    
+
     console.log("[MODELS] Getting models from stateManager");
     const models = stateManager.get("models") || [];
     console.log("[MODELS] Found", models.length, "models");
-    
+
     console.log("[MODELS] Creating ModelsPage component");
     this.comp = new ModelsPage({ models: models });
-    
+
     console.log("[MODELS] Calling component.render()");
     const el = this.comp.render();
     this.comp._el = el;
     el._component = this.comp;
-    
+
     console.log("[MODELS] Binding events");
     this.comp.bindEvents();
-    
+
     console.log("[MODELS] ModelsController.render() - END");
     return el;
   }
@@ -54,7 +54,7 @@ class ModelsController {
       console.log("[MODELS] Calling stateManager.getModels()");
       const d = await stateManager.getModels();
       console.log("[MODELS] Got response:", d.models?.length, "models");
-      
+
       const models = d.models || [];
       console.log("[MODELS] Processing", models.length, "models");
 
@@ -72,15 +72,15 @@ class ModelsController {
       // If router not running, mark all as unloaded
       const routerRunning = routerStatus?.status === "running";
       console.log("[MODELS] Router running:", routerRunning);
-      
+
       const finalModels = routerRunning
         ? models
         : models.map((m) => ({ ...m, status: "unloaded" }));
-      
+
       console.log("[MODELS] Setting models in stateManager - count:", finalModels.length);
       stateManager.set("models", finalModels);
       stateManager.set("routerStatus", routerStatus);
-      
+
       console.log("[MODELS] ModelsController.load() - END");
     } catch (e) {
       console.log("[MODELS] Load error:", e.message);
@@ -93,7 +93,7 @@ class ModelsPage extends Component {
     super(props);
     console.log("[MODELS] ModelsPage constructor called");
     console.log("[MODELS] Props models count:", props.models?.length);
-    
+
     this.state = {
       models: props.models || [],
       filters: { status: "all", search: "" },
@@ -105,7 +105,7 @@ class ModelsPage extends Component {
     console.log("[MODELS] ModelsPage.render() called");
     const filtered = this._getFiltered();
     console.log("[MODELS] Filtered models:", filtered.length);
-    
+
     const routerStatus = stateManager.get("routerStatus");
     const routerRunning = routerStatus?.status === "running";
     const config = stateManager.get("config") || {};
@@ -116,7 +116,7 @@ class ModelsPage extends Component {
     const statusBadge = (status) => {
       console.log("[MODELS] Creating badge for status:", status);
       const cls = status === "loaded" || status === "running" ? "success" : status === "loading" ? "warning" : status === "error" ? "danger" : "default";
-      return Component.h("span", { className: "badge " + cls }, status);
+      return Component.h("span", { className: `badge ${  cls}` }, status);
     };
 
     const actionBtn = (m) => {
@@ -133,21 +133,21 @@ class ModelsPage extends Component {
     const rows = filtered.length === 0
       ? Component.h("tr", {}, Component.h("td", { colSpan: 11 }, "No models"))
       : filtered.map((m) => {
-          console.log("[MODELS] Rendering row for:", m.name);
-          return Component.h("tr", { "data-name": m.name },
-            Component.h("td", {}, m.name),
-            Component.h("td", {}, statusBadge(m.status)),
-            Component.h("td", {}, m.type || "-"),
-            Component.h("td", {}, m.params || "-"),
-            Component.h("td", {}, m.quantization || "-"),
-            Component.h("td", {}, this._fmtCtx(m.ctx_size)),
-            Component.h("td", {}, m.embedding_size || "-"),
-            Component.h("td", {}, m.block_count || "-"),
-            Component.h("td", {}, m.head_count || "-"),
-            Component.h("td", {}, m.file_size ? this._fmtBytes(m.file_size) : "-"),
-            Component.h("td", {}, actionBtn(m))
-          );
-        });
+        console.log("[MODELS] Rendering row for:", m.name);
+        return Component.h("tr", { "data-name": m.name },
+          Component.h("td", {}, m.name),
+          Component.h("td", {}, statusBadge(m.status)),
+          Component.h("td", {}, m.type || "-"),
+          Component.h("td", {}, m.params || "-"),
+          Component.h("td", {}, m.quantization || "-"),
+          Component.h("td", {}, this._fmtCtx(m.ctx_size)),
+          Component.h("td", {}, m.embedding_size || "-"),
+          Component.h("td", {}, m.block_count || "-"),
+          Component.h("td", {}, m.head_count || "-"),
+          Component.h("td", {}, m.file_size ? this._fmtBytes(m.file_size) : "-"),
+          Component.h("td", {}, actionBtn(m))
+        );
+      });
 
     console.log("[MODELS] Total rows to render:", Array.isArray(rows) ? rows.length : 1);
 
@@ -156,8 +156,8 @@ class ModelsPage extends Component {
         Component.h("button", { className: "btn btn-primary", "data-action": "scan" }, "Scan Filesystem"),
         Component.h("button", { className: "btn", "data-action": "cleanup" }, "Cleanup"),
         routerRunning
-          ? Component.h("span", { className: "router-indicator success" }, "Router Active (" + port + ")")
-          : Component.h("span", { className: "router-indicator default" }, "Router Not Running (Port: " + port + ")")
+          ? Component.h("span", { className: "router-indicator success" }, `Router Active (${  port  })`)
+          : Component.h("span", { className: "router-indicator default" }, `Router Not Running (Port: ${  port  })`)
       ),
       Component.h("div", { className: "filters" },
         Component.h("input", { type: "text", placeholder: "Search...", "data-field": "search", value: this.state.filters.search }),
@@ -179,7 +179,7 @@ class ModelsPage extends Component {
         Component.h("tbody", { className: "models-tbody" }, ...(Array.isArray(rows) ? rows : [rows]))
       )
     );
-    
+
     console.log("[MODELS] ModelsPage.render() - END");
     return result;
   }
@@ -188,23 +188,23 @@ class ModelsPage extends Component {
     console.log("[MODELS] _getFiltered() called");
     let ms = this.state.models || [];
     console.log("[MODELS] Starting with", ms.length, "models");
-    
+
     if (this.state.filters.status !== "all") {
       console.log("[MODELS] Filtering by status:", this.state.filters.status);
       ms = ms.filter((m) => m.status === this.state.filters.status);
     }
-    
+
     if (this.state.filters.search) {
       console.log("[MODELS] Filtering by search:", this.state.filters.search);
       ms = ms.filter((m) => m.name.toLowerCase().includes(this.state.filters.search.toLowerCase()));
     }
-    
+
     console.log("[MODELS] Returning", ms.length, "filtered models");
     return ms;
   }
 
   _fmtCtx(v) {
-    const result = !v || v === 0 ? "-" : v >= 1000 ? (v / 1000).toFixed(0) + "k" : String(v);
+    const result = !v || v === 0 ? "-" : v >= 1000 ? `${(v / 1000).toFixed(0)  }k` : String(v);
     console.log("[MODELS] _fmtCtx:", v, "->", result);
     return result;
   }
@@ -214,7 +214,7 @@ class ModelsPage extends Component {
     const k = 1024;
     const sizes = ["B", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(v) / Math.log(k));
-    const result = parseFloat((v / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+    const result = `${parseFloat((v / Math.pow(k, i)).toFixed(1))  } ${  sizes[i]}`;
     console.log("[MODELS] _fmtBytes:", v, "->", result);
     return result;
   }
@@ -243,17 +243,17 @@ class ModelsPage extends Component {
       const rs = await stateManager.getRouterStatus();
       console.log("[MODELS] Router status refreshed:", rs.routerStatus?.status);
       stateManager.set("routerStatus", rs.routerStatus);
-      
+
       const config = stateManager.get("config") || {};
       const settings = stateManager.get("settings") || {};
-      
+
       const models = stateManager.get("models") || [];
       const updated = models.map((m) => {
         const rm = rs.routerStatus?.models?.find((x) => x.id === m.name);
         return rm ? { ...m, status: rm.state } : { ...m, status: "unloaded" };
       });
       stateManager.set("models", updated);
-      this.setState({ 
+      this.setState({
         models: updated,
         port: rs.routerStatus?.port || config.port || 8080
       });
@@ -265,7 +265,7 @@ class ModelsPage extends Component {
       stateManager.set("models", updated);
       const config = stateManager.get("config") || {};
       stateManager.set("routerStatus", null);
-      this.setState({ 
+      this.setState({
         models: updated,
         port: config.port || 8080
       });
@@ -304,13 +304,13 @@ class ModelsPage extends Component {
     try {
       const d = await stateManager.scanModels();
       console.log("[MODELS] Scan result:", d);
-      showNotification("Scanned: " + (d.scanned || 0) + " new, " + (d.updated || 0) + " updated", "success");
+      showNotification(`Scanned: ${  d.scanned || 0  } new, ${  d.updated || 0  } updated`, "success");
       const d2 = await stateManager.getModels();
       this.setState({ models: d2.models || [] });
       console.log("[MODELS] Reloaded", d2.models?.length, "models");
     } catch (e) {
       console.log("[MODELS] Scan error:", e.message);
-      showNotification("Scan failed: " + e.message, "error");
+      showNotification(`Scan failed: ${  e.message}`, "error");
     }
   }
 
@@ -320,10 +320,10 @@ class ModelsPage extends Component {
     try {
       const d = await stateManager.cleanupModels();
       console.log("[MODELS] Cleanup result:", d);
-      showNotification("Removed " + (d.deletedCount || 0) + " models", "success");
+      showNotification(`Removed ${  d.deletedCount || 0  } models`, "success");
     } catch (e) {
       console.log("[MODELS] Cleanup error:", e.message);
-      showNotification("Cleanup failed: " + e.message, "error");
+      showNotification(`Cleanup failed: ${  e.message}`, "error");
     }
   }
 }

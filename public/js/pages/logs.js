@@ -23,20 +23,20 @@ class LogsController {
 
   async render() {
     console.log("[LOGS] LogsController.render() called - START");
-    
+
     await this.load();
-    
+
     const logs = stateManager.get("logs") || [];
     console.log("[LOGS] Found", logs.length, "logs");
-    
+
     this.comp = new LogsPage({ logs: logs });
-    
+
     console.log("[LOGS] Calling component.render()");
     const el = this.comp.render();
     this.comp._el = el;
     el._component = this.comp;
     this.comp.bindEvents();
-    
+
     console.log("[LOGS] LogsController.render() - END");
     return el;
   }
@@ -60,7 +60,7 @@ class LogsPage extends Component {
     super(props);
     console.log("[LOGS] LogsPage constructor called");
     console.log("[LOGS] Props logs:", props.logs?.length);
-    
+
     this.state = { logs: props.logs || [], filters: { level: "all", search: "" } };
     console.log("[LOGS] State initialized");
   }
@@ -86,16 +86,16 @@ class LogsPage extends Component {
         filtered.length === 0
           ? Component.h("p", { className: "empty" }, "No logs")
           : filtered.map((l) => {
-              console.log("[LOGS] Rendering log:", l.level, l.message?.substring(0, 30));
-              return Component.h("div", { className: "log-entry level-" + (l.level || "info") },
-                Component.h("span", { className: "log-time" }, this._time(l.timestamp)),
-                Component.h("span", { className: "log-level" }, (l.level || "info").toUpperCase()),
-                Component.h("span", { className: "log-msg" }, String(l.message))
-              );
-            })
+            console.log("[LOGS] Rendering log:", l.level, l.message?.substring(0, 30));
+            return Component.h("div", { className: `log-entry level-${  l.level || "info"}` },
+              Component.h("span", { className: "log-time" }, this._time(l.timestamp)),
+              Component.h("span", { className: "log-level" }, (l.level || "info").toUpperCase()),
+              Component.h("span", { className: "log-msg" }, String(l.message))
+            );
+          })
       )
     );
-    
+
     console.log("[LOGS] LogsPage.render() - END");
     return result;
   }
@@ -104,18 +104,18 @@ class LogsPage extends Component {
     console.log("[LOGS] _getFiltered() called");
     let ls = [...(this.state.logs || [])];
     console.log("[LOGS] Starting with", ls.length, "logs");
-    
+
     if (this.state.filters.level && this.state.filters.level !== "all") {
       console.log("[LOGS] Filtering by level:", this.state.filters.level);
       ls = ls.filter((l) => l.level === this.state.filters.level);
     }
-    
+
     if (this.state.filters.search) {
       console.log("[LOGS] Filtering by search:", this.state.filters.search);
       const s = this.state.filters.search.toLowerCase();
       ls = ls.filter((l) => String(l.message).toLowerCase().includes(s));
     }
-    
+
     console.log("[LOGS] Returning", ls.length, "filtered logs");
     return ls;
   }
@@ -123,7 +123,7 @@ class LogsPage extends Component {
   _time(ts) {
     if (!ts) return "--:--:--";
     const d = new Date(ts);
-    const result = d.toLocaleTimeString() + "." + String(d.getMilliseconds()).padStart(3, "0");
+    const result = `${d.toLocaleTimeString()  }.${  String(d.getMilliseconds()).padStart(3, "0")}`;
     console.log("[LOGS] _time:", ts, "->", result);
     return result;
   }
@@ -155,7 +155,7 @@ class LogsPage extends Component {
         const b = new Blob([d], { type: "application/json" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(b);
-        a.download = "logs-" + new Date().toISOString() + ".json";
+        a.download = `logs-${  new Date().toISOString()  }.json`;
         a.click();
         showNotification("Logs exported", "success");
         console.log("[LOGS] Logs exported");

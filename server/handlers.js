@@ -209,14 +209,6 @@ async function llamaApiRequest(endpoint, method = "GET", body = null) {
     "--ctx-size", String(options.ctxSize || 4096),
   ];
 
-  // Add parallel processing options
-  if (options.slots) {
-    args.push("--np", String(options.slots));
-  }
-  if (options.threadsHttp) {
-    args.push("--threads-http", String(options.threadsHttp));
-  }
-
   // Disable auto-load if specified
   if (options.noAutoLoad) {
     args.push("--no-models-autoload");
@@ -226,26 +218,41 @@ async function llamaApiRequest(endpoint, method = "GET", body = null) {
 
   // Spawn llama-server in router mode
   try {
+    console.log("[LLAMA] About to spawn llama-server...");
+    console.log("[LLAMA] Binary:", llamaBin, fs.existsSync(llamaBin) ? "(exists)" : "(NOT FOUND)");
+    
     llamaServerProcess = spawn(llamaBin, args, {
       stdio: ["pipe", "pipe", "pipe"],
       env: { ...process.env },
     });
 
-    // Capture output
-    let stdout = "";
-    let stderr = "";
+    console.log("[LLAMA] Process spawned, PID:", llamaServerProcess?.pid);
+    console.log("[LLAMA] Process connected:", llamaServerProcess?.connected);
 
-    llamaServerProcess.stdout.on("data", (data) => {
-      const text = data.toString();
-      stdout += text;
-      console.log("[LLAMA] stdout:", text.substring(0, 200));
+    // Check if process immediately fails
+    llamaServerProcess.on('error', (err) => {
+      console.error("[LLAMA] Process ERROR:", err.message);
     });
 
-    llamaServerProcess.stderr.on("data", (data) => {
-      const text = data.toString();
-      stderr += text;
-      console.log("[LLAMA] stderr:", text.substring(0, 200));
+    llamaServerProcess.on('close', (code) => {
+      console.log("[LLAMA] Process CLOSED with code:", code);
     });
+
+    // Check stdout/stderr immediately
+    llamaServerProcess.stdout.on('data', (data) => {
+      console.log("[LLAMA] stdout:", data.toString().substring(0, 100));
+    });
+
+    llamaServerProcess.stderr.on('data', (data) => {
+      const text = data.toString();
+      console.log("[LLAMA] stderr:", text.substring(0, 100));
+      // Check for listening message
+      if (text.includes("router server is listening")) {
+        console.log("[LLAMA] Server is listening!");
+      }
+    });
+
+    console.log("[LLAMA] Event listeners attached, starting wait loop...");
 
     llamaServerProcess.on("error", (err) => {
       console.error("[LLAMA] Process error:", err.message);
@@ -266,19 +273,22 @@ async function llamaApiRequest(endpoint, method = "GET", body = null) {
     while (attempts < maxAttempts) {
       await new Promise((r) => setTimeout(r, 1000));
       attempts++;
+      console.log("[LLAMA] Attempt", attempts, "- Checking port", llamaServerPort);
 
       if (isPortInUse(llamaServerPort)) {
-        console.log("[LLAMA] Router server is ready on port", llamaServerPort);
+        console.log("[LLAMA] Port is in use, checking API...");
 
         // Try to get models list to confirm API is working
         try {
-          await llamaApiRequest("/models");
-          console.log("[LLAMA] API confirmed working");
-        } catch {
-          console.log("[LLAMA] API not ready yet, waiting...");
+          console.log("[LLAMA] Calling llamaApiRequest /models...");
+          const result = await llamaApiRequest("/models");
+          console.log("[LLAMA] API confirmed working:", JSON.stringify(result).substring(0, 100));
+        } catch (e) {
+          console.log("[LLAMA] API not ready yet:", e.message);
           continue;
         }
 
+        console.log("[LLAMA] Router server successfully started on port", llamaServerPort);
         return {
           success: true,
           port: llamaServerPort,
@@ -291,7 +301,7 @@ async function llamaApiRequest(endpoint, method = "GET", body = null) {
       if (llamaServerProcess && llamaServerProcess.exitCode !== null) {
         const error = `llama-server exited with code ${llamaServerProcess.exitCode}`;
         console.error("[LLAMA] ERROR:", error);
-        console.error("[LLAMA] stderr:", stderr);
+        console.error("[LLAMA] stderr:", stderr.substring(0, 500));
         return { success: false, error };
       }
     }
@@ -631,70 +641,6 @@ export function registerHandlers(io, db, ggufParser) {
         .catch((e) => {
           console.error("[DEBUG] models:unload: Exception:", e.message);
           err(socket, "models:unload:result", e.message, id);
-        });
-    });
-
-    /**
-     * Start a model - DEPRECATED in router mode, use models:load instead
-     * Kept for backward compatibility
-     * Event: models:start
-     * Response: models:start:result
-     */
-    socket.on("models:start", (req) => {
-      const id = req?.requestId || Date.now();
-      const modelId = req?.modelId;
-      console.log("[DEBUG] models:start request (deprecated, using load)", { requestId: id, modelId });
-
-      // Get model name from database
-      const model = db.getModel(modelId);
-      if (!model) {
-        err(socket, "models:start:result", "Model not found", id);
-        return;
-      }
-
-      // Forward to models:load
-      socket.emit("models:load", { modelName: model.name, requestId: id });
-    });
-
-    /**
-     * Stop a model - DEPRECATED in router mode, use models:unload instead
-     * Kept for backward compatibility
-     * Event: models:stop
-     * Response: models:stop:result
-     */
-    socket.on("models:stop", (req) => {
-      const id = req?.requestId || Date.now();
-      const modelId = req?.modelId;
-      console.log("[DEBUG] models:stop request (deprecated, using unload)", { requestId: id, modelId });
-
-      // Get model name from database
-      const model = db.getModel(modelId);
-      if (!model) {
-        err(socket, "models:stop:result", "Model not found", id);
-        return;
-      }
-
-      // Forward to models:unload
-      socket.emit("models:unload", { modelName: model.name, requestId: id });
-    });
-
-    /**
-     * Get router mode status for all models
-     * Event: models:router:status
-     * Response: models:router:status:result
-     */
-    socket.on("models:router:status", (req) => {
-      const id = req?.requestId || Date.now();
-      console.log("[DEBUG] models:router:status request", { requestId: id });
-
-      getLlamaStatus()
-        .then((status) => {
-          console.log("[DEBUG] models:router:status result:", status);
-          ok(socket, "models:router:status:result", { routerStatus: status }, id);
-        })
-        .catch((e) => {
-          console.error("[DEBUG] models:router:status error:", e.message);
-          err(socket, "models:router:status:result", e.message, id);
         });
     });
 
@@ -1075,7 +1021,8 @@ export function registerHandlers(io, db, ggufParser) {
      */
     socket.on("llama:start", (req) => {
       const id = req?.requestId || Date.now();
-      console.log("[DEBUG] llama:start request (router mode)", { requestId: id });
+      console.log("[LLAMA] *** llama:start EVENT RECEIVED *** requestId:", id);
+      console.log("[LLAMA] *** Request data:", JSON.stringify(req).substring(0, 200));
 
       try {
         const config = db.getConfig();
@@ -1097,8 +1044,6 @@ export function registerHandlers(io, db, ggufParser) {
         // Start llama-server in router mode
         startLlamaServerRouter(modelsDir, db, {
           maxModels: settings.maxModelsLoaded || 4,
-          slots: settings.parallelSlots || 1,
-          threadsHttp: settings.parallelSlots || 1,
           ctxSize: config.ctx_size || 4096,
           threads: config.threads || 4,
           noAutoLoad: !settings.autoLoadModels,

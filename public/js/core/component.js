@@ -26,7 +26,7 @@ class Component {
 
     this.willMount && this.willMount();
     console.log("[DEBUG] Component willMount called:", this.constructor.name);
-    
+
     const rendered = this.render();
     console.log("[DEBUG] Component render returned:", typeof rendered);
 
@@ -52,7 +52,11 @@ class Component {
 
   // Update state and re-render
   setState(updates) {
-    console.log("[DEBUG] Component.setState() called:", this.constructor.name, Object.keys(updates));
+    console.log(
+      "[DEBUG] Component.setState() called:",
+      this.constructor.name,
+      Object.keys(updates)
+    );
     this.state = { ...this.state, ...updates };
     if (this._el) {
       console.log("[DEBUG] Component.update() called:", this.constructor.name);
@@ -68,7 +72,7 @@ class Component {
     console.log("[DEBUG] Component.update() START:", this.constructor.name);
     const oldEl = this._el;
     console.log("[DEBUG] Old element:", oldEl?.tagName, oldEl?.className);
-    
+
     const rendered = this.render();
     console.log("[DEBUG] Rendered:", typeof rendered);
 
@@ -83,7 +87,7 @@ class Component {
       oldEl.replaceWith(rendered);
       this._el = rendered;
     }
-    
+
     if (this._el) {
       this._el._component = this;
       this.bindEvents();
@@ -106,16 +110,54 @@ class Component {
     console.log("[DEBUG] Component.bindEvents() called:", this.constructor.name);
     const map = this.getEventMap();
     console.log("[DEBUG] Event map:", Object.keys(map).length, "events");
-    
+
+    if (!this._el) {
+      console.error("[DEBUG] ERROR: No _el element for binding events!");
+      return;
+    }
+
     Object.entries(map).forEach(([spec, handler]) => {
       const [event, selector] = spec.split(" ");
-      const fn = typeof handler === "string" ? this[handler].bind(this) : handler.bind(this);
-      console.log("[DEBUG] Binding event:", event, selector || "(no selector)");
-      
+      let fn;
+
+      if (typeof handler === "string") {
+        if (!this[handler]) {
+          console.error(`[DEBUG] ERROR: Method '${handler}' not found on ${this.constructor.name}`);
+          console.error(
+            "[DEBUG] Available methods:",
+            Object.getOwnPropertyNames(Object.getPrototypeOf(this))
+          );
+          return;
+        }
+        fn = this[handler].bind(this);
+      } else if (typeof handler === "function") {
+        fn = handler.bind(this);
+      } else {
+        console.error("[DEBUG] ERROR: Invalid handler type:", typeof handler);
+        return;
+      }
+
+      console.log(
+        "[DEBUG] Binding event:",
+        event,
+        selector || "(no selector)",
+        "-> handler:",
+        typeof handler === "string" ? handler : "function"
+      );
+
       if (selector) {
         this._el.addEventListener(event, (e) => {
+          console.log(
+            "[DEBUG] Event triggered:",
+            event,
+            "target matches:",
+            e.target.closest(selector) ? "YES" : "NO"
+          );
           const target = e.target.closest(selector);
-          if (target) fn(e, target);
+          if (target) {
+            console.log("[DEBUG] Calling handler for:", event);
+            fn(e, target);
+          }
         });
       } else {
         this._el.addEventListener(event, fn);
@@ -139,7 +181,7 @@ class Component {
   // Element creator (h)
   static h(tag, attrs = {}, ...children) {
     console.log("[DEBUG] Component.h() called:", tag, Object.keys(attrs || {}).length, "attrs");
-    
+
     // Handle Component classes
     if (typeof tag === "function" && tag.prototype instanceof Component) {
       const comp = new tag(attrs);
@@ -176,6 +218,11 @@ class Component {
         Object.entries(v).forEach(([dk, dv]) => {
           el.dataset[dk] = dv;
         });
+      } else if (typeof v === "boolean") {
+        // Boolean attributes (disabled, checked, etc.) - only set when true
+        if (v) {
+          el.setAttribute(k, "");
+        }
       } else if (v !== null && v !== undefined) {
         el.setAttribute(k, v);
       }

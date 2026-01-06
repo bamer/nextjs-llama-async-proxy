@@ -27,7 +27,6 @@
   router.register("/", () => new DashboardController({}));
   router.register("/dashboard", () => new DashboardController({}));
   router.register("/models", () => new ModelsController({}));
-  router.register("/monitoring", () => new MonitoringController({}));
   router.register("/settings", () => new SettingsController({}));
   router.register("/logs", () => new LogsController({}));
 

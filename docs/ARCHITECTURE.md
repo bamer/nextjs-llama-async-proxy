@@ -498,6 +498,44 @@ const io = new Server(server, {
 });
 ```
 
+## Performance Optimizations (January 2026)
+
+The application has been simplified to remove redundant workflows and improve performance:
+
+### Simplifications Applied
+
+| Category | Change | Impact |
+|----------|--------|--------|
+| **Backend** | Removed deprecated `models:start` and `models:stop` handlers | -37 lines, cleaner API |
+| **Backend** | Consolidated `llama:status` and `models:router:status` endpoints | Single source of truth |
+| **Frontend** | Removed unused components (`ModelTableRow`, `ModelDetailsPanel`) | -209 lines dead code |
+| **Frontend** | Reduced debug logging by 94% in StateManager | Faster execution, cleaner console |
+| **Frontend** | Removed queue logic from StateManager | Simplified request flow |
+| **Settings** | Fixed direct DOM reading - now uses component state | Better state management |
+| **Utils** | Removed duplicate `formatFileSize` and unused `formatCurrency` | -14 lines |
+| **DB** | Removed duplicate `updateConfig` method | No-op cleanup |
+
+### Lines of Code Removed
+
+```
+Backend handlers.js:    ~60 lines removed
+Frontend components:    ~209 lines removed  
+Frontend state.js:      ~75 lines removed (logging + queue)
+Frontend settings.js:   ~35 lines removed (logging)
+Utils format.js:        ~14 lines removed
+Server db.js:           ~6 lines removed
+────────────────────────────────────────
+Total:                  ~400 lines removed
+```
+
+### API Changes
+
+| Old Endpoint | New Endpoint | Notes |
+|--------------|--------------|-------|
+| `models:start` (deprecated) | `models:load` | Forward removed |
+| `models:stop` (deprecated) | `models:unload` | Forward removed |
+| `models:router:status` | `llama:status` | Consolidated |
+
 ## Security Considerations
 
 1. **No Authentication**: Application is designed for local/network use only

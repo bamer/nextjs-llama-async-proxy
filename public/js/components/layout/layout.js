@@ -42,11 +42,6 @@ class Sidebar extends Component {
           { href: "/models", className: "nav-link", "data-page": "models" },
           "📁 Models"
         ),
-        Component.h(
-          "a",
-          { href: "/monitoring", className: "nav-link", "data-page": "monitoring" },
-          "📈 Monitoring"
-        ),
         Component.h("a", { href: "/logs", className: "nav-link", "data-page": "logs" }, "📋 Logs"),
         Component.h(
           "a",
@@ -137,7 +132,6 @@ class Header extends Component {
     const titles = {
       "/": "Dashboard",
       "/models": "Models",
-      "/monitoring": "Monitoring",
       "/logs": "Logs",
       "/settings": "Settings",
     };
@@ -190,8 +184,8 @@ class Header extends Component {
     if (hs) {
       hs.innerHTML =
         s === "connected"
-          ? "<span class=\"badge online\">● Online</span>"
-          : "<span class=\"badge offline\">● Offline</span>";
+          ? '<span class="badge online">● Online</span>'
+          : '<span class="badge offline">● Offline</span>';
     }
   }
 }
