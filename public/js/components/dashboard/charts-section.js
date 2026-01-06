@@ -192,6 +192,11 @@ class ChartsSection extends Component {
 
     const newType = tab.dataset.chart;
 
+    // Notify parent - parent will update chartType and trigger visibility update
+    if (this.props.onChartTypeChange) {
+      this.props.onChartTypeChange(newType);
+    }
+
     // Use chartManager from props
     const chartManager = this.props.chartManager || this.state.chartManager;
 
@@ -199,27 +204,15 @@ class ChartsSection extends Component {
       const canvas = this._el?.querySelector(newType === "usage" ? "#usageChart" : "#memoryChart");
 
       if (canvas) {
-        // Get current dimensions
-        const rect = canvas.getBoundingClientRect();
-
-        if (rect.width > 0 && rect.height > 0) {
-          // Set canvas dimensions
-          canvas.width = Math.round(rect.width * (window.devicePixelRatio || 1));
-          canvas.height = Math.round(rect.height * (window.devicePixelRatio || 1));
-
-          // Create the chart for this type
-          if (newType === "usage") {
-            chartManager.createUsageChart(canvas, this.state.history);
-          } else {
-            chartManager.createMemoryChart(canvas, this.state.history);
-          }
-        }
+        // Use requestAnimationFrame to wait for visibility change to take effect
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            // Use _ensureChartDimensions for consistency with didMount
+            // This handles the case where canvas isn't visible yet and needs to wait for dimensions
+            this._ensureChartDimensions(canvas, newType, chartManager);
+          }, 10);
+        });
       }
-    }
-
-    // Notify parent - parent will update chartType
-    if (this.props.onChartTypeChange) {
-      this.props.onChartTypeChange(newType);
     }
   }
 
