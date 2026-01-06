@@ -27,6 +27,16 @@ class StateManager {
       return;
     }
 
+    // Connection timeout fallback - set connected after 3 seconds even without handshake
+    this._connectionTimeout = setTimeout(() => {
+      if (!this.connected) {
+        console.log("[STATE] Connection timeout - setting connected=true");
+        this.connected = true;
+        this._notify("connectionStatus", "connected");
+        this._processQueue();
+      }
+    }, 3000);
+
     this.socket.on("connect", () => {
       console.log("[STATE] Socket connected event fired");
       console.log("[STATE] Socket ID:", this.socket?.id);
@@ -42,6 +52,11 @@ class StateManager {
     this.socket.on("connection:established", (data) => {
       console.log("[STATE] Connection established event received");
       console.log("[STATE] Connection data:", JSON.stringify(data));
+      // Clear the timeout since we got the proper response
+      if (this._connectionTimeout) {
+        clearTimeout(this._connectionTimeout);
+        this._connectionTimeout = null;
+      }
       this.connected = true;
       this._notify("connectionStatus", "connected");
       console.log("[STATE] Calling _processQueue()");
@@ -93,6 +108,15 @@ class StateManager {
       console.log("[STATE] data.total:", data?.total);
       console.log("[STATE] Calling _refreshModels() after scan");
       this._refreshModels();
+    });
+
+    this.socket.on("models:router-stopped", () => {
+      console.log("[STATE] Received models:router-stopped broadcast");
+      // Reset all model statuses to unloaded
+      const models = this.state.models || [];
+      const updatedModels = models.map((m) => ({ ...m, status: "unloaded" }));
+      this._set("models", updatedModels);
+      this._set("routerStatus", null);
     });
 
     this.socket.on("metrics:update", (data) => {
@@ -220,11 +244,14 @@ class StateManager {
       }
       const reqId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       console.log("[STATE] Sending request:", event, "with requestId:", reqId);
+      // Shorter timeout for config operations (5 seconds), longer for scan (120 seconds)
+      const isConfigOperation = event === "config:get" || event === "config:update" || event === "settings:get" || event === "settings:update";
+      const timeoutMs = isConfigOperation ? 5000 : 120000;
       const timeout = setTimeout(() => {
         console.warn("[STATE] Request timeout:", event, "requestId:", reqId);
         this.pending.delete(reqId);
         reject(new Error(`Timeout: ${event}`));
-      }, 120000); // 120 second timeout for long-running operations like scan
+      }, timeoutMs);
       this.pending.set(reqId, { resolve, reject, event, timeout });
       this.socket.emit(event, { ...data, requestId: reqId });
     });

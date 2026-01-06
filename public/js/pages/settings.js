@@ -1,54 +1,34 @@
 /**
- * Settings Page - Simple one-glance layout
+ * Settings Page - Loads config first, then renders
  */
 
 class SettingsController {
   constructor(options = {}) {
     this.router = options.router || window.router;
     this.comp = null;
-    this.unsub = null;
-    console.log("[DEBUG] SettingsController created");
   }
-  init() {
-    console.log("[DEBUG] SettingsController init");
-    this.unsub = stateManager.subscribe("config", () => {
-      console.log("[DEBUG] Config state changed");
-      if (this.comp) {
-        this.comp.setState({ updated: Date.now() });
-      }
-    });
-    this.unsubSettings = stateManager.subscribe("settings", () => {
-      console.log("[DEBUG] Settings state changed");
-      if (this.comp) {
-        this.comp.setState({ updated: Date.now() });
-      }
-    });
-    this.load();
-  }
-  async load() {
-    console.log("[DEBUG] SettingsController load");
+
+  async init() {
+    // Load config and settings from server before rendering
     try {
       const c = await stateManager.getConfig();
-      console.log("[DEBUG] Config loaded:", `${JSON.stringify(c.config).substring(0, 100)}...`);
       stateManager.set("config", c.config || {});
       const s = await stateManager.getSettings();
-      console.log("[DEBUG] Settings loaded:", `${JSON.stringify(s.settings).substring(0, 200)}...`);
       stateManager.set("settings", s.settings || {});
     } catch (e) {
-      console.error("[DEBUG] Settings load error:", e);
+      console.log("[DEBUG] Settings load error:", e.message);
     }
   }
-  willUnmount() {
-    console.log("[DEBUG] SettingsController willUnmount");
-    this.unsub?.();
-    this.unsubSettings?.();
-  }
+
+  willUnmount() {}
+
   destroy() {
     this.willUnmount();
   }
-  render() {
+
+  async render() {
+    await this.init();
     this.comp = new SettingsPage({});
-    this.init();
     const el = this.comp.render();
     this.comp._el = el;
     el._component = this.comp;
@@ -60,288 +40,233 @@ class SettingsController {
 class SettingsPage extends Component {
   constructor(props) {
     super(props);
-    this.state = { updated: 0 };
+    // Load initial values from stateManager (now guaranteed to have data)
+    const config = stateManager.get("config") || {};
+    const settings = stateManager.get("settings") || {};
+
+    this.state = {
+      serverPath: config.serverPath || "",
+      host: config.host || "localhost",
+      port: config.port || 8080,
+      baseModelsPath: config.baseModelsPath || "",
+      ctx_size: config.ctx_size || 4096,
+      threads: config.threads || 4,
+      batch_size: config.batch_size || 512,
+      temperature: config.temperature || 0.7,
+      repeatPenalty: config.repeatPenalty || 1.1,
+      maxModelsLoaded: settings.maxModelsLoaded || 4,
+      parallelSlots: settings.parallelSlots || 1,
+      gpuLayers: settings.gpuLayers || 0,
+      routerStatus: null,
+    };
   }
 
   render() {
-    // Always read latest config from stateManager
-    const c = stateManager.get("config") || {};
-    const s = stateManager.get("settings") || {};
+    const rs = this.state.routerStatus || {};
+    const isRunning = rs.status === "running";
+    const loadedCount = rs.models?.filter((m) => m.state === "loaded").length || 0;
+
     return Component.h(
       "div",
       { className: "settings-page" },
       Component.h("h1", {}, "Settings"),
+
+      // Section 1: Llama Server
       Component.h(
         "div",
-        { className: "settings-one-glance" },
+        { className: "settings-section" },
+        Component.h("h2", {}, "Llama Server (Router Mode)"),
+        Component.h("p", { className: "section-desc" }, "Configure llama.cpp server in router mode"),
         Component.h(
           "div",
-          { className: "card" },
-          Component.h("h2", {}, "Server"),
+          { className: `card router-card ${isRunning ? "running" : "idle"}` },
           Component.h(
             "div",
-            { className: "form-grid" },
-            this._field("Server Path", "serverPath", c.serverPath || ""),
-            this._field("Host", "host", c.host || "localhost"),
-            this._field("Port", "port", c.port || 8080, "number"),
-            this._field("Models Path", "baseModelsPath", c.baseModelsPath || "")
-          ),
-          Component.h(
-            "label",
-            { className: "checkbox" },
-            Component.h("input", {
-              type: "checkbox",
-              checked: !!c.autoStart,
-              onChange: (e) => this._updateConfig("autoStart", e.target.checked),
-            }),
-            " Auto-start server"
-          )
-        ),
-        Component.h(
-          "div",
-          { className: "card" },
-          Component.h("h2", {}, "Router Mode Settings"),
-          Component.h("p", { className: "info" }, "Settings for llama.cpp router mode (multi-model support)"),
-          Component.h(
-            "div",
-            { className: "form-grid" },
-            this._field("Max Models Loaded", "maxModelsLoaded", s.maxModelsLoaded || 4, "number"),
-            this._field("Parallel Slots", "parallelSlots", s.parallelSlots || 1, "number"),
-            this._field("Context Size", "ctx_size", c.ctx_size || 4096, "number"),
-            this._field("Threads", "threads", c.threads || 4, "number")
-          ),
-          Component.h(
-            "label",
-            { className: "checkbox" },
-            Component.h("input", {
-              type: "checkbox",
-              checked: s.autoLoadModels !== false,
-              onChange: (e) => this._updateSettings("autoLoadModels", e.target.checked),
-            }),
-            " Auto-load models on first request"
-          ),
-          Component.h(
-            "label",
-            { className: "checkbox" },
-            Component.h("input", {
-              type: "checkbox",
-              checked: !!s.noAutoLoadModels,
-              onChange: (e) => this._updateSettings("noAutoLoadModels", e.target.checked),
-            }),
-            " Require explicit load (disables auto-load)"
-          )
-        ),
-        Component.h(
-          "div",
-          { className: "card" },
-          Component.h("h2", {}, "Model Defaults"),
-          Component.h(
-            "div",
-            { className: "form-grid" },
-            this._field("Context Size", "ctx_size", c.ctx_size || 2048, "number"),
-            this._field("Batch Size", "batch_size", c.batch_size || 512, "number"),
-            this._field("Threads", "threads", c.threads || 4, "number")
-          )
-        ),
-        Component.h(
-          "div",
-          { className: "card" },
-          Component.h("h2", {}, "Llama Server Control"),
-          Component.h(
-            "div",
-            { className: "button-group" },
+            { className: "router-header" },
             Component.h(
-              "button",
-              { className: "btn btn-primary", "data-action": "startLlama" },
-              "Start Router"
+              "div",
+              { className: "router-title" },
+              Component.h("h3", {}, "Router Status"),
+              Component.h("span", { className: `status-badge ${isRunning ? "running" : "idle"}` }, isRunning ? "RUNNING" : "STOPPED")
             ),
-            Component.h(
-              "button",
-              { className: "btn", "data-action": "restartLlama" },
-              "Restart Router"
-            ),
-            Component.h(
-              "button",
-              { className: "btn btn-danger", "data-action": "stopLlama" },
-              "Stop Router"
-            )
+            isRunning &&
+              Component.h(
+                "div",
+                { className: "router-stats" },
+                Component.h("div", { className: "stat" }, Component.h("span", { className: "stat-label" }, "Port"), Component.h("span", { className: "stat-value" }, rs.port || 8080)),
+                Component.h("div", { className: "stat" }, Component.h("span", { className: "stat-label" }, "Loaded"), Component.h("span", { className: "stat-value" }, `${loadedCount}`))
+              )
           ),
           Component.h(
             "div",
-            { className: "router-status", "data-field": "routerStatus" },
-            "Router status will appear here..."
-          )
-        ),
-        Component.h(
-          "div",
-          { className: "card" },
-          Component.h("h2", {}, "About"),
-          Component.h("p", {}, "Llama Async Proxy Dashboard v1.1"),
-          Component.h("p", { className: "info" }, "Multi-model support via llama.cpp router mode")
-        ),
-        Component.h(
-          "div",
-          { className: "actions" },
-          Component.h(
-            "button",
-            { className: "btn btn-primary", onClick: () => this._save() },
-            "Save Settings"
+            { className: "router-controls" },
+            isRunning
+              ? Component.h("button", { className: "btn btn-danger", "data-action": "stop" }, "Stop Router")
+              : Component.h("button", { className: "btn btn-primary", "data-action": "start" }, "Start Router"),
+            Component.h("button", { className: "btn btn-secondary", "data-action": "restart", disabled: !isRunning }, "Restart")
           ),
+          Component.h("hr", { className: "divider" }),
+          Component.h("h4", {}, "Configuration"),
           Component.h(
-            "button",
-            { className: "btn btn-secondary", onClick: () => this._reset() },
-            "Reset"
+            "div",
+            { className: "config-grid" },
+            Component.h("div", { className: "form-group" }, Component.h("label", {}, "Max Models"), Component.h("input", { type: "number", value: this.state.maxModelsLoaded, min: 1, max: 16, id: "maxModelsLoaded" })),
+            Component.h("div", { className: "form-group" }, Component.h("label", {}, "Slots"), Component.h("input", { type: "number", value: this.state.parallelSlots, min: 1, max: 32, id: "parallelSlots" })),
+            Component.h("div", { className: "form-group" }, Component.h("label", {}, "Context"), Component.h("input", { type: "number", value: this.state.ctx_size, min: 512, max: 131072, id: "ctx_size" })),
+            Component.h("div", { className: "form-group" }, Component.h("label", {}, "GPU Layers"), Component.h("input", { type: "number", value: this.state.gpuLayers, min: 0, max: 999, id: "gpuLayers" }))
           )
         )
-      )
+      ),
+
+      // Section 2: Paths
+      Component.h(
+        "div",
+        { className: "settings-section" },
+        Component.h("h2", {}, "Server Paths"),
+        Component.h("p", { className: "section-desc" }, "Configure paths and connection"),
+        Component.h(
+          "div",
+          { className: "card" },
+          Component.h(
+            "div",
+            { className: "paths-grid" },
+            Component.h("div", { className: "form-group" }, Component.h("label", {}, "Models Path"), Component.h("input", { type: "text", value: this.state.baseModelsPath, placeholder: "/path/to/models", id: "baseModelsPath" })),
+            Component.h("div", { className: "form-group" }, Component.h("label", {}, "Server Path"), Component.h("input", { type: "text", value: this.state.serverPath, id: "serverPath" })),
+            Component.h("div", { className: "form-group" }, Component.h("label", {}, "Host"), Component.h("input", { type: "text", value: this.state.host, id: "host" })),
+            Component.h("div", { className: "form-group" }, Component.h("label", {}, "Port"), Component.h("input", { type: "number", value: this.state.port, min: 1, max: 65535, id: "port" }))
+          )
+        )
+      ),
+
+      // Section 3: Defaults
+      Component.h(
+        "div",
+        { className: "settings-section" },
+        Component.h("h2", {}, "Model Defaults"),
+        Component.h("p", { className: "section-desc" }, "Default inference parameters"),
+        Component.h(
+          "div",
+          { className: "card" },
+          Component.h(
+            "div",
+            { className: "defaults-grid" },
+            Component.h("div", { className: "form-group" }, Component.h("label", {}, "Threads"), Component.h("input", { type: "number", value: this.state.threads, min: 1, max: 64, id: "threads" })),
+            Component.h("div", { className: "form-group" }, Component.h("label", {}, "Batch"), Component.h("input", { type: "number", value: this.state.batch_size, min: 1, max: 8192, id: "batch_size" })),
+            Component.h("div", { className: "form-group" }, Component.h("label", {}, "Temperature"), Component.h("input", { type: "number", value: this.state.temperature, min: 0, max: 2, step: 0.1, id: "temperature" })),
+            Component.h("div", { className: "form-group" }, Component.h("label", {}, "Repeat Penalty"), Component.h("input", { type: "number", value: this.state.repeatPenalty, min: 0, max: 2, step: 0.1, id: "repeatPenalty" }))
+          )
+        )
+      ),
+
+      // Section 4: Save
+      Component.h(
+        "div",
+        { className: "settings-section" },
+        Component.h(
+          "div",
+          { className: "card actions-card" },
+          Component.h("h3", {}, "Save Configuration"),
+          Component.h("p", { className: "info" }, "Settings apply on router restart"),
+          Component.h("div", { className: "action-buttons" }, Component.h("button", { className: "btn btn-primary btn-lg", "data-action": "save" }, "Save All Settings"))
+        )
+      ),
+
+      // About
+      Component.h("div", { className: "settings-section" }, Component.h("div", { className: "card about-card" }, Component.h("h3", {}, "Llama Async Proxy Dashboard"), Component.h("p", {}, "Version 1.2")))
     );
-  }
-
-  _field(label, key, val, type = "text") {
-    return Component.h(
-      "div",
-      { className: "form-group" },
-      Component.h("label", {}, label),
-      Component.h("input", {
-        type,
-        value: val,
-        onChange: (e) => {
-          const v = type === "number" ? parseInt(e.target.value) : e.target.value;
-          this.setState({ updated: Date.now() });
-        },
-      })
-    );
-  }
-
-  _updateConfig(key, value) {
-    stateManager.set("config", { ...stateManager.get("config"), [key]: value });
-    this.setState({ updated: Date.now() });
-  }
-
-  _updateSettings(key, value) {
-    stateManager.set("settings", { ...stateManager.get("settings"), [key]: value });
-    this.setState({ updated: Date.now() });
   }
 
   async _save() {
-    console.log("[DEBUG] Settings _save clicked");
+    const btn = this._el.querySelector('[data-action="save"]');
+    btn.textContent = "Saving...";
+    btn.disabled = true;
+
     try {
-      const config = stateManager.get("config") || {};
-      const settings = stateManager.get("settings") || {};
-      console.log("[DEBUG] Saving config:", JSON.stringify(config).substring(0, 100));
-      console.log("[DEBUG] Saving settings:", JSON.stringify(settings).substring(0, 200));
+      if (!stateManager.connected) {
+        throw new Error("Not connected to server");
+      }
+
+      // Read values directly from DOM by id
+      const config = {
+        serverPath: document.getElementById("serverPath").value,
+        host: document.getElementById("host").value,
+        port: parseInt(document.getElementById("port").value) || 8080,
+        baseModelsPath: document.getElementById("baseModelsPath").value,
+        ctx_size: parseInt(document.getElementById("ctx_size").value) || 4096,
+        threads: parseInt(document.getElementById("threads").value) || 4,
+        batch_size: parseInt(document.getElementById("batch_size").value) || 512,
+        temperature: parseFloat(document.getElementById("temperature").value) || 0.7,
+        repeatPenalty: parseFloat(document.getElementById("repeatPenalty").value) || 1.1,
+      };
+
+      const settings = {
+        maxModelsLoaded: parseInt(document.getElementById("maxModelsLoaded").value) || 4,
+        parallelSlots: parseInt(document.getElementById("parallelSlots").value) || 1,
+        gpuLayers: parseInt(document.getElementById("gpuLayers").value) || 0,
+      };
+
       await stateManager.updateConfig(config);
       await stateManager.updateSettings(settings);
-      // Apply llama config if router is running
-      try {
-        await stateManager.configureLlama(settings);
-        console.log("[DEBUG] Llama router configured");
-      } catch (e) {
-        console.warn("[DEBUG] Could not configure llama router:", e.message);
-      }
-      showNotification("Settings saved", "success");
-    } catch (e) {
-      console.error("[DEBUG] Save error:", e);
-      showNotification(`Save failed: ${e.message}`, "error");
-    }
-  }
 
-  async _reset() {
-    console.log("[DEBUG] Settings _reset clicked");
-    if (confirm("Reset all settings to defaults?")) {
-      try {
-        const c = await stateManager.getConfig();
-        stateManager.set("config", c.config || {});
-        const s = await stateManager.getSettings();
-        stateManager.set("settings", s.settings || {});
-        this.setState({ updated: Date.now() });
-        showNotification("Settings reset to defaults", "info");
-      } catch (e) {
-        console.error("[DEBUG] Reset error:", e);
-        showNotification(`Reset failed: ${e.message}`, "error");
-      }
-    }
-  }
+      stateManager.set("config", config);
+      stateManager.set("settings", settings);
 
-  async _refreshLlamaStatus() {
-    console.log("[DEBUG] Refreshing llama status");
-    try {
-      const status = await stateManager.getLlamaStatus();
-      const statusEl = this._el?.querySelector?.("[data-field='routerStatus']");
-      if (statusEl) {
-        const statusText = status.status === "running"
-          ? `Running on port ${status.port} | Mode: ${status.mode || "router"} | Models: ${status.models?.length || 0}`
-          : "Router is not running";
-        statusEl.textContent = statusText;
-      }
+      showNotification("Settings saved successfully", "success");
     } catch (e) {
-      console.error("[DEBUG] Failed to get llama status:", e.message);
+      showNotification("Save failed: " + e.message, "error");
+    } finally {
+      btn.textContent = "Save All Settings";
+      btn.disabled = false;
     }
   }
 
   async _startLlama() {
-    console.log("[DEBUG] Starting llama router");
-    showNotification("Starting llama router...", "info");
     try {
       await stateManager.startLlama();
       showNotification("Llama router started", "success");
-      this._refreshLlamaStatus();
+      setTimeout(() => this._refreshStatus(), 2000);
     } catch (e) {
-      console.error("[DEBUG] Start error:", e);
-      showNotification(`Failed to start: ${e.message}`, "error");
-    }
-  }
-
-  async _restartLlama() {
-    console.log("[DEBUG] Restarting llama router");
-    showNotification("Restarting llama router...", "info");
-    try {
-      await stateManager.restartLlama();
-      setTimeout(() => {
-        showNotification("Llama router restarted", "success");
-        this._refreshLlamaStatus();
-      }, 3000);
-    } catch (e) {
-      console.error("[DEBUG] Restart error:", e);
-      showNotification(`Failed to restart: ${e.message}`, "error");
+      showNotification("Failed: " + e.message, "error");
     }
   }
 
   async _stopLlama() {
-    console.log("[DEBUG] Stopping llama router");
-    if (!confirm("Stop the llama router? All loaded models will be unloaded.")) {
-      return;
-    }
-    showNotification("Stopping llama router...", "info");
+    if (!confirm("Stop router?")) return;
     try {
       await stateManager.stopLlama();
-      showNotification("Llama router stopped", "success");
-      this._refreshLlamaStatus();
+      showNotification("Router stopped", "success");
+      stateManager.set("routerStatus", null);
+      this.setState({ routerStatus: null });
     } catch (e) {
-      console.error("[DEBUG] Stop error:", e);
-      showNotification(`Failed to stop: ${e.message}`, "error");
+      showNotification("Failed: " + e.message, "error");
     }
+  }
+
+  async _restartLlama() {
+    try {
+      await stateManager.restartLlama();
+      showNotification("Restarting...", "info");
+      setTimeout(() => this._refreshStatus(), 3000);
+    } catch (e) {
+      showNotification("Failed: " + e.message, "error");
+    }
+  }
+
+  async _refreshStatus() {
+    try {
+      const rs = await stateManager.getRouterStatus();
+      stateManager.set("routerStatus", rs.routerStatus);
+      this.setState({ routerStatus: rs.routerStatus });
+    } catch (e) {}
   }
 
   getEventMap() {
     return {
-      "click [data-action=startLlama]": () => this._startLlama(),
-      "click [data-action=restartLlama]": () => this._restartLlama(),
-      "click [data-action=stopLlama]": () => this._stopLlama(),
+      "click [data-action=start]": () => this._startLlama(),
+      "click [data-action=stop]": () => this._stopLlama(),
+      "click [data-action=restart]": () => this._restartLlama(),
+      "click [data-action=save]": () => this._save(),
     };
-  }
-
-  didMount() {
-    // Refresh llama status on mount
-    this._refreshLlamaStatus();
-    // Refresh every 10 seconds
-    this._statusInterval = setInterval(() => this._refreshLlamaStatus(), 10000);
-  }
-
-  willUnmount() {
-    if (this._statusInterval) {
-      clearInterval(this._statusInterval);
-    }
   }
 }
 

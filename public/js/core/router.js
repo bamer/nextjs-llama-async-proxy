@@ -84,10 +84,24 @@ class Router {
 
     if (!this.contentEl) return;
     this.contentEl.innerHTML = "";
-    const el = this.currentController.render();
-    this.contentEl.appendChild(el);
-    this._callDidMount(el);
-    this.currentController.didMount && this.currentController.didMount();
+
+    const result = this.currentController.render();
+
+    // Handle both sync and async render
+    if (result instanceof Promise) {
+      const el = await result;
+      if (el) {
+        this.contentEl.appendChild(el);
+        this._callDidMount(el);
+      }
+    } else if (result) {
+      this.contentEl.appendChild(result);
+      this._callDidMount(result);
+    }
+
+    if (this.currentController.didMount) {
+      this.currentController.didMount();
+    }
 
     // Run after hooks
     this.afterHooks.forEach((h) => h(path, route));

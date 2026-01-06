@@ -1136,6 +1136,7 @@ export function registerHandlers(io, db, ggufParser) {
      * Event: llama:stop
      * Response: llama:stop:result
      * Broadcast: llama:status
+     * Broadcast: models:router-stopped (to reset all model statuses)
      */
     socket.on("llama:stop", (req) => {
       const id = req?.requestId || Date.now();
@@ -1145,6 +1146,8 @@ export function registerHandlers(io, db, ggufParser) {
         const result = stopLlamaServer();
         console.log("[DEBUG] llama:stop: SUCCESS");
         io.emit("llama:status", { status: "idle" });
+        // Broadcast that router stopped so clients reset model statuses
+        io.emit("models:router-stopped", {});
         ok(socket, "llama:stop:result", result, id);
       } catch (e) {
         console.error("[DEBUG] llama:stop error:", e.message);
