@@ -12,7 +12,7 @@ import os from "os";
 import { fileURLToPath } from "url";
 import si from "systeminformation";
 
-import DB from "./server/db.js";
+import DB from "./server/db/index.js";
 import { registerHandlers } from "./server/handlers.js";
 import { parseGgufMetadata } from "./server/gguf-parser.js";
 

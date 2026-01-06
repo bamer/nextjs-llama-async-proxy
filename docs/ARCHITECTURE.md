@@ -446,30 +446,79 @@ data/
     └── metadata       # Arbitrary key-value storage
 ```
 
-### Database Class
+### Modular Database Architecture (January 2026)
+
+The database layer has been refactored into modular components following the **Repository Pattern**:
+
+```
+server/db/
+├── index.js              # Main DB orchestrator (186 lines)
+├── db-base.js            # Base class initialization (45 lines)
+├── schema.js             # Table definitions, indexes, migrations (176 lines)
+├── model-validator.js    # GGUF file validation utilities (90 lines)
+├── models-repository.js  # Models CRUD (168 lines)
+├── metrics-repository.js # Metrics CRUD + pruning (81 lines)
+├── logs-repository.js    # Logs CRUD (43 lines)
+├── config-repository.js  # Configuration management (53 lines)
+└── metadata-repository.js # Key-value metadata storage (42 lines)
+```
+
+#### Benefits
+
+| Feature                   | Before (Monolithic) | After (Modular)                          |
+| ------------------------- | ------------------- | ---------------------------------------- |
+| **File Size**             | 532 lines (1 file)  | 884 lines (9 files, all <200 lines)      |
+| **Single Responsibility** | Mixed concerns      | Each module has one role                 |
+| **Testing**               | All tests coupled   | Repositories can be tested independently |
+| **Maintenance**           | Change affects file | Changes scoped to module                 |
+
+#### Usage
 
 ```javascript
-class Database {
-  constructor(dbPath) {
-    this.db = require('better-sqlite3')(dbPath);
-    this.init();
-  }
+import DB from "./server/db/index.js";
 
-  init() {
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS models (...);
-      CREATE TABLE IF NOT EXISTS metrics (...);
-      CREATE TABLE IF NOT EXISTS logs (...);
-      CREATE TABLE IF NOT EXISTS server_config (...);
-      CREATE TABLE IF NOT EXISTS metadata (...);
-    `);
-  }
+const db = new DB();
 
-  // CRUD operations for each table
-  getModels() { ... }
-  saveModel(model) { ... }
-  // ... etc
-}
+// Access repositories directly
+const models = db.models.getAll();
+const latestMetrics = db.metrics.getLatest();
+
+// Or use delegated methods
+const models = db.getModels();
+db.saveMetrics({ cpu_usage: 50 });
+```
+
+#### Repository API
+
+Each repository follows a consistent pattern:
+
+```javascript
+// Models Repository
+db.models.getAll()              // Get all models
+db.models.getById(id)           // Get single model
+db.models.save(model)           // Insert/update model
+db.models.update(id, updates)   // Partial update
+db.models.delete(id)            // Delete model
+db.models.cleanupMissingFiles() // Remove invalid entries
+
+// Metrics Repository
+db.metrics.save(metrics)              // Insert metrics
+db.metrics.getHistory(limit)          // Get historical data
+db.metrics.getLatest()                // Get most recent
+db.metrics.prune(maxRecords)          // Remove old records
+
+// Logs Repository
+db.logs.getAll(limit)           // Get logs
+db.logs.add(level, msg, source) // Add entry
+db.logs.clear()                 // Clear all logs
+
+// Config Repository
+db.config.get()    // Get with defaults
+db.config.save(c)  // Save config
+
+// Metadata Repository
+db.meta.get(key, default)  // Get value
+db.meta.set(key, value)    // Set value
 ```
 
 ## Performance Considerations
@@ -556,7 +605,47 @@ For production deployment, consider:
 
 1. **New Page**: Create controller in `public/js/pages/`, register route
 2. **New API Event**: Add handler in `server.js`
-3. **New Database Table**: Add to `Database.init()`, create methods
+3. **New Database Table**: Add to `server/db/schema.js`, create new repository
+
+### Adding a New Repository
+
+1. Create `server/db/<name>-repository.js`:
+
+```javascript
+export class NameRepository {
+  constructor(db) {
+    this.db = db;
+  }
+
+  getAll() {
+    return this.db.prepare("SELECT * FROM table_name").all();
+  }
+
+  save(data) {
+    // ...
+  }
+}
+```
+
+2. Import and instantiate in `server/db/index.js`:
+
+```javascript
+import { NameRepository } from "./name-repository.js";
+
+class DB {
+  constructor() {
+    this.db = new Database(dbPath);
+    this.name = new NameRepository(this.db);
+    // ...
+  }
+}
+```
+
+3. Export from `server/db/index.js`:
+
+```javascript
+export { DB, NameRepository };
+```
 
 ### Database Migration
 
