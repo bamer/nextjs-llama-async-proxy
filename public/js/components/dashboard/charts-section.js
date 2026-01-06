@@ -71,7 +71,7 @@ class ChartsSection extends Component {
     this._updateVisibility();
   }
 
-  componentDidMount() {
+  didMount() {
     // Initialize charts after DOM is ready
     requestAnimationFrame(() => {
       setTimeout(() => {
