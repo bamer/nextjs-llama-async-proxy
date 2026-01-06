@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Event Binding Test</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .test { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+    .result { color: green; }
+    .error { color: red; }
+    button { padding: 10px; margin: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Event Binding Fix Test</h1>
+  <div id="app"></div>
+
+  <script>
+    // Simple Component class for testing
+    class Component {
+      constructor(props = {}) {
+        this.props = props;
+        this.state = {};
+        this._el = null;
+        this._mounted = false;
+        this._events = {};
+        this._delegatedHandlers = {};
+        this.clickCount = 0;
+      }
+
+      render() {
+        throw new Error("render() must be implemented");
+      }
+
+      mount(parent) {
+        if (typeof parent === "string") parent = document.querySelector(parent);
+        if (!parent) throw new Error("Parent not found");
+
+        this.willMount && this.willMount();
+
+        const rendered = this.render();
+
+        if (typeof rendered === "string") {
+          const div = document.createElement("div");
+          div.innerHTML = rendered;
+          this._el = div.firstChild || div;
+        } else if (rendered instanceof HTMLElement) {
+          this._el = rendered;
+        }
+
+        if (this._el) {
+          this._el._component = this;
+          this.bindEvents();
+          parent.appendChild(this._el);
+          this._mounted = true;
+          this.didMount && this.didMount();
+        }
+        return this;
+      }
+
+      setState(updates) {
+        this.state = { ...this.state, ...updates };
+        if (this._el) {
+          this.update();
+        }
+        return this;
+      }
+
+      update() {
+        const oldEl = this._el;
+
+        const rendered = this.render();
+
+        if (typeof rendered === "string") {
+          const div = document.createElement("div");
+          div.innerHTML = rendered;
+          const newEl = div.firstChild || div;
+          oldEl.replaceWith(newEl);
+          this._el = newEl;
+        } else if (rendered instanceof HTMLElement) {
+          oldEl.replaceWith(rendered);
+          this._el = rendered;
+        }
+
+        if (this._el) {
+          this._el._component = this;
+          this.willReceiveProps && this.willReceiveProps(this.props);
+          this.bindEvents();
+          this.didUpdate && this.didUpdate();
+        }
+      }
+
+      get initialState() {
+        return {};
+      }
+
+      getEventMap() {
+        return {};
+      }
+
+      bindEvents() {
+        if (!this._el) return;
+
+        const map = this.getEventMap();
+        if (Object.keys(map).length === 0) return;
+
+        // Always clean up old listeners first
+        this._cleanupEvents();
+        this._delegatedHandlers = {};
+
+        // Use event delegation on document for stable event handling
+        Object.entries(map).forEach(([spec, handler]) => {
+          const [event, selector] = spec.split(" ");
+
+          let fn;
+          if (typeof handler === "string") {
+            if (!this[handler]) return;
+            fn = this[handler].bind(this);
+          } else if (typeof handler === "function") {
+            fn = handler.bind(this);
+          } else {
+            return;
+          }
+
+          // Create a unique key for this specific event+selector combination
+          const delegationKey = `${event}|${selector || "none"}`;
+
+          // Create delegated handler
+          const delegatedHandler = (e) => {
+            const target = selector ? e.target.closest(selector) : e.target;
+            if (target && this._el && (this._el === target || this._el.contains(target))) {
+              fn(e, target);
+            }
+          };
+
+          // Store for cleanup
+          this._delegatedHandlers[delegationKey] = delegatedHandler;
+
+          // Attach to document
+          document.addEventListener(event, delegatedHandler, false);
+        });
+      }
+
+      _cleanupEvents() {
+        if (!this._delegatedHandlers) return;
+        
+        Object.entries(this._delegatedHandlers).forEach(([key, handler]) => {
+          const [event] = key.split("|");
+          document.removeEventListener(event, handler, false);
+        });
+      }
+
+      destroy() {
+        this.willDestroy && this.willDestroy();
+
+        // Remove delegated event listeners from document
+        this._cleanupEvents();
+        this._delegatedHandlers = null;
+
+        if (this._el && this._el.parentNode) {
+          this._el.parentNode.removeChild(this._el);
+        }
+        this._el = null;
+        this._mounted = false;
+        this._events = {};
+        this.didDestroy && this.didDestroy();
+      }
+
+      static h(tag, attrs = {}, ...children) {
+        const el = document.createElement(tag);
+        Object.entries(attrs).forEach(([k, v]) => {
+          if (k === "className") {
+            el.className = v;
+          } else if (k === "style" && typeof v === "object") {
+            Object.assign(el.style, v);
+          } else if (k.startsWith("on") && typeof v === "function") {
+            el.addEventListener(k.slice(2).toLowerCase(), v);
+          } else if (k === "dataset") {
+            Object.entries(v).forEach(([dk, dv]) => {
+              el.dataset[dk] = dv;
+            });
+          } else if (typeof v === "boolean") {
+            if (v) {
+              el.setAttribute(k, "");
+            }
+          } else if (v !== null && v !== undefined) {
+            el.setAttribute(k, v);
+          }
+        });
+        children.forEach((c) => {
+          if (typeof c === "string" || typeof c === "number") {
+            el.appendChild(document.createTextNode(String(c)));
+          } else if (c instanceof HTMLElement) {
+            el.appendChild(c);
+          } else if (c instanceof Component) {
+            const cel = c.render();
+            if (cel instanceof HTMLElement) {
+              el.appendChild(cel);
+              c._el = cel;
+              c.bindEvents();
+            }
+          }
+        });
+        return el;
+      }
+    }
+
+    // Test Component
+    class TestComponent extends Component {
+      constructor(props) {
+        super(props);
+        this.state = { value: 0, lastAction: "" };
+        this.handleClickCount = 0;
+      }
+
+      getEventMap() {
+        return {
+          "click [data-action=test]": "handleClick"
+        };
+      }
+
+      handleClick(event) {
+        event.preventDefault();
+        this.handleClickCount++;
+        this.setState({ 
+          value: this.state.value + 1, 
+          lastAction: `Clicked (handler call #${this.handleClickCount})`
+        });
+      }
+
+      render() {
+        return Component.h("div", { className: "test" },
+          Component.h("h2", {}, "Component Re-render Test"),
+          Component.h("p", {}, `Button Clicks: ${this.state.value}`),
+          Component.h("p", {}, `Last Action: ${this.state.lastAction}`),
+          Component.h("button", 
+            { "data-action": "test" }, 
+            "Click Me"
+          )
+        );
+      }
+    }
+
+    // Run test
+    async function runTest() {
+      const testDiv = document.querySelector("#app");
+      const comp = new TestComponent({});
+      comp.mount(testDiv);
+
+      const log = (msg, type = "info") => {
+        const p = document.createElement("p");
+        p.className = type === "error" ? "error" : "result";
+        p.textContent = msg;
+        document.body.appendChild(p);
+        console.log(msg);
+      };
+
+      const btn = comp._el.querySelector("button");
+      if (!btn) {
+        log("❌ Button not found", "error");
+        return;
+      }
+
+      // Test 1: First click
+      btn.click();
+      await new Promise(r => setTimeout(r, 100));
+      
+      if (comp.state.value === 1) {
+        log("✓ Test 1 PASSED: First click incremented value");
+      } else {
+        log(`❌ Test 1 FAILED: Expected value=1, got ${comp.state.value}`, "error");
+      }
+
+      // Test 2: Second click (after re-render)
+      btn.click();
+      await new Promise(r => setTimeout(r, 100));
+      
+      if (comp.state.value === 2) {
+        log("✓ Test 2 PASSED: Second click worked after re-render");
+      } else {
+        log(`❌ Test 2 FAILED: Expected value=2, got ${comp.state.value}`, "error");
+      }
+
+      // Test 3: Third click (multiple re-renders)
+      btn.click();
+      await new Promise(r => setTimeout(r, 100));
+      
+      if (comp.state.value === 3) {
+        log("✓ Test 3 PASSED: Third click worked after multiple re-renders");
+      } else {
+        log(`❌ Test 3 FAILED: Expected value=3, got ${comp.state.value}`, "error");
+      }
+
+      log("✓ All tests completed");
+    }
+
+    runTest();
+  </script>
+</body>
+</html>
