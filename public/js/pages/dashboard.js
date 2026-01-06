@@ -372,16 +372,16 @@ class DashboardPage extends Component {
         history.length > 0
           ? this._renderChart(history, chartType)
           : Component.h(
-              "div",
-              { className: "chart-empty" },
-              Component.h("div", { className: "empty-icon" }, "📈"),
-              Component.h("p", {}, "Collecting performance data..."),
-              Component.h(
-                "p",
-                { className: "empty-hint" },
-                "Data will appear once metrics are collected"
-              )
+            "div",
+            { className: "chart-empty" },
+            Component.h("div", { className: "empty-icon" }, "📈"),
+            Component.h("p", {}, "Collecting performance data..."),
+            Component.h(
+              "p",
+              { className: "empty-hint" },
+              "Data will appear once metrics are collected"
             )
+          )
       ),
       Component.h(
         "div",
@@ -682,15 +682,15 @@ class DashboardPage extends Component {
             { className: "router-controls" },
             isRunning
               ? Component.h(
-                  "button",
-                  { className: "btn btn-danger", "data-action": "stop" },
-                  "⏹ Stop Router"
-                )
+                "button",
+                { className: "btn btn-danger", "data-action": "stop" },
+                "⏹ Stop Router"
+              )
               : Component.h(
-                  "button",
-                  { className: "btn btn-primary", "data-action": "start" },
-                  "▶ Start Router"
-                ),
+                "button",
+                { className: "btn btn-primary", "data-action": "start" },
+                "▶ Start Router"
+              ),
             Component.h(
               "button",
               {

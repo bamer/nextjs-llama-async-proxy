@@ -295,7 +295,7 @@ class StateManager {
   async startModel(id) {
     const model = this.getState().models.find((m) => m.id === id);
     if (!model) {
-      throw new Error("Model not found: " + id);
+      throw new Error(`Model not found: ${  id}`);
     }
     return this.request("models:load", { modelName: model.name });
   }
@@ -311,7 +311,7 @@ class StateManager {
   async stopModel(id) {
     const model = this.getState().models.find((m) => m.id === id);
     if (!model) {
-      throw new Error("Model not found: " + id);
+      throw new Error(`Model not found: ${  id}`);
     }
     return this.request("models:unload", { modelName: model.name });
   }
