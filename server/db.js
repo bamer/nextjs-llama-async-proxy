@@ -79,6 +79,9 @@ class DB {
 
     // Migration: Add missing columns to existing models table
     this._migrateModelsTable();
+
+    // Migration: Add GPU columns to metrics table
+    this._migrateMetricsTable();
   }
 
   /**
@@ -129,6 +132,32 @@ class DB {
         if (!columnNames.includes(mig.name)) {
           console.log(`[MIGRATION] Adding column: ${mig.name}`);
           this.db.exec(`ALTER TABLE models ADD COLUMN ${mig.name} ${mig.type}`);
+        }
+      }
+    } catch (e) {
+      console.warn("[MIGRATION] Failed:", e.message);
+    }
+  }
+
+  /**
+   * Run migrations to add GPU columns to the metrics table
+   */
+  _migrateMetricsTable() {
+    try {
+      // Check if column exists
+      const columns = this.db.prepare("PRAGMA table_info(metrics)").all();
+      const columnNames = columns.map((c) => c.name);
+
+      const migrations = [
+        { name: "gpu_usage", type: "REAL DEFAULT 0" },
+        { name: "gpu_memory_used", type: "REAL DEFAULT 0" },
+        { name: "gpu_memory_total", type: "REAL DEFAULT 0" },
+      ];
+
+      for (const mig of migrations) {
+        if (!columnNames.includes(mig.name)) {
+          console.log(`[MIGRATION] Adding column: ${mig.name}`);
+          this.db.exec(`ALTER TABLE metrics ADD COLUMN ${mig.name} ${mig.type}`);
         }
       }
     } catch (e) {
@@ -345,7 +374,7 @@ class DB {
    */
   saveMetrics(m) {
     const query = `INSERT INTO metrics (cpu_usage, memory_usage,
-      disk_usage, active_models, uptime) VALUES (?, ?, ?, ?, ?)`;
+      disk_usage, active_models, uptime, gpu_usage, gpu_memory_used, gpu_memory_total) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
     this.db
       .prepare(query)
       .run(
@@ -353,7 +382,10 @@ class DB {
         m.memory_usage || 0,
         m.disk_usage || 0,
         m.active_models || 0,
-        m.uptime || 0
+        m.uptime || 0,
+        m.gpu_usage || 0,
+        m.gpu_memory_used || 0,
+        m.gpu_memory_total || 0
       );
   }
 

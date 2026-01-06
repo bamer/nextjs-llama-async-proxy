@@ -37,7 +37,7 @@ class DashboardController {
       const history = stateManager.get("metricsHistory") || [];
 
       this.chartManager = new window.ChartManager({
-        state: { chartType: "cpu", history },
+        state: { chartType: "usage", history },
       });
 
       this.comp = new window.DashboardPage({
@@ -219,7 +219,7 @@ class DashboardPage extends Component {
       configPort: (props.config || {}).port || 8080,
       history,
       loading: false,
-      chartType: "cpu",
+      chartType: "usage",
       chartStats: window.DashboardUtils._calculateStats(history),
     };
   }
@@ -267,18 +267,18 @@ class DashboardPage extends Component {
       // Update ChartsSection DOM directly
       const chartsSection = this._el.querySelector(".charts-section");
       if (chartsSection) {
-        const cpuCanvas = chartsSection.querySelector("#cpuChart");
-        const gpuCanvas = chartsSection.querySelector("#gpuChart");
-        if (cpuCanvas && gpuCanvas) {
-          cpuCanvas.style.display = this.state.chartType === "cpu" ? "block" : "none";
-          gpuCanvas.style.display = this.state.chartType === "gpu" ? "block" : "none";
+        const usageCanvas = chartsSection.querySelector("#usageChart");
+        const memoryCanvas = chartsSection.querySelector("#memoryChart");
+        if (usageCanvas && memoryCanvas) {
+          usageCanvas.style.display = this.state.chartType === "usage" ? "block" : "none";
+          memoryCanvas.style.display = this.state.chartType === "memory" ? "block" : "none";
         }
 
-        const cpuTab = chartsSection.querySelector('[data-chart="cpu"]');
-        const gpuTab = chartsSection.querySelector('[data-chart="gpu"]');
-        if (cpuTab && gpuTab) {
-          cpuTab.classList.toggle("active", this.state.chartType === "cpu");
-          gpuTab.classList.toggle("active", this.state.chartType === "gpu");
+        const usageTab = chartsSection.querySelector('[data-chart="usage"]');
+        const memoryTab = chartsSection.querySelector('[data-chart="memory"]');
+        if (usageTab && memoryTab) {
+          usageTab.classList.toggle("active", this.state.chartType === "usage");
+          memoryTab.classList.toggle("active", this.state.chartType === "memory");
         }
       }
     }
@@ -322,19 +322,19 @@ class DashboardPage extends Component {
     // Update DOM directly to avoid full re-render
     if (this._el) {
       // Update tab active states
-      const cpuTab = this._el.querySelector('[data-chart="cpu"]');
-      const gpuTab = this._el.querySelector('[data-chart="gpu"]');
-      if (cpuTab && gpuTab) {
-        cpuTab.classList.toggle("active", newType === "cpu");
-        gpuTab.classList.toggle("active", newType === "gpu");
+      const usageTab = this._el.querySelector('[data-chart="usage"]');
+      const memoryTab = this._el.querySelector('[data-chart="memory"]');
+      if (usageTab && memoryTab) {
+        usageTab.classList.toggle("active", newType === "usage");
+        memoryTab.classList.toggle("active", newType === "memory");
       }
 
       // Update canvas visibility
-      const cpuCanvas = this._el.querySelector("#cpuChart");
-      const gpuCanvas = this._el.querySelector("#gpuChart");
-      if (cpuCanvas && gpuCanvas) {
-        cpuCanvas.style.display = newType === "cpu" ? "block" : "none";
-        gpuCanvas.style.display = newType === "gpu" ? "block" : "none";
+      const usageCanvas = this._el.querySelector("#usageChart");
+      const memoryCanvas = this._el.querySelector("#memoryChart");
+      if (usageCanvas && memoryCanvas) {
+        usageCanvas.style.display = newType === "usage" ? "block" : "none";
+        memoryCanvas.style.display = newType === "memory" ? "block" : "none";
       }
 
       // Update chart stats based on new type

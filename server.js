@@ -10,6 +10,7 @@ import path from "path";
 import fs from "fs";
 import os from "os";
 import { fileURLToPath } from "url";
+import si from "systeminformation";
 
 import DB from "./server/db.js";
 import { registerHandlers } from "./server/handlers.js";
@@ -23,10 +24,10 @@ const PORT = 3000;
 let lastCpuTimes = null;
 let metricsCallCount = 0;
 
-function startMetrics(io, db) {
+async function startMetrics(io, db) {
   lastCpuTimes = null;
 
-  setInterval(() => {
+  setInterval(async () => {
     try {
       const mem = process.memoryUsage();
       const cpus = os.cpus();
@@ -57,11 +58,38 @@ function startMetrics(io, db) {
         idle: c.times.idle,
       }));
 
+      // Get GPU data
+      let gpuUsage = 0;
+      let gpuMemoryUsed = 0;
+      let gpuMemoryTotal = 0;
+      try {
+        const gpu = await si.graphics();
+        if (gpu.controllers && gpu.controllers.length > 0) {
+          const primaryGpu = gpu.controllers[0];
+          // GPU load is in percentage (0-100)
+          gpuUsage = primaryGpu.utilizationGpu || 0;
+          // Memory values are already in MB
+          gpuMemoryUsed = primaryGpu.memoryUsed || 0;
+          gpuMemoryTotal = primaryGpu.memoryTotal || 0;
+          console.log("[DEBUG] GPU metrics collected:", {
+            usage: gpuUsage,
+            memoryUsed: gpuMemoryUsed,
+            memoryTotal: gpuMemoryTotal,
+          });
+        }
+      } catch (e) {
+        // GPU data not available, continue with 0 values
+        console.log("[DEBUG] GPU data not available:", e.message);
+      }
+
       // Save metrics
       db.saveMetrics({
         cpu_usage: Math.round(cpuUsage * 10) / 10,
         memory_usage: mem.heapUsed,
         uptime: process.uptime(),
+        gpu_usage: Math.round(gpuUsage * 10) / 10,
+        gpu_memory_used: Math.round(gpuMemoryUsed),
+        gpu_memory_total: Math.round(gpuMemoryTotal),
       });
 
       // Emit to clients
@@ -71,6 +99,11 @@ function startMetrics(io, db) {
           metrics: {
             cpu: { usage: cpuUsage },
             memory: { used: mem.heapUsed },
+            gpu: {
+              usage: gpuUsage,
+              memoryUsed: gpuMemoryUsed,
+              memoryTotal: gpuMemoryTotal,
+            },
             uptime: process.uptime(),
           },
         },

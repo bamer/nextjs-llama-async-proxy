@@ -20,6 +20,11 @@ export function registerMetricsHandlers(socket, db) {
         cpu: { usage: m.cpu_usage || 0 },
         memory: { used: m.memory_usage || 0 },
         disk: { used: m.disk_usage || 0 },
+        gpu: {
+          usage: m.gpu_usage || 0,
+          memoryUsed: m.gpu_memory_used || 0,
+          memoryTotal: m.gpu_memory_total || 0,
+        },
         uptime: m.uptime || 0,
       };
       ok(socket, "metrics:get:result", { metrics }, id);
@@ -38,6 +43,11 @@ export function registerMetricsHandlers(socket, db) {
         cpu: { usage: m.cpu_usage || 0 },
         memory: { used: m.memory_usage || 0 },
         disk: { used: m.disk_usage || 0 },
+        gpu: {
+          usage: m.gpu_usage || 0,
+          memoryUsed: m.gpu_memory_used || 0,
+          memoryTotal: m.gpu_memory_total || 0,
+        },
         uptime: m.uptime || 0,
         timestamp: m.timestamp,
       }));
