@@ -1,172 +1,70 @@
 /**
- * Main Application Entry Point
- * Initializes all services and starts the router
+ * Main Application Entry Point - Simplified
  */
 
 (function() {
-  'use strict';
+  "use strict";
 
-  console.log('[App] Initializing application...');
+  console.log("[App] Initializing...");
 
-  // Initialize Socket.IO client
+  // Initialize services
   socketClient.connect();
-
-  // Initialize state manager with socket
   stateManager.init(socketClient);
 
-  // Setup global error handler
-  window.addEventListener('error', handleGlobalError);
-  window.addEventListener('unhandledrejection', handleUnhandledRejection);
+  // Error handlers
+  window.addEventListener("error", (e) => {
+    console.error("[App] Error:", e.error);
+    showNotification("An error occurred", "error");
+  });
+  window.addEventListener("unhandledrejection", (e) => {
+    console.error("[App] Rejection:", e.reason);
+    showNotification("An error occurred", "error");
+  });
 
-  // Initialize router
-  const router = new Router({ root: document.getElementById('app') });
+  // Router
+  const router = new Router({ root: document.getElementById("app") });
 
-  // Register routes
-  router.register('/', () => new DashboardController({}));
-  router.register('/dashboard', () => new DashboardController({}));
-  router.register('/models', () => new ModelsController({}));
-  router.register('/monitoring', () => new MonitoringController({}));
-  router.register('/configuration', () => new ConfigurationController({}));
-  router.register('/settings', () => new SettingsController({}));
-  router.register('/logs', () => new LogsController({}));
+  router.register("/", () => new DashboardController({}));
+  router.register("/models", () => new ModelsController({}));
+  router.register("/monitoring", () => new MonitoringController({}));
+  router.register("/settings", () => new SettingsController({}));
+  router.register("/logs", () => new LogsController({}));
 
-  // Not found handler
-  router.notFound(() => new NotFoundController({}));
-
-  // Global before hook - check connection
-  router.beforeEach(async (path, route) => {
-    if (socketClient.isConnected) {
-      return true;
-    }
-    // Wait for connection
-    return new Promise((resolve) => {
-      const checkConnection = setInterval(() => {
-        if (socketClient.isConnected) {
-          clearInterval(checkConnection);
-          resolve(true);
-        }
-      }, 100);
-
-      // Timeout after 10 seconds
-      setTimeout(() => {
-        clearInterval(checkConnection);
-        console.warn('[App] Connection timeout, proceeding anyway...');
-        resolve(true);
-      }, 10000);
+  // Navigation update
+  router.afterEach((path) => {
+    document.querySelectorAll(".nav-link").forEach(l => {
+      const h = l.getAttribute("href");
+      if (h === path || (path.startsWith(h) && h !== "/")) l.classList.add("active");
+      else l.classList.remove("active");
     });
   });
 
-  // Global after hook - log navigation
-  router.afterEach((path, route) => {
-    console.log(`[App] Navigated to: ${path}`);
-    updateActiveNav(path);
-  });
-
-  // Start router
   router.start();
-
-  // Expose router globally for navigation
   window.router = router;
 
-  console.log('[App] Application initialized');
+  console.log("[App] Ready");
 })();
 
-/**
- * Update active navigation state
- */
-function updateActiveNav(path) {
-  const navLinks = document.querySelectorAll('.nav-link, .sidebar-link');
-  navLinks.forEach(link => {
-    const href = link.getAttribute('href') || link.dataset.href;
-    if (href === path || (path.startsWith(href) && href !== '/')) {
-      link.classList.add('active');
-    } else if (href === '/' && path === '/dashboard') {
-      link.classList.add('active');
-    } else {
-      link.classList.remove('active');
-    }
-  });
+// Notifications
+function showNotification(msg, type = "info") {
+  const c = document.getElementById("notifications");
+  if (!c) return;
+  const n = document.createElement("div");
+  n.className = `notification notification-${type}`;
+  n.innerHTML = `<span>${msg}</span><button onclick="this.parentElement.remove()">×</button>`;
+  c.appendChild(n);
+  setTimeout(() => n.remove(), 5000);
 }
 
-/**
- * Global error handler
- */
-function handleGlobalError(event) {
-  console.error('[App] Global error:', event.error);
-  showNotification('An error occurred. Please check the console.', 'error');
-}
-
-/**
- * Unhandled promise rejection handler
- */
-function handleUnhandledRejection(event) {
-  console.error('[App] Unhandled promise rejection:', event.reason);
-  showNotification('An error occurred. Please check the console.', 'error');
-}
-
-/**
- * Show notification (simple implementation)
- */
-function showNotification(message, type = 'info') {
-  const container = document.getElementById('notifications');
-  if (!container) return;
-
-  const notification = document.createElement('div');
-  notification.className = `notification notification-${type}`;
-  notification.innerHTML = `
-    <span class="notification-message">${message}</span>
-    <button class="notification-close">&times;</button>
-  `;
-
-  container.appendChild(notification);
-
-  // Auto-remove after 5 seconds
-  setTimeout(() => {
-    notification.classList.add('notification-hiding');
-    setTimeout(() => notification.remove(), 300);
-  }, 5000);
-
-  // Close button
-  notification.querySelector('.notification-close').addEventListener('click', () => {
-    notification.classList.add('notification-hiding');
-    setTimeout(() => notification.remove(), 300);
-  });
-}
-
-/**
- * Utility functions - convenience wrappers around FormatUtils
- */
+// Utils
 window.AppUtils = {
-  formatBytes: FormatUtils.formatBytes.bind(FormatUtils),
-  formatPercent: FormatUtils.formatPercent.bind(FormatUtils),
-  formatTimestamp: FormatUtils.formatTimestamp.bind(FormatUtils),
-  formatRelativeTime: FormatUtils.formatRelativeTime.bind(FormatUtils),
-  debounce: function(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
-      };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
-  },
-  throttle: function(func, limit) {
-    let inThrottle;
-    return function executedFunction(...args) {
-      if (!inThrottle) {
-        func(...args);
-        inThrottle = true;
-        setTimeout(() => inThrottle = false, limit);
-      }
-    };
-  },
-  generateId: function() {
-    return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  },
-  deepClone: function(obj) {
-    return JSON.parse(JSON.stringify(obj));
-  },
-  isEmpty: ValidationUtils.isEmpty.bind(ValidationUtils)
+  formatBytes: (b) => FormatUtils.formatBytes(b),
+  formatPercent: (v) => FormatUtils.formatPercent(v),
+  formatTimestamp: (t) => FormatUtils.formatTimestamp(t),
+  formatRelativeTime: (t) => FormatUtils.formatRelativeTime(t),
+  debounce: (f, w) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => f(...a), w); }; },
+  throttle: (f, l) => { let t; return (...a) => { if (!t) { f(...a); t = setTimeout(() => t = null, l); } }; },
+  generateId: () => `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+  deepClone: (o) => JSON.parse(JSON.stringify(o)),
+  isEmpty: (o) => !o || (Array.isArray(o) ? o.length : Object.keys(o).length) === 0
 };

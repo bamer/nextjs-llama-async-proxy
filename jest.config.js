@@ -24,5 +24,6 @@ export default {
   verbose: true,
   testEnvironmentOptions: {
     customExportConditions: ['node', 'node-addons', 'browser']
-  }
+  },
+  setupFilesAfterEnv: ['<rootDir>/__tests__/setup.js']
 };

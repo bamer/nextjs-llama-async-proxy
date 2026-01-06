@@ -1,223 +1,130 @@
 /**
- * Layout Component - Main Application Layout
+ * Simple Layout Component
  */
 
 class Layout extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      sidebarOpen: true
-    };
-  }
-
   render() {
-    return Component.h('div', { className: 'app-container' },
-      Component.h(Sidebar, { open: this.state.sidebarOpen }),
+    return Component.h("div", { className: "app-container" },
+      Component.h(Sidebar, {}),
       Component.h(MainContent, {})
     );
   }
 }
 
-/**
- * Sidebar Component
- */
 class Sidebar extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { open: props.open !== false };
-  }
-
   render() {
-    return Component.h('aside', { className: `sidebar ${this.state.open ? 'open' : ''}` },
-      Component.h('div', { className: 'sidebar-header' },
-        Component.h('div', { className: 'sidebar-logo' },
-          Component.h('span', {}, '🦙'),
-          Component.h('span', {}, 'Llama Proxy')
-        )
+    return Component.h("aside", { className: "sidebar" },
+      Component.h("div", { className: "sidebar-header" },
+        Component.h("span", { className: "logo-icon" }, "🦙"),
+        Component.h("span", { className: "logo-text" }, "Llama Proxy")
       ),
-      Component.h('nav', { className: 'sidebar-nav' },
-        Component.h('div', { className: 'nav-section' },
-          Component.h('span', { className: 'nav-section-title' }, 'Main'),
-          Component.h('a', {
-            href: '/',
-            className: 'nav-link',
-            'data-page': 'dashboard'
-          }, '📊 Dashboard'),
-          Component.h('a', {
-            href: '/models',
-            className: 'nav-link',
-            'data-page': 'models'
-          }, '📁 Models'),
-          Component.h('a', {
-            href: '/monitoring',
-            className: 'nav-link',
-            'data-page': 'monitoring'
-          }, '📈 Monitoring'),
-          Component.h('a', {
-            href: '/logs',
-            className: 'nav-link',
-            'data-page': 'logs'
-          }, '📋 Logs')
-        ),
-        Component.h('div', { className: 'nav-section' },
-          Component.h('span', { className: 'nav-section-title' }, 'Settings'),
-          Component.h('a', {
-            href: '/configuration',
-            className: 'nav-link',
-            'data-page': 'configuration'
-          }, '⚙️ Configuration'),
-          Component.h('a', {
-            href: '/settings',
-            className: 'nav-link',
-            'data-page': 'settings'
-          }, '🔧 Settings')
-        ),
-        Component.h('div', { className: 'nav-section' },
-          Component.h('span', { className: 'nav-section-title' }, 'Server'),
-          Component.h('div', { className: 'server-connection-status', id: 'connection-status' },
-            Component.h('span', { className: 'status-dot disconnected' }),
-            Component.h('span', { className: 'status-text' }, 'Disconnected')
-          )
+      Component.h("nav", { className: "sidebar-nav" },
+        Component.h("a", { href: "/", className: "nav-link", "data-page": "dashboard" }, "📊 Dashboard"),
+        Component.h("a", { href: "/models", className: "nav-link", "data-page": "models" }, "📁 Models"),
+        Component.h("a", { href: "/monitoring", className: "nav-link", "data-page": "monitoring" }, "📈 Monitoring"),
+        Component.h("a", { href: "/logs", className: "nav-link", "data-page": "logs" }, "📋 Logs"),
+        Component.h("a", { href: "/settings", className: "nav-link", "data-page": "settings" }, "⚙️ Settings")
+      ),
+      Component.h("div", { className: "sidebar-footer" },
+        Component.h("div", { className: "connection-status", id: "connection-status" },
+          Component.h("span", { className: "dot disconnected" }),
+          Component.h("span", { className: "text" }, "Disconnected")
         )
       )
     );
   }
 
   getEventMap() {
-    return {
-      'click [data-page]': 'handlePageClick'
-    };
+    return { "click [data-page]": "handleClick" };
   }
 
-  handlePageClick(event) {
-    event.preventDefault();
-    const page = event.currentTarget.dataset.page;
-    window.router.navigate('/' + (page === 'dashboard' ? '' : page));
+  handleClick(e) {
+    const t = e.target.closest("[data-page]");
+    if (t) {
+      e.preventDefault();
+      const p = t.dataset.page;
+      window.router.navigate("/" + (p === "dashboard" ? "" : p));
+    }
   }
 }
 
-/**
- * Main Content Component
- */
 class MainContent extends Component {
   render() {
-    return Component.h('main', { className: 'main-content' },
+    return Component.h("main", { className: "main-content" },
       Component.h(Header, {}),
-      Component.h('div', { id: 'page-content', className: 'page-content' },
-        Component.h('div', { className: 'loading-screen' },
-          Component.h('div', { className: 'loading-spinner' }),
-          Component.h('p', {}, 'Connecting to server...')
+      Component.h("div", { id: "page-content", className: "page-content" },
+        Component.h("div", { className: "loading-screen" },
+          Component.h("div", { className: "spinner" }),
+          Component.h("p", {}, "Connecting...")
         )
       )
     );
   }
 }
 
-// Header title updater - registers immediately
-function setupHeaderTitleUpdater() {
-  const updateTitleFromPath = () => {
-    const path = window.location.pathname;
-    const titles = {
-      '/': 'Dashboard',
-      '/dashboard': 'Dashboard',
-      '/models': 'Models',
-      '/monitoring': 'Monitoring',
-      '/logs': 'Logs',
-      '/configuration': 'Configuration',
-      '/settings': 'Settings'
-    };
-    const title = titles[path] || 'Dashboard';
-    const headerElement = document.querySelector('.page-header');
-    if (headerElement) {
-      const headerTitle = headerElement.querySelector('h1');
-      if (headerTitle && headerTitle.textContent !== title) {
-        headerTitle.textContent = title;
-      }
-    }
-  };
-
-  // Initial update
-  updateTitleFromPath();
-
-  // Listen for navigation events
-  window.addEventListener('popstate', updateTitleFromPath);
-  window.addEventListener('routechange', updateTitleFromPath);
-}
-
-// Setup immediately
-setupHeaderTitleUpdater();
-
-/**
- * Header Component
- */
 class Header extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      serverOnline: false
-    };
+    this.state = { online: false };
+    this._route = null;
   }
 
   render() {
-    return Component.h('header', { className: 'page-header' },
-      Component.h('div', { className: 'header-left' },
-        Component.h('button', {
-          className: 'btn btn-icon sidebar-toggle',
-          'data-action': 'toggle-sidebar'
-        }, '☰'),
-        Component.h('h1', {}, 'Dashboard')
-      ),
-      Component.h('div', { className: 'header-right' },
-        Component.h('div', { className: 'connection-indicator', id: 'header-connection' },
-          this.state.serverOnline ?
-            Component.h('span', { className: 'online-badge' }, '● Online') :
-            Component.h('span', { className: 'offline-badge' }, '● Offline')
-        )
+    return Component.h("header", { className: "page-header" },
+      Component.h("button", { className: "menu-btn", "data-action": "toggle" }, "☰"),
+      Component.h("h1", { id: "page-title" }, this._getTitle()),
+      Component.h("div", { className: "header-status" },
+        this.state.online ?
+          Component.h("span", { className: "badge online" }, "● Online") :
+          Component.h("span", { className: "badge offline" }, "● Offline")
       )
     );
   }
 
+  _getTitle() {
+    const p = window.location.pathname;
+    const titles = { "/": "Dashboard", "/models": "Models", "/monitoring": "Monitoring", "/logs": "Logs", "/settings": "Settings" };
+    return titles[p] || "Dashboard";
+  }
+
   getEventMap() {
-    return {
-      'click [data-action="toggle-sidebar"]': 'handleToggleSidebar'
-    };
+    return { "click [data-action=toggle]": () => document.querySelector(".sidebar")?.classList.toggle("open") };
   }
 
-  handleToggleSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    if (sidebar) {
-      sidebar.classList.toggle('open');
-    }
-  }
-
-  componentDidMount() {
-    stateManager.subscribe('connectionStatus', (status) => {
-      this.setState({ serverOnline: status === 'connected' });
-      this.updateConnectionUI(status);
+  didMount() {
+    stateManager.subscribe("connectionStatus", (s) => {
+      this.setState({ online: s === "connected" });
+      this._updateUI(s);
     });
+
+    this._route = () => {
+      const t = this._el?.querySelector("#page-title");
+      if (t) t.textContent = this._getTitle();
+    };
+    window.addEventListener("routechange", this._route);
+    window.addEventListener("popstate", this._route);
   }
 
-  updateConnectionUI(status) {
-    const statusEl = document.getElementById('connection-status');
-    const headerEl = document.getElementById('header-connection');
-    const dot = statusEl?.querySelector('.status-dot');
-    const text = statusEl?.querySelector('.status-text');
+  willDestroy() {
+    if (this._route) { window.removeEventListener("routechange", this._route); window.removeEventListener("popstate", this._route); }
+  }
 
-    if (dot) {
-      dot.className = 'status-dot ' + (status === 'connected' ? 'connected' : 'disconnected');
+  _updateUI(s) {
+    const st = document.getElementById("connection-status");
+    if (st) {
+      const dot = st.querySelector(".dot"), txt = st.querySelector(".text");
+      if (dot) dot.className = `dot ${s === "connected" ? "connected" : "disconnected"}`;
+      if (txt) txt.textContent = s === "connected" ? "Connected" : "Disconnected";
     }
-    if (text) {
-      text.textContent = status === 'connected' ? 'Connected' : 'Disconnected';
-    }
-    if (headerEl) {
-      headerEl.innerHTML = status === 'connected' ?
-        '<span class="online-badge">● Online</span>' :
-        '<span class="offline-badge">● Offline</span>';
+    const hs = this._el?.querySelector(".header-status");
+    if (hs) {
+      hs.innerHTML = s === "connected" ?
+        "<span class=\"badge online\">● Online</span>" :
+        "<span class=\"badge offline\">● Offline</span>";
     }
   }
 }
 
-// Export
 window.Layout = Layout;
 window.Sidebar = Sidebar;
 window.MainContent = MainContent;

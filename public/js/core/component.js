@@ -1,446 +1,144 @@
 /**
- * Base Component Class
- * Vanilla JS component model with lifecycle hooks
+ * Simple Component Base Class
  */
 
 class Component {
   constructor(props = {}) {
     this.props = props;
     this.state = {};
-    this._element = null;
-    this._parent = null;
-    this._children = [];
+    this._el = null;
     this._mounted = false;
-    this._destroyed = false;
-    this._eventListeners = new Map();
-    this._refs = new Map();
+    this._events = {};
   }
 
-  /**
-   * Get the component element
-   */
-  get element() {
-    return this._element;
-  }
+  // Override in subclasses
+  render() { throw new Error("render() must be implemented"); }
 
-  /**
-   * Get component props
-   */
-  get props() {
-    return this._props;
-  }
+  // Mount to DOM
+  mount(parent) {
+    if (typeof parent === "string") parent = document.querySelector(parent);
+    if (!parent) throw new Error("Parent not found");
 
-  /**
-   * Set component props
-   */
-  set props(value) {
-    this._props = value || {};
-  }
-
-  /**
-   * Get component state
-   */
-  get state() {
-    return this._state;
-  }
-
-   /**
-    * Set component state (triggers update if changed)
-    */
-  set state(value) {
-    this._state = value || {};
-  }
-
-   /**
-   * Update component state (similar to React's setState)
-   * @param {Object|Function} updates - State updates or updater function
-   */
-  setState(updates) {
-    if (typeof updates === 'function') {
-      // Functional update
-      this._state = { ...this._state, ...updates(this._state) };
-    } else {
-      // Object update
-      this._state = { ...this._state, ...updates };
-    }
-    return this;
-  }
-
-  /**
-   * Lifecycle: Initialize before mounting
-   */
-  init() {
-    this.state = this.getInitialState ? this.getInitialState() : {};
-  }
-
-  /**
-   * Lifecycle: Get initial state
-   */
-  getInitialState() {
-    return {};
-  }
-
-  /**
-   * Lifecycle: Called before first render
-   */
-  willMount() {}
-
-  /**
-   * Lifecycle: Render the component
-   * Must be implemented by subclasses
-   */
-  render() {
-    throw new Error('render() must be implemented by subclass');
-  }
-
-  /**
-   * Lifecycle: Called after mounting
-   */
-  didMount() {}
-
-  /**
-   * Lifecycle: Called before update
-   */
-  willUpdate(oldProps, oldState) {}
-
-  /**
-   * Lifecycle: Called after update
-   */
-  didUpdate(oldProps, oldState) {}
-
-  /**
-   * Lifecycle: Called before destroy
-   */
-  willDestroy() {}
-
-  /**
-   * Lifecycle: Called after destroy
-   */
-  didDestroy() {}
-
-  /**
-   * Mount the component to a DOM element
-   * @param {HTMLElement|string} parent - Parent element or selector
-   * @param {boolean} replace - Replace existing content
-   */
-  mount(parent, replace = false) {
-    if (this._mounted && this._element) {
-      console.warn('[Component] Component already mounted');
-      return this;
-    }
-
-    this.willMount();
-
-    // Get parent element
-    if (typeof parent === 'string') {
-      this._parent = document.querySelector(parent);
-    } else if (parent instanceof HTMLElement) {
-      this._parent = parent;
-    } else {
-      throw new Error('Invalid parent element');
-    }
-
-    if (!this._parent) {
-      throw new Error(`Parent element not found`);
-    }
-
-    // Create and append element
+    this.willMount && this.willMount();
     const rendered = this.render();
 
-    if (typeof rendered === 'string') {
-      const temp = document.createElement('div');
-      temp.innerHTML = rendered;
-      this._element = temp.firstChild;
+    if (typeof rendered === "string") {
+      const div = document.createElement("div");
+      div.innerHTML = rendered;
+      this._el = div.firstChild;
     } else if (rendered instanceof HTMLElement) {
-      this._element = rendered;
-    } else {
-      throw new Error('render() must return HTML string or HTMLElement');
+      this._el = rendered;
     }
+    this._el._component = this;
 
-    // Store reference to component on element
-    this._element._component = this;
-
-    if (replace) {
-      this._parent.innerHTML = '';
-    }
-    this._parent.appendChild(this._element);
-
+    this.bindEvents();  // Bind BEFORE appending
+    parent.appendChild(this._el);
     this._mounted = true;
-    this.bindEvents();
-
-    this.didMount();
-
+    this.didMount && this.didMount();
     return this;
   }
 
-  /**
-   * Update the component with new props/state
-   * @param {Object} newProps - New props
-   * @param {Object} newState - New state
-   */
-  update(newProps = {}, newState = {}) {
-    if (!this._mounted || this._destroyed) {
-      console.warn('[Component] Cannot update unmounted or destroyed component');
-      return;
+  // Update state and re-render
+  setState(updates) {
+    this.state = { ...this.state, ...updates };
+    if (this._el) {
+      this.update();
     }
-
-    const oldProps = { ...this._props };
-    const oldState = { ...this._state };
-
-    // Merge new props and state
-    this._props = { ...this._props, ...newProps };
-    this._state = { ...this._state, ...newState };
-
-    this.willUpdate(oldProps, oldState);
-
-    // Re-render and patch DOM
-    const newElement = this.render();
-
-    if (typeof newElement === 'string') {
-      const temp = document.createElement('div');
-      temp.innerHTML = newElement;
-      const newDom = temp.firstChild;
-      this.patch(this._element, newDom);
-      this._element = newDom;
-    } else if (newElement instanceof HTMLElement) {
-      this.patch(this._element, newElement);
-      this._element = newElement;
-    }
-
-    this._element._component = this;
-    this.bindEvents();
-
-    this.didUpdate(oldProps, oldState);
-
     return this;
   }
 
-  /**
-   * Simple DOM patching algorithm
-   * @param {HTMLElement} oldEl - Old element
-   * @param {HTMLElement} newEl - New element
-   */
-  patch(oldEl, newEl) {
-    if (oldEl.nodeName !== newEl.nodeName) {
+  // Re-render
+  update() {
+    const oldEl = this._el;
+    const rendered = this.render();
+
+    if (typeof rendered === "string") {
+      const div = document.createElement("div");
+      div.innerHTML = rendered;
+      const newEl = div.firstChild;
       oldEl.replaceWith(newEl);
-      return;
+      this._el = newEl;
+    } else if (rendered instanceof HTMLElement) {
+      oldEl.replaceWith(rendered);
+      this._el = rendered;
     }
-
-    // Copy attributes
-    Array.from(oldEl.attributes).forEach(attr => {
-      if (!newEl.hasAttribute(attr.name)) {
-        oldEl.removeAttribute(attr.name);
-      }
-    });
-
-    Array.from(newEl.attributes).forEach(attr => {
-      if (oldEl.getAttribute(attr.name) !== attr.value) {
-        oldEl.setAttribute(attr.name, attr.value);
-      }
-    });
-
-    // Copy text content
-    if (oldEl.textContent !== newEl.textContent) {
-      oldEl.textContent = newEl.textContent;
-    }
-
-    // Handle children
-    const oldChildren = Array.from(oldEl.children);
-    const newChildren = Array.from(newEl.children);
-
-    const maxLength = Math.max(oldChildren.length, newChildren.length);
-
-    for (let i = 0; i < maxLength; i++) {
-      if (i < newChildren.length && i < oldChildren.length) {
-        // Both exist - patch recursively
-        this.patch(oldChildren[i], newChildren[i]);
-      } else if (i < newChildren.length) {
-        // New child - append
-        oldEl.appendChild(newChildren[i]);
-      } else {
-        // Old child - remove
-        oldChildren[i].remove();
-      }
-    }
+    this._el._component = this;
+    this.bindEvents();
+    this.didUpdate && this.didUpdate();
   }
 
-  /**
-   * Destroy the component
-   */
-  destroy() {
-    if (this._destroyed) return;
+  // Get/Set state
+  get initialState() { return {}; }
 
-    this.willDestroy();
+  // Event handling
+  getEventMap() { return {}; }
 
-    // Remove event listeners
-    this.unbindEvents();
-
-    // Destroy children
-    this._children.forEach(child => {
-      if (child.destroy) child.destroy();
-    });
-    this._children = [];
-
-    // Remove from DOM
-    if (this._element && this._element.parentNode) {
-      this._element.parentNode.removeChild(this._element);
-    }
-
-    this._element = null;
-    this._parent = null;
-    this._mounted = false;
-    this._destroyed = true;
-
-    this.didDestroy();
-  }
-
-  /**
-   * Bind event listeners from props
-   */
   bindEvents() {
-    if (!this._element) return;
-
-    const events = this.getEventMap ? this.getEventMap() : {};
-
-    Object.entries(events).forEach(([eventSpec, handler]) => {
-      const [eventName, selector] = eventSpec.split(' ');
-      const eventHandler = typeof handler === 'string' ? this[handler].bind(this) : handler.bind(this);
-
+    const map = this.getEventMap();
+    Object.entries(map).forEach(([spec, handler]) => {
+      const [event, selector] = spec.split(" ");
+      const fn = typeof handler === "string" ? this[handler].bind(this) : handler.bind(this);
       if (selector) {
-        // Delegated event
-        this._element.addEventListener(eventName, (e) => {
+        this._el.addEventListener(event, (e) => {
           const target = e.target.closest(selector);
-          if (target) eventHandler(e, target);
+          if (target) fn(e, target);
         });
       } else {
-        // Direct event on element
-        this._element.addEventListener(eventName, eventHandler);
-      }
-
-      // Store for cleanup
-      const key = `${eventName}${selector ? ' ' + selector : ''}`;
-      this._eventListeners.set(key, eventHandler);
-    });
-  }
-
-  /**
-   * Remove all event listeners
-   */
-  unbindEvents() {
-    this._eventListeners.forEach((handler, key) => {
-      const [eventName, selector] = key.split(' ');
-      if (this._element) {
-        if (selector) {
-          this._element.removeEventListener(eventName, handler);
-        } else {
-          this._element.removeEventListener(eventName, handler);
-        }
+        this._el.addEventListener(event, fn);
       }
     });
-    this._eventListeners.clear();
   }
 
-  /**
-   * Get event map (override in subclasses)
-   */
-  getEventMap() {
-    return {};
+  // Cleanup
+  destroy() {
+    this.willDestroy && this.willDestroy();
+    if (this._el && this._el.parentNode) {
+      this._el.parentNode.removeChild(this._el);
+    }
+    this._el = null;
+    this._mounted = false;
+    this.didDestroy && this.didDestroy();
   }
 
-   /**
-    * Create an element with children
-    * @param {string|Component} tag - HTML tag name or Component class
-    * @param {Object} attrs - Attributes (or props if tag is a Component)
-    * @param {...HTMLElement|string|Component} children - Child elements
-    */
-  static createElement(tag, attrs = {}, ...children) {
+  // Element creator (h)
+  static h(tag, attrs = {}, ...children) {
     // Handle Component classes
-    if (typeof tag === 'function' && tag.prototype && tag.prototype instanceof Component) {
-      const component = new tag(attrs);
-      const element = component.render();
-      if (element instanceof HTMLElement) {
-        element._component = component;
-        component._element = element;
-        component._mounted = true;
-        if (component.didMount) {
-          component.didMount();
-        }
-      }
-      // Add children if element supports it
-      if (element instanceof HTMLElement) {
-        children.forEach(child => {
-          if (child === null || child === undefined) return;
-          if (typeof child === 'string' || typeof child === 'number') {
-            element.appendChild(document.createTextNode(String(child)));
-          } else if (child instanceof HTMLElement) {
-            element.appendChild(child);
-          } else if (child instanceof Component) {
-            const childEl = child.render();
-            if (childEl instanceof HTMLElement) {
-              element.appendChild(childEl);
-              child._element = childEl;
-              child._mounted = true;
-              if (child.didMount) {
-                child.didMount();
-              }
-            }
+    if (typeof tag === "function" && tag.prototype instanceof Component) {
+      const comp = new tag(attrs);
+      const el = comp.render();
+      if (el instanceof HTMLElement) {
+        el._component = comp;
+        comp._el = el;
+        children.forEach(c => {
+          if (typeof c === "string") el.appendChild(document.createTextNode(c));
+          else if (c instanceof HTMLElement) el.appendChild(c);
+          else if (c instanceof Component) {
+            const cel = c.render();
+            if (cel instanceof HTMLElement) { el.appendChild(cel); c._el = cel; }
           }
         });
       }
-      return element;
+      return el;
     }
 
-    const element = document.createElement(tag);
-
-    // Set attributes
-    Object.entries(attrs).forEach(([key, value]) => {
-      if (key === 'className') {
-        element.className = value;
-      } else if (key === 'style' && typeof value === 'object') {
-        Object.assign(element.style, value);
-      } else if (key.startsWith('on') && typeof value === 'function') {
-        element.addEventListener(key.slice(2).toLowerCase(), value);
-      } else if (key === 'dataset') {
-        Object.entries(value).forEach(([dataKey, dataValue]) => {
-          element.dataset[dataKey] = dataValue;
-        });
-      } else if (key === 'ref') {
-        element.ref = value;
-      } else if (value !== null && value !== undefined) {
-        element.setAttribute(key, value);
+    const el = document.createElement(tag);
+    Object.entries(attrs).forEach(([k, v]) => {
+      if (k === "className") el.className = v;
+      else if (k === "style" && typeof v === "object") Object.assign(el.style, v);
+      else if (k.startsWith("on") && typeof v === "function") el.addEventListener(k.slice(2).toLowerCase(), v);
+      else if (k === "dataset") Object.entries(v).forEach(([dk, dv]) => el.dataset[dk] = dv);
+      else if (v !== null && v !== undefined) el.setAttribute(k, v);
+    });
+    children.forEach(c => {
+      if (typeof c === "string" || typeof c === "number") el.appendChild(document.createTextNode(String(c)));
+      else if (c instanceof HTMLElement) el.appendChild(c);
+      else if (c instanceof Component) {
+        const cel = c.render();
+        if (cel instanceof HTMLElement) { el.appendChild(cel); c._el = cel; }
       }
     });
-
-    // Add children
-    children.forEach(child => {
-      if (child === null || child === undefined) return;
-      if (typeof child === 'string' || typeof child === 'number') {
-        element.appendChild(document.createTextNode(String(child)));
-      } else if (child instanceof HTMLElement) {
-        element.appendChild(child);
-      } else if (child instanceof Component) {
-        const childEl = child.render();
-        if (childEl instanceof HTMLElement) {
-          element.appendChild(childEl);
-          child._element = childEl;
-          child._mounted = true;
-          if (child.didMount) {
-            child.didMount();
-          }
-        }
-      }
-    });
-
-    return element;
-  }
-
-  /**
-   * Helper to create element (static method alias)
-   */
-  static h(tag, attrs, ...children) {
-    return Component.createElement(tag, attrs, ...children);
+    return el;
   }
 }
 
-// Export
 window.Component = Component;

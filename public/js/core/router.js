@@ -1,295 +1,137 @@
 /**
- * Router - History API based routing with persistent Layout
+ * Simple Router - History API based routing
  */
 
 class Router {
   constructor(options = {}) {
     this.routes = new Map();
-    this.currentRoute = null;
     this.currentController = null;
-    this.rootElement = options.root || document.getElementById('app');
-    this.contentElement = null;
-    this.layoutComponent = null;
-    this.beforeHooks = [];
-    this.afterHooks = [];
-    this.notFoundHandler = null;
+    this.rootEl = options.root || document.getElementById("app");
+    this.contentEl = null;
+    this.layout = null;
     this.initialized = false;
+    this.afterHooks = [];
 
-    // Bind popstate
-    window.addEventListener('popstate', (event) => {
-      this._handleRouteChange(window.location.pathname, false);
-    });
+    window.addEventListener("popstate", () => this._handle(window.location.pathname, false));
   }
 
-  /**
-   * Register a route
-   * @param {string} path - Route path (e.g., '/dashboard', '/models/:id')
-   * @param {Function|Object} handler - Controller or options
-   */
   register(path, handler) {
-    const pattern = this._pathToRegex(path);
-    this.routes.set(pattern, {
-      path,
-      pattern,
-      handler: typeof handler === 'function' ? { render: handler } : handler
-    });
+    const pattern = this._toRegex(path);
+    this.routes.set(pattern, { path, handler: typeof handler === "function" ? { render: handler } : handler });
     return this;
   }
 
-  /**
-   * Register not found handler
-   */
-  notFound(handler) {
-    this.notFoundHandler = typeof handler === 'function' ? { render: handler } : handler;
-    return this;
-  }
+  afterEach(hook) { this.afterHooks.push(hook); return this; }
 
-  /**
-   * Add before navigation hook
-   */
-  beforeEach(hook) {
-    this.beforeHooks.push(hook);
-    return this;
-  }
-
-  /**
-   * Add after navigation hook
-   */
-  afterEach(hook) {
-    this.afterHooks.push(hook);
-    return this;
-  }
-
-  /**
-   * Navigate to a path
-   * @param {string} path - Path to navigate to
-   * @param {Object} data - Route data (query params)
-   */
   navigate(path, data = {}) {
     const url = new URL(path, window.location.origin);
-    Object.entries(data).forEach(([key, value]) => {
-      url.searchParams.set(key, value);
-    });
-
+    Object.entries(data).forEach(([k, v]) => url.searchParams.set(k, v));
     const newPath = url.pathname + url.search;
-
-    if (newPath === window.location.pathname + window.location.search) {
-      // Same route - just update data
-      if (this.currentController && this.currentController.updateData) {
-        this.currentController.updateData(data);
-      }
-      return this;
+    if (newPath !== window.location.pathname + window.location.search) {
+      window.history.pushState(data, "", newPath);
     }
-
-    window.history.pushState(data, '', newPath);
-    this._handleRouteChange(newPath, false);
-    this._dispatchTitleUpdate(newPath);
+    this._handle(newPath, false);
+    this._dispatchTitle(newPath);
     return this;
   }
 
-  /**
-   * Navigate and replace current history entry
-   */
-  replace(path, data = {}) {
-    const url = new URL(path, window.location.origin);
-    Object.entries(data).forEach(([key, value]) => {
-      url.searchParams.set(key, value);
-    });
+  getPath() { return window.location.pathname; }
+  getQuery() { return Object.fromEntries(new URLSearchParams(window.location.search)); }
 
-    window.history.replaceState(data, '', url);
-    this._handleRouteChange(url.pathname + url.search, false);
-    this._dispatchTitleUpdate(url.pathname + url.search);
-    return this;
-  }
-
-  /**
-   * Get current path
-   */
-  getPath() {
-    return window.location.pathname;
-  }
-
-  /**
-   * Get query params
-   */
-  getQuery() {
-    return Object.fromEntries(new URLSearchParams(window.location.search));
-  }
-
-  /**
-   * Get route params
-   */
-  getParams() {
-    return this.currentRoute?.params || {};
-  }
-
-  /**
-   * Start the router - mounts Layout and initial route
-   */
   start() {
     if (this.initialized) return this;
+    this.rootEl.innerHTML = "";
 
-    // Create and mount the Layout component
-    this.layoutComponent = new Layout({});
-    const layoutElement = this.layoutComponent.render();
-    this.rootElement.appendChild(layoutElement);
+    this.layout = new Layout({});
+    const layoutEl = this.layout.render();
+    this.rootEl.appendChild(layoutEl);
+    this.layout.bindEvents();
+    if (this.layout.didMount) this.layout.didMount();
+    this._callDidMount(layoutEl);
 
-    // Get reference to the content area
-    this.contentElement = document.getElementById('page-content');
-
-    if (!this.contentElement) {
-      console.error('[Router] Content element #page-content not found');
-      // Fallback: use rootElement
-      this.contentElement = this.rootElement;
-    }
-
+    this.contentEl = document.getElementById("page-content") || this.rootEl;
     this.initialized = true;
 
-    // Navigate to initial path
-    const initialPath = window.location.pathname;
-    this._handleRouteChange(initialPath, true);
-    this._dispatchTitleUpdate(initialPath);
+    const path = window.location.pathname;
+    this._handle(path, true);
+    this._dispatchTitle(path);
 
     return this;
   }
 
-  /**
-   * Handle route change
-   */
-  async _handleRouteChange(path, isInitial = false) {
-    const route = this._matchRoute(path);
+  async _handle(path, isInitial = false) {
+    const route = this._match(path);
 
-    // Run before hooks
-    for (const hook of this.beforeHooks) {
-      const result = await hook(path, route);
-      if (result === false) {
-        return; // Navigation cancelled
-      }
-    }
-
-    // Destroy current controller
     if (this.currentController) {
-      if (this.currentController.willUnmount) {
-        this.currentController.willUnmount();
-      }
-      if (this.currentController.destroy) {
-        this.currentController.destroy();
-      }
+      this.currentController.willUnmount && this.currentController.willUnmount();
+      this.currentController.destroy && this.currentController.destroy();
       this.currentController = null;
     }
 
-    // Handle not found
-    if (!route && this.notFoundHandler) {
-      this.currentRoute = { path, params: {}, route: null };
-      this.currentController = this._createController(this.notFoundHandler, path, {});
-      this._renderControllerToContent();
-      return;
-    }
+    if (!route) return;
 
-    if (!route) {
-      console.warn(`No route found for: ${path}`);
-      return;
-    }
+    this.currentController = this._create(route.handler, path, route.params);
 
-    // Create controller
-    this.currentRoute = route;
-    this.currentController = this._createController(route.handler, path, route.params);
-
-    this._renderControllerToContent();
+    if (!this.contentEl) return;
+    this.contentEl.innerHTML = "";
+    const el = this.currentController.render();
+    this.contentEl.appendChild(el);
+    this._callDidMount(el);
+    this.currentController.didMount && this.currentController.didMount();
 
     // Run after hooks
-    for (const hook of this.afterHooks) {
-      await hook(path, route);
-    }
+    this.afterHooks.forEach(h => h(path, route));
   }
 
-  /**
-   * Render current controller to the content area
-   */
-  _renderControllerToContent() {
-    if (!this.contentElement || !this.currentController) return;
-
-    // Clear content area
-    this.contentElement.innerHTML = '';
-
-    // Render controller to content area
-    const element = this.currentController.render();
-    this.contentElement.appendChild(element);
-
-    if (this.currentController.didMount) {
-      this.currentController.didMount();
-    }
-  }
-
-  /**
-   * Create a controller instance
-   */
-  _createController(handler, path, params) {
-    let controller;
-
-    if (typeof handler === 'function') {
-      controller = handler({ path, params });
-    } else if (typeof handler === 'object') {
-      if (handler.render && typeof handler.render === 'function') {
-        controller = handler.render({ path, params });
-      } else if (handler.controller) {
-        controller = new handler.controller(handler.options || {});
-      } else {
-        console.error('[Router] Invalid handler - missing render or controller:', handler);
-        return null;
-      }
+  _create(handler, path, params) {
+    let ctrl;
+    if (typeof handler === "function") {
+      ctrl = handler({ path, params });
+    } else if (handler.render && typeof handler.render === "function") {
+      ctrl = handler.render({ path, params });
+    } else if (handler.controller) {
+      ctrl = new handler.controller(handler.options || {});
     } else {
-      console.error('[Router] Invalid handler:', handler);
       return null;
     }
-
-    controller.router = this;
-    controller.path = path;
-    controller.params = params;
-    controller.query = this.getQuery();
-
-    return controller;
+    ctrl.router = this;
+    ctrl.path = path;
+    ctrl.params = params;
+    ctrl.query = this.getQuery();
+    return ctrl;
   }
 
-  /**
-   * Match path to route
-   */
-  _matchRoute(path) {
+  _match(path) {
     for (const [pattern, route] of this.routes) {
-      const match = pattern.exec(path);
-      if (match) {
+      const m = pattern.exec(path);
+      if (m) {
         const params = {};
-        route.path.split('/').forEach((segment, i) => {
-          if (segment.startsWith(':')) {
-            params[segment.slice(1)] = match[i + 1];
-          }
-        });
+        route.path.split("/").forEach((seg, i) => { if (seg.startsWith(":")) params[seg.slice(1)] = m[i + 1]; });
         return { ...route, params };
       }
     }
     return null;
   }
 
-  /**
-   * Convert path to regex
-   */
-  _pathToRegex(path) {
-    const regexPath = path
-      .replace(/\//g, '\\/')
-      .replace(/:([^/]+)/g, '([^/]+)')
-      .replace(/\*$/, '(.*)');
-    return new RegExp(`^${regexPath}$`);
+  _toRegex(path) {
+    const rx = path.replace(/\//g, "\\/").replace(/:([^/]+)/g, "([^/]+)").replace(/\*$/, "(.*)");
+    return new RegExp(`^${rx}$`);
   }
 
-  /**
-   * Dispatch title update event
-   */
-  _dispatchTitleUpdate(path) {
-    console.log('[Router] Dispatching routechange event for:', path);
-    const event = new CustomEvent('routechange', { detail: { path } });
-    window.dispatchEvent(event);
+  _callDidMount(el) {
+    if (!el) return;
+    if (el._component && el._component.didMount && !el._component._mounted) {
+      el._component._mounted = true;
+      el._component.didMount();
+    }
+    if (el.children) {
+      Array.from(el.children).forEach(c => this._callDidMount(c));
+    }
+  }
+
+  _dispatchTitle(path) {
+    window.dispatchEvent(new CustomEvent("routechange", { detail: { path } }));
   }
 }
 
-// Export
 window.Router = Router;

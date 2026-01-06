@@ -66,7 +66,8 @@ const ValidationUtils = {
     if (typeof path !== 'string') return false;
     if (path.length === 0) return false;
     if (path.includes('..')) return false;
-    return !/[<>:"/\\|?*]/.test(path);
+    // Allow alphanumeric, underscores, hyphens, dots, forward slashes
+    return /^[\w\-./]+$/.test(path);
   },
 
   isModelName(name) {

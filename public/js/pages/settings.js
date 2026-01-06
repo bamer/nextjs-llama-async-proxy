@@ -1,326 +1,117 @@
 /**
- * Settings Page Controller
+ * Settings Page - Simple one-glance layout
  */
 
 class SettingsController {
-  constructor(options = {}) {
-    this.router = options.router || window.router;
-    this.unsubscribers = [];
-    this.component = null;
-  }
-
+  constructor(options = {}) { this.router = options.router || window.router; this.comp = null; this.unsub = null; }
   init() {
-    this.unsubscribers.push(
-      stateManager.subscribe('settings', this.onSettingsChange.bind(this))
-    );
-
-    this.loadSettings();
-  }
-
-  async loadSettings() {
-    try {
-      const data = await stateManager.getSettings();
-      stateManager.set('settings', data.settings || {});
-    } catch (error) {
-      console.error('[Settings] Failed to load settings:', error);
-    }
-  }
-
-  onSettingsChange(settings) {
-    if (this.component) {
-      this.component.updateSettings(settings);
-    }
-  }
-
-  willUnmount() {
-    this.unsubscribers.forEach(unsub => unsub());
-    this.unsubscribers = [];
-    if (this.component) {
-      this.component.destroy();
-    }
-  }
-
-  destroy() {
-    this.willUnmount();
-  }
-
-  render() {
-    this.component = new SettingsPage({
-      settings: stateManager.get('settings') || {}
+    this.unsub = stateManager.subscribe("config", () => {
+      if (this.comp) {
+        this.comp.setState({ updated: Date.now() });
+      }
     });
-
-    this.init();
-
-    return this.component.render();
+    this.load();
   }
-
-  didMount() {
-    if (this.component && this.component.didMount) {
-      this.component.didMount();
-    }
+  async load() {
+    try {
+      const c = await stateManager.getConfig();
+      stateManager.set("config", c.config || {});
+    } catch (e) { console.error("[Settings] Load error:", e); }
+  }
+  willUnmount() { this.unsub?.(); }
+  destroy() { this.willUnmount(); }
+  render() {
+    this.comp = new SettingsPage({});
+    this.init();
+    const el = this.comp.render();
+    this.comp._el = el;
+    el._component = this.comp;
+    this.comp.bindEvents();
+    return el;
   }
 }
 
-/**
- * Settings Page Component
- */
 class SettingsPage extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      settings: props.settings || {},
-      activeSection: 'appearance'
-    };
+    this.state = { updated: 0 };
   }
 
   render() {
-    return Component.h('div', { className: 'settings-page' },
-      Component.h('div', { className: 'settings-layout' },
-        Component.h('div', { className: 'settings-sidebar' },
-          Component.h('button', {
-            className: `settings-nav-item ${this.state.activeSection === 'appearance' ? 'active' : ''}`,
-            'data-section': 'appearance'
-          }, 'Appearance'),
-          Component.h('button', {
-            className: `settings-nav-item ${this.state.activeSection === 'logging' ? 'active' : ''}`,
-            'data-section': 'logging'
-          }, 'Logging'),
-          Component.h('button', {
-            className: `settings-nav-item ${this.state.activeSection === 'features' ? 'active' : ''}`,
-            'data-section': 'features'
-          }, 'Features'),
-          Component.h('button', {
-            className: `settings-nav-item ${this.state.activeSection === 'system' ? 'active' : ''}`,
-            'data-section': 'system'
-          }, 'System')
+    // Always read latest config from stateManager
+    const c = stateManager.get("config") || {};
+    return Component.h("div", { className: "settings-page" },
+      Component.h("h1", {}, "Settings"),
+      Component.h("div", { className: "settings-one-glance" },
+        Component.h("div", { className: "card" },
+          Component.h("h2", {}, "Server"),
+          Component.h("div", { className: "form-grid" },
+            this._field("Server Path", "serverPath", c.serverPath || ""),
+            this._field("Host", "host", c.host || "localhost"),
+            this._field("Port", "port", c.port || 8080, "number"),
+            this._field("Models Path", "baseModelsPath", c.baseModelsPath || "")
+          ),
+          Component.h("label", { className: "checkbox" },
+            Component.h("input", { type: "checkbox", checked: !!c.autoStart, onChange: (e) => this._update("autoStart", e.target.checked) }),
+            " Auto-start server"
+          )
         ),
-        Component.h('div', { className: 'settings-content' },
-          this.state.activeSection === 'appearance' ? Component.h(SettingsAppearance, {
-            settings: this.state.settings,
-            onChange: this.handleSettingChange.bind(this)
-          }) : null,
-          this.state.activeSection === 'logging' ? Component.h(SettingsLogging, {
-            settings: this.state.settings,
-            onChange: this.handleSettingChange.bind(this)
-          }) : null,
-          this.state.activeSection === 'features' ? Component.h(SettingsFeatures, {
-            settings: this.state.settings,
-            onChange: this.handleSettingChange.bind(this)
-          }) : null,
-          this.state.activeSection === 'system' ? Component.h(SettingsSystem, {
-            settings: this.state.settings,
-            onChange: this.handleSettingChange.bind(this)
-          }) : null
+        Component.h("div", { className: "card" },
+          Component.h("h2", {}, "Model Defaults"),
+          Component.h("div", { className: "form-grid" },
+            this._field("Context Size", "ctx_size", c.ctx_size || 2048, "number"),
+            this._field("Batch Size", "batch_size", c.batch_size || 512, "number"),
+            this._field("Threads", "threads", c.threads || 4, "number")
+          )
+        ),
+        Component.h("div", { className: "card" },
+          Component.h("h2", {}, "About"),
+          Component.h("p", {}, "Llama Async Proxy Dashboard v1.0"),
+          Component.h("p", { className: "info" }, "Simple dashboard for managing Llama models")
+        ),
+        Component.h("div", { className: "actions" },
+          Component.h("button", { className: "btn btn-primary", onClick: () => this._save() }, "Save Settings"),
+          Component.h("button", { className: "btn btn-secondary", onClick: () => this._reset() }, "Reset")
         )
       )
     );
   }
 
-  updateSettings(settings) {
-    this.setState({ settings });
+  _field(label, key, val, type = "text") {
+    return Component.h("div", { className: "form-group" },
+      Component.h("label", {}, label),
+      Component.h("input", { type, value: val, onChange: (e) => {
+        const v = type === "number" ? parseInt(e.target.value) : e.target.value;
+        stateManager.set("config", { ...stateManager.get("config"), [key]: v });
+        this.setState({ updated: Date.now() });
+      }})
+    );
   }
 
-  handleSettingChange(key, value) {
-    const settings = { ...this.state.settings, [key]: value };
-    this.setState({ settings });
-    this.saveSettings(settings);
+  _update(key, value) {
+    stateManager.set("config", { ...stateManager.get("config"), [key]: value });
+    this.setState({ updated: Date.now() });
   }
 
-  async saveSettings(settings) {
+  async _save() {
     try {
-      await stateManager.updateSettings(settings);
-    } catch (error) {
-      console.error('[Settings] Failed to save settings:', error);
-      showNotification('Failed to save settings', 'error');
-    }
+      const config = stateManager.get("config") || {};
+      await stateManager.updateConfig(config);
+      showNotification("Settings saved", "success");
+    } catch (e) { showNotification("Save failed: " + e.message, "error"); }
   }
 
-  getEventMap() {
-    return {
-      'click [data-section]': 'handleSectionChange'
-    };
-  }
-
-  handleSectionChange(event) {
-    this.setState({ activeSection: event.target.dataset.section });
-  }
-}
-
-/**
- * Appearance Settings
- */
-class SettingsAppearance extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { settings: props.settings || {} };
-  }
-
-  render() {
-    return Component.h('div', { className: 'settings-section' },
-      Component.h('h2', {}, 'Appearance'),
-      Component.h('div', { className: 'form-group' },
-        Component.h('label', {}, 'Theme'),
-        Component.h('select', {
-          value: this.state.settings.theme || 'system',
-          onChange: (e) => this.props.onChange('theme', e.target.value)
-        },
-          Component.h('option', { value: 'light' }, 'Light'),
-          Component.h('option', { value: 'dark' }, 'Dark'),
-          Component.h('option', { value: 'system' }, 'System')
-        )
-      ),
-      Component.h('div', { className: 'form-group' },
-        Component.h('label', {}, 'Compact Mode'),
-        Component.h('input', {
-          type: 'checkbox',
-          checked: this.state.settings.compactMode || false,
-          onChange: (e) => this.props.onChange('compactMode', e.target.checked)
-        })
-      )
-    );
-  }
-}
-
-/**
- * Logging Settings
- */
-class SettingsLogging extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { settings: props.settings || {} };
-  }
-
-  render() {
-    return Component.h('div', { className: 'settings-section' },
-      Component.h('h2', {}, 'Logging'),
-      Component.h('div', { className: 'form-group' },
-        Component.h('label', {}, 'Log Level'),
-        Component.h('select', {
-          value: this.state.settings.logLevel || 'info',
-          onChange: (e) => this.props.onChange('logLevel', e.target.value)
-        },
-          Component.h('option', { value: 'debug' }, 'Debug'),
-          Component.h('option', { value: 'info' }, 'Info'),
-          Component.h('option', { value: 'warn' }, 'Warning'),
-          Component.h('option', { value: 'error' }, 'Error')
-        )
-      ),
-      Component.h('div', { className: 'form-group' },
-        Component.h('label', {}, 'Max Log Entries'),
-        Component.h('input', {
-          type: 'number',
-          value: this.state.settings.maxLogEntries || 100,
-          onChange: (e) => this.props.onChange('maxLogEntries', parseInt(e.target.value))
-        })
-      ),
-      Component.h('div', { className: 'form-group' },
-        Component.h('label', {}, 'Enable Console Logging'),
-        Component.h('input', {
-          type: 'checkbox',
-          checked: this.state.settings.enableConsoleLog !== false,
-          onChange: (e) => this.props.onChange('enableConsoleLog', e.target.checked)
-        })
-      )
-    );
-  }
-}
-
-/**
- * Features Settings
- */
-class SettingsFeatures extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { settings: props.settings || {} };
-  }
-
-  render() {
-    return Component.h('div', { className: 'settings-section' },
-      Component.h('h2', {}, 'Features'),
-      Component.h('div', { className: 'form-group' },
-        Component.h('label', {}, 'Auto-refresh Metrics'),
-        Component.h('input', {
-          type: 'checkbox',
-          checked: this.state.settings.autoRefreshMetrics !== false,
-          onChange: (e) => this.props.onChange('autoRefreshMetrics', e.target.checked)
-        })
-      ),
-      Component.h('div', { className: 'form-group' },
-        Component.h('label', {}, 'Refresh Interval (seconds)'),
-        Component.h('input', {
-          type: 'number',
-          value: this.state.settings.refreshInterval || 10,
-          min: 5,
-          max: 60,
-          onChange: (e) => this.props.onChange('refreshInterval', parseInt(e.target.value))
-        })
-      ),
-      Component.h('div', { className: 'form-group' },
-        Component.h('label', {}, 'Enable Notifications'),
-        Component.h('input', {
-          type: 'checkbox',
-          checked: this.state.settings.enableNotifications !== false,
-          onChange: (e) => this.props.onChange('enableNotifications', e.target.checked)
-        })
-      )
-    );
-  }
-}
-
-/**
- * System Settings
- */
-class SettingsSystem extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { settings: props.settings || {} };
-  }
-
-  render() {
-    return Component.h('div', { className: 'settings-section' },
-      Component.h('h2', {}, 'System'),
-      Component.h('div', { className: 'system-info' },
-        Component.h('h3', {}, 'About'),
-        Component.h('p', {}, 'Llama Async Proxy Dashboard'),
-        Component.h('p', { className: 'version' }, 'Version 1.0.0')
-      ),
-      Component.h('div', { className: 'system-actions' },
-        Component.h('button', {
-          className: 'btn btn-secondary',
-          'data-action': 'restart'
-        }, 'Restart Server'),
-        Component.h('button', {
-          className: 'btn btn-secondary',
-          'data-action': 'clear-cache'
-        }, 'Clear Cache')
-      )
-    );
-  }
-
-  getEventMap() {
-    return {
-      'click [data-action="restart"]': 'handleRestart',
-      'click [data-action="clear-cache"]': 'handleClearCache'
-    };
-  }
-
-  handleRestart() {
-    if (confirm('Restart the server? This will disconnect all clients.')) {
-      showNotification('Restarting server...', 'info');
-    }
-  }
-
-  handleClearCache() {
-    if (confirm('Clear all cached data?')) {
-      showNotification('Cache cleared', 'success');
+  async _reset() {
+    if (confirm("Reset all settings to defaults?")) {
+      try {
+        const c = await stateManager.getConfig();
+        stateManager.set("config", c.config || {});
+        this.setState({ updated: Date.now() });
+        showNotification("Settings reset to defaults", "info");
+      } catch (e) { showNotification("Reset failed: " + e.message, "error"); }
     }
   }
 }
 
-// Export
 window.SettingsController = SettingsController;
 window.SettingsPage = SettingsPage;
-window.SettingsAppearance = SettingsAppearance;
-window.SettingsLogging = SettingsLogging;
-window.SettingsFeatures = SettingsFeatures;
-window.SettingsSystem = SettingsSystem;
