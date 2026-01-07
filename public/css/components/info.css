@@ -1,45 +1,3 @@
-
-/* Actions Card */
-.actions-card {
-  background: var(--card-bg);
-}
-
-.actions-card h3 {
-  margin-bottom: var(--sm);
-}
-
-.action-buttons {
-  display: flex;
-  gap: var(--md);
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.btn-lg {
-  padding: var(--sm) var(--xl);
-  font-size: 1rem;
-}
-
-/* About Card */
-.about-card {
-  text-align: center;
-  padding: var(--xl);
-}
-
-.about-card h3 {
-  font-size: 1.25rem;
-  margin-bottom: var(--sm);
-}
-
-.about-card p {
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-.about-card p.info {
-  margin-top: var(--sm);
-  font-size: 0.875rem;
-  color: var(--text-secondary);
 }
 
 /* Responsive */
@@ -98,3 +56,43 @@
   margin: var(--md) 0;
   padding: var(--md);
   background: rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+}
+
+.status-card .status-details span {
+  display: flex;
+  justify-content: space-between;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--md);
+  margin-bottom: var(--md);
+}
+
+.form-group {
+  margin-bottom: 0;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--xs);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--gray-600);
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"] {
+  width: 100%;
+  padding: var(--sm) var(--md);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+}
+
+.form-group input:focus {
+  border-color: var(--primary);
+  outline: none;

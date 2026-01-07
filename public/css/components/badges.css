@@ -1,100 +1,98 @@
-  border-radius: var(--radius);
-  font-size: 0.875rem;
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  gap: var(--md);
+  margin-bottom: var(--lg);
+  flex-wrap: wrap;
 }
 
-.status-card .status-details span {
+.toolbar .btn {
+  white-space: nowrap;
+}
+
+/* Filters */
+.filters {
+  display: flex;
+  gap: var(--md);
+  margin-bottom: var(--lg);
+}
+.filters input {
+  width: 200px;
+}
+.filters select {
+  width: 150px;
+}
+
+/* Settings Page */
+.settings-page {
+  padding: var(--lg);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.settings-page h1 {
+  font-size: 1.5rem;
+  margin-bottom: var(--lg);
+  color: var(--text-primary);
+}
+
+.settings-section {
+  margin-bottom: var(--xl);
+}
+
+.settings-section h2 {
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--sm);
+  padding-bottom: var(--sm);
+  border-bottom: 2px solid var(--primary);
+  display: inline-block;
+}
+
+.section-desc {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-bottom: var(--md);
+}
+
+/* Router Card - Unified Status + Config */
+.router-card {
+  border-left: 4px solid var(--primary);
+}
+
+.router-card.running {
+  border-left-color: var(--success);
+}
+
+.router-card.idle {
+  border-left-color: var(--gray-400);
+}
+
+.router-header {
   display: flex;
   justify-content: space-between;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  align-items: flex-start;
+  flex-wrap: wrap;
   gap: var(--md);
   margin-bottom: var(--md);
 }
 
-.form-group {
-  margin-bottom: 0;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: var(--xs);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--gray-600);
-}
-
-.form-group input[type="text"],
-.form-group input[type="number"] {
-  width: 100%;
-  padding: var(--sm) var(--md);
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius);
-  font-size: 0.875rem;
-}
-
-.form-group input:focus {
-  border-color: var(--primary);
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-}
-
-.field-help {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--gray-400);
-  margin-top: 2px;
-}
-
-.checkbox {
+.router-title {
   display: flex;
   align-items: center;
-  gap: var(--sm);
-  cursor: pointer;
-  margin-top: var(--sm);
-}
-
-.checkbox input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
-.checkbox span {
-  font-size: 0.875rem;
-  color: var(--gray-700);
-}
-
-/* Control buttons */
-.actions-section .card {
-  background: var(--card-bg);
-}
-
-.actions-section h3 {
-  margin-bottom: var(--sm);
-}
-
-.action-buttons {
-  display: flex;
   gap: var(--md);
-  flex-wrap: wrap;
 }
 
-/* About card */
-.about-card {
-  text-align: center;
-  padding: var(--xl);
+.router-title h3 {
+  margin: 0;
+  font-size: 1.125rem;
 }
 
-.about-card h3 {
-  font-size: 1.25rem;
-  margin-bottom: var(--sm);
-}
-
-.about-card p {
-  color: var(--text-secondary);
-}
-
-/* Responsive */
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;

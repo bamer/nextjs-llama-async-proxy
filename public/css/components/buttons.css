@@ -1,3 +1,61 @@
+    background-color 0.3s ease,
+    border-color 0.2s ease,
+    color 0.3s ease;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--primary);
+}
+
+.form-group {
+  margin-bottom: var(--md);
+}
+.form-group label {
+  display: block;
+  margin-bottom: var(--sm);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+.form-group input {
+  width: 100%;
+}
+
+.form-row {
+  display: flex;
+  gap: var(--md);
+}
+.form-row > div {
+  flex: 1;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--sm);
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  text-transform: capitalize;
+}
+
+.badge.running {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+html.dark-mode .badge.running {
+  background: #064e3b;
+  color: #86efac;
+}
+
+.badge.idle {
+  background: var(--gray-100);
   color: var(--gray-600);
 }
 
@@ -33,68 +91,3 @@ table {
   table-layout: fixed;
 }
 th,
-td {
-  padding: var(--sm) var(--md);
-  text-align: left;
-  border-bottom: 1px solid var(--border-color);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--text-primary);
-}
-th {
-  font-weight: 600;
-  color: var(--text-secondary);
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  background: var(--bg-tertiary);
-}
-/* Models table specific column widths */
-.models-table th:nth-child(1),
-.models-table td:nth-child(1) {
-  width: 25%;
-}
-.models-table th:nth-child(2),
-.models-table td:nth-child(2) {
-  width: 80px;
-}
-.models-table th:nth-child(3),
-.models-table td:nth-child(3) {
-  width: 80px;
-}
-.models-table th:nth-child(4),
-.models-table td:nth-child(4) {
-  width: 70px;
-}
-.models-table th:nth-child(5),
-.models-table td:nth-child(5) {
-  width: 80px;
-}
-.models-table th:nth-child(6),
-.models-table td:nth-child(6) {
-  width: 70px;
-}
-.models-table th:nth-child(7),
-.models-table td:nth-child(7) {
-  width: 70px;
-}
-.models-table th:nth-child(8),
-.models-table td:nth-child(8) {
-  width: 60px;
-}
-.models-table th:nth-child(9),
-.models-table td:nth-child(9) {
-  width: 60px;
-}
-.models-table th:nth-child(10),
-.models-table td:nth-child(10) {
-  width: 80px;
-}
-.models-table th:nth-child(11),
-.models-table td:nth-child(11) {
-  width: 80px;
-}
-.models-page .models-table {
-  min-width: 900px;
-}
-

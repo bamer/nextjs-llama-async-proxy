@@ -1,130 +1,103 @@
-
-.big-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.status-card.running {
-  border-left: 4px solid var(--success);
-}
-.status-card.idle {
-  border-left: 4px solid var(--gray-400);
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.status-card.running .status-badge {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-html.dark-mode .status-card.running .status-badge {
-  background: #064e3b;
-  color: #86efac;
-}
-
-.status-card.idle .status-badge {
-  background: var(--gray-100);
-  color: var(--gray-600);
-}
-
-html.dark-mode .status-card.idle .status-badge {
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
-}
-
-/* Toolbar */
-.toolbar {
-  display: flex;
-  gap: var(--md);
-  margin-bottom: var(--lg);
-  flex-wrap: wrap;
-}
-
-.toolbar .btn {
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
   white-space: nowrap;
-}
-
-/* Filters */
-.filters {
-  display: flex;
-  gap: var(--md);
-  margin-bottom: var(--lg);
-}
-.filters input {
-  width: 200px;
-}
-.filters select {
-  width: 150px;
-}
-
-/* Settings Page */
-.settings-page {
-  padding: var(--lg);
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.settings-page h1 {
-  font-size: 1.5rem;
-  margin-bottom: var(--lg);
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--text-primary);
 }
-
-.settings-section {
-  margin-bottom: var(--xl);
+th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  background: var(--bg-tertiary);
+}
+/* Models table specific column widths */
+.models-table th:nth-child(1),
+.models-table td:nth-child(1) {
+  width: 25%;
+}
+.models-table th:nth-child(2),
+.models-table td:nth-child(2) {
+  width: 80px;
+}
+.models-table th:nth-child(3),
+.models-table td:nth-child(3) {
+  width: 80px;
+}
+.models-table th:nth-child(4),
+.models-table td:nth-child(4) {
+  width: 70px;
+}
+.models-table th:nth-child(5),
+.models-table td:nth-child(5) {
+  width: 80px;
+}
+.models-table th:nth-child(6),
+.models-table td:nth-child(6) {
+  width: 70px;
+}
+.models-table th:nth-child(7),
+.models-table td:nth-child(7) {
+  width: 70px;
+}
+.models-table th:nth-child(8),
+.models-table td:nth-child(8) {
+  width: 60px;
+}
+.models-table th:nth-child(9),
+.models-table td:nth-child(9) {
+  width: 60px;
+}
+.models-table th:nth-child(10),
+.models-table td:nth-child(10) {
+  width: 80px;
+}
+.models-table th:nth-child(11),
+.models-table td:nth-child(11) {
+  width: 80px;
+}
+.models-page .models-table {
+  min-width: 900px;
 }
 
-.settings-section h2 {
-  font-size: 1.125rem;
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: var(--sm);
+  margin-bottom: var(--lg);
+}
+.tab {
+  padding: var(--sm) var(--md);
+  border: none;
+  background: none;
   color: var(--text-secondary);
+  border-radius: var(--radius);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+.tab:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+.tab.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* Notifications */
+#notifications {
+  position: fixed;
+  top: var(--md);
+  right: var(--md);
+  z-index: 1000;
+}
+
+.notification {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: var(--md) var(--lg);
   margin-bottom: var(--sm);
-  padding-bottom: var(--sm);
-  border-bottom: 2px solid var(--primary);
-  display: inline-block;
-}
-
-.section-desc {
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-  margin-bottom: var(--md);
-}
-
-/* Router Card - Unified Status + Config */
-.router-card {
-  border-left: 4px solid var(--primary);
-}
-
-.router-card.running {
-  border-left-color: var(--success);
-}
-
-.router-card.idle {
-  border-left-color: var(--gray-400);
-}
-
-.router-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: var(--md);
-  margin-bottom: var(--md);
-}
-
-.router-title {
-  display: flex;
-  align-items: center;
-  gap: var(--md);
-}
-
-.router-title h3 {
-  margin: 0;

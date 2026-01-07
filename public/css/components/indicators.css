@@ -1,100 +1,100 @@
-@media (max-width: 768px) {
-  .settings-page {
-    padding: var(--md);
-  }
+.router-indicator.default::before {
+  background: var(--border-color);
+}
 
-  .settings-grid {
-    grid-template-columns: 1fr;
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
   }
-
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .control-buttons {
-    flex-direction: column;
-  }
-
-  .action-buttons {
-    flex-direction: column;
-  }
-
-  .action-buttons .btn {
-    width: 100%;
+  50% {
+    opacity: 0.5;
   }
 }
 
-/* Logs */
-.logs-page {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+/* Router mode badges */
+.badge.loaded {
+  background: #d1fae5;
+  color: #065f46;
 }
 
-.logs-page .toolbar {
+html.dark-mode .badge.loaded {
+  background: #064e3b;
+  color: #86efac;
+}
+
+.badge.unloaded {
+  background: var(--gray-100);
+  color: var(--gray-600);
+}
+
+html.dark-mode .badge.unloaded {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.badge.loaded,
+.badge.unloaded {
+  text-transform: capitalize;
+}
+
+/* Button group */
+.button-group {
   display: flex;
-  flex-direction: column;
   gap: var(--md);
   margin-bottom: var(--md);
-  background: var(--card-bg);
+}
+
+/* Router status display */
+.router-status {
   padding: var(--md);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  border: 1px solid var(--border-color);
-}
-
-.logs-page .toolbar h2 {
-  margin: 0;
-  font-size: 1.1rem;
-  color: var(--text-primary);
-}
-
-.logs-page .toolbar > div:last-child {
-  display: flex;
-  gap: var(--md);
-  flex-wrap: wrap;
-}
-
-.logs-page .toolbar input,
-.logs-page .toolbar select {
-  flex: 1;
-  min-width: 200px;
-  padding: var(--sm);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-  background: var(--card-bg);
-  color: var(--text-primary);
-}
-
-.logs-container {
-  flex: 1;
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  overflow-y: auto;
-  border: 1px solid var(--border-color);
-}
-
-.log-entry {
-  display: flex;
-  gap: var(--md);
-  padding: var(--sm) var(--md);
-  border-bottom: 1px solid var(--border-color);
-  border-left: 3px solid var(--border-color);
-  font-family: monospace;
-  font-size: 0.75rem;
-  color: var(--text-primary);
-}
-
-.log-entry:hover {
   background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
 }
 
-.log-entry.level-info {
-  border-left-color: var(--info);
+/* Dashboard actions */
+.dashboard-actions {
+  display: flex;
+  gap: var(--md);
+  margin-top: var(--lg);
 }
 
-.log-entry.level-warn {
-  border-left-color: var(--warning);
+.dashboard-page .card h2 {
+  margin-bottom: var(--md);
+  font-size: 1rem;
+  color: var(--text-primary);
 }
 
+/* Unified Dashboard Styles */
+.dashboard-page.unified {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Router Section */
+.router-section {
+  margin-bottom: var(--lg);
+}
+
+.router-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--lg);
+  border-left: 4px solid var(--primary);
+  border: 1px solid var(--border-color);
+}
+
+.router-card.running {
+  border-left-color: var(--success);
+}
+
+.router-card.idle {
+  border-left-color: var(--gray-400);
+}
+
+.router-header {
+  display: flex;
+  justify-content: space-between;

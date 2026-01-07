@@ -148,3 +148,47 @@
 
 .sidebar.collapsed .sidebar-nav .nav-link span:last-child {
   display: none;
+}
+
+.sidebar.collapsed .sidebar-footer {
+  padding: 8px;
+  display: flex;
+  justify-content: center;
+}
+
+.sidebar.collapsed + .main-content,
+.sidebar.collapsed ~ .main-content {
+  margin-left: 70px;
+}
+
+.main-content {
+  margin-left: var(--sidebar);
+  margin-top: 64px;
+  flex: 1;
+  min-height: calc(100vh - 64px);
+  transition: margin-left 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-header {
+  height: 64px;
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--lg);
+  gap: var(--md);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.page-header h1 {

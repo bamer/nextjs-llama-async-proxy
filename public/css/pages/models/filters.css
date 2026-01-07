@@ -1,60 +1,98 @@
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--lg);
+  margin-bottom: var(--lg);
 }
 
-.charts-header h3 {
-  margin: 0;
+@media (max-width: 1024px) {
+  .content-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Health Section */
+.health-section {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--lg);
+}
+
+.health-section h3 {
+  margin: 0 0 var(--md);
   font-size: 1rem;
   color: var(--text-primary);
 }
 
-.chart-tabs {
+.health-status {
   display: flex;
-  gap: var(--xs);
-  background: var(--bg-tertiary);
-  padding: 4px;
+  align-items: center;
+  gap: var(--md);
+  padding: var(--md);
   border-radius: var(--radius);
-}
-
-.chart-tab {
-  padding: var(--sm) var(--md);
-  border: none;
-  background: none;
-  color: var(--text-secondary);
-  border-radius: calc(var(--radius) - 2px);
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.chart-tab:hover {
-  color: var(--text-primary);
-}
-
-.chart-tab.active {
-  background: var(--primary);
-  color: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.chart-container {
   margin-bottom: var(--md);
 }
 
-.chart-wrapper {
-  width: 100%;
-  height: 200px;
-  position: relative;
+.health-status.good {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
 }
 
-.chart-canvas {
-  width: 100% !important;
-  height: 100% !important;
+html.dark-mode .health-status.good {
+  background: rgba(16, 185, 129, 0.1);
+  color: #6ee7b7;
 }
 
-.chart-empty {
+.health-status.warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #d97706;
+}
+
+html.dark-mode .health-status.warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: #fbbf24;
+}
+
+.health-icon {
+  font-size: 1.25rem;
+}
+
+.health-message {
+  font-weight: 500;
+}
+
+.health-checks {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--xl);
-  color: var(--gray-500);
+  gap: var(--sm);
 }
+
+.health-check {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--sm) var(--md);
+  background: var(--bg-tertiary);
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.health-check.ok {
+  border-left: 3px solid var(--success);
+}
+
+.health-check.warning {
+  border-left: 3px solid var(--warning);
+}
+
+.check-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.check-name {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.check-value {

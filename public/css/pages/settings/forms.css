@@ -1,100 +1,98 @@
-
-.chart-empty .empty-icon {
-  font-size: 2.5rem;
-  margin-bottom: var(--md);
 }
 
-.chart-empty p {
-  margin: var(--xs) 0;
+.check-indicator {
+  font-size: 0.875rem;
 }
 
-.chart-empty .empty-hint {
-  font-size: 0.75rem;
-  color: var(--gray-400);
+.indicator-good {
+  color: var(--success);
 }
 
-.chart-stats {
-  display: flex;
-  gap: var(--xl);
-  padding-top: var(--md);
-  border-top: 1px solid var(--gray-100);
+.indicator-warning {
+  color: var(--warning);
 }
 
-.chart-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.chart-stat-label {
-  font-size: 0.7rem;
-  color: var(--gray-500);
-  text-transform: uppercase;
-}
-
-.chart-stat-value {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--gray-800);
-}
-
-/* Content Row */
-.content-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: var(--lg);
-  margin-bottom: var(--lg);
-}
-
-@media (max-width: 1024px) {
-  .content-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Health Section */
-.health-section {
+/* Actions Section */
+.actions-section {
   background: var(--card-bg);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: var(--lg);
 }
 
-.health-section h3 {
+.actions-section h3 {
   margin: 0 0 var(--md);
   font-size: 1rem;
   color: var(--text-primary);
 }
 
-.health-status {
+.action-buttons {
   display: flex;
-  align-items: center;
   gap: var(--md);
-  padding: var(--md);
-  border-radius: var(--radius);
-  margin-bottom: var(--md);
+  flex-wrap: wrap;
 }
 
-.health-status.good {
-  background: rgba(16, 185, 129, 0.15);
-  color: #10b981;
-}
+/* Responsive */
+@media (max-width: 768px) {
+  :root {
+    --sidebar: 220px;
+  }
 
-html.dark-mode .health-status.good {
-  background: rgba(16, 185, 129, 0.1);
-  color: #6ee7b7;
-}
+  .page-header {
+    gap: var(--sm);
+    padding: 0 var(--md);
+  }
 
-.health-status.warning {
-  background: rgba(245, 158, 11, 0.15);
-  color: #d97706;
-}
+  .page-header h1 {
+    font-size: 1rem;
+  }
 
-html.dark-mode .health-status.warning {
-  background: rgba(245, 158, 11, 0.1);
-  color: #fbbf24;
-}
+  .router-header {
+    flex-direction: column;
+  }
 
-.health-icon {
-  font-size: 1.25rem;
-}
+  .router-info {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .router-controls {
+    width: 100%;
+  }
+
+  .router-controls .btn {
+    flex: 1;
+    min-width: 100px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat-card {
+    padding: var(--md);
+  }
+
+  .stat-icon {
+    font-size: 1.25rem;
+    width: 36px;
+    height: 36px;
+  }
+
+  .stat-value {
+    font-size: 1rem;
+  }
+
+  .charts-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .chart-tabs {
+    width: 100%;
+  }
+
+  .chart-tab {
+    flex: 1;
+    text-align: center;
+  }

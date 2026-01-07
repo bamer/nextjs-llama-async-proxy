@@ -1,3 +1,61 @@
+
+.empty {
+  padding: var(--xl);
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+/* Utility */
+.color-success {
+  border-left: 3px solid var(--success);
+}
+.color-danger {
+  border-left: 3px solid var(--danger);
+}
+.color-warning {
+  border-left: 3px solid var(--warning);
+}
+.color-info {
+  border-left: 3px solid var(--info);
+}
+
+/* Router Mode Styles */
+.router-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sm);
+  padding: var(--sm) var(--md);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.router-indicator::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.router-indicator.success {
+  background: #d1fae5;
+  color: #065f46;
+}
+.router-indicator.success::before {
+  background: var(--success);
+  animation: pulse 2s infinite;
+}
+
+.router-indicator.default {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+html.dark-mode .router-indicator.default {
+  background: #064e3b;
+  color: #86efac;
+}
+
 .router-indicator.default::before {
   background: var(--border-color);
 }
@@ -38,13 +96,3 @@ html.dark-mode .badge.unloaded {
   text-transform: capitalize;
 }
 
-/* Button group */
-.button-group {
-  display: flex;
-  gap: var(--md);
-  margin-bottom: var(--md);
-}
-
-/* Router status display */
-.router-status {
-  padding: var(--md);

@@ -62,4 +62,7 @@
   .stats-grid {
     grid-template-columns: 1fr;
   }
+  .router-title h3 {
+    font-size: 1rem;
+  }
 }

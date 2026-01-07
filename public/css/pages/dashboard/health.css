@@ -1,3 +1,11 @@
+  display: flex;
+  gap: var(--md);
+  margin-bottom: var(--md);
+}
+
+/* Router status display */
+.router-status {
+  padding: var(--md);
   background: var(--bg-tertiary);
   border-radius: var(--radius);
   font-size: 0.875rem;
@@ -48,3 +56,43 @@
 .router-header {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--md);
+  margin-bottom: var(--md);
+}
+
+.router-title {
+  display: flex;
+  align-items: center;
+  gap: var(--md);
+}
+
+.router-title h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+}
+
+.router-info {
+  display: flex;
+  gap: var(--lg);
+  flex-wrap: wrap;
+}
+
+.info-item {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.router-controls {
+  display: flex;
+  gap: var(--md);
+  flex-wrap: wrap;
+}
+
+.router-controls .btn {
+  min-width: 120px;
+}
+
+/* Stats Grid */
