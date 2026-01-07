@@ -102,7 +102,7 @@ class LogsPage extends Component {
         Component.h("button", { className: "btn btn-danger", "data-action": "clear" }, "Clear"),
         Component.h(
           "select",
-          { "data-field": "level" },
+          { "data-field": "level", value: this.state.filters.level },
           Component.h("option", { value: "all" }, "All Levels"),
           Component.h("option", { value: "info" }, "Info"),
           Component.h("option", { value: "warn" }, "Warning"),

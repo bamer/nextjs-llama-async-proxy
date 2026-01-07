@@ -55,6 +55,11 @@ class Component {
 
   // Re-render - simple full replacement (native approach)
   update() {
+    // Check if component wants to skip this update
+    if (this.shouldUpdate && !this.shouldUpdate(this.props)) {
+      return;
+    }
+
     const oldEl = this._el;
 
     const rendered = this.render();
@@ -171,6 +176,7 @@ class Component {
     // Handle Component classes
     if (typeof tag === "function" && tag.prototype instanceof Component) {
       const comp = new tag(attrs);
+      comp.props = attrs; // Ensure props are set
       const el = comp.render();
       if (el instanceof HTMLElement) {
         el._component = comp;
@@ -196,6 +202,8 @@ class Component {
     }
 
     const el = document.createElement(tag);
+    let valueAttr = null;
+
     Object.entries(attrs).forEach(([k, v]) => {
       if (k === "className") {
         el.className = v;
@@ -207,8 +215,19 @@ class Component {
         Object.entries(v).forEach(([dk, dv]) => {
           el.dataset[dk] = dv;
         });
-      } else if (k === "value" || k === "checked") {
-        // Set value and checked as properties for form elements
+      } else if (k === "value") {
+        // For select elements, store value and set after children are added
+        if (tag === "select") {
+          valueAttr = v;
+        } else {
+          // For input/textarea, set immediately
+          if (tag === "textarea") {
+            el.setAttribute(k, v);
+          }
+          el[k] = v;
+        }
+      } else if (k === "checked") {
+        // Set checked as property for checkboxes and radios
         el[k] = v;
       } else if (typeof v === "boolean") {
         // Boolean attributes (disabled, checked, etc.) - only set when true
@@ -219,6 +238,7 @@ class Component {
         el.setAttribute(k, v);
       }
     });
+
     children.forEach((c) => {
       if (typeof c === "string" || typeof c === "number") {
         el.appendChild(document.createTextNode(String(c)));
@@ -233,6 +253,12 @@ class Component {
         }
       }
     });
+
+    // Set select value AFTER children are added
+    if (valueAttr !== null && tag === "select") {
+      el.value = valueAttr;
+    }
+
     return el;
   }
 }

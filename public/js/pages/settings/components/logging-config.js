@@ -17,7 +17,19 @@ class LoggingConfig extends Component {
     };
   }
 
-  componentWillReceiveProps(newProps) {
+  shouldUpdate(newProps) {
+    // Skip re-render if none of our relevant props changed
+    return (
+      newProps.maxFileSize !== this.props.maxFileSize ||
+      newProps.maxFiles !== this.props.maxFiles ||
+      newProps.logLevel !== this.props.logLevel ||
+      newProps.enableFileLogging !== this.props.enableFileLogging ||
+      newProps.enableDatabaseLogging !== this.props.enableDatabaseLogging ||
+      newProps.enableConsoleLogging !== this.props.enableConsoleLogging
+    );
+  }
+
+  willReceiveProps(newProps) {
     // Only sync state if props actually changed (avoid overwriting user input)
     const newState = {};
     let hasChanges = false;
