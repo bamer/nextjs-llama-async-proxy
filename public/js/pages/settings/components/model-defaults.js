@@ -49,7 +49,8 @@ class ModelDefaultsForm extends Component {
                 this.setState({ threads: val });
                 this.props.onThreadsChange?.(val);
               },
-            })
+            }),
+            Component.h("small", {}, "CPU threads")
           ),
           Component.h(
             "div",
@@ -66,7 +67,8 @@ class ModelDefaultsForm extends Component {
                 this.setState({ batch_size: val });
                 this.props.onBatchSizeChange?.(val);
               },
-            })
+            }),
+            Component.h("small", {}, "Batch size")
           ),
           Component.h(
             "div",
@@ -84,7 +86,8 @@ class ModelDefaultsForm extends Component {
                 this.setState({ temperature: val });
                 this.props.onTemperatureChange?.(val);
               },
-            })
+            }),
+            Component.h("small", {}, "Response randomness")
           ),
           Component.h(
             "div",
@@ -102,7 +105,8 @@ class ModelDefaultsForm extends Component {
                 this.setState({ repeatPenalty: val });
                 this.props.onRepeatPenaltyChange?.(val);
               },
-            })
+            }),
+            Component.h("small", {}, "Penalize repetition")
           )
         )
       )

@@ -29,6 +29,15 @@ class DashboardPage extends Component {
 
   didMount() {
     this.unsubscribers = [];
+    this.routerCardUpdater = null;
+    
+    // Provide subscription callback to RouterCard
+    if (this.routerCardComponent) {
+      this.routerCardComponent.props.subscribeToUpdates = (callback) => {
+        this.routerCardUpdater = callback;
+      };
+    }
+    
     this.unsubscribers.push(
       stateManager.subscribe("llamaStatus", (status) => {
         // Update state directly without setState to preserve charts
@@ -37,6 +46,10 @@ class DashboardPage extends Component {
         if (this.state.routerLoading) {
           // Clear loading when port changes (started or stopped)
           this.state.routerLoading = false;
+        }
+        // Notify RouterCard of status update
+        if (this.routerCardUpdater) {
+          this.routerCardUpdater(status);
         }
         // Update RouterCard UI only (not full page re-render)
         this._updateRouterCardUI();

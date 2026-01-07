@@ -1,0 +1,118 @@
+/**
+ * Router Configuration Component
+ * Displays and manages router-specific settings
+ */
+
+class RouterConfig extends Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      maxModelsLoaded: props.maxModelsLoaded || 4,
+      parallelSlots: props.parallelSlots || 1,
+      ctx_size: props.ctx_size || 4096,
+      gpuLayers: props.gpuLayers || 0,
+    };
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.state = {
+      maxModelsLoaded: newProps.maxModelsLoaded || 4,
+      parallelSlots: newProps.parallelSlots || 1,
+      ctx_size: newProps.ctx_size || 4096,
+      gpuLayers: newProps.gpuLayers || 0,
+    };
+  }
+
+  render() {
+    return Component.h(
+      "div",
+      { className: "settings-section" },
+      Component.h("h2", {}, "Router Configuration"),
+      Component.h("p", { className: "section-desc" }, "Configure llama.cpp router behavior"),
+      Component.h(
+        "div",
+        { className: "card" },
+        Component.h(
+          "div",
+          { className: "defaults-grid" },
+          Component.h(
+            "div",
+            { className: "form-group" },
+            Component.h("label", {}, "Max Models"),
+            Component.h("input", {
+              type: "number",
+              min: "1",
+              max: "16",
+              value: this.state.maxModelsLoaded,
+              id: "maxModelsLoaded",
+              onChange: (e) => {
+                const val = parseInt(e.target.value) || 4;
+                this.setState({ maxModelsLoaded: val });
+                this.props.onMaxModelsLoadedChange?.(val);
+              },
+            }),
+            Component.h("small", {}, "Models in memory")
+          ),
+          Component.h(
+            "div",
+            { className: "form-group" },
+            Component.h("label", {}, "Parallel Slots"),
+            Component.h("input", {
+              type: "number",
+              min: "1",
+              max: "16",
+              value: this.state.parallelSlots,
+              id: "parallelSlots",
+              onChange: (e) => {
+                const val = parseInt(e.target.value) || 1;
+                this.setState({ parallelSlots: val });
+                this.props.onParallelSlotsChange?.(val);
+              },
+            }),
+            Component.h("small", {}, "Processing slots")
+          ),
+          Component.h(
+            "div",
+            { className: "form-group" },
+            Component.h("label", {}, "Context Size"),
+            Component.h("input", {
+              type: "number",
+              min: "512",
+              max: "32768",
+              step: "512",
+              value: this.state.ctx_size,
+              id: "ctx_size",
+              onChange: (e) => {
+                const val = parseInt(e.target.value) || 4096;
+                this.setState({ ctx_size: val });
+                this.props.onCtxSizeChange?.(val);
+              },
+            }),
+            Component.h("small", {}, "Token window")
+          ),
+          Component.h(
+            "div",
+            { className: "form-group" },
+            Component.h("label", {}, "GPU Layers"),
+            Component.h("input", {
+              type: "number",
+              min: "0",
+              max: "200",
+              value: this.state.gpuLayers,
+              id: "gpuLayers",
+              onChange: (e) => {
+                const val = parseInt(e.target.value) || 0;
+                this.setState({ gpuLayers: val });
+                this.props.onGpuLayersChange?.(val);
+              },
+            }),
+            Component.h("small", {}, "GPU offload layers")
+          )
+        )
+      )
+    );
+  }
+}
+
+window.RouterConfig = RouterConfig;

@@ -78,6 +78,7 @@ class Sidebar extends Component {
     const t = e.target.closest("[data-page]");
     if (t) {
       e.preventDefault();
+      e.stopPropagation();
       const p = t.dataset.page;
       window.router.navigate(`/${p === "dashboard" ? "" : p}`);
     }

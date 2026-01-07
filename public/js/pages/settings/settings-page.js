@@ -30,6 +30,15 @@ class SettingsPage extends Component {
 
   async didMount() {
     this.unsubscribers = [];
+    this.routerCardUpdater = null;
+
+    // Provide subscription callback to RouterCard
+    if (this.routerCardComponent) {
+      this.routerCardComponent.props.subscribeToUpdates = (callback) => {
+        this.routerCardUpdater = callback;
+      };
+    }
+
     this.unsubscribers.push(
       stateManager.subscribe("routerStatus", (rs) => {
         this.setState({ routerStatus: rs });
@@ -38,6 +47,10 @@ class SettingsPage extends Component {
     this.unsubscribers.push(
       stateManager.subscribe("llamaStatus", (ls) => {
         this.setState({ llamaStatus: ls });
+        // Notify RouterCard of status update
+        if (this.routerCardUpdater) {
+          this.routerCardUpdater(ls);
+        }
       })
     );
   }
@@ -47,7 +60,7 @@ class SettingsPage extends Component {
   }
 
   async _save() {
-    const btn = this._el?.querySelector("[data-action=\"save\"]");
+    const btn = this._el?.querySelector('[data-action="save"]');
     if (btn) {
       btn.textContent = "Saving...";
       btn.disabled = true;
@@ -76,6 +89,11 @@ class SettingsPage extends Component {
         gpuLayers: this.state.gpuLayers,
       };
 
+      // Update config with ctx_size
+      config.ctx_size = this.state.ctx_size;
+
+      console.log("[DEBUG] Saving config and settings", { config, settings });
+
       await stateManager.updateConfig(config);
       await stateManager.updateSettings(settings);
 
@@ -84,6 +102,7 @@ class SettingsPage extends Component {
 
       showNotification("Settings saved successfully", "success");
     } catch (e) {
+      console.error("[DEBUG] Save failed:", e.message);
       showNotification(`Save failed: ${e.message}`, "error");
     } finally {
       if (btn) {
@@ -143,26 +162,37 @@ class SettingsPage extends Component {
   render() {
     const rs = this.state.routerStatus || {};
     const ls = this.state.llamaStatus || {};
-    const isRunning = rs.status === "running" || ls.status === "running";
+    const isRunning = rs.port || ls.port;
     const displayPort = rs.port || ls.port || this.state.port;
 
     return Component.h(
       "div",
       { className: "settings-page" },
       Component.h("h1", {}, "Settings"),
-      Component.h(window.SettingsRouterCard, {
+      Component.h(window.RouterCard, {
+        status: this.state.llamaStatus,
         routerStatus: this.state.routerStatus,
-        llamaStatus: this.state.llamaStatus,
+        models: this.state.models || [],
+        configPort: this.state.port,
+        onAction: (action) => {
+          if (action === "start") {
+            this.handleStart({ preventDefault: () => {} });
+          } else if (action === "stop") {
+            this.handleStop({ preventDefault: () => {} });
+          } else if (action === "restart") {
+            this.handleRestart({ preventDefault: () => {} });
+          }
+        },
+      }),
+      Component.h(window.RouterConfig, {
         maxModelsLoaded: this.state.maxModelsLoaded,
         parallelSlots: this.state.parallelSlots,
         ctx_size: this.state.ctx_size,
         gpuLayers: this.state.gpuLayers,
-        port: displayPort,
-        isRunning,
-        loadedCount: rs.models?.filter((m) => m.state === "loaded").length || 0,
-        onStart: () => this.handleStart({ preventDefault: () => {} }),
-        onStop: () => this.handleStop({ preventDefault: () => {} }),
-        onRestart: () => this.handleRestart({ preventDefault: () => {} }),
+        onMaxModelsLoadedChange: (val) => this.setState({ maxModelsLoaded: val }),
+        onParallelSlotsChange: (val) => this.setState({ parallelSlots: val }),
+        onCtxSizeChange: (val) => this.setState({ ctx_size: val }),
+        onGpuLayersChange: (val) => this.setState({ gpuLayers: val }),
       }),
       Component.h(window.ServerPathsForm, {
         baseModelsPath: this.state.baseModelsPath,
