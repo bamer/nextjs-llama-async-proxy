@@ -18,15 +18,19 @@ export default {
   testMatch: ["**/__tests__/**/*.test.js"],
   collectCoverage: true,
   collectCoverageFrom: [
-    "__tests__/**/*.js",
-    "public/js/utils/**/*.js",
     "server.js",
-    "!node_modules/**",
+    "server/**/*.js",
+    "public/js/utils/**/*.js",
+    "public/js/services/**/*.js",
+    "public/js/core/**/*.js",
+    "!**/node_modules/**",
+    "!**/coverage/**",
   ],
   coverageDirectory: "coverage",
   coverageReporters: ["text", "lcov", "html", "json-summary"],
-  // Coverage collection enabled for reporting
-  // Note: ESM modules may show 0% in terminal but coverage files are generated
   testTimeout: 30000,
   verbose: false,
+  moduleNameMapper: {
+    "^(\\.{1,2}/.*)\\.js$": "$1",
+  },
 };

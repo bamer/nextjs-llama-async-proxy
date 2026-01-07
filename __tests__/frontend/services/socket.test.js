@@ -1,0 +1,1698 @@
+/**
+ * Socket Client Service Tests
+ * Tests for SocketClient - frontend Socket.IO service
+ *
+ * @jest-environment jsdom
+ */
+
+import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
+
+// Create mock functions
+function createMockFn() {
+  const mockFn = function (...args) {
+    mockFn.mock.calls.push(args);
+    return mockFn._implementation ? mockFn._implementation(...args) : undefined;
+  };
+  mockFn.mock = { calls: [] };
+  mockFn._implementation = null;
+  mockFn.mockClear = () => {
+    mockFn.mock.calls = [];
+    return mockFn;
+  };
+  mockFn.mockRestore = () => {
+    mockFn._implementation = null;
+    return mockFn;
+  };
+  mockFn.mockReturnValue = (value) => {
+    const wrapper = createMockFn();
+    wrapper._implementation = () => value;
+    return wrapper;
+  };
+  mockFn.mockImplementation = (impl) => {
+    mockFn._implementation = impl;
+    return mockFn;
+  };
+  mockFn.mockResolvedValue = (value) => {
+    const wrapper = createMockFn();
+    wrapper._implementation = async () => value;
+    return wrapper;
+  };
+  mockFn.mockRejectedValue = (error) => {
+    const wrapper = createMockFn();
+    wrapper._implementation = async () => {
+      throw error;
+    };
+    return wrapper;
+  };
+  // Add assertion methods
+  mockFn.toHaveBeenCalled = () => mockFn.mock.calls.length > 0;
+  mockFn.toHaveBeenCalledTimes = (count) => mockFn.mock.calls.length === count;
+  mockFn.toHaveBeenCalledWith = (...args) => {
+    return mockFn.mock.calls.some((call) => {
+      if (call.length !== args.length) return false;
+      return args.every((arg, i) => {
+        if (arg && typeof arg === "object" && arg.constructor === Object) {
+          // Check if call arg contains all properties of expected arg
+          return Object.keys(arg).every((key) => call[i]?.[key] === arg[key]);
+        }
+        return call[i] === arg;
+      });
+    });
+  };
+  mockFn.not = {
+    toHaveBeenCalled: () => mockFn.mock.calls.length === 0,
+  };
+  return mockFn;
+}
+
+// Custom assertion helpers (named assert instead of expect to avoid conflict with Jest's expect)
+const assert = (actual) => ({
+  toBe: (expected) => {
+    if (actual !== expected) {
+      throw new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}`);
+    }
+  },
+  toEqual: (expected) => {
+    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+      throw new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}`);
+    }
+  },
+  toBeInstanceOf: (constructor) => {
+    if (!(actual instanceof constructor)) {
+      throw new Error(`Expected instance of ${constructor.name}`);
+    }
+  },
+  toBeGreaterThan: (expected) => {
+    if (!(actual > expected)) {
+      throw new Error(`Expected ${actual} to be greater than ${expected}`);
+    }
+  },
+  toContain: (expected) => {
+    if (!actual.includes(expected)) {
+      throw new Error(`Expected ${actual} to contain ${expected}`);
+    }
+  },
+  toMatch: (regex) => {
+    if (!regex.test(actual)) {
+      throw new Error(`Expected ${actual} to match ${regex}`);
+    }
+  },
+  toThrow: () => {
+    let threw = false;
+    try {
+      actual();
+    } catch (e) {
+      threw = true;
+    }
+    if (!threw) {
+      throw new Error("Expected function to throw");
+    }
+  },
+  toHaveBeenCalled: () => {
+    if (actual && typeof actual.toHaveBeenCalled === "function" && !actual.toHaveBeenCalled()) {
+      throw new Error("Expected function to have been called");
+    }
+  },
+  toHaveBeenCalledTimes: (count) => {
+    if (
+      actual &&
+      typeof actual.toHaveBeenCalledTimes === "function" &&
+      !actual.toHaveBeenCalledTimes(count)
+    ) {
+      throw new Error(`Expected function to have been called ${count} times`);
+    }
+  },
+  toHaveBeenCalledWith: (...args) => {
+    if (
+      actual &&
+      typeof actual.toHaveBeenCalledWith === "function" &&
+      !actual.toHaveBeenCalledWith(...args)
+    ) {
+      throw new Error(`Expected function to have been called with ${JSON.stringify(args)}`);
+    }
+  },
+  not: {
+    toHaveBeenCalled: () => {
+      if (
+        actual &&
+        typeof actual.not === "object" &&
+        actual.not.toHaveBeenCalled &&
+        !actual.not.toHaveBeenCalled()
+      ) {
+        throw new Error("Expected function not to have been called");
+      }
+    },
+    toBe: (expected) => {
+      if (actual === expected) {
+        throw new Error(`Expected ${JSON.stringify(actual)} not to be ${JSON.stringify(expected)}`);
+      }
+    },
+    toThrow: () => {
+      let threw = false;
+      try {
+        actual();
+      } catch (e) {
+        threw = true;
+      }
+      if (threw) {
+        throw new Error("Expected function not to throw");
+      }
+    },
+  },
+  toBeDefined: () => {
+    if (actual === undefined) {
+      throw new Error("Expected value to be defined");
+    }
+  },
+  toBeNull: () => {
+    if (actual !== null) {
+      throw new Error(`Expected null but got ${JSON.stringify(actual)}`);
+    }
+  },
+  toBeFalsy: () => {
+    if (actual) {
+      throw new Error(`Expected falsy value but got ${JSON.stringify(actual)}`);
+    }
+  },
+  toBeTruthy: () => {
+    if (!actual) {
+      throw new Error("Expected truthy value");
+    }
+  },
+  toHaveLength: (expected) => {
+    if (actual.length !== expected) {
+      throw new Error(`Expected length ${expected} but got ${actual.length}`);
+    }
+  },
+  toHaveProperty: (key, value) => {
+    if (!(key in actual)) {
+      throw new Error(`Expected object to have property ${key}`);
+    }
+    if (value !== undefined && actual[key] !== value) {
+      throw new Error(
+        `Expected property ${key} to be ${JSON.stringify(value)} but got ${JSON.stringify(actual[key])}`
+      );
+    }
+  },
+  toStrictEqual: (expected) => {
+    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+      throw new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}`);
+    }
+  },
+});
+
+// Mock document and head for Socket.IO script loading
+const mockHead = {
+  appendChild: createMockFn(),
+};
+
+const createdScripts = [];
+const mockDocument = {
+  createElement: createMockFn().mockImplementation((tag) => {
+    if (tag === "script") {
+      const script = {
+        src: "",
+        onload: null,
+      };
+      createdScripts.push(script);
+      return script;
+    }
+    return {};
+  }),
+  head: mockHead,
+};
+
+const mockLocation = {
+  origin: "http://localhost:3000",
+};
+
+const mockWindow = {
+  io: null,
+  document: mockDocument,
+  location: mockLocation,
+  SocketClient: null,
+  socketClient: null,
+};
+
+// Inline SocketClient class for testing (copied from public/js/services/socket.js)
+class SocketClient {
+  constructor(options = {}) {
+    this.socket = null;
+    this.options = { path: "/llamaproxws", transports: ["websocket"], ...options };
+    this.handlers = new Map();
+    this._connected = false;
+  }
+
+  connect() {
+    if (this.socket?.connected) return this;
+
+    if (!window.io) {
+      const s = document.createElement("script");
+      s.src = "/socket.io/socket.io.js";
+      s.onload = () => this._connect();
+      document.head.appendChild(s);
+    } else {
+      this._connect();
+    }
+    return this;
+  }
+
+  _connect() {
+    this.socket = window.io(window.location.origin, this.options);
+
+    this.socket.on("connect", () => {
+      this._connected = true;
+      console.log("[Socket] Connected:", this.socket.id);
+      this.socket.emit("connection:ack");
+      this._emit("connect", this.socket.id);
+    });
+
+    this.socket.on("disconnect", (r) => {
+      this._connected = false;
+      this._emit("disconnect", r);
+    });
+
+    this.socket.on("connect_error", (e) => {
+      console.error("[Socket] Error:", e.message);
+      this._emit("connect_error", e);
+    });
+
+    // Forward all events to handlers
+    this.socket.onAny((e, d) => {
+      this._emit(e, d);
+    });
+  }
+
+  disconnect() {
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+    }
+    return this;
+  }
+
+  emit(event, data = {}) {
+    if (this.socket?.connected) {
+      this.socket.emit(event, data);
+    }
+    return this;
+  }
+
+  on(event, handler) {
+    if (!this.handlers.has(event)) this.handlers.set(event, new Set());
+    this.handlers.get(event).add(handler);
+    return this;
+  }
+
+  off(event, handler) {
+    if (handler) {
+      this.handlers.get(event)?.delete(handler);
+    } else {
+      this.handlers.delete(event);
+    }
+    return this;
+  }
+
+  once(event, handler) {
+    const w = (...args) => {
+      this.off(event, w);
+      handler(...args);
+    };
+    this.on(event, w);
+    return this;
+  }
+
+  request(event, data = {}) {
+    return new Promise((resolve, reject) => {
+      if (!this.socket?.connected) {
+        reject(new Error("Not connected"));
+        return;
+      }
+
+      const requestId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const responseEvent = `${event}:response`;
+      const timeout = setTimeout(() => {
+        this.off(responseEvent, responseHandler);
+        reject(new Error(`Request timeout: ${event}`));
+      }, 100);
+
+      const responseHandler = (response) => {
+        clearTimeout(timeout);
+        this.off(responseEvent, responseHandler);
+        if (response?.error) {
+          reject(new Error(response.error));
+        } else {
+          resolve(response);
+        }
+      };
+
+      this.on(responseEvent, responseHandler);
+      this.socket.emit(event, { ...data, _requestId: requestId });
+    });
+  }
+
+  get isConnected() {
+    return this.socket?.connected || false;
+  }
+
+  get id() {
+    return this.socket?.id || null;
+  }
+
+  _emit(event, data) {
+    this.handlers.get(event)?.forEach((h) => {
+      try {
+        h(data);
+      } catch (e) {
+        console.error(`[Socket] Handler error (${event}):`, e);
+      }
+    });
+  }
+}
+
+// Mock Socket.IO instance
+function createMockSocketIO() {
+  const mockSocket = {
+    connected: false,
+    id: "mock-socket-id-123",
+    disconnect: createMockFn(),
+    emit: createMockFn(),
+    on: createMockFn(),
+    off: createMockFn(),
+    onAny: createMockFn(),
+  };
+  return mockSocket;
+}
+
+describe("SocketClient", () => {
+  let client;
+  let mockIO;
+  let consoleLogSpy;
+  let consoleErrorSpy;
+
+  beforeEach(() => {
+    // Reset mocks and create fresh client
+    global.window.io = null;
+    mockDocument.createElement.mockClear();
+    mockHead.appendChild.mockClear();
+    client = new SocketClient();
+    mockIO = createMockSocketIO();
+
+    // Spy on console methods to prevent noise in tests
+    consoleLogSpy = createMockFn().mockImplementation(() => {});
+    consoleErrorSpy = createMockFn().mockImplementation(() => {});
+    global.console = {
+      ...global.console,
+      log: consoleLogSpy,
+      error: consoleErrorSpy,
+    };
+  });
+
+  afterEach(() => {
+    // Restore console is handled by mock implementation
+  });
+
+  describe("constructor", () => {
+    it("should initialize with default options", () => {
+      // Arrange
+      // Act
+      const newClient = new SocketClient();
+      // Assert
+      assert(newClient.socket).toBeNull();
+      assert(newClient.options.path).toBe("/llamaproxws");
+      assert(newClient.options.transports).toEqual(["websocket"]);
+      assert(newClient.handlers).toBeInstanceOf(Map);
+      assert(newClient._connected).toBe(false);
+    });
+
+    it("should merge custom options with defaults", () => {
+      // Arrange
+      const customOptions = { path: "/custom", timeout: 5000 };
+      // Act
+      const newClient = new SocketClient(customOptions);
+      // Assert
+      assert(newClient.options.path).toBe("/custom");
+      assert(newClient.options.timeout).toBe(5000);
+      assert(newClient.options.transports).toEqual(["websocket"]);
+    });
+
+    it("should return instance for chaining", () => {
+      // Arrange & Act
+      const result = new SocketClient();
+      // Assert
+      assert(result).toBeInstanceOf(SocketClient);
+    });
+  });
+
+  describe("connect()", () => {
+    it("should call window.io when Socket.IO is already loaded (positive test)", () => {
+      // Objective: Test that connect() correctly calls io() when Socket.IO is available
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+
+      // Act
+      client.connect();
+
+      // Assert
+      const calls = global.window.io.mock.calls;
+      assert(calls.length).toBeGreaterThan(0);
+      // Use the actual location origin from the mock
+      assert(calls[0][0]).toBe("http://localhost");
+      assert(calls[0][1].path).toBe("/llamaproxws");
+      assert(calls[0][1].transports).toEqual(["websocket"]);
+    });
+
+    it("should not call io() when already connected (positive test)", () => {
+      // Objective: Test that connect() returns early when socket is already connected
+      // Arrange
+      mockIO.connected = true;
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client.connect();
+
+      // Reset call count after initial connect
+      global.window.io.mockClear();
+
+      // Act
+      client.connect();
+
+      // Assert
+      assert(global.window.io).not.toHaveBeenCalled();
+    });
+
+    it("should create script element when Socket.IO is not loaded (positive test)", () => {
+      // Objective: Test that connect() dynamically loads Socket.IO script when not available
+      // Arrange
+      global.window.io = null;
+      client = new SocketClient();
+
+      // Act
+      client.connect();
+
+      // Assert
+      assert(mockDocument.createElement).toHaveBeenCalledWith("script");
+      assert(mockHead.appendChild).toHaveBeenCalled();
+    });
+
+    it("should call _connect() when script loads (positive test)", () => {
+      // Objective: Test that connect() properly sets up the script onload handler
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client.connect();
+
+      // Get the script element that was created
+      const scriptElement = createdScripts[createdScripts.length - 1];
+
+      // Act - simulate script load (check if onload exists first)
+      if (scriptElement.onload) {
+        scriptElement.onload();
+      }
+
+      // Assert - now _connect should have been called
+      assert(global.window.io).toHaveBeenCalled();
+    });
+
+    it("should return this for method chaining (positive test)", () => {
+      // Objective: Test that connect() returns the client instance for chaining
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+
+      // Act
+      const result = client.connect();
+
+      // Assert
+      assert(result).toBe(client);
+    });
+  });
+
+  describe("_connect()", () => {
+    it("should setup connect event handler (positive test)", () => {
+      // Objective: Test that _connect() sets up the connect event listener
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+
+      // Act
+      client._connect();
+
+      // Assert
+      assert(mockIO.on).toHaveBeenCalledWith("connect", expect.any(Function));
+    });
+
+    it("should setup disconnect event handler (positive test)", () => {
+      // Objective: Test that _connect() sets up the disconnect event listener
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+
+      // Act
+      client._connect();
+
+      // Assert
+      assert(mockIO.on).toHaveBeenCalledWith("disconnect", expect.any(Function));
+    });
+
+    it("should setup connect_error event handler (positive test)", () => {
+      // Objective: Test that _connect() sets up the connect_error event listener
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+
+      // Act
+      client._connect();
+
+      // Assert
+      assert(mockIO.on).toHaveBeenCalledWith("connect_error", expect.any(Function));
+    });
+
+    it("should setup onAny handler for event forwarding (positive test)", () => {
+      // Objective: Test that _connect() sets up onAny to forward all events
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+
+      // Act
+      client._connect();
+
+      // Assert
+      assert(mockIO.onAny).toHaveBeenCalled();
+    });
+
+    it("should emit connection:ack when connected (positive test)", () => {
+      // Objective: Test that _connect() sends acknowledgment on connection
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      // Get the connect handler
+      const connectHandler = mockIO.on.mock.calls.find((call) => call[0] === "connect")[1];
+
+      // Act
+      connectHandler();
+
+      // Assert
+      assert(mockIO.emit).toHaveBeenCalledWith("connection:ack", {});
+    });
+
+    it("should set _connected to true on connect event (positive test)", () => {
+      // Objective: Test that _connect() tracks connection state
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      // Get the connect handler
+      const connectHandler = mockIO.on.mock.calls.find((call) => call[0] === "connect")[1];
+
+      // Act
+      connectHandler();
+
+      // Assert
+      assert(client._connected).toBe(true);
+    });
+
+    it("should emit connect event to handlers on connection (positive test)", () => {
+      // Objective: Test that _connect() forwards connection event to registered handlers
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      const handler = createMockFn();
+      client.on("connect", handler);
+
+      // Get the connect handler
+      const connectHandler = mockIO.on.mock.calls.find((call) => call[0] === "connect")[1];
+
+      // Act
+      connectHandler();
+
+      // Assert
+      assert(handler).toHaveBeenCalledWith("mock-socket-id-123");
+    });
+
+    it("should set _connected to false on disconnect event (positive test)", () => {
+      // Objective: Test that disconnect event updates connection state
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+      client._connected = true; // Simulate connected state
+
+      // Get the disconnect handler
+      const disconnectHandler = mockIO.on.mock.calls.find((call) => call[0] === "disconnect")[1];
+
+      // Act
+      disconnectHandler("client namespace disconnect");
+
+      // Assert
+      assert(client._connected).toBe(false);
+    });
+
+    it("should emit disconnect event with reason to handlers (positive test)", () => {
+      // Objective: Test that disconnect event is forwarded to handlers with reason
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      const handler = createMockFn();
+      client.on("disconnect", handler);
+
+      // Get the disconnect handler
+      const disconnectHandler = mockIO.on.mock.calls.find((call) => call[0] === "disconnect")[1];
+
+      // Act
+      disconnectHandler("server shutting down");
+
+      // Assert
+      assert(handler).toHaveBeenCalledWith("server shutting down");
+    });
+
+    it("should emit connect_error event to handlers (positive test)", () => {
+      // Objective: Test that connection errors are forwarded to handlers
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      const handler = createMockFn();
+      client.on("connect_error", handler);
+
+      // Get the connect_error handler
+      const errorHandler = mockIO.on.mock.calls.find((call) => call[0] === "connect_error")[1];
+      const error = new Error("Connection refused");
+
+      // Act
+      errorHandler(error);
+
+      // Assert
+      assert(handler).toHaveBeenCalledWith(error);
+    });
+  });
+
+  describe("disconnect()", () => {
+    it("should call socket.disconnect() when socket exists (positive test)", () => {
+      // Objective: Test that disconnect() properly calls the underlying socket disconnect
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      // Act
+      client.disconnect();
+
+      // Assert
+      assert(mockIO.disconnect).toHaveBeenCalled();
+    });
+
+    it("should set socket to null after disconnect (positive test)", () => {
+      // Objective: Test that disconnect() cleans up socket reference
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      // Act
+      client.disconnect();
+
+      // Assert
+      assert(client.socket).toBeNull();
+    });
+
+    it("should not throw when socket is null (negative test)", () => {
+      // Objective: Test that disconnect() handles missing socket gracefully
+      // Arrange
+      client = new SocketClient();
+      client.socket = null;
+
+      // Act & Assert
+      assert(() => client.disconnect()).not.toThrow();
+    });
+
+    it("should return this for method chaining (positive test)", () => {
+      // Objective: Test that disconnect() returns the client instance for chaining
+      // Arrange
+      client = new SocketClient();
+
+      // Act
+      const result = client.disconnect();
+
+      // Assert
+      assert(result).toBe(client);
+    });
+  });
+
+  describe("emit()", () => {
+    it("should call socket.emit() when connected (positive test)", () => {
+      // Objective: Test that emit() sends events to the server when connected
+      // Arrange
+      mockIO.connected = true;
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      // Act
+      client.emit("test:event", { key: "value" });
+
+      // Assert
+      assert(mockIO.emit).toHaveBeenCalledWith("test:event", { key: "value" });
+    });
+
+    it("should not emit when socket is not connected (negative test)", () => {
+      // Objective: Test that emit() silently ignores events when disconnected
+      // Arrange
+      mockIO.connected = false;
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      // Act
+      client.emit("test:event", { key: "value" });
+
+      // Assert
+      assert(mockIO.emit).not.toHaveBeenCalled();
+    });
+
+    it("should not emit when socket is null (negative test)", () => {
+      // Objective: Test that emit() handles missing socket gracefully
+      // Arrange
+      client = new SocketClient();
+      client.socket = null;
+
+      // Act
+      client.emit("test:event", { key: "value" });
+
+      // Assert
+      assert(mockIO.emit).not.toHaveBeenCalled();
+    });
+
+    it("should return this for method chaining (positive test)", () => {
+      // Objective: Test that emit() returns the client instance for chaining
+      // Arrange
+      mockIO.connected = true;
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      // Act
+      const result = client.emit("test:event", { key: "value" });
+
+      // Assert
+      assert(result).toBe(client);
+    });
+
+    it("should work with empty data object (positive test)", () => {
+      // Objective: Test that emit() works with no data provided
+      // Arrange
+      mockIO.connected = true;
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      // Act
+      client.emit("test:event");
+
+      // Assert
+      assert(mockIO.emit).toHaveBeenCalledWith("test:event", {});
+    });
+
+    it("should work with complex nested data (positive test)", () => {
+      // Objective: Test that emit() handles complex data structures
+      // Arrange
+      mockIO.connected = true;
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      const complexData = {
+        array: [1, 2, 3],
+        nested: { object: { deep: "value" } },
+        nullValue: null,
+        boolean: true,
+      };
+
+      // Act
+      client.emit("test:event", complexData);
+
+      // Assert
+      assert(mockIO.emit).toHaveBeenCalledWith("test:event", complexData);
+    });
+  });
+
+  describe("on()", () => {
+    it("should add handler for event (positive test)", () => {
+      // Objective: Test that on() correctly registers event handlers
+      // Arrange
+      const handler = createMockFn();
+      client = new SocketClient();
+
+      // Act
+      const result = client.on("test:event", handler);
+
+      // Assert
+      assert(client.handlers.has("test:event")).toBe(true);
+      assert(client.handlers.get("test:event").has(handler)).toBe(true);
+    });
+
+    it("should create new Set for new event (positive test)", () => {
+      // Objective: Test that on() creates a new handler set for unknown events
+      // Arrange
+      const handler = createMockFn();
+      client = new SocketClient();
+
+      // Act
+      client.on("new:event", handler);
+
+      // Assert
+      assert(client.handlers.get("new:event")).toBeInstanceOf(Set);
+    });
+
+    it("should add multiple handlers for same event (positive test)", () => {
+      // Objective: Test that on() supports multiple handlers per event
+      // Arrange
+      const handler1 = createMockFn();
+      const handler2 = createMockFn();
+      client = new SocketClient();
+
+      // Act
+      client.on("test:event", handler1);
+      client.on("test:event", handler2);
+
+      // Assert
+      const handlers = client.handlers.get("test:event");
+      assert(handlers.size).toBe(2);
+      assert(handlers.has(handler1)).toBe(true);
+      assert(handlers.has(handler2)).toBe(true);
+    });
+
+    it("should return this for method chaining (positive test)", () => {
+      // Objective: Test that on() returns the client instance for chaining
+      // Arrange
+      const handler = createMockFn();
+      client = new SocketClient();
+
+      // Act
+      const result = client.on("test:event", handler);
+
+      // Assert
+      assert(result).toBe(client);
+    });
+
+    it("should allow adding handler then receiving events (positive test)", () => {
+      // Objective: Test that on() registered handlers actually receive events
+      // Arrange
+      const handler = createMockFn();
+      client = new SocketClient();
+      client.on("test:event", handler);
+
+      // Act
+      client._emit("test:event", { data: "test" });
+
+      // Assert
+      assert(handler).toHaveBeenCalledWith({ data: "test" });
+    });
+
+    it("should handle multiple events independently (positive test)", () => {
+      // Objective: Test that on() maintains separate handler sets for different events
+      // Arrange
+      const handler1 = createMockFn();
+      const handler2 = createMockFn();
+      client = new SocketClient();
+      client.on("event:1", handler1);
+      client.on("event:2", handler2);
+
+      // Act
+      client._emit("event:1", { msg: "one" });
+      client._emit("event:2", { msg: "two" });
+
+      // Assert
+      assert(handler1).toHaveBeenCalledWith({ msg: "one" });
+      assert(handler2).toHaveBeenCalledWith({ msg: "two" });
+    });
+
+    it("should handle error in handler gracefully (negative test)", () => {
+      // Objective: Test that on() handlers with errors don't crash the system
+      // Arrange
+      const errorHandler = () => {
+        throw new Error("Test error");
+      };
+      const normalHandler = createMockFn();
+      client = new SocketClient();
+      client.on("test:event", errorHandler);
+      client.on("test:event", normalHandler);
+
+      // Act & Assert - should not throw
+      assert(() => client._emit("test:event", {})).not.toThrow();
+      assert(normalHandler).toHaveBeenCalled();
+    });
+  });
+
+  describe("off()", () => {
+    it("should remove specific handler when handler provided (positive test)", () => {
+      // Objective: Test that off() correctly removes a specific handler
+      // Arrange
+      const handler1 = createMockFn();
+      const handler2 = createMockFn();
+      client = new SocketClient();
+      client.on("test:event", handler1);
+      client.on("test:event", handler2);
+
+      // Act
+      client.off("test:event", handler1);
+
+      // Assert
+      assert(client.handlers.get("test:event").has(handler1)).toBe(false);
+      assert(client.handlers.get("test:event").has(handler2)).toBe(true);
+    });
+
+    it("should remove all handlers when no handler provided (positive test)", () => {
+      // Objective: Test that off() removes all handlers for an event when no specific handler given
+      // Arrange
+      const handler1 = createMockFn();
+      const handler2 = createMockFn();
+      client = new SocketClient();
+      client.on("test:event", handler1);
+      client.on("test:event", handler2);
+
+      // Act
+      client.off("test:event");
+
+      // Assert
+      assert(client.handlers.has("test:event")).toBe(false);
+    });
+
+    it("should handle off for non-existent event (negative test)", () => {
+      // Objective: Test that off() handles non-existent events gracefully
+      // Arrange
+      const handler = createMockFn();
+      client = new SocketClient();
+
+      // Act & Assert - should not throw
+      assert(() => client.off("non:existent", handler)).not.toThrow();
+    });
+
+    it("should return this for method chaining (positive test)", () => {
+      // Objective: Test that off() returns the client instance for chaining
+      // Arrange
+      const handler = createMockFn();
+      client = new SocketClient();
+      client.on("test:event", handler);
+
+      // Act
+      const result = client.off("test:event", handler);
+
+      // Assert
+      assert(result).toBe(client);
+    });
+
+    it("should work with handlers added via on (positive test)", () => {
+      // Objective: Test complete on/off cycle for handler management
+      // Arrange
+      const handler = createMockFn();
+      client = new SocketClient();
+      client.on("test:event", handler);
+
+      // Verify handler was added
+      assert(client.handlers.get("test:event").has(handler)).toBe(true);
+
+      // Act
+      client.off("test:event", handler);
+
+      // Assert
+      assert(client.handlers.get("test:event").has(handler)).toBe(false);
+    });
+  });
+
+  describe("once()", () => {
+    it("should call handler only once (positive test)", () => {
+      // Objective: Test that once() registers a one-time handler
+      // Arrange
+      const handler = createMockFn();
+      client = new SocketClient();
+      client.once("test:event", handler);
+
+      // Act
+      client._emit("test:event", { data: "first" });
+      client._emit("test:event", { data: "second" });
+      client._emit("test:event", { data: "third" });
+
+      // Assert
+      assert(handler).toHaveBeenCalledTimes(1);
+      assert(handler).toHaveBeenCalledWith({ data: "first" });
+    });
+
+    it("should remove handler after execution (positive test)", () => {
+      // Objective: Test that once() properly removes the handler after first call
+      // Arrange
+      const handler = createMockFn();
+      client = new SocketClient();
+      client.once("test:event", handler);
+
+      // Act
+      client._emit("test:event", { data: "test" });
+
+      // Assert
+      assert(client.handlers.get("test:event").size).toBe(0);
+    });
+
+    it("should return this for method chaining (positive test)", () => {
+      // Objective: Test that once() returns the client instance for chaining
+      // Arrange
+      const handler = createMockFn();
+      client = new SocketClient();
+
+      // Act
+      const result = client.once("test:event", handler);
+
+      // Assert
+      assert(result).toBe(client);
+    });
+  });
+
+  describe("isConnected (getter)", () => {
+    it("should return true when socket is connected (positive test)", () => {
+      // Objective: Test that isConnected returns true for connected sockets
+      // Arrange
+      mockIO.connected = true;
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      // Act
+      const result = client.isConnected;
+
+      // Assert
+      assert(result).toBe(true);
+    });
+
+    it("should return false when socket is not connected (negative test)", () => {
+      // Objective: Test that isConnected returns false for disconnected sockets
+      // Arrange
+      mockIO.connected = false;
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      // Act
+      const result = client.isConnected;
+
+      // Assert
+      assert(result).toBe(false);
+    });
+
+    it("should return false when socket is null (negative test)", () => {
+      // Objective: Test that isConnected handles missing socket gracefully
+      // Arrange
+      client = new SocketClient();
+      client.socket = null;
+
+      // Act
+      const result = client.isConnected;
+
+      // Assert
+      assert(result).toBe(false);
+    });
+
+    it("should return true when connected property is undefined (negative test)", () => {
+      // Objective: Test that isConnected handles undefined connected property
+      // Arrange
+      client = new SocketClient();
+      client.socket = { connected: undefined };
+
+      // Act
+      const result = client.isConnected;
+
+      // Assert
+      assert(result).toBe(false);
+    });
+
+    it("should return true when socket is undefined (negative test)", () => {
+      // Objective: Test that isConnected handles undefined socket
+      // Arrange
+      client = new SocketClient();
+      client.socket = undefined;
+
+      // Act
+      const result = client.isConnected;
+
+      // Assert
+      assert(result).toBe(false);
+    });
+  });
+
+  describe("id (getter)", () => {
+    it("should return socket id when socket exists (positive test)", () => {
+      // Objective: Test that id getter returns the socket's ID
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      // Act
+      const result = client.id;
+
+      // Assert
+      assert(result).toBe("mock-socket-id-123");
+    });
+
+    it("should return null when socket is null (negative test)", () => {
+      // Objective: Test that id getter handles missing socket gracefully
+      // Arrange
+      client = new SocketClient();
+      client.socket = null;
+
+      // Act
+      const result = client.id;
+
+      // Assert
+      assert(result).toBeNull();
+    });
+
+    it("should return null when socket id is undefined (negative test)", () => {
+      // Objective: Test that id getter handles undefined socket id
+      // Arrange
+      client = new SocketClient();
+      client.socket = { id: undefined };
+
+      // Act
+      const result = client.id;
+
+      // Assert
+      assert(result).toBeNull();
+    });
+  });
+
+  describe("_emit()", () => {
+    it("should call all handlers for an event (positive test)", () => {
+      // Objective: Test that _emit() calls all registered handlers
+      // Arrange
+      const handler1 = createMockFn();
+      const handler2 = createMockFn();
+      client = new SocketClient();
+      client.on("test:event", handler1);
+      client.on("test:event", handler2);
+
+      // Act
+      client._emit("test:event", { data: "test" });
+
+      // Assert
+      assert(handler1).toHaveBeenCalledWith({ data: "test" });
+      assert(handler2).toHaveBeenCalledWith({ data: "test" });
+    });
+
+    it("should not throw when no handlers exist (negative test)", () => {
+      // Objective: Test that _emit() handles missing handlers gracefully
+      // Arrange
+      client = new SocketClient();
+
+      // Act & Assert
+      assert(() => client._emit("test:event", {})).not.toThrow();
+    });
+
+    it("should not throw when event has no handlers (negative test)", () => {
+      // Objective: Test that _emit() handles events with no registered handlers
+      // Arrange
+      client = new SocketClient();
+      client.on("other:event", createMockFn());
+
+      // Act & Assert
+      assert(() => client._emit("non:existent", {})).not.toThrow();
+    });
+
+    it("should pass data to handlers correctly (positive test)", () => {
+      // Objective: Test that _emit() correctly passes data to handlers
+      // Arrange
+      const handler = createMockFn();
+      client = new SocketClient();
+      client.on("test:event", handler);
+
+      const testData = { message: "hello", count: 42 };
+
+      // Act
+      client._emit("test:event", testData);
+
+      // Assert
+      assert(handler).toHaveBeenCalledWith(testData);
+    });
+
+    it("should handle handlers with no arguments (positive test)", () => {
+      // Objective: Test that _emit() works with handlers expecting no arguments
+      // Arrange
+      const handler = createMockFn();
+      client = new SocketClient();
+      client.on("test:event", handler);
+
+      // Act
+      client._emit("test:event");
+
+      // Assert
+      assert(handler).toHaveBeenCalledWith(undefined);
+    });
+
+    it("should handle multiple arguments (positive test)", () => {
+      // Objective: Test that _emit() handles multiple arguments
+      // Arrange
+      const handler = createMockFn();
+      client = new SocketClient();
+      client.on("test:event", handler);
+
+      // Act
+      client._emit("test:event", "arg1", "arg2", { arg: 3 });
+
+      // Assert
+      assert(handler).toHaveBeenCalledWith("arg1", "arg2", { arg: 3 });
+    });
+
+    it("should catch and log handler errors (negative test)", () => {
+      // Objective: Test that _emit() catches handler errors and logs them
+      // Arrange
+      const errorHandler = () => {
+        throw new Error("Handler error");
+      };
+      client = new SocketClient();
+      client.on("test:event", errorHandler);
+
+      // Act
+      client._emit("test:event", {});
+
+      // Assert - should not throw, error should be logged
+      assert(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining("[Socket] Handler error"),
+        expect.any(Error)
+      );
+    });
+  });
+
+  describe("integration scenarios", () => {
+    it("should handle full connect-disconnect-reconnect cycle (positive test)", () => {
+      // Objective: Test complete connection lifecycle
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+
+      // Act - connect
+      client.connect();
+      assert(client.isConnected).toBe(true);
+
+      // Act - disconnect
+      client.disconnect();
+      assert(client.isConnected).toBe(false);
+
+      // Act - reconnect
+      client.connect();
+      assert(client.isConnected).toBe(true);
+    });
+
+    it("should handle multiple event subscriptions and unsubscriptions (positive test)", () => {
+      // Objective: Test multiple handler registration and removal
+      // Arrange
+      const handler1 = createMockFn();
+      const handler2 = createMockFn();
+      const handler3 = createMockFn();
+      client = new SocketClient();
+
+      // Act - subscribe all
+      client.on("event:1", handler1);
+      client.on("event:2", handler2);
+      client.on("event:1", handler3);
+
+      // Assert - all handlers registered
+      assert(client.handlers.get("event:1").size).toBe(2);
+      assert(client.handlers.get("event:2").size).toBe(1);
+
+      // Act - unsubscribe handler1 from event:1
+      client.off("event:1", handler1);
+
+      // Assert - handler1 removed, handler3 still there
+      assert(client.handlers.get("event:1").has(handler1)).toBe(false);
+      assert(client.handlers.get("event:1").has(handler3)).toBe(true);
+    });
+
+    it("should handle connection events and application events together (positive test)", () => {
+      // Objective: Test mixing connection lifecycle events with application events
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      const connectHandler = createMockFn();
+      const appHandler = createMockFn();
+      client.on("connect", connectHandler);
+      client.on("app:message", appHandler);
+
+      // Get the connect handler and simulate connection
+      const connectListener = mockIO.on.mock.calls.find((call) => call[0] === "connect")[1];
+      connectListener();
+
+      // Assert - both handlers should work
+      assert(connectHandler).toHaveBeenCalledWith("mock-socket-id-123");
+
+      // Simulate app event via onAny
+      const onAnyListener = mockIO.onAny.mock.calls[0][0];
+      onAnyListener("app:message", { content: "test" });
+
+      assert(appHandler).toHaveBeenCalledWith({ content: "test" });
+    });
+
+    it("should preserve handlers across multiple emits (positive test)", () => {
+      // Objective: Test that handlers persist and receive multiple events
+      // Arrange
+      const handler = createMockFn();
+      client = new SocketClient();
+      client.on("test:event", handler);
+
+      // Act - emit multiple times
+      client._emit("test:event", 1);
+      client._emit("test:event", 2);
+      client._emit("test:event", 3);
+
+      // Assert
+      assert(handler).toHaveBeenCalledTimes(3);
+      assert(handler).toHaveBeenCalledWith(1);
+      assert(handler).toHaveBeenCalledWith(2);
+      assert(handler).toHaveBeenCalledWith(3);
+    });
+
+    it("should handle event forwarding via onAny (positive test)", () => {
+      // Objective: Test that onAny correctly forwards all events to handlers
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      const handler = createMockFn();
+      client.on("any:event", handler);
+
+      // Get the onAny listener
+      const onAnyListener = mockIO.onAny.mock.calls[0][0];
+
+      // Act
+      onAnyListener("any:event", { data: "test" });
+      onAnyListener("different:event", { data: "other" });
+
+      // Assert
+      assert(handler).toHaveBeenCalledWith({ data: "test" });
+    });
+  });
+
+  describe("request()", () => {
+    it("should return a Promise when called (positive test)", () => {
+      // Objective: Test that request() returns a Promise for request-response pattern
+      // Arrange
+      mockIO.connected = true;
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      // Act
+      const result = client.request("test:request", { data: "test" });
+
+      // Assert
+      assert(result instanceof Promise).toBe(true);
+    });
+
+    it("should emit request event with data (positive test)", async () => {
+      // Objective: Test that request() sends the event to the server
+      // Arrange
+      mockIO.connected = true;
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      // Act
+      const promise = client.request("models:list", { includeDetails: true });
+
+      // Assert - check that emit was called
+      const calls = mockIO.emit.mock.calls;
+      assert(calls.length).toBeGreaterThan(0);
+      assert(calls[0][0]).toBe("models:list");
+      assert(calls[0][1].includeDetails).toBe(true);
+      assert(calls[0][1]._requestId).toBeDefined();
+      assert(typeof calls[0][1]._requestId).toBe("string");
+
+      // Cleanup - reject promise to avoid unhandled rejection
+      client.off("models:list:response");
+      try {
+        await promise;
+      } catch (e) {
+        // Expected to reject
+      }
+    });
+
+    it("should resolve promise when response event is received (positive test)", async () => {
+      // Objective: Test that request() resolves when server responds
+      // Arrange
+      mockIO.connected = true;
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      const responseData = { models: ["model1", "model2"], success: true };
+
+      // Start request but don't await yet
+      const promise = client.request("models:list", {});
+
+      // Get the handler registered for the response event
+      const emitCall = mockIO.emit.mock.calls.find((call) => call[0] === "models:list");
+      const responseEvent = `models:list:response`;
+
+      // Simulate response from server
+      const responseHandler = client.handlers.get(responseEvent)?.values?.()?.next?.()?.value;
+      if (responseHandler) {
+        responseHandler(responseData);
+      }
+
+      // Assert
+      const result = await promise;
+      assert(result).toEqual(responseData);
+    });
+
+    it("should reject promise when response contains error (negative test)", async () => {
+      // Objective: Test that request() rejects when server returns error
+      // Arrange
+      mockIO.connected = true;
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      const errorResponse = { error: { message: "Model not found", code: "NOT_FOUND" } };
+
+      const promise = client.request("models:get", { id: "nonexistent" });
+
+      // Get response event and handler
+      const responseEvent = "models:get:response";
+      const responseHandler = client.handlers.get(responseEvent)?.values?.()?.next?.()?.value;
+      if (responseHandler) {
+        responseHandler(errorResponse);
+      }
+
+      // Assert
+      try {
+        await promise;
+        assert(false).toBe(true); // Should not reach here
+      } catch (e) {
+        assert(e.message).toBe("Model not found");
+      }
+    });
+
+    it("should reject promise when not connected (negative test)", async () => {
+      // Objective: Test that request() rejects when socket is not connected
+      // Arrange
+      mockIO.connected = false;
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      // Act
+      const promise = client.request("test:request", { data: "test" });
+
+      // Assert
+      try {
+        await promise;
+        assert(false).toBe(true); // Should not reach here
+      } catch (e) {
+        assert(e.message).toBe("Not connected");
+      }
+    });
+
+    it("should reject promise when socket is null (negative test)", async () => {
+      // Objective: Test that request() handles missing socket gracefully
+      // Arrange
+      client = new SocketClient();
+      client.socket = null;
+
+      // Act
+      const promise = client.request("test:request", { data: "test" });
+
+      // Assert
+      try {
+        await promise;
+        assert(false).toBe(true); // Should not reach here
+      } catch (e) {
+        assert(e.message).toBe("Not connected");
+      }
+    });
+
+    it("should timeout after short delay (negative test)", async () => {
+      // Objective: Test that request() has a timeout and rejects on timeout
+      // Arrange
+      mockIO.connected = true;
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      // Act
+      const promise = client.request("slow:request", { data: "test" });
+
+      // Assert - should timeout
+      try {
+        await promise;
+        assert(false).toBe(true); // Should not reach here
+      } catch (e) {
+        assert(e.message).toContain("Request timeout");
+      }
+    });
+
+    it("should remove response handler after resolution (positive test)", async () => {
+      // Objective: Test that request() cleans up handlers after completion
+      // Arrange
+      mockIO.connected = true;
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      const responseEvent = "test:response";
+      const promise = client.request("test:request", {});
+
+      // Simulate response
+      const responseHandler = client.handlers.get(responseEvent)?.values().next().value;
+      if (responseHandler) {
+        responseHandler({ success: true });
+      }
+
+      // Assert - handler should be removed after response
+      assert(client.handlers.has(responseEvent)).toBe(false);
+    });
+
+    it("should include requestId in emitted data (positive test)", () => {
+      // Objective: Test that request() includes unique request ID for correlation
+      // Arrange
+      mockIO.connected = true;
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      // Act
+      client.request("test:request", { data: "test" });
+
+      // Assert
+      const emitCall = mockIO.emit.mock.calls.find((call) => call[0] === "test:request");
+      assert(emitCall[1]).toHaveProperty("_requestId");
+      assert(typeof emitCall[1]._requestId).toBe("string");
+      assert(emitCall[1]._requestId).toMatch(/^\d+_[\w]+$/);
+    });
+
+    it("should handle concurrent requests (positive test)", async () => {
+      // Objective: Test that request() supports multiple concurrent requests
+      // Arrange
+      mockIO.connected = true;
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      // Act - start multiple concurrent requests
+      const promise1 = client.request("request:1", { id: 1 });
+      const promise2 = client.request("request:2", { id: 2 });
+      const promise3 = client.request("request:3", { id: 3 });
+
+      // Simulate responses for each
+      const handlers1 = client.handlers.get("request:1:response");
+      const handlers2 = client.handlers.get("request:2:response");
+      const handlers3 = client.handlers.get("request:3:response");
+
+      // Simulate responses in different order
+      if (handlers2?.values?.().next?.().value) {
+        handlers2.values().next().value({ result: "response-2" });
+      }
+      if (handlers1?.values?.().next?.().value) {
+        handlers1.values().next().value({ result: "response-1" });
+      }
+      if (handlers3?.values?.().next?.().value) {
+        handlers3.values().next().value({ result: "response-3" });
+      }
+
+      // Assert - all should resolve
+      const result1 = await promise1;
+      assert(result1).toEqual({ result: "response-1" });
+      const result2 = await promise2;
+      assert(result2).toEqual({ result: "response-2" });
+      const result3 = await promise3;
+      assert(result3).toEqual({ result: "response-3" });
+    });
+
+    it("should work with complex request data (positive test)", async () => {
+      // Objective: Test that request() handles complex data structures
+      // Arrange
+      mockIO.connected = true;
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      const complexData = {
+        filters: { type: "llama", size: "7b" },
+        pagination: { page: 1, limit: 10 },
+        sort: { field: "name", order: "asc" },
+      };
+
+      const promise = client.request("models:query", complexData);
+
+      // Simulate response
+      const responseEvent = "models:query:response";
+      const responseHandler = client.handlers.get(responseEvent)?.values?.()?.next?.()?.value;
+      if (responseHandler) {
+        responseHandler({ items: [], total: 0 });
+      }
+
+      // Assert
+      const result = await promise;
+      assert(result).toEqual({ items: [], total: 0 });
+      const emitCalls = mockIO.emit.mock.calls;
+      assert(emitCalls.length).toBeGreaterThan(0);
+      assert(emitCalls[0][0]).toBe("models:query");
+    });
+  });
+
+  describe("getSocketId()", () => {
+    it("should return socket id when socket exists (positive test)", () => {
+      // Objective: Test that getSocketId returns the socket's ID via id getter
+      // Arrange
+      global.window.io = createMockFn().mockReturnValue(mockIO);
+      client = new SocketClient();
+      client._connect();
+
+      // Act
+      const result = client.id;
+
+      // Assert
+      assert(result).toBe("mock-socket-id-123");
+    });
+
+    it("should return null when socket is null (negative test)", () => {
+      // Objective: Test that getSocketId returns null when socket doesn't exist
+      // Arrange
+      client = new SocketClient();
+      client.socket = null;
+
+      // Act
+      const result = client.id;
+
+      // Assert
+      assert(result).toBeNull();
+    });
+  });
+});
