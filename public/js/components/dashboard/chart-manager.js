@@ -7,6 +7,69 @@ class ChartManager {
     this.usageChart = null;
     this.memoryChart = null;
     this.state = options.state || { chartType: "usage", history: [] };
+    this.isDarkMode = document.documentElement.classList.contains("dark-mode");
+    // Watch for theme changes
+    this._observeThemeChanges();
+  }
+
+  /**
+   * Observe theme changes and update charts
+   */
+  _observeThemeChanges() {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === "class") {
+          const isDark = document.documentElement.classList.contains("dark-mode");
+          if (isDark !== this.isDarkMode) {
+            this.isDarkMode = isDark;
+            // Recreate charts with new colors
+            this._recreateCharts();
+          }
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, { attributes: true });
+    this.themeObserver = observer;
+  }
+
+  /**
+   * Recreate charts with current theme colors
+   */
+  _recreateCharts() {
+    // Store canvas elements and history data
+    const usageChartData = this.usageChart?.data;
+    const memoryChartData = this.memoryChart?.data;
+
+    if (this.usageChart) {
+      const canvas = this.usageChart.canvas;
+      this.usageChart.destroy();
+      this.usageChart = null;
+      if (usageChartData) {
+        this._createChartWithData(canvas, "usage", usageChartData);
+      }
+    }
+
+    if (this.memoryChart) {
+      const canvas = this.memoryChart.canvas;
+      this.memoryChart.destroy();
+      this.memoryChart = null;
+      if (memoryChartData) {
+        this._createChartWithData(canvas, "memory", memoryChartData);
+      }
+    }
+  }
+
+  /**
+   * Get chart colors based on current theme
+   */
+  _getChartColors() {
+    const isDark = this.isDarkMode;
+    return {
+      textColor: isDark ? "#a1a5b0" : "#374151",
+      gridColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)",
+      tickColor: isDark ? "#6b7280" : "#6b7280",
+    };
   }
 
   /**
@@ -76,6 +139,7 @@ class ChartManager {
     );
 
     const ctx = canvas.getContext("2d");
+    const colors = this._getChartColors();
 
     const labels = history.map((_, i) => i.toString());
     const cpuData = history.map((h) => h.cpu?.usage || 0);
@@ -134,15 +198,19 @@ class ChartManager {
               usePointStyle: true,
               padding: 15,
               font: { size: 12, weight: "500" },
-              color: "#374151",
+              color: colors.textColor,
             },
           },
           tooltip: {
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            backgroundColor: this.isDarkMode ? "rgba(45, 45, 45, 0.95)" : "rgba(0, 0, 0, 0.8)",
             padding: 12,
             titleFont: { size: 13 },
             bodyFont: { size: 12 },
             displayColors: true,
+            titleColor: colors.textColor,
+            bodyColor: colors.textColor,
+            borderColor: colors.gridColor,
+            borderWidth: 1,
             callbacks: {
               label: (context) => `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`,
             },
@@ -157,20 +225,20 @@ class ChartManager {
               display: true,
               text: "Time (seconds ago)",
               font: { size: 12, weight: "500" },
-              color: "#374151",
+              color: colors.textColor,
               padding: { top: 10 },
             },
           },
           y: {
             min: 0,
             max: 100,
-            grid: { color: "rgba(0, 0, 0, 0.05)" },
-            ticks: { stepSize: 25, font: { size: 11 }, color: "#6b7280" },
+            grid: { color: colors.gridColor },
+            ticks: { stepSize: 25, font: { size: 11 }, color: colors.tickColor },
             title: {
               display: true,
               text: "Usage (%)",
               font: { size: 12, weight: "500" },
-              color: "#374151",
+              color: colors.textColor,
               padding: { bottom: 10 },
             },
           },
@@ -201,6 +269,7 @@ class ChartManager {
     }
 
     const ctx = canvas.getContext("2d");
+    const colors = this._getChartColors();
 
     const labels = history.map((_, i) => i.toString());
     // Convert bytes to MB for system memory
@@ -261,15 +330,19 @@ class ChartManager {
               usePointStyle: true,
               padding: 15,
               font: { size: 12, weight: "500" },
-              color: "#374151",
+              color: colors.textColor,
             },
           },
           tooltip: {
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            backgroundColor: this.isDarkMode ? "rgba(45, 45, 45, 0.95)" : "rgba(0, 0, 0, 0.8)",
             padding: 12,
             titleFont: { size: 13 },
             bodyFont: { size: 12 },
             displayColors: true,
+            titleColor: colors.textColor,
+            bodyColor: colors.textColor,
+            borderColor: colors.gridColor,
+            borderWidth: 1,
             callbacks: {
               label: (context) => `${context.dataset.label}: ${context.parsed.y.toFixed(1)} MB`,
             },
@@ -284,19 +357,19 @@ class ChartManager {
               display: true,
               text: "Time (seconds ago)",
               font: { size: 12, weight: "500" },
-              color: "#374151",
+              color: colors.textColor,
               padding: { top: 10 },
             },
           },
           y: {
             beginAtZero: true,
-            grid: { color: "rgba(0, 0, 0, 0.05)" },
-            ticks: { font: { size: 11 }, color: "#6b7280" },
+            grid: { color: colors.gridColor },
+            ticks: { font: { size: 11 }, color: colors.tickColor },
             title: {
               display: true,
               text: "Memory (MB)",
               font: { size: 12, weight: "500" },
-              color: "#374151",
+              color: colors.textColor,
               padding: { bottom: 10 },
             },
           },
@@ -337,9 +410,36 @@ class ChartManager {
   }
 
   /**
+   * Create chart with existing data during theme change
+   */
+  _createChartWithData(canvas, type, data) {
+    if (type === "usage" && data.datasets[0]) {
+      // Reconstruct history from chart data
+      const history = data.labels.map((_, i) => ({
+        cpu: { usage: data.datasets[0].data[i] || 0 },
+        gpu: { usage: data.datasets[1]?.data[i] || 0 },
+      }));
+      this.createUsageChart(canvas, history);
+    } else if (type === "memory" && data.datasets[0]) {
+      // Reconstruct history from chart data
+      const history = data.labels.map((_, i) => ({
+        memory: { used: (data.datasets[0].data[i] || 0) * 1024 * 1024 },
+        gpu: { memoryUsed: data.datasets[1]?.data[i] || 0 },
+      }));
+      this.createMemoryChart(canvas, history);
+    }
+  }
+
+  /**
    * Destroy all chart instances
    */
   destroy() {
+    // Stop observing theme changes
+    if (this.themeObserver) {
+      this.themeObserver.disconnect();
+      this.themeObserver = null;
+    }
+
     if (this.usageChart) {
       try {
         this.usageChart.destroy();

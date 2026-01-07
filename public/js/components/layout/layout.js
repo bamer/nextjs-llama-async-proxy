@@ -16,7 +16,10 @@ class Layout extends Component {
 class Sidebar extends Component {
   constructor(props) {
     super(props);
-    this.state = { collapsed: localStorage.getItem("sidebarCollapsed") === "true" };
+    this.state = {
+      collapsed: localStorage.getItem("sidebarCollapsed") === "true",
+      darkMode: localStorage.getItem("darkMode") === "true",
+    };
   }
 
   render() {
@@ -61,6 +64,11 @@ class Sidebar extends Component {
         "div",
         { className: "sidebar-footer" },
         Component.h(
+          "button",
+          { className: "theme-toggle-btn", "data-action": "toggle-theme" },
+          "🌙 Dark"
+        ),
+        Component.h(
           "div",
           { className: "connection-status", id: "connection-status" },
           Component.h("span", { className: "dot disconnected" }),
@@ -71,7 +79,10 @@ class Sidebar extends Component {
   }
 
   getEventMap() {
-    return { "click [data-page]": "handleClick" };
+    return {
+      "click [data-page]": "handleClick",
+      "click [data-action=toggle-theme]": "handleThemeToggle",
+    };
   }
 
   handleClick(e) {
@@ -84,11 +95,41 @@ class Sidebar extends Component {
     }
   }
 
+  handleThemeToggle() {
+    const isDark = !this.state.darkMode;
+    this.setState({ darkMode: isDark });
+    localStorage.setItem("darkMode", isDark);
+    this._applyTheme(isDark);
+    this._updateThemeButton(isDark);
+  }
+
+  _applyTheme(isDark) {
+    if (isDark) {
+      document.documentElement.classList.add("dark-mode");
+    } else {
+      document.documentElement.classList.remove("dark-mode");
+    }
+  }
+
+  _updateThemeButton(isDark) {
+    const btn = this._el?.querySelector("[data-action=toggle-theme]");
+    if (btn) {
+      btn.textContent = isDark ? "☀️ Light" : "🌙 Dark";
+    }
+  }
+
   didMount() {
     // Restore collapsed state
     const collapsed = localStorage.getItem("sidebarCollapsed") === "true";
     if (collapsed) {
       document.querySelector(".sidebar")?.classList.add("collapsed");
+    }
+
+    // Restore theme state
+    const isDark = localStorage.getItem("darkMode") === "true";
+    if (isDark) {
+      this._applyTheme(true);
+      this._updateThemeButton(true);
     }
   }
 }
