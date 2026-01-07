@@ -124,7 +124,7 @@ class LogsPage extends Component {
           : Component.h(
               "div",
               {},
-              visibleLogs.map((l) =>
+              ...visibleLogs.map((l) =>
                 Component.h(
                   "div",
                   { className: `log-entry level-${l.level || "info"}` },
@@ -159,7 +159,10 @@ class LogsPage extends Component {
 
   _time(ts) {
     if (!ts) return "--:--:--";
-    const d = new Date(ts);
+    // Handle both formats: database (seconds) and file (milliseconds)
+    // If timestamp is less than 1e11, it's in seconds; otherwise milliseconds
+    const ms = ts < 1e11 ? ts * 1000 : ts;
+    const d = new Date(ms);
     return `${d.toLocaleTimeString()}.${String(d.getMilliseconds()).padStart(3, "0")}`;
   }
 

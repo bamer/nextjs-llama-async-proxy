@@ -17,7 +17,7 @@ class LoggingConfig extends Component {
     };
   }
 
-  willReceiveProps(newProps) {
+  componentWillReceiveProps(newProps) {
     // Only sync state if props actually changed (avoid overwriting user input)
     const newState = {};
     let hasChanges = false;
