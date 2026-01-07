@@ -59,8 +59,8 @@ class ChartsSection extends Component {
     }
 
     // Update tab active states
-    const cpuTab = this._el?.querySelector("[data-chart=\"cpu\"]");
-    const gpuTab = this._el?.querySelector("[data-chart=\"gpu\"]");
+    const cpuTab = this._el?.querySelector('[data-chart="cpu"]');
+    const gpuTab = this._el?.querySelector('[data-chart="gpu"]');
     if (cpuTab && gpuTab) {
       const chartType = this.getChartType();
       cpuTab.classList.toggle("active", chartType === "cpu");
@@ -131,7 +131,7 @@ class ChartsSection extends Component {
       const rect = canvas.getBoundingClientRect();
 
       if (rect.width > 0 && rect.height > 0) {
-        console.log(`[CHARTS-SECTION] Canvas ${  type  } dimensions:`, rect.width, "x", rect.height);
+        console.log(`[CHARTS-SECTION] Canvas ${type} dimensions:`, rect.width, "x", rect.height);
         // Explicitly set canvas width/height attributes
         canvas.width = Math.round(rect.width * (window.devicePixelRatio || 1));
         canvas.height = Math.round(rect.height * (window.devicePixelRatio || 1));
@@ -155,7 +155,9 @@ class ChartsSection extends Component {
         setTimeout(checkDimensions, 50);
       } else {
         // Give up after max retries
-        console.warn(`[CHARTS-SECTION] Canvas ${  type  } failed to get dimensions after ${  maxRetries  } retries`);
+        console.warn(
+          `[CHARTS-SECTION] Canvas ${type} failed to get dimensions after ${maxRetries} retries`
+        );
       }
     };
 
@@ -255,30 +257,30 @@ class ChartsSection extends Component {
         { className: "chart-container" },
         hasData
           ? Component.h(
-            "div",
-            { className: "chart-wrapper" },
-            Component.h("canvas", {
-              id: "usageChart",
-              className: "chart-canvas",
-              style: `display: ${chartType === "usage" ? "block" : "none"}`,
-            }),
-            Component.h("canvas", {
-              id: "memoryChart",
-              className: "chart-canvas",
-              style: `display: ${chartType === "memory" ? "block" : "none"}`,
-            })
-          )
-          : Component.h(
-            "div",
-            { className: "chart-empty" },
-            Component.h("div", { className: "empty-icon" }, "📈"),
-            Component.h("p", {}, "Collecting performance data..."),
-            Component.h(
-              "p",
-              { className: "empty-hint" },
-              "Data will appear once metrics are collected"
+              "div",
+              { className: "chart-wrapper" },
+              Component.h("canvas", {
+                id: "usageChart",
+                className: "chart-canvas",
+                style: `display: ${chartType === "usage" ? "block" : "none"}`,
+              }),
+              Component.h("canvas", {
+                id: "memoryChart",
+                className: "chart-canvas",
+                style: `display: ${chartType === "memory" ? "block" : "none"}`,
+              })
             )
-          )
+          : Component.h(
+              "div",
+              { className: "chart-empty" },
+              Component.h("div", { className: "empty-icon" }, "📈"),
+              Component.h("p", {}, "Collecting performance data..."),
+              Component.h(
+                "p",
+                { className: "empty-hint" },
+                "Data will appear once metrics are collected"
+              )
+            )
       ),
       hasData &&
         Component.h(

@@ -34,7 +34,12 @@ export function registerLogsHandlers(socket, db) {
     try {
       const fileName = req?.fileName || null;
       const logs = fileLogger.readLogFile(fileName);
-      ok(socket, "logs:read-file:result", { logs, fileName: fileName || fileLogger.getLogFileName() }, id);
+      ok(
+        socket,
+        "logs:read-file:result",
+        { logs, fileName: fileName || fileLogger.getLogFileName() },
+        id
+      );
     } catch (e) {
       err(socket, "logs:read-file:result", e.message, id);
     }

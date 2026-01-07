@@ -234,8 +234,8 @@ class Header extends Component {
     if (hs) {
       hs.innerHTML =
         s === "connected"
-          ? "<span class=\"badge online\">● Online</span>"
-          : "<span class=\"badge offline\">● Offline</span>";
+          ? '<span class="badge online">● Online</span>'
+          : '<span class="badge offline">● Offline</span>';
     }
   }
 }

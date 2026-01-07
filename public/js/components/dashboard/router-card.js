@@ -76,15 +76,15 @@ class RouterCard extends Component {
           { className: "router-controls" },
           isRunning
             ? Component.h(
-              "button",
-              { className: "btn btn-danger", "data-action": "stop" },
-              "⏹ Stop Router"
-            )
+                "button",
+                { className: "btn btn-danger", "data-action": "stop" },
+                "⏹ Stop Router"
+              )
             : Component.h(
-              "button",
-              { className: "btn btn-primary", "data-action": "start" },
-              "▶ Start Router"
-            ),
+                "button",
+                { className: "btn btn-primary", "data-action": "start" },
+                "▶ Start Router"
+              ),
           Component.h(
             "button",
             { className: "btn btn-secondary", "data-action": "restart", disabled: !isRunning },

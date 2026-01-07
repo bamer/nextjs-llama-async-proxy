@@ -11,8 +11,8 @@ import { fileLogger } from "./file-logger.js";
  */
 export function registerConfigHandlers(socket, db) {
   /**
-    * Get server configuration
-    */
+   * Get server configuration
+   */
   socket.on("config:get", (req) => {
     const id = req?.requestId || Date.now();
     try {
@@ -24,8 +24,8 @@ export function registerConfigHandlers(socket, db) {
   });
 
   /**
-    * Update server configuration
-    */
+   * Update server configuration
+   */
   socket.on("config:update", (req) => {
     const id = req?.requestId || Date.now();
     try {
@@ -37,8 +37,8 @@ export function registerConfigHandlers(socket, db) {
   });
 
   /**
-    * Get user settings
-    */
+   * Get user settings
+   */
   socket.on("settings:get", (req) => {
     const id = req?.requestId || Date.now();
     try {
@@ -50,8 +50,8 @@ export function registerConfigHandlers(socket, db) {
   });
 
   /**
-    * Update user settings
-    */
+   * Update user settings
+   */
   socket.on("settings:update", (req) => {
     const id = req?.requestId || Date.now();
     try {

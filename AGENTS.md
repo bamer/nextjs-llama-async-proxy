@@ -14,6 +14,16 @@ This document provides guidelines for agentic coding assistants working in this 
 
 ## Llama.cpp Router Mode
 
+## Project Mandatory Rules
+
+1. **Keep files under 200 lines** - Split large files into smaller modules
+2. **Single responsibility** - Each component/class should do one thing
+3. **No memory leaks** - Always clean up subscriptions and event listeners
+4. **Graceful degradation** - Handle missing data gracefully
+5. **User feedback** - Show notifications for user actions
+6. **Error boundaries** - Catch and display errors to users
+7. **NEVER WRITE OUTSIDE THE PROJECT DIR** it will be deny and you will loose time for nothing.
+
 **Important**: The application uses llama.cpp's router mode to support multiple models in a single server.
 
 ### Router Mode Key Facts
@@ -640,15 +650,6 @@ Examples:
 [DEBUG] File check: { name: "model.gguf", isFile: true, extMatch: true }
 [DEBUG] models:list request { requestId: 123456789 }
 ```
-
-## Best Practices
-
-1. **Keep files under 200 lines** - Split large files into smaller modules
-2. **Single responsibility** - Each component/class should do one thing
-3. **No memory leaks** - Always clean up subscriptions and event listeners
-4. **Graceful degradation** - Handle missing data gracefully
-5. **User feedback** - Show notifications for user actions
-6. **Error boundaries** - Catch and display errors to users
 
 ## Common Patterns
 

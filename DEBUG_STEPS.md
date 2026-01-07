@@ -129,6 +129,7 @@ Debug logging shows the flow of state changes and server responses.
    - Should return the event map
 
 3. **Test event firing manually**
+
    ```javascript
    const select = document.querySelector('select[data-field="log-level"]');
    select.value = "error";
