@@ -14,7 +14,7 @@ import si from "systeminformation";
 
 import DB from "./server/db/index.js";
 import { registerHandlers } from "./server/handlers.js";
-import { parseGgufMetadata } from "./server/gguf-parser.js";
+import { parseGgufMetadata } from "./server/gguf/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
