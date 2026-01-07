@@ -35,18 +35,26 @@ class Sidebar extends Component {
         Component.h(
           "a",
           { href: "/", className: "nav-link", "data-page": "dashboard" },
-          "📊 Dashboard"
+          Component.h("span", {}, "📊"),
+          Component.h("span", {}, "Dashboard")
         ),
         Component.h(
           "a",
           { href: "/models", className: "nav-link", "data-page": "models" },
-          "📁 Models"
+          Component.h("span", {}, "📁"),
+          Component.h("span", {}, "Models")
         ),
-        Component.h("a", { href: "/logs", className: "nav-link", "data-page": "logs" }, "📋 Logs"),
+        Component.h(
+          "a",
+          { href: "/logs", className: "nav-link", "data-page": "logs" },
+          Component.h("span", {}, "📋"),
+          Component.h("span", {}, "Logs")
+        ),
         Component.h(
           "a",
           { href: "/settings", className: "nav-link", "data-page": "settings" },
-          "⚙️ Settings"
+          Component.h("span", {}, "⚙️"),
+          Component.h("span", {}, "Settings")
         )
       ),
       Component.h(
