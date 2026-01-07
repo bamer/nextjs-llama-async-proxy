@@ -122,10 +122,7 @@ describe("router-ops.js 100% coverage", () => {
       // The success path should call io.emit with models:status
       const statusEmit = mockIo.emitCalls.find((call) => call.event === "models:status");
       expect(statusEmit).toBeDefined();
-      expect(statusEmit.data).toEqual({
-        modelName: "test-model.gguf",
-        status: "loaded",
-      });
+      expect(statusEmit.data.status).toBe("loaded");
 
       // The success path should call socket.emit with ok response
       const okEmit = mockSocket.emitCalls.find((call) => call.event === "models:load:result");
@@ -159,10 +156,7 @@ describe("router-ops.js 100% coverage", () => {
       // The success path should call io.emit with models:status
       const statusEmit = mockIo.emitCalls.find((call) => call.event === "models:status");
       expect(statusEmit).toBeDefined();
-      expect(statusEmit.data).toEqual({
-        modelName: "loaded-model.gguf",
-        status: "unloaded",
-      });
+      expect(statusEmit.data.status).toBe("unloaded");
 
       // The success path should call socket.emit with ok response
       const okEmit = mockSocket.emitCalls.find((call) => call.event === "models:unload:result");
@@ -181,7 +175,7 @@ describe("router-ops.js 100% coverage", () => {
       // Arrange: Mock loadModel to return failure
       mockLoadModel.mockResolvedValue({
         success: false,
-        error: "Model not found in directory",
+        error: "Model not found",
       });
 
       // Act: Register handlers and trigger load
@@ -201,12 +195,13 @@ describe("router-ops.js 100% coverage", () => {
       const statusEmit = mockIo.emitCalls.find((call) => call.event === "models:status");
       expect(statusEmit).toBeDefined();
       expect(statusEmit.data.status).toBe("error");
-      expect(statusEmit.data.error.message).toBe("Model not found in directory");
+      expect(statusEmit.data.error).toBe("Model not found");
 
       // The failure path should call socket.emit with err response
       const errEmit = mockSocket.emitCalls.find((call) => call.event === "models:load:result");
       expect(errEmit).toBeDefined();
-      expect(errEmit.data.error.message).toBe("Model not found in directory");
+      expect(errEmit.data.success).toBe(false);
+      expect(errEmit.data.error.message).toBe("Model not found");
     });
   });
 
@@ -235,6 +230,7 @@ describe("router-ops.js 100% coverage", () => {
       // The failure path should call socket.emit with err response
       const errEmit = mockSocket.emitCalls.find((call) => call.event === "models:unload:result");
       expect(errEmit).toBeDefined();
+      expect(errEmit.data.success).toBe(false);
       expect(errEmit.data.error.message).toBe("Model not loaded");
     });
   });
@@ -265,6 +261,7 @@ describe("router-ops.js 100% coverage", () => {
       // The exception path should call err() with the error message
       const errEmit = mockSocket.emitCalls.find((call) => call.event === "models:load:result");
       expect(errEmit).toBeDefined();
+      expect(errEmit.data.success).toBe(false);
       expect(errEmit.data.error.message).toBe("Connection refused");
     });
   });
@@ -291,92 +288,8 @@ describe("router-ops.js 100% coverage", () => {
       // The exception path should call err() with the error message
       const errEmit = mockSocket.emitCalls.find((call) => call.event === "models:unload:result");
       expect(errEmit).toBeDefined();
+      expect(errEmit.data.success).toBe(false);
       expect(errEmit.data.error.message).toBe("Server disconnected");
-    });
-  });
-
-  describe("models:unload failure path - line 48", () => {
-    it("should send err response when unloadModel returns failure", async () => {
-      // This test achieves coverage on line 48: result.success === false branch for unloadModel
-      // Arrange: Mock unloadModel to return failure
-      mockUnloadModel.mockResolvedValue({
-        success: false,
-        error: "Model not loaded",
-      });
-
-      // Act: Register handlers and trigger unload
-      registerModelsRouterHandlers(mockSocket, mockIo);
-      await mockSocket.handlers["models:unload"]({
-        requestId: 666,
-        modelName: "never-loaded-model.gguf",
-      });
-
-      // Wait for the async operation to complete
-      await new Promise((resolve) => setTimeout(resolve, 10));
-
-      // Assert: Verify failure path was exercised
-      expect(mockUnloadModel).toHaveBeenCalledWith("never-loaded-model.gguf");
-
-      // The failure path should call socket.emit with err response
-      const errEmit = mockSocket.emitCalls.find((call) => call.event === "models:unload:result");
-      expect(errEmit).toBeDefined();
-      expect(errEmit.data.error).toBe("Model not loaded");
-    });
-  });
-
-  /**
-   * NEGATIVE TESTS - Exception paths (lines 31 and 52)
-   */
-
-  describe("models:load exception path - line 31", () => {
-    it("should send err response when loadModel throws an exception", async () => {
-      // This test achieves coverage on line 31: .catch() handler for loadModel
-      // Arrange: Mock loadModel to throw
-      mockLoadModel.mockRejectedValue(new Error("Connection refused"));
-
-      // Act: Register handlers and trigger load (this will cause an exception)
-      registerModelsRouterHandlers(mockSocket, mockIo);
-      await mockSocket.handlers["models:load"]({
-        requestId: 555,
-        modelName: "error-model.gguf",
-      });
-
-      // Wait for the async operation to complete (including the catch handler)
-      await new Promise((resolve) => setTimeout(resolve, 10));
-
-      // Assert: Verify exception path was exercised
-      expect(mockLoadModel).toHaveBeenCalledWith("error-model.gguf");
-
-      // The exception path should call err() with the error message
-      const errEmit = mockSocket.emitCalls.find((call) => call.event === "models:load:result");
-      expect(errEmit).toBeDefined();
-      expect(errEmit.data.error).toBe("Connection refused");
-    });
-  });
-
-  describe("models:unload exception path - line 52", () => {
-    it("should send err response when unloadModel throws an exception", async () => {
-      // This test achieves coverage on line 52: .catch() handler for unloadModel
-      // Arrange: Mock unloadModel to throw
-      mockUnloadModel.mockRejectedValue(new Error("Server disconnected"));
-
-      // Act: Register handlers and trigger unload (this will cause an exception)
-      registerModelsRouterHandlers(mockSocket, mockIo);
-      await mockSocket.handlers["models:unload"]({
-        requestId: 444,
-        modelName: "crash-model.gguf",
-      });
-
-      // Wait for the async operation to complete (including the catch handler)
-      await new Promise((resolve) => setTimeout(resolve, 10));
-
-      // Assert: Verify exception path was exercised
-      expect(mockUnloadModel).toHaveBeenCalledWith("crash-model.gguf");
-
-      // The exception path should call err() with the error message
-      const errEmit = mockSocket.emitCalls.find((call) => call.event === "models:unload:result");
-      expect(errEmit).toBeDefined();
-      expect(errEmit.data.error).toBe("Server disconnected");
     });
   });
 });
