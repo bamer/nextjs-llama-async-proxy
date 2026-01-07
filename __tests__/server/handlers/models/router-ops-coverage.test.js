@@ -292,4 +292,159 @@ describe("router-ops.js 100% coverage", () => {
       expect(errEmit.data.error.message).toBe("Server disconnected");
     });
   });
+
+  /**
+   * EDGE CASES - Branch coverage for lines 17-18 and 39-40
+   * These test the short-circuit evaluation: req?.requestId || Date.now() and req?.modelName || req?.modelId
+   */
+
+  describe("request parameter edge cases - branch coverage", () => {
+    it("should use requestId from req when provided (line 17)", async () => {
+      // This tests the truthy branch of: req?.requestId || Date.now()
+      // Arrange
+      mockLoadModel.mockResolvedValue({ success: true });
+      const reqId = 123456789;
+
+      // Act
+      registerModelsRouterHandlers(mockSocket, mockIo);
+      await mockSocket.handlers["models:load"]({
+        requestId: reqId,
+        modelName: "test.gguf",
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Assert: Check that the ok response uses the provided requestId
+      const okEmit = mockSocket.emitCalls.find((call) => call.event === "models:load:result");
+      expect(okEmit).toBeDefined();
+      expect(okEmit.data.requestId).toBe(reqId);
+    });
+
+    it("should use Date.now() as fallback when requestId is undefined (line 17)", async () => {
+      // This tests the falsy branch of: req?.requestId || Date.now()
+      // Arrange
+      mockLoadModel.mockResolvedValue({ success: true });
+      const before = Date.now();
+
+      // Act
+      registerModelsRouterHandlers(mockSocket, mockIo);
+      await mockSocket.handlers["models:load"]({
+        requestId: undefined,
+        modelName: "test.gguf",
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      const after = Date.now();
+
+      // Assert: Check that the ok response uses Date.now() as requestId
+      const okEmit = mockSocket.emitCalls.find((call) => call.event === "models:load:result");
+      expect(okEmit).toBeDefined();
+      expect(okEmit.data.requestId).toBeGreaterThanOrEqual(before);
+      expect(okEmit.data.requestId).toBeLessThanOrEqual(after);
+    });
+
+    it("should use modelName from req when provided (line 18)", async () => {
+      // This tests the truthy branch of: req?.modelName || req?.modelId
+      // Arrange
+      mockLoadModel.mockResolvedValue({ success: true });
+      const modelName = "preferred-model.gguf";
+
+      // Act
+      registerModelsRouterHandlers(mockSocket, mockIo);
+      await mockSocket.handlers["models:load"]({
+        requestId: 1,
+        modelName: modelName,
+        modelId: "fallback-model.gguf",
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Assert: Verify loadModel was called with modelName (not modelId)
+      expect(mockLoadModel).toHaveBeenCalledWith(modelName);
+    });
+
+    it("should use modelId as fallback when modelName is undefined (line 18)", async () => {
+      // This tests the falsy branch of: req?.modelName || req?.modelId
+      // Arrange
+      mockLoadModel.mockResolvedValue({ success: true });
+      const modelId = "fallback-model.gguf";
+
+      // Act
+      registerModelsRouterHandlers(mockSocket, mockIo);
+      await mockSocket.handlers["models:load"]({
+        requestId: 1,
+        modelName: undefined,
+        modelId: modelId,
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Assert: Verify loadModel was called with modelId (not modelName)
+      expect(mockLoadModel).toHaveBeenCalledWith(modelId);
+    });
+
+    it("should use requestId from req for unload when provided (line 39)", async () => {
+      // This tests the truthy branch of: req?.requestId || Date.now() for unload
+      // Arrange
+      mockUnloadModel.mockResolvedValue({ success: true });
+      const reqId = 987654321;
+
+      // Act
+      registerModelsRouterHandlers(mockSocket, mockIo);
+      await mockSocket.handlers["models:unload"]({
+        requestId: reqId,
+        modelName: "test.gguf",
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Assert: Check that the ok response uses the provided requestId
+      const okEmit = mockSocket.emitCalls.find((call) => call.event === "models:unload:result");
+      expect(okEmit).toBeDefined();
+      expect(okEmit.data.requestId).toBe(reqId);
+    });
+
+    it("should use modelId as fallback for unload when modelName is undefined (line 40)", async () => {
+      // This tests the falsy branch of: req?.modelName || req?.modelId for unload
+      // Arrange
+      mockUnloadModel.mockResolvedValue({ success: true });
+      const modelId = "unload-fallback.gguf";
+
+      // Act
+      registerModelsRouterHandlers(mockSocket, mockIo);
+      await mockSocket.handlers["models:unload"]({
+        requestId: 1,
+        modelName: undefined,
+        modelId: modelId,
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Assert: Verify unloadModel was called with modelId (not modelName)
+      expect(mockUnloadModel).toHaveBeenCalledWith(modelId);
+    });
+
+    it("should use Date.now() as fallback for unload when requestId is undefined (line 39)", async () => {
+      // This tests the falsy branch of: req?.requestId || Date.now() for unload
+      // Arrange
+      mockUnloadModel.mockResolvedValue({ success: true });
+      const before = Date.now();
+
+      // Act
+      registerModelsRouterHandlers(mockSocket, mockIo);
+      await mockSocket.handlers["models:unload"]({
+        requestId: undefined,
+        modelName: "test.gguf",
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      const after = Date.now();
+
+      // Assert: Check that the ok response uses Date.now() as requestId
+      const okEmit = mockSocket.emitCalls.find((call) => call.event === "models:unload:result");
+      expect(okEmit).toBeDefined();
+      expect(okEmit.data.requestId).toBeGreaterThanOrEqual(before);
+      expect(okEmit.data.requestId).toBeLessThanOrEqual(after);
+    });
+  });
 });
