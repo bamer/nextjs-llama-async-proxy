@@ -1,7 +1,9 @@
 /**
  * Logger
- * Simple Socket.IO-aware logger
+ * Socket.IO-aware logger that integrates with file logging
  */
+
+import { fileLogger } from "./file-logger.js";
 
 class Logger {
   constructor() {
@@ -10,26 +12,31 @@ class Logger {
 
   setIo(io) {
     this.io = io;
+    fileLogger.setIo(io);
   }
 
-  log(level, msg) {
-    const ts = new Date().toISOString().split("T")[1].split(".")[0];
-    console.log(`[${ts}] ${msg}`);
-    if (this.io) {
-      this.io.emit("logs:entry", { entry: { level, message: String(msg), timestamp: Date.now() } });
-    }
+  setDb(db) {
+    fileLogger.setDb(db);
   }
 
-  info(msg) {
-    this.log("info", msg);
+  log(level, msg, source = "server") {
+    fileLogger.log(level, msg, source);
   }
 
-  error(msg) {
-    this.log("error", msg);
+  info(msg, source = "server") {
+    fileLogger.info(msg, source);
   }
 
-  warn(msg) {
-    this.log("warn", msg);
+  error(msg, source = "server") {
+    fileLogger.error(msg, source);
+  }
+
+  warn(msg, source = "server") {
+    fileLogger.warn(msg, source);
+  }
+
+  debug(msg, source = "server") {
+    fileLogger.debug(msg, source);
   }
 }
 
@@ -75,3 +82,4 @@ function registerLoggerHandlers(socket, loggerInstance) {
 }
 
 export { logger, registerLoggerHandlers };
+export default Logger;

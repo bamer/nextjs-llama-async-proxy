@@ -15,13 +15,13 @@ class RouterConfig extends Component {
     };
   }
 
-  componentWillReceiveProps(newProps) {
-    this.state = {
+  willReceiveProps(newProps) {
+    this.setState({
       maxModelsLoaded: newProps.maxModelsLoaded || 4,
       parallelSlots: newProps.parallelSlots || 1,
       ctx_size: newProps.ctx_size || 4096,
       gpuLayers: newProps.gpuLayers || 0,
-    };
+    });
   }
 
   render() {

@@ -363,8 +363,20 @@ class StateManager {
     return this.request("logs:get", p);
   }
 
+  async readLogFile(fileName) {
+    return this.request("logs:read-file", { fileName });
+  }
+
+  async listLogFiles() {
+    return this.request("logs:list-files");
+  }
+
   async clearLogs() {
     return this.request("logs:clear");
+  }
+
+  async clearLogFiles() {
+    return this.request("logs:clear-files");
   }
 
   async getConfig() {

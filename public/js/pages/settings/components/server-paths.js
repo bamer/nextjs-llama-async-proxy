@@ -9,13 +9,13 @@ class ServerPathsForm extends Component {
     };
   }
 
-  componentWillReceiveProps(newProps) {
-    this.state = {
+  willReceiveProps(newProps) {
+    this.setState({
       baseModelsPath: newProps.baseModelsPath || "",
       serverPath: newProps.serverPath || "",
       host: newProps.host || "localhost",
       port: newProps.port || 8080,
-    };
+    });
   }
 
   render() {

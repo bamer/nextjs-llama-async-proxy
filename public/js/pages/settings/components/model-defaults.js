@@ -13,13 +13,13 @@ class ModelDefaultsForm extends Component {
     };
   }
 
-  componentWillReceiveProps(newProps) {
-    this.state = {
+  willReceiveProps(newProps) {
+    this.setState({
       threads: newProps.threads || 4,
       batch_size: newProps.batch_size || 512,
       temperature: newProps.temperature || 0.7,
       repeatPenalty: newProps.repeatPenalty || 1.1,
-    };
+    });
   }
 
   render() {

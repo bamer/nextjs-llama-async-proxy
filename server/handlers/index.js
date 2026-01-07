@@ -36,6 +36,7 @@ import { logger } from "./logger.js";
  */
 export function registerHandlers(io, db, ggufParser) {
   logger.setIo(io);
+  logger.setDb(db);
 
   io.on("connection", (socket) => {
     const cid = socket.id;

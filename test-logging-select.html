@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Logging Select</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .section { margin-bottom: 30px; padding: 20px; border: 1px solid #ccc; }
+    h2 { margin-top: 0; }
+    select, input { padding: 8px; margin: 10px 0; display: block; }
+    .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 12px; }
+    button { padding: 10px 20px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Logging Settings Debug</h1>
+
+  <div class="section">
+    <h2>1. Test Event Delegation</h2>
+    <div id="test-container">
+      <select id="test-select" data-field="log-level">
+        <option value="debug">Debug</option>
+        <option value="info">Info</option>
+        <option value="warn">Warning</option>
+        <option value="error">Error</option>
+      </select>
+    </div>
+    <button onclick="testEventDelegation()">Test Event Delegation</button>
+    <div id="test-result" class="debug"></div>
+  </div>
+
+  <div class="section">
+    <h2>2. Test Server Connection</h2>
+    <button onclick="testServerConnection()">Check Server Status</button>
+    <div id="server-result" class="debug"></div>
+  </div>
+
+  <div class="section">
+    <h2>3. Test Settings Save/Load</h2>
+    <button onclick="testSettingsSave()">Save Settings</button>
+    <button onclick="testSettingsLoad()">Load Settings</button>
+    <div id="settings-result" class="debug"></div>
+  </div>
+
+  <div class="section">
+    <h2>4. Test Log Appearance</h2>
+    <button onclick="testLogsEndpoint()">Check Logs Endpoint</button>
+    <div id="logs-result" class="debug"></div>
+  </div>
+
+  <script>
+    function log(msg) {
+      console.log(`[TEST] ${msg}`);
+    }
+
+    function testEventDelegation() {
+      const result = document.getElementById("test-result");
+      result.innerHTML = "<p>Testing event delegation...</p>";
+
+      const select = document.getElementById("test-select");
+      log(`Select element found: ${!!select}`);
+      log(`Current value: ${select.value}`);
+
+      // Test if selector works
+      const testElement = document.querySelector('[data-field="log-level"]');
+      log(`Selector [data-field="log-level"] found: ${!!testElement}`);
+
+      // Manually test closest()
+      select.addEventListener("change", (e) => {
+        log(`Change event fired! Value: ${e.target.value}`);
+        const closest = e.target.closest('[data-field="log-level"]');
+        log(`closest() found element: ${!!closest}`);
+        result.innerHTML += `<p>✓ Change event fired with value: ${e.target.value}</p>`;
+        result.innerHTML += `<p>✓ closest() works: ${!!closest}</p>`;
+      });
+
+      // Trigger change
+      select.value = "info";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    function testServerConnection() {
+      const result = document.getElementById("server-result");
+      result.innerHTML = "<p>Testing server connection...</p>";
+
+      // Check if socketClient exists
+      if (!window.socketClient) {
+        result.innerHTML += "<p>✗ socketClient not found in window</p>";
+        return;
+      }
+
+      result.innerHTML += "<p>✓ socketClient found</p>";
+      result.innerHTML += `<p>Connected: ${window.socketClient.isConnected}</p>`;
+      result.innerHTML += `<p>Socket ID: ${window.socketClient.id}</p>`;
+
+      if (!window.socketClient.isConnected) {
+        result.innerHTML += "<p>⚠ Not connected! Trying to connect...</p>";
+        window.socketClient.connect();
+        setTimeout(() => {
+          result.innerHTML += `<p>After connect attempt - Connected: ${window.socketClient.isConnected}</p>`;
+        }, 1000);
+      }
+    }
+
+    function testSettingsSave() {
+      const result = document.getElementById("settings-result");
+      result.innerHTML = "<p>Testing settings save...</p>";
+
+      if (!window.stateManager) {
+        result.innerHTML += "<p>✗ stateManager not found</p>";
+        return;
+      }
+
+      const testSettings = {
+        logLevel: "error",
+        maxFileSize: 10485760,
+        maxFiles: 7,
+        enableFileLogging: true,
+        enableDatabaseLogging: true,
+        enableConsoleLogging: true,
+      };
+
+      window.stateManager.updateSettings(testSettings)
+        .then((response) => {
+          result.innerHTML += "<p>✓ Settings saved successfully</p>";
+          result.innerHTML += `<pre>${JSON.stringify(response, null, 2)}</pre>`;
+          log("Settings saved: " + JSON.stringify(testSettings));
+        })
+        .catch((e) => {
+          result.innerHTML += `<p>✗ Error saving settings: ${e.message}</p>`;
+          log("Error: " + e.message);
+        });
+    }
+
+    function testSettingsLoad() {
+      const result = document.getElementById("settings-result");
+      result.innerHTML = "<p>Testing settings load...</p>";
+
+      if (!window.stateManager) {
+        result.innerHTML += "<p>✗ stateManager not found</p>";
+        return;
+      }
+
+      window.stateManager.getSettings()
+        .then((response) => {
+          result.innerHTML += "<p>✓ Settings loaded successfully</p>";
+          result.innerHTML += `<pre>${JSON.stringify(response.settings, null, 2)}</pre>`;
+          log("Settings loaded: " + JSON.stringify(response.settings));
+        })
+        .catch((e) => {
+          result.innerHTML += `<p>✗ Error loading settings: ${e.message}</p>`;
+          log("Error: " + e.message);
+        });
+    }
+
+    function testLogsEndpoint() {
+      const result = document.getElementById("logs-result");
+      result.innerHTML = "<p>Testing logs endpoints...</p>";
+
+      if (!window.stateManager) {
+        result.innerHTML += "<p>✗ stateManager not found</p>";
+        return;
+      }
+
+      // Try to get logs from database
+      window.stateManager.getLogs({ limit: 10 })
+        .then((response) => {
+          result.innerHTML += `<p>✓ getLogs() returned ${response.logs?.length || 0} logs</p>`;
+          if (response.logs?.length > 0) {
+            result.innerHTML += `<pre>${JSON.stringify(response.logs.slice(0, 3), null, 2)}</pre>`;
+          } else {
+            result.innerHTML += "<p>No logs in database</p>";
+          }
+        })
+        .catch((e) => {
+          result.innerHTML += `<p>✗ getLogs() error: ${e.message}</p>`;
+        });
+
+      // Try to read log file
+      setTimeout(() => {
+        window.stateManager.readLogFile()
+          .then((response) => {
+            result.innerHTML += `<p>✓ readLogFile() returned ${response.logs?.length || 0} logs</p>`;
+            if (response.logs?.length > 0) {
+              result.innerHTML += `<pre>${JSON.stringify(response.logs.slice(0, 3), null, 2)}</pre>`;
+            } else {
+              result.innerHTML += "<p>No logs in file</p>";
+            }
+          })
+          .catch((e) => {
+            result.innerHTML += `<p>✗ readLogFile() error: ${e.message}</p>`;
+          });
+      }, 500);
+    }
+
+    log("Test page loaded. Open DevTools console for more details.");
+    log(`Window.stateManager: ${!!window.stateManager}`);
+    log(`Window.socketClient: ${!!window.socketClient}`);
+  </script>
+</body>
+</html>

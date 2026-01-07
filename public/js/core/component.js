@@ -118,8 +118,12 @@ class Component {
 
       // Create delegated handler
       const delegatedHandler = (e) => {
+        // Early exit if event is not from within this component
+        if (!this._el || (!this._el.contains(e.target) && this._el !== e.target)) {
+          return;
+        }
         const target = selector ? e.target.closest(selector) : e.target;
-        if (target && this._el && (this._el === target || this._el.contains(target))) {
+        if (target) {
           fn(e, target);
         }
       };
@@ -127,8 +131,10 @@ class Component {
       // Store for cleanup
       this._delegatedHandlers[delegationKey] = delegatedHandler;
 
-      // Attach to document
-      document.addEventListener(event, delegatedHandler, false);
+      // Attach to this component element instead of document for better performance
+      if (this._el) {
+        this._el.addEventListener(event, delegatedHandler, false);
+      }
     });
   }
 
@@ -137,7 +143,9 @@ class Component {
 
     Object.entries(this._delegatedHandlers).forEach(([key, handler]) => {
       const [event] = key.split("|");
-      document.removeEventListener(event, handler, false);
+      if (this._el) {
+        this._el.removeEventListener(event, handler, false);
+      }
     });
   }
 
@@ -199,6 +207,9 @@ class Component {
         Object.entries(v).forEach(([dk, dv]) => {
           el.dataset[dk] = dv;
         });
+      } else if (k === "value" || k === "checked") {
+        // Set value and checked as properties for form elements
+        el[k] = v;
       } else if (typeof v === "boolean") {
         // Boolean attributes (disabled, checked, etc.) - only set when true
         if (v) {

@@ -23,6 +23,12 @@ class SettingsPage extends Component {
       maxModelsLoaded: settings.maxModelsLoaded || 4,
       parallelSlots: settings.parallelSlots || 1,
       gpuLayers: settings.gpuLayers || 0,
+      logLevel: settings.logLevel || "info",
+      maxFileSize: settings.maxFileSize || 10485760,
+      maxFiles: settings.maxFiles || 7,
+      enableFileLogging: settings.enableFileLogging !== false,
+      enableDatabaseLogging: settings.enableDatabaseLogging !== false,
+      enableConsoleLogging: settings.enableConsoleLogging !== false,
       routerStatus: props.routerStatus || null,
       llamaStatus: props.llamaStatus || null,
     };
@@ -87,6 +93,12 @@ class SettingsPage extends Component {
         maxModelsLoaded: this.state.maxModelsLoaded,
         parallelSlots: this.state.parallelSlots,
         gpuLayers: this.state.gpuLayers,
+        logLevel: this.state.logLevel,
+        maxFileSize: this.state.maxFileSize,
+        maxFiles: this.state.maxFiles,
+        enableFileLogging: this.state.enableFileLogging,
+        enableDatabaseLogging: this.state.enableDatabaseLogging,
+        enableConsoleLogging: this.state.enableConsoleLogging,
       };
 
       // Update config with ctx_size
@@ -213,6 +225,26 @@ class SettingsPage extends Component {
         onBatchSizeChange: (val) => this.setState({ batch_size: val }),
         onTemperatureChange: (val) => this.setState({ temperature: val }),
         onRepeatPenaltyChange: (val) => this.setState({ repeatPenalty: val }),
+      }),
+      Component.h(window.LoggingConfig, {
+        logLevel: this.state.logLevel,
+        maxFileSize: this.state.maxFileSize,
+        maxFiles: this.state.maxFiles,
+        enableFileLogging: this.state.enableFileLogging,
+        enableDatabaseLogging: this.state.enableDatabaseLogging,
+        enableConsoleLogging: this.state.enableConsoleLogging,
+        onLogLevelChange: (val) => {
+          console.log("[DEBUG] SettingsPage.onLogLevelChange:", {
+            val,
+            oldValue: this.state.logLevel,
+          });
+          this.setState({ logLevel: val });
+        },
+        onMaxFileSizeChange: (val) => this.setState({ maxFileSize: val }),
+        onMaxFilesChange: (val) => this.setState({ maxFiles: val }),
+        onEnableFileLoggingChange: (val) => this.setState({ enableFileLogging: val }),
+        onEnableDatabaseLoggingChange: (val) => this.setState({ enableDatabaseLogging: val }),
+        onEnableConsoleLoggingChange: (val) => this.setState({ enableConsoleLogging: val }),
       }),
       Component.h(window.SaveSection)
     );
