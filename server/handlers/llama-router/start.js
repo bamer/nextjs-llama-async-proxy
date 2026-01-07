@@ -87,6 +87,7 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
   }
 
   // Build command
+  const optionsToUse = options || {};
   const args = [
     "--port",
     String(llamaServerPort),
@@ -95,14 +96,14 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
     "--models-dir",
     modelsDir,
     "--models-max",
-    String(options.maxModels || 4),
+    String(optionsToUse.maxModels || 4),
     "--threads",
-    String(options.threads || 4),
+    String(optionsToUse.threads || 4),
     "--ctx-size",
-    String(options.ctxSize || 4096),
+    String(optionsToUse.ctxSize || 4096),
   ];
 
-  if (options.noAutoLoad) {
+  if (optionsToUse.noAutoLoad) {
     args.push("--no-models-autoload");
   }
 

@@ -97,8 +97,24 @@ class ModelsPage extends Component {
     this.state = {
       models: props.models || [],
       filters: { status: "all", search: "" },
+      sortBy: "name",
+      sortOrder: "asc",
     };
+    this.lastSearchValue = "";
+    this.lastStatusValue = "all";
     console.log("[MODELS] State initialized with", this.state.models.length, "models");
+  }
+
+  didUpdate() {
+    // Restore focus and cursor position to search input after update
+    const searchInput = this._el?.querySelector('[data-field="search"]');
+    if (searchInput && document.activeElement === searchInput) {
+      // Focus already restored by browser, no action needed
+    } else if (searchInput && this.lastSearchValue === this.state.filters.search) {
+      // Only restore if value hasn't changed (user is still typing)
+      searchInput.focus();
+      searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+    }
   }
 
   shouldUpdate(newProps) {
@@ -150,6 +166,25 @@ class ModelsPage extends Component {
       );
     };
 
+    const sortableHeader = (label, field) => {
+      const isSorted = this.state.sortBy === field;
+      const indicator =
+        isSorted && this.state.sortOrder === "asc"
+          ? " ↑"
+          : isSorted && this.state.sortOrder === "desc"
+            ? " ↓"
+            : "";
+      return Component.h(
+        "th",
+        {
+          "data-sort": field,
+          className: isSorted ? "sorted" : "",
+          style: "cursor: pointer; user-select: none;",
+        },
+        label + indicator
+      );
+    };
+
     const rows =
       filtered.length === 0
         ? Component.h("tr", {}, Component.h("td", { colSpan: 11 }, "No models"))
@@ -158,8 +193,8 @@ class ModelsPage extends Component {
             return Component.h(
               "tr",
               { "data-name": m.name },
-              Component.h("td", {}, m.name),
-              Component.h("td", {}, statusBadge(m.status)),
+              Component.h("td", { className: "name-cell" }, m.name),
+              Component.h("td", { className: "status-cell" }, statusBadge(m.status)),
               Component.h("td", {}, m.type || "-"),
               Component.h("td", {}, m.params || "-"),
               Component.h("td", {}, m.quantization || "-"),
@@ -167,8 +202,12 @@ class ModelsPage extends Component {
               Component.h("td", {}, m.embedding_size || "-"),
               Component.h("td", {}, m.block_count || "-"),
               Component.h("td", {}, m.head_count || "-"),
-              Component.h("td", {}, m.file_size ? this._fmtBytes(m.file_size) : "-"),
-              Component.h("td", {}, actionBtn(m))
+              Component.h(
+                "td",
+                { className: "size-cell" },
+                m.file_size ? this._fmtBytes(m.file_size) : "-"
+              ),
+              Component.h("td", { className: "action-cell" }, actionBtn(m))
             );
           });
 
@@ -203,13 +242,14 @@ class ModelsPage extends Component {
         { className: "filters" },
         Component.h("input", {
           type: "text",
-          placeholder: "Search...",
+          placeholder: "Search models...",
           "data-field": "search",
           value: this.state.filters.search,
+          autoComplete: "off",
         }),
         Component.h(
           "select",
-          { "data-field": "status" },
+          { "data-field": "status", value: this.state.filters.status },
           Component.h("option", { value: "all" }, "All"),
           Component.h("option", { value: "loaded" }, "Loaded"),
           Component.h("option", { value: "unloaded" }, "Unloaded")
@@ -224,16 +264,16 @@ class ModelsPage extends Component {
           Component.h(
             "tr",
             {},
-            Component.h("th", {}, "Name"),
-            Component.h("th", {}, "Status"),
-            Component.h("th", {}, "Arch"),
-            Component.h("th", {}, "Params"),
-            Component.h("th", {}, "Quant"),
-            Component.h("th", {}, "Ctx"),
-            Component.h("th", {}, "Embed"),
-            Component.h("th", {}, "Blocks"),
-            Component.h("th", {}, "Heads"),
-            Component.h("th", {}, "Size"),
+            sortableHeader("Name", "name"),
+            sortableHeader("Status", "status"),
+            sortableHeader("Arch", "type"),
+            sortableHeader("Params", "params"),
+            sortableHeader("Quant", "quantization"),
+            sortableHeader("Ctx", "ctx_size"),
+            sortableHeader("Embed", "embedding_size"),
+            sortableHeader("Blocks", "block_count"),
+            sortableHeader("Heads", "head_count"),
+            sortableHeader("Size", "file_size"),
             Component.h("th", {}, "Actions")
           )
         ),
@@ -264,8 +304,33 @@ class ModelsPage extends Component {
       ms = ms.filter((m) => m.name.toLowerCase().includes(this.state.filters.search.toLowerCase()));
     }
 
+    // Apply sorting
+    ms = this._sortModels(ms);
+
     console.log("[MODELS] Returning", ms.length, "filtered models");
     return ms;
+  }
+
+  _sortModels(models) {
+    const { sortBy, sortOrder } = this.state;
+    const sorted = [...models].sort((a, b) => {
+      let aVal = a[sortBy];
+      let bVal = b[sortBy];
+
+      if (sortBy === "file_size") {
+        aVal = aVal || 0;
+        bVal = bVal || 0;
+      } else if (typeof aVal === "string") {
+        aVal = aVal.toLowerCase();
+        bVal = bVal.toLowerCase();
+      }
+
+      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return sorted;
   }
 
   _fmtCtx(v) {
@@ -289,11 +354,20 @@ class ModelsPage extends Component {
     return {
       "input [data-field=search]": (e) => {
         console.log("[MODELS] Search input changed:", e.target.value);
+        this.lastSearchValue = e.target.value;
         this.setState({ filters: { ...this.state.filters, search: e.target.value } });
       },
       "change [data-field=status]": (e) => {
         console.log("[MODELS] Status filter changed:", e.target.value);
+        this.lastStatusValue = e.target.value;
         this.setState({ filters: { ...this.state.filters, status: e.target.value } });
+      },
+      "click [data-sort]": (e) => {
+        const field = e.target.closest("[data-sort]").dataset.sort;
+        console.log("[MODELS] Sort header clicked:", field);
+        const newOrder =
+          this.state.sortBy === field && this.state.sortOrder === "asc" ? "desc" : "asc";
+        this.setState({ sortBy: field, sortOrder: newOrder });
       },
       "click [data-action=scan]": () => this._scan(),
       "click [data-action=cleanup]": () => this._cleanup(),
