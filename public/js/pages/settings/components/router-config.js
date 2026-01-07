@@ -35,11 +35,12 @@ class RouterConfig extends Component {
         { className: "card" },
         Component.h(
           "div",
-          { className: "defaults-grid" },
+          { className: "router-grid" },
+          // Max Models Loaded
           Component.h(
             "div",
             { className: "form-group" },
-            Component.h("label", {}, "Max Models"),
+            Component.h("label", {}, "Max Models Loaded"),
             Component.h("input", {
               type: "number",
               min: "1",
@@ -52,8 +53,10 @@ class RouterConfig extends Component {
                 this.props.onMaxModelsLoadedChange?.(val);
               },
             }),
-            Component.h("small", {}, "Models in memory")
+            Component.h("small", {}, "Maximum number of models to keep in memory")
           ),
+
+          // Parallel Slots
           Component.h(
             "div",
             { className: "form-group" },
@@ -70,8 +73,10 @@ class RouterConfig extends Component {
                 this.props.onParallelSlotsChange?.(val);
               },
             }),
-            Component.h("small", {}, "Processing slots")
+            Component.h("small", {}, "Number of parallel processing slots")
           ),
+
+          // Context Size
           Component.h(
             "div",
             { className: "form-group" },
@@ -89,8 +94,10 @@ class RouterConfig extends Component {
                 this.props.onCtxSizeChange?.(val);
               },
             }),
-            Component.h("small", {}, "Token window")
+            Component.h("small", {}, "Token context window size")
           ),
+
+          // GPU Layers
           Component.h(
             "div",
             { className: "form-group" },
@@ -107,7 +114,7 @@ class RouterConfig extends Component {
                 this.props.onGpuLayersChange?.(val);
               },
             }),
-            Component.h("small", {}, "GPU offload layers")
+            Component.h("small", {}, "Number of model layers to offload to GPU (0 = CPU only)")
           )
         )
       )
