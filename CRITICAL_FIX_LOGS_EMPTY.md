@@ -1,15 +1,18 @@
 # CRITICAL FIX: Empty Logs Page
 
 ## Problem
+
 - **Logs page completely empty** - no logs appearing
 - **Select box slow** - performance issue with event delegation
 
 ## Root Causes Found
 
 ### Issue #1: Database Never Connected to Logger ❌
+
 **File**: `server/handlers/index.js`
 
 **Problem**:
+
 ```javascript
 export function registerHandlers(io, db, ggufParser) {
   logger.setIo(io);          // ✓ Socket.IO connected
@@ -19,6 +22,7 @@ export function registerHandlers(io, db, ggufParser) {
 The database was never being passed to the logger, so logs were **created in memory and broadcast** but **never saved to the database**.
 
 **Fix**:
+
 ```javascript
 export function registerHandlers(io, db, ggufParser) {
   logger.setIo(io);
@@ -30,9 +34,11 @@ export function registerHandlers(io, db, ggufParser) {
 ---
 
 ### Issue #2: Event Delegation Too Broad (Slow Select) ❌
+
 **File**: `public/js/core/component.js`
 
 **Problem**:
+
 ```javascript
 // BEFORE - listens to ALL change events on entire document
 document.addEventListener(event, delegatedHandler, false);
@@ -41,6 +47,7 @@ document.addEventListener(event, delegatedHandler, false);
 Event listeners were attached to the **entire document**, so every single change event in the app was being checked by every component. This caused massive slowdown.
 
 **Fix**:
+
 ```javascript
 // AFTER - listen only within this component
 if (this._el) {
@@ -93,9 +100,11 @@ if (this._el) {
 ## Files Modified
 
 ### Backend
+
 1. `server/handlers/index.js` - Added `logger.setDb(db)`
 
 ### Frontend Performance
+
 2. `public/js/core/component.js` - Optimized event delegation scope
 
 ---
@@ -103,17 +112,20 @@ if (this._el) {
 ## Testing
 
 ### Test 1: Logs Appear
+
 1. Refresh browser (clears old state)
 2. Go to **Logs** page
 3. Should see logs immediately
 4. Should see "Client connected: ..." log
 
 ### Test 2: Select is Fast
+
 1. Go to **Settings** page
 2. Try changing **Log Level** dropdown multiple times
 3. Should be responsive now (not sluggish)
 
 ### Test 3: New Logs Appear in Real-Time
+
 1. Open **Logs** page
 2. Open another terminal and SSH into server
 3. Logs should appear as they're created
@@ -137,12 +149,12 @@ sqlite3 data/llama-dashboard.db "SELECT * FROM logs LIMIT 5;"
 
 ## Performance Impact
 
-| Metric | Before | After |
-|--------|--------|-------|
-| Select responsiveness | Slow | Fast |
-| Event listeners on page | Many | One per component |
-| Document event listeners | Hundreds | 0 |
-| Select operations | 500ms+ | <50ms |
+| Metric                   | Before   | After             |
+| ------------------------ | -------- | ----------------- |
+| Select responsiveness    | Slow     | Fast              |
+| Event listeners on page  | Many     | One per component |
+| Document event listeners | Hundreds | 0                 |
+| Select operations        | 500ms+   | <50ms             |
 
 ---
 
@@ -160,14 +172,15 @@ sqlite3 data/llama-dashboard.db "SELECT * FROM logs LIMIT 5;"
 
 ## Summary
 
-| Issue | Cause | Fix | Status |
-|-------|-------|-----|--------|
-| Empty logs page | DB not set on logger | Add `logger.setDb(db)` | ✅ Fixed |
+| Issue           | Cause                   | Fix                      | Status   |
+| --------------- | ----------------------- | ------------------------ | -------- |
+| Empty logs page | DB not set on logger    | Add `logger.setDb(db)`   | ✅ Fixed |
 | Slow select box | Document-wide listeners | Listen on component only | ✅ Fixed |
 
 **Total lines changed**: 7 across 2 files
 
-**Expected result**: 
+**Expected result**:
+
 - ✅ Logs page shows logs
 - ✅ Select box fast and responsive
 - ✅ All other functionality unchanged
@@ -187,11 +200,13 @@ sqlite3 data/llama-dashboard.db "SELECT * FROM logs LIMIT 5;"
 ## If Issue Persists
 
 1. Check database has logs:
+
    ```bash
    sqlite3 data/llama-dashboard.db "SELECT COUNT(*) FROM logs;"
    ```
 
 2. Check logs directory exists:
+
    ```bash
    ls -la logs/
    ```
@@ -205,4 +220,4 @@ sqlite3 data/llama-dashboard.db "SELECT * FROM logs LIMIT 5;"
 
 ---
 
-*This was the critical missing piece - the logger had no way to store logs in the database.*
+_This was the critical missing piece - the logger had no way to store logs in the database._

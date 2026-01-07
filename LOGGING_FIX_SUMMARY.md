@@ -9,26 +9,27 @@
 
 ## 🟢 Root Causes Found
 
-| # | Problem | Cause | Impact |
-|---|---------|-------|--------|
-| 1 | Select value won't update | `value` set as attribute instead of property | Form controls don't show correct value |
-| 2 | Event handlers broken | Inline callbacks don't survive re-renders | Select changes not detected |
-| 3 | Prop changes ignored | Wrong lifecycle method name (`componentWillReceiveProps` vs `willReceiveProps`) | Props never synced to state |
-| 4 | Direct state assignment | Using `this.state = {}` instead of `this.setState()` | Re-renders not triggered |
-| 5 | Server doesn't apply level | No handler to update FileLogger | Settings saved but ignored |
-| 6 | All logs saved regardless | No level threshold check | Logs below level still saved |
+| #   | Problem                    | Cause                                                                           | Impact                                 |
+| --- | -------------------------- | ------------------------------------------------------------------------------- | -------------------------------------- |
+| 1   | Select value won't update  | `value` set as attribute instead of property                                    | Form controls don't show correct value |
+| 2   | Event handlers broken      | Inline callbacks don't survive re-renders                                       | Select changes not detected            |
+| 3   | Prop changes ignored       | Wrong lifecycle method name (`componentWillReceiveProps` vs `willReceiveProps`) | Props never synced to state            |
+| 4   | Direct state assignment    | Using `this.state = {}` instead of `this.setState()`                            | Re-renders not triggered               |
+| 5   | Server doesn't apply level | No handler to update FileLogger                                                 | Settings saved but ignored             |
+| 6   | All logs saved regardless  | No level threshold check                                                        | Logs below level still saved           |
 
 ## 🔧 Fixes Applied
 
 ### 1. Core Component System Fix
+
 **File**: `public/js/core/component.js`
 
 ```javascript
 // BEFORE - value set as attribute
-el.setAttribute('value', v);
+el.setAttribute("value", v);
 
 // AFTER - value set as property
-el[k] = v;  // For 'value' and 'checked'
+el[k] = v; // For 'value' and 'checked'
 ```
 
 **Why**: HTML form elements require properties, not attributes, for `value` and `checked` to work correctly.
@@ -36,7 +37,9 @@ el[k] = v;  // For 'value' and 'checked'
 ---
 
 ### 2. Lifecycle Method Names
+
 **Files**: All 4 settings components
+
 - `logging-config.js`
 - `router-config.js`
 - `model-defaults.js`
@@ -55,6 +58,7 @@ willReceiveProps(newProps) { ... }
 ---
 
 ### 3. Event Delegation System
+
 **File**: `logging-config.js`
 
 ```javascript
@@ -79,6 +83,7 @@ Component.h("select", { "data-field": "log-level" })
 ---
 
 ### 4. Proper setState Usage
+
 **All affected files**
 
 ```javascript
@@ -94,18 +99,19 @@ this.setState({ logLevel: "error" });
 ---
 
 ### 5. Server-Side Log Level Application
+
 **File**: `server/handlers/config.js`
 
 ```javascript
 socket.on("settings:update", (req) => {
   const settings = req?.settings || {};
   db.setMeta("user_settings", settings);
-  
+
   // NEW: Apply log level to FileLogger
   if (settings.logLevel) {
     fileLogger.logLevel = settings.logLevel;
   }
-  
+
   ok(socket, "settings:update:result", { settings }, id);
 });
 ```
@@ -115,6 +121,7 @@ socket.on("settings:update", (req) => {
 ---
 
 ### 6. Log Level Threshold Enforcement
+
 **File**: `server/handlers/file-logger.js`
 
 ```javascript
@@ -179,17 +186,17 @@ User Interface (Settings Page)
 
 ## 📋 File Changes Summary
 
-| File | Change | Lines Changed |
-|------|--------|-----------------|
-| `component.js` | Add value/checked property binding | +3 |
-| `logging-config.js` | Event delegation + lifecycle fix | +75 |
-| `router-config.js` | Lifecycle method name | -/+ 5 |
-| `model-defaults.js` | Lifecycle method name | -/+ 5 |
-| `server-paths.js` | Lifecycle method name | -/+ 5 |
-| `settings-page.js` | Debug logging | +3 |
-| `logs.js` | Debug logging | +8 |
-| `config.js` | Apply log level to FileLogger | +6 |
-| `file-logger.js` | Enforce log level threshold | +5 |
+| File                | Change                             | Lines Changed |
+| ------------------- | ---------------------------------- | ------------- |
+| `component.js`      | Add value/checked property binding | +3            |
+| `logging-config.js` | Event delegation + lifecycle fix   | +75           |
+| `router-config.js`  | Lifecycle method name              | -/+ 5         |
+| `model-defaults.js` | Lifecycle method name              | -/+ 5         |
+| `server-paths.js`   | Lifecycle method name              | -/+ 5         |
+| `settings-page.js`  | Debug logging                      | +3            |
+| `logs.js`           | Debug logging                      | +8            |
+| `config.js`         | Apply log level to FileLogger      | +6            |
+| `file-logger.js`    | Enforce log level threshold        | +5            |
 
 **Total**: 9 files modified, ~115 lines changed
 
@@ -197,38 +204,42 @@ User Interface (Settings Page)
 
 ## ✅ What Now Works
 
-| Feature | Before | After |
-|---------|--------|-------|
-| Select dropdown | ❌ Stuck | ✅ Changes value |
-| Value persists | ❌ Resets | ✅ Stays selected |
-| Save button | ❌ Ignored | ✅ Updates server |
-| Server applies | ❌ No | ✅ Yes |
-| Logs appear | ❌ None | ✅ Loads from file/DB |
-| Log filtering | ❌ All saved | ✅ Respects level |
-| Logs page | ❌ Empty | ✅ Shows logs |
+| Feature         | Before       | After                 |
+| --------------- | ------------ | --------------------- |
+| Select dropdown | ❌ Stuck     | ✅ Changes value      |
+| Value persists  | ❌ Resets    | ✅ Stays selected     |
+| Save button     | ❌ Ignored   | ✅ Updates server     |
+| Server applies  | ❌ No        | ✅ Yes                |
+| Logs appear     | ❌ None      | ✅ Loads from file/DB |
+| Log filtering   | ❌ All saved | ✅ Respects level     |
+| Logs page       | ❌ Empty     | ✅ Shows logs         |
 
 ---
 
 ## 🧪 Testing Instructions
 
 ### Test 1: Select Works
+
 1. Go to Settings
 2. Change Log Level dropdown
 3. ✅ Should update immediately
 
 ### Test 2: Save Works
+
 1. Change Log Level
 2. Click "Save All Settings"
 3. Check server console
 4. ✅ Should see: `[DEBUG] Log level changed to: error`
 
 ### Test 3: Logs Appear
+
 1. Go to Logs page
 2. ✅ Should load and display logs
 3. Try changing level in Logs page
 4. ✅ Should filter correctly
 
 ### Debug Logs to Check
+
 - Browser console: Search for `[DEBUG]`
 - Server console: Look for `[DEBUG] Log level changed to:`
 
@@ -286,4 +297,4 @@ User Interface (Settings Page)
 
 ---
 
-*All fixes are production-ready and tested. No breaking changes.*
+_All fixes are production-ready and tested. No breaking changes._

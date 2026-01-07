@@ -3,9 +3,10 @@
 ## Summary of All Issues Found and Fixed
 
 ### Phase 1: Component System Issues (6 bugs)
+
 **Status**: ✅ Fixed
 
-1. **Select box value won't update** 
+1. **Select box value won't update**
    - Root: `value` attribute set instead of property
    - File: `component.js`
    - Fix: Set `value` and `checked` as properties
@@ -38,6 +39,7 @@
 ---
 
 ### Phase 2: Critical Missing Functionality (2 bugs)
+
 **Status**: ✅ Fixed
 
 7. **Logs page completely empty**
@@ -59,6 +61,7 @@
 ### Backend Files
 
 #### 1. `/server/handlers/index.js` - Initialize Logger with Database
+
 ```diff
 export function registerHandlers(io, db, ggufParser) {
   logger.setIo(io);
@@ -66,6 +69,7 @@ export function registerHandlers(io, db, ggufParser) {
 ```
 
 #### 2. `/server/handlers/config.js` - Apply Log Level to Server
+
 ```javascript
 // NEW: When settings update, apply log level
 if (settings.logLevel) {
@@ -75,6 +79,7 @@ if (settings.logLevel) {
 ```
 
 #### 3. `/server/handlers/file-logger.js` - Enforce Log Level Threshold
+
 ```javascript
 // NEW: Check if log should be logged
 log(level, msg, source = "server") {
@@ -90,6 +95,7 @@ log(level, msg, source = "server") {
 ### Frontend Files
 
 #### 4. `/public/js/core/component.js` - Fix Form Element Values
+
 ```diff
 - el.setAttribute(k, v);
 + } else if (k === "value" || k === "checked") {
@@ -97,6 +103,7 @@ log(level, msg, source = "server") {
 ```
 
 #### 5. `/public/js/core/component.js` - Optimize Event Delegation
+
 ```diff
 - document.addEventListener(event, delegatedHandler, false);
 + if (this._el) {
@@ -105,27 +112,33 @@ log(level, msg, source = "server") {
 ```
 
 #### 6. `/public/js/pages/settings/components/logging-config.js`
+
 - Migrated from inline `onChange` to `getEventMap()` event delegation
 - Fixed `componentWillReceiveProps` → `willReceiveProps`
 - Added proper `setState()` usage
 - Added debug logging
 
 #### 7. `/public/js/pages/settings/components/router-config.js`
+
 - Fixed `componentWillReceiveProps` → `willReceiveProps`
 - Changed to `setState()` instead of direct assignment
 
 #### 8. `/public/js/pages/settings/components/model-defaults.js`
+
 - Fixed `componentWillReceiveProps` → `willReceiveProps`
 - Changed to `setState()` instead of direct assignment
 
 #### 9. `/public/js/pages/settings/components/server-paths.js`
+
 - Fixed `componentWillReceiveProps` → `willReceiveProps`
 - Changed to `setState()` instead of direct assignment
 
 #### 10. `/public/js/pages/settings/settings-page.js`
+
 - Added debug logging for settings changes
 
 #### 11. `/public/js/pages/logs.js`
+
 - Added debug logging for log loading
 
 ---
@@ -133,35 +146,39 @@ log(level, msg, source = "server") {
 ## Results
 
 ### Before Fixes
-| Feature | Status |
-|---------|--------|
-| Select dropdown | ❌ Won't change |
-| Value persists | ❌ Resets to debug |
-| Save settings | ❌ Doesn't work |
-| Server applies | ❌ Ignored |
-| Logs appear | ❌ None visible |
-| Logs filtering | ❌ N/A |
-| Select speed | ❌ Extremely slow |
+
+| Feature         | Status             |
+| --------------- | ------------------ |
+| Select dropdown | ❌ Won't change    |
+| Value persists  | ❌ Resets to debug |
+| Save settings   | ❌ Doesn't work    |
+| Server applies  | ❌ Ignored         |
+| Logs appear     | ❌ None visible    |
+| Logs filtering  | ❌ N/A             |
+| Select speed    | ❌ Extremely slow  |
 
 ### After Fixes
-| Feature | Status |
-|---------|--------|
-| Select dropdown | ✅ Changes smoothly |
-| Value persists | ✅ Stays selected |
-| Save settings | ✅ Works |
-| Server applies | ✅ Applied |
-| Logs appear | ✅ Visible |
-| Logs filtering | ✅ Works |
-| Select speed | ✅ Fast & responsive |
+
+| Feature         | Status               |
+| --------------- | -------------------- |
+| Select dropdown | ✅ Changes smoothly  |
+| Value persists  | ✅ Stays selected    |
+| Save settings   | ✅ Works             |
+| Server applies  | ✅ Applied           |
+| Logs appear     | ✅ Visible           |
+| Logs filtering  | ✅ Works             |
+| Select speed    | ✅ Fast & responsive |
 
 ---
 
 ## Key Insights
 
 ### The Critical Missing Piece
-The most important fix was adding `logger.setDb(db)` in `server/handlers/index.js`. 
+
+The most important fix was adding `logger.setDb(db)` in `server/handlers/index.js`.
 
 **Why it mattered**:
+
 - Logs were being created
 - Logs were being broadcast via Socket.IO
 - Logs were being saved to files
@@ -170,9 +187,11 @@ The most important fix was adding `logger.setDb(db)` in `server/handlers/index.j
 - Therefore: logs page was always empty
 
 ### The Performance Fix
+
 Event delegation on document caused massive slowdown because every change event in the app was being checked by every component's handlers.
 
 **Moving to component-level listeners**:
+
 - Event propagation still works (bubbling)
 - But only checked within that component
 - Massive performance improvement
@@ -196,21 +215,25 @@ Event delegation on document caused massive slowdown because every change event 
 ## Deployment Steps
 
 1. **Backup database** (optional but recommended):
+
    ```bash
    cp data/llama-dashboard.db data/llama-dashboard.db.backup
    ```
 
 2. **Stop server**:
+
    ```bash
    # Ctrl+C in terminal
    ```
 
 3. **Clear browser cache** (or hard refresh):
+
    ```
    Ctrl+Shift+R or Cmd+Shift+R
    ```
 
 4. **Restart server**:
+
    ```bash
    pnpm start
    ```
@@ -221,16 +244,16 @@ Event delegation on document caused massive slowdown because every change event 
 
 ## Metrics
 
-| Metric | Value |
-|--------|-------|
-| Files modified | 11 |
-| Backend files | 3 |
-| Frontend files | 8 |
-| Total lines changed | ~150 |
-| Critical bugs fixed | 2 |
-| Secondary bugs fixed | 6 |
-| Performance improvements | 2 |
-| Breaking changes | 0 |
+| Metric                   | Value |
+| ------------------------ | ----- |
+| Files modified           | 11    |
+| Backend files            | 3     |
+| Frontend files           | 8     |
+| Total lines changed      | ~150  |
+| Critical bugs fixed      | 2     |
+| Secondary bugs fixed     | 6     |
+| Performance improvements | 2     |
+| Breaking changes         | 0     |
 
 ---
 
@@ -266,6 +289,7 @@ If you want to improve further:
 If issues persist:
 
 1. Check database:
+
    ```bash
    sqlite3 data/llama-dashboard.db "SELECT COUNT(*) FROM logs;"
    ```
@@ -276,4 +300,4 @@ If issues persist:
 
 ---
 
-*All fixes are production-ready. No breaking changes. Full backwards compatibility.*
+_All fixes are production-ready. No breaking changes. Full backwards compatibility._

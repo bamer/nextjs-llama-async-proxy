@@ -3,6 +3,7 @@
 ## 🚀 What to Do Now
 
 ### Step 1: Restart Server (2 minutes)
+
 ```bash
 # In your server terminal:
 # 1. Press Ctrl+C to stop
@@ -11,6 +12,7 @@ pnpm start
 ```
 
 **You should see**:
+
 ```
 > Llama Async Proxy Dashboard
 > http://localhost:3000
@@ -19,6 +21,7 @@ pnpm start
 ---
 
 ### Step 2: Refresh Browser (1 minute)
+
 ```
 1. Open browser
 2. Press Ctrl+Shift+R (Cmd+Shift+R on Mac)
@@ -29,6 +32,7 @@ pnpm start
 ---
 
 ### Step 3: Test Logs Page (1 minute)
+
 ```
 1. Click "Logs" in sidebar
 2. Wait 2 seconds
@@ -41,6 +45,7 @@ pnpm start
 ---
 
 ### Step 4: Test Settings Page (2 minutes)
+
 ```
 1. Click "Settings" in sidebar
 2. Find "Log Level" dropdown (under Logging Configuration)
@@ -56,6 +61,7 @@ pnpm start
 ---
 
 ### Step 5: Verify in Browser Console (1 minute)
+
 ```
 1. Press F12 to open DevTools
 2. Go to Console tab
@@ -70,19 +76,20 @@ pnpm start
 
 ## ✅ Expected Results
 
-| Test | Expected Result |
-|------|-----------------|
-| Logs page | ✅ Shows logs from database |
-| Select dropdown | ✅ Changes immediately & fast |
-| Save button | ✅ Saves successfully |
-| Server applies | ✅ Shows [DEBUG] message |
-| Console messages | ✅ Shows [DEBUG] logs |
+| Test             | Expected Result               |
+| ---------------- | ----------------------------- |
+| Logs page        | ✅ Shows logs from database   |
+| Select dropdown  | ✅ Changes immediately & fast |
+| Save button      | ✅ Saves successfully         |
+| Server applies   | ✅ Shows [DEBUG] message      |
+| Console messages | ✅ Shows [DEBUG] logs         |
 
 ---
 
 ## 🔴 If Something Still Wrong
 
 ### No logs on Logs page?
+
 ```bash
 # Check database has logs
 sqlite3 data/llama-dashboard.db "SELECT COUNT(*) FROM logs;"
@@ -93,10 +100,12 @@ ls -la logs/
 ```
 
 ### Select still slow?
+
 - Hard refresh again: Ctrl+Shift+R
 - Restart server
 
 ### No console messages?
+
 - Make sure you're looking at the right browser console
 - F12 → Console tab
 - Filter for "DEBUG"
@@ -127,7 +136,7 @@ ls -la logs/
 ## ⏱️ Total Time
 
 - Restart server: 30 seconds
-- Hard refresh: 10 seconds  
+- Hard refresh: 10 seconds
 - Test logs: 30 seconds
 - Test settings: 60 seconds
 - **Total: ~2 minutes**
@@ -150,6 +159,7 @@ If nothing works:
 ## 🎉 You're Done!
 
 Once all tests pass, the logging system is fully functional:
+
 - ✅ Select works smoothly
 - ✅ Changes saved to server
 - ✅ Logs appear on Logs page
@@ -158,4 +168,4 @@ Once all tests pass, the logging system is fully functional:
 
 ---
 
-*The critical fix was adding logger.setDb(db) which initializes the database for log storage.*
+_The critical fix was adding logger.setDb(db) which initializes the database for log storage._

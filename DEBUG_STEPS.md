@@ -3,6 +3,7 @@
 ## Changes Made
 
 ### 1. Fixed `value` Property Binding in Component.h
+
 **File**: `public/js/core/component.js`
 
 The Component.h function now properly sets `value` and `checked` as properties instead of attributes for form elements. This is critical for select boxes and checkboxes to work correctly.
@@ -10,6 +11,7 @@ The Component.h function now properly sets `value` and `checked` as properties i
 **Impact**: Select boxes and form inputs should now properly update their displayed value.
 
 ### 2. Fixed LoggingConfig Event Delegation
+
 **File**: `public/js/pages/settings/components/logging-config.js`
 
 - Migrated from inline `onChange` callbacks to `getEventMap()` event delegation
@@ -19,6 +21,7 @@ The Component.h function now properly sets `value` and `checked` as properties i
 **Impact**: Changes to log level should now properly trigger state updates.
 
 ### 3. Added Server-Side Log Level Application
+
 **File**: `server/handlers/config.js`
 
 When settings are updated, the server now applies the new log level to the FileLogger instance.
@@ -26,7 +29,9 @@ When settings are updated, the server now applies the new log level to the FileL
 **Impact**: Log level changes are now actually applied on the server.
 
 ### 4. Added Enhanced Debug Logging
-**Files**: 
+
+**Files**:
+
 - `public/js/pages/settings/components/logging-config.js`
 - `public/js/pages/settings/settings-page.js`
 - `public/js/pages/logs.js`
@@ -36,12 +41,14 @@ Debug logging shows the flow of state changes and server responses.
 ## How to Test
 
 ### Step 1: Open Browser Console
+
 1. Open the application in your browser
 2. Press `F12` to open DevTools
 3. Go to the **Console** tab
 4. You should see logs with `[DEBUG]` prefix
 
 ### Step 2: Test Select Box Change
+
 1. Navigate to **Settings** page
 2. Find the **Log Level** select box
 3. Try changing it to a different value
@@ -54,11 +61,13 @@ Debug logging shows the flow of state changes and server responses.
 5. **The select box visual should update immediately**
 
 **If you don't see these logs:**
+
 - Event delegation might not be working
 - Check if there are JavaScript errors in the console
 - Check the Network tab to see if requests are being sent
 
 ### Step 3: Test Saving Settings
+
 1. Change the Log Level in Settings
 2. Click **Save All Settings** button
 3. **Watch the console** for:
@@ -72,11 +81,13 @@ Debug logging shows the flow of state changes and server responses.
    ```
 
 **If you don't see server logs:**
+
 - Server might not be receiving the update
 - Check Network tab → WS (WebSocket) requests
 - Look for `settings:update` event
 
 ### Step 4: Test Logs Appearing
+
 1. Navigate to **Logs** page
 2. **Watch the console** for:
    ```
@@ -87,11 +98,13 @@ Debug logging shows the flow of state changes and server responses.
    ```
 
 **If you see `logsCount: 0`:**
+
 - No logs have been generated yet
 - Try performing some actions (model operations, etc.) to generate logs
 - Check if logs directory exists: `ls -la logs/`
 
 ### Step 5: Check Server Logs
+
 1. Open terminal where server is running
 2. Look for `[DEBUG]` messages
 3. You should see connection logs like:
@@ -103,6 +116,7 @@ Debug logging shows the flow of state changes and server responses.
 ## Troubleshooting
 
 ### Select Box Not Changing
+
 1. **Check Component.h value binding**
    - Open DevTools Elements panel
    - Right-click select element
@@ -120,10 +134,13 @@ Debug logging shows the flow of state changes and server responses.
    select.value = "error";
    select.dispatchEvent(new Event("change", { bubbles: true }));
    ```
+
    - Should trigger `onLogLevelChange` and see debug logs
 
 ### No Logs Appearing
+
 1. **Check if logs are being created**
+
    ```bash
    # In terminal, check logs directory
    ls -la logs/
@@ -131,6 +148,7 @@ Debug logging shows the flow of state changes and server responses.
    ```
 
 2. **Check database**
+
    ```bash
    sqlite3 data/llama-dashboard.db "SELECT COUNT(*) FROM logs; SELECT * FROM logs LIMIT 5;"
    ```
@@ -147,6 +165,7 @@ Debug logging shows the flow of state changes and server responses.
    - Click "Test Log Appearance" button
 
 ### Settings Not Saving
+
 1. **Check network request**
    - DevTools Network tab
    - Trigger save
@@ -159,16 +178,17 @@ Debug logging shows the flow of state changes and server responses.
 
 3. **Test manually**
    ```javascript
-   stateManager.updateSettings({ logLevel: "error" })
-     .then(r => console.log("Success:", r))
-     .catch(e => console.error("Error:", e))
+   stateManager
+     .updateSettings({ logLevel: "error" })
+     .then((r) => console.log("Success:", r))
+     .catch((e) => console.error("Error:", e));
    ```
 
 ## Files Modified
 
 1. `/public/js/core/component.js` - Fixed value/checked property binding
 2. `/public/js/pages/settings/components/logging-config.js` - Event delegation + debug logging
-3. `/public/js/pages/settings/settings-page.js` - Debug logging  
+3. `/public/js/pages/settings/settings-page.js` - Debug logging
 4. `/public/js/pages/logs.js` - Debug logging
 5. `/server/handlers/config.js` - Apply log level to FileLogger
 6. `/server/handlers/file-logger.js` - Log level threshold enforcement

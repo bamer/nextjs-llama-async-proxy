@@ -1,16 +1,19 @@
 # Logging Settings Fixes
 
 ## Summary
+
 Fixed three critical bugs in the logging system:
 
 1. **Log Level Select Box Not Working**
-2. **Log Level Changes Not Being Applied to Server**  
+2. **Log Level Changes Not Being Applied to Server**
 3. **Log Level Threshold Not Enforced**
 
 ## Bug #1: Log Level Select Box Not Working
 
 ### Root Cause
+
 The `LoggingConfig` component used inline `onChange` callbacks in the JSX:
+
 ```javascript
 // BROKEN - inline callback doesn't survive re-renders
 Component.h("select", {
@@ -19,12 +22,13 @@ Component.h("select", {
     this.setState({ logLevel: val });
     this.props.onLogLevelChange?.(val);
   },
-})
+});
 ```
 
 When the component re-renders (via `setState`), new element instances are created with new inline function references. The event delegation system doesn't work with inline callbacks.
 
 ### Solution
+
 Migrated to Component's event delegation pattern using `getEventMap()`:
 
 ```javascript
@@ -44,22 +48,26 @@ onLogLevelChange(e) {
 ```
 
 Elements now use `data-field` attributes:
+
 ```javascript
 Component.h("select", {
   "data-field": "log-level",
   value: this.state.logLevel,
-})
+});
 ```
 
 ### Changed File
+
 - `public/js/pages/settings/components/logging-config.js`
 
 ## Bug #2: Log Level Changes Not Applied to Server
 
 ### Root Cause
+
 Settings were saved to the database but never applied to the FileLogger instance. The FileLogger always used `process.env.LOG_LEVEL` (defaulting to "info") and never checked the updated settings.
 
 ### Solution
+
 Added handler in `config.js` to apply log level changes to FileLogger:
 
 ```javascript
@@ -83,12 +91,15 @@ socket.on("settings:update", (req) => {
 ```
 
 ### Changed File
+
 - `server/handlers/config.js`
 
 ## Bug #3: Log Level Threshold Not Enforced
 
 ### Root Cause
+
 The `debug()` method checked the log level:
+
 ```javascript
 debug(msg, source = "server") {
   if (this.logLevels[this.logLevel] >= this.logLevels.debug) {
@@ -100,6 +111,7 @@ debug(msg, source = "server") {
 But the main `log()` method didn't, so other log methods (`info`, `warn`, `error`) always logged regardless of threshold, and debug logs got saved even when below the current level.
 
 ### Solution
+
 Added threshold check in the main `log()` method:
 
 ```javascript
@@ -113,12 +125,14 @@ log(level, msg, source = "server") {
 ```
 
 This ensures:
+
 - `debug: 3` - includes debug, info, warn, error
 - `info: 2` - includes info, warn, error (excludes debug)
 - `warn: 1` - includes warn, error (excludes info, debug)
 - `error: 0` - includes error only
 
 ### Changed File
+
 - `server/handlers/file-logger.js`
 
 ## How It Works Now
@@ -134,6 +148,7 @@ This ensures:
 ## Testing
 
 ### Test Select Box Works
+
 ```javascript
 // Open Settings page in browser
 // Change Log Level dropdown
@@ -141,6 +156,7 @@ This ensures:
 ```
 
 ### Test Log Level Applied to Server
+
 ```javascript
 // Change log level to "error"
 // Generate some logs (e.g., via model operations)
@@ -151,6 +167,7 @@ This ensures:
 ```
 
 ### Test Logs Appear
+
 ```javascript
 // Open Logs page
 // Should load logs from file or database
@@ -160,6 +177,7 @@ This ensures:
 ## Related Components
 
 Other settings components also use inline `onChange` handlers:
+
 - `router-config.js` - Router configuration inputs
 - `model-defaults.js` - Model defaults
 - `server-paths.js` - Server paths
@@ -168,12 +186,12 @@ These may also need migration to event delegation if they experience issues with
 
 ## Log Level Reference
 
-| Level | Value | Includes                   |
-|-------|-------|---------------------------|
-| error | 0     | error only                |
-| warn  | 1     | warn, error               |
-| info  | 2     | info, warn, error         |
-| debug | 3     | debug, info, warn, error  |
+| Level | Value | Includes                 |
+| ----- | ----- | ------------------------ |
+| error | 0     | error only               |
+| warn  | 1     | warn, error              |
+| info  | 2     | info, warn, error        |
+| debug | 3     | debug, info, warn, error |
 
 ## Files Modified
 
