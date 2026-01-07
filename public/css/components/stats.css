@@ -1,0 +1,80 @@
+.btn-sm {
+  padding: 2px 8px;
+  font-size: 0.75rem;
+}
+
+.btn-icon {
+  padding: var(--sm);
+  background: none;
+  border: none;
+}
+
+/* Forms */
+input[type="text"],
+input[type="number"],
+select {
+  padding: var(--sm) var(--md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  outline: none;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  transition:
+    background-color 0.3s ease,
+    border-color 0.2s ease,
+    color 0.3s ease;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--primary);
+}
+
+.form-group {
+  margin-bottom: var(--md);
+}
+.form-group label {
+  display: block;
+  margin-bottom: var(--sm);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+.form-group input {
+  width: 100%;
+}
+
+.form-row {
+  display: flex;
+  gap: var(--md);
+}
+.form-row > div {
+  flex: 1;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--sm);
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  text-transform: capitalize;
+}
+
+.badge.running {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+html.dark-mode .badge.running {
+  background: #064e3b;
+  color: #86efac;
+}
+
+.badge.idle {
+  background: var(--gray-100);

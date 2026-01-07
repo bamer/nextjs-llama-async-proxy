@@ -1,0 +1,80 @@
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--md);
+  margin-bottom: var(--md);
+}
+
+.router-title {
+  display: flex;
+  align-items: center;
+  gap: var(--md);
+}
+
+.router-title h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+}
+
+.router-info {
+  display: flex;
+  gap: var(--lg);
+  flex-wrap: wrap;
+}
+
+.info-item {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.router-controls {
+  display: flex;
+  gap: var(--md);
+  flex-wrap: wrap;
+}
+
+.router-controls .btn {
+  min-width: 120px;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--md);
+  margin-bottom: var(--lg);
+}
+
+.stat-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--lg);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--md);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+  border: 1px solid var(--border-color);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card.warning {
+  border-left: 3px solid var(--warning);
+}
+
+.stat-card.good {
+  border-left: 3px solid var(--success);
+}
+
+.stat-icon {
+  font-size: 1.5rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;

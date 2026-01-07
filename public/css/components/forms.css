@@ -1,0 +1,130 @@
+
+.big-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.status-card.running {
+  border-left: 4px solid var(--success);
+}
+.status-card.idle {
+  border-left: 4px solid var(--gray-400);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-card.running .status-badge {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+html.dark-mode .status-card.running .status-badge {
+  background: #064e3b;
+  color: #86efac;
+}
+
+.status-card.idle .status-badge {
+  background: var(--gray-100);
+  color: var(--gray-600);
+}
+
+html.dark-mode .status-card.idle .status-badge {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  gap: var(--md);
+  margin-bottom: var(--lg);
+  flex-wrap: wrap;
+}
+
+.toolbar .btn {
+  white-space: nowrap;
+}
+
+/* Filters */
+.filters {
+  display: flex;
+  gap: var(--md);
+  margin-bottom: var(--lg);
+}
+.filters input {
+  width: 200px;
+}
+.filters select {
+  width: 150px;
+}
+
+/* Settings Page */
+.settings-page {
+  padding: var(--lg);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.settings-page h1 {
+  font-size: 1.5rem;
+  margin-bottom: var(--lg);
+  color: var(--text-primary);
+}
+
+.settings-section {
+  margin-bottom: var(--xl);
+}
+
+.settings-section h2 {
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--sm);
+  padding-bottom: var(--sm);
+  border-bottom: 2px solid var(--primary);
+  display: inline-block;
+}
+
+.section-desc {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-bottom: var(--md);
+}
+
+/* Router Card - Unified Status + Config */
+.router-card {
+  border-left: 4px solid var(--primary);
+}
+
+.router-card.running {
+  border-left-color: var(--success);
+}
+
+.router-card.idle {
+  border-left-color: var(--gray-400);
+}
+
+.router-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--md);
+  margin-bottom: var(--md);
+}
+
+.router-title {
+  display: flex;
+  align-items: center;
+  gap: var(--md);
+}
+
+.router-title h3 {
+  margin: 0;

@@ -1,0 +1,100 @@
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+}
+
+.status-card .status-details span {
+  display: flex;
+  justify-content: space-between;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--md);
+  margin-bottom: var(--md);
+}
+
+.form-group {
+  margin-bottom: 0;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--xs);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--gray-600);
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"] {
+  width: 100%;
+  padding: var(--sm) var(--md);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+}
+
+.form-group input:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.field-help {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  margin-top: 2px;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--sm);
+  cursor: pointer;
+  margin-top: var(--sm);
+}
+
+.checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.checkbox span {
+  font-size: 0.875rem;
+  color: var(--gray-700);
+}
+
+/* Control buttons */
+.actions-section .card {
+  background: var(--card-bg);
+}
+
+.actions-section h3 {
+  margin-bottom: var(--sm);
+}
+
+.action-buttons {
+  display: flex;
+  gap: var(--md);
+  flex-wrap: wrap;
+}
+
+/* About card */
+.about-card {
+  text-align: center;
+  padding: var(--xl);
+}
+
+.about-card h3 {
+  font-size: 1.25rem;
+  margin-bottom: var(--sm);
+}
+
+.about-card p {
+  color: var(--text-secondary);
+}
+
+/* Responsive */

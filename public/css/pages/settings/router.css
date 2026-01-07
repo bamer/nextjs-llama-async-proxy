@@ -1,0 +1,60 @@
+
+.health-message {
+  font-weight: 500;
+}
+
+.health-checks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sm);
+}
+
+.health-check {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--sm) var(--md);
+  background: var(--bg-tertiary);
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.health-check.ok {
+  border-left: 3px solid var(--success);
+}
+
+.health-check.warning {
+  border-left: 3px solid var(--warning);
+}
+
+.check-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.check-name {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.check-value {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.check-indicator {
+  font-size: 0.875rem;
+}
+
+.indicator-good {
+  color: var(--success);
+}
+
+.indicator-warning {
+  color: var(--warning);
+}
+
+/* Actions Section */
+.actions-section {
+  background: var(--card-bg);
+  border-radius: var(--radius);

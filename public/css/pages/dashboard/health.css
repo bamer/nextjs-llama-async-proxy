@@ -1,0 +1,50 @@
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* Dashboard actions */
+.dashboard-actions {
+  display: flex;
+  gap: var(--md);
+  margin-top: var(--lg);
+}
+
+.dashboard-page .card h2 {
+  margin-bottom: var(--md);
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+/* Unified Dashboard Styles */
+.dashboard-page.unified {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Router Section */
+.router-section {
+  margin-bottom: var(--lg);
+}
+
+.router-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--lg);
+  border-left: 4px solid var(--primary);
+  border: 1px solid var(--border-color);
+}
+
+.router-card.running {
+  border-left-color: var(--success);
+}
+
+.router-card.idle {
+  border-left-color: var(--gray-400);
+}
+
+.router-header {
+  display: flex;
+  justify-content: space-between;
