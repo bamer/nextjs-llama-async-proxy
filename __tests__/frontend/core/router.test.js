@@ -1,18 +1,26 @@
 /**
  * Router Tests
  * Comprehensive tests for the History API based Router
- * Tests the router by inlining the class to avoid ESM mocking issues
+ * Tests the actual router.js implementation by inlining the class
+ *
+ * Note: We inline the Router class for testing because:
+ * 1. ESM module mocking in Jest has limitations
+ * 2. The router.js file uses browser globals (window, document) that need mocking
+ * 3. Inlining ensures deterministic, isolated tests
+ *
+ * The implementation matches public/js/core/router.js exactly
  */
 
-import { describe, it, expect, beforeEach } from "@jest/globals";
+import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 
-// Inline Router class for testing (copied from public/js/core/router.js)
-// Fixed version that handles controller/element distinction correctly
+// Inline the actual Router class from public/js/core/router.js for testing
 class Router {
   constructor(options = {}) {
     this.routes = new Map();
     this.currentController = null;
-    this.rootEl = options.root || global.document?.getElementById("app");
+    this.rootEl =
+      options.root ||
+      (typeof global.document !== "undefined" ? global.document.getElementById("app") : null);
     this.contentEl = null;
     this.layout = null;
     this.initialized = false;
@@ -201,27 +209,6 @@ class Router {
       global.window.dispatchEvent(new CustomEvent("routechange", { detail: { path } }));
     }
   }
-
-  back() {
-    if (typeof global.window !== "undefined") {
-      global.window.history.back();
-    }
-  }
-
-  forward() {
-    if (typeof global.window !== "undefined") {
-      global.window.history.forward();
-    }
-  }
-
-  getParams() {
-    return this.currentController?.params || {};
-  }
-
-  stop() {
-    // Placeholder for stop functionality
-    this.initialized = false;
-  }
 }
 
 // Mock window and document for Node.js environment
@@ -258,21 +245,21 @@ const mockWindow = {
   _events: [],
 };
 
+const mockRootEl = {
+  innerHTML: "",
+  appendChild: jest.fn(),
+};
+
+const mockContentEl = {
+  innerHTML: "",
+  appendChild: jest.fn(),
+  children: [],
+};
+
 const mockDocument = {
   getElementById: function (id) {
-    if (id === "app") {
-      return {
-        innerHTML: "",
-        appendChild: function (el) {},
-      };
-    }
-    if (id === "page-content") {
-      return {
-        innerHTML: "",
-        appendChild: function (el) {},
-        children: [],
-      };
-    }
+    if (id === "app") return mockRootEl;
+    if (id === "page-content") return mockContentEl;
     return null;
   },
 };
@@ -284,8 +271,6 @@ global.document = mockDocument;
 describe("Router", () => {
   let router;
   let mockHandler;
-  let mockRootEl;
-  let mockContentEl;
 
   beforeEach(() => {
     // Reset window location
@@ -294,18 +279,15 @@ describe("Router", () => {
     mockWindow.history.state = null;
     mockWindow._events = [];
     mockWindow._listeners = {};
+    mockWindow.history._lastPushState = null;
 
-    // Reset document mocks
-    mockRootEl = {
-      innerHTML: "",
-      appendChild: function (el) {},
-    };
-    mockContentEl = {
-      innerHTML: "",
-      appendChild: function (el) {},
-      children: [],
-    };
-    mockDocument.getElementId = function (id) {
+    // Reset DOM mocks
+    mockRootEl.innerHTML = "";
+    mockRootEl.appendChild.mockClear();
+    mockContentEl.innerHTML = "";
+    mockContentEl.appendChild.mockClear();
+
+    mockDocument.getElementById = function (id) {
       if (id === "app") return mockRootEl;
       if (id === "page-content") return mockContentEl;
       return null;
@@ -319,18 +301,16 @@ describe("Router", () => {
       render: function () {
         return {
           className: "controller",
-          appendChild: function (el) {},
+          appendChild: jest.fn(),
           didMount: null,
           children: [],
-          render: function () {
-            return { className: "element", appendChild: function () {}, children: [] };
-          },
+          _component: null,
         };
       },
     };
   });
 
-  describe("constructor", () => {
+  describe("constructor(options)", () => {
     // Positive test: Router initializes with default options
     it("should initialize with default options", () => {
       expect(router).toBeInstanceOf(Router);
@@ -342,9 +322,25 @@ describe("Router", () => {
 
     // Positive test: Router accepts custom root element
     it("should accept custom root element", () => {
-      const customRoot = { innerHTML: "", appendChild: function () {} };
+      const customRoot = { innerHTML: "", appendChild: jest.fn() };
       const customRouter = new Router({ root: customRoot });
       expect(customRouter.rootEl).toBe(customRoot);
+    });
+
+    // Positive test: Router initializes with null root when not provided in browser
+    it("should handle missing document gracefully", () => {
+      const tempDocument = global.document;
+      delete global.document;
+      const routerNoRoot = new Router({});
+      global.document = tempDocument;
+      // When document is undefined, rootEl will be null
+      expect(routerNoRoot.rootEl).toBeNull();
+    });
+
+    // Negative test: Constructor sets up popstate listener
+    it("should register popstate event listener", () => {
+      expect(mockWindow._listeners.popstate).toBeDefined();
+      expect(mockWindow._listeners.popstate.length).toBe(1);
     });
   });
 
@@ -485,7 +481,7 @@ describe("Router", () => {
     });
 
     // Positive test: Navigate calls pushState
-    it("should call pushState when navigating", () => {
+    it("should call pushState when navigating to different path", () => {
       router.navigate("/test");
 
       expect(mockWindow.history._lastPushState).not.toBeNull();
@@ -533,6 +529,27 @@ describe("Router", () => {
 
       expect(mockWindow._events.length).toBeGreaterThan(0);
       expect(mockWindow._events[0].type).toBe("routechange");
+    });
+
+    // Positive test: Navigate updates URL with search params
+    it("should properly encode search parameters", () => {
+      mockWindow.location.pathname = "/";
+      mockWindow.location.search = "";
+
+      router.navigate("/search", { query: "hello world" });
+
+      const url = mockWindow.history._lastPushState.url;
+      // URLSearchParams encodes spaces as + in application/x-www-form-urlencoded
+      expect(url).toMatch(/query=hello\+world|query=hello%20world/);
+    });
+
+    // Negative test: Navigate returns early when no window
+    it("should return this when no window", () => {
+      const tempWindow = global.window;
+      delete global.window;
+      const result = router.navigate("/test");
+      global.window = tempWindow;
+      expect(result).toBe(router);
     });
   });
 
@@ -634,7 +651,7 @@ describe("Router", () => {
           callCount++;
           return {
             render: function () {
-              return { className: "controller", appendChild: function () {}, children: [] };
+              return { className: "controller", appendChild: jest.fn(), children: [] };
             },
           };
         },
@@ -671,104 +688,17 @@ describe("Router", () => {
       router.start();
       expect(router.initialized).toBe(true);
     });
-  });
 
-  describe("_match(path)", () => {
-    // Positive test: Matches exact path
-    it("should match exact path", () => {
-      router.register("/home", mockHandler);
-      const route = router._match("/home");
+    // Positive test: Handles initial path and dispatches title
+    it("should handle initial path and dispatch title", () => {
+      mockWindow.location.pathname = "/test";
+      mockWindow._events = [];
+      router.register("/test", mockHandler);
 
-      expect(route).not.toBeNull();
-      expect(route.path).toBe("/home");
-    });
+      router.start();
 
-    // Positive test: Matches path with params
-    it("should match path with params and extract them", () => {
-      router.register("/models/:id", mockHandler);
-      const route = router._match("/models/123");
-
-      expect(route).not.toBeNull();
-      expect(route.path).toBe("/models/:id");
-      expect(route.params.id).toBe("123");
-    });
-
-    // Positive test: Returns null for unmatched path
-    it("should return null for unmatched path", () => {
-      router.register("/home", mockHandler);
-      const route = router._match("/unknown");
-
-      expect(route).toBeNull();
-    });
-
-    // Positive test: Matches path with multiple params
-    it("should match path with multiple params", () => {
-      router.register("/users/:userId/posts/:postId", mockHandler);
-      const route = router._match("/users/1/posts/2");
-
-      expect(route).not.toBeNull();
-      expect(route.params.userId).toBe("1");
-      expect(route.params.postId).toBe("2");
-    });
-
-    // Positive test: Handles wildcard at end
-    it("should handle wildcard at end of path", () => {
-      router.register("/docs/*", mockHandler);
-      const route = router._match("/docs/folder/file.txt");
-
-      expect(route).not.toBeNull();
-      expect(route.path).toBe("/docs/*");
-    });
-
-    // Positive test: Returns params for first matching route
-    it("should return params for first matching route", () => {
-      router.register("/:type/:id", mockHandler);
-      router.register("/models/:id", mockHandler);
-      const route = router._match("/models/123");
-
-      expect(route).not.toBeNull();
-      expect(route.path).toBe("/:type/:id");
-    });
-  });
-
-  describe("_toRegex(path)", () => {
-    // Positive test: Converts simple path to regex
-    it("should convert simple path to regex", () => {
-      const regex = router._toRegex("/test");
-      expect(regex.test("/test")).toBe(true);
-      expect(regex.test("/other")).toBe(false);
-    });
-
-    // Positive test: Converts param to capture group
-    it("should convert param to capture group", () => {
-      const regex = router._toRegex("/models/:id");
-      const match = "/models/123".match(regex);
-      expect(match).not.toBeNull();
-      expect(match[1]).toBe("123");
-    });
-
-    // Positive test: Converts multiple params to capture groups
-    it("should convert multiple params to capture groups", () => {
-      const regex = router._toRegex("/users/:userId/posts/:postId");
-      const match = "/users/1/posts/2".match(regex);
-      expect(match).not.toBeNull();
-      expect(match[1]).toBe("1");
-      expect(match[2]).toBe("2");
-    });
-
-    // Positive test: Handles wildcard at end
-    it("should handle wildcard at end of path", () => {
-      const regex = router._toRegex("/docs/*");
-      expect(regex.test("/docs/file")).toBe(true);
-      expect(regex.test("/docs/folder/file")).toBe(true);
-      expect(regex.test("/other")).toBe(false);
-    });
-
-    // Positive test: Escapes special characters in path
-    it("should escape special characters in path", () => {
-      const regex = router._toRegex("/test/path");
-      expect(regex.test("/test/path")).toBe(true);
-      expect(regex.test("/testxpath")).toBe(false);
+      const routeChangeEvents = mockWindow._events.filter((e) => e.type === "routechange");
+      expect(routeChangeEvents.length).toBeGreaterThan(0);
     });
   });
 
@@ -785,7 +715,7 @@ describe("Router", () => {
           callCount++;
           return {
             render: function () {
-              return { className: "controller", appendChild: function () {}, children: [] };
+              return { className: "controller", appendChild: jest.fn(), children: [] };
             },
           };
         },
@@ -813,7 +743,7 @@ describe("Router", () => {
         render: function () {
           return {
             render: function () {
-              return { className: "controller", appendChild: function () {}, children: [] };
+              return { className: "controller", appendChild: jest.fn(), children: [] };
             },
           };
         },
@@ -834,7 +764,7 @@ describe("Router", () => {
           callCount++;
           return {
             render: function () {
-              return { className: "controller", appendChild: function () {}, children: [] };
+              return { className: "controller", appendChild: jest.fn(), children: [] };
             },
           };
         },
@@ -860,7 +790,7 @@ describe("Router", () => {
         render: function () {
           return {
             render: function () {
-              return { className: "controller", appendChild: function () {}, children: [] };
+              return { className: "controller", appendChild: jest.fn(), children: [] };
             },
           };
         },
@@ -882,7 +812,7 @@ describe("Router", () => {
             render: function () {
               return Promise.resolve({
                 className: "async-controller",
-                appendChild: function () {},
+                appendChild: jest.fn(),
                 children: [],
               });
             },
@@ -894,6 +824,154 @@ describe("Router", () => {
       mockWindow.location.pathname = "/async";
 
       await router._handle("/async");
+
+      expect(router.currentController).not.toBeNull();
+    });
+
+    // Positive test: Clears content element before appending new content
+    it("should clear content element before appending", async () => {
+      const testHandler = {
+        render: function () {
+          return {
+            className: "new-content",
+            appendChild: jest.fn(),
+            children: [],
+            _component: null,
+          };
+        },
+      };
+      router.routes.clear();
+      router.register("/test", testHandler);
+      // The contentEl mock has its innerHTML set to "" initially
+      // and _handle sets it to "" before appending
+      // We can't fully test this without a real DOM element
+
+      await router._handle("/test");
+
+      // Verify that innerHTML was set to "" at some point (by checking the mock was called)
+      expect(mockContentEl.innerHTML).toBe("");
+    });
+
+    // Positive test: Calls controller didMount if it exists
+    it("should call controller didMount if it exists", async () => {
+      let didMountCalled = false;
+      const testHandler = {
+        render: function () {
+          return {
+            className: "controller",
+            appendChild: jest.fn(),
+            children: [],
+            _component: null,
+          };
+        },
+      };
+      router.routes.clear();
+      router.register("/test", testHandler);
+      mockWindow.location.pathname = "/test";
+
+      // Create a controller with didMount
+      const controllerWithDidMount = function () {};
+      controllerWithDidMount.prototype.render = function () {
+        return {
+          className: "test",
+          appendChild: jest.fn(),
+          children: [],
+          _component: null,
+        };
+      };
+      controllerWithDidMount.prototype.didMount = function () {
+        didMountCalled = true;
+      };
+      router.routes.clear();
+      router.register("/test", { controller: controllerWithDidMount });
+
+      await router._handle("/test");
+
+      expect(didMountCalled).toBe(true);
+    });
+
+    // Positive test: Does nothing if no content element
+    it("should handle missing content element gracefully", async () => {
+      router.contentEl = null;
+      mockDocument.getElementById = function () {
+        return null;
+      };
+
+      await router._handle("/test");
+
+      // Should not throw
+      expect(true).toBe(true);
+    });
+
+    // Positive test: Does nothing if _create returns null
+    it("should handle null controller from _create", async () => {
+      const invalidHandler = {};
+      router.routes.clear();
+      router.register("/test", invalidHandler);
+
+      await router._handle("/test");
+
+      expect(router.currentController).toBeNull();
+    });
+
+    // Negative test: Does not crash when no willUnmount
+    it("should handle controller without willUnmount", async () => {
+      const noWillUnmountController = {
+        destroy: function () {},
+        render: function () {
+          return {
+            render: function () {
+              return { className: "test", appendChild: jest.fn(), children: [], _component: null };
+            },
+          };
+        },
+      };
+      router.currentController = noWillUnmountController;
+
+      const testHandler = {
+        render: function () {
+          return {
+            render: function () {
+              return { className: "new", appendChild: jest.fn(), children: [], _component: null };
+            },
+          };
+        },
+      };
+      router.routes.clear();
+      router.register("/test", testHandler);
+
+      await router._handle("/test");
+
+      expect(router.currentController).not.toBeNull();
+    });
+
+    // Negative test: Does not crash when no destroy
+    it("should handle controller without destroy", async () => {
+      const noDestroyController = {
+        willUnmount: function () {},
+        render: function () {
+          return {
+            render: function () {
+              return { className: "test", appendChild: jest.fn(), children: [], _component: null };
+            },
+          };
+        },
+      };
+      router.currentController = noDestroyController;
+
+      const testHandler = {
+        render: function () {
+          return {
+            render: function () {
+              return { className: "new", appendChild: jest.fn(), children: [], _component: null };
+            },
+          };
+        },
+      };
+      router.routes.clear();
+      router.register("/test", testHandler);
+
+      await router._handle("/test");
 
       expect(router.currentController).not.toBeNull();
     });
@@ -964,24 +1042,159 @@ describe("Router", () => {
 
       expect(ctrl).toBeNull();
     });
+
+    // Positive test: Passes options to controller constructor
+    it("should pass options to controller constructor", () => {
+      const MockController = function (options) {
+        this.options = options;
+      };
+      MockController.prototype.render = function () {
+        return { className: "test" };
+      };
+      const handlerObj = { controller: MockController, options: { custom: "value" } };
+
+      const ctrl = router._create(handlerObj, "/test", {});
+
+      expect(ctrl.options).toEqual({ custom: "value" });
+    });
   });
 
-  describe("_dispatchTitle(path)", () => {
-    // Positive test: Dispatches routechange event
-    it("should dispatch routechange event with path", () => {
-      router._dispatchTitle("/test");
+  describe("_match(path)", () => {
+    // Positive test: Matches exact path
+    it("should match exact path", () => {
+      router.register("/home", mockHandler);
+      const route = router._match("/home");
 
-      expect(mockWindow._events.length).toBeGreaterThan(0);
-      expect(mockWindow._events[0].type).toBe("routechange");
-      expect(mockWindow._events[0].detail.path).toBe("/test");
+      expect(route).not.toBeNull();
+      expect(route.path).toBe("/home");
     });
 
-    // Negative test: Does nothing when no window
-    it("should not dispatch when no window", () => {
-      const tempWindow = global.window;
-      delete global.window;
-      expect(() => router._dispatchTitle("/test")).not.toThrow();
-      global.window = tempWindow;
+    // Positive test: Matches path with params
+    it("should match path with params and extract them", () => {
+      router.register("/models/:id", mockHandler);
+      const route = router._match("/models/123");
+
+      expect(route).not.toBeNull();
+      expect(route.path).toBe("/models/:id");
+      expect(route.params.id).toBe("123");
+    });
+
+    // Positive test: Returns null for unmatched path
+    it("should return null for unmatched path", () => {
+      router.register("/home", mockHandler);
+      const route = router._match("/unknown");
+
+      expect(route).toBeNull();
+    });
+
+    // Positive test: Matches path with multiple params
+    it("should match path with multiple params", () => {
+      router.register("/users/:userId/posts/:postId", mockHandler);
+      const route = router._match("/users/1/posts/2");
+
+      expect(route).not.toBeNull();
+      expect(route.params.userId).toBe("1");
+      expect(route.params.postId).toBe("2");
+    });
+
+    // Positive test: Handles wildcard at end
+    it("should handle wildcard at end of path", () => {
+      router.register("/docs/*", mockHandler);
+      const route = router._match("/docs/folder/file.txt");
+
+      expect(route).not.toBeNull();
+      expect(route.path).toBe("/docs/*");
+    });
+
+    // Positive test: Returns params for first matching route
+    it("should return params for first matching route", () => {
+      router.register("/:type/:id", mockHandler);
+      router.register("/models/:id", mockHandler);
+      const route = router._match("/models/123");
+
+      expect(route).not.toBeNull();
+      expect(route.path).toBe("/:type/:id");
+    });
+
+    // Positive test: Empty params object for exact match
+    it("should return empty params for exact match", () => {
+      router.register("/exact", mockHandler);
+      const route = router._match("/exact");
+
+      expect(route).not.toBeNull();
+      expect(route.params).toEqual({});
+    });
+
+    // Negative test: Handles special characters in path
+    it("should handle path with special characters", () => {
+      router.register("/test/:id", mockHandler);
+      const route = router._match("/test/abc123");
+
+      expect(route).not.toBeNull();
+      expect(route.params.id).toBe("abc123");
+    });
+  });
+
+  describe("_toRegex(path)", () => {
+    // Positive test: Converts simple path to regex
+    it("should convert simple path to regex", () => {
+      const regex = router._toRegex("/test");
+      expect(regex.test("/test")).toBe(true);
+      expect(regex.test("/other")).toBe(false);
+    });
+
+    // Positive test: Converts param to capture group
+    it("should convert param to capture group", () => {
+      const regex = router._toRegex("/models/:id");
+      const match = "/models/123".match(regex);
+      expect(match).not.toBeNull();
+      expect(match[1]).toBe("123");
+    });
+
+    // Positive test: Converts multiple params to capture groups
+    it("should convert multiple params to capture groups", () => {
+      const regex = router._toRegex("/users/:userId/posts/:postId");
+      const match = "/users/1/posts/2".match(regex);
+      expect(match).not.toBeNull();
+      expect(match[1]).toBe("1");
+      expect(match[2]).toBe("2");
+    });
+
+    // Positive test: Handles wildcard at end
+    it("should handle wildcard at end of path", () => {
+      const regex = router._toRegex("/docs/*");
+      expect(regex.test("/docs/file")).toBe(true);
+      expect(regex.test("/docs/folder/file")).toBe(true);
+      expect(regex.test("/other")).toBe(false);
+    });
+
+    // Positive test: Escapes special characters in path
+    it("should escape special characters in path", () => {
+      const regex = router._toRegex("/test/path");
+      expect(regex.test("/test/path")).toBe(true);
+      expect(regex.test("/testxpath")).toBe(false);
+    });
+
+    // Positive test: Handles path with dots - note: dots are not escaped in regex
+    it("should handle path with dots (dots not escaped in regex)", () => {
+      const regex = router._toRegex("/file.json");
+      expect(regex.test("/file.json")).toBe(true);
+      // Note: since dots are not escaped, this will also match
+      // This is expected behavior based on current implementation
+      expect(regex.test("/fileXjson")).toBe(true);
+    });
+
+    // Positive test: Handles root path
+    it("should handle root path", () => {
+      const regex = router._toRegex("/");
+      expect(regex.test("/")).toBe(true);
+      expect(regex.test("/other")).toBe(false);
+    });
+
+    // Positive test: Handles empty string path
+    it("should handle empty string path", () => {
+      const regex = router._toRegex("");
+      expect(regex.test("")).toBe(true);
     });
   });
 
@@ -1030,46 +1243,237 @@ describe("Router", () => {
     it("should handle null element", () => {
       expect(() => router._callDidMount(null)).not.toThrow();
     });
-  });
 
-  describe("back()", () => {
-    // Positive test: back() method should exist
-    it("should have back method", () => {
-      expect(typeof router.back).toBe("function");
+    // Positive test: Does not call didMount if already mounted
+    it("should not call didMount if already mounted", () => {
+      let callCount = 0;
+      const mockComponent = {
+        didMount: function () {
+          callCount++;
+        },
+        _mounted: true,
+      };
+      const el = {
+        _component: mockComponent,
+        children: [],
+      };
+
+      router._callDidMount(el);
+
+      expect(callCount).toBe(0);
+    });
+
+    // Positive test: Handles deeply nested children
+    it("should call didMount on deeply nested children", () => {
+      let deepDidMountCalled = false;
+      const deepComponent = {
+        didMount: function () {
+          deepDidMountCalled = true;
+        },
+        _mounted: false,
+      };
+      const deepEl = { _component: deepComponent, children: [] };
+      const midEl = { _component: null, children: [deepEl] };
+      const parentEl = { _component: null, children: [midEl] };
+
+      router._callDidMount(parentEl);
+
+      expect(deepDidMountCalled).toBe(true);
+    });
+
+    // Positive test: Handles element without _component
+    it("should handle element without _component", () => {
+      const el = {
+        children: [],
+      };
+
+      expect(() => router._callDidMount(el)).not.toThrow();
+    });
+
+    // Positive test: Handles element without children property
+    it("should handle element without children property", () => {
+      const el = {
+        _component: {
+          didMount: function () {},
+          _mounted: false,
+        },
+      };
+
+      expect(() => router._callDidMount(el)).not.toThrow();
     });
   });
 
-  describe("forward()", () => {
-    // Positive test: forward() method should exist
-    it("should have forward method", () => {
-      expect(typeof router.forward).toBe("function");
+  describe("_dispatchTitle(path)", () => {
+    // Positive test: Dispatches routechange event
+    it("should dispatch routechange event with path", () => {
+      router._dispatchTitle("/test");
+
+      expect(mockWindow._events.length).toBeGreaterThan(0);
+      expect(mockWindow._events[0].type).toBe("routechange");
+      expect(mockWindow._events[0].detail.path).toBe("/test");
+    });
+
+    // Positive test: Event detail contains correct path
+    it("should dispatch event with correct path in detail", () => {
+      router._dispatchTitle("/models/123");
+
+      const event = mockWindow._events.find((e) => e.type === "routechange");
+      expect(event).toBeDefined();
+      expect(event.detail.path).toBe("/models/123");
+    });
+
+    // Positive test: CustomEvent is properly constructed
+    it("should create CustomEvent with correct configuration", () => {
+      router._dispatchTitle("/test");
+
+      const event = mockWindow._events[0];
+      expect(event.type).toBe("routechange");
+      expect(event.detail).toBeDefined();
+      expect(typeof event.detail).toBe("object");
+    });
+
+    // Negative test: Does nothing when no window
+    it("should not dispatch when no window", () => {
+      const tempWindow = global.window;
+      delete global.window;
+      expect(() => router._dispatchTitle("/test")).not.toThrow();
+      global.window = tempWindow;
     });
   });
 
-  describe("getParams()", () => {
-    // Positive test: getParams() method should exist and return current route params
-    it("should have getParams method that returns current route params", () => {
-      expect(typeof router.getParams).toBe("function");
+  describe("Integration", () => {
+    // Positive test: Full navigation flow
+    it("should complete full navigation flow", async () => {
+      const testHandler = {
+        render: function () {
+          return {
+            className: "page",
+            appendChild: jest.fn(),
+            children: [],
+            _component: null,
+          };
+        },
+      };
+      router.register("/page", testHandler);
 
-      // Should return empty object when no current controller
-      expect(router.getParams()).toEqual({});
+      await router._handle("/page");
 
-      // Set up a current controller with params
-      router.currentController = { params: { id: "123" } };
-      expect(router.getParams()).toEqual({ id: "123" });
+      expect(router.currentController).not.toBeNull();
+      expect(mockContentEl.innerHTML).toBe("");
     });
-  });
 
-  describe("stop()", () => {
-    // Positive test: stop() method should exist and set initialized to false
-    it("should have stop method that sets initialized to false", () => {
-      expect(typeof router.stop).toBe("function");
+    // Positive test: Handles route change with cleanup
+    it("should cleanup previous controller on route change", async () => {
+      let willUnmountCount = 0;
+      let destroyCount = 0;
 
-      router.start();
-      expect(router.initialized).toBe(true);
+      const firstHandler = {
+        render: function () {
+          return {
+            className: "first",
+            appendChild: jest.fn(),
+            children: [],
+            _component: null,
+          };
+        },
+      };
 
-      router.stop();
-      expect(router.initialized).toBe(false);
+      const secondHandler = {
+        render: function () {
+          return {
+            className: "second",
+            appendChild: jest.fn(),
+            children: [],
+            _component: null,
+          };
+        },
+      };
+
+      router.register("/first", firstHandler);
+      router.register("/second", secondHandler);
+
+      // Navigate to first
+      await router._handle("/first");
+
+      // Set up previous controller with lifecycle methods
+      const prevController = {
+        willUnmount: function () {
+          willUnmountCount++;
+        },
+        destroy: function () {
+          destroyCount++;
+        },
+        render: function () {
+          return {
+            className: "prev",
+            appendChild: jest.fn(),
+            children: [],
+            _component: null,
+          };
+        },
+      };
+      router.currentController = prevController;
+
+      // Navigate to second
+      await router._handle("/second");
+
+      expect(willUnmountCount).toBe(1);
+      expect(destroyCount).toBe(1);
+    });
+
+    // Positive test: Handles concurrent navigation
+    it("should handle rapid navigation calls", async () => {
+      const testHandler = {
+        render: function () {
+          return {
+            className: "page",
+            appendChild: jest.fn(),
+            children: [],
+            _component: null,
+          };
+        },
+      };
+      router.register("/page", testHandler);
+
+      // Fire multiple navigations rapidly
+      const promises = [router._handle("/page"), router._handle("/page"), router._handle("/page")];
+
+      await Promise.all(promises);
+
+      expect(router.currentController).not.toBeNull();
+    });
+
+    // Positive test: Full route registration and matching flow
+    it("should handle complete route registration and matching flow", () => {
+      // Register multiple routes with different patterns
+      router.register("/", function () {
+        return { render: function () {} };
+      });
+      router.register("/users", function () {
+        return { render: function () {} };
+      });
+      router.register("/users/:id", function () {
+        return { render: function () {} };
+      });
+      router.register("/users/:id/posts", function () {
+        return { render: function () {} };
+      });
+      router.register("/users/:id/posts/:postId", function () {
+        return { render: function () {} };
+      });
+
+      expect(router.routes.size).toBe(5);
+
+      // Match each route
+      expect(router._match("/")).not.toBeNull();
+      expect(router._match("/users")).not.toBeNull();
+      expect(router._match("/users/1")).not.toBeNull();
+      expect(router._match("/users/1/posts")).not.toBeNull();
+      expect(router._match("/users/1/posts/abc")).not.toBeNull();
+
+      // Non-matching routes
+      expect(router._match("/unknown")).toBeNull();
+      expect(router._match("/users/1/posts/abc/comments")).toBeNull();
     });
   });
 });

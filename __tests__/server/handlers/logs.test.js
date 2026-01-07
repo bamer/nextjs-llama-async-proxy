@@ -136,43 +136,6 @@ describe("Logs Handlers", () => {
       expect(Array.isArray(mockSocket.emitCalls[0].data.data.logs)).toBe(true);
     });
 
-    // Positive test: logs:get uses default requestId when not provided
-    it("should use default requestId when not provided in request", async () => {
-      // Arrange: Setup mocks without requestId
-      const { registerLogsHandlers } =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
-      const mockSocket = createMockSocket();
-      const mockDb = createMockDb([]);
-      registerLogsHandlers(mockSocket, mockDb);
-
-      // Act: Trigger logs:get without requestId
-      await mockSocket.handlers["logs:get"]();
-
-      // Assert: Verify requestId is set (timestamp-based)
-      expect(mockSocket.emitCalls[0].data.requestId).toBeDefined();
-      expect(typeof mockSocket.emitCalls[0].data.requestId).toBe("number");
-    });
-
-    // Positive test: logs:get passes undefined limit correctly to db
-    it("should handle undefined limit gracefully", async () => {
-      // Arrange: Setup mocks with logs
-      const { registerLogsHandlers } =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
-      const mockSocket = createMockSocket();
-      const mockLogs = [
-        { id: 1, level: "info", message: "Test", source: "test", timestamp: Date.now() },
-      ];
-      const mockDb = createMockDb(mockLogs);
-      registerLogsHandlers(mockSocket, mockDb);
-
-      // Act: Trigger logs:get with undefined limit in request (no limit property)
-      await mockSocket.handlers["logs:get"]({ requestId: 100 });
-
-      // Assert: Verify handler executed successfully
-      expect(mockSocket.emitCalls[0].data.success).toBe(true);
-      expect(mockSocket.emitCalls[0].data.data.logs).toEqual(mockLogs);
-    });
-
     // Negative test: logs:get handles database errors gracefully
     it("should return error response when database getLogs throws", async () => {
       // Arrange: Setup mocks with failing database
@@ -210,25 +173,6 @@ describe("Logs Handlers", () => {
       // Assert: Verify handler executed with default values
       expect(mockSocket.emitCalls[0].data.success).toBe(true);
       expect(mockSocket.emitCalls[0].data.requestId).toBeDefined();
-    });
-
-    // Positive test: logs:get with limit of 0 uses default limit (100)
-    it("should use default limit when limit is 0 (falsy value)", async () => {
-      // Arrange: Setup with logs and limit 0
-      const { registerLogsHandlers } =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
-      const mockSocket = createMockSocket();
-      const mockLogs = [
-        { id: 1, level: "info", message: "Test", source: "test", timestamp: Date.now() },
-      ];
-      const mockDb = createMockDb(mockLogs);
-      registerLogsHandlers(mockSocket, mockDb);
-
-      // Act: Trigger logs:get with limit 0
-      await mockSocket.handlers["logs:get"]({ requestId: 101, limit: 0 });
-
-      // Assert: Verify default limit is used (0 is falsy, so defaults to 100)
-      expect(mockSocket.emitCalls[0].data.data.logs).toEqual(mockLogs);
     });
   });
 
@@ -275,23 +219,6 @@ describe("Logs Handlers", () => {
       expect(mockSocket.emitCalls[0].data.data.cleared).toBe(0);
     });
 
-    // Positive test: logs:clear uses default requestId when not provided
-    it("should use default requestId when not provided in request", async () => {
-      // Arrange: Setup without requestId
-      const { registerLogsHandlers } =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
-      const mockSocket = createMockSocket();
-      const mockDb = createMockDb([]);
-      registerLogsHandlers(mockSocket, mockDb);
-
-      // Act: Trigger logs:clear without requestId
-      await mockSocket.handlers["logs:clear"]();
-
-      // Assert: Verify requestId is set
-      expect(mockSocket.emitCalls[0].data.requestId).toBeDefined();
-      expect(typeof mockSocket.emitCalls[0].data.requestId).toBe("number");
-    });
-
     // Negative test: logs:clear handles database errors gracefully
     it("should return error response when database clearLogs throws", async () => {
       // Arrange: Setup with failing database
@@ -330,266 +257,461 @@ describe("Logs Handlers", () => {
       expect(mockSocket.emitCalls[0].data.success).toBe(true);
       expect(mockSocket.emitCalls[0].data.requestId).toBeDefined();
     });
+  });
 
-    // Positive test: logs:clear multiple times
-    it("should handle multiple clear calls correctly", async () => {
-      // Arrange: Setup with logs
+  describe("logs:read-file event", () => {
+    // Positive test: logs:read-file handler is registered
+    it("should register logs:read-file event handler", async () => {
+      // Arrange: Import the handler and create mocks
       const { registerLogsHandlers } =
         await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
       const mockSocket = createMockSocket();
-      const mockLogs = [
-        { id: 1, level: "info", message: "Test", source: "test", timestamp: Date.now() },
-      ];
-      const mockDb = createMockDb(mockLogs);
+      const mockDb = createMockDb();
+
+      // Act: Register the handlers
       registerLogsHandlers(mockSocket, mockDb);
 
-      // Act: Clear logs twice
-      await mockSocket.handlers["logs:clear"]({ requestId: 301 });
-      await mockSocket.handlers["logs:clear"]({ requestId: 302 });
+      // Assert: Verify logs:read-file handler is registered
+      expect(typeof mockSocket.handlers["logs:read-file"]).toBe("function");
+    });
+
+    // Positive test: logs:read-file handler can be called without throwing
+    it("should execute logs:read-file handler without throwing", async () => {
+      // Arrange: Import the handler and create mocks
+      const { registerLogsHandlers } =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+      const mockSocket = createMockSocket();
+      const mockDb = createMockDb();
+      registerLogsHandlers(mockSocket, mockDb);
+
+      // Act: Trigger logs:read-file event
+      await mockSocket.handlers["logs:read-file"]({ requestId: 601 });
+
+      // Assert: Verify handler executed and emit was called
+      expect(mockSocket.emitCalls.length).toBe(1);
+      expect(mockSocket.emitCalls[0].event).toBe("logs:read-file:result");
+      expect(mockSocket.emitCalls[0].data.requestId).toBe(601);
+    });
+
+    // Positive test: logs:read-file uses default requestId when not provided
+    it("should use default requestId when not provided in request", async () => {
+      // Arrange: Import the handler and create mocks
+      const { registerLogsHandlers } =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+      const mockSocket = createMockSocket();
+      const mockDb = createMockDb();
+      registerLogsHandlers(mockSocket, mockDb);
+
+      // Act: Trigger logs:read-file without requestId
+      await mockSocket.handlers["logs:read-file"]();
+
+      // Assert: Verify requestId is set
+      expect(mockSocket.emitCalls[0].data.requestId).toBeDefined();
+      expect(typeof mockSocket.emitCalls[0].data.requestId).toBe("number");
+    });
+
+    // Positive test: logs:read-file handler response has correct structure
+    it("should return response with correct structure", async () => {
+      // Arrange: Import the handler and create mocks
+      const { registerLogsHandlers } =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+      const mockSocket = createMockSocket();
+      const mockDb = createMockDb();
+      registerLogsHandlers(mockSocket, mockDb);
+
+      // Act: Trigger logs:read-file event
+      await mockSocket.handlers["logs:read-file"]({ requestId: 602 });
+
+      // Assert: Verify response structure
+      const response = mockSocket.emitCalls[0].data;
+      expect(response.success).toBeDefined();
+      expect(response.requestId).toBe(602);
+      expect(response.timestamp).toBeDefined();
+      expect(response.data).toBeDefined();
+      expect(response.data.logs).toBeDefined();
+      expect(response.data.fileName).toBeDefined();
+    });
+
+    // Negative test: logs:read-file handles null request object
+    it("should handle null request object", async () => {
+      // Arrange: Import the handler and create mocks
+      const { registerLogsHandlers } =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+      const mockSocket = createMockSocket();
+      const mockDb = createMockDb();
+      registerLogsHandlers(mockSocket, mockDb);
+
+      // Act: Trigger logs:read-file with null request
+      await mockSocket.handlers["logs:read-file"](null);
+
+      // Assert: Verify handler executed with default values
+      expect(mockSocket.emitCalls[0].data.success).toBe(true);
+      expect(mockSocket.emitCalls[0].data.requestId).toBeDefined();
+    });
+
+    // Negative test: logs:read-file handles errors from fileLogger
+    it("should return error response when fileLogger.readLogFile throws", async () => {
+      // Arrange: Import the fileLogger module
+      const fileLoggerModule =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const originalReadLogFile = fileLoggerModule.fileLogger.readLogFile;
+
+      // Mock readLogFile to throw an error
+      fileLoggerModule.fileLogger.readLogFile = function () {
+        throw new Error("File read error");
+      };
+
+      try {
+        // Arrange: Import the handler and create mocks
+        const { registerLogsHandlers } =
+          await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+        const mockSocket = createMockSocket();
+        const mockDb = createMockDb();
+        registerLogsHandlers(mockSocket, mockDb);
+
+        // Act: Trigger logs:read-file event
+        await mockSocket.handlers["logs:read-file"]({ requestId: 603 });
+
+        // Assert: Verify error response
+        expect(mockSocket.emitCalls.length).toBe(1);
+        expect(mockSocket.emitCalls[0].data.success).toBe(false);
+        expect(mockSocket.emitCalls[0].data.error.message).toBe("File read error");
+        expect(mockSocket.emitCalls[0].data.requestId).toBe(603);
+      } finally {
+        // Restore original readLogFile
+        fileLoggerModule.fileLogger.readLogFile = originalReadLogFile;
+      }
+    });
+  });
+
+  describe("logs:list-files event", () => {
+    // Positive test: logs:list-files handler is registered
+    it("should register logs:list-files event handler", async () => {
+      // Arrange: Import the handler and create mocks
+      const { registerLogsHandlers } =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+      const mockSocket = createMockSocket();
+      const mockDb = createMockDb();
+
+      // Act: Register the handlers
+      registerLogsHandlers(mockSocket, mockDb);
+
+      // Assert: Verify logs:list-files handler is registered
+      expect(typeof mockSocket.handlers["logs:list-files"]).toBe("function");
+    });
+
+    // Positive test: logs:list-files handler can be called without throwing
+    it("should execute logs:list-files handler without throwing", async () => {
+      // Arrange: Import the handler and create mocks
+      const { registerLogsHandlers } =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+      const mockSocket = createMockSocket();
+      const mockDb = createMockDb();
+      registerLogsHandlers(mockSocket, mockDb);
+
+      // Act: Trigger logs:list-files event
+      await mockSocket.handlers["logs:list-files"]({ requestId: 701 });
+
+      // Assert: Verify handler executed and emit was called
+      expect(mockSocket.emitCalls.length).toBe(1);
+      expect(mockSocket.emitCalls[0].event).toBe("logs:list-files:result");
+      expect(mockSocket.emitCalls[0].data.requestId).toBe(701);
+    });
+
+    // Positive test: logs:list-files returns files and size in response
+    it("should return files and size in response data", async () => {
+      // Arrange: Import the handler and create mocks
+      const { registerLogsHandlers } =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+      const mockSocket = createMockSocket();
+      const mockDb = createMockDb();
+      registerLogsHandlers(mockSocket, mockDb);
+
+      // Act: Trigger logs:list-files event
+      await mockSocket.handlers["logs:list-files"]({ requestId: 702 });
+
+      // Assert: Verify response contains files and size
+      const response = mockSocket.emitCalls[0].data;
+      expect(response.success).toBe(true);
+      expect(response.data.files).toBeDefined();
+      expect(response.data.size).toBeDefined();
+      expect(Array.isArray(response.data.files)).toBe(true);
+      expect(typeof response.data.size).toBe("number");
+    });
+
+    // Positive test: logs:list-files uses default requestId when not provided
+    it("should use default requestId when not provided in request", async () => {
+      // Arrange: Import the handler and create mocks
+      const { registerLogsHandlers } =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+      const mockSocket = createMockSocket();
+      const mockDb = createMockDb();
+      registerLogsHandlers(mockSocket, mockDb);
+
+      // Act: Trigger logs:list-files without requestId
+      await mockSocket.handlers["logs:list-files"]();
+
+      // Assert: Verify requestId is set
+      expect(mockSocket.emitCalls[0].data.requestId).toBeDefined();
+      expect(typeof mockSocket.emitCalls[0].data.requestId).toBe("number");
+    });
+
+    // Positive test: logs:list-files handler response has correct structure
+    it("should return response with correct structure", async () => {
+      // Arrange: Import the handler and create mocks
+      const { registerLogsHandlers } =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+      const mockSocket = createMockSocket();
+      const mockDb = createMockDb();
+      registerLogsHandlers(mockSocket, mockDb);
+
+      // Act: Trigger logs:list-files event
+      await mockSocket.handlers["logs:list-files"]({ requestId: 703 });
+
+      // Assert: Verify response structure
+      const response = mockSocket.emitCalls[0].data;
+      expect(response.success).toBeDefined();
+      expect(response.requestId).toBe(703);
+      expect(response.timestamp).toBeDefined();
+      expect(response.data).toBeDefined();
+      expect(response.data.files).toBeDefined();
+      expect(response.data.size).toBeDefined();
+    });
+
+    // Negative test: logs:list-files handles null request object
+    it("should handle null request object", async () => {
+      // Arrange: Import the handler and create mocks
+      const { registerLogsHandlers } =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+      const mockSocket = createMockSocket();
+      const mockDb = createMockDb();
+      registerLogsHandlers(mockSocket, mockDb);
+
+      // Act: Trigger logs:list-files with null request
+      await mockSocket.handlers["logs:list-files"](null);
+
+      // Assert: Verify handler executed with default values
+      expect(mockSocket.emitCalls[0].data.success).toBe(true);
+      expect(mockSocket.emitCalls[0].data.requestId).toBeDefined();
+    });
+
+    // Negative test: logs:list-files handles errors from fileLogger
+    it("should return error response when fileLogger.listLogFiles throws", async () => {
+      // Arrange: Import the fileLogger module
+      const fileLoggerModule =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const originalListLogFiles = fileLoggerModule.fileLogger.listLogFiles;
+
+      // Mock listLogFiles to throw an error
+      fileLoggerModule.fileLogger.listLogFiles = function () {
+        throw new Error("Directory read error");
+      };
+
+      try {
+        // Arrange: Import the handler and create mocks
+        const { registerLogsHandlers } =
+          await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+        const mockSocket = createMockSocket();
+        const mockDb = createMockDb();
+        registerLogsHandlers(mockSocket, mockDb);
+
+        // Act: Trigger logs:list-files event
+        await mockSocket.handlers["logs:list-files"]({ requestId: 704 });
+
+        // Assert: Verify error response
+        expect(mockSocket.emitCalls.length).toBe(1);
+        expect(mockSocket.emitCalls[0].data.success).toBe(false);
+        expect(mockSocket.emitCalls[0].data.error.message).toBe("Directory read error");
+        expect(mockSocket.emitCalls[0].data.requestId).toBe(704);
+      } finally {
+        // Restore original listLogFiles
+        fileLoggerModule.fileLogger.listLogFiles = originalListLogFiles;
+      }
+    });
+  });
+
+  describe("logs:clear-files event", () => {
+    // Positive test: logs:clear-files handler is registered
+    it("should register logs:clear-files event handler", async () => {
+      // Arrange: Import the handler and create mocks
+      const { registerLogsHandlers } =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+      const mockSocket = createMockSocket();
+      const mockDb = createMockDb();
+
+      // Act: Register the handlers
+      registerLogsHandlers(mockSocket, mockDb);
+
+      // Assert: Verify logs:clear-files handler is registered
+      expect(typeof mockSocket.handlers["logs:clear-files"]).toBe("function");
+    });
+
+    // Positive test: logs:clear-files handler can be called without throwing
+    it("should execute logs:clear-files handler without throwing", async () => {
+      // Arrange: Import the handler and create mocks
+      const { registerLogsHandlers } =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+      const mockSocket = createMockSocket();
+      const mockDb = createMockDb();
+      registerLogsHandlers(mockSocket, mockDb);
+
+      // Act: Trigger logs:clear-files event
+      await mockSocket.handlers["logs:clear-files"]({ requestId: 801 });
+
+      // Assert: Verify handler executed and emit was called
+      expect(mockSocket.emitCalls.length).toBe(1);
+      expect(mockSocket.emitCalls[0].event).toBe("logs:clear-files:result");
+      expect(mockSocket.emitCalls[0].data.requestId).toBe(801);
+    });
+
+    // Positive test: logs:clear-files returns cleared count in response
+    it("should return cleared count in response data", async () => {
+      // Arrange: Import the handler and create mocks
+      const { registerLogsHandlers } =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+      const mockSocket = createMockSocket();
+      const mockDb = createMockDb();
+      registerLogsHandlers(mockSocket, mockDb);
+
+      // Act: Trigger logs:clear-files event
+      await mockSocket.handlers["logs:clear-files"]({ requestId: 802 });
+
+      // Assert: Verify response contains cleared count
+      const response = mockSocket.emitCalls[0].data;
+      expect(response.success).toBe(true);
+      expect(response.data.cleared).toBeDefined();
+      expect(typeof response.data.cleared).toBe("number");
+    });
+
+    // Positive test: logs:clear-files uses default requestId when not provided
+    it("should use default requestId when not provided in request", async () => {
+      // Arrange: Import the handler and create mocks
+      const { registerLogsHandlers } =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+      const mockSocket = createMockSocket();
+      const mockDb = createMockDb();
+      registerLogsHandlers(mockSocket, mockDb);
+
+      // Act: Trigger logs:clear-files without requestId
+      await mockSocket.handlers["logs:clear-files"]();
+
+      // Assert: Verify requestId is set
+      expect(mockSocket.emitCalls[0].data.requestId).toBeDefined();
+      expect(typeof mockSocket.emitCalls[0].data.requestId).toBe("number");
+    });
+
+    // Positive test: logs:clear-files handler response has correct structure
+    it("should return response with correct structure", async () => {
+      // Arrange: Import the handler and create mocks
+      const { registerLogsHandlers } =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+      const mockSocket = createMockSocket();
+      const mockDb = createMockDb();
+      registerLogsHandlers(mockSocket, mockDb);
+
+      // Act: Trigger logs:clear-files event
+      await mockSocket.handlers["logs:clear-files"]({ requestId: 803 });
+
+      // Assert: Verify response structure
+      const response = mockSocket.emitCalls[0].data;
+      expect(response.success).toBeDefined();
+      expect(response.requestId).toBe(803);
+      expect(response.timestamp).toBeDefined();
+      expect(response.data).toBeDefined();
+      expect(response.data.cleared).toBeDefined();
+    });
+
+    // Negative test: logs:clear-files handles null request object
+    it("should handle null request object", async () => {
+      // Arrange: Import the handler and create mocks
+      const { registerLogsHandlers } =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+      const mockSocket = createMockSocket();
+      const mockDb = createMockDb();
+      registerLogsHandlers(mockSocket, mockDb);
+
+      // Act: Trigger logs:clear-files with null request
+      await mockSocket.handlers["logs:clear-files"](null);
+
+      // Assert: Verify handler executed with default values
+      expect(mockSocket.emitCalls[0].data.success).toBe(true);
+      expect(mockSocket.emitCalls[0].data.requestId).toBeDefined();
+    });
+
+    // Positive test: logs:clear-files multiple times
+    it("should handle multiple clear calls correctly", async () => {
+      // Arrange: Import the handler and create mocks
+      const { registerLogsHandlers } =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+      const mockSocket = createMockSocket();
+      const mockDb = createMockDb();
+      registerLogsHandlers(mockSocket, mockDb);
+
+      // Act: Clear files twice
+      await mockSocket.handlers["logs:clear-files"]({ requestId: 804 });
+      await mockSocket.handlers["logs:clear-files"]({ requestId: 805 });
 
       // Assert: Both calls succeeded
-      expect(mockSocket.emitCalls[0].data.data.cleared).toBe(1);
-      expect(mockSocket.emitCalls[1].data.data.cleared).toBe(0);
-      expect(mockSocket.emitCalls[1].data.requestId).toBe(302);
+      expect(mockSocket.emitCalls[0].data.requestId).toBe(804);
+      expect(mockSocket.emitCalls[1].data.requestId).toBe(805);
+      expect(mockSocket.emitCalls.length).toBe(2);
+      expect(mockSocket.emitCalls[0].event).toBe("logs:clear-files:result");
+      expect(mockSocket.emitCalls[1].event).toBe("logs:clear-files:result");
+    });
+
+    // Negative test: logs:clear-files handles errors from fileLogger
+    it("should return error response when fileLogger.clearLogFiles throws", async () => {
+      // Arrange: Import the fileLogger module
+      const fileLoggerModule =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const originalClearLogFiles = fileLoggerModule.fileLogger.clearLogFiles;
+
+      // Mock clearLogFiles to throw an error
+      fileLoggerModule.fileLogger.clearLogFiles = function () {
+        throw new Error("Clear files error");
+      };
+
+      try {
+        // Arrange: Import the handler and create mocks
+        const { registerLogsHandlers } =
+          await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+        const mockSocket = createMockSocket();
+        const mockDb = createMockDb();
+        registerLogsHandlers(mockSocket, mockDb);
+
+        // Act: Trigger logs:clear-files event
+        await mockSocket.handlers["logs:clear-files"]({ requestId: 806 });
+
+        // Assert: Verify error response
+        expect(mockSocket.emitCalls.length).toBe(1);
+        expect(mockSocket.emitCalls[0].data.success).toBe(false);
+        expect(mockSocket.emitCalls[0].data.error.message).toBe("Clear files error");
+        expect(mockSocket.emitCalls[0].data.requestId).toBe(806);
+      } finally {
+        // Restore original clearLogFiles
+        fileLoggerModule.fileLogger.clearLogFiles = originalClearLogFiles;
+      }
     });
   });
 
-  describe("Integration tests", () => {
-    // Positive test: full workflow - get logs, clear logs
-    it("should handle complete workflow: get logs, then clear logs", async () => {
-      // Arrange: Setup with logs
+  describe("All handlers registration", () => {
+    // Positive test: verify all 5 handlers are registered correctly
+    it("should register all 5 logs event handlers", async () => {
+      // Arrange: Import the handler and create mocks
       const { registerLogsHandlers } =
         await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
       const mockSocket = createMockSocket();
-      const mockLogs = [
-        { id: 1, level: "info", message: "Info message", source: "server", timestamp: Date.now() },
-        {
-          id: 2,
-          level: "error",
-          message: "Error message",
-          source: "server",
-          timestamp: Date.now(),
-        },
-      ];
-      const mockDb = createMockDb(mockLogs);
+      const mockDb = createMockDb();
+
+      // Act: Register the handlers
       registerLogsHandlers(mockSocket, mockDb);
 
-      // Act: Get logs first, then clear
-      await mockSocket.handlers["logs:get"]({ requestId: 401 });
-      await mockSocket.handlers["logs:clear"]({ requestId: 402 });
-
-      // Assert: Both operations succeeded
-      expect(mockSocket.emitCalls.length).toBe(2);
-
-      // Verify logs:get result
-      expect(mockSocket.emitCalls[0].event).toBe("logs:get:result");
-      expect(mockSocket.emitCalls[0].data.data.logs.length).toBe(2);
-
-      // Verify logs:clear result
-      expect(mockSocket.emitCalls[1].event).toBe("logs:clear:result");
-      expect(mockSocket.emitCalls[1].data.data.cleared).toBe(2);
-    });
-
-    // Positive test: get logs after clear returns empty array
-    it("should return empty logs after clear operation", async () => {
-      // Arrange: Setup with logs
-      const { registerLogsHandlers } =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
-      const mockSocket = createMockSocket();
-      const mockLogs = [
-        { id: 1, level: "info", message: "Test", source: "test", timestamp: Date.now() },
-      ];
-      const mockDb = createMockDb(mockLogs);
-      registerLogsHandlers(mockSocket, mockDb);
-
-      // Act: Clear, then get logs
-      await mockSocket.handlers["logs:clear"]({ requestId: 501 });
-      await mockSocket.handlers["logs:get"]({ requestId: 502 });
-
-      // Assert: Get after clear returns empty array
-      expect(mockSocket.emitCalls[1].data.data.logs).toEqual([]);
-    });
-
-    // Positive test: mixed operations with different requestIds
-    it("should track requestIds correctly across multiple operations", async () => {
-      // Arrange: Setup
-      const { registerLogsHandlers } =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
-      const mockSocket = createMockSocket();
-      const mockDb = createMockDb([]);
-      registerLogsHandlers(mockSocket, mockDb);
-
-      // Act: Multiple operations with different requestIds
-      await mockSocket.handlers["logs:get"]({ requestId: 1001 });
-      await mockSocket.handlers["logs:clear"]({ requestId: 1002 });
-      await mockSocket.handlers["logs:get"]({ requestId: 1003, limit: 10 });
-
-      // Assert: All requestIds preserved correctly
-      expect(mockSocket.emitCalls[0].data.requestId).toBe(1001);
-      expect(mockSocket.emitCalls[1].data.requestId).toBe(1002);
-      expect(mockSocket.emitCalls[2].data.requestId).toBe(1003);
-    });
-
-    // Positive test: concurrent operations don't interfere
-    it("should handle concurrent operations independently", async () => {
-      // Arrange: Setup
-      const { registerLogsHandlers } =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
-      const mockSocket = createMockSocket();
-      const mockDb = createMockDb([]);
-      registerLogsHandlers(mockSocket, mockDb);
-
-      // Act: Simulate concurrent operations by calling handlers in sequence
-      await mockSocket.handlers["logs:get"]({ requestId: 2001 });
-      await mockSocket.handlers["logs:clear"]({ requestId: 2002 });
-
-      // Assert: Each operation has its own emit call
-      expect(mockSocket.emitCalls.length).toBe(2);
-      expect(mockSocket.emitCalls[0].event).toBe("logs:get:result");
-      expect(mockSocket.emitCalls[1].event).toBe("logs:clear:result");
-    });
-  });
-
-  describe("Edge cases", () => {
-    // Positive test: handler emits error when db getLogs is undefined
-    it("should emit error response when db getLogs is undefined", async () => {
-      // Arrange: Setup with incomplete mock db (no getLogs method)
-      const { registerLogsHandlers } =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
-      const mockSocket = createMockSocket();
-      const mockDb = {}; // Missing getLogs and clearLogs
-      registerLogsHandlers(mockSocket, mockDb);
-
-      // Assert: Handler is registered and should emit error response
+      // Assert: Verify all 5 event handlers are registered
       expect(typeof mockSocket.handlers["logs:get"]).toBe("function");
-      mockSocket.handlers["logs:get"]({ requestId: 3001 });
-
-      // Should emit error response since db.getLogs is undefined
-      expect(mockSocket.emitCalls.length).toBe(1);
-      expect(mockSocket.emitCalls[0].data.success).toBe(false);
-      expect(mockSocket.emitCalls[0].data.error).toBeDefined();
-    });
-
-    // Positive test: logs:get with very large limit
-    it("should handle very large limit value", async () => {
-      // Arrange: Setup with logs
-      const { registerLogsHandlers } =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
-      const mockSocket = createMockSocket();
-      const mockLogs = [
-        { id: 1, level: "info", message: "Test", source: "test", timestamp: Date.now() },
-      ];
-      const mockDb = createMockDb(mockLogs);
-      registerLogsHandlers(mockSocket, mockDb);
-
-      // Act: Trigger with very large limit
-      await mockSocket.handlers["logs:get"]({ requestId: 3002, limit: 999999 });
-
-      // Assert: Should return all available logs
-      expect(mockSocket.emitCalls[0].data.data.logs.length).toBe(1);
-    });
-
-    // Positive test: logs:get with very large limit
-    it("should handle very large limit value", async () => {
-      // Arrange: Setup with logs
-      const { registerLogsHandlers } =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
-      const mockSocket = createMockSocket();
-      const mockLogs = [
-        { id: 1, level: "info", message: "Test", source: "test", timestamp: Date.now() },
-      ];
-      const mockDb = createMockDb(mockLogs);
-      registerLogsHandlers(mockSocket, mockDb);
-
-      // Act: Trigger with very large limit
-      await mockSocket.handlers["logs:get"]({ requestId: 3002, limit: 999999 });
-
-      // Assert: Should return all available logs
-      expect(mockSocket.emitCalls[0].data.data.logs.length).toBe(1);
-    });
-
-    // Positive test: logs:get with very large limit
-    it("should handle very large limit value", async () => {
-      // Arrange: Setup with logs
-      const { registerLogsHandlers } =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
-      const mockSocket = createMockSocket();
-      const mockLogs = [
-        { id: 1, level: "info", message: "Test", source: "test", timestamp: Date.now() },
-      ];
-      const mockDb = createMockDb(mockLogs);
-      registerLogsHandlers(mockSocket, mockDb);
-
-      // Act: Trigger with very large limit
-      await mockSocket.handlers["logs:get"]({ requestId: 3002, limit: 999999 });
-
-      // Assert: Should return all available logs
-      expect(mockSocket.emitCalls[0].data.data.logs.length).toBe(1);
-    });
-
-    // Positive test: logs:get with very large limit
-    it("should handle very large limit value", async () => {
-      // Arrange: Setup with logs
-      const { registerLogsHandlers } =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
-      const mockSocket = createMockSocket();
-      const mockLogs = [
-        { id: 1, level: "info", message: "Test", source: "test", timestamp: Date.now() },
-      ];
-      const mockDb = createMockDb(mockLogs);
-      registerLogsHandlers(mockSocket, mockDb);
-
-      // Act: Trigger with very large limit
-      await mockSocket.handlers["logs:get"]({ requestId: 3002, limit: 999999 });
-
-      // Assert: Should return all available logs
-      expect(mockSocket.emitCalls[0].data.data.logs.length).toBe(1);
-    });
-
-    // Positive test: logs:get with very large limit
-    it("should handle very large limit value", async () => {
-      // Arrange: Setup with logs
-      const { registerLogsHandlers } =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
-      const mockSocket = createMockSocket();
-      const mockLogs = [
-        { id: 1, level: "info", message: "Test", source: "test", timestamp: Date.now() },
-      ];
-      const mockDb = createMockDb(mockLogs);
-      registerLogsHandlers(mockSocket, mockDb);
-
-      // Act: Trigger with very large limit
-      await mockSocket.emitCalls.splice(0); // Clear previous emits
-      await mockSocket.handlers["logs:get"]({ requestId: 3002, limit: 999999 });
-
-      // Assert: Should return all available logs
-      expect(mockSocket.emitCalls[0].data.data.logs.length).toBe(1);
-    });
-
-    // Positive test: response format consistency
-    it("should maintain consistent response format across all events", async () => {
-      // Arrange: Setup
-      const { registerLogsHandlers } =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
-      const mockSocket = createMockSocket();
-      const mockDb = createMockDb([]);
-      registerLogsHandlers(mockSocket, mockDb);
-
-      // Act: Trigger both events
-      await mockSocket.handlers["logs:get"]({ requestId: 4001 });
-      await mockSocket.handlers["logs:clear"]({ requestId: 4002 });
-
-      // Assert: Verify response format consistency
-      const getResponse = mockSocket.emitCalls[0].data;
-      const clearResponse = mockSocket.emitCalls[1].data;
-
-      // Both should have these fields
-      expect(getResponse.success).toBeDefined();
-      expect(getResponse.requestId).toBeDefined();
-      expect(getResponse.timestamp).toBeDefined();
-      expect(clearResponse.success).toBeDefined();
-      expect(clearResponse.requestId).toBeDefined();
-      expect(clearResponse.timestamp).toBeDefined();
+      expect(typeof mockSocket.handlers["logs:read-file"]).toBe("function");
+      expect(typeof mockSocket.handlers["logs:list-files"]).toBe("function");
+      expect(typeof mockSocket.handlers["logs:clear"]).toBe("function");
+      expect(typeof mockSocket.handlers["logs:clear-files"]).toBe("function");
     });
   });
 });

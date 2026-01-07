@@ -184,9 +184,11 @@ class Router {
       if (m) {
         console.log("[ROUTER] Found match:", route.path);
         const params = {};
-        route.path.split("/").forEach((seg, i) => {
+        let paramIndex = 0;
+        route.path.split("/").forEach((seg) => {
           if (seg.startsWith(":")) {
-            params[seg.slice(1)] = m[i + 1];
+            params[seg.slice(1)] = m[paramIndex + 1];
+            paramIndex++;
           }
         });
         return { ...route, params };

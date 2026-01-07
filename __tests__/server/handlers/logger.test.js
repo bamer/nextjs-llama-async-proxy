@@ -64,7 +64,7 @@ describe("Logger Class", () => {
       const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
       Logger.log("info", "Test message");
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringMatching(/^\[\d{2}:\d{2}:\d{2}\] Test message$/)
+        expect.stringMatching(/^\[\d{2}:\d{2}:\d{2}\] \[INFO\] \[server\] Test message$/)
       );
       consoleSpy.mockRestore();
     });
@@ -86,10 +86,14 @@ describe("Logger Class", () => {
       Logger.setIo(mockIo);
       Logger.log("info", "Test message");
       expect(mockIo.emit).toHaveBeenCalledWith("logs:entry", {
-        entry: {
-          level: "info",
-          message: "Test message",
-          timestamp: expect.any(Number),
+        type: "broadcast",
+        data: {
+          entry: {
+            level: "info",
+            message: "Test message",
+            source: "server",
+            timestamp: expect.any(Number),
+          },
         },
       });
     });
@@ -102,10 +106,14 @@ describe("Logger Class", () => {
       Logger.setIo(mockIo);
       Logger.log("error", 12345);
       expect(mockIo.emit).toHaveBeenCalledWith("logs:entry", {
-        entry: {
-          level: "error",
-          message: "12345",
-          timestamp: expect.any(Number),
+        type: "broadcast",
+        data: {
+          entry: {
+            level: "error",
+            message: "12345",
+            source: "server",
+            timestamp: expect.any(Number),
+          },
         },
       });
     });
@@ -119,10 +127,14 @@ describe("Logger Class", () => {
       const obj = { key: "value" };
       Logger.log("warn", obj);
       expect(mockIo.emit).toHaveBeenCalledWith("logs:entry", {
-        entry: {
-          level: "warn",
-          message: String(obj),
-          timestamp: expect.any(Number),
+        type: "broadcast",
+        data: {
+          entry: {
+            level: "warn",
+            message: String(obj),
+            source: "server",
+            timestamp: expect.any(Number),
+          },
         },
       });
     });
