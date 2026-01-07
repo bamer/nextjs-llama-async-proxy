@@ -101,6 +101,18 @@ class ModelsPage extends Component {
     console.log("[MODELS] State initialized with", this.state.models.length, "models");
   }
 
+  shouldUpdate(newProps) {
+    // Only re-render if models list actually changed (by count or content)
+    // Changes to filters state shouldn't trigger full re-render
+    const oldModels = this.props.models || [];
+    const newModels = newProps.models || [];
+    if (oldModels.length !== newModels.length) return true;
+    // Check if any model actually changed
+    return !oldModels.every(
+      (m, i) => m.name === newModels[i]?.name && m.status === newModels[i]?.status
+    );
+  }
+
   render() {
     console.log("[MODELS] ModelsPage.render() called");
     const filtered = this._getFiltered();
@@ -285,10 +297,12 @@ class ModelsPage extends Component {
       "input [data-field=search]": (e) => {
         console.log("[MODELS] Search input changed:", e.target.value);
         this.setState({ filters: { ...this.state.filters, search: e.target.value } });
+        this.updateView();
       },
       "change [data-field=status]": (e) => {
         console.log("[MODELS] Status filter changed:", e.target.value);
         this.setState({ filters: { ...this.state.filters, status: e.target.value } });
+        this.updateView();
       },
       "click [data-action=scan]": () => this._scan(),
       "click [data-action=cleanup]": () => this._cleanup(),

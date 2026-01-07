@@ -91,3 +91,4 @@ select {
   border-radius: var(--radius);
   outline: none;
   background: var(--card-bg);
+  color: var(--text-primary);

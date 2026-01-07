@@ -9,12 +9,12 @@ html.dark-mode .status-badge.running {
 }
 
 .status-badge.idle {
-  background: var(--gray-100);
-  color: var(--gray-600);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 html.dark-mode .status-badge.idle {
-  background: var(--bg-tertiary);
+  background: var(--bg-secondary);
   color: var(--text-secondary);
 }
 

@@ -24,12 +24,12 @@ html.dark-mode .badge.loaded {
 }
 
 .badge.unloaded {
-  background: var(--gray-100);
-  color: var(--gray-600);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 html.dark-mode .badge.unloaded {
-  background: var(--bg-tertiary);
+  background: var(--bg-secondary);
   color: var(--text-secondary);
 }
 
@@ -92,7 +92,7 @@ html.dark-mode .badge.unloaded {
 }
 
 .router-card.idle {
-  border-left-color: var(--gray-400);
+  border-left-color: var(--border-color);
 }
 
 .router-header {

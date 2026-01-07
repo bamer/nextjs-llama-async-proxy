@@ -2,7 +2,7 @@
 .field-help {
   display: block;
   font-size: 0.75rem;
-  color: var(--gray-400);
+  color: var(--text-secondary);
   margin-top: 2px;
 }
 
@@ -22,7 +22,7 @@
 
 .checkbox span {
   font-size: 0.875rem;
-  color: var(--gray-700);
+  color: var(--text-primary);
 }
 
 /* Control buttons */

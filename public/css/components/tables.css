@@ -90,9 +90,9 @@ html.dark-mode .status-card.running .status-badge {
 }
 
 .status-card.idle .status-badge {
-  background: var(--gray-100);
-  color: var(--gray-600);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 html.dark-mode .status-card.idle .status-badge {
-  background: var(--bg-tertiary);
+  background: var(--bg-secondary);

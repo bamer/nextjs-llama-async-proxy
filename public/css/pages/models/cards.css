@@ -54,7 +54,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--xl);
-  color: var(--gray-500);
+  color: var(--text-secondary);
 }
 
 .chart-empty .empty-icon {
@@ -68,14 +68,14 @@
 
 .chart-empty .empty-hint {
   font-size: 0.75rem;
-  color: var(--gray-400);
+  color: var(--text-secondary);
 }
 
 .chart-stats {
   display: flex;
   gap: var(--xl);
   padding-top: var(--md);
-  border-top: 1px solid var(--gray-100);
+  border-top: 1px solid var(--border-color);
 }
 
 .chart-stat {
@@ -86,13 +86,12 @@
 
 .chart-stat-label {
   font-size: 0.7rem;
-  color: var(--gray-500);
+  color: var(--text-secondary);
   text-transform: uppercase;
 }
 
 .chart-stat-value {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--gray-800);
+  color: var(--text-primary);
 }
-

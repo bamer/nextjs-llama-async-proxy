@@ -55,9 +55,10 @@
   gap: var(--xs);
   margin: var(--md) 0;
   padding: var(--md);
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--bg-tertiary);
   border-radius: var(--radius);
   font-size: 0.875rem;
+  color: var(--text-primary);
 }
 
 .status-card .status-details span {
@@ -81,18 +82,22 @@
   margin-bottom: var(--xs);
   font-size: 0.8125rem;
   font-weight: 500;
-  color: var(--gray-600);
+  color: var(--text-primary);
 }
 
 .form-group input[type="text"],
-.form-group input[type="number"] {
+.form-group input[type="number"],
+.form-group select {
   width: 100%;
   padding: var(--sm) var(--md);
-  border: 1px solid var(--gray-300);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius);
   font-size: 0.875rem;
+  color: var(--text-primary);
+  background: var(--bg-primary);
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus {
   border-color: var(--primary);
   outline: none;

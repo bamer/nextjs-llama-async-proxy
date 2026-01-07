@@ -22,6 +22,11 @@
 }
 .filters select {
   width: 150px;
+  color: var(--text-primary);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  padding: var(--sm) var(--md);
+  border-radius: var(--radius);
 }
 
 /* Settings Page */
