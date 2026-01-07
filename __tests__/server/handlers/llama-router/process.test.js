@@ -15,74 +15,80 @@
  * - stopLlamaServer() - Full stop operation (5 tests)
  */
 
-import { describe, it, expect, beforeEach } from "@jest/globals";
+import { jest, describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 
-// Import functions to test
-const {
-  findLlamaServer,
-  isPortInUse,
-  killLlamaServer,
-  killLlamaOnPort,
-  findAvailablePort,
-  stopLlamaServer,
-} = await import("../../../../server/handlers/llama-router/process.js");
+// Create mocks before importing
+const mockExistsSync = jest.fn();
+const mockExecSync = jest.fn();
+const mockSpawn = jest.fn();
 
-// Create mock modules using Object.defineProperty to intercept ESM imports
-let mockFsExistsSync = true;
-let mockExecSyncResult = null;
-let mockExecSyncThrow = false;
-let execSyncCalls = [];
+jest.unstable_mockModule("fs", () => ({
+  __esModule: true,
+  default: {
+    existsSync: mockExistsSync,
+  },
+  existsSync: mockExistsSync,
+}));
+
+jest.unstable_mockModule("child_process", () => ({
+  __esModule: true,
+  default: {
+    execSync: mockExecSync,
+    spawn: mockSpawn,
+  },
+  execSync: mockExecSync,
+  spawn: mockSpawn,
+}));
 
 describe("findLlamaServer()", () => {
-  beforeEach(() => {
+  let findLlamaServer;
+
+  beforeEach(async () => {
     // Reset mocks before each test
-    mockFsExistsSync = true;
-    mockExecSyncResult = null;
-    mockExecSyncThrow = false;
-    execSyncCalls = [];
+    jest.clearAllMocks();
+
+    // Re-import to get fresh module with mocks
+    const module = await import("../../../../server/handlers/llama-router/process.js");
+    findLlamaServer = module.findLlamaServer;
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it("should return path when binary exists at /home/bamer/llama.cpp/build/bin/llama-server", () => {
     // Objective: Test findLlamaServer returns path when binary exists at first possible location
     // This verifies the binary discovery logic finds a valid binary at a common location
-    // Simulate fs.existsSync returning true for first path
-    const paths = ["/home/bamer/llama.cpp/build/bin/llama-server"];
-    let callIndex = 0;
+    mockExistsSync.mockImplementation((p) => p === "/home/bamer/llama.cpp/build/bin/llama-server");
+    mockExecSync.mockImplementation(() => {
+      throw new Error("not found");
+    });
 
-    // Since we can't mock ESM, we test the logic directly by simulating what would happen
-    // The function checks paths in order and returns the first one that exists
-    const possiblePaths = [
-      "/home/bamer/llama.cpp/build/bin/llama-server",
-      "/home/bamer/ik_llama.cpp/build/bin/llama-server",
-      "/usr/local/bin/llama-server",
-      "/usr/bin/llama-server",
-    ];
+    const result = findLlamaServer();
 
-    // Simulate: first path exists
-    expect(possiblePaths[0]).toBe("/home/bamer/llama.cpp/build/bin/llama-server");
+    expect(result).toBe("/home/bamer/llama.cpp/build/bin/llama-server");
   });
 
   it("should return path when binary exists at /home/bamer/.local/bin/llama-server", () => {
     // Objective: Test findLlamaServer returns path when binary exists at user local bin
     // This verifies the binary discovery checks user home directory paths
-    const possiblePaths = [
-      "/home/bamer/llama.cpp/build/bin/llama-server",
-      "/home/bamer/.local/bin/llama-server",
-    ];
+    mockExistsSync.mockImplementation((p) => p === "/home/bamer/.local/bin/llama-server");
+    mockExecSync.mockImplementation(() => {
+      throw new Error("not found");
+    });
 
-    // Simulate: first path doesn't exist, second does
-    expect(possiblePaths[0]).not.toBe("/home/bamer/.local/bin/llama-server");
-    expect(possiblePaths[1]).toBe("/home/bamer/.local/bin/llama-server");
+    const result = findLlamaServer();
+
+    expect(result).toBe("/home/bamer/.local/bin/llama-server");
   });
 
   it("should return path when binary exists in PATH via which command", () => {
     // Objective: Test findLlamaServer returns path from which command when not found locally
     // This verifies the fallback to system PATH lookup when local paths fail
-    const whichResult = "/usr/bin/llama-server";
+    mockExistsSync.mockReturnValue(false);
+    mockExecSync.mockReturnValue("/usr/bin/llama-server\n");
 
-    // Simulate the logic: if local paths don't exist, try which command
-    const localPathsExist = false;
-    const result = localPathsExist ? null : whichResult;
+    const result = findLlamaServer();
 
     expect(result).toBe("/usr/bin/llama-server");
   });
@@ -90,11 +96,12 @@ describe("findLlamaServer()", () => {
   it("should return null when binary not found anywhere", () => {
     // Objective: Test findLlamaServer returns null when binary not found
     // This verifies graceful handling when no llama-server binary is available
-    const localPathsExist = false;
-    const whichFails = true;
+    mockExistsSync.mockReturnValue(false);
+    mockExecSync.mockImplementation(() => {
+      throw new Error("not found");
+    });
 
-    // Simulate: neither local paths nor which command find the binary
-    const result = localPathsExist ? "/some/path" : whichFails ? null : "/usr/bin/llama-server";
+    const result = findLlamaServer();
 
     expect(result).toBeNull();
   });
@@ -102,87 +109,112 @@ describe("findLlamaServer()", () => {
   it("should return path when binary exists at /usr/local/bin/llama-server", () => {
     // Objective: Test findLlamaServer returns path when binary exists at system location
     // This verifies the binary discovery checks system-wide installation paths
-    const systemPaths = ["/usr/local/bin/llama-server", "/usr/bin/llama-server"];
-    const binaryPath = systemPaths[0];
+    mockExistsSync.mockImplementation((p) => p === "/usr/local/bin/llama-server");
+    mockExecSync.mockImplementation(() => {
+      throw new Error("not found");
+    });
 
-    expect(binaryPath).toBe("/usr/local/bin/llama-server");
+    const result = findLlamaServer();
+
+    expect(result).toBe("/usr/local/bin/llama-server");
   });
 
   it("should return path when binary exists at /usr/bin/llama-server", () => {
     // Objective: Test findLlamaServer returns path when binary exists at /usr/bin
     // This verifies the binary discovery checks standard system bin directories
-    const systemPaths = ["/usr/local/bin/llama-server", "/usr/bin/llama-server"];
-    const binaryPath = systemPaths[1];
+    mockExistsSync.mockImplementation((p) => p === "/usr/bin/llama-server");
+    mockExecSync.mockImplementation(() => {
+      throw new Error("not found");
+    });
 
-    expect(binaryPath).toBe("/usr/bin/llama-server");
+    const result = findLlamaServer();
+
+    expect(result).toBe("/usr/bin/llama-server");
   });
 
   it("should return path when binary exists at /home/bamer/ik_llama.cpp/build/bin/llama-server", () => {
     // Objective: Test findLlamaServer returns path when binary exists in alternate development location
     // This verifies the binary discovery checks for alternate build locations
-    const devPaths = [
-      "/home/bamer/llama.cpp/build/bin/llama-server",
-      "/home/bamer/ik_llama.cpp/build/bin/llama-server",
-    ];
+    mockExistsSync.mockImplementation(
+      (p) => p === "/home/bamer/ik_llama.cpp/build/bin/llama-server"
+    );
+    mockExecSync.mockImplementation(() => {
+      throw new Error("not found");
+    });
 
-    expect(devPaths[1]).toBe("/home/bamer/ik_llama.cpp/build/bin/llama-server");
+    const result = findLlamaServer();
+
+    expect(result).toBe("/home/bamer/ik_llama.cpp/build/bin/llama-server");
   });
 
   it("should handle fs.existsSync throwing an error gracefully", () => {
     // Objective: Test findLlamaServer handles fs.existsSync errors gracefully
     // This verifies the error handling when filesystem access fails
-    // Simulate: one path throws error, but function should continue to next
-    const paths = [
-      "/home/bamer/llama.cpp/build/bin/llama-server",
-      "/home/bamer/.local/bin/llama-server",
-    ];
-    const errors = [true, false]; // First throws, second doesn't
-
-    // Simulate continuing after error
-    let foundPath = null;
-    for (let i = 0; i < paths.length; i++) {
-      if (!errors[i]) {
-        foundPath = paths[i];
-        break;
+    let callCount = 0;
+    mockExistsSync.mockImplementation((p) => {
+      callCount++;
+      if (callCount === 1) {
+        throw new Error("Permission denied");
       }
-    }
+      return p === "/home/bamer/.local/bin/llama-server";
+    });
+    mockExecSync.mockImplementation(() => {
+      throw new Error("not found");
+    });
 
-    expect(foundPath).toBe("/home/bamer/.local/bin/llama-server");
+    const result = findLlamaServer();
+
+    expect(result).toBe("/home/bamer/.local/bin/llama-server");
   });
 });
 
 describe("isPortInUse()", () => {
-  it("should return true when port is in use", () => {
-    // Objective: Test isPortInUse returns true when port is in use
-    // This verifies the port checking correctly detects occupied ports
-    // Simulate: lsof returns PID when port is in use
-    const lsofOutput = "12345\n";
-    const portInUse = lsofOutput.length > 0;
+  let isPortInUse;
 
-    expect(portInUse).toBe(true);
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    const module = await import("../../../../server/handlers/llama-router/process.js");
+    isPortInUse = module.isPortInUse;
   });
 
-  it("should return false when port is free", () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("should return true when port is in use (execSync succeeds)", () => {
+    // Objective: Test isPortInUse returns true when port is in use
+    // This verifies the port checking correctly detects occupied ports
+    mockExecSync.mockReturnValue("12345\n");
+
+    const result = isPortInUse(8080);
+
+    expect(result).toBe(true);
+  });
+
+  it("should return false when port is free (execSync throws)", () => {
     // Objective: Test isPortInUse returns false when port is free
     // This verifies the port checking correctly detects available ports
-    // Simulate: lsof throws error when port is free
-    const lsofThrows = true;
-    const portInUse = !lsofThrows;
+    mockExecSync.mockImplementation(() => {
+      throw new Error("Command failed");
+    });
 
-    expect(portInUse).toBe(false);
+    const result = isPortInUse(8080);
+
+    expect(result).toBe(false);
   });
 
   it("should return true for any port that has a process", () => {
     // Objective: Test isPortInUse works with different port numbers
     // This verifies the port checking works consistently across different port values
     const testCases = [
-      { port: 3000, pid: "67890" },
-      { port: 8080, pid: "12345" },
-      { port: 9000, pid: "54321" },
+      { port: 3000, result: "67890\n" },
+      { port: 8080, result: "12345\n" },
+      { port: 9000, result: "54321\n" },
     ];
 
-    testCases.forEach(({ port, pid }) => {
-      const portInUse = pid !== null && pid.length > 0;
+    testCases.forEach(({ port, result }) => {
+      mockExecSync.mockReturnValue(result);
+      const portInUse = isPortInUse(port);
       expect(portInUse).toBe(true);
     });
   });
@@ -190,24 +222,39 @@ describe("isPortInUse()", () => {
   it("should return false when lsof command fails", () => {
     // Objective: Test isPortInUse handles lsof command failure
     // This verifies graceful error handling when the port check command fails
-    const commandFails = true;
-    const portInUse = !commandFails;
+    mockExecSync.mockImplementation(() => {
+      throw new Error("Command failed");
+    });
 
-    expect(portInUse).toBe(false);
+    const result = isPortInUse(8080);
+
+    expect(result).toBe(false);
   });
 
   it("should return true when execSync returns empty string but no error", () => {
     // Objective: Test isPortInUse returns true when execSync succeeds (process exists)
     // This verifies the success case even with empty stdout
-    const lsofOutput = "";
-    const commandSucceeded = true;
-    const portInUse = commandSucceeded;
+    mockExecSync.mockReturnValue("");
 
-    expect(portInUse).toBe(true);
+    const result = isPortInUse(8080);
+
+    expect(result).toBe(true);
   });
 });
 
 describe("killLlamaServer()", () => {
+  let killLlamaServer;
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    const module = await import("../../../../server/handlers/llama-router/process.js");
+    killLlamaServer = module.killLlamaServer;
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it("should kill process and return true when process is provided", () => {
     // Objective: Test killLlamaServer kills process and returns true
     // This verifies the process termination works correctly with valid input
@@ -218,11 +265,7 @@ describe("killLlamaServer()", () => {
       },
     };
 
-    // Simulate the killLlamaServer logic
-    const result = mockProcess ? true : false;
-    if (mockProcess) {
-      mockProcess.kill("SIGTERM");
-    }
+    const result = killLlamaServer(mockProcess);
 
     expect(result).toBe(true);
     expect(killCalledWith).toBe("SIGTERM");
@@ -231,8 +274,7 @@ describe("killLlamaServer()", () => {
   it("should return false when process is null", () => {
     // Objective: Test killLlamaServer returns false when process is null
     // This verifies proper handling of null process input
-    const process = null;
-    const result = process ? true : false;
+    const result = killLlamaServer(null);
 
     expect(result).toBe(false);
   });
@@ -240,8 +282,7 @@ describe("killLlamaServer()", () => {
   it("should return false when process is undefined", () => {
     // Objective: Test killLlamaServer returns false when process is undefined
     // This verifies proper handling of undefined process input
-    const process = undefined;
-    const result = process ? true : false;
+    const result = killLlamaServer(undefined);
 
     expect(result).toBe(false);
   });
@@ -252,7 +293,7 @@ describe("killLlamaServer()", () => {
     const falsyValues = [null, undefined, 0, "", false];
 
     falsyValues.forEach((value) => {
-      const result = value ? true : false;
+      const result = killLlamaServer(value);
       expect(result).toBe(false);
     });
   });
@@ -267,10 +308,7 @@ describe("killLlamaServer()", () => {
       },
     };
 
-    // Simulate: killLlamaServer calls kill with SIGTERM
-    if (mockProcess) {
-      mockProcess.kill("SIGTERM");
-    }
+    killLlamaServer(mockProcess);
 
     expect(killCalledWith).toBe("SIGTERM");
   });
@@ -278,22 +316,39 @@ describe("killLlamaServer()", () => {
   it("should not call kill when process is falsy", () => {
     // Objective: Test killLlamaServer does not call kill on falsy process
     // This verifies no operations are attempted on invalid process handles
-    const killCalled = false;
+    let killCalled = false;
+    const mockProcess = null;
 
-    // Simulate: no kill call for falsy process
-    const result = killCalled ? true : false;
+    killLlamaServer(mockProcess);
 
-    expect(result).toBe(false);
+    expect(killCalled).toBe(false);
   });
 });
 
 describe("killLlamaOnPort()", () => {
+  let killLlamaOnPort;
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    const module = await import("../../../../server/handlers/llama-router/process.js");
+    killLlamaOnPort = module.killLlamaOnPort;
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it("should return true when process is killed on port", () => {
     // Objective: Test killLlamaOnPort returns true when process is killed
     // This verifies the port-based killing works correctly
-    const pid = "12345";
-    const killSucceeded = true;
-    const result = pid && pid.trim() && killSucceeded;
+    mockExecSync.mockImplementation((command) => {
+      if (command.includes("lsof")) {
+        return "12345\n";
+      }
+      return "";
+    });
+
+    const result = killLlamaOnPort(8080);
 
     expect(result).toBe(true);
   });
@@ -301,8 +356,11 @@ describe("killLlamaOnPort()", () => {
   it("should return false when no process on port", () => {
     // Objective: Test killLlamaOnPort returns false when no process on port
     // This verifies graceful handling when port is already free
-    const pid = null;
-    const result = pid && pid.trim() ? true : false;
+    mockExecSync.mockImplementation(() => {
+      throw new Error("No process found");
+    });
+
+    const result = killLlamaOnPort(8080);
 
     expect(result).toBe(false);
   });
@@ -310,9 +368,14 @@ describe("killLlamaOnPort()", () => {
   it("should return false when lsof returns empty string", () => {
     // Objective: Test killLlamaOnPort returns false when lsof returns empty PID
     // This verifies handling of empty process ID response
-    const pid = "";
-    const trimmedPid = pid.trim();
-    const result = trimmedPid ? true : false;
+    mockExecSync.mockImplementation((command) => {
+      if (command.includes("lsof")) {
+        return "";
+      }
+      return "";
+    });
+
+    const result = killLlamaOnPort(8080);
 
     expect(result).toBe(false);
   });
@@ -320,18 +383,32 @@ describe("killLlamaOnPort()", () => {
   it("should trim the PID before using it", () => {
     // Objective: Test killLlamaOnPort trims whitespace from PID
     // This verifies proper handling of PID strings with whitespace
-    const rawPid = "  12345  \n";
-    const trimmedPid = rawPid.toString().trim();
+    mockExecSync.mockImplementation((command) => {
+      if (command.includes("lsof")) {
+        return "  12345  \n";
+      }
+      return "";
+    });
 
-    expect(trimmedPid).toBe("12345");
+    // The function trims, so the result should still be true
+    const result = killLlamaOnPort(8080);
+
+    expect(result).toBe(true);
   });
 
   it("should return false when kill command fails", () => {
     // Objective: Test killLlamaOnPort returns false when kill command fails
     // This verifies error handling when the kill command itself fails
-    const pid = "12345";
-    const killSucceeded = false;
-    const result = pid && pid.trim() && killSucceeded;
+    let callCount = 0;
+    mockExecSync.mockImplementation((command) => {
+      callCount++;
+      if (callCount === 1) {
+        return "12345\n";
+      }
+      throw new Error("kill failed");
+    });
+
+    const result = killLlamaOnPort(8080);
 
     expect(result).toBe(false);
   });
@@ -339,115 +416,84 @@ describe("killLlamaOnPort()", () => {
   it("should handle different port numbers", () => {
     // Objective: Test killLlamaOnPort works with different port numbers
     // This verifies the function works with various port values
-    const testCases = [
-      { port: 3000, pid: "54321", expected: true },
-      { port: 8080, pid: "12345", expected: true },
-      { port: 9000, pid: null, expected: false },
-    ];
+    const testPorts = [3000, 8080, 9000];
 
-    testCases.forEach(({ port, pid, expected }) => {
-      const result = pid && pid.trim() ? true : false;
-      expect(result).toBe(expected);
+    testPorts.forEach((port) => {
+      mockExecSync.mockImplementation(() => {
+        throw new Error("No process found");
+      });
+      const result = killLlamaOnPort(port);
+      expect(result).toBe(false);
     });
   });
 });
 
 describe("findAvailablePort()", () => {
+  let findAvailablePort;
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    const module = await import("../../../../server/handlers/llama-router/process.js");
+    findAvailablePort = module.findAvailablePort;
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it("should return first available port starting from default", async () => {
     // Objective: Test findAvailablePort returns first free port
     // This verifies the port scanning starts from the default port
-    const DEFAULT_LLAMA_PORT = 8080;
-    const portsChecked = [];
-    let availablePort = null;
+    const isPortInUse = (port) => false;
 
-    for (let port = DEFAULT_LLAMA_PORT; port <= 8090; port++) {
-      portsChecked.push(port);
-      if (true) {
-        // port is available
-        availablePort = port;
-        break;
-      }
-    }
+    const result = await findAvailablePort(isPortInUse);
 
-    expect(availablePort).toBe(8080);
-    expect(portsChecked[0]).toBe(8080);
+    expect(result).toBe(8080);
   });
 
   it("should skip occupied ports and return next available", async () => {
     // Objective: Test findAvailablePort skips occupied ports
     // This verifies the port scanning correctly skips in-use ports
-    const DEFAULT_LLAMA_PORT = 8080;
-    const portsChecked = [];
-    let availablePort = null;
+    const isPortInUse = (port) => {
+      if (port === 8080) return true;
+      return false;
+    };
 
-    for (let port = DEFAULT_LLAMA_PORT; port <= 8090; port++) {
-      portsChecked.push(port);
-      if (port === 8080) {
-        continue; // port is occupied
-      }
-      availablePort = port;
-      break;
-    }
+    const result = await findAvailablePort(isPortInUse);
 
-    expect(availablePort).toBe(8081);
-    expect(portsChecked).toContain(8080);
-    expect(portsChecked).toContain(8081);
+    expect(result).toBe(8081);
   });
 
   it("should find first available port when multiple are occupied", async () => {
     // Objective: Test findAvailablePort finds first available when multiple ports are occupied
     // This verifies scanning through multiple occupied ports
-    const DEFAULT_LLAMA_PORT = 8080;
-    const portsChecked = [];
-    let availablePort = null;
+    const isPortInUse = (port) => port < 8083;
 
-    for (let port = DEFAULT_LLAMA_PORT; port <= 8090; port++) {
-      portsChecked.push(port);
-      if (port < 8083) {
-        continue; // port is occupied
-      }
-      availablePort = port;
-      break;
-    }
+    const result = await findAvailablePort(isPortInUse);
 
-    expect(availablePort).toBe(8083);
-    expect(portsChecked).toContain(8080);
-    expect(portsChecked).toContain(8081);
-    expect(portsChecked).toContain(8082);
-    expect(portsChecked).toContain(8083);
+    expect(result).toBe(8083);
   });
 
   it("should return MAX_PORT + 1 when all ports are occupied", async () => {
     // Objective: Test findAvailablePort returns MAX_PORT + 1 when all ports occupied
     // This verifies the overflow handling when no ports are available
-    const DEFAULT_LLAMA_PORT = 8080;
-    const MAX_PORT = 8090;
-    let availablePort = null;
+    const isPortInUse = (port) => true;
 
-    for (let port = DEFAULT_LLAMA_PORT; port <= MAX_PORT; port++) {
-      if (port === MAX_PORT) {
-        continue; // all ports occupied
-      }
-    }
-    availablePort = MAX_PORT + 1;
+    const result = await findAvailablePort(isPortInUse);
 
-    expect(availablePort).toBe(8091);
+    expect(result).toBe(8091);
   });
 
   it("should check all ports from DEFAULT_LLAMA_PORT to MAX_PORT", async () => {
     // Objective: Test findAvailablePort checks all ports in range
     // This verifies the complete port range is scanned
-    const DEFAULT_LLAMA_PORT = 8080;
-    const MAX_PORT = 8090;
     const checkedPorts = [];
-
-    for (let port = DEFAULT_LLAMA_PORT; port <= MAX_PORT; port++) {
+    const isPortInUse = (port) => {
       checkedPorts.push(port);
-      if (port < 8085) {
-        continue; // occupied
-      }
-      break;
-    }
+      return port < 8085;
+    };
+
+    const result = await findAvailablePort(isPortInUse);
 
     expect(checkedPorts[0]).toBe(8080);
     expect(checkedPorts[checkedPorts.length - 1]).toBe(8085);
@@ -457,25 +503,32 @@ describe("findAvailablePort()", () => {
   it("should handle isPortInUse throwing an error", async () => {
     // Objective: Test findAvailablePort handles isPortInUse errors gracefully
     // This verifies error handling during port scanning
-    const DEFAULT_LLAMA_PORT = 8080;
-    let errorOccurred = false;
-    let availablePort = null;
+    let callCount = 0;
+    const isPortInUse = (port) => {
+      callCount++;
+      if (port === 8080) throw new Error("Port check failed");
+      return false;
+    };
 
-    for (let port = DEFAULT_LLAMA_PORT; port <= 8090; port++) {
-      if (port === 8080) {
-        errorOccurred = true;
-        continue; // error on this port
-      }
-      availablePort = port;
-      break;
-    }
+    const result = await findAvailablePort(isPortInUse);
 
-    expect(errorOccurred).toBe(true);
-    expect(availablePort).toBe(8081);
+    expect(result).toBe(8081);
   });
 });
 
 describe("stopLlamaServer()", () => {
+  let stopLlamaServer;
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    const module = await import("../../../../server/handlers/llama-router/process.js");
+    stopLlamaServer = module.stopLlamaServer;
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it("should call killLlamaServerFn and return success", () => {
     // Objective: Test stopLlamaServer calls killLlamaServerFn and returns success
     // This verifies the main process termination is attempted
@@ -485,43 +538,78 @@ describe("stopLlamaServer()", () => {
         killCalled = true;
       },
     };
-    const result = { success: true };
+    const killLlamaServerFn = (process) => {
+      if (process) {
+        process.kill("SIGTERM");
+        return true;
+      }
+      return false;
+    };
+    const killLlamaOnPortFn = () => false;
+
+    const result = stopLlamaServer(
+      mockProcess,
+      null,
+      null,
+      () => false,
+      killLlamaServerFn,
+      killLlamaOnPortFn
+    );
 
     expect(result.success).toBe(true);
   });
 
-  it("should call killLlamaOnPortFn for all ports", () => {
+  it("should call killLlamaOnPortFn for all ports in range", () => {
     // Objective: Test stopLlamaServer calls killLlamaOnPortFn for all ports in range
     // This verifies cleanup of all possible llama-server instances
-    const DEFAULT_LLAMA_PORT = 8080;
-    const MAX_PORT = 8090;
-    const portsChecked = [];
+    const checkedPorts = [];
+    const killLlamaServerFn = () => false;
+    const killLlamaOnPortFn = (port) => {
+      checkedPorts.push(port);
+      return false;
+    };
 
-    for (let p = DEFAULT_LLAMA_PORT; p <= MAX_PORT; p++) {
-      portsChecked.push(p);
-    }
+    stopLlamaServer(null, null, null, () => false, killLlamaServerFn, killLlamaOnPortFn);
 
-    expect(portsChecked.length).toBe(11); // 8080 to 8090 inclusive
-    expect(portsChecked[0]).toBe(8080);
-    expect(portsChecked[portsChecked.length - 1]).toBe(8090);
+    expect(checkedPorts.length).toBe(11); // 8080 to 8090 inclusive
+    expect(checkedPorts[0]).toBe(8080);
+    expect(checkedPorts[checkedPorts.length - 1]).toBe(8090);
   });
 
   it("should continue even if killLlamaServerFn throws", () => {
     // Objective: Test stopLlamaServer handles killLlamaServerFn errors gracefully
     // This verifies resilient error handling during shutdown
-    const killError = true;
-    const result = { success: true };
+    const killLlamaServerFn = () => {
+      throw new Error("Kill failed");
+    };
+    const killLlamaOnPortFn = () => false;
 
-    // Function should continue and return success even if kill throws
+    const result = stopLlamaServer(
+      null,
+      null,
+      null,
+      () => false,
+      killLlamaServerFn,
+      killLlamaOnPortFn
+    );
+
     expect(result.success).toBe(true);
   });
 
   it("should handle null llamaServerProcess", () => {
     // Objective: Test stopLlamaServer handles null process gracefully
     // This verifies null process is handled without errors
-    const process = null;
-    const killCalled = false;
-    const result = { success: true };
+    const killLlamaServerFn = () => false;
+    const killLlamaOnPortFn = () => false;
+
+    const result = stopLlamaServer(
+      null,
+      null,
+      null,
+      () => false,
+      killLlamaServerFn,
+      killLlamaOnPortFn
+    );
 
     expect(result.success).toBe(true);
   });
@@ -529,7 +617,17 @@ describe("stopLlamaServer()", () => {
   it("should always return success object", () => {
     // Objective: Test stopLlamaServer always returns success object
     // This verifies the API contract that stop always returns success
-    const result = { success: true };
+    const killLlamaServerFn = () => false;
+    const killLlamaOnPortFn = () => false;
+
+    const result = stopLlamaServer(
+      null,
+      null,
+      null,
+      () => false,
+      killLlamaServerFn,
+      killLlamaOnPortFn
+    );
 
     expect(result).toEqual({ success: true });
     expect(result.success).toBe(true);

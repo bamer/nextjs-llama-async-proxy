@@ -1,14 +1,17 @@
 /**
  * Format Utilities Tests
  * Tests for FormatUtils - imports from actual source file
+ * @jest-environment jsdom
  */
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
 
-// Import from actual source file
+// Import from actual source file - this sets window.FormatUtils
 const formatPath = new URL("../../public/js/utils/format.js", import.meta.url);
-const formatContent = await import(formatPath.href);
-const FormatUtils = formatContent.FormatUtils || formatContent.default || formatContent;
+await import(formatPath.href);
+
+// Access FormatUtils from window (set by the module)
+const FormatUtils = global.window.FormatUtils;
 
 describe("FormatUtils", () => {
   describe("formatBytes", () => {

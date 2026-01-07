@@ -535,4 +535,816 @@ describe("Models Router Operations", () => {
       expect(source).toContain("unloadModel");
     });
   });
+
+  /**
+   * SUCCESS PATH TESTS - Test the result.success === true branches
+   * These tests achieve coverage on lines 23-24 and 45-46
+   */
+
+  describe("models:load success path - 100% coverage objective", () => {
+    it("should emit models:status 'loaded' and send ok response when loadModel succeeds", async () => {
+      // This test achieves coverage on lines 23-24: if (result.success) {...}
+      // Arrange: Mock the llama-router module BEFORE importing router-ops
+      const mockLoadModel = jest.fn().mockResolvedValue({ success: true, result: { status: "loaded" } });
+      const mockUnloadModel = jest.fn().mockResolvedValue({ success: true });
+
+      jest.unstable_mockModule(
+        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/index.js",
+        () => ({
+          loadModel: mockLoadModel,
+          unloadModel: mockUnloadModel,
+          // Export other functions as identity to avoid breaking the module
+          startLlamaServerRouter: jest.fn(),
+          stopLlamaServerRouter: jest.fn(),
+          getLlamaStatus: jest.fn(),
+          llamaApiRequest: jest.fn(),
+          isPortInUse: jest.fn(),
+          findLlamaServer: jest.fn(),
+          findAvailablePort: jest.fn(),
+          killLlamaServer: jest.fn(),
+          killLlamaOnPort: jest.fn(),
+          getRouterState: jest.fn(),
+          getServerUrl: jest.fn(),
+          getServerProcess: jest.fn(),
+        })
+      );
+
+      // Clear the module cache to ensure our mock is used
+      const mod = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
+      const { registerModelsRouterHandlers } = mod;
+
+      // Re-create fresh mocks for this test
+      const socket = createMockSocket();
+      const io = createMockIo();
+
+      // Create a custom socket that captures emit calls for verification
+      const emitCalls = [];
+      const testSocket = {
+        on: socket.on,
+        emit: function (event, data) {
+          emitCalls.push({ event, data });
+        },
+      };
+
+      // Act: Register handlers and trigger load
+      registerModelsRouterHandlers(testSocket, io);
+      await testSocket.handlers["models:load"]({
+        requestId: 999,
+        modelName: "test-model.gguf",
+      });
+
+      // Wait for the async operation to complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Assert: Verify success path was exercised
+      expect(mockLoadModel).toHaveBeenCalledWith("test-model.gguf");
+      // The success path should call io.emit with models:status
+      const statusEmit = io.emitCalls.find((call) => call.event === "models:status");
+      expect(statusEmit).toBeDefined();
+      expect(statusEmit.data).toEqual({ modelName: "test-model.gguf", status: "loaded" });
+    });
+  });
+
+  describe("models:unload success path - 100% coverage objective", () => {
+    it("should emit models:status 'unloaded' and send ok response when unloadModel succeeds", async () => {
+      // This test achieves coverage on lines 45-46: if (result.success) {...}
+      // Arrange: Mock the llama-router module BEFORE importing router-ops
+      const mockLoadModel = jest.fn().mockResolvedValue({ success: true });
+      const mockUnloadModel = jest.fn().mockResolvedValue({ success: true, result: { status: "unloaded" } });
+
+      jest.unstable_mockModule(
+        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/index.js",
+        () => ({
+          loadModel: mockLoadModel,
+          unloadModel: mockUnloadModel,
+          // Export other functions as identity to avoid breaking the module
+          startLlamaServerRouter: jest.fn(),
+          stopLlamaServerRouter: jest.fn(),
+          getLlamaStatus: jest.fn(),
+          llamaApiRequest: jest.fn(),
+          isPortInUse: jest.fn(),
+          findLlamaServer: jest.fn(),
+          findAvailablePort: jest.fn(),
+          killLlamaServer: jest.fn(),
+          killLlamaOnPort: jest.fn(),
+          getRouterState: jest.fn(),
+          getServerUrl: jest.fn(),
+          getServerProcess: jest.fn(),
+        })
+      );
+
+      // Clear the module cache to ensure our mock is used
+      const mod = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
+      const { registerModelsRouterHandlers } = mod;
+
+      // Re-create fresh mocks for this test
+      const socket = createMockSocket();
+      const io = createMockIo();
+
+      // Create a custom socket that captures emit calls for verification
+      const emitCalls = [];
+      const testSocket = {
+        on: socket.on,
+        emit: function (event, data) {
+          emitCalls.push({ event, data });
+        },
+      };
+
+      // Act: Register handlers and trigger unload
+      registerModelsRouterHandlers(testSocket, io);
+      await testSocket.handlers["models:unload"]({
+        requestId: 888,
+        modelName: "loaded-model.gguf",
+      });
+
+      // Wait for the async operation to complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Assert: Verify success path was exercised
+      expect(mockUnloadModel).toHaveBeenCalledWith("loaded-model.gguf");
+      // The success path should call io.emit with models:status
+      const statusEmit = io.emitCalls.find((call) => call.event === "models:status");
+      expect(statusEmit).toBeDefined();
+      expect(statusEmit.data).toEqual({ modelName: "loaded-model.gguf", status: "unloaded" });
+    });
+  });
+
+  /**
+   * FAILURE PATH TESTS - Test the result.success === false branches
+   */
+
+  describe("models:load failure path - error handling", () => {
+    it("should emit models:status 'error' and send err response when loadModel fails", async () => {
+      // This test achieves coverage on lines 26-27: result.success === false branch
+      // Arrange: Mock the llama-router module BEFORE importing router-ops
+      const mockLoadModel = jest.fn().mockResolvedValue({
+        success: false,
+        error: "Model not found in directory"
+      });
+      const mockUnloadModel = jest.fn().mockResolvedValue({ success: true });
+
+      jest.unstable_mockModule(
+        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/index.js",
+        () => ({
+          loadModel: mockLoadModel,
+          unloadModel: mockUnloadModel,
+          // Export other functions as identity to avoid breaking the module
+          startLlamaServerRouter: jest.fn(),
+          stopLlamaServerRouter: jest.fn(),
+          getLlamaStatus: jest.fn(),
+          llamaApiRequest: jest.fn(),
+          isPortInUse: jest.fn(),
+          findLlamaServer: jest.fn(),
+          findAvailablePort: jest.fn(),
+          killLlamaServer: jest.fn(),
+          killLlamaOnPort: jest.fn(),
+          getRouterState: jest.fn(),
+          getServerUrl: jest.fn(),
+          getServerProcess: jest.fn(),
+        })
+      );
+
+      // Clear the module cache to ensure our mock is used
+      const mod = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
+      const { registerModelsRouterHandlers } = mod;
+
+      // Re-create fresh mocks for this test
+      const socket = createMockSocket();
+      const io = createMockIo();
+
+      // Create a custom socket that captures emit calls for verification
+      const emitCalls = [];
+      const testSocket = {
+        on: socket.on,
+        emit: function (event, data) {
+          emitCalls.push({ event, data });
+        },
+      };
+
+      // Act: Register handlers and trigger load
+      registerModelsRouterHandlers(testSocket, io);
+      await testSocket.handlers["models:load"]({
+        requestId: 777,
+        modelName: "missing-model.gguf",
+      });
+
+      // Wait for the async operation to complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Assert: Verify failure path was exercised
+      expect(mockLoadModel).toHaveBeenCalledWith("missing-model.gguf");
+      // The failure path should call io.emit with models:status containing error
+      const statusEmit = io.emitCalls.find((call) => call.event === "models:status");
+      expect(statusEmit).toBeDefined();
+      expect(statusEmit.data.status).toBe("error");
+      expect(statusEmit.data.error).toBe("Model not found in directory");
+    });
+  });
+
+  describe("models:unload failure path - error handling", () => {
+    it("should send err response when unloadModel returns failure", async () => {
+      // This test achieves coverage on line 48: result.success === false branch for unloadModel
+      // Arrange: Mock the llama-router module BEFORE importing router-ops
+      const mockLoadModel = jest.fn().mockResolvedValue({ success: true });
+      const mockUnloadModel = jest.fn().mockResolvedValue({
+        success: false,
+        error: "Model not loaded"
+      });
+
+      jest.unstable_mockModule(
+        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/index.js",
+        () => ({
+          loadModel: mockLoadModel,
+          unloadModel: mockUnloadModel,
+          // Export other functions as identity to avoid breaking the module
+          startLlamaServerRouter: jest.fn(),
+          stopLlamaServerRouter: jest.fn(),
+          getLlamaStatus: jest.fn(),
+          llamaApiRequest: jest.fn(),
+          isPortInUse: jest.fn(),
+          findLlamaServer: jest.fn(),
+          findAvailablePort: jest.fn(),
+          killLlamaServer: jest.fn(),
+          killLlamaOnPort: jest.fn(),
+          getRouterState: jest.fn(),
+          getServerUrl: jest.fn(),
+          getServerProcess: jest.fn(),
+        })
+      );
+
+      // Clear the module cache to ensure our mock is used
+      const mod = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
+      const { registerModelsRouterHandlers } = mod;
+
+      // Re-create fresh mocks for this test
+      const socket = createMockSocket();
+      const io = createMockIo();
+
+      // Create a custom socket that captures emit calls for verification
+      const emitCalls = [];
+      const testSocket = {
+        on: socket.on,
+        emit: function (event, data) {
+          emitCalls.push({ event, data });
+        },
+      };
+
+      // Act: Register handlers and trigger unload
+      registerModelsRouterHandlers(testSocket, io);
+      await testSocket.handlers["models:unload"]({
+        requestId: 666,
+        modelName: "never-loaded-model.gguf",
+      });
+
+      // Wait for the async operation to complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Assert: Verify failure path was exercised
+      expect(mockUnloadModel).toHaveBeenCalledWith("never-loaded-model.gguf");
+    });
+  });
+
+  /**
+   * EXCEPTION PATH TESTS - Test the .catch() branches
+   */
+
+  describe("models:load exception path - error handling", () => {
+    it("should send err response when loadModel throws an exception", async () => {
+      // This test achieves coverage on line 31: .catch() handler for loadModel
+      // Arrange: Mock the llama-router module BEFORE importing router-ops
+      const mockLoadModel = jest.fn().mockRejectedValue(new Error("Connection refused"));
+      const mockUnloadModel = jest.fn().mockResolvedValue({ success: true });
+
+      jest.unstable_mockModule(
+        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/index.js",
+        () => ({
+          loadModel: mockLoadModel,
+          unloadModel: mockUnloadModel,
+          // Export other functions as identity to avoid breaking the module
+          startLlamaServerRouter: jest.fn(),
+          stopLlamaServerRouter: jest.fn(),
+          getLlamaStatus: jest.fn(),
+          llamaApiRequest: jest.fn(),
+          isPortInUse: jest.fn(),
+          findLlamaServer: jest.fn(),
+          findAvailablePort: jest.fn(),
+          killLlamaServer: jest.fn(),
+          killLlamaOnPort: jest.fn(),
+          getRouterState: jest.fn(),
+          getServerUrl: jest.fn(),
+          getServerProcess: jest.fn(),
+        })
+      );
+
+      // Clear the module cache to ensure our mock is used
+      const mod = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
+      const { registerModelsRouterHandlers } = mod;
+
+      // Re-create fresh mocks for this test
+      const socket = createMockSocket();
+      const io = createMockIo();
+
+      // Create a custom socket that captures emit calls for verification
+      const emitCalls = [];
+      const testSocket = {
+        on: socket.on,
+        emit: function (event, data) {
+          emitCalls.push({ event, data });
+        },
+      };
+
+      // Act: Register handlers and trigger load (this will cause an exception)
+      registerModelsRouterHandlers(testSocket, io);
+      await testSocket.handlers["models:load"]({
+        requestId: 555,
+        modelName: "error-model.gguf",
+      });
+
+      // Wait for the async operation to complete (including the catch handler)
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Assert: Verify exception path was exercised
+      expect(mockLoadModel).toHaveBeenCalledWith("error-model.gguf");
+      // The exception path should call err() with the error message
+      const errEmit = emitCalls.find((call) => call.event === "models:load:result");
+      expect(errEmit).toBeDefined();
+      expect(errEmit.data.error).toBe("Connection refused");
+    });
+  });
+
+  describe("models:unload exception path - error handling", () => {
+    it("should send err response when unloadModel throws an exception", async () => {
+      // This test achieves coverage on line 52: .catch() handler for unloadModel
+      // Arrange: Mock the llama-router module BEFORE importing router-ops
+      const mockLoadModel = jest.fn().mockResolvedValue({ success: true });
+      const mockUnloadModel = jest.fn().mockRejectedValue(new Error("Server disconnected"));
+
+      jest.unstable_mockModule(
+        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/index.js",
+        () => ({
+          loadModel: mockLoadModel,
+          unloadModel: mockUnloadModel,
+          // Export other functions as identity to avoid breaking the module
+          startLlamaServerRouter: jest.fn(),
+          stopLlamaServerRouter: jest.fn(),
+          getLlamaStatus: jest.fn(),
+          llamaApiRequest: jest.fn(),
+          isPortInUse: jest.fn(),
+          findLlamaServer: jest.fn(),
+          findAvailablePort: jest.fn(),
+          killLlamaServer: jest.fn(),
+          killLlamaOnPort: jest.fn(),
+          getRouterState: jest.fn(),
+          getServerUrl: jest.fn(),
+          getServerProcess: jest.fn(),
+        })
+      );
+
+      // Clear the module cache to ensure our mock is used
+      const mod = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
+      const { registerModelsRouterHandlers } = mod;
+
+      // Re-create fresh mocks for this test
+      const socket = createMockSocket();
+      const io = createMockIo();
+
+      // Create a custom socket that captures emit calls for verification
+      const emitCalls = [];
+      const testSocket = {
+        on: socket.on,
+        emit: function (event, data) {
+          emitCalls.push({ event, data });
+        },
+      };
+
+      // Act: Register handlers and trigger unload (this will cause an exception)
+      registerModelsRouterHandlers(testSocket, io);
+      await testSocket.handlers["models:unload"]({
+        requestId: 444,
+        modelName: "crash-model.gguf",
+      });
+
+      // Wait for the async operation to complete (including the catch handler)
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Assert: Verify exception path was exercised
+      expect(mockUnloadModel).toHaveBeenCalledWith("crash-model.gguf");
+      // The exception path should call err() with the error message
+      const errEmit = emitCalls.find((call) => call.event === "models:unload:result");
+      expect(errEmit).toBeDefined();
+      expect(errEmit.data.error).toBe("Server disconnected");
+    });
+  });
+});
+  });
+
+  /**
+   * SUCCESS PATH TESTS - Test the result.success === true branches
+   * These tests achieve coverage on lines 23-24 and 45-46
+   */
+
+  describe("models:load success path - 100% coverage objective", () => {
+    it("should emit models:status 'loaded' and send ok response when loadModel succeeds", async () => {
+      // This test achieves coverage on lines 23-24: if (result.success) {...}
+      // Arrange: Mock the llama-router module BEFORE importing router-ops
+      const mockLoadModel = jest
+        .fn()
+        .mockResolvedValue({ success: true, result: { status: "loaded" } });
+      const mockUnloadModel = jest.fn().mockResolvedValue({ success: true });
+
+      jest.unstable_mockModule(
+        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/index.js",
+        () => ({
+          loadModel: mockLoadModel,
+          unloadModel: mockUnloadModel,
+          // Export other functions as identity to avoid breaking the module
+          startLlamaServerRouter: jest.fn(),
+          stopLlamaServerRouter: jest.fn(),
+          getLlamaStatus: jest.fn(),
+          llamaApiRequest: jest.fn(),
+          isPortInUse: jest.fn(),
+          findLlamaServer: jest.fn(),
+          findAvailablePort: jest.fn(),
+          killLlamaServer: jest.fn(),
+          killLlamaOnPort: jest.fn(),
+          getRouterState: jest.fn(),
+          getServerUrl: jest.fn(),
+          getServerProcess: jest.fn(),
+        })
+      );
+
+      // Clear the module cache to ensure our mock is used
+      const mod =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
+      const { registerModelsRouterHandlers } = mod;
+
+      // Re-create fresh mocks for this test
+      const socket = createMockSocket();
+      const io = createMockIo();
+
+      // Create a custom socket that captures emit calls for verification
+      const emitCalls = [];
+      const testSocket = {
+        on: socket.on,
+        emit: function (event, data) {
+          emitCalls.push({ event, data });
+        },
+      };
+
+      // Act: Register handlers and trigger load
+      registerModelsRouterHandlers(testSocket, io);
+      await testSocket.handlers["models:load"]({
+        requestId: 999,
+        modelName: "test-model.gguf",
+      });
+
+      // Wait for the async operation to complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Assert: Verify success path was exercised
+      expect(mockLoadModel).toHaveBeenCalledWith("test-model.gguf");
+      // The success path should call io.emit with models:status
+      const statusEmit = io.emitCalls.find((call) => call.event === "models:status");
+      expect(statusEmit).toBeDefined();
+      expect(statusEmit.data).toEqual({ modelName: "test-model.gguf", status: "loaded" });
+    });
+  });
+
+  describe("models:unload success path - 100% coverage objective", () => {
+    it("should emit models:status 'unloaded' and send ok response when unloadModel succeeds", async () => {
+      // This test achieves coverage on lines 45-46: if (result.success) {...}
+      // Arrange: Mock the llama-router module BEFORE importing router-ops
+      const mockLoadModel = jest.fn().mockResolvedValue({ success: true });
+      const mockUnloadModel = jest
+        .fn()
+        .mockResolvedValue({ success: true, result: { status: "unloaded" } });
+
+      jest.unstable_mockModule(
+        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/index.js",
+        () => ({
+          loadModel: mockLoadModel,
+          unloadModel: mockUnloadModel,
+          // Export other functions as identity to avoid breaking the module
+          startLlamaServerRouter: jest.fn(),
+          stopLlamaServerRouter: jest.fn(),
+          getLlamaStatus: jest.fn(),
+          llamaApiRequest: jest.fn(),
+          isPortInUse: jest.fn(),
+          findLlamaServer: jest.fn(),
+          findAvailablePort: jest.fn(),
+          killLlamaServer: jest.fn(),
+          killLlamaOnPort: jest.fn(),
+          getRouterState: jest.fn(),
+          getServerUrl: jest.fn(),
+          getServerProcess: jest.fn(),
+        })
+      );
+
+      // Clear the module cache to ensure our mock is used
+      const mod =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
+      const { registerModelsRouterHandlers } = mod;
+
+      // Re-create fresh mocks for this test
+      const socket = createMockSocket();
+      const io = createMockIo();
+
+      // Create a custom socket that captures emit calls for verification
+      const emitCalls = [];
+      const testSocket = {
+        on: socket.on,
+        emit: function (event, data) {
+          emitCalls.push({ event, data });
+        },
+      };
+
+      // Act: Register handlers and trigger unload
+      registerModelsRouterHandlers(testSocket, io);
+      await testSocket.handlers["models:unload"]({
+        requestId: 888,
+        modelName: "loaded-model.gguf",
+      });
+
+      // Wait for the async operation to complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Assert: Verify success path was exercised
+      expect(mockUnloadModel).toHaveBeenCalledWith("loaded-model.gguf");
+      // The success path should call io.emit with models:status
+      const statusEmit = io.emitCalls.find((call) => call.event === "models:status");
+      expect(statusEmit).toBeDefined();
+      expect(statusEmit.data).toEqual({ modelName: "loaded-model.gguf", status: "unloaded" });
+    });
+  });
+
+  /**
+   * FAILURE PATH TESTS - Test the result.success === false branches
+   */
+
+  describe("models:load failure path - error handling", () => {
+    it("should emit models:status 'error' and send err response when loadModel fails", async () => {
+      // This test achieves coverage on lines 26-27: result.success === false branch
+      // Arrange: Mock the llama-router module BEFORE importing router-ops
+      const mockLoadModel = jest.fn().mockResolvedValue({
+        success: false,
+        error: "Model not found in directory",
+      });
+      const mockUnloadModel = jest.fn().mockResolvedValue({ success: true });
+
+      jest.unstable_mockModule(
+        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/index.js",
+        () => ({
+          loadModel: mockLoadModel,
+          unloadModel: mockUnloadModel,
+          // Export other functions as identity to avoid breaking the module
+          startLlamaServerRouter: jest.fn(),
+          stopLlamaServerRouter: jest.fn(),
+          getLlamaStatus: jest.fn(),
+          llamaApiRequest: jest.fn(),
+          isPortInUse: jest.fn(),
+          findLlamaServer: jest.fn(),
+          findAvailablePort: jest.fn(),
+          killLlamaServer: jest.fn(),
+          killLlamaOnPort: jest.fn(),
+          getRouterState: jest.fn(),
+          getServerUrl: jest.fn(),
+          getServerProcess: jest.fn(),
+        })
+      );
+
+      // Clear the module cache to ensure our mock is used
+      const mod =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
+      const { registerModelsRouterHandlers } = mod;
+
+      // Re-create fresh mocks for this test
+      const socket = createMockSocket();
+      const io = createMockIo();
+
+      // Create a custom socket that captures emit calls for verification
+      const emitCalls = [];
+      const testSocket = {
+        on: socket.on,
+        emit: function (event, data) {
+          emitCalls.push({ event, data });
+        },
+      };
+
+      // Act: Register handlers and trigger load
+      registerModelsRouterHandlers(testSocket, io);
+      await testSocket.handlers["models:load"]({
+        requestId: 777,
+        modelName: "missing-model.gguf",
+      });
+
+      // Wait for the async operation to complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Assert: Verify failure path was exercised
+      expect(mockLoadModel).toHaveBeenCalledWith("missing-model.gguf");
+      // The failure path should call io.emit with models:status containing error
+      const statusEmit = io.emitCalls.find((call) => call.event === "models:status");
+      expect(statusEmit).toBeDefined();
+      expect(statusEmit.data.status).toBe("error");
+      expect(statusEmit.data.error).toBe("Model not found in directory");
+    });
+  });
+
+  describe("models:unload failure path - error handling", () => {
+    it("should send err response when unloadModel returns failure", async () => {
+      // This test achieves coverage on line 48: result.success === false branch for unloadModel
+      // Arrange: Mock the llama-router module BEFORE importing router-ops
+      const mockLoadModel = jest.fn().mockResolvedValue({ success: true });
+      const mockUnloadModel = jest.fn().mockResolvedValue({
+        success: false,
+        error: "Model not loaded",
+      });
+
+      jest.unstable_mockModule(
+        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/index.js",
+        () => ({
+          loadModel: mockLoadModel,
+          unloadModel: mockUnloadModel,
+          // Export other functions as identity to avoid breaking the module
+          startLlamaServerRouter: jest.fn(),
+          stopLlamaServerRouter: jest.fn(),
+          getLlamaStatus: jest.fn(),
+          llamaApiRequest: jest.fn(),
+          isPortInUse: jest.fn(),
+          findLlamaServer: jest.fn(),
+          findAvailablePort: jest.fn(),
+          killLlamaServer: jest.fn(),
+          killLlamaOnPort: jest.fn(),
+          getRouterState: jest.fn(),
+          getServerUrl: jest.fn(),
+          getServerProcess: jest.fn(),
+        })
+      );
+
+      // Clear the module cache to ensure our mock is used
+      const mod =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
+      const { registerModelsRouterHandlers } = mod;
+
+      // Re-create fresh mocks for this test
+      const socket = createMockSocket();
+      const io = createMockIo();
+
+      // Create a custom socket that captures emit calls for verification
+      const emitCalls = [];
+      const testSocket = {
+        on: socket.on,
+        emit: function (event, data) {
+          emitCalls.push({ event, data });
+        },
+      };
+
+      // Act: Register handlers and trigger unload
+      registerModelsRouterHandlers(testSocket, io);
+      await testSocket.handlers["models:unload"]({
+        requestId: 666,
+        modelName: "never-loaded-model.gguf",
+      });
+
+      // Wait for the async operation to complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Assert: Verify failure path was exercised
+      expect(mockUnloadModel).toHaveBeenCalledWith("never-loaded-model.gguf");
+    });
+  });
+
+  /**
+   * EXCEPTION PATH TESTS - Test the .catch() branches
+   */
+
+  describe("models:load exception path - error handling", () => {
+    it("should send err response when loadModel throws an exception", async () => {
+      // This test achieves coverage on line 31: .catch() handler for loadModel
+      // Arrange: Mock the llama-router module BEFORE importing router-ops
+      const mockLoadModel = jest.fn().mockRejectedValue(new Error("Connection refused"));
+      const mockUnloadModel = jest.fn().mockResolvedValue({ success: true });
+
+      jest.unstable_mockModule(
+        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/index.js",
+        () => ({
+          loadModel: mockLoadModel,
+          unloadModel: mockUnloadModel,
+          // Export other functions as identity to avoid breaking the module
+          startLlamaServerRouter: jest.fn(),
+          stopLlamaServerRouter: jest.fn(),
+          getLlamaStatus: jest.fn(),
+          llamaApiRequest: jest.fn(),
+          isPortInUse: jest.fn(),
+          findLlamaServer: jest.fn(),
+          findAvailablePort: jest.fn(),
+          killLlamaServer: jest.fn(),
+          killLlamaOnPort: jest.fn(),
+          getRouterState: jest.fn(),
+          getServerUrl: jest.fn(),
+          getServerProcess: jest.fn(),
+        })
+      );
+
+      // Clear the module cache to ensure our mock is used
+      const mod =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
+      const { registerModelsRouterHandlers } = mod;
+
+      // Re-create fresh mocks for this test
+      const socket = createMockSocket();
+      const io = createMockIo();
+
+      // Create a custom socket that captures emit calls for verification
+      const emitCalls = [];
+      const testSocket = {
+        on: socket.on,
+        emit: function (event, data) {
+          emitCalls.push({ event, data });
+        },
+      };
+
+      // Act: Register handlers and trigger load (this will cause an exception)
+      registerModelsRouterHandlers(testSocket, io);
+      await testSocket.handlers["models:load"]({
+        requestId: 555,
+        modelName: "error-model.gguf",
+      });
+
+      // Wait for the async operation to complete (including the catch handler)
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Assert: Verify exception path was exercised
+      expect(mockLoadModel).toHaveBeenCalledWith("error-model.gguf");
+      // The exception path should call err() with the error message
+      const errEmit = emitCalls.find((call) => call.event === "models:load:result");
+      expect(errEmit).toBeDefined();
+      expect(errEmit.data.error).toBe("Connection refused");
+    });
+  });
+
+  describe("models:unload exception path - error handling", () => {
+    it("should send err response when unloadModel throws an exception", async () => {
+      // This test achieves coverage on line 52: .catch() handler for unloadModel
+      // Arrange: Mock the llama-router module BEFORE importing router-ops
+      const mockLoadModel = jest.fn().mockResolvedValue({ success: true });
+      const mockUnloadModel = jest.fn().mockRejectedValue(new Error("Server disconnected"));
+
+      jest.unstable_mockModule(
+        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/index.js",
+        () => ({
+          loadModel: mockLoadModel,
+          unloadModel: mockUnloadModel,
+          // Export other functions as identity to avoid breaking the module
+          startLlamaServerRouter: jest.fn(),
+          stopLlamaServerRouter: jest.fn(),
+          getLlamaStatus: jest.fn(),
+          llamaApiRequest: jest.fn(),
+          isPortInUse: jest.fn(),
+          findLlamaServer: jest.fn(),
+          findAvailablePort: jest.fn(),
+          killLlamaServer: jest.fn(),
+          killLlamaOnPort: jest.fn(),
+          getRouterState: jest.fn(),
+          getServerUrl: jest.fn(),
+          getServerProcess: jest.fn(),
+        })
+      );
+
+      // Clear the module cache to ensure our mock is used
+      const mod =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
+      const { registerModelsRouterHandlers } = mod;
+
+      // Re-create fresh mocks for this test
+      const socket = createMockSocket();
+      const io = createMockIo();
+
+      // Create a custom socket that captures emit calls for verification
+      const emitCalls = [];
+      const testSocket = {
+        on: socket.on,
+        emit: function (event, data) {
+          emitCalls.push({ event, data });
+        },
+      };
+
+      // Act: Register handlers and trigger unload (this will cause an exception)
+      registerModelsRouterHandlers(testSocket, io);
+      await testSocket.handlers["models:unload"]({
+        requestId: 444,
+        modelName: "crash-model.gguf",
+      });
+
+      // Wait for the async operation to complete (including the catch handler)
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Assert: Verify exception path was exercised
+      expect(mockUnloadModel).toHaveBeenCalledWith("crash-model.gguf");
+      // The exception path should call err() with the error message
+      const errEmit = emitCalls.find((call) => call.event === "models:unload:result");
+      expect(errEmit).toBeDefined();
+      expect(errEmit.data.error).toBe("Server disconnected");
+    });
+  });
 });

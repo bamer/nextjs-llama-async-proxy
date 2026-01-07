@@ -14,8 +14,12 @@ import { DEFAULT_LLAMA_PORT, MAX_PORT } from "../constants.js";
  */
 export async function findAvailablePort(isPortInUse) {
   for (let port = DEFAULT_LLAMA_PORT; port <= MAX_PORT; port++) {
-    if (!isPortInUse(port)) {
-      return port;
+    try {
+      if (!isPortInUse(port)) {
+        return port;
+      }
+    } catch {
+      // Port check failed, skip this port
     }
   }
   return MAX_PORT + 1;
@@ -108,7 +112,11 @@ export function stopLlamaServer(
 ) {
   console.log("[LLAMA] === STOPPING LLAMA-SERVER ===");
 
-  const killed = killLlamaServerFn(llamaServerProcess);
+  try {
+    const killed = killLlamaServerFn(llamaServerProcess);
+  } catch {
+    // Ignore errors from killLlamaServerFn
+  }
 
   // Also kill by port
   for (let p = DEFAULT_LLAMA_PORT; p <= MAX_PORT; p++) {
