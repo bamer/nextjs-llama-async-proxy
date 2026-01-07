@@ -166,8 +166,23 @@ class ModelsPage extends Component {
       );
     };
 
+    const iconMap = {
+      name: "📄",
+      status: "⭐",
+      type: "🏗️",
+      params: "#️⃣",
+      quantization: "📊",
+      ctx_size: "📈",
+      embedding_size: "📐",
+      block_count: "🧱",
+      head_count: "👁️",
+      file_size: "💾",
+      actions: "⚙️",
+    };
+
     const sortableHeader = (label, field) => {
       const isSorted = this.state.sortBy === field;
+      const icon = iconMap[field] || "";
       const indicator =
         isSorted && this.state.sortOrder === "asc"
           ? " ↑"
@@ -181,7 +196,7 @@ class ModelsPage extends Component {
           className: isSorted ? "sorted" : "",
           style: "cursor: pointer; user-select: none;",
         },
-        label + indicator
+        icon ? `${icon} ${label}${indicator}` : `${label}${indicator}`
       );
     };
 
@@ -274,7 +289,7 @@ class ModelsPage extends Component {
             sortableHeader("Blocks", "block_count"),
             sortableHeader("Heads", "head_count"),
             sortableHeader("Size", "file_size"),
-            Component.h("th", {}, "Actions")
+            sortableHeader("Actions", "status")
           )
         ),
         Component.h(

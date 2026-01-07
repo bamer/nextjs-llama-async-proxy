@@ -1164,5 +1164,41 @@ describe("Component Class", function () {
       selfTarget.click();
       expect(handler).toHaveBeenCalled();
     });
+
+    it("should handle nested Component children with their own children", function () {
+      // Tests lines 187-196: Component child with children passed to parent Component.h()
+      const Grandchild = class extends Component {
+        render() {
+          return Component.h("em", {}, "grandchild text");
+        }
+      };
+      const ChildWithGrandchild = class extends Component {
+        render() {
+          return Component.h("div", { className: "child" }, "Label: ", Component.h(Grandchild, {}));
+        }
+      };
+      // This should trigger the nested Component handling in Component.h() lines 187-196
+      const el = Component.h("article", {}, Component.h(ChildWithGrandchild, {}), " more content");
+      expect(el.querySelector(".child em")).not.toBeNull();
+      expect(el.querySelector(".child em").textContent).toBe("grandchild text");
+    });
+
+    it("should handle Component.h with Component class having children array", function () {
+      // Tests lines 187-196: Component class with children array containing nested Components
+      const TinyComponent = class extends Component {
+        render() {
+          return Component.h("i", {}, "tiny");
+        }
+      };
+      const ParentComponent = class extends Component {
+        render() {
+          return Component.h("section", {}, Component.h(TinyComponent, {}), " after tiny");
+        }
+      };
+      // Create element using Component.h with the parent Component class
+      const el = Component.h("main", {}, Component.h(ParentComponent, {}));
+      expect(el.querySelector("section i")).not.toBeNull();
+      expect(el.querySelector("section i").textContent).toBe("tiny");
+    });
   });
 });

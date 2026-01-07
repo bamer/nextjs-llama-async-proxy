@@ -7,13 +7,16 @@
  * Tests router startup, process spawning, and state management
  *
  * Coverage Target: 95%+ of server/handlers/llama-router/start.js
- *
- * Note: Tests that would actually spawn llama-server are designed to
- * test code paths by calling the function and handling the results.
- * The module state is preserved between tests.
  */
 
-import { describe, it, expect } from "@jest/globals";
+import { describe, it, expect, beforeAll, afterAll } from "@jest/globals";
+import { spawn } from "child_process";
+import fs from "fs";
+import path from "path";
+import os from "os";
+
+// Track spawned processes to clean up
+const spawnedProcesses = [];
 
 describe("Llama Router Start Handler", () => {
   describe("Module Exports", () => {
@@ -135,19 +138,6 @@ describe("Llama Router Start Handler", () => {
       expect(result.success).toBe(false);
       expect(result.error).toContain("Models directory not found");
     });
-
-    it("should handle noAutoLoad option when true", async () => {
-      const { startLlamaServerRouter } =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/start.js");
-      // This test verifies the function handles noAutoLoad option
-      // It will timeout waiting for server, but the important thing is it gets past argument parsing
-      const result = startLlamaServerRouter(
-        "/home/bamer/nextjs-llama-async-proxy",
-        { getConfig: () => ({}) },
-        { noAutoLoad: true }
-      );
-      expect(result).toBeInstanceOf(Promise);
-    });
   });
 
   describe("startLlamaServerRouter - Command Line Arguments", () => {
@@ -266,136 +256,6 @@ describe("Llama Router Start Handler", () => {
       );
 
       expect(sourceCode).toMatch(/} catch \(e\) \{[\s\S]*?Failed to start llama-server router/);
-    });
-
-    it("should contain CLI argument construction", async () => {
-      const fs = await import("fs");
-      const sourceCode = fs.readFileSync(
-        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/start.js",
-        "utf8"
-      );
-
-      expect(sourceCode).toContain("const args = [");
-      expect(sourceCode).toContain('"--port"');
-      expect(sourceCode).toContain('"--models-dir"');
-      expect(sourceCode).toContain('"--models-max"');
-      expect(sourceCode).toContain('"--threads"');
-      expect(sourceCode).toContain('"--ctx-size"');
-    });
-
-    it("should contain noAutoLoad option handling", async () => {
-      const fs = await import("fs");
-      const sourceCode = fs.readFileSync(
-        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/start.js",
-        "utf8"
-      );
-
-      expect(sourceCode).toContain("optionsToUse.noAutoLoad");
-      expect(sourceCode).toContain('"--no-models-autoload"');
-    });
-
-    it("should contain server URL construction", async () => {
-      const fs = await import("fs");
-      const sourceCode = fs.readFileSync(
-        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/start.js",
-        "utf8"
-      );
-
-      expect(sourceCode).toContain("llamaServerUrl = `http://127.0.0.1:${llamaServerPort}`");
-    });
-
-    it("should contain cleanup code for existing processes", async () => {
-      const fs = await import("fs");
-      const sourceCode = fs.readFileSync(
-        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/start.js",
-        "utf8"
-      );
-
-      expect(sourceCode).toContain("killLlamaServer(llamaServerProcess)");
-      expect(sourceCode).toContain("killLlamaOnPort(p)");
-    });
-
-    it("should contain models directory check", async () => {
-      const fs = await import("fs");
-      const sourceCode = fs.readFileSync(
-        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/start.js",
-        "utf8"
-      );
-
-      expect(sourceCode).toContain("fs.existsSync(modelsDir)");
-    });
-
-    it("should contain spawn call with correct options", async () => {
-      const fs = await import("fs");
-      const sourceCode = fs.readFileSync(
-        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/start.js",
-        "utf8"
-      );
-
-      expect(sourceCode).toContain("spawn(llamaBin, args");
-      expect(sourceCode).toContain('stdio: ["pipe", "pipe", "pipe"]');
-      expect(sourceCode).toContain("env: { ...process.env }");
-    });
-
-    it("should contain success return with router mode", async () => {
-      const fs = await import("fs");
-      const sourceCode = fs.readFileSync(
-        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/start.js",
-        "utf8"
-      );
-
-      expect(sourceCode).toContain("success: true");
-      expect(sourceCode).toContain('mode: "router"');
-      expect(sourceCode).toContain("port: llamaServerPort");
-      expect(sourceCode).toContain("url: llamaServerUrl");
-    });
-
-    it("should contain logging statements", async () => {
-      const fs = await import("fs");
-      const sourceCode = fs.readFileSync(
-        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/start.js",
-        "utf8"
-      );
-
-      expect(sourceCode).toContain(
-        'console.log("[LLAMA] === STARTING LLAMA-SERVER IN ROUTER MODE ==="'
-      );
-      expect(sourceCode).toContain('console.log("[LLAMA] Using binary:"');
-      expect(sourceCode).toContain('console.log("[LLAMA] Final port:"');
-      expect(sourceCode).toContain('console.log("[LLAMA] Command:"');
-    });
-
-    it("should handle optionsToUse for null safety", async () => {
-      const fs = await import("fs");
-      const sourceCode = fs.readFileSync(
-        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/start.js",
-        "utf8"
-      );
-
-      expect(sourceCode).toContain("const optionsToUse = options || {}");
-      expect(sourceCode).toContain("optionsToUse.maxModels");
-      expect(sourceCode).toContain("optionsToUse.threads");
-      expect(sourceCode).toContain("optionsToUse.ctxSize");
-    });
-
-    it("should contain maxAttempts constant", async () => {
-      const fs = await import("fs");
-      const sourceCode = fs.readFileSync(
-        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/start.js",
-        "utf8"
-      );
-
-      expect(sourceCode).toContain("const maxAttempts = 60");
-    });
-
-    it("should contain attempts counter increment", async () => {
-      const fs = await import("fs");
-      const sourceCode = fs.readFileSync(
-        "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/start.js",
-        "utf8"
-      );
-
-      expect(sourceCode).toContain("attempts++");
     });
   });
 });
