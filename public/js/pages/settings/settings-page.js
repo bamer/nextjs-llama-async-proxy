@@ -150,7 +150,7 @@ class SettingsPage extends Component {
       "div",
       { className: "settings-page" },
       Component.h("h1", {}, "Settings"),
-      Component.h(window.RouterCard, {
+      Component.h(window.SettingsRouterCard, {
         routerStatus: this.state.routerStatus,
         llamaStatus: this.state.llamaStatus,
         maxModelsLoaded: this.state.maxModelsLoaded,

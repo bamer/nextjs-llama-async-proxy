@@ -2,7 +2,7 @@
  * Router Card Component
  */
 
-class RouterCard extends Component {
+class SettingsRouterCard extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -103,4 +103,4 @@ class RouterCard extends Component {
   }
 }
 
-window.RouterCard = RouterCard;
+window.SettingsRouterCard = SettingsRouterCard;

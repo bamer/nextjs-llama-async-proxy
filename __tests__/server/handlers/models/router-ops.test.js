@@ -545,7 +545,9 @@ describe("Models Router Operations", () => {
     it("should emit models:status 'loaded' and send ok response when loadModel succeeds", async () => {
       // This test achieves coverage on lines 23-24: if (result.success) {...}
       // Arrange: Mock the llama-router module BEFORE importing router-ops
-      const mockLoadModel = jest.fn().mockResolvedValue({ success: true, result: { status: "loaded" } });
+      const mockLoadModel = jest
+        .fn()
+        .mockResolvedValue({ success: true, result: { status: "loaded" } });
       const mockUnloadModel = jest.fn().mockResolvedValue({ success: true });
 
       jest.unstable_mockModule(
@@ -570,7 +572,8 @@ describe("Models Router Operations", () => {
       );
 
       // Clear the module cache to ensure our mock is used
-      const mod = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
+      const mod =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
       const { registerModelsRouterHandlers } = mod;
 
       // Re-create fresh mocks for this test
@@ -610,7 +613,9 @@ describe("Models Router Operations", () => {
       // This test achieves coverage on lines 45-46: if (result.success) {...}
       // Arrange: Mock the llama-router module BEFORE importing router-ops
       const mockLoadModel = jest.fn().mockResolvedValue({ success: true });
-      const mockUnloadModel = jest.fn().mockResolvedValue({ success: true, result: { status: "unloaded" } });
+      const mockUnloadModel = jest
+        .fn()
+        .mockResolvedValue({ success: true, result: { status: "unloaded" } });
 
       jest.unstable_mockModule(
         "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama-router/index.js",
@@ -634,7 +639,8 @@ describe("Models Router Operations", () => {
       );
 
       // Clear the module cache to ensure our mock is used
-      const mod = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
+      const mod =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
       const { registerModelsRouterHandlers } = mod;
 
       // Re-create fresh mocks for this test
@@ -679,7 +685,7 @@ describe("Models Router Operations", () => {
       // Arrange: Mock the llama-router module BEFORE importing router-ops
       const mockLoadModel = jest.fn().mockResolvedValue({
         success: false,
-        error: "Model not found in directory"
+        error: "Model not found in directory",
       });
       const mockUnloadModel = jest.fn().mockResolvedValue({ success: true });
 
@@ -705,7 +711,8 @@ describe("Models Router Operations", () => {
       );
 
       // Clear the module cache to ensure our mock is used
-      const mod = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
+      const mod =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
       const { registerModelsRouterHandlers } = mod;
 
       // Re-create fresh mocks for this test
@@ -748,7 +755,7 @@ describe("Models Router Operations", () => {
       const mockLoadModel = jest.fn().mockResolvedValue({ success: true });
       const mockUnloadModel = jest.fn().mockResolvedValue({
         success: false,
-        error: "Model not loaded"
+        error: "Model not loaded",
       });
 
       jest.unstable_mockModule(
@@ -773,7 +780,8 @@ describe("Models Router Operations", () => {
       );
 
       // Clear the module cache to ensure our mock is used
-      const mod = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
+      const mod =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
       const { registerModelsRouterHandlers } = mod;
 
       // Re-create fresh mocks for this test
@@ -837,7 +845,8 @@ describe("Models Router Operations", () => {
       );
 
       // Clear the module cache to ensure our mock is used
-      const mod = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
+      const mod =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
       const { registerModelsRouterHandlers } = mod;
 
       // Re-create fresh mocks for this test
@@ -901,7 +910,8 @@ describe("Models Router Operations", () => {
       );
 
       // Clear the module cache to ensure our mock is used
-      const mod = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
+      const mod =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/router-ops.js");
       const { registerModelsRouterHandlers } = mod;
 
       // Re-create fresh mocks for this test
@@ -934,8 +944,6 @@ describe("Models Router Operations", () => {
       expect(errEmit).toBeDefined();
       expect(errEmit.data.error).toBe("Server disconnected");
     });
-  });
-});
   });
 
   /**
