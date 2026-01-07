@@ -66,7 +66,7 @@ describe("Server Entry Point - Source Structure", () => {
         true
       );
       expect(
-        serverSource.includes('import { parseGgufMetadata } from "./server/gguf-parser.js"')
+        serverSource.includes('import { parseGgufMetadata } from "./server/gguf/index.js"')
       ).toBe(true);
     });
 
