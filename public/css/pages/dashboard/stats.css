@@ -2,8 +2,8 @@
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: var(--md);
-  margin-bottom: var(--lg);
+  gap: calc(var(--md) * 2 / 3);
+  margin-bottom: calc(var(--md) * 2 / 3);
   width: 100%;
 }
 
@@ -11,10 +11,10 @@
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
-  padding: 10px 12px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 6px;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -59,7 +59,7 @@
 .stat-content {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .stat-label {

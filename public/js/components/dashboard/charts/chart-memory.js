@@ -29,6 +29,7 @@ class MemoryChart {
     const labels = history.map((_, i) => i.toString());
     // memory.used is percentage (0-100), gpu.memoryUsed is bytes
     const systemMemData = history.map((h) => h.memory?.used || 0);
+    // Note: Currently shows primary GPU only. Full multi-GPU support requires database schema changes
     const gpuMemData = history.map((h) => (h.gpu?.memoryUsed || 0) / (1024 * 1024));
 
     const sysGradient = ctx.createLinearGradient(0, 0, 0, 180);
@@ -59,8 +60,12 @@ class MemoryChart {
             pointHoverRadius: 4,
           },
           {
-            label: "GPU Memory (MB)",
-            data: gpuMemData,
+            label: "GPU Memory (Primary) (%)",
+            data: gpuMemData.map((mb, idx) => {
+              // Get GPU memory total from history (primary GPU only)
+              const gpuTotal = history[idx]?.gpu?.memoryTotal || 1;
+              return (mb * 1024 * 1024) / gpuTotal * 100;
+            }),
             borderColor: "#f97316",
             backgroundColor: gpuMemGradient,
             borderWidth: 2,
@@ -75,24 +80,17 @@ class MemoryChart {
         scales: configBuilder.buildScalesOptions({
           y: {
             beginAtZero: true,
+            max: 100,
             ticks: {
               callback: function (value) {
-                // Format Y-axis labels based on scale
-                // System Memory uses %, GPU Memory uses MB
-                if (value <= 100) {
-                  return value.toFixed(0) + "%";
-                } else {
-                  return value.toFixed(0) + "MB";
-                }
+                return value.toFixed(0) + "%";
               },
             },
           },
         }),
         plugins: {
           tooltip: configBuilder.buildTooltipOptions((context) => {
-            const isSystemMem = context.dataset.label.includes("System");
-            const unit = isSystemMem ? "%" : "MB";
-            return `${context.dataset.label}: ${context.parsed.y.toFixed(1)} ${unit}`;
+            return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`;
           }),
           legend: {
             display: true,
@@ -117,10 +115,15 @@ class MemoryChart {
     // memory.used is percentage (0-100), gpu.memoryUsed is bytes
     const systemMemData = history.map((h) => h.memory?.used || 0);
     const gpuMemData = history.map((h) => (h.gpu?.memoryUsed || 0) / (1024 * 1024));
+    const gpuMemPercent = gpuMemData.map((mb, idx) => {
+      // Convert GPU memory MB to percentage
+      const gpuTotal = history[idx]?.gpu?.memoryTotal || 1;
+      return (mb * 1024 * 1024) / gpuTotal * 100;
+    });
 
     this.chart.data.labels = labels;
     this.chart.data.datasets[0].data = systemMemData;
-    this.chart.data.datasets[1].data = gpuMemData;
+    this.chart.data.datasets[1].data = gpuMemPercent;
     this.chart.update("none");
   }
 

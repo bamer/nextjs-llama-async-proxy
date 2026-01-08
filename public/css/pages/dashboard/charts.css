@@ -167,7 +167,7 @@ html.dark-mode .badge.error {
 
 /* Router Section */
 .router-section {
-  margin-bottom: var(--lg);
+  margin-bottom: 0;
 }
 
 /* Animations */

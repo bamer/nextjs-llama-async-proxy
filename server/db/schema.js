@@ -100,6 +100,7 @@ export function getMetricsMigrations() {
     { name: "gpu_usage", type: "REAL DEFAULT 0" },
     { name: "gpu_memory_used", type: "REAL DEFAULT 0" },
     { name: "gpu_memory_total", type: "REAL DEFAULT 0" },
+    { name: "swap_usage", type: "REAL DEFAULT 0" },
   ];
 }
 

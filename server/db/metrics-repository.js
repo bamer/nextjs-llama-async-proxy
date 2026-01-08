@@ -17,8 +17,8 @@ export class MetricsRepository {
    */
   save(m) {
     const query = `INSERT INTO metrics (cpu_usage, memory_usage,
-      disk_usage, active_models, uptime, gpu_usage, gpu_memory_used, gpu_memory_total)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+      disk_usage, active_models, uptime, gpu_usage, gpu_memory_used, gpu_memory_total, swap_usage)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     this.db
       .prepare(query)
@@ -30,7 +30,8 @@ export class MetricsRepository {
         m.uptime || 0,
         m.gpu_usage || 0,
         m.gpu_memory_used || 0,
-        m.gpu_memory_total || 0
+        m.gpu_memory_total || 0,
+        m.swap_usage || 0
       );
   }
 

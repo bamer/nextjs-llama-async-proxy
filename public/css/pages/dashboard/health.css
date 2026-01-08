@@ -2,7 +2,7 @@
 .dashboard-page.unified {
   display: flex;
   flex-direction: column;
-  gap: var(--lg);
+  gap: calc(var(--lg) * 2 / 3);
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -11,14 +11,14 @@
 .dashboard-middle-row {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: var(--lg);
+  gap: calc(var(--lg) * 2 / 3);
   align-items: start;
 }
 
 .content-row {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: var(--lg);
+  gap: calc(var(--lg) * 2 / 3);
   align-items: start;
 }
 

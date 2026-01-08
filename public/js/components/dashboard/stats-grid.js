@@ -44,6 +44,7 @@ class StatsGrid extends Component {
         value: `${(m.cpu?.usage || 0).toFixed(1)}%`,
         percent: Math.min(m.cpu?.usage || 0, 100),
         warning: m.cpu?.usage > 80,
+        showBar: true,
       },
       {
         icon: "🧠",
@@ -51,6 +52,7 @@ class StatsGrid extends Component {
         value: `${(m.memory?.used || 0).toFixed(1)}%`,
         percent: Math.min(m.memory?.used || 0, 100),
         warning: m.memory?.used > 85,
+        showBar: true,
       },
       {
         icon: "💨",
@@ -58,6 +60,7 @@ class StatsGrid extends Component {
         value: `${(m.swap?.used || 0).toFixed(1)}%`,
         percent: Math.min(m.swap?.used || 0, 100),
         warning: m.swap?.used > 50,
+        showBar: true,
       },
       {
         icon: "🎮",
@@ -66,6 +69,7 @@ class StatsGrid extends Component {
         percent: Math.min(gpu?.usage || 0, 100),
         warning: gpu?.usage > 85,
         isGpu: true,
+        showBar: true,
       },
       {
         icon: "💾",
@@ -81,6 +85,7 @@ class StatsGrid extends Component {
             ? (gpu?.memoryUsed / gpu?.memoryTotal) * 100
             : Math.min(gpu?.usage || 0, 100),
         isGpu: true,
+        showBar: true,
       },
       {
         icon: "💿",
@@ -88,12 +93,14 @@ class StatsGrid extends Component {
         value: `${(m.disk?.used || 0).toFixed(1)}%`,
         percent: Math.min(m.disk?.used || 0, 100),
         warning: m.disk?.used > 90,
+        showBar: true,
       },
       {
         icon: "⏱️",
         label: "Uptime",
         value: this._fmtUptime(m.uptime || 0),
         percent: 0,
+        showBar: false,
       },
     ];
 
@@ -110,7 +117,7 @@ class StatsGrid extends Component {
             { className: "stat-content" },
             Component.h("span", { className: "stat-label" }, stat.label),
             Component.h("span", { className: "stat-value" }, stat.value),
-            stat.percent > 0 &&
+            stat.showBar &&
               Component.h(
                 "div",
                 { className: "stat-bar" },
