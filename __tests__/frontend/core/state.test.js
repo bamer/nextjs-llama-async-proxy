@@ -1174,6 +1174,21 @@ describe("StateSocket", function () {
       expect(socket.connection.onConnected).toBeDefined();
       expect(socket.connection.onDisconnected).toBeDefined();
     });
+
+    it("passes broadcast callbacks for model operations", function () {
+      expect(socket.broadcast.handlers.onModelCreated).toBeDefined();
+      expect(socket.broadcast.handlers.onModelUpdated).toBeDefined();
+      expect(socket.broadcast.handlers.onModelDeleted).toBeDefined();
+    });
+
+    it("passes broadcast callbacks for metrics and logs", function () {
+      expect(socket.broadcast.handlers.onMetric).toBeDefined();
+      expect(socket.broadcast.handlers.onLog).toBeDefined();
+    });
+
+    it("passes broadcast callback for models scanned", function () {
+      expect(socket.broadcast.handlers.onModelsScanned).toBeDefined();
+    });
   });
 
   describe("init()", function () {
@@ -1331,6 +1346,242 @@ describe("StateSocket", function () {
 
       expect(mockSocket.getEmitCalls().length).toBe(1);
     });
+
+    it("uses 5000ms timeout for config: events", function () {
+      socket.init(mockSocket);
+      mockSocket.triggerConnectionEstablished();
+      mockSocket.clearEmitCalls();
+
+      const originalSetTimeout = global.setTimeout;
+      let capturedDelay = null;
+      global.setTimeout = function (fn, delay) {
+        capturedDelay = delay;
+        return originalSetTimeout(fn, delay);
+      };
+
+      socket.request("config:update", { config: {} });
+
+      global.setTimeout = originalSetTimeout;
+      expect(capturedDelay).toBe(5000);
+    });
+
+    it("uses 5000ms timeout for settings: events", function () {
+      socket.init(mockSocket);
+      mockSocket.triggerConnectionEstablished();
+      mockSocket.clearEmitCalls();
+
+      const originalSetTimeout = global.setTimeout;
+      let capturedDelay = null;
+      global.setTimeout = function (fn, delay) {
+        capturedDelay = delay;
+        return originalSetTimeout(fn, delay);
+      };
+
+      socket.request("settings:update", { settings: {} });
+
+      global.setTimeout = originalSetTimeout;
+      expect(capturedDelay).toBe(5000);
+    });
+
+    it("uses 120000ms timeout for regular events", function () {
+      socket.init(mockSocket);
+      mockSocket.triggerConnectionEstablished();
+      mockSocket.clearEmitCalls();
+
+      const originalSetTimeout = global.setTimeout;
+      let capturedDelay = null;
+      global.setTimeout = function (fn, delay) {
+        capturedDelay = delay;
+        return originalSetTimeout(fn, delay);
+      };
+
+      socket.request("models:list", {});
+
+      global.setTimeout = originalSetTimeout;
+      expect(capturedDelay).toBe(120000);
+    });
+
+    it("generates unique request IDs", function () {
+      socket.init(mockSocket);
+      mockSocket.triggerConnectionEstablished();
+      mockSocket.clearEmitCalls();
+
+      const ids = new Set();
+      for (let i = 0; i < 100; i++) {
+        socket.request("test:event", { index: i });
+        const call = mockSocket.getEmitCalls()[i];
+        ids.add(call.data.requestId);
+      }
+      expect(ids.size).toBeGreaterThan(90);
+    });
+
+    it("handles request with empty data object", function () {
+      socket.init(mockSocket);
+      mockSocket.triggerConnectionEstablished();
+      mockSocket.clearEmitCalls();
+
+      socket.request("test:event");
+
+      const call = mockSocket.getEmitCalls()[0];
+      expect(call.data.requestId).toBeDefined();
+    });
+  });
+
+  describe("_doRequest()", function () {
+    it("adds request to pending map", function () {
+      socket.init(mockSocket);
+      mockSocket.triggerConnectionEstablished();
+      mockSocket.clearEmitCalls();
+
+      const resolve = jest.fn();
+      const reject = jest.fn();
+      socket._doRequest("test:event", { data: "test" }, resolve, reject);
+
+      expect(socket.pending.size).toBe(1);
+      const reqId = socket.pending.keys().next().value;
+      expect(reqId.startsWith("req_")).toBe(true);
+    });
+
+    it("emits event with requestId", function () {
+      socket.init(mockSocket);
+      mockSocket.triggerConnectionEstablished();
+      mockSocket.clearEmitCalls();
+
+      const resolve = jest.fn();
+      const reject = jest.fn();
+      socket._doRequest("test:event", { data: "test" }, resolve, reject);
+
+      const call = mockSocket.getEmitCalls()[0];
+      expect(call.event).toBe("test:event");
+      expect(call.data.requestId).toBeDefined();
+      // The data is spread: { ...data, requestId: reqId }
+      expect(call.data.data).toBe("test");
+    });
+
+    it("stores resolve and reject callbacks in pending", function () {
+      socket.init(mockSocket);
+      mockSocket.triggerConnectionEstablished();
+      mockSocket.clearEmitCalls();
+
+      const resolve = jest.fn();
+      const reject = jest.fn();
+      socket._doRequest("test:event", {}, resolve, reject);
+
+      const reqId = socket.pending.keys().next().value;
+      const pending = socket.pending.get(reqId);
+      expect(pending.resolve).toBe(resolve);
+      expect(pending.reject).toBe(reject);
+      expect(pending.event).toBe("test:event");
+      expect(pending.timeout).toBeDefined();
+    });
+
+    it("sets 5000ms timeout for config: events", function () {
+      socket.init(mockSocket);
+      mockSocket.triggerConnectionEstablished();
+      mockSocket.clearEmitCalls();
+
+      const originalSetTimeout = global.setTimeout;
+      let capturedDelay = null;
+      global.setTimeout = function (fn, delay) {
+        capturedDelay = delay;
+        return originalSetTimeout(fn, delay);
+      };
+
+      socket._doRequest("config:update", { config: {} }, jest.fn(), jest.fn());
+
+      global.setTimeout = originalSetTimeout;
+      expect(capturedDelay).toBe(5000);
+    });
+
+    it("sets 120000ms timeout for regular events", function () {
+      socket.init(mockSocket);
+      mockSocket.triggerConnectionEstablished();
+      mockSocket.clearEmitCalls();
+
+      const originalSetTimeout = global.setTimeout;
+      let capturedDelay = null;
+      global.setTimeout = function (fn, delay) {
+        capturedDelay = delay;
+        return originalSetTimeout(fn, delay);
+      };
+
+      socket._doRequest("models:list", {}, jest.fn(), jest.fn());
+
+      global.setTimeout = originalSetTimeout;
+      expect(capturedDelay).toBe(120000);
+    });
+  });
+
+  describe("_refreshModels()", function () {
+    it("updates models state on successful refresh", async function () {
+      socket.init(mockSocket);
+      mockSocket.triggerConnectionEstablished();
+      mockSocket.clearEmitCalls();
+
+      const refreshPromise = socket._refreshModels();
+
+      // Wait for the models:list request
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const listCall = mockSocket.getEmitCalls().find((c) => c.event === "models:list");
+      expect(listCall).toBeDefined();
+
+      const requestId = listCall.data.requestId;
+      mockSocket.triggerEvent("models:list:result", {
+        requestId,
+        success: true,
+        data: { models: [{ id: 1, name: "test" }] },
+      });
+
+      await refreshPromise;
+      expect(core.get("models")).toEqual([{ id: 1, name: "test" }]);
+    });
+
+    it("handles refresh failure without throwing", async function () {
+      socket.init(mockSocket);
+      mockSocket.triggerConnectionEstablished();
+      mockSocket.clearEmitCalls();
+
+      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+      const refreshPromise = socket._refreshModels();
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const listCall = mockSocket.getEmitCalls().find((c) => c.event === "models:list");
+      const requestId = listCall.data.requestId;
+      mockSocket.triggerEvent("models:list:result", {
+        requestId,
+        success: false,
+        error: { message: "Failed" },
+      });
+
+      // Should not throw
+      await expect(refreshPromise).resolves.toBeUndefined();
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("handles empty models array", async function () {
+      socket.init(mockSocket);
+      mockSocket.triggerConnectionEstablished();
+      mockSocket.clearEmitCalls();
+
+      const refreshPromise = socket._refreshModels();
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const listCall = mockSocket.getEmitCalls().find((c) => c.event === "models:list");
+      const requestId = listCall.data.requestId;
+      mockSocket.triggerEvent("models:list:result", {
+        requestId,
+        success: true,
+        data: { models: [] },
+      });
+
+      await refreshPromise;
+      expect(core.get("models")).toEqual([]);
+    });
   });
 
   describe("destroy()", function () {
@@ -1339,6 +1590,108 @@ describe("StateSocket", function () {
       const destroySpy = jest.spyOn(socket.connection, "destroy");
       socket.destroy();
       expect(destroySpy).toHaveBeenCalled();
+    });
+
+    it("can be called multiple times safely", function () {
+      socket.init(mockSocket);
+      expect(() => {
+        socket.destroy();
+        socket.destroy();
+      }).not.toThrow();
+    });
+
+    it("cleans up connection timeout", function () {
+      jest.useFakeTimers();
+      socket.init(mockSocket);
+      const connection = socket.connection;
+      socket.destroy();
+      expect(connection.connectionTimeout).toBeNull();
+      jest.useRealTimers();
+    });
+  });
+
+  describe("Connection State Notifications", function () {
+    it("notifies connectionStatus on connect", function () {
+      let status = null;
+      core.subscribe("connectionStatus", (newStatus) => {
+        status = newStatus;
+      });
+
+      socket.init(mockSocket);
+      mockSocket.triggerConnectionEstablished();
+
+      expect(status).toBe("connected");
+    });
+
+    it("notifies connectionStatus on disconnect", function () {
+      let status = null;
+      core.subscribe("connectionStatus", (newStatus) => {
+        status = newStatus;
+      });
+
+      socket.init(mockSocket);
+      mockSocket.triggerConnectionEstablished();
+      mockSocket.triggerDisconnect();
+
+      expect(status).toBe("disconnected");
+    });
+
+    it("handles multiple connection/disconnect cycles", function () {
+      let connectCount = 0;
+      let disconnectCount = 0;
+      core.subscribe("connectionStatus", (newStatus) => {
+        if (newStatus === "connected") connectCount++;
+        if (newStatus === "disconnected") disconnectCount++;
+      });
+
+      socket.init(mockSocket);
+
+      // First cycle
+      mockSocket.triggerConnectionEstablished();
+      mockSocket.triggerDisconnect();
+
+      // Second cycle
+      mockSocket.triggerConnectionEstablished();
+      mockSocket.triggerDisconnect();
+
+      expect(connectCount).toBe(2);
+      expect(disconnectCount).toBe(2);
+    });
+  });
+
+  describe("Multiple Pending Requests", function () {
+    it("handles multiple pending requests", function () {
+      socket.init(mockSocket);
+      mockSocket.triggerConnectionEstablished();
+      mockSocket.clearEmitCalls();
+
+      const promise1 = socket.request("event1", { id: 1 });
+      const promise2 = socket.request("event2", { id: 2 });
+      const promise3 = socket.request("event3", { id: 3 });
+
+      expect(socket.pending.size).toBe(3);
+      expect(mockSocket.getEmitCalls().length).toBe(3);
+    });
+
+    it("tracks pending requests correctly", function () {
+      socket.init(mockSocket);
+      mockSocket.triggerConnectionEstablished();
+      mockSocket.clearEmitCalls();
+
+      const resolve1 = jest.fn();
+      const reject1 = jest.fn();
+      const resolve2 = jest.fn();
+      const reject2 = jest.fn();
+
+      socket._doRequest("event1", { id: 1 }, resolve1, reject1);
+      expect(socket.pending.size).toBe(1);
+
+      socket._doRequest("event2", { id: 2 }, resolve2, reject2);
+      expect(socket.pending.size).toBe(2);
+
+      const reqIds = Array.from(socket.pending.keys());
+      expect(reqIds.length).toBe(2);
+      expect(reqIds[0]).not.toBe(reqIds[1]);
     });
   });
 });

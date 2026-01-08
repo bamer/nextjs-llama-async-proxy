@@ -1,0 +1,380 @@
+[
+  {
+    "taskId": "COV-001",
+    "role": "tester-agent",
+    "description": "Add tests for state-socket.js (22 uncovered lines, 7 branches) - Cover socket connection states, reconnection, error handling, event listeners",
+    "filesAffected": [
+      "public/js/core/state/state-socket.js",
+      "__tests__/frontend/core/state-socket.test.js"
+    ],
+    "inputs": {
+      "targetFile": "public/js/core/state/state-socket.js",
+      "currentCoverage": "60%",
+      "uncoveredLines": 22,
+      "uncoveredBranches": 7,
+      "testType": "unit"
+    },
+    "successCriteria": [
+      "pnpm test -- __tests__/frontend/core/state-socket.test.js passes",
+      "state-socket.js coverage increases to ≥95%",
+      "All 7 uncovered branches have test coverage"
+    ],
+    "dependsOn": [],
+    "timeoutSeconds": 1200
+  },
+  {
+    "taskId": "COV-002",
+    "role": "tester-agent",
+    "description": "Add tests for state-requests.js (6 uncovered lines, 3 branches) - Cover request queue, timeout, retry, error states",
+    "filesAffected": [
+      "public/js/core/state/state-requests.js",
+      "__tests__/frontend/core/state-requests.test.js"
+    ],
+    "inputs": {
+      "targetFile": "public/js/core/state/state-requests.js",
+      "currentCoverage": "72.72%",
+      "uncoveredLines": 6,
+      "uncoveredBranches": 3,
+      "testType": "unit"
+    },
+    "successCriteria": [
+      "pnpm test -- __tests__/frontend/core/state-requests.test.js passes",
+      "state-requests.js coverage increases to ≥95%",
+      "All 3 uncovered branches have test coverage"
+    ],
+    "dependsOn": [],
+    "timeoutSeconds": 900
+  },
+  {
+    "taskId": "COV-003",
+    "role": "tester-agent",
+    "description": "Add tests for llama-router/start.js (18 uncovered lines, 13 branches) - Cover process start, timeout, error recovery, config variations",
+    "filesAffected": [
+      "server/handlers/llama-router/start.js",
+      "__tests__/server/handlers/llama-router/start-coverage.test.js"
+    ],
+    "inputs": {
+      "targetFile": "server/handlers/llama-router/start.js",
+      "currentCoverage": "67.27%",
+      "uncoveredLines": 18,
+      "uncoveredBranches": 13,
+      "testType": "unit"
+    },
+    "successCriteria": [
+      "pnpm test -- __tests__/server/handlers/llama-router/start-coverage.test.js passes",
+      "llama-router/start.js coverage increases to ≥95%",
+      "All 13 uncovered branches have test coverage"
+    ],
+    "dependsOn": [],
+    "timeoutSeconds": 1200
+  },
+  {
+    "taskId": "COV-004",
+    "role": "tester-agent",
+    "description": "Add branch coverage tests for metadata-parser.js (11 uncovered lines, 23 branches) - Cover all metadata field types, error cases, edge values",
+    "filesAffected": [
+      "server/gguf/metadata-parser.js",
+      "__tests__/server/gguf/metadata-full.test.js"
+    ],
+    "inputs": {
+      "targetFile": "server/gguf/metadata-parser.js",
+      "currentCoverage": "80.70%",
+      "uncoveredLines": 11,
+      "uncoveredBranches": 23,
+      "testType": "unit"
+    },
+    "successCriteria": [
+      "pnpm test -- __tests__/server/gguf/metadata-full.test.js passes",
+      "metadata-parser.js coverage increases to ≥95%",
+      "At least 18 of 23 uncovered branches have test coverage"
+    ],
+    "dependsOn": [],
+    "timeoutSeconds": 1200
+  },
+  {
+    "taskId": "COV-005",
+    "role": "tester-agent",
+    "description": "Add branch coverage tests for component.js (14 uncovered lines, 28 branches) - Cover all conditional rendering and event handling branches",
+    "filesAffected": [
+      "public/js/core/component.js",
+      "__tests__/frontend/core/component-branches.test.js"
+    ],
+    "inputs": {
+      "targetFile": "public/js/core/component.js",
+      "currentCoverage": "90.96%",
+      "uncoveredLines": 14,
+      "uncoveredBranches": 28,
+      "testType": "unit"
+    },
+    "successCriteria": [
+      "pnpm test -- __tests__/frontend/core/component-branches.test.js passes",
+      "component.js coverage increases to ≥98%",
+      "At least 20 of 28 uncovered branches have test coverage"
+    ],
+    "dependsOn": [],
+    "timeoutSeconds": 1200
+  },
+  {
+    "taskId": "COV-006",
+    "role": "tester-agent",
+    "description": "Add branch coverage tests for file-logger.js (11 uncovered lines, 4 branches) - Cover file rotation, size limits, write errors",
+    "filesAffected": [
+      "server/handlers/file-logger.js",
+      "__tests__/server/handlers/file-logger-branches.test.js"
+    ],
+    "inputs": {
+      "targetFile": "server/handlers/file-logger.js",
+      "currentCoverage": "86.90%",
+      "uncoveredLines": 11,
+      "uncoveredBranches": 4,
+      "testType": "unit"
+    },
+    "successCriteria": [
+      "pnpm test -- __tests__/server/handlers/file-logger-branches.test.js passes",
+      "file-logger.js coverage increases to ≥95%",
+      "All 4 uncovered branches have test coverage"
+    ],
+    "dependsOn": [],
+    "timeoutSeconds": 900
+  },
+  {
+    "taskId": "COV-007",
+    "role": "tester-agent",
+    "description": "Add branch coverage tests for header-parser.js (1 uncovered line, 8 branches) - Cover all header parsing branches and error paths",
+    "filesAffected": [
+      "server/gguf/header-parser.js",
+      "__tests__/server/gguf/header-branches.test.js"
+    ],
+    "inputs": {
+      "targetFile": "server/gguf/header-parser.js",
+      "currentCoverage": "98.55%",
+      "uncoveredLines": 1,
+      "uncoveredBranches": 8,
+      "testType": "unit"
+    },
+    "successCriteria": [
+      "pnpm test -- __tests__/server/gguf/header-branches.test.js passes",
+      "header-parser.js coverage increases to ≥99%",
+      "At least 6 of 8 uncovered branches have test coverage"
+    ],
+    "dependsOn": [],
+    "timeoutSeconds": 900
+  },
+  {
+    "taskId": "COV-008",
+    "role": "tester-agent",
+    "description": "Add branch coverage tests for models-repository.js (3 uncovered lines, 9 branches) - Cover all CRUD operation branches and error paths",
+    "filesAffected": [
+      "server/db/models-repository.js",
+      "__tests__/server/db/models-repository-branches.test.js"
+    ],
+    "inputs": {
+      "targetFile": "server/db/models-repository.js",
+      "currentCoverage": "92.31%",
+      "uncoveredLines": 3,
+      "uncoveredBranches": 9,
+      "testType": "unit"
+    },
+    "successCriteria": [
+      "pnpm test -- __tests__/server/db/models-repository-branches.test.js passes",
+      "models-repository.js coverage increases to ≥98%",
+      "At least 7 of 9 uncovered branches have test coverage"
+    ],
+    "dependsOn": [],
+    "timeoutSeconds": 900
+  },
+  {
+    "taskId": "COV-009",
+    "role": "tester-agent",
+    "description": "Add branch coverage tests for filename-parser.js (6 uncovered branches) - Cover all filename parsing edge cases",
+    "filesAffected": [
+      "server/gguf/filename-parser.js",
+      "__tests__/server/gguf/filename-branches.test.js"
+    ],
+    "inputs": {
+      "targetFile": "server/gguf/filename-parser.js",
+      "currentCoverage": "100% lines, 76.92% branches",
+      "uncoveredLines": 0,
+      "uncoveredBranches": 6,
+      "testType": "unit"
+    },
+    "successCriteria": [
+      "pnpm test -- __tests__/server/gguf/filename-branches.test.js passes",
+      "filename-parser.js branch coverage increases to ≥90%",
+      "All 6 uncovered branches have test coverage"
+    ],
+    "dependsOn": [],
+    "timeoutSeconds": 600
+  },
+  {
+    "taskId": "COV-010",
+    "role": "tester-agent",
+    "description": "Add branch coverage tests for state-models.js (5 uncovered branches) - Cover state model validation and transition branches",
+    "filesAffected": [
+      "public/js/core/state/state-models.js",
+      "__tests__/frontend/core/state-models-branches.test.js"
+    ],
+    "inputs": {
+      "targetFile": "public/js/core/state/state-models.js",
+      "currentCoverage": "100% lines, 72.22% branches",
+      "uncoveredLines": 0,
+      "uncoveredBranches": 5,
+      "testType": "unit"
+    },
+    "successCriteria": [
+      "pnpm test -- __tests__/frontend/core/state-models-branches.test.js passes",
+      "state-models.js branch coverage increases to ≥90%",
+      "All 5 uncovered branches have test coverage"
+    ],
+    "dependsOn": [],
+    "timeoutSeconds": 600
+  },
+  {
+    "taskId": "COV-011",
+    "role": "tester-agent",
+    "description": "Add branch coverage tests for socket.js (4 uncovered lines, 1 branch) - Cover reconnection, event cleanup, error handling",
+    "filesAffected": [
+      "public/js/services/socket.js",
+      "__tests__/frontend/services/socket-branches.test.js"
+    ],
+    "inputs": {
+      "targetFile": "public/js/services/socket.js",
+      "currentCoverage": "92.59%",
+      "uncoveredLines": 4,
+      "uncoveredBranches": 1,
+      "testType": "unit"
+    },
+    "successCriteria": [
+      "pnpm test -- __tests__/frontend/services/socket-branches.test.js passes",
+      "socket.js coverage increases to ≥98%",
+      "All uncovered lines and branches have test coverage"
+    ],
+    "dependsOn": [],
+    "timeoutSeconds": 600
+  },
+  {
+    "taskId": "COV-012",
+    "role": "tester-agent",
+    "description": "Add branch coverage tests for logger.js (2 uncovered lines, 2 branches) - Cover log level filtering and error paths",
+    "filesAffected": [
+      "server/handlers/logger.js",
+      "__tests__/server/handlers/logger-branches.test.js"
+    ],
+    "inputs": {
+      "targetFile": "server/handlers/logger.js",
+      "currentCoverage": "92.31%",
+      "uncoveredLines": 2,
+      "uncoveredBranches": 2,
+      "testType": "unit"
+    },
+    "successCriteria": [
+      "pnpm test -- __tests__/server/handlers/logger-branches.test.js passes",
+      "logger.js coverage increases to ≥98%",
+      "All uncovered lines and branches have test coverage"
+    ],
+    "dependsOn": [],
+    "timeoutSeconds": 600
+  },
+  {
+    "taskId": "COV-013",
+    "role": "tester-agent",
+    "description": "Add branch coverage tests for config.js (2 uncovered lines, 1 branch) - Cover config validation all paths",
+    "filesAffected": [
+      "server/handlers/config.js",
+      "__tests__/server/handlers/config-branches.test.js"
+    ],
+    "inputs": {
+      "targetFile": "server/handlers/config.js",
+      "currentCoverage": "92.86%",
+      "uncoveredLines": 2,
+      "uncoveredBranches": 1,
+      "testType": "unit"
+    },
+    "successCriteria": [
+      "pnpm test -- __tests__/server/handlers/config-branches.test.js passes",
+      "config.js coverage increases to ≥98%",
+      "All uncovered lines and branches have test coverage"
+    ],
+    "dependsOn": [],
+    "timeoutSeconds": 600
+  },
+  {
+    "taskId": "COV-014",
+    "role": "tester-agent",
+    "description": "Add branch coverage tests for metrics.js (1 uncovered line, 2 branches) - Cover metrics aggregation edge cases",
+    "filesAffected": [
+      "server/handlers/metrics.js",
+      "__tests__/server/handlers/metrics-branches.test.js"
+    ],
+    "inputs": {
+      "targetFile": "server/handlers/metrics.js",
+      "currentCoverage": "93.33%",
+      "uncoveredLines": 1,
+      "uncoveredBranches": 2,
+      "testType": "unit"
+    },
+    "successCriteria": [
+      "pnpm test -- __tests__/server/handlers/metrics-branches.test.js passes",
+      "metrics.js coverage increases to ≥98%",
+      "All uncovered lines and branches have test coverage"
+    ],
+    "dependsOn": [],
+    "timeoutSeconds": 600
+  },
+  {
+    "taskId": "COV-015",
+    "role": "tester-agent",
+    "description": "Add integration tests for state-router flow - Cover state change → router navigation, error propagation",
+    "filesAffected": [
+      "public/js/core/state.js",
+      "public/js/core/router.js",
+      "__tests__/integration/state-router.test.js"
+    ],
+    "inputs": {
+      "testType": "integration",
+      "modules": ["state", "router"],
+      "coverageGap": "Cross-module branches"
+    },
+    "successCriteria": [
+      "pnpm test -- __tests__/integration/state-router.test.js passes",
+      "Cross-module branch coverage increases",
+      "State-router integration paths are covered"
+    ],
+    "dependsOn": ["COV-001", "COV-005"],
+    "timeoutSeconds": 900
+  },
+  {
+    "taskId": "COV-016",
+    "role": "tester-agent",
+    "description": "Run full coverage validation - Verify all targets meet 98% threshold",
+    "filesAffected": [],
+    "inputs": {
+      "validation": "full"
+    },
+    "successCriteria": [
+      "pnpm test:coverage",
+      "Line coverage ≥98%",
+      "Statement coverage ≥98%",
+      "Function coverage ≥98%",
+      "Branch coverage ≥98%"
+    ],
+    "dependsOn": [
+      "COV-001",
+      "COV-002",
+      "COV-003",
+      "COV-004",
+      "COV-005",
+      "COV-006",
+      "COV-007",
+      "COV-008",
+      "COV-009",
+      "COV-010",
+      "COV-011",
+      "COV-012",
+      "COV-013",
+      "COV-014",
+      "COV-015"
+    ],
+    "timeoutSeconds": 300
+  }
+]
