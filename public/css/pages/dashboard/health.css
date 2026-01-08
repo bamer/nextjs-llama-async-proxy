@@ -1,7 +1,7 @@
 /* Dashboard Layout */
 .dashboard-page.unified {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: var(--lg);
   max-width: 1400px;
   margin: 0 auto;
@@ -9,7 +9,7 @@
 
 .content-row {
   display: grid;
-  grid-template-columns: 1.5fr 1fr;
+  grid-template-columns: 2fr 1fr;
   gap: var(--lg);
   align-items: start;
 }
@@ -472,13 +472,6 @@ html.dark-mode .health-status.critical .health-message {
   white-space: nowrap;
 }
 
-/* Middle Row Layout - Router and Quick Actions side by side */
-.dashboard-middle-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--lg);
-}
-
 /* Quick Actions */
 .quick-actions {
   background: var(--card-bg);
@@ -486,45 +479,28 @@ html.dark-mode .health-status.critical .health-message {
   box-shadow: var(--shadow);
   padding: var(--lg);
   border: 1px solid var(--border-color);
-  border-left: 4px solid var(--info);
+  margin-top: var(--lg);
 }
 
 .quick-actions h3 {
-  margin: 0 0 var(--lg) 0;
-  font-size: 0.95rem;
+  margin: 0 0 var(--md) 0;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
-.quick-actions .action-buttons {
-  display: grid !important;
-  grid-template-columns: repeat(2, 1fr) !important;
+.action-buttons {
+  display: flex;
   gap: var(--md);
-  flex-wrap: initial !important;
-  flex-direction: initial !important;
+  flex-wrap: wrap;
 }
 
 .action-buttons .btn {
-  padding: var(--md) var(--lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sm);
-  font-weight: 600;
-  min-height: 48px;
+  flex: 1;
+  min-width: 120px;
 }
-
-
 
 /* Responsive */
-@media (max-width: 1200px) {
-  .dashboard-middle-row {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 1024px) {
   .content-row {
     grid-template-columns: 1fr;
@@ -599,16 +575,6 @@ html.dark-mode .health-status.critical .health-message {
   }
 }
 
-@media (max-width: 768px) {
-  .action-buttons {
-    grid-template-columns: 1fr;
-  }
-
-  .action-buttons .btn {
-    min-height: 45px;
-  }
-}
-
 @media (max-width: 480px) {
   .router-card {
     padding: var(--md);
@@ -645,5 +611,13 @@ html.dark-mode .health-status.critical .health-message {
 
   .chart-stat-value {
     font-size: 1.25rem;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .action-buttons .btn {
+    width: 100%;
   }
 }

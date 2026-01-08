@@ -47,10 +47,10 @@ class StatsGrid extends Component {
       },
       {
         icon: "🧠",
-        label: "Memory Used",
-        value: window.AppUtils?.formatBytes?.(m.memory?.used || 0) || "0 B",
-        percent: 0,
-        warning: false,
+        label: "Memory Usage",
+        value: `${(m.memory?.used || 0).toFixed(1)}%`,
+        percent: Math.min(m.memory?.used || 0, 100),
+        warning: m.memory?.used > 85,
       },
       {
         icon: "🎮",
@@ -68,8 +68,11 @@ class StatsGrid extends Component {
             ? `${window.AppUtils?.formatBytes?.(gpu?.memoryUsed || 0)} / ${window.AppUtils?.formatBytes?.(
                 gpu?.memoryTotal || 0
               )}`
-            : `${window.AppUtils?.formatBytes?.(gpu?.memoryUsed || 0)}`,
-        percent: gpu?.memoryTotal > 0 ? (gpu?.memoryUsed / gpu?.memoryTotal) * 100 : 0,
+            : `${(gpu?.usage || 0).toFixed(1)}%`,
+        percent:
+          gpu?.memoryTotal > 0
+            ? (gpu?.memoryUsed / gpu?.memoryTotal) * 100
+            : Math.min(gpu?.usage || 0, 100),
         isGpu: true,
       },
       {
@@ -93,10 +96,7 @@ class StatsGrid extends Component {
       stats.map((stat) =>
         Component.h(
           "div",
-          {
-            key: stat.label,
-            className: `stat-card ${stat.warning ? "warning" : ""} ${stat.isGpu ? "gpu-stat" : ""}`,
-          },
+          { key: stat.label, className: `stat-card ${stat.warning ? "warning" : ""}` },
           Component.h("div", { className: "stat-icon" }, stat.icon),
           Component.h(
             "div",
