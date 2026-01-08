@@ -34,8 +34,6 @@ class SettingsPage extends Component {
     };
   }
 
-
-
   async _save() {
     const btn = this._el?.querySelector('[data-action="save"]');
     if (btn) {

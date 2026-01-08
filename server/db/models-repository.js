@@ -68,12 +68,6 @@ export class ModelsRepository {
       embedding_size, block_count, head_count, head_count_kv, ffn_dim, file_type)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-    const getValue = (val, defaultVal = 0) => {
-      if (Array.isArray(val)) return val[0] || defaultVal;
-      if (val === undefined || val === null) return defaultVal;
-      return val;
-    };
-
     this.db
       .prepare(query)
       .run(

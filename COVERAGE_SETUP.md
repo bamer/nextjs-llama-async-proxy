@@ -3,11 +3,13 @@
 ## What's Been Configured
 
 ### 1. Enhanced Jest Configuration (`jest.config.js`)
+
 - Added multiple coverage report formats: text, text-summary, lcov, html, json
 - Set coverage thresholds at 80% for lines, functions, branches, statements
 - Coverage reports generate automatically on `pnpm test:coverage`
 
 ### 2. Automated Coverage Display Script (`scripts/coverage-report.js`)
+
 - Generates beautiful terminal output with color-coded percentages
 - 🟢 Green (≥90%): Excellent
 - 🟡 Yellow (≥80%): Good
@@ -16,14 +18,15 @@
 - Automatically opens HTML report in browser
 
 ### 3. VSCode Integration
+
 - Created `.vscode/extensions.json` with recommended extensions:
   - **Jest** (orta.vscode-jest) - Run tests from editor
   - **Coverage Gutters** (ryanluker.vscode-coverage-gutters) - Inline coverage display
   - **Jest Runner** (firsttris.vscode-jest-runner) - Quick test running
-  
 - Updated `.vscode/settings.json` with coverage display settings
 
 ### 4. Documentation (`docs/COVERAGE_GUIDE.md`)
+
 - Complete guide for using coverage reports
 - How to install VSCode extensions
 - How to improve coverage
@@ -33,11 +36,13 @@
 ## Quick Start
 
 ### Run Coverage Report
+
 ```bash
 pnpm test:coverage
 ```
 
 This will:
+
 1. Run all tests with Jest
 2. Generate coverage reports in multiple formats
 3. Display a formatted summary in the terminal
@@ -46,6 +51,7 @@ This will:
 ### VSCode Coverage Display
 
 After installing the Coverage Gutters extension:
+
 1. Open any `.js` file
 2. Run: `Coverage Gutters: Display Coverage` (Cmd+Shift+P)
 3. See inline coverage with:
@@ -54,11 +60,13 @@ After installing the Coverage Gutters extension:
    - 🟡 Yellow = branch not covered
 
 ### View HTML Report
+
 ```bash
 open coverage/index.html
 ```
 
 The interactive report shows:
+
 - Summary dashboard
 - Per-file coverage breakdown
 - Line-by-line coverage highlighting
@@ -80,18 +88,21 @@ coverage/
 ## Coverage Metrics at a Glance
 
 **Overall Coverage:**
+
 - Lines: 80%+
 - Statements: 80%+
 - Functions: 80%+
 - Branches: 80%+
 
 **Best Covered Files (100%):**
+
 - All database repositories
 - All handler files
 - All utility validation functions
 - Most format utilities
 
 **Areas for Improvement:**
+
 - `server.js` main entry point (20.8%)
 - State management request/socket handlers
 - Llama router start operations
@@ -150,7 +161,7 @@ cat coverage/coverage-summary.json
 - [docs/COVERAGE_GUIDE.md](docs/COVERAGE_GUIDE.md) - Full coverage guide
 - [jest.config.js](jest.config.js) - Jest configuration
 - [AGENTS.md](AGENTS.md) - Testing guidelines
-- [__tests__/](__tests__/) - Test files
+- [**tests**/](__tests__/) - Test files
 
 ---
 

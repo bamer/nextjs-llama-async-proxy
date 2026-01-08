@@ -13,18 +13,21 @@
 ## How to Use
 
 ### Search Models
+
 1. Click the search box
 2. **Type continuously** - No re-clicking needed
 3. Results filter in real-time
 4. Clear search box to see all models
 
 ### Filter by Status
+
 1. Click the "Status" dropdown
 2. Select: **All** / **Loaded** / **Unloaded**
 3. Filter applies **instantly**
 4. Works **with search** - combine filters
 
 ### Sort by Any Column
+
 1. **Click any column header** to sort:
    - Name
    - Status
@@ -44,6 +47,7 @@
 3. **Click same header again** to reverse order
 
 ### Combined Example
+
 ```
 1. Search: "llama"
    → Shows only models with "llama" in name
@@ -62,12 +66,12 @@
 
 ## What's New
 
-| Feature | Before | After |
-|---------|--------|-------|
+| Feature       | Before                       | After                |
+| ------------- | ---------------------------- | -------------------- |
 | Search typing | ❌ Had to re-click each time | ✅ Type continuously |
-| Select filter | ❌ Slow, laggy | ✅ Instant updates |
-| Sorting | ❌ Only 5 columns | ✅ All 10 columns |
-| Performance | ❌ Noticeable lag | ✅ Instant response |
+| Select filter | ❌ Slow, laggy               | ✅ Instant updates   |
+| Sorting       | ❌ Only 5 columns            | ✅ All 10 columns    |
+| Performance   | ❌ Noticeable lag            | ✅ Instant response  |
 
 ---
 
@@ -83,7 +87,7 @@
 ## Performance Notes
 
 - ⚡ Search input: ~30ms response
-- ⚡ Filter dropdown: ~50ms response  
+- ⚡ Filter dropdown: ~50ms response
 - ⚡ Column sorting: ~40ms response
 - ⚡ Page feels professional and snappy
 
@@ -92,6 +96,7 @@
 ## Mobile/Tablet
 
 Table adapts automatically:
+
 - On mobile: Becomes horizontally scrollable
 - Search and filter work the same
 - Sorting works the same
@@ -118,11 +123,13 @@ A: Try refreshing. Check if router is running (see "Router Active" indicator).
 ## Tips & Tricks
 
 1. **Quick search** - Type first few letters of model name
+
    ```
    "llama" → Finds: LLaMA, LLaMA-2, LLaMA-3, etc.
    ```
 
 2. **Filter + Sort** - Use together for powerful browsing
+
    ```
    Filter: "Loaded"
    Sort by: "Size" (descending)
@@ -130,6 +137,7 @@ A: Try refreshing. Check if router is running (see "Router Active" indicator).
    ```
 
 3. **Find unloaded models** - Use filter
+
    ```
    Status: "Unloaded"
    Sort by: "Size"
@@ -161,17 +169,20 @@ Click again → Reverses sort order
 ## Visual Indicators
 
 ### Status Column
+
 - 🟢 **Loaded** - Model is loaded in memory
 - 🟡 **Loading** - Model is currently loading
 - ⚪ **Unloaded** - Model is on disk, not in memory
 - 🔴 **Error** - Model failed to load
 
 ### Sort Indicators (on headers)
+
 - ↑ = Sorting ascending
 - ↓ = Sorting descending
 - No arrow = Not sorted by this column
 
 ### Router Status (top right)
+
 - 🟢 **Active** - Router is running, can load models
 - ⚪ **Not Running** - Router offline, all models unloaded
 

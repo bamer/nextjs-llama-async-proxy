@@ -3,6 +3,7 @@
 ## Search Input Behavior
 
 ### BEFORE ❌
+
 ```
 User types: "m"
 → Input updates
@@ -19,6 +20,7 @@ Result: Frustrated user, 5 clicks to type "model"
 ```
 
 ### AFTER ✅
+
 ```
 User types: "m"
 → Input updates
@@ -41,6 +43,7 @@ Result: Happy user, smooth typing experience
 ## Select Filter Behavior
 
 ### BEFORE ❌
+
 ```
 Select shows: "All" (but state is "All")
 User clicks dropdown
@@ -55,6 +58,7 @@ Result: UI lag, user confused about state
 ```
 
 ### AFTER ✅
+
 ```
 Select shows: "All"
 User clicks dropdown
@@ -72,6 +76,7 @@ Result: Instant feedback, no confusion
 ## Column Sorting
 
 ### BEFORE ❌
+
 ```
 Available sortable columns: 5/10
 - Name ✓
@@ -92,6 +97,7 @@ Result: Frustrating, incomplete feature
 ```
 
 ### AFTER ✅
+
 ```
 All columns sortable: 10/10
 - Name ✓ (click to sort A→Z, click again for Z→A)
@@ -115,6 +121,7 @@ Result: Complete sorting power, obvious what's sorted
 ## Page Performance
 
 ### BEFORE ❌
+
 ```
 Interaction Timeline:
 - User types in search: 200ms lag before update
@@ -134,6 +141,7 @@ Result: Professional = slow
 ```
 
 ### AFTER ✅
+
 ```
 Interaction Timeline:
 - User types in search: ~30ms update (instant feeling)
@@ -157,6 +165,7 @@ Result: Professional = fast
 ## Visual Design Evolution
 
 ### BEFORE ❌
+
 ```
 Table Layout:
 ┌─────────────────────────────────────────────┐
@@ -177,6 +186,7 @@ Issues:
 ```
 
 ### AFTER ✅
+
 ```
 Table Layout:
 ┌──────────────────────────────────────────┐
@@ -203,6 +213,7 @@ Improvements:
 ## User Workflow Comparison
 
 ### BEFORE ❌
+
 ```
 Task: Find and sort "LLaMA 70B" by size
 
@@ -223,6 +234,7 @@ Frustration level: HIGH
 ```
 
 ### AFTER ✅
+
 ```
 Task: Find and sort "LLaMA 70B" by size
 
@@ -244,6 +256,7 @@ Frustration level: NONE
 ## Code Quality Comparison
 
 ### BEFORE ❌
+
 ```javascript
 // Trying to preserve focus with hacks
 setTimeout(() => {
@@ -254,18 +267,20 @@ setTimeout(() => {
 Component.h("input", {
   ref: (el) => {
     if (el) this.searchInputEl = el;
-  }
+  },
   // ^ Doesn't work with Component.h
-})
+});
 
 // Select without value attribute
-Component.h("select", 
-  { "data-field": "status" },  // Missing: value attribute
+Component.h(
+  "select",
+  { "data-field": "status" } // Missing: value attribute
   // ... options ...
-)
+);
 ```
 
 ### AFTER ✅
+
 ```javascript
 // Proper lifecycle hook
 didUpdate() {
@@ -284,8 +299,8 @@ Component.h("input", {
 })
 
 // Select with proper value attribute
-Component.h("select", 
-  { 
+Component.h("select",
+  {
     "data-field": "status",
     value: this.state.filters.status  // ✓ Keeps in sync
   },
@@ -298,10 +313,11 @@ Component.h("select",
 ## CSS Footprint
 
 ### BEFORE ❌
+
 ```css
 /* Heavy animations */
 transition: all 0.3s ease;
-transition: background 0.2s ease, 
+transition: background 0.2s ease,
             border-color 0.2s ease,
             transform 0.1s ease;
 
@@ -321,6 +337,7 @@ padding: var(--lg);
 ```
 
 ### AFTER ✅
+
 ```css
 /* Fast transitions */
 transition: border-color 0.15s ease;
@@ -343,16 +360,16 @@ padding: 8px;
 
 ## Summary Table
 
-| Aspect | Before | After | Better? |
-|--------|--------|-------|---------|
-| Search usability | Broken (re-click) | Works perfectly | ✅ 100% |
-| Select responsiveness | Slow (300ms) | Instant (50ms) | ✅ 83% faster |
-| Sorting columns | 5 of 10 | 10 of 10 | ✅ Complete |
-| Page lag | Noticeable | None | ✅ 85% faster |
-| CSS file size | 2.5KB | 1.8KB | ✅ 28% smaller |
-| User satisfaction | Low | High | ✅ Much better |
-| Code quality | Hacky | Clean | ✅ Professional |
-| Browser performance | Sluggish | Snappy | ✅ Excellent |
+| Aspect                | Before            | After           | Better?         |
+| --------------------- | ----------------- | --------------- | --------------- |
+| Search usability      | Broken (re-click) | Works perfectly | ✅ 100%         |
+| Select responsiveness | Slow (300ms)      | Instant (50ms)  | ✅ 83% faster   |
+| Sorting columns       | 5 of 10           | 10 of 10        | ✅ Complete     |
+| Page lag              | Noticeable        | None            | ✅ 85% faster   |
+| CSS file size         | 2.5KB             | 1.8KB           | ✅ 28% smaller  |
+| User satisfaction     | Low               | High            | ✅ Much better  |
+| Code quality          | Hacky             | Clean           | ✅ Professional |
+| Browser performance   | Sluggish          | Snappy          | ✅ Excellent    |
 
 ---
 

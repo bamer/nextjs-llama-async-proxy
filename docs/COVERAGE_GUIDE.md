@@ -51,6 +51,7 @@ File Coverage:
 ```
 
 **Color coding:**
+
 - 🟢 Green (≥90%): Excellent coverage
 - 🟡 Yellow (≥80%): Good coverage
 - 🔴 Red (<80%): Needs improvement
@@ -66,6 +67,7 @@ The interactive HTML report opens automatically and includes:
 - **Filters** - Filter by coverage threshold
 
 View the report:
+
 ```bash
 # Open the HTML report directly
 open coverage/index.html
@@ -106,11 +108,13 @@ The project recommends these extensions for better coverage visualization:
    - Quick coverage debugging
 
 Install all recommended extensions:
+
 ```
 VSCode → Extensions → View Recommended Extensions
 ```
 
 Or install manually:
+
 ```bash
 code --install-extension orta.vscode-jest
 code --install-extension ryanluker.vscode-coverage-gutters
@@ -129,6 +133,7 @@ After installing "Coverage Gutters":
    - **Yellow highlight** = Branch not tested
 
 Toggle coverage display:
+
 ```
 Cmd+Shift+P (Mac) or Ctrl+Shift+P (Windows/Linux)
 Type: "Coverage Gutters: Display Coverage"
@@ -160,6 +165,7 @@ Lines: 80%
 If coverage falls below these thresholds, `pnpm test:coverage` will fail.
 
 **Fix coverage:**
+
 1. Identify uncovered files in the report
 2. Add tests for those lines/branches
 3. Rerun coverage
@@ -181,6 +187,7 @@ If coverage falls below these thresholds, `pnpm test:coverage` will fail.
 ### Coverage Checklist
 
 When writing tests, cover:
+
 - ✅ Happy path (normal operation)
 - ✅ Error cases (exceptions, rejections)
 - ✅ Edge cases (null, undefined, empty)
@@ -200,18 +207,20 @@ function formatSize(bytes) {
 ```
 
 **Uncovered branches:**
+
 - `bytes === 0`
 - Each size unit in the array
 - Invalid inputs (negative, non-number)
 
 **Tests needed:**
+
 ```javascript
 test("formatSize covers all cases", () => {
-  expect(formatSize(0)).toBe("0 B");           // bytes === 0
-  expect(formatSize(1024)).toBe("1.00 KB");    // KB
-  expect(formatSize(1048576)).toBe("1.00 MB");  // MB
-  expect(formatSize(-100)).toThrow();          // error case
-  expect(formatSize("abc")).toThrow();         // invalid input
+  expect(formatSize(0)).toBe("0 B"); // bytes === 0
+  expect(formatSize(1024)).toBe("1.00 KB"); // KB
+  expect(formatSize(1048576)).toBe("1.00 MB"); // MB
+  expect(formatSize(-100)).toThrow(); // error case
+  expect(formatSize("abc")).toThrow(); // invalid input
 });
 ```
 
@@ -248,13 +257,17 @@ Display coverage in pull request comments:
 ### "Module not found" errors
 
 The project uses ES modules. Ensure `jest.config.js` has:
+
 ```javascript
-export default { /* ... */ }
+export default {
+  /* ... */
+};
 ```
 
 ### Coverage not updating
 
 Clear the coverage cache:
+
 ```bash
 rm -rf coverage/
 pnpm test:coverage
@@ -263,6 +276,7 @@ pnpm test:coverage
 ### Browser not opening
 
 If the HTML report doesn't open automatically:
+
 ```bash
 # macOS
 open coverage/index.html
@@ -279,11 +293,13 @@ start coverage/index.html
 If tests report coverage below 80% threshold:
 
 1. Check which files need more tests:
+
    ```bash
    cat coverage/coverage-summary.json | grep -v total
    ```
 
 2. Add tests for those files:
+
    ```bash
    pnpm test:watch -- path/to/file.test.js
    ```
@@ -319,7 +335,7 @@ pnpm format                # Format all files
 
 - [AGENTS.md](../AGENTS.md) - Testing guidelines and patterns
 - [jest.config.js](../jest.config.js) - Jest configuration
-- [__tests__/](../__tests__/) - Test files
+- [**tests**/](../__tests__/) - Test files
 
 ---
 

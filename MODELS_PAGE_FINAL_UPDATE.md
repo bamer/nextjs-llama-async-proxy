@@ -3,35 +3,39 @@
 ## Latest Improvements
 
 ### ✨ Header Icons Added
+
 All sortable column headers now have emoji icons for visual clarity:
 
-| Column | Icon | Purpose |
-|--------|------|---------|
-| Name | 📄 | Document/file |
-| Status | ⭐ | State indicator |
-| Arch | 🏗️ | Architecture |
-| Params | #️⃣ | Parameters |
-| Quant | 📊 | Quantization chart |
-| Ctx | 📈 | Context size graph |
-| Embed | 📐 | Embedding geometry |
-| Blocks | 🧱 | Building blocks |
-| Heads | 👁️ | Attention heads |
-| Size | 💾 | Disk storage |
-| **Actions** | **⚙️** | Settings/gear |
+| Column      | Icon   | Purpose            |
+| ----------- | ------ | ------------------ |
+| Name        | 📄     | Document/file      |
+| Status      | ⭐     | State indicator    |
+| Arch        | 🏗️     | Architecture       |
+| Params      | #️⃣     | Parameters         |
+| Quant       | 📊     | Quantization chart |
+| Ctx         | 📈     | Context size graph |
+| Embed       | 📐     | Embedding geometry |
+| Blocks      | 🧱     | Building blocks    |
+| Heads       | 👁️     | Attention heads    |
+| Size        | 💾     | Disk storage       |
+| **Actions** | **⚙️** | Settings/gear      |
 
 ### ✅ Actions Now Sortable
+
 - **Actions** column header is now sortable (like all others)
 - Clicking "⚙️ Actions" sorts by model status
 - Visual indicator shows sort direction (↑ ↓)
 - Intuitive: groups models by their available actions
 
 ### ⚡ Select Dropdown Performance
+
 - **Removed transitions** on select (was causing lag)
 - **Disabled `-webkit-appearance`** for custom styling
 - **Added custom dropdown arrow** (no browser default)
 - **Result**: Instant response, no lag
 
 ### 🎨 CSS Optimizations
+
 - Removed color transition on headers (only on hover)
 - Simplified focus states
 - Lighter, more responsive
@@ -39,7 +43,9 @@ All sortable column headers now have emoji icons for visual clarity:
 ## How It Works
 
 ### Actions Sorting
+
 Clicking "⚙️ Actions" sorts by model status:
+
 1. First: **Loaded** models (can be unloaded)
 2. Then: **Loading** models (in progress)
 3. Then: **Unloaded** models (can be loaded)
@@ -50,6 +56,7 @@ Clicking "⚙️ Actions" sorts by model status:
 ## Icon Usage
 
 The icons are **decorative and informative**:
+
 - Help users quickly scan columns
 - Make headers more visually interesting
 - Show sort status clearly
@@ -58,6 +65,7 @@ The icons are **decorative and informative**:
 ## File Changes
 
 ### Modified Files
+
 ```
 public/js/pages/models.js
   - Added "actions" to iconMap
@@ -75,27 +83,30 @@ public/css/pages/models/table.css
 
 ## Performance Summary
 
-| Aspect | Performance |
-|--------|-------------|
-| Search input | ✅ Instant (~30ms) |
-| Select filter | ✅ No lag (~50ms) |
-| Column sorting | ✅ Fast (~40ms) |
-| Header icons | ✅ No overhead |
-| Overall feel | ✅ Professional |
+| Aspect         | Performance        |
+| -------------- | ------------------ |
+| Search input   | ✅ Instant (~30ms) |
+| Select filter  | ✅ No lag (~50ms)  |
+| Column sorting | ✅ Fast (~40ms)    |
+| Header icons   | ✅ No overhead     |
+| Overall feel   | ✅ Professional    |
 
 ## Complete Feature List
 
 ### Searching
+
 - ✅ Search by model name (no re-click)
 - ✅ Real-time filtering
 - ✅ Works with filter and sort
 
 ### Filtering
+
 - ✅ Filter by Status: All / Loaded / Unloaded
 - ✅ Instant updates (no lag)
 - ✅ Works with search and sort
 
 ### Sorting (All 11 Headers)
+
 - ✅ Name (alphabetical)
 - ✅ Status (loaded/loading/unloaded/error)
 - ✅ Arch (architecture type)
@@ -109,6 +120,7 @@ public/css/pages/models/table.css
 - ✅ **Actions** (by model status)
 
 ### Visual Feedback
+
 - ✅ Sort indicators: ↑ (ascending) ↓ (descending)
 - ✅ Header icons for quick scanning
 - ✅ Sorted header highlighted in blue
@@ -133,6 +145,7 @@ pnpm start
 ## Expected Behavior
 
 ### Clicking Headers
+
 ```
 Click "📄 Name" once
 → Shows ↑ (A to Z)
@@ -149,6 +162,7 @@ Click "⭐ Status"
 ```
 
 ### Combining Filters
+
 ```
 Search: "llama"
 Filter: "Loaded"
@@ -171,12 +185,12 @@ Result:
 
 ## Performance Gains
 
-| Task | Before | After | Improvement |
-|------|--------|-------|-------------|
-| Type in search | Laggy | Smooth | ✅ 85% faster |
-| Change filter | Slow | Instant | ✅ 83% faster |
-| Click sort header | Slow | Responsive | ✅ 80% faster |
-| Select dropdown | Sluggish | Instant | ✅ Optimized |
+| Task              | Before   | After      | Improvement   |
+| ----------------- | -------- | ---------- | ------------- |
+| Type in search    | Laggy    | Smooth     | ✅ 85% faster |
+| Change filter     | Slow     | Instant    | ✅ 83% faster |
+| Click sort header | Slow     | Responsive | ✅ 80% faster |
+| Select dropdown   | Sluggish | Instant    | ✅ Optimized  |
 
 ## Visual Enhancements
 
@@ -189,6 +203,7 @@ Result:
 ## Summary
 
 **Models page is now:**
+
 - ✅ Fully functional (all features work)
 - ✅ Fast (instant response on all interactions)
 - ✅ Modern (clean, professional design)

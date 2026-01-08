@@ -27,14 +27,7 @@ export default {
     "!**/coverage/**",
   ],
   coverageDirectory: "coverage",
-  coverageReporters: [
-    "text",
-    "text-summary",
-    "lcov",
-    "html",
-    "json-summary",
-    "json",
-  ],
+  coverageReporters: ["text", "text-summary", "lcov", "html", "json-summary", "json"],
   coverageThreshold: {
     global: {
       lines: 80,

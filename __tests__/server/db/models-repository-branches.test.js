@@ -65,116 +65,165 @@ describe("ModelsRepository Branch Coverage", () => {
     repository = new ModelsRepository(mockDb);
   });
 
-  describe("save() - getValue function branches", () => {
+  describe("save() - default value branches for numeric fields", () => {
     /**
-     * Objective: Test getValue function branches for array handling
-     * Test: Pass array with first element to use the val[0] branch
+     * Objective: Test ctx_size with falsy value (0)
+     * Test: model.ctx_size || 4096 - when ctx_size is 0 (falsy), use default 4096
      */
-    it("should use first element when array has values in getValue", () => {
+    it("should use default ctx_size when 0 is passed (falsy)", () => {
       const savedModel = { id: "model_123", name: "Test" };
       mockStmtGet.get.mockReturnValue(savedModel);
 
       repository.save({
         name: "Test",
-        parameters: ["firstValue", "secondValue"], // Array with values
+        ctx_size: 0,
       });
 
       const callArgs = mockStmtRun.run.mock.calls[0];
-      // parameters goes through getValue which takes val[0] = "firstValue"
-      // Then JSON.stringify("firstValue")
-      expect(callArgs[4]).toBe('"firstValue"');
+      // 0 is falsy, so uses default 4096
+      expect(callArgs[9]).toBe(4096);
     });
 
     /**
-     * Objective: Test getValue function when array is empty
-     * Test: Pass empty array to use default value
+     * Objective: Test ctx_size with actual value
+     * Test: model.ctx_size || 4096 - when ctx_size is truthy, use it
      */
-    it("should use default value when array is empty in getValue", () => {
+    it("should use provided ctx_size when given", () => {
       const savedModel = { id: "model_123", name: "Test" };
       mockStmtGet.get.mockReturnValue(savedModel);
 
       repository.save({
         name: "Test",
-        parameters: [], // Empty array
+        ctx_size: 8192,
       });
 
       const callArgs = mockStmtRun.run.mock.calls[0];
-      // Empty array through getValue: val[0] is undefined, so uses default (0)
-      // Then JSON.stringify(0)
-      expect(callArgs[4]).toBe("0");
+      // 8192 is truthy, so use it
+      expect(callArgs[9]).toBe(8192);
     });
 
     /**
-     * Objective: Test getValue function for undefined handling
-     * Test: Pass undefined to trigger the undefined branch
+     * Objective: Test batch_size with falsy value (0)
+     * Test: model.batch_size || 512 - when batch_size is 0, use default
      */
-    it("should use default value when value is undefined in getValue", () => {
+    it("should use default batch_size when 0 is passed (falsy)", () => {
       const savedModel = { id: "model_123", name: "Test" };
       mockStmtGet.get.mockReturnValue(savedModel);
 
       repository.save({
         name: "Test",
-        parameters: undefined, // Explicitly undefined
+        batch_size: 0,
       });
 
       const callArgs = mockStmtRun.run.mock.calls[0];
-      // undefined triggers default value (0)
-      expect(callArgs[4]).toBe("0");
+      // 0 is falsy, so uses default 512
+      expect(callArgs[10]).toBe(512);
     });
 
     /**
-     * Objective: Test getValue function for null handling
-     * Test: Pass null to trigger the null branch
+     * Objective: Test threads with falsy value
+     * Test: model.threads || 4
      */
-    it("should use default value when value is null in getValue", () => {
+    it("should use default threads when 0 is passed (falsy)", () => {
       const savedModel = { id: "model_123", name: "Test" };
       mockStmtGet.get.mockReturnValue(savedModel);
 
       repository.save({
         name: "Test",
-        parameters: null, // Explicitly null
+        threads: 0,
       });
 
       const callArgs = mockStmtRun.run.mock.calls[0];
-      // null triggers default value (0)
-      expect(callArgs[4]).toBe("0");
+      // 0 is falsy, so uses default 4
+      expect(callArgs[11]).toBe(4);
     });
 
     /**
-     * Objective: Test getValue function for normal value handling
-     * Test: Pass normal value to return val branch
+     * Objective: Test embedding_size with falsy value
+     * Test: model.embedding_size || 0 - when 0, use 0
      */
-    it("should use original value when value is normal in getValue", () => {
+    it("should use 0 for embedding_size when 0 is passed", () => {
       const savedModel = { id: "model_123", name: "Test" };
       mockStmtGet.get.mockReturnValue(savedModel);
-      const params = { temperature: 0.7, max_tokens: 100 };
 
       repository.save({
         name: "Test",
-        parameters: params, // Normal object value
+        embedding_size: 0,
       });
 
       const callArgs = mockStmtRun.run.mock.calls[0];
-      // Normal value goes through: JSON.stringify(params)
-      expect(callArgs[4]).toBe(JSON.stringify(params));
+      // 0 || 0 = 0 (same value)
+      expect(callArgs[14]).toBe(0);
     });
 
     /**
-     * Objective: Test getValue function with falsy first element in array
-     * Test: Pass array with falsy first element (0)
+     * Objective: Test embedding_size with actual value
+     * Test: model.embedding_size || 0 - when truthy value
      */
-    it("should use default when array first element is falsy in getValue", () => {
+    it("should use provided embedding_size when given", () => {
       const savedModel = { id: "model_123", name: "Test" };
       mockStmtGet.get.mockReturnValue(savedModel);
 
       repository.save({
         name: "Test",
-        parameters: [0, "second"], // First element is 0 (falsy)
+        embedding_size: 4096,
       });
 
       const callArgs = mockStmtRun.run.mock.calls[0];
-      // val[0] = 0 is falsy, so uses default (0)
-      expect(callArgs[4]).toBe("0");
+      // 4096 is truthy
+      expect(callArgs[14]).toBe(4096);
+    });
+
+    /**
+     * Objective: Test block_count with falsy value
+     * Test: model.block_count || 0
+     */
+    it("should use 0 for block_count when 0 is passed", () => {
+      const savedModel = { id: "model_123", name: "Test" };
+      mockStmtGet.get.mockReturnValue(savedModel);
+
+      repository.save({
+        name: "Test",
+        block_count: 0,
+      });
+
+      const callArgs = mockStmtRun.run.mock.calls[0];
+      expect(callArgs[15]).toBe(0);
+    });
+
+    /**
+     * Objective: Test file_size with null
+     * Test: model.file_size || null - when null, use null
+     */
+    it("should use null for file_size when null is passed", () => {
+      const savedModel = { id: "model_123", name: "Test" };
+      mockStmtGet.get.mockReturnValue(savedModel);
+
+      repository.save({
+        name: "Test",
+        file_size: null,
+      });
+
+      const callArgs = mockStmtRun.run.mock.calls[0];
+      // null || null = null
+      expect(callArgs[6]).toBeNull();
+    });
+
+    /**
+     * Objective: Test file_size with actual value
+     * Test: model.file_size || null - when value is provided
+     */
+    it("should use provided file_size when given", () => {
+      const savedModel = { id: "model_123", name: "Test" };
+      mockStmtGet.get.mockReturnValue(savedModel);
+
+      repository.save({
+        name: "Test",
+        file_size: 8589934592,
+      });
+
+      const callArgs = mockStmtRun.run.mock.calls[0];
+      expect(callArgs[6]).toBe(8589934592);
     });
   });
 

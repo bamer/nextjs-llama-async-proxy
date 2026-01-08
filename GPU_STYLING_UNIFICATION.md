@@ -1,7 +1,9 @@
 # GPU Styling Unification
 
 ## Problem
+
 GPU components used inconsistent variable names and styling compared to the rest of the dashboard:
+
 - **Color variables mismatch**: `--color-border` vs `--border-color`, `--color-text` vs `--text-primary`
 - **Spacing inconsistency**: Hard-coded `16px`, `12px` vs design system variables
 - **GPU Details card** had a separate, bulky design that didn't integrate well with the stats-grid
@@ -10,18 +12,19 @@ GPU components used inconsistent variable names and styling compared to the rest
 ## Solution
 
 ### 1. Unified CSS Variables in gpu.css
+
 Replaced all old color/spacing variables with dashboard-consistent ones:
 
-| Old Variable | New Variable | Impact |
-|---|---|---|
-| `--color-border` | `--border-color` | All borders now consistent |
-| `--color-text` | `--text-primary` | Text hierarchy unified |
-| `--color-text-muted` | `--text-secondary` | Secondary text unified |
-| `--color-surface` | `--card-bg` or `--bg-tertiary` | Background colors aligned |
-| `--color-hover` | Transparent/rgba | Hover states cohesive |
-| `16px` padding | `var(--lg)` | Spacing rhythm unified |
-| `12px` padding | `var(--md)` | Consistent internal spacing |
-| `6px` gap | `var(--sm)` | Gutter spacing aligned |
+| Old Variable         | New Variable                   | Impact                      |
+| -------------------- | ------------------------------ | --------------------------- |
+| `--color-border`     | `--border-color`               | All borders now consistent  |
+| `--color-text`       | `--text-primary`               | Text hierarchy unified      |
+| `--color-text-muted` | `--text-secondary`             | Secondary text unified      |
+| `--color-surface`    | `--card-bg` or `--bg-tertiary` | Background colors aligned   |
+| `--color-hover`      | Transparent/rgba               | Hover states cohesive       |
+| `16px` padding       | `var(--lg)`                    | Spacing rhythm unified      |
+| `12px` padding       | `var(--md)`                    | Consistent internal spacing |
+| `6px` gap            | `var(--sm)`                    | Gutter spacing aligned      |
 
 ### 2. Visual Integration of GPU Stats in StatsGrid
 
@@ -29,27 +32,29 @@ Replaced all old color/spacing variables with dashboard-consistent ones:
 
 ```css
 .stat-card.gpu-stat {
-  border-left: 4px solid var(--danger);  /* Red accent matching GPU importance */
+  border-left: 4px solid var(--danger); /* Red accent matching GPU importance */
 }
 
 .stat-card.gpu-stat::before {
-  background: var(--danger);  /* Red top bar on hover */
+  background: var(--danger); /* Red top bar on hover */
 }
 
 .stat-card.gpu-stat:hover {
   border-color: var(--danger);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);  /* Red shadow */
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1); /* Red shadow */
 }
 ```
 
 ### 3. GPU Details Card Styling
 
 **Header now matches stat-card header**:
+
 - Same padding, typography, hover effects
 - Added `::before` pseudo-element for top bar indicator
 - Smooth transitions and shadows
 
 **GPU Card items** inside expanded section:
+
 - Match stat-card styling with border/shadow
 - Red left border (danger color) for GPU context
 - Consistent spacing and typography
@@ -75,13 +80,15 @@ Replaced all old color/spacing variables with dashboard-consistent ones:
 
 ## Visual Result
 
-**Before**: 
+**Before**:
+
 - GPU Details card was a large, separate expandable section with inconsistent styling
 - Progress bars were tall (24px) with green gradients
 - Different typography, spacing, and color variables
 - Didn't integrate with the stats-grid aesthetic
 
 **After**:
+
 - GPU stats in stats-grid have red accents (danger color) distinguishing them from system stats
 - GPU Details card header matches stat-card styling with consistent hover effects
 - Individual GPU cards inside the expanded section match stat-card design
@@ -97,6 +104,7 @@ Replaced all old color/spacing variables with dashboard-consistent ones:
 ## Spacing Consistency
 
 All spacing now uses design tokens:
+
 - `--lg` (16px): Card padding, section spacing
 - `--md` (12px): Internal component spacing, gaps
 - `--sm` (8px): Small gaps, grouped items

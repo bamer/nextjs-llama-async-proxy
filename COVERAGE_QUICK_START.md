@@ -11,6 +11,7 @@ Done. Your coverage report opens automatically.
 ## 📊 What You'll See
 
 **Terminal:**
+
 ```
 ═══════════════════════════════════════════════════════════════
                COVERAGE REPORT - TEST SUMMARY
@@ -33,6 +34,7 @@ File Coverage:
 ```
 
 **Browser:**
+
 - Interactive HTML report opens automatically
 - Click files to see line-by-line coverage
 - Green = tested, Red = untested
@@ -40,21 +42,25 @@ File Coverage:
 ## 🎯 Common Tasks
 
 ### View the HTML report manually
+
 ```bash
 open coverage/index.html
 ```
 
 ### See which files need more tests
+
 ```bash
 cat coverage/coverage-summary.json | grep -v total
 ```
 
 ### Watch and re-run tests
+
 ```bash
 pnpm test:watch
 ```
 
 ### Just run tests (no coverage)
+
 ```bash
 pnpm test
 ```
@@ -70,11 +76,13 @@ pnpm test
 ## 🔍 What the Colors Mean
 
 **Terminal percentages:**
+
 - 🟢 Green (≥90%) = Excellent coverage
 - 🟡 Yellow (≥80%) = Good coverage
 - 🔴 Red (<80%) = Needs improvement
 
 **VSCode Coverage Gutters:**
+
 - 🟢 Green highlight = Code is tested
 - 🔴 Red highlight = Code is not tested
 - 🟡 Yellow highlight = Branch not tested
@@ -82,6 +90,7 @@ pnpm test
 ## 📈 Coverage Goals
 
 Minimum thresholds:
+
 - **Lines**: 80%
 - **Statements**: 80%
 - **Functions**: 80%
@@ -97,6 +106,7 @@ Minimum thresholds:
 ## 🚨 If Tests Fail
 
 The coverage report still generates! You'll see:
+
 - Which tests failed
 - Coverage metrics anyway (so you can see progress)
 - Both on screen and in HTML report
@@ -104,6 +114,7 @@ The coverage report still generates! You'll see:
 ## 📚 Full Guide
 
 See [docs/COVERAGE_GUIDE.md](docs/COVERAGE_GUIDE.md) for:
+
 - Installing VSCode extensions
 - CI/CD integration
 - Coverage improvement strategies

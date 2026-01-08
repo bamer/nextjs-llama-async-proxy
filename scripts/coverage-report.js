@@ -77,9 +77,7 @@ function displayCoverageReport() {
     });
 
     console.log("─".repeat(70));
-    console.log(
-      `  Statements    : ${total.statements.covered}/${total.statements.total}`
-    );
+    console.log(`  Statements    : ${total.statements.covered}/${total.statements.total}`);
     console.log(`  Branches      : ${total.branches.covered}/${total.branches.total}`);
     console.log(`  Functions     : ${total.functions.covered}/${total.functions.total}`);
     console.log(`  Lines         : ${total.lines.covered}/${total.lines.total}`);
@@ -103,12 +101,8 @@ function displayCoverageReport() {
     }
 
     console.log("\n" + "═".repeat(70));
-    console.log(
-      "\x1b[32m✓ HTML report generated at: coverage/index.html\x1b[0m"
-    );
-    console.log(
-      "\x1b[36m✓ Run 'open coverage/index.html' to view detailed report\x1b[0m"
-    );
+    console.log("\x1b[32m✓ HTML report generated at: coverage/index.html\x1b[0m");
+    console.log("\x1b[36m✓ Run 'open coverage/index.html' to view detailed report\x1b[0m");
     console.log("═".repeat(70) + "\n");
 
     // Open HTML report if available

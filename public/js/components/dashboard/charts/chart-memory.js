@@ -64,7 +64,7 @@ class MemoryChart {
             data: gpuMemData.map((mb, idx) => {
               // Get GPU memory total from history (primary GPU only)
               const gpuTotal = history[idx]?.gpu?.memoryTotal || 1;
-              return (mb * 1024 * 1024) / gpuTotal * 100;
+              return ((mb * 1024 * 1024) / gpuTotal) * 100;
             }),
             borderColor: "#f97316",
             backgroundColor: gpuMemGradient,
@@ -122,7 +122,7 @@ class MemoryChart {
     const gpuMemPercent = gpuMemData.map((mb, idx) => {
       // Convert GPU memory MB to percentage
       const gpuTotal = history[idx]?.gpu?.memoryTotal || 1;
-      return (mb * 1024 * 1024) / gpuTotal * 100;
+      return ((mb * 1024 * 1024) / gpuTotal) * 100;
     });
 
     this.chart.data.labels = labels;

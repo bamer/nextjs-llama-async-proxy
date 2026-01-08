@@ -9,18 +9,21 @@ All requested features have been implemented and optimized.
 ## 🎯 Features
 
 ### 1. Search Input ✅
+
 - **Smooth typing** - No re-clicking required
 - **Focus preservation** - Automatically restored after re-render
 - **Instant filtering** - Real-time results
 - **Works with filters** - Search + Filter + Sort together
 
 ### 2. Select Filter ✅
+
 - **Zero lag** - Transitions removed for instant response
 - **Custom dropdown** - Modern styling with arrow icon
 - **Visual feedback** - Shows current selection
 - **Options**: All / Loaded / Unloaded
 
 ### 3. Sortable Headers (All 11 Columns) ✅
+
 All columns are now sortable with visual indicators:
 
 ```
@@ -38,14 +41,18 @@ All columns are now sortable with visual indicators:
 ```
 
 ### 4. Header Icons ✅
+
 Each column has a distinctive emoji icon:
+
 - Helps quick visual scanning
 - Makes headers more professional
 - Improves UX at a glance
 - Works on all devices
 
 ### 5. Sort Indicators ✅
+
 Visual feedback for current sort state:
+
 - **↑** = Ascending order
 - **↓** = Descending order
 - No indicator = Not sorted
@@ -56,14 +63,16 @@ Visual feedback for current sort state:
 ## ⚡ Performance
 
 ### Response Times
-| Action | Time | Status |
-|--------|------|--------|
-| Type in search | ~30ms | ✅ Instant |
-| Change filter | ~50ms | ✅ Instant |
-| Click sort | ~40ms | ✅ Instant |
+
+| Action          | Time  | Status     |
+| --------------- | ----- | ---------- |
+| Type in search  | ~30ms | ✅ Instant |
+| Change filter   | ~50ms | ✅ Instant |
+| Click sort      | ~40ms | ✅ Instant |
 | Select dropdown | ~30ms | ✅ Instant |
 
 ### Optimizations Applied
+
 - ✅ Removed all animations
 - ✅ Removed select transitions (lag culprit)
 - ✅ Removed header color transitions
@@ -76,6 +85,7 @@ Visual feedback for current sort state:
 ## 🎨 Design
 
 ### Icons (Emoji)
+
 ```
 Data Type Icons:
 📄 = Names/text
@@ -96,12 +106,14 @@ Action Icon:
 ```
 
 ### Colors
+
 - **Sorted header** = Primary blue (#3B82F6)
 - **Hover effect** = Text brightens on hover
 - **Badges** = Semantic colors (green=loaded, yellow=loading, red=error)
 - **Background** = Theme-aware (light/dark mode)
 
 ### Layout
+
 - Compact padding (10px, 8px)
 - Sticky table headers
 - Clean typography
@@ -113,6 +125,7 @@ Action Icon:
 ## 🔧 How to Use
 
 ### Basic Search
+
 ```
 1. Click search box
 2. Type model name
@@ -121,6 +134,7 @@ Action Icon:
 ```
 
 ### Filter by Status
+
 ```
 1. Click dropdown (shows "All", "Loaded", "Unloaded")
 2. Select option
@@ -128,6 +142,7 @@ Action Icon:
 ```
 
 ### Sort by Column
+
 ```
 1. Click any column header
 2. Models sort by that column (ascending ↑)
@@ -136,6 +151,7 @@ Action Icon:
 ```
 
 ### Combined Example
+
 ```
 Task: Find largest unloaded LLaMA models
 
@@ -151,40 +167,43 @@ Task: Find largest unloaded LLaMA models
 ## 📊 Technical Details
 
 ### JavaScript Changes
+
 ```javascript
 // Added iconMap with emoji for each column
 const iconMap = {
   name: "📄",
   status: "⭐",
   // ... etc
-  actions: "⚙️",  // NEW: Actions now has icon
+  actions: "⚙️", // NEW: Actions now has icon
 };
 
 // Actions header now sortable
-sortableHeader("Actions", "status")  // Sort by status field
+sortableHeader("Actions", "status"); // Sort by status field
 ```
 
 ### CSS Optimizations
+
 ```css
 /* Select dropdown: instant response */
 .models-page .filters select {
-  transition: none;  /* Removed for speed */
+  transition: none; /* Removed for speed */
   -webkit-appearance: none;
   appearance: none;
-  background-image: url(...);  /* Custom arrow */
+  background-image: url(...); /* Custom arrow */
 }
 
 /* Header hover: only on interaction */
 .models-table th[data-sort] {
-  transition: none;  /* No default transition */
+  transition: none; /* No default transition */
 }
 
 .models-table th[data-sort]:hover {
-  transition: color 0.1s ease;  /* Only on hover */
+  transition: color 0.1s ease; /* Only on hover */
 }
 ```
 
 ### Focus Management
+
 ```javascript
 didUpdate() {
   // Restore focus after re-render
@@ -216,6 +235,7 @@ didUpdate() {
 ## 🚀 Ready to Use
 
 The Models page is now:
+
 - **Complete** - All features implemented
 - **Fast** - Instant response on all interactions
 - **Modern** - Professional design with icons
@@ -223,6 +243,7 @@ The Models page is now:
 - **Responsive** - Works on all screen sizes
 
 ### Start Using It
+
 1. Navigate to http://localhost:3000/models
 2. Try searching, filtering, and sorting
 3. Enjoy the smooth experience!
