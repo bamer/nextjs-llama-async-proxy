@@ -74,25 +74,25 @@ describe("filename-parser-branches", () => {
     });
 
     /**
-     * Test nematron-8b special case (line 53)
+     * Test nemotron-8b special case (line 53)
      */
-    test("should return 8B for nematron-8b with no separator after b", () => {
-      expect(extractParams("nematron-8b")).toBe("8B");
+    test("should return 8B for nemotron-8b with no separator after b", () => {
+      expect(extractParams("nemotron-8b")).toBe("8B");
     });
 
-    test("should return 8B for nematron_8b with underscore", () => {
-      expect(extractParams("nematron_8b")).toBe("8B");
+    test("should return 8B for nemotron_8b with underscore", () => {
+      expect(extractParams("nemotron_8b")).toBe("8B");
     });
 
     /**
-     * Test nematron-5b special case (line 54)
+     * Test nemotron-5b special case (line 54)
      */
-    test("should return 5B for nematron-5b with no separator after b", () => {
-      expect(extractParams("nematron-5b")).toBe("5B");
+    test("should return 5B for nemotron-5b with no separator after b", () => {
+      expect(extractParams("nemotron-5b")).toBe("5B");
     });
 
-    test("should return 5B for nematron_5b with underscore", () => {
-      expect(extractParams("nematron_5b")).toBe("5B");
+    test("should return 5B for nemotron_5b with underscore", () => {
+      expect(extractParams("nemotron_5b")).toBe("5B");
     });
 
     /**
@@ -132,15 +132,15 @@ describe("filename-parser-branches", () => {
       expect(extractParams("phi-2-model.gguf")).toBe("");
     });
 
-    test("should exercise false branch of nematron-8b condition", () => {
-      // Contains 'nematron' but not 'nematron-8b' or 'nematron_8b'
+    test("should exercise false branch of nemotron-8b condition", () => {
+      // Contains 'nemotron' but not 'nemotron-8b' or 'nemotron_8b'
       // Also has no standard 'b' parameter to avoid early return
-      expect(extractParams("nematron-model.gguf")).toBe("");
+      expect(extractParams("nemotron-model.gguf")).toBe("");
     });
 
-    test("should exercise false branch of nematron-5b condition", () => {
-      // Contains 'nematron' but not 'nematron-5b' or 'nematron_5b'
-      expect(extractParams("nematron-custom-model.gguf")).toBe("");
+    test("should exercise false branch of nemotron-5b condition", () => {
+      // Contains 'nemotron' but not 'nemotron-5b' or 'nemotron_5b'
+      expect(extractParams("nemotron-custom-model.gguf")).toBe("");
     });
 
     /**
@@ -149,7 +149,7 @@ describe("filename-parser-branches", () => {
      */
     test("should exercise multiple false branches in sequence", () => {
       // No standard params, contains parts of patterns but not full matches
-      // Reaches: phi? no, yi? no, dbrx? no, nematron-8b? no, nematron-5b? no, mixtral-8x? no
+      // Reaches: phi? no, yi? no, dbrx? no, nemotron-8b? no, nemotron-5b? no, mixtral-8x? no
       expect(extractParams("model-with-mixed-parts.gguf")).toBe("");
     });
   });
@@ -323,10 +323,10 @@ describe("filename-parser-branches", () => {
       expect(extractQuantization("mixtral-8x-instruct-q4_k_m.gguf")).toBe("Q4_K_M");
     });
 
-    test("should parse nematron-5b special case", () => {
-      expect(extractArchitecture("nematron-5b-instruct-q4_0.gguf")).toBe("Nemotron");
-      expect(extractParams("nematron-5b-instruct-q4_0.gguf")).toBe("5B");
-      expect(extractQuantization("nematron-5b-instruct-q4_0.gguf")).toBe("Q4_0");
+    test("should parse nemotron-5b special case", () => {
+      expect(extractArchitecture("nemotron-5b-instruct-q4_0.gguf")).toBe("Nemotron");
+      expect(extractParams("nemotron-5b-instruct-q4_0.gguf")).toBe("5B");
+      expect(extractQuantization("nemotron-5b-instruct-q4_0.gguf")).toBe("Q4_0");
     });
 
     test("should parse IQ quantization pattern", () => {
