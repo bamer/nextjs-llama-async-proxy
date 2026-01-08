@@ -39,6 +39,9 @@
 /* Logs */
 @import "pages/logs/viewer.css";
 
+/* Presets */
+@import "pages/presets/presets.css";
+
 /* Responsive */
 @media (max-width: 768px) {
   .sidebar {

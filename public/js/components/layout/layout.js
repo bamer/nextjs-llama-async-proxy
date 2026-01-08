@@ -49,6 +49,12 @@ class Sidebar extends Component {
         ),
         Component.h(
           "a",
+          { href: "/presets", className: "nav-link", "data-page": "presets" },
+          Component.h("span", {}, "⚡"),
+          Component.h("span", {}, "Presets")
+        ),
+        Component.h(
+          "a",
           { href: "/logs", className: "nav-link", "data-page": "logs" },
           Component.h("span", {}, "📋"),
           Component.h("span", {}, "Logs")
@@ -182,6 +188,7 @@ class Header extends Component {
     const titles = {
       "/": "Dashboard",
       "/models": "Models",
+      "/presets": "Presets",
       "/logs": "Logs",
       "/settings": "Settings",
     };
