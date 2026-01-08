@@ -82,6 +82,7 @@ class MemoryChart {
             beginAtZero: true,
             max: 100,
             ticks: {
+              stepSize: 25,
               callback: function (value) {
                 return value.toFixed(0) + "%";
               },
@@ -96,7 +97,10 @@ class MemoryChart {
             display: true,
             labels: {
               usePointStyle: true,
+              pointStyle: "circle",
               padding: 15,
+              font: { size: 12, weight: "500" },
+              color: colors.textColor,
             },
           },
         },

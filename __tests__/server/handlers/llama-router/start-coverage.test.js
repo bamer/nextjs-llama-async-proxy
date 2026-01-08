@@ -355,7 +355,7 @@ describe("Llama Router Start Handler - Additional Coverage", () => {
       );
 
       expect(sourceCode).toContain(
-        "return { success: false, error: `llama-server exited with code ${llamaServerProcess.exitCode}` }"
+        "error: `llama-server exited with code ${llamaServerProcess.exitCode}`"
       );
     });
 

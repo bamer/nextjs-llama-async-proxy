@@ -74,12 +74,29 @@ class UsageChart {
       },
       options: configBuilder.buildCommonOptions({
         scales: configBuilder.buildScalesOptions({
-          y: { max: 100 },
+          y: {
+            max: 100,
+            ticks: {
+              callback: function (value) {
+                return value.toFixed(0) + "%";
+              },
+            },
+          },
         }),
         plugins: {
           tooltip: configBuilder.buildTooltipOptions(
             (context) => `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`
           ),
+          legend: {
+            display: true,
+            labels: {
+              usePointStyle: true,
+              pointStyle: "circle",
+              padding: 15,
+              font: { size: 12, weight: "500" },
+              color: colors.textColor,
+            },
+          },
         },
       }),
     });
