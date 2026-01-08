@@ -34,36 +34,7 @@ class SettingsPage extends Component {
     };
   }
 
-  async didMount() {
-    this.unsubscribers = [];
-    this.routerCardUpdater = null;
 
-    // Provide subscription callback to RouterCard
-    if (this.routerCardComponent) {
-      this.routerCardComponent.props.subscribeToUpdates = (callback) => {
-        this.routerCardUpdater = callback;
-      };
-    }
-
-    this.unsubscribers.push(
-      stateManager.subscribe("routerStatus", (rs) => {
-        this.setState({ routerStatus: rs });
-      })
-    );
-    this.unsubscribers.push(
-      stateManager.subscribe("llamaStatus", (ls) => {
-        this.setState({ llamaStatus: ls });
-        // Notify RouterCard of status update
-        if (this.routerCardUpdater) {
-          this.routerCardUpdater(ls);
-        }
-      })
-    );
-  }
-
-  willDestroy() {
-    this.unsubscribers?.forEach((unsub) => unsub());
-  }
 
   async _save() {
     const btn = this._el?.querySelector('[data-action="save"]');
@@ -124,46 +95,10 @@ class SettingsPage extends Component {
     }
   }
 
-  async _refreshStatus() {
-    try {
-      const rs = await stateManager.getRouterStatus();
-      stateManager.set("routerStatus", rs.routerStatus);
-      this.setState({ routerStatus: rs.routerStatus });
-    } catch (e) {
-      // Ignore status refresh errors
-    }
-  }
-
   getEventMap() {
     return {
-      "click [data-action=start]": "handleStart",
-      "click [data-action=stop]": "handleStop",
-      "click [data-action=restart]": "handleRestart",
       "click [data-action=save]": "handleSave",
     };
-  }
-
-  handleStart(event) {
-    event.preventDefault();
-    stateManager.startLlama();
-    showNotification("Starting router...", "info");
-    setTimeout(() => this._refreshStatus(), 2000);
-  }
-
-  handleStop(event) {
-    event.preventDefault();
-    if (!confirm("Stop router?")) return;
-    stateManager.stopLlama();
-    showNotification("Router stopped", "success");
-    stateManager.set("routerStatus", null);
-    this.setState({ routerStatus: null });
-  }
-
-  handleRestart(event) {
-    event.preventDefault();
-    stateManager.restartLlama();
-    showNotification("Restarting...", "info");
-    setTimeout(() => this._refreshStatus(), 3000);
   }
 
   handleSave(event) {
@@ -187,13 +122,7 @@ class SettingsPage extends Component {
         models: this.state.models || [],
         configPort: this.state.port,
         onAction: (action) => {
-          if (action === "start") {
-            this.handleStart({ preventDefault: () => {} });
-          } else if (action === "stop") {
-            this.handleStop({ preventDefault: () => {} });
-          } else if (action === "restart") {
-            this.handleRestart({ preventDefault: () => {} });
-          }
+          this.props.controller?.handleRouterAction(action);
         },
       }),
       Component.h(window.RouterConfig, {
