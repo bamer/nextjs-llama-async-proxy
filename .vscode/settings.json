@@ -10,9 +10,16 @@
   "jest.useSeparateOutputChannel": true,
   "jest.enableInlineErrorMessages": true,
   "jest.enableSnapshotPreview": true,
+  "jest.showCoverageOnLoad": false,
+  "jest.showCoverageLettermarks": true,
   "editor.codeLens": true,
   "testing.showTestOutput": "always",
   "testing.showTestResults": "always",
   "testing.showTestCoverage": true,
-  "testing.autoRun": "watch"
+  "testing.autoRun": "watch",
+  "[javascript]": {
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    }
+  }
 }

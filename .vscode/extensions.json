@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "orta.vscode-jest",
+    "firsttris.vscode-jest-runner",
+    "firsttris.vscode-jest-runner",
+    "wallaby.wallaby-vscode",
+    "ryanluker.vscode-coverage-gutters",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-vscode.makefile-tools"
+  ]
+}

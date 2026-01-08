@@ -27,7 +27,22 @@ export default {
     "!**/coverage/**",
   ],
   coverageDirectory: "coverage",
-  coverageReporters: ["text", "lcov", "html", "json-summary"],
+  coverageReporters: [
+    "text",
+    "text-summary",
+    "lcov",
+    "html",
+    "json-summary",
+    "json",
+  ],
+  coverageThreshold: {
+    global: {
+      lines: 80,
+      functions: 80,
+      branches: 80,
+      statements: 80,
+    },
+  },
   testTimeout: 30000,
   verbose: false,
   moduleNameMapper: {
