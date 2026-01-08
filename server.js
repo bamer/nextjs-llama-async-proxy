@@ -59,6 +59,36 @@ async function startMetrics(io, db) {
         idle: c.times.idle,
       }));
 
+      // Get system memory usage (as percentage)
+      // Use (total - available) to account for cached memory
+      let memoryUsedPercent = 0;
+      let swapUsedPercent = 0;
+      try {
+        const memInfo = await si.mem();
+        if (memInfo) {
+          // Calculate real memory usage: total - available
+          const actualUsed = memInfo.total - memInfo.available;
+          memoryUsedPercent = Math.round((actualUsed / memInfo.total) * 1000) / 10;
+
+          // Calculate swap usage
+          if (memInfo.swaptotal > 0) {
+            swapUsedPercent = Math.round((memInfo.swapused / memInfo.swaptotal) * 1000) / 10;
+          }
+
+          console.log("[DEBUG] Memory metrics collected:", {
+            total: (memInfo.total / 1024 / 1024 / 1024).toFixed(2) + " GB",
+            used: (actualUsed / 1024 / 1024 / 1024).toFixed(2) + " GB",
+            available: (memInfo.available / 1024 / 1024 / 1024).toFixed(2) + " GB",
+            percent: memoryUsedPercent,
+            swapUsed: (memInfo.swapused / 1024 / 1024 / 1024).toFixed(2) + " GB",
+            swapTotal: (memInfo.swaptotal / 1024 / 1024 / 1024).toFixed(2) + " GB",
+            swapPercent: swapUsedPercent,
+          });
+        }
+      } catch (e) {
+        console.log("[DEBUG] Memory data not available:", e.message);
+      }
+
       // Get disk usage for root drive
       let diskUsedPercent = 0;
       try {
@@ -118,7 +148,8 @@ async function startMetrics(io, db) {
       // Save metrics
       db.saveMetrics({
         cpu_usage: Math.round(cpuUsage * 10) / 10,
-        memory_usage: mem.heapUsed,
+        memory_usage: memoryUsedPercent,
+        swap_usage: swapUsedPercent,
         disk_usage: diskUsedPercent,
         uptime: process.uptime(),
         gpu_usage: Math.round(gpuUsage * 10) / 10,
@@ -132,7 +163,8 @@ async function startMetrics(io, db) {
         data: {
           metrics: {
             cpu: { usage: cpuUsage },
-            memory: { used: mem.heapUsed },
+            memory: { used: memoryUsedPercent },
+            swap: { used: swapUsedPercent },
             disk: { used: diskUsedPercent },
             gpu: {
               usage: gpuUsage,

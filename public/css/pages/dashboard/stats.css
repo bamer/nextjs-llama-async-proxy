@@ -1,19 +1,20 @@
 /* Stats Grid */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: var(--md);
   margin-bottom: var(--lg);
+  width: 100%;
 }
 
 .stat-card {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
-  padding: var(--md);
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: var(--sm);
+  gap: 3px;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -50,37 +51,39 @@
 }
 
 .stat-icon {
-  font-size: 1.75rem;
+  font-size: 1.25rem;
   display: inline-block;
+  line-height: 1;
 }
 
 .stat-content {
   display: flex;
   flex-direction: column;
-  gap: var(--sm);
+  gap: 2px;
 }
 
 .stat-label {
-  font-size: 0.875rem;
+  font-size: 0.65rem;
   color: var(--text-secondary);
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.2px;
+  line-height: 1;
 }
 
 .stat-value {
-  font-size: 1.5rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text-primary);
-  line-height: 1.2;
+  line-height: 1.1;
 }
 
 .stat-bar {
-  height: 6px;
+  height: 4px;
   background: var(--bg-tertiary);
-  border-radius: 3px;
+  border-radius: 2px;
   overflow: hidden;
-  margin-top: var(--sm);
+  margin-top: 2px;
 }
 
 .stat-bar-fill {

@@ -22,6 +22,7 @@ export function registerMetricsHandlers(socket, db) {
       const metrics = {
         cpu: { usage: m.cpu_usage || 0 },
         memory: { used: m.memory_usage || 0 },
+        swap: { used: m.swap_usage || 0 },
         disk: { used: m.disk_usage || 0 },
         gpu: {
           usage: m.gpu_usage || 0,
@@ -46,6 +47,7 @@ export function registerMetricsHandlers(socket, db) {
       const history = db.getMetricsHistory(req?.limit || 100).map((m) => ({
         cpu: { usage: m.cpu_usage || 0 },
         memory: { used: m.memory_usage || 0 },
+        swap: { used: m.swap_usage || 0 },
         disk: { used: m.disk_usage || 0 },
         gpu: {
           usage: m.gpu_usage || 0,

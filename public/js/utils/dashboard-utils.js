@@ -38,20 +38,21 @@ function _calculateStatsForType(history, type) {
 function _getHealthStatus(metrics) {
   const cpuOk = (metrics?.cpu?.usage || 0) <= 80;
   const memoryOk = (metrics?.memory?.used || 0) <= 85;
+  const swapOk = (metrics?.swap?.used || 0) <= 50;
   const diskOk = (metrics?.disk?.used || 0) <= 90;
   const gpuOk = !metrics?.gpu || (metrics.gpu.usage || 0) <= 85;
 
-  if (cpuOk && memoryOk && diskOk && gpuOk) {
+  if (cpuOk && memoryOk && swapOk && diskOk && gpuOk) {
     return {
       status: "good",
       message: "All systems operational",
-      checks: { cpuOk, memoryOk, diskOk, gpuOk },
+      checks: { cpuOk, memoryOk, swapOk, diskOk, gpuOk },
     };
   }
   return {
     status: "warning",
     message: "Some systems need attention",
-    checks: { cpuOk, memoryOk, diskOk, gpuOk },
+    checks: { cpuOk, memoryOk, swapOk, diskOk, gpuOk },
   };
 }
 

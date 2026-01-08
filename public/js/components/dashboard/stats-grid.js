@@ -53,6 +53,13 @@ class StatsGrid extends Component {
         warning: m.memory?.used > 85,
       },
       {
+        icon: "💨",
+        label: "Swap Usage",
+        value: `${(m.swap?.used || 0).toFixed(1)}%`,
+        percent: Math.min(m.swap?.used || 0, 100),
+        warning: m.swap?.used > 50,
+      },
+      {
         icon: "🎮",
         label: "GPU Usage",
         value: `${(gpu?.usage || 0).toFixed(1)}%`,

@@ -5,6 +5,7 @@ class DashboardPage extends Component {
     const metrics = props.metrics || {
       cpu: { usage: 0 },
       memory: { used: 0 },
+      swap: { used: 0 },
       gpu: null,
       disk: { used: 0 },
       uptime: 0,
