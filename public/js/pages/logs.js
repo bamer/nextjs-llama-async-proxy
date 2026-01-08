@@ -81,6 +81,20 @@ class LogsPage extends Component {
   constructor(props) {
     super(props);
     this.state = { logs: props.logs || [], filters: { level: "all", search: "" } };
+    this.lastSearchValue = "";
+    this.lastLevelValue = "all";
+  }
+
+  didUpdate() {
+    // Restore focus and cursor position to search input after update
+    const searchInput = this._el?.querySelector('[data-field="search"]');
+    if (searchInput && document.activeElement === searchInput) {
+      // Focus already restored by browser, no action needed
+    } else if (searchInput && this.lastSearchValue === this.state.filters.search) {
+      // Only restore if value hasn't changed (user is still typing)
+      searchInput.focus();
+      searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+    }
   }
 
   render() {
@@ -114,6 +128,7 @@ class LogsPage extends Component {
           placeholder: "Search logs...",
           "data-field": "search",
           value: this.state.filters.search,
+          autoComplete: "off",
         })
       ),
       Component.h(
@@ -168,19 +183,17 @@ class LogsPage extends Component {
 
   getEventMap() {
     return {
-      "change [data-field=level]": "onLevelChange",
-      "input [data-field=search]": "onSearchChange",
+      "input [data-field=search]": (e) => {
+        this.lastSearchValue = e.target.value;
+        this.setState({ filters: { ...this.state.filters, search: e.target.value } });
+      },
+      "change [data-field=level]": (e) => {
+        this.lastLevelValue = e.target.value;
+        this.setState({ filters: { ...this.state.filters, level: e.target.value } });
+      },
       "click [data-action=clear]": "onClear",
       "click [data-action=export]": "onExport",
     };
-  }
-
-  onLevelChange(e) {
-    this.setState({ filters: { ...this.state.filters, level: e.target.value } });
-  }
-
-  onSearchChange(e) {
-    this.setState({ filters: { ...this.state.filters, search: e.target.value } });
   }
 
   onClear() {
