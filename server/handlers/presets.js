@@ -66,6 +66,54 @@ function generateIni(config) {
 }
 
 /**
+ * Get default parameters (all available llama.cpp router parameters)
+ */
+function getDefaultParameters() {
+  return {
+    // Model file path
+    model: "",
+
+    // Context and memory
+    "ctx-size": 2048,
+    "ctx-checkpoints": 8,
+
+    // GPU offloading
+    "n-gpu-layers": 0,
+    "split-mode": "none",
+    "tensor-split": null,
+    "main-gpu": 0,
+
+    // Performance tuning
+    threads: 0,
+    batch: 512,
+    ubatch: 512,
+    "threads-http": 1,
+
+    // Sampling parameters
+    temp: 0.7,
+    seed: -1,
+    "samplers": "penalties;dry;top_n_sigma;top_k;typ_p;top_p;min_p;xtc;temperature",
+    "mirostat": 0,
+    "mirostat-lr": 0.1,
+    "mirostat-ent": 5.0,
+
+    // Speculative decoding
+    "draft-min": 5,
+    "draft-max": 10,
+    "draft-p-min": 0.8,
+
+    // Server settings
+    "cache-ram": 8192,
+
+    // Router-specific
+    "load-on-startup": false,
+
+    // Advanced
+    "mmp": null,
+  };
+}
+
+/**
  * Convert model config object to INI format
  */
 function modelToIniSection(modelName, config) {
@@ -81,25 +129,46 @@ function modelToIniSection(modelName, config) {
   if (config.batchSize !== undefined) section["batch"] = String(config.batchSize);
   if (config.ubatchSize !== undefined) section["ubatch"] = String(config.ubatchSize);
   if (config.tensorSplit) section["tensor-split"] = config.tensorSplit;
+  if (config.splitMode) section["split-mode"] = config.splitMode;
+  if (config.mainGpu !== undefined) section["main-gpu"] = String(config.mainGpu);
   if (config.mmp) section["mmp"] = config.mmp;
+  if (config.seed !== undefined) section["seed"] = String(config.seed);
+  if (config.loadOnStartup !== undefined) section["load-on-startup"] = String(config.loadOnStartup);
 
   return section;
 }
 
 /**
- * Convert INI section to model config object
+ * Convert INI section to model config object with inheritance from defaults
  */
-function iniSectionToModel(section) {
+function iniSectionToModel(section, defaultsSection = {}) {
+  const fullDefaults = getDefaultParameters();
+  const mergedDefaults = { ...fullDefaults, ...defaultsSection };
+
   return {
-    model: section.model || "",
-    ctxSize: section["ctx-size"] ? parseInt(section["ctx-size"]) : 2048,
-    temperature: section.temp ? parseFloat(section.temp) : 0.7,
-    nGpuLayers: section["n-gpu-layers"] ? parseInt(section["n-gpu-layers"]) : 0,
-    threads: section.threads ? parseInt(section.threads) : 0,
-    batchSize: section.batch ? parseInt(section.batch) : 512,
-    ubatchSize: section.ubatch ? parseInt(section.ubatch) : 512,
-    tensorSplit: section["tensor-split"] || null,
-    mmp: section.mmp || null,
+    model: section.model || mergedDefaults.model || "",
+    ctxSize: section["ctx-size"]
+      ? parseInt(section["ctx-size"])
+      : mergedDefaults["ctx-size"],
+    temperature: section.temp
+      ? parseFloat(section.temp)
+      : mergedDefaults.temp,
+    nGpuLayers: section["n-gpu-layers"]
+      ? parseInt(section["n-gpu-layers"])
+      : mergedDefaults["n-gpu-layers"],
+    threads: section.threads ? parseInt(section.threads) : mergedDefaults.threads,
+    batchSize: section.batch ? parseInt(section.batch) : mergedDefaults.batch,
+    ubatchSize: section.ubatch ? parseInt(section.ubatch) : mergedDefaults.ubatch,
+    tensorSplit: section["tensor-split"] || mergedDefaults["tensor-split"] || null,
+    splitMode: section["split-mode"] || mergedDefaults["split-mode"] || "none",
+    mainGpu: section["main-gpu"]
+      ? parseInt(section["main-gpu"])
+      : mergedDefaults["main-gpu"],
+    mmp: section.mmp || mergedDefaults.mmp || null,
+    seed: section.seed ? parseInt(section.seed) : mergedDefaults.seed,
+    loadOnStartup: section["load-on-startup"]
+      ? section["load-on-startup"].toLowerCase() === "true"
+      : mergedDefaults["load-on-startup"],
   };
 }
 
@@ -242,23 +311,40 @@ function validateIni(content) {
 }
 
 /**
- * Get all models from a preset
+ * Get all models from a preset with inheritance from "*" defaults
  */
 function getModelsFromPreset(filename) {
   try {
     const { parsed } = readPreset(filename);
     const models = {};
+    const defaultsSection = parsed["*"] || {};
 
     for (const [section, params] of Object.entries(parsed)) {
-      if (section === "LLAMA_CONFIG_VERSION") continue;
-      models[section] = iniSectionToModel(params);
+      if (section === "LLAMA_CONFIG_VERSION" || section === "*") continue;
+      models[section] = iniSectionToModel(params, defaultsSection);
     }
 
-    console.log("[DEBUG] Models loaded from preset:", { filename, count: Object.keys(models).length });
+    console.log("[DEBUG] Models loaded from preset:", {
+      filename,
+      count: Object.keys(models).length,
+      hasDefaults: Boolean(defaultsSection),
+    });
 
     return models;
   } catch (error) {
     throw new Error(`Failed to get models: ${error.message}`);
+  }
+}
+
+/**
+ * Get the "*" defaults section from a preset
+ */
+function getPresetsDefaults(filename) {
+  try {
+    const { parsed } = readPreset(filename);
+    return iniSectionToModel(parsed["*"] || {}, {});
+  } catch (error) {
+    throw new Error(`Failed to get preset defaults: ${error.message}`);
   }
 }
 
@@ -452,6 +538,48 @@ export function registerPresetsHandlers(socket, db) {
       if (typeof ack === "function") ack(response);
     } catch (error) {
       console.error("[DEBUG] Error in presets:remove-model:", error.message);
+      const response = { success: false, error: { message: error.message } };
+      if (typeof ack === "function") ack(response);
+    }
+  });
+
+  socket.on("presets:get-defaults", async (data, ack) => {
+    console.log("[DEBUG] Event: presets:get-defaults", { filename: data.filename });
+    try {
+      const { filename } = data;
+      const defaults = getPresetsDefaults(filename);
+      const response = { success: true, data: { defaults } };
+      if (typeof ack === "function") ack(response);
+    } catch (error) {
+      console.error("[DEBUG] Error in presets:get-defaults:", error.message);
+      const response = { success: false, error: { message: error.message } };
+      if (typeof ack === "function") ack(response);
+    }
+  });
+
+  socket.on("presets:update-defaults", async (data, ack) => {
+    console.log("[DEBUG] Event: presets:update-defaults", { filename: data.filename });
+    try {
+      const { filename, config } = data;
+      const preset = readPreset(filename);
+      const iniSection = modelToIniSection("*", config);
+
+      preset.parsed["*"] = iniSection;
+      savePreset(filename, preset.parsed);
+
+      console.log("[DEBUG] Preset defaults updated:", { filename });
+      logger.info(`Preset defaults updated: ${filename}`);
+
+      const response = {
+        success: true,
+        data: {
+          filename,
+          defaults: iniSectionToModel(iniSection, {}),
+        },
+      };
+      if (typeof ack === "function") ack(response);
+    } catch (error) {
+      console.error("[DEBUG] Error in presets:update-defaults:", error.message);
       const response = { success: false, error: { message: error.message } };
       if (typeof ack === "function") ack(response);
     }

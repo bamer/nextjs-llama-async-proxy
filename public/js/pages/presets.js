@@ -1,6 +1,6 @@
 /**
- * Presets Page - INI Configuration Management
- * Manage llama.cpp router mode model presets via WebSocket
+ * Presets Page - Hierarchical Preset Management
+ * Global Defaults → Groups → Models
  */
 
 class PresetsController {
@@ -20,11 +20,11 @@ class PresetsController {
   }
 
   init() {
-    console.log("[PRESETS] PresetsController.init() called");
+    console.log("[PRESETS] PresetsController.init()");
   }
 
   willUnmount() {
-    console.log("[PRESETS] PresetsController.willUnmount() called");
+    console.log("[PRESETS] PresetsController.willUnmount()");
     this.unsubscribers.forEach((unsub) => unsub());
   }
 
@@ -39,21 +39,15 @@ class PresetsController {
     console.log("[PRESETS] PresetsController.render() START");
     const service = this._ensureService();
     if (!service) {
-      console.error("[PRESETS] Socket not ready, will retry");
-      // Return empty element, will retry when socket connects
-      const presets = stateManager.get("presets") || [];
-      this.comp = new PresetsPage({
-        presets,
-        presetsService: null,
-        controller: this,
-      });
+      console.error("[PRESETS] Socket not ready");
+      this.comp = new PresetsPage({ presetsService: null, controller: this });
       const el = this.comp.render();
       this.comp._el = el;
       el._component = this.comp;
       this.comp.bindEvents();
-      console.log("[PRESETS] PresetsController.render() END (socket not ready)");
       return el;
     }
+
     await this.load();
     const presets = stateManager.get("presets") || [];
     this.comp = new PresetsPage({
@@ -70,16 +64,14 @@ class PresetsController {
   }
 
   didMount() {
-    console.log("[PRESETS] PresetsController.didMount() called");
+    console.log("[PRESETS] PresetsController.didMount()");
     if (this.comp && this.comp.didMount) {
       this.comp.didMount();
     }
-    // If socket wasn't ready on render, wait for it to connect
     if (!this.presetsService) {
-      console.log("[PRESETS] Waiting for socket to connect");
       const checkSocket = () => {
         if (window.socketClient?.socket?.connected) {
-          console.log("[PRESETS] Socket now available, loading presets");
+          console.log("[PRESETS] Socket ready, loading presets");
           this._ensureService();
           this.loadPresetsData();
         } else {
@@ -88,7 +80,6 @@ class PresetsController {
       };
       checkSocket();
     } else {
-      // Socket was ready during render
       this.loadPresetsData();
     }
   }
@@ -106,7 +97,7 @@ class PresetsController {
       }
     } catch (error) {
       console.error("[PRESETS] Load error:", error.message);
-      showNotification(`Failed to load presets: ${  error.message}`, "error");
+      showNotification(`Failed to load presets: ${error.message}`, "error");
     }
   }
 
@@ -118,7 +109,7 @@ class PresetsController {
       stateManager.set("presets", presets);
     } catch (error) {
       console.error("[PRESETS] Load error:", error.message);
-      showNotification(`Failed to load presets: ${  error.message}`, "error");
+      showNotification(`Failed to load presets: ${error.message}`, "error");
       stateManager.set("presets", []);
     }
   }
@@ -130,22 +121,16 @@ class PresetsPage extends Component {
     this.state = {
       presets: props.presets || [],
       selectedPreset: null,
-      selectedPresetName: null,
-      showCreateModal: false,
+      showGlobalModal: false,
+      showGroupModal: false,
       showModelModal: false,
-      newPresetName: "",
-      newModelName: "",
-      modelForm: {
-        model: "",
-        ctxSize: "2048",
-        temperature: "0.7",
-        nGpuLayers: "0",
-        threads: "0",
-        batchSize: "512",
-      },
+      globalDefaults: null,
+      groups: [],
+      currentGroup: null,
+      currentModel: null,
+      editingGroup: null,
       editingModel: null,
       loading: false,
-      models: {},
     };
     this.presetsService = props.presetsService;
     this.controller = props.controller;
@@ -156,211 +141,336 @@ class PresetsPage extends Component {
       "div",
       { className: "presets-page" },
       this.renderHeader(),
-      this.renderContent()
+      this.renderContent(),
+      this.renderModals()
     );
   }
 
   renderHeader() {
     return Component.h(
       "div",
-      { className: "page-header" },
-      Component.h("h1", {}, "Model Presets"),
+      { className: "presets-header" },
       Component.h(
-        "p",
-        { className: "subtitle" },
-        "Create and manage llama.cpp router mode configuration presets"
+        "div",
+        { className: "presets-header-content" },
+        Component.h("h1", { className: "presets-title" }, "Model Presets"),
+        Component.h(
+          "p",
+          { className: "presets-subtitle" },
+          "Configure llama.cpp parameters with global defaults, groups, and per-model settings"
+        )
       ),
       Component.h(
-        "button",
-        {
-          className: "btn btn-primary",
-          "data-action": "new-preset",
-        },
-        "+ New Preset"
+        "div",
+        { className: "presets-header-actions" },
+        Component.h(
+          "button",
+          {
+            className: "btn btn-primary btn-sm",
+            "data-action": "new-preset",
+          },
+          "+ New Preset"
+        )
       )
     );
   }
 
   renderContent() {
-    return Component.h(
-      "div",
-      { className: "presets-content" },
-      this.renderPresetsList(),
-      this.renderPresetDetail(),
-      this.renderModals()
-    );
-  }
-
-  renderPresetsList() {
     const presets = this.state.presets;
 
     if (presets.length === 0) {
       return Component.h(
         "div",
-        { className: "presets-list" },
+        { className: "presets-empty-state" },
         Component.h(
           "div",
-          { className: "presets-empty" },
-          Component.h("p", {}, "No presets yet. Click '+ New Preset' to create one.")
+          { className: "empty-icon" },
+          "⚙"
+        ),
+        Component.h("h2", {}, "No Presets Yet"),
+        Component.h(
+          "p",
+          {},
+          "Create your first preset to get started"
+        ),
+        Component.h(
+          "button",
+          { className: "btn btn-primary", "data-action": "new-preset" },
+          "Create First Preset"
         )
       );
     }
 
     return Component.h(
       "div",
-      { className: "presets-list" },
-      presets.map((preset) =>
+      { className: "presets-container" },
+      this.renderPresetSelector(),
+      this.state.selectedPreset ? this.renderPresetEditor() : this.renderSelectPrompt()
+    );
+  }
+
+  renderSelectPrompt() {
+    return Component.h(
+      "div",
+      { className: "presets-prompt" },
+      Component.h("div", { className: "prompt-icon" }, "→"),
+      Component.h("p", {}, "Select a preset to edit")
+    );
+  }
+
+  renderPresetSelector() {
+    return Component.h(
+      "div",
+      { className: "presets-sidebar" },
+      this.state.presets.map((preset) =>
         Component.h(
           "div",
           {
-            className: `preset-item ${
-              this.state.selectedPresetName === preset.name ? "active" : ""
-            }`,
-            "data-preset-name": preset.name,
+            className: `preset-card ${this.state.selectedPreset?.name === preset.name ? "active" : ""}`,
             "data-action": "select-preset",
+            "data-preset-name": preset.name,
           },
-          Component.h("div", { className: "preset-name" }, preset.name),
+          Component.h(
+            "div",
+            { className: "preset-card-main" },
+            Component.h("span", { className: "preset-name" }, preset.name)
+          ),
           Component.h(
             "button",
             {
-              className: "btn btn-small btn-danger",
+              className: "preset-delete",
               "data-action": "delete-preset",
               "data-preset-name": preset.name,
+              title: "Delete preset",
             },
             "×"
           )
         )
-      )
-    );
-  }
-
-  renderPresetDetail() {
-    const preset = this.state.selectedPreset;
-
-    if (!preset) {
-      return Component.h(
-        "div",
-        { className: "preset-detail empty" },
-        Component.h("p", {}, "Select a preset or create a new one")
-      );
-    }
-
-    const models = this.state.models;
-    const modelCount = Object.keys(models).length;
-
-    return Component.h(
-      "div",
-      { className: "preset-detail" },
-      Component.h(
-        "div",
-        { className: "detail-header" },
-        Component.h("h2", {}, preset.name),
-        Component.h("p", { className: "model-count" }, `${modelCount} model(s)`)
       ),
       Component.h(
         "button",
         {
-          className: "btn btn-success",
-          "data-action": "add-model",
+          className: "preset-add-btn",
+          "data-action": "new-preset",
         },
-        "+ Add Model"
-      ),
-      this.renderModelsList(models),
-      this.renderPresetActions(preset)
+        "+ Add Preset"
+      )
     );
   }
 
-  renderModelsList(models) {
-    const modelEntries = Object.entries(models);
-
-    if (modelEntries.length === 0) {
-      return Component.h(
-        "div",
-        { className: "models-empty" },
-        Component.h("p", {}, "No models in this preset")
-      );
-    }
+  renderPresetEditor() {
+    const preset = this.state.selectedPreset;
+    const groups = this.state.groups || [];
 
     return Component.h(
       "div",
-      { className: "models-table" },
+      { className: "presets-editor" },
       Component.h(
-        "table",
-        {},
+        "div",
+        { className: "editor-section" },
+        this.renderGlobalDefaults(),
+        this.renderGroupsList(groups)
+      )
+    );
+  }
+
+  renderGlobalDefaults() {
+    const defaults = this.state.globalDefaults;
+
+    return Component.h(
+      "div",
+      { className: "section-card global-section" },
+      Component.h(
+        "div",
+        { className: "section-header" },
+        Component.h("div", { className: "section-icon" }, "⭐"),
         Component.h(
-          "thead",
-          {},
+          "div",
+          { className: "section-title-group" },
+          Component.h("h2", { className: "section-title" }, "Global Defaults"),
           Component.h(
-            "tr",
-            {},
-            Component.h("th", {}, "Model Name"),
-            Component.h("th", {}, "Path"),
-            Component.h("th", {}, "Context Size"),
-            Component.h("th", {}, "GPU Layers"),
-            Component.h("th", {}, "Actions")
+            "p",
+            { className: "section-desc" },
+            "Applied to all groups and models unless overridden"
           )
         ),
         Component.h(
-          "tbody",
-          {},
-          modelEntries.map(([name, config]) =>
-            Component.h(
-              "tr",
-              {},
-              Component.h("td", {}, name),
-              Component.h("td", { className: "path" }, config.model || ""),
-              Component.h("td", {}, config.ctxSize || ""),
-              Component.h("td", {}, config.nGpuLayers || ""),
-              Component.h(
-                "td",
-                { className: "actions" },
-                Component.h(
-                  "button",
-                  {
-                    className: "btn btn-small btn-info",
-                    "data-action": "edit-model",
-                    "data-model-name": name,
-                  },
-                  "Edit"
-                ),
-                Component.h(
-                  "button",
-                  {
-                    className: "btn btn-small btn-danger",
-                    "data-action": "delete-model",
-                    "data-model-name": name,
-                  },
-                  "Delete"
-                )
-              )
-            )
-          )
+          "button",
+          {
+            className: "btn btn-outline btn-sm",
+            "data-action": "edit-defaults",
+          },
+          "Edit"
         )
+      ),
+      defaults
+        ? Component.h(
+            "div",
+            { className: "defaults-summary" },
+            this.renderDefaultsSummary(defaults)
+          )
+        : Component.h(
+            "div",
+            { className: "empty-summary" },
+            "No defaults set"
+          )
+    );
+  }
+
+  renderDefaultsSummary(defaults) {
+    const items = [
+      { label: "Context Size", value: defaults.ctxSize || "—" },
+      { label: "Temperature", value: defaults.temperature || "—" },
+      { label: "GPU Layers", value: defaults.nGpuLayers || "—" },
+      { label: "Threads", value: defaults.threads || "—" },
+      { label: "Batch Size", value: defaults.batchSize || "—" },
+    ];
+
+    return items.map((item) =>
+      Component.h(
+        "div",
+        { className: "summary-item" },
+        Component.h("span", { className: "label" }, item.label),
+        Component.h("span", { className: "value" }, String(item.value))
       )
     );
   }
 
-  renderPresetActions(preset) {
+  renderGroupsList(groups) {
     return Component.h(
       "div",
-      { className: "preset-actions" },
+      { className: "groups-section" },
+      Component.h(
+        "div",
+        { className: "section-card groups-header" },
+        Component.h("div", { className: "section-icon" }, "📦"),
+        Component.h(
+          "div",
+          { className: "section-title-group" },
+          Component.h("h2", { className: "section-title" }, "Groups"),
+          Component.h(
+            "p",
+            { className: "section-desc" },
+            "Organize models into groups with shared settings"
+          )
+        ),
+        Component.h(
+          "button",
+          {
+            className: "btn btn-outline btn-sm",
+            "data-action": "new-group",
+          },
+          "+ Add Group"
+        )
+      ),
+      groups.length === 0
+        ? Component.h(
+            "div",
+            { className: "section-card empty-groups" },
+            Component.h("p", {}, "No groups yet. Create one to get started.")
+          )
+        : groups.map((group) => this.renderGroupCard(group))
+    );
+  }
+
+  renderGroupCard(group) {
+    const models = group.models || [];
+
+    return Component.h(
+      "div",
+      { className: "section-card group-card" },
+      Component.h(
+        "div",
+        { className: "group-header" },
+        Component.h("div", { className: "group-title-area" },
+          Component.h("h3", { className: "group-name" }, group.name),
+          Component.h(
+            "p",
+            { className: "group-desc" },
+            `${models.length} model${models.length !== 1 ? "s" : ""}`
+          )
+        ),
+        Component.h(
+          "div",
+          { className: "group-actions" },
+          Component.h(
+            "button",
+            {
+              className: "btn btn-outline btn-sm",
+              "data-action": "edit-group",
+              "data-group-name": group.name,
+            },
+            "Edit"
+          ),
+          Component.h(
+            "button",
+            {
+              className: "btn btn-danger btn-sm",
+              "data-action": "delete-group",
+              "data-group-name": group.name,
+            },
+            "Delete"
+          )
+        )
+      ),
+      models.length > 0
+        ? Component.h(
+            "div",
+            { className: "models-list" },
+            Component.h("div", { className: "models-header" }, "Models"),
+            models.map((model) => this.renderModelItem(model, group.name))
+          )
+        : null,
       Component.h(
         "button",
         {
-          className: "btn btn-secondary",
-          "data-action": "download-preset",
-          "data-preset-name": preset.name,
+          className: "btn btn-text btn-sm add-model-btn",
+          "data-action": "new-model",
+          "data-group-name": group.name,
         },
-        "⬇ Download"
+        "+ Add Model"
+      )
+    );
+  }
+
+  renderModelItem(model, groupName) {
+    return Component.h(
+      "div",
+      { className: "model-item" },
+      Component.h("div", { className: "model-icon" }, "🤖"),
+      Component.h(
+        "div",
+        { className: "model-info" },
+        Component.h("span", { className: "model-name" }, model.name || "Unnamed"),
+        Component.h(
+          "span",
+          { className: "model-path" },
+          model.model || "No model set"
+        )
       ),
       Component.h(
-        "button",
-        {
-          className: "btn btn-secondary",
-          "data-action": "copy-command",
-          "data-preset-name": preset.name,
-        },
-        "📋 Copy Command"
+        "div",
+        { className: "model-actions" },
+        Component.h(
+          "button",
+          {
+            className: "btn btn-outline btn-sm",
+            "data-action": "edit-model",
+            "data-group-name": groupName,
+            "data-model-name": model.name,
+          },
+          "Edit"
+        ),
+        Component.h(
+          "button",
+          {
+            className: "btn btn-danger btn-sm",
+            "data-action": "delete-model",
+            "data-group-name": groupName,
+            "data-model-name": model.name,
+          },
+          "×"
+        )
       )
     );
   }
@@ -368,38 +478,37 @@ class PresetsPage extends Component {
   renderModals() {
     return Component.h(
       "div",
-      {},
-      this.state.showCreateModal ? this.renderCreateModal() : null,
+      { className: "modals-container" },
+      this.state.showGlobalModal ? this.renderGlobalModal() : null,
+      this.state.showGroupModal ? this.renderGroupModal() : null,
       this.state.showModelModal ? this.renderModelModal() : null
     );
   }
 
-  renderCreateModal() {
+  renderGlobalModal() {
     return Component.h(
       "div",
       { className: "modal-overlay", "data-action": "close-modal" },
       Component.h(
         "div",
-        { className: "modal", onClick: (e) => e.stopPropagation() },
+        { className: "modal-content" },
         Component.h(
           "div",
           { className: "modal-header" },
-          Component.h("h2", {}, "Create New Preset")
+          Component.h("h2", {}, "Global Defaults"),
+          Component.h(
+            "button",
+            {
+              className: "modal-close",
+              "data-action": "close-modal",
+            },
+            "×"
+          )
         ),
         Component.h(
           "div",
           { className: "modal-body" },
-          Component.h(
-            "div",
-            { className: "form-group" },
-            Component.h("label", {}, "Preset Name:"),
-            Component.h("input", {
-              type: "text",
-              placeholder: "e.g., gpu-heavy",
-              value: this.state.newPresetName,
-              "data-field": "presetName",
-            })
-          )
+          this.renderDefaultsForm()
         ),
         Component.h(
           "div",
@@ -407,8 +516,8 @@ class PresetsPage extends Component {
           Component.h(
             "button",
             {
-              className: "btn btn-secondary",
-              "data-action": "cancel-create",
+              className: "btn btn-outline",
+              "data-action": "close-modal",
             },
             "Cancel"
           ),
@@ -416,108 +525,57 @@ class PresetsPage extends Component {
             "button",
             {
               className: "btn btn-primary",
-              "data-action": "create-preset",
+              "data-action": "save-defaults",
             },
-            "Create"
+            "Save"
           )
         )
       )
     );
   }
 
-  renderModelModal() {
-    const isEditing = !!this.state.editingModel;
+  renderDefaultsForm() {
+    const defaults = this.state.globalDefaults || {};
 
+    return Component.h(
+      "div",
+      { className: "form-group" },
+      this.renderFormField("ctxSize", "Context Size", "number", defaults.ctxSize || 2048),
+      this.renderFormField("temperature", "Temperature", "number", defaults.temperature || 0.7, 0.1),
+      this.renderFormField("nGpuLayers", "GPU Layers", "number", defaults.nGpuLayers || 0),
+      this.renderFormField("threads", "Threads", "number", defaults.threads || 0),
+      this.renderFormField("batchSize", "Batch Size", "number", defaults.batchSize || 512)
+    );
+  }
+
+  renderGroupModal() {
     return Component.h(
       "div",
       { className: "modal-overlay", "data-action": "close-modal" },
       Component.h(
         "div",
-        { className: "modal", onClick: (e) => e.stopPropagation() },
+        { className: "modal-content" },
         Component.h(
           "div",
           { className: "modal-header" },
-          Component.h("h2", {}, isEditing ? "Edit Model" : "Add Model to Preset")
+          Component.h(
+            "h2",
+            {},
+            this.state.editingGroup ? "Edit Group" : "New Group"
+          ),
+          Component.h(
+            "button",
+            {
+              className: "modal-close",
+              "data-action": "close-modal",
+            },
+            "×"
+          )
         ),
         Component.h(
           "div",
           { className: "modal-body" },
-          Component.h(
-            "div",
-            { className: "form-group" },
-            Component.h("label", {}, "Model Name:"),
-            Component.h("input", {
-              type: "text",
-              disabled: isEditing,
-              placeholder: "e.g., gemma-4b",
-              value: this.state.newModelName,
-              "data-field": "modelName",
-            })
-          ),
-          Component.h(
-            "div",
-            { className: "form-group" },
-            Component.h("label", {}, "Model Path:"),
-            Component.h("input", {
-              type: "text",
-              placeholder: "./models/model.gguf",
-              value: this.state.modelForm.model,
-              "data-field": "model",
-            })
-          ),
-          Component.h(
-            "div",
-            { className: "form-group" },
-            Component.h("label", {}, "Context Size:"),
-            Component.h("input", {
-              type: "number",
-              value: this.state.modelForm.ctxSize,
-              "data-field": "ctxSize",
-            })
-          ),
-          Component.h(
-            "div",
-            { className: "form-group" },
-            Component.h("label", {}, "Temperature:"),
-            Component.h("input", {
-              type: "number",
-              step: "0.1",
-              min: "0",
-              max: "2",
-              value: this.state.modelForm.temperature,
-              "data-field": "temperature",
-            })
-          ),
-          Component.h(
-            "div",
-            { className: "form-group" },
-            Component.h("label", {}, "GPU Layers:"),
-            Component.h("input", {
-              type: "number",
-              value: this.state.modelForm.nGpuLayers,
-              "data-field": "nGpuLayers",
-            })
-          ),
-          Component.h(
-            "div",
-            { className: "form-group" },
-            Component.h("label", {}, "Threads:"),
-            Component.h("input", {
-              type: "number",
-              value: this.state.modelForm.threads,
-              "data-field": "threads",
-            })
-          ),
-          Component.h(
-            "div",
-            { className: "form-group" },
-            Component.h("label", {}, "Batch Size:"),
-            Component.h("input", {
-              type: "number",
-              value: this.state.modelForm.batchSize,
-              "data-field": "batchSize",
-            })
-          )
+          this.renderGroupForm()
         ),
         Component.h(
           "div",
@@ -525,8 +583,8 @@ class PresetsPage extends Component {
           Component.h(
             "button",
             {
-              className: "btn btn-secondary",
-              "data-action": "cancel-model",
+              className: "btn btn-outline",
+              "data-action": "close-modal",
             },
             "Cancel"
           ),
@@ -534,65 +592,197 @@ class PresetsPage extends Component {
             "button",
             {
               className: "btn btn-primary",
-              "data-action": isEditing ? "update-model" : "add-model",
+              "data-action": "save-group",
             },
-            isEditing ? "Update" : "Add"
+            "Save"
           )
         )
       )
+    );
+  }
+
+  renderGroupForm() {
+    const group = this.state.currentGroup || {};
+
+    return Component.h(
+      "div",
+      { className: "form-group" },
+      this.renderFormField("groupName", "Group Name", "text", group.name || ""),
+      this.renderFormField("ctxSize", "Context Size", "number", group.ctxSize, 0.1),
+      this.renderFormField("temperature", "Temperature", "number", group.temperature, 0.1),
+      this.renderFormField("nGpuLayers", "GPU Layers", "number", group.nGpuLayers),
+      this.renderFormField("threads", "Threads", "number", group.threads),
+      this.renderFormField("batchSize", "Batch Size", "number", group.batchSize)
+    );
+  }
+
+  renderModelModal() {
+    return Component.h(
+      "div",
+      { className: "modal-overlay", "data-action": "close-modal" },
+      Component.h(
+        "div",
+        { className: "modal-content" },
+        Component.h(
+          "div",
+          { className: "modal-header" },
+          Component.h(
+            "h2",
+            {},
+            this.state.editingModel ? "Edit Model" : "New Model"
+          ),
+          Component.h(
+            "button",
+            {
+              className: "modal-close",
+              "data-action": "close-modal",
+            },
+            "×"
+          )
+        ),
+        Component.h(
+          "div",
+          { className: "modal-body" },
+          this.renderModelForm()
+        ),
+        Component.h(
+          "div",
+          { className: "modal-footer" },
+          Component.h(
+            "button",
+            {
+              className: "btn btn-outline",
+              "data-action": "close-modal",
+            },
+            "Cancel"
+          ),
+          Component.h(
+            "button",
+            {
+              className: "btn btn-primary",
+              "data-action": "save-model",
+            },
+            "Save"
+          )
+        )
+      )
+    );
+  }
+
+  renderModelForm() {
+    const model = this.state.currentModel || {};
+
+    return Component.h(
+      "div",
+      { className: "form-group" },
+      this.renderFormField("modelName", "Model Name", "text", model.name || ""),
+      this.renderFormField("modelPath", "Model File Path", "text", model.model || ""),
+      this.renderFormField("temperature", "Temperature", "number", model.temperature, 0.1),
+      this.renderFormField("ctxSize", "Context Size", "number", model.ctxSize),
+      this.renderFormField("nGpuLayers", "GPU Layers", "number", model.nGpuLayers),
+      this.renderFormField("threads", "Threads", "number", model.threads),
+      this.renderFormField("batchSize", "Batch Size", "number", model.batchSize)
+    );
+  }
+
+  renderFormField(name, label, type, value, step = "1") {
+    return Component.h(
+      "div",
+      { className: "form-field" },
+      Component.h("label", { htmlFor: `field-${name}` }, label),
+      Component.h("input", {
+        id: `field-${name}`,
+        type,
+        className: "form-input",
+        value: String(value || ""),
+        step,
+        "data-field": name,
+        "data-action": "field-change",
+      })
     );
   }
 
   getEventMap() {
     return {
-      "click [data-action=new-preset]": "handleNewPreset",
       "click [data-action=select-preset]": "handleSelectPreset",
+      "click [data-action=new-preset]": "handleNewPreset",
       "click [data-action=delete-preset]": "handleDeletePreset",
-      "click [data-action=add-model]": "handleShowAddModel",
+      "click [data-action=edit-defaults]": "handleEditDefaults",
+      "click [data-action=save-defaults]": "handleSaveDefaults",
+      "click [data-action=new-group]": "handleNewGroup",
+      "click [data-action=edit-group]": "handleEditGroup",
+      "click [data-action=save-group]": "handleSaveGroup",
+      "click [data-action=delete-group]": "handleDeleteGroup",
+      "click [data-action=new-model]": "handleNewModel",
       "click [data-action=edit-model]": "handleEditModel",
+      "click [data-action=save-model]": "handleSaveModel",
       "click [data-action=delete-model]": "handleDeleteModel",
-      "click [data-action=download-preset]": "handleDownloadPreset",
-      "click [data-action=copy-command]": "handleCopyCommand",
       "click [data-action=close-modal]": "handleCloseModal",
-      "click [data-action=cancel-create]": "handleCloseModal",
-      "click [data-action=cancel-model]": "handleCloseModal",
-      "click [data-action=create-preset]": "handleCreatePreset",
-      "click [data-action=update-model]": "handleUpdateModel",
-      "change input[data-field]": "handleFieldChange",
+      "change [data-action=field-change]": "handleFieldChange",
     };
-  }
-
-  handleNewPreset(e) {
-    console.log("[PRESETS] New preset clicked");
-    this.setState({ showCreateModal: true, newPresetName: "" });
   }
 
   handleSelectPreset(e) {
     const el = e.target.closest("[data-action=select-preset]");
     if (!el) return;
     const name = el.dataset.presetName;
-    console.log("[PRESETS] Selected preset:", name);
-    this.selectPreset(name);
-  }
-
-  async selectPreset(name) {
     const preset = this.state.presets.find((p) => p.name === name);
     if (!preset) return;
 
-    this.setState({
-      selectedPreset: preset,
-      selectedPresetName: name,
-      models: {},
-      loading: true,
-    });
+    console.log("[PRESETS] Selected preset:", name);
+    this.loadPresetData(preset);
+  }
 
+  async loadPresetData(preset) {
     try {
-      const models = await this.presetsService.getModelsFromPreset(name);
-      console.log("[PRESETS] Loaded models:", Object.keys(models).length);
-      this.setState({ models, loading: false });
+      const service = this.presetsService;
+      const models = await service.getModelsFromPreset(preset.name);
+      const defaults = await service.getDefaults(preset.name);
+
+      const groups = {};
+      for (const [modelName, modelConfig] of Object.entries(models)) {
+        if (modelName === "*") continue;
+
+        const parts = modelName.split("/");
+        if (parts.length === 2) {
+          const groupName = parts[0];
+          if (!groups[groupName]) {
+            groups[groupName] = { name: groupName, models: [] };
+          }
+          groups[groupName].models.push({
+            name: parts[1],
+            ...modelConfig,
+          });
+        }
+      }
+
+      this.setState({
+        selectedPreset: preset,
+        globalDefaults: defaults,
+        groups: Object.values(groups),
+      });
     } catch (error) {
-      console.error("[PRESETS] Error loading models:", error.message);
-      showNotification(`Error: ${  error.message}`, "error");
+      console.error("[PRESETS] Error loading preset:", error);
+      showNotification(`Error loading preset: ${error.message}`, "error");
+    }
+  }
+
+  handleNewPreset() {
+    const name = prompt("Preset name:");
+    if (!name) return;
+
+    this.createPreset(name);
+  }
+
+  async createPreset(name) {
+    this.setState({ loading: true });
+    try {
+      await this.presetsService.createPreset(name);
+      showNotification(`Preset "${name}" created`, "success");
+      await this.controller.loadPresetsData();
+    } catch (error) {
+      console.error("[PRESETS] Create error:", error);
+      showNotification(`Error: ${error.message}`, "error");
       this.setState({ loading: false });
     }
   }
@@ -601,10 +791,8 @@ class PresetsPage extends Component {
     const el = e.target.closest("[data-action=delete-preset]");
     if (!el) return;
     const name = el.dataset.presetName;
-    e.stopPropagation();
 
     if (!confirm(`Delete preset "${name}"?`)) return;
-
     this.deletePreset(name);
   }
 
@@ -612,275 +800,133 @@ class PresetsPage extends Component {
     this.setState({ loading: true });
     try {
       await this.presetsService.deletePreset(name);
-      showNotification(`Preset "${name}" deleted`, "success");
-      await this.controller.load();
-      const presets = stateManager.get("presets") || [];
-      this.setState({
-        presets,
-        selectedPreset: null,
-        selectedPresetName: null,
-        models: {},
-        loading: false,
-      });
+      showNotification(`Preset deleted`, "success");
+      this.setState({ selectedPreset: null, groups: [], globalDefaults: null, loading: false });
+      await this.controller.loadPresetsData();
     } catch (error) {
-      console.error("[PRESETS] Delete error:", error.message);
-      showNotification(`Error: ${  error.message}`, "error");
+      console.error("[PRESETS] Delete error:", error);
+      showNotification(`Error: ${error.message}`, "error");
       this.setState({ loading: false });
     }
   }
 
-  handleCreatePreset(e) {
-    this.createPreset();
+  handleEditDefaults() {
+    this.setState({ showGlobalModal: true });
   }
 
-  handleAddModelForm(e) {
-    const el = e.target.closest("[data-action=add-model-form]");
-    if (!el || this.state.editingModel) return;
-    this.addModel();
+  handleSaveDefaults() {
+    this.setState({ showGlobalModal: false });
   }
 
-  async createPreset() {
-    const name = this.state.newPresetName.trim();
-    if (!name) {
-      showNotification("Please enter a preset name", "error");
-      return;
-    }
-
-    this.setState({ loading: true });
-    try {
-      await this.presetsService.createPreset(name);
-      showNotification(`Preset "${name}" created`, "success");
-      await this.controller.load();
-      const presets = stateManager.get("presets") || [];
-      this.setState({
-        presets,
-        showCreateModal: false,
-        newPresetName: "",
-        loading: false,
-      });
-    } catch (error) {
-      console.error("[PRESETS] Create error:", error.message);
-      showNotification(`Error: ${  error.message}`, "error");
-      this.setState({ loading: false });
-    }
+  handleNewGroup() {
+    this.setState({ showGroupModal: true, editingGroup: null, currentGroup: {} });
   }
 
-  handleShowAddModel(e) {
-    if (!this.state.selectedPreset) {
-      showNotification("Please select a preset first", "error");
-      return;
-    }
+  handleEditGroup(e) {
+    const el = e.target.closest("[data-action=edit-group]");
+    if (!el) return;
+    const groupName = el.dataset.groupName;
+    const group = this.state.groups.find((g) => g.name === groupName);
+    if (!group) return;
+
     this.setState({
-      showModelModal: true,
-      editingModel: null,
-      newModelName: "",
-      modelForm: {
-        model: "",
-        ctxSize: "2048",
-        temperature: "0.7",
-        nGpuLayers: "0",
-        threads: "0",
-        batchSize: "512",
-      },
+      showGroupModal: true,
+      editingGroup: groupName,
+      currentGroup: { ...group },
     });
   }
 
-  handleUpdateModel(e) {
-    const el = e.target.closest("[data-action=update-model]");
-    if (!el) return;
-    this.updateModel();
+  handleSaveGroup() {
+    this.setState({ showGroupModal: false });
   }
 
-  async addModel() {
-    const presetName = this.state.selectedPresetName;
-    const modelName = this.state.newModelName.trim();
+  handleDeleteGroup(e) {
+    const el = e.target.closest("[data-action=delete-group]");
+    if (!el) return;
+    const groupName = el.dataset.groupName;
 
-    if (!presetName || !modelName) {
-      showNotification("Model name required", "error");
-      return;
-    }
-    if (!this.state.modelForm.model) {
-      showNotification("Model path required", "error");
-      return;
-    }
+    if (!confirm(`Delete group "${groupName}"?`)) return;
+  }
 
-    this.setState({ loading: true });
-    try {
-      const config = {
-        model: this.state.modelForm.model,
-        ctxSize: parseInt(this.state.modelForm.ctxSize),
-        temperature: parseFloat(this.state.modelForm.temperature),
-        nGpuLayers: parseInt(this.state.modelForm.nGpuLayers),
-        threads: parseInt(this.state.modelForm.threads),
-        batchSize: parseInt(this.state.modelForm.batchSize),
-      };
-      await this.presetsService.addModel(presetName, modelName, config);
-      showNotification(`Model "${modelName}" added`, "success");
-      await this.selectPreset(presetName);
-      this.resetModelForm();
-    } catch (error) {
-      console.error("[PRESETS] Add model error:", error.message);
-      showNotification(`Error: ${  error.message}`, "error");
-      this.setState({ loading: false });
-    }
+  handleNewModel(e) {
+    const el = e.target.closest("[data-action=new-model]");
+    if (!el) return;
+    const groupName = el.dataset.groupName;
+
+    this.setState({
+      showModelModal: true,
+      editingModel: null,
+      currentModel: { groupName },
+    });
   }
 
   handleEditModel(e) {
     const el = e.target.closest("[data-action=edit-model]");
     if (!el) return;
+    const groupName = el.dataset.groupName;
     const modelName = el.dataset.modelName;
-    const model = this.state.models[modelName];
 
+    const group = this.state.groups.find((g) => g.name === groupName);
+    if (!group) return;
+    const model = group.models.find((m) => m.name === modelName);
     if (!model) return;
 
     this.setState({
       showModelModal: true,
       editingModel: modelName,
-      newModelName: modelName,
-      modelForm: {
-        model: model.model || "",
-        ctxSize: String(model.ctxSize || 2048),
-        temperature: String(model.temperature || 0.7),
-        nGpuLayers: String(model.nGpuLayers || 0),
-        threads: String(model.threads || 0),
-        batchSize: String(model.batchSize || 512),
-      },
+      currentModel: { ...model, groupName },
     });
   }
 
-  async updateModel() {
-    const presetName = this.state.selectedPresetName;
-    const modelName = this.state.editingModel;
-
-    if (!presetName || !modelName) {
-      showNotification("Preset and model required", "error");
-      return;
-    }
-
-    this.setState({ loading: true });
-    try {
-      const config = {
-        model: this.state.modelForm.model,
-        ctxSize: parseInt(this.state.modelForm.ctxSize),
-        temperature: parseFloat(this.state.modelForm.temperature),
-        nGpuLayers: parseInt(this.state.modelForm.nGpuLayers),
-        threads: parseInt(this.state.modelForm.threads),
-        batchSize: parseInt(this.state.modelForm.batchSize),
-      };
-      await this.presetsService.updateModel(presetName, modelName, config);
-      showNotification(`Model "${modelName}" updated`, "success");
-      await this.selectPreset(presetName);
-      this.resetModelForm();
-    } catch (error) {
-      console.error("[PRESETS] Update error:", error.message);
-      showNotification(`Error: ${  error.message}`, "error");
-      this.setState({ loading: false });
-    }
+  handleSaveModel() {
+    this.setState({ showModelModal: false });
   }
 
   handleDeleteModel(e) {
     const el = e.target.closest("[data-action=delete-model]");
     if (!el) return;
+    const groupName = el.dataset.groupName;
     const modelName = el.dataset.modelName;
 
     if (!confirm(`Delete model "${modelName}"?`)) return;
-
-    this.deleteModel(modelName);
-  }
-
-  async deleteModel(modelName) {
-    const presetName = this.state.selectedPresetName;
-    this.setState({ loading: true });
-
-    try {
-      await this.presetsService.removeModel(presetName, modelName);
-      showNotification(`Model "${modelName}" deleted`, "success");
-      await this.selectPreset(presetName);
-    } catch (error) {
-      console.error("[PRESETS] Delete model error:", error.message);
-      showNotification(`Error: ${  error.message}`, "error");
-      this.setState({ loading: false });
-    }
-  }
-
-  handleDownloadPreset(e) {
-    const el = e.target.closest("[data-action=download-preset]");
-    if (!el) return;
-    const name = el.dataset.presetName;
-    this.downloadPreset(name);
-  }
-
-  async downloadPreset(name) {
-    try {
-      const preset = await this.presetsService.readPreset(name);
-      const element = document.createElement("a");
-      element.setAttribute(
-        "href",
-        `data:text/plain;charset=utf-8,${  encodeURIComponent(preset.content)}`
-      );
-      element.setAttribute("download", `${name}.ini`);
-      element.style.display = "none";
-      document.body.appendChild(element);
-      element.click();
-      document.body.removeChild(element);
-      showNotification("Preset downloaded", "success");
-    } catch (error) {
-      showNotification(`Error: ${  error.message}`, "error");
-    }
-  }
-
-  handleCopyCommand(e) {
-    const el = e.target.closest("[data-action=copy-command]");
-    if (!el) return;
-    const name = el.dataset.presetName;
-    const command = `llama-server --models-preset ./config/${name}.ini --models-max 4`;
-    navigator.clipboard.writeText(command);
-    showNotification("Command copied to clipboard", "success");
   }
 
   handleCloseModal(e) {
     if (e.target.dataset.action === "close-modal") {
       this.setState({
-        showCreateModal: false,
+        showGlobalModal: false,
+        showGroupModal: false,
         showModelModal: false,
       });
     }
   }
 
-  handlePresetNameChange(e) {
-    this.setState({ newPresetName: e.target.value });
-  }
-
   handleFieldChange(e) {
     const field = e.target.dataset.field;
-    if (field === "presetName") {
-      this.setState({ newPresetName: e.target.value });
-    } else if (field === "modelName") {
-      this.setState({ newModelName: e.target.value });
-    } else {
+    const value = e.target.value;
+
+    if (this.state.showGlobalModal) {
       this.setState({
-        modelForm: {
-          ...this.state.modelForm,
-          [field]: e.target.value,
+        globalDefaults: {
+          ...this.state.globalDefaults,
+          [field]: isNaN(value) ? value : parseFloat(value),
+        },
+      });
+    } else if (this.state.showGroupModal) {
+      this.setState({
+        currentGroup: {
+          ...this.state.currentGroup,
+          [field]: isNaN(value) ? value : parseFloat(value),
+        },
+      });
+    } else if (this.state.showModelModal) {
+      this.setState({
+        currentModel: {
+          ...this.state.currentModel,
+          [field]: isNaN(value) ? value : parseFloat(value),
         },
       });
     }
-  }
-
-  resetModelForm() {
-    this.setState({
-      showModelModal: false,
-      editingModel: null,
-      newModelName: "",
-      modelForm: {
-        model: "",
-        ctxSize: "2048",
-        temperature: "0.7",
-        nGpuLayers: "0",
-        threads: "0",
-        batchSize: "512",
-      },
-    });
   }
 }
 

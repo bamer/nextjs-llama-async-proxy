@@ -202,6 +202,47 @@ class PresetsService {
       });
     });
   }
+
+  /**
+   * Get default parameters from "*" preset
+   * @param {string} filename - Preset filename (without .ini extension)
+   * @returns {Promise<Object>} Default configuration parameters
+   */
+  getDefaults(filename) {
+    return new Promise((resolve, reject) => {
+      console.log("[DEBUG] PresetsService: getDefaults", { filename });
+      this.socket.emit("presets:get-defaults", { filename }, (response) => {
+        if (response.success) {
+          resolve(response.data.defaults);
+        } else {
+          reject(new Error(response.error.message));
+        }
+      });
+    });
+  }
+
+  /**
+   * Update default parameters in "*" preset
+   * @param {string} filename - Preset filename (without .ini extension)
+   * @param {Object} config - Default configuration
+   * @returns {Promise<Object>} Updated defaults
+   */
+  updateDefaults(filename, config) {
+    return new Promise((resolve, reject) => {
+      console.log("[DEBUG] PresetsService: updateDefaults", { filename });
+      this.socket.emit(
+        "presets:update-defaults",
+        { filename, config },
+        (response) => {
+          if (response.success) {
+            resolve(response.data);
+          } else {
+            reject(new Error(response.error.message));
+          }
+        }
+      );
+    });
+  }
 }
 
 window.PresetsService = PresetsService;
