@@ -137,6 +137,9 @@ function setupShutdown(server) {
   process.on("SIGINT", () => shutdown("SIGINT"));
 }
 
+// Export for testing
+export { startMetrics, setupShutdown, main };
+
 // Main entry point
 async function main() {
   const dataDir = path.join(process.cwd(), "data");
@@ -180,7 +183,19 @@ async function main() {
   setupShutdown(server);
 }
 
-main().catch((e) => {
-  console.error("Failed to start server:", e);
-  process.exit(1);
-});
+// Run main if this is the main module
+// Check if this is being run directly (not imported for testing)
+const isMainModule =
+  process.argv[1] &&
+  (process.argv[1].includes("server.js") || process.argv[1].includes("bin/")) &&
+  !process.env.JEST_WORKER_ID;
+
+// Also prevent execution during test imports
+const inTestMode = process.env.NODE_ENV === "test" || process.env.JEST_WORKER_ID !== undefined;
+
+if (isMainModule && !inTestMode) {
+  main().catch((e) => {
+    console.error("Failed to start server:", e);
+    process.exit(1);
+  });
+}

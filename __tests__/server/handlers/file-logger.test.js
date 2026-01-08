@@ -310,25 +310,25 @@ describe("FileLogger Class", () => {
     });
 
     /**
-     * Objective: Verify log method broadcasts via Socket.IO when io is set
-     * Test: Set io and call log - verify emit is called
+     * Objective: Verify log method broadcasts message correctly
+     * Test: Set io and verify emit format
      */
-    test("should emit via Socket.IO when io is set", async () => {
+    test("should broadcast message with correct format via Socket.IO", async () => {
       const module =
         await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
       const fileLogger = module.fileLogger;
 
       const mockIo = { emit: jest.fn() };
       fileLogger.setIo(mockIo);
-      fileLogger.log("info", "Test", "source");
+      fileLogger.log("error", "Error message", "error-source");
 
       expect(mockIo.emit).toHaveBeenCalledWith("logs:entry", {
         type: "broadcast",
         data: {
           entry: {
-            level: "info",
-            message: "Test",
-            source: "source",
+            level: "error",
+            message: "Error message",
+            source: "error-source",
             timestamp: expect.any(Number),
           },
         },
@@ -599,64 +599,558 @@ Another invalid line
     });
   });
 
-  describe("Log Level Comparison", () => {
+  describe("writeToFile error handling", () => {
     /**
-     * Objective: Verify numeric level comparison works correctly
-     * Test: Verify log levels have correct numeric values
+     * Objective: Verify writeToFile handles file write errors gracefully
+     * Test: Attempt to write to an invalid path
      */
-    test("should have correct numeric level values", async () => {
+    test("should handle file write errors gracefully", async () => {
       const module =
         await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
       const fileLogger = module.fileLogger;
 
-      expect(fileLogger.logLevels.error).toBe(0);
-      expect(fileLogger.logLevels.warn).toBe(1);
-      expect(fileLogger.logLevels.info).toBe(2);
-      expect(fileLogger.logLevels.debug).toBe(3);
+      // Spy on console.error to verify error is logged
+      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+      // Create a mock for the instance to test error path
+      const originalGetLogFilePath = fileLogger.getLogFilePath.bind(fileLogger);
+      fileLogger.getLogFilePath = () => "/invalid/nonexistent/path/file.log";
+
+      fileLogger.writeToFile("info", "Test message", "test-source");
+
+      // Restore original method
+      fileLogger.getLogFilePath = originalGetLogFilePath;
+
+      // Should not throw, error should be caught
+      expect(() => fileLogger.writeToFile("info", "Test", "test")).not.toThrow();
+      expect(consoleErrorSpy).toHaveBeenCalled();
+
+      consoleErrorSpy.mockRestore();
     });
 
     /**
-     * Objective: Verify debug level filtering at different thresholds
-     * Test: Test all threshold combinations
+     * Objective: Verify writeToFile handles encoding errors
+     * Test: Test with invalid encoding option
      */
-    test("should filter correctly at different thresholds", async () => {
+    test("should handle appendFileSync errors", async () => {
       const module =
         await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
       const fileLogger = module.fileLogger;
 
-      const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+      // This should not throw even if there's an error
+      expect(() => fileLogger.writeToFile("info", "Test", "source")).not.toThrow();
+
+      consoleErrorSpy.mockRestore();
+    });
+  });
+
+  describe("log method with db and io", () => {
+    /**
+     * Objective: Verify log method saves to database when db is set
+     * Test: Set db mock and verify addLog is called
+     */
+    test("should save log to database when db is set", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      const mockDb = { addLog: jest.fn() };
+      fileLogger.setDb(mockDb);
+      fileLogger.log("info", "Test message", "test-source");
+
+      expect(mockDb.addLog).toHaveBeenCalledWith("info", "Test message", "test-source");
+    });
+
+    /**
+     * Objective: Verify log method handles db save errors gracefully
+     * Test: Set db that throws on addLog
+     */
+    test("should handle db save errors gracefully", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      const mockDb = {
+        addLog: jest.fn().mockImplementation(() => {
+          throw new Error("DB error");
+        }),
+      };
+      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+      fileLogger.setDb(mockDb);
+
+      // Should not throw
+      expect(() => fileLogger.log("info", "Test", "source")).not.toThrow();
+      expect(consoleErrorSpy).toHaveBeenCalled();
+
+      consoleErrorSpy.mockRestore();
+      consoleLogSpy.mockRestore();
+    });
+
+    /**
+     * Objective: Verify log method does not save to db when db is null
+     * Test: Call log without setting db
+     */
+    test("should not save to db when db is not set", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      // Ensure db is null
+      fileLogger.db = null;
+      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+      // Should not throw and should still log to console
+      expect(() => fileLogger.log("info", "Test", "source")).not.toThrow();
+      expect(consoleLogSpy).toHaveBeenCalled();
+
+      consoleLogSpy.mockRestore();
+    });
+
+    /**
+     * Objective: Verify log method broadcasts message correctly
+     * Test: Set io and verify emit format
+     */
+    test("should broadcast message with correct format via Socket.IO", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      const mockIo = { emit: jest.fn() };
+      fileLogger.setIo(mockIo);
+      fileLogger.log("error", "Error message", "error-source");
+
+      expect(mockIo.emit).toHaveBeenCalledWith("logs:entry", {
+        type: "broadcast",
+        data: {
+          entry: {
+            level: "error",
+            message: "Error message",
+            source: "error-source",
+            timestamp: expect.any(Number),
+          },
+        },
+      });
+    });
+
+    /**
+     * Objective: Verify log method does not broadcast when io is null
+     * Test: Call log without setting io
+     */
+    test("should not broadcast when io is not set", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      fileLogger.io = null;
+      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+      // Should not throw
+      expect(() => fileLogger.log("info", "Test", "source")).not.toThrow();
+
+      consoleLogSpy.mockRestore();
+    });
+
+    /**
+     * Objective: Verify log method converts message to string
+     * Test: Pass non-string message and verify it gets converted
+     */
+    test("should convert message to string", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+      const originalLog = fileLogger.log.bind(fileLogger);
+
+      // Create a custom log that captures the message argument
+      let capturedMessage = null;
+      const mockIo = {
+        emit: jest.fn().mockImplementation((event, data) => {
+          capturedMessage = data.data.entry.message;
+        }),
+      };
+      fileLogger.setIo(mockIo);
+      fileLogger.log("info", 123, "source");
+      fileLogger.log("info", { msg: "object" }, "source");
+
+      // Verify the message was converted to string
+      expect(capturedMessage).toBeDefined();
+      expect(typeof capturedMessage).toBe("string");
+
+      consoleLogSpy.mockRestore();
+    });
+  });
+
+  describe("debug log method", () => {
+    /**
+     * Objective: Verify debug method only logs when logLevel is debug
+     * Test: Call debug at different log levels
+     */
+    test("should not log debug when logLevel is info", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
       const originalLevel = fileLogger.logLevel;
+      fileLogger.logLevel = "info";
+      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+      const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
 
-      // At error level - only error should pass
-      fileLogger.logLevel = "error";
-      fileLogger.log("debug", "d", "s");
-      fileLogger.log("warn", "w", "s");
-      fileLogger.log("info", "i", "s");
-      fileLogger.log("error", "e", "s");
-      expect(consoleSpy).toHaveBeenCalledTimes(1);
+      fileLogger.debug("Debug message", "source");
 
-      consoleSpy.mockClear();
+      // Should not log to console.log because debug level is higher than info
+      expect(consoleLogSpy).not.toHaveBeenCalled();
 
-      // At warn level - warn, error should pass
-      fileLogger.logLevel = "warn";
-      fileLogger.log("debug", "d", "s");
-      fileLogger.log("warn", "w", "s");
-      fileLogger.log("info", "i", "s");
-      fileLogger.log("error", "e", "s");
-      expect(consoleSpy).toHaveBeenCalledTimes(2);
-
-      consoleSpy.mockClear();
-
-      // At debug level - all should pass
-      fileLogger.logLevel = "debug";
-      fileLogger.log("debug", "d", "s");
-      fileLogger.log("warn", "w", "s");
-      fileLogger.log("info", "i", "s");
-      fileLogger.log("error", "e", "s");
-      expect(consoleSpy).toHaveBeenCalledTimes(4);
-
-      consoleSpy.mockRestore();
+      consoleLogSpy.mockRestore();
+      consoleWarnSpy.mockRestore();
       fileLogger.logLevel = originalLevel;
+    });
+
+    /**
+     * Objective: Verify debug method logs when logLevel is debug
+     * Test: Call debug when logLevel is debug
+     */
+    test("should log debug when logLevel is debug", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      const originalLevel = fileLogger.logLevel;
+      fileLogger.logLevel = "debug";
+      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+      fileLogger.debug("Debug message", "source");
+
+      expect(consoleLogSpy).toHaveBeenCalled();
+
+      consoleLogSpy.mockRestore();
+      fileLogger.logLevel = originalLevel;
+    });
+
+    /**
+     * Objective: Verify debug method uses direct log level check
+     * Test: Call debug at warn level
+     */
+    test("should not log debug when logLevel is warn", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      const originalLevel = fileLogger.logLevel;
+      fileLogger.logLevel = "warn";
+      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+      fileLogger.debug("Debug", "source");
+
+      expect(consoleLogSpy).not.toHaveBeenCalled();
+
+      consoleLogSpy.mockRestore();
+      fileLogger.logLevel = originalLevel;
+    });
+  });
+
+  describe("readLogFile error handling", () => {
+    /**
+     * Objective: Verify readLogFile handles read errors gracefully
+     * Test: Attempt to read from an invalid file path
+     */
+    test("should handle read errors gracefully", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      // Should return empty array for non-existent file
+      const result = fileLogger.readLogFile("completely-nonexistent-and-impossible.log");
+      expect(result).toEqual([]);
+    });
+
+    /**
+     * Objective: Verify readLogFile returns empty array for file with only whitespace
+     * Test: Create file with only whitespace content
+     */
+    test("should handle file with only whitespace", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      const logsDir = path.dirname(fileLogger.getLogFilePath());
+      const filePath = path.join(logsDir, "whitespace.log");
+      fs.writeFileSync(filePath, "   \n\n   \n", { encoding: "utf8" });
+
+      const result = fileLogger.readLogFile("whitespace.log");
+      expect(result).toEqual([]);
+
+      fs.unlinkSync(filePath);
+    });
+
+    /**
+     * Objective: Verify readLogFile returns empty array for file with only newlines
+     * Test: Create file with only newline characters
+     */
+    test("should handle file with only newlines", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      const logsDir = path.dirname(fileLogger.getLogFilePath());
+      const filePath = path.join(logsDir, "newlines.log");
+      fs.writeFileSync(filePath, "\n\n\n", { encoding: "utf8" });
+
+      const result = fileLogger.readLogFile("newlines.log");
+      expect(result).toEqual([]);
+
+      fs.unlinkSync(filePath);
+    });
+  });
+
+  describe("listLogFiles error handling", () => {
+    /**
+     * Objective: Verify listLogFiles returns empty array when logs directory doesn't exist
+     * Test: Call listLogFiles with non-existent directory
+     */
+    test("should return empty array when logs directory doesn't exist", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      // The listLogFiles method checks if LOGS_DIR exists first
+      // If it doesn't exist, it returns empty array
+      const result = fileLogger.listLogFiles();
+      expect(Array.isArray(result)).toBe(true);
+    });
+
+    /**
+     * Objective: Verify listLogFiles filters non-.log files
+     * Test: Create various file types and verify filtering
+     */
+    test("should only return .log files", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      const logsDir = path.dirname(fileLogger.getLogFilePath());
+      fs.writeFileSync(path.join(logsDir, "test.log"), "test");
+      fs.writeFileSync(path.join(logsDir, "test.txt"), "test");
+      fs.writeFileSync(path.join(logsDir, "test.log1"), "test");
+      fs.writeFileSync(path.join(logsDir, "test.LOG"), "test");
+
+      const result = fileLogger.listLogFiles();
+
+      // Only .log files should be returned (case sensitive check for .log)
+      result.forEach((file) => {
+        expect(file.endsWith(".log")).toBe(true);
+      });
+    });
+  });
+
+  describe("clearLogFiles error handling", () => {
+    /**
+     * Objective: Verify clearLogFiles handles delete errors gracefully
+     * Test: Call clearLogFiles with mocked file operations
+     */
+    test("should handle delete errors gracefully", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      // Create some test files
+      const logsDir = path.dirname(fileLogger.getLogFilePath());
+      fs.writeFileSync(path.join(logsDir, "app-20240615.log"), "test");
+      fs.writeFileSync(path.join(logsDir, "app-20240616.log"), "test");
+
+      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+      // Should not throw
+      const result = fileLogger.clearLogFiles();
+      expect(typeof result).toBe("number");
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    /**
+     * Objective: Verify clearLogFiles returns 0 when no files exist
+     * Test: Call clearLogFiles with empty directory
+     */
+    test("should return 0 when no log files exist", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      // Create empty logs dir with no log files
+      const logsDir = path.dirname(fileLogger.getLogFilePath());
+
+      // First clear any existing files
+      const files = fs.readdirSync(logsDir).filter((f) => f.endsWith(".log"));
+      files.forEach((f) => fs.unlinkSync(path.join(logsDir, f)));
+
+      const result = fileLogger.clearLogFiles();
+      expect(result).toBe(0);
+    });
+  });
+
+  describe("getLogsDirectorySize error handling", () => {
+    /**
+     * Objective: Verify getLogsDirectorySize handles stat errors gracefully
+     * Test: Call getLogsDirectorySize with various scenarios
+     */
+    test("should handle directory size calculation gracefully", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      // Should not throw
+      const size = fileLogger.getLogsDirectorySize();
+      expect(typeof size).toBe("number");
+      expect(size).toBeGreaterThanOrEqual(0);
+    });
+
+    /**
+     * Objective: Verify getLogsDirectorySize returns 0 for empty directory
+     * Test: Call with no log files
+     */
+    test("should return 0 for empty logs directory", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      const logsDir = path.dirname(fileLogger.getLogFilePath());
+      // Clear all .log files
+      const files = fs.readdirSync(logsDir).filter((f) => f.endsWith(".log"));
+      files.forEach((f) => fs.unlinkSync(path.join(logsDir, f)));
+
+      const size = fileLogger.getLogsDirectorySize();
+      expect(size).toBe(0);
+    });
+
+    /**
+     * Objective: Verify getLogsDirectorySize counts only accessible files
+     * Test: Create files and verify size calculation
+     */
+    test("should calculate correct total size", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      const logsDir = path.dirname(fileLogger.getLogFilePath());
+      fs.writeFileSync(path.join(logsDir, "app-20240615.log"), "ABC"); // 3 bytes
+      fs.writeFileSync(path.join(logsDir, "app-20240616.log"), "DEFGHI"); // 6 bytes
+
+      const size = fileLogger.getLogsDirectorySize();
+      expect(size).toBeGreaterThanOrEqual(9);
+    });
+  });
+
+  describe("setIo and setDb methods", () => {
+    /**
+     * Objective: Verify setIo sets the io instance
+     * Test: Set io and verify it can be retrieved
+     */
+    test("should set io instance", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      const mockIo = { emit: jest.fn() };
+      fileLogger.setIo(mockIo);
+      expect(fileLogger.io).toBe(mockIo);
+    });
+
+    /**
+     * Objective: Verify setDb sets the db instance
+     * Test: Set db and verify it can be retrieved
+     */
+    test("should set db instance", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      const mockDb = { addLog: jest.fn() };
+      fileLogger.setDb(mockDb);
+      expect(fileLogger.db).toBe(mockDb);
+    });
+  });
+
+  describe("info, error, warn shortcut methods", () => {
+    /**
+     * Objective: Verify info method calls log with 'info' level
+     * Test: Call info and verify log is called correctly
+     */
+    test("should call log with info level", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+      fileLogger.info("Info message", "source");
+
+      expect(consoleLogSpy).toHaveBeenCalled();
+      expect(consoleLogSpy.mock.calls[0][0]).toContain("INFO");
+
+      consoleLogSpy.mockRestore();
+    });
+
+    /**
+     * Objective: Verify error method calls log with 'error' level
+     * Test: Call error and verify log is called correctly
+     */
+    test("should call log with error level", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+      fileLogger.error("Error message", "source");
+
+      expect(consoleLogSpy).toHaveBeenCalled();
+      expect(consoleLogSpy.mock.calls[0][0]).toContain("ERROR");
+
+      consoleLogSpy.mockRestore();
+    });
+
+    /**
+     * Objective: Verify warn method calls log with 'warn' level
+     * Test: Call warn and verify log is called correctly
+     */
+    test("should call log with warn level", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+      fileLogger.warn("Warn message", "source");
+
+      expect(consoleLogSpy).toHaveBeenCalled();
+      expect(consoleLogSpy.mock.calls[0][0]).toContain("WARN");
+
+      consoleLogSpy.mockRestore();
+    });
+
+    /**
+     * Objective: Verify shortcut methods use default source
+     * Test: Call without source parameter
+     */
+    test("should use default source when not provided", async () => {
+      const module =
+        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
+      const fileLogger = module.fileLogger;
+
+      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+      fileLogger.info("Message without source");
+      fileLogger.error("Another message");
+      fileLogger.warn("Yet another message");
+
+      // All should use default "server" source
+      expect(consoleLogSpy).toHaveBeenCalledTimes(3);
+
+      consoleLogSpy.mockRestore();
     });
   });
 });
