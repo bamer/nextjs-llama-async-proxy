@@ -5,6 +5,9 @@
 
 import { ok, err } from "./response.js";
 
+// Store latest GPU list to include in responses
+let latestGpuList = [];
+
 /**
  * Register metrics handlers
  */
@@ -24,6 +27,7 @@ export function registerMetricsHandlers(socket, db) {
           usage: m.gpu_usage || 0,
           memoryUsed: m.gpu_memory_used || 0,
           memoryTotal: m.gpu_memory_total || 0,
+          list: latestGpuList,
         },
         uptime: m.uptime || 0,
       };
@@ -47,6 +51,7 @@ export function registerMetricsHandlers(socket, db) {
           usage: m.gpu_usage || 0,
           memoryUsed: m.gpu_memory_used || 0,
           memoryTotal: m.gpu_memory_total || 0,
+          list: latestGpuList,
         },
         uptime: m.uptime || 0,
         timestamp: m.timestamp,
@@ -56,4 +61,12 @@ export function registerMetricsHandlers(socket, db) {
       err(socket, "metrics:history:result", e.message, id);
     }
   });
+}
+
+/**
+ * Update the GPU list to include in metrics responses
+ * @param {Array} gpuList - Array of GPU objects with name, usage, memory info
+ */
+export function updateGpuList(gpuList) {
+  latestGpuList = gpuList || [];
 }

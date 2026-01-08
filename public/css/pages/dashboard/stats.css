@@ -1,98 +1,161 @@
-  border: 1px solid var(--border-color);
-}
-
-.logs-page .toolbar h2 {
-  margin: 0;
-  font-size: 1.1rem;
-  color: var(--text-primary);
-}
-
-.logs-page .toolbar > div:last-child {
-  display: flex;
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
   gap: var(--md);
-  flex-wrap: wrap;
+  margin-bottom: var(--lg);
 }
 
-.logs-page .toolbar input,
-.logs-page .toolbar select {
-  flex: 1;
-  min-width: 200px;
-  padding: var(--sm);
+.stat-card {
+  background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
-  background: var(--card-bg);
-  color: var(--text-primary);
-}
-
-.logs-container {
-  flex: 1;
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  overflow-y: auto;
-  border: 1px solid var(--border-color);
-}
-
-.log-entry {
+  padding: var(--md);
   display: flex;
-  gap: var(--md);
-  padding: var(--sm) var(--md);
-  border-bottom: 1px solid var(--border-color);
-  border-left: 3px solid var(--border-color);
-  font-family: monospace;
-  font-size: 0.75rem;
-  color: var(--text-primary);
+  flex-direction: column;
+  gap: var(--sm);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.log-entry:hover {
+.stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--primary);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stat-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.stat-card:hover::before {
+  opacity: 1;
+}
+
+.stat-card.warning {
+  border-left: 4px solid var(--warning);
+}
+
+.stat-card.warning::before {
+  background: var(--warning);
+  opacity: 1;
+}
+
+.stat-icon {
+  font-size: 1.75rem;
+  display: inline-block;
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sm);
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.stat-bar {
+  height: 6px;
   background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: var(--sm);
 }
 
-.log-entry.level-info {
-  border-left-color: var(--info);
+.stat-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--info));
+  border-radius: 3px;
+  transition: width 0.3s ease;
 }
 
-.log-entry.level-warn {
-  border-left-color: var(--warning);
+.stat-bar-fill.gpu {
+  background: linear-gradient(90deg, var(--warning), var(--danger));
 }
 
-.log-entry.level-error {
-  border-left-color: var(--danger);
+/* GPU Stat Card - Subtle accent on border */
+.stat-card.gpu-stat {
+  border-left: 3px solid var(--primary);
 }
 
-.log-entry.level-debug {
-  border-left-color: var(--gray-400);
+.stat-card.gpu-stat:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
 }
 
-.log-time {
-  color: var(--text-secondary);
-  min-width: 140px;
-  flex-shrink: 0;
+/* GPU warning state - show danger color only when warning */
+.stat-card.gpu-stat.warning {
+  border-left: 4px solid var(--danger);
 }
 
-.log-level {
-  min-width: 50px;
-  font-weight: 600;
-  flex-shrink: 0;
+.stat-card.gpu-stat.warning::before {
+  background: var(--danger);
+  opacity: 1;
 }
 
-.log-level.info {
-  color: var(--info);
+.stat-card.gpu-stat.warning:hover {
+  border-color: var(--danger);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
 }
 
-.log-level.warn {
-  color: var(--warning);
+/* Responsive */
+@media (max-width: 1400px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
-.log-level.error {
-  color: var(--danger);
+@media (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
-.log-level.debug {
-  color: var(--text-secondary);
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat-card {
+    padding: var(--md);
+  }
+
+  .stat-icon {
+    font-size: 1.5rem;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+  }
 }
 
-.log-msg {
-  flex: 1;
-  color: var(--text-primary);
-  word-wrap: break-word;
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    padding: var(--md);
+  }
+}

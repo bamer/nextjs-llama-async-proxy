@@ -1,0 +1,249 @@
+/**
+ * GPU Details Component Styles
+ * Unified with stats-grid styling for consistency
+ */
+
+.gpu-details {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 0;
+  background: var(--card-bg);
+  transition: all 0.3s ease;
+}
+
+.gpu-details.expanded {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+/* Header - Unified with stat-card styling */
+.gpu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--lg);
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.gpu-header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--primary);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.gpu-header:hover {
+  border-color: var(--primary);
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.gpu-header:hover::before {
+  opacity: 1;
+}
+
+.gpu-title {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gpu-toggle {
+  display: inline-block;
+  transition: transform 0.3s ease;
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.gpu-toggle.open {
+  transform: rotate(0deg);
+}
+
+.gpu-toggle.closed {
+  transform: rotate(0deg);
+}
+
+/* GPU List */
+.gpu-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md);
+  padding: var(--lg);
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+/* Individual GPU Card - Unified with stat-card styling */
+.gpu-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md);
+  padding: var(--md);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  border-left: 3px solid var(--primary);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.gpu-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--primary);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.gpu-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.gpu-card:hover::before {
+  opacity: 1;
+}
+
+/* GPU card warning state - high usage */
+.gpu-card.high-usage {
+  border-left: 4px solid var(--danger);
+}
+
+.gpu-card.high-usage::before {
+  background: var(--danger);
+  opacity: 1;
+}
+
+.gpu-card.high-usage:hover {
+  border-color: var(--danger);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
+}
+
+.gpu-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sm);
+}
+
+.gpu-info strong {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-weight: 700;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gpu-vendor {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  padding: var(--xs) var(--sm);
+  border-radius: 3px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+/* Metrics - Unified with stat-card styling */
+.gpu-metric {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sm);
+}
+
+.gpu-metric > span {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-bar {
+  position: relative;
+  width: 100%;
+  height: 24px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+  border: none;
+}
+
+.metric-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--warning), var(--danger));
+  transition: width 0.3s ease;
+  border-radius: 3px;
+  min-width: 2px;
+}
+
+.metric-fill:not(:empty) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+}
+
+.metric-text {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  z-index: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+}
+
+/* When percentage is low, position text to the right */
+.metric-fill:empty ~ .metric-text {
+  color: var(--text-primary);
+  text-shadow: none;
+}
+
+/* No GPU state */
+.gpu-no-data {
+  padding: var(--lg);
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* Scrollbar styling for GPU list */
+.gpu-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.gpu-list::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+}
+
+.gpu-list::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.gpu-list::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}

@@ -183,20 +183,31 @@ class Component {
         comp._el = el;
         // Call bindEvents on the child component to attach event listeners
         comp.bindEvents();
-        children.forEach((c) => {
-          if (typeof c === "string") {
-            el.appendChild(document.createTextNode(c));
-          } else if (c instanceof HTMLElement) {
-            el.appendChild(c);
-          } else if (c instanceof Component) {
-            const cel = c.render();
-            if (cel instanceof HTMLElement) {
-              el.appendChild(cel);
-              c._el = cel;
-              c.bindEvents();
+
+        // Helper function to recursively flatten and append children
+        const appendChildren = (parent, childList) => {
+          childList.forEach((c) => {
+            if (c === null || c === undefined || c === false) {
+              // Skip null, undefined, or false values
+            } else if (typeof c === "string" || typeof c === "number") {
+              parent.appendChild(document.createTextNode(String(c)));
+            } else if (Array.isArray(c)) {
+              // Recursively handle nested arrays
+              appendChildren(parent, c);
+            } else if (c instanceof HTMLElement) {
+              parent.appendChild(c);
+            } else if (c instanceof Component) {
+              const cel = c.render();
+              if (cel instanceof HTMLElement) {
+                parent.appendChild(cel);
+                c._el = cel;
+                c.bindEvents();
+              }
             }
-          }
-        });
+          });
+        };
+
+        appendChildren(el, children);
       }
       return el;
     }
@@ -239,20 +250,30 @@ class Component {
       }
     });
 
-    children.forEach((c) => {
-      if (typeof c === "string" || typeof c === "number") {
-        el.appendChild(document.createTextNode(String(c)));
-      } else if (c instanceof HTMLElement) {
-        el.appendChild(c);
-      } else if (c instanceof Component) {
-        const cel = c.render();
-        if (cel instanceof HTMLElement) {
-          el.appendChild(cel);
-          c._el = cel;
-          c.bindEvents();
+    // Helper function to recursively flatten and append children
+    const appendChildren = (parent, childList) => {
+      childList.forEach((c) => {
+        if (c === null || c === undefined || c === false) {
+          // Skip null, undefined, or false values
+        } else if (typeof c === "string" || typeof c === "number") {
+          parent.appendChild(document.createTextNode(String(c)));
+        } else if (Array.isArray(c)) {
+          // Recursively handle nested arrays
+          appendChildren(parent, c);
+        } else if (c instanceof HTMLElement) {
+          parent.appendChild(c);
+        } else if (c instanceof Component) {
+          const cel = c.render();
+          if (cel instanceof HTMLElement) {
+            parent.appendChild(cel);
+            c._el = cel;
+            c.bindEvents();
+          }
         }
-      }
-    });
+      });
+    };
+
+    appendChildren(el, children);
 
     // Set select value AFTER children are added
     if (valueAttr !== null && tag === "select") {

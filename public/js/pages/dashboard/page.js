@@ -256,17 +256,24 @@ class DashboardPage extends Component {
     return Component.h(
       "div",
       { className: "dashboard-page unified" },
-      Component.h(window.RouterCard, {
-        status: this.state.status,
-        routerStatus: this.state.routerStatus,
-        models: this.state.models,
-        configPort: this.state.configPort,
-        onAction: (action) => this.props.controller?.handleRouterAction(action),
-      }),
       Component.h(window.StatsGrid, {
         metrics: this.state.metrics,
         gpuMetrics: this.state.gpuMetrics,
       }),
+      Component.h(
+        "div",
+        { className: "dashboard-middle-row" },
+        Component.h(window.RouterCard, {
+          status: this.state.status,
+          routerStatus: this.state.routerStatus,
+          models: this.state.models,
+          configPort: this.state.configPort,
+          onAction: (action) => this.props.controller?.handleRouterAction(action),
+        }),
+        Component.h(window.QuickActions, {
+          onRefresh: () => this._refresh(),
+        })
+      ),
       Component.h(
         "div",
         { className: "content-row" },
@@ -281,9 +288,13 @@ class DashboardPage extends Component {
           gpuMetrics: this.state.gpuMetrics,
         })
       ),
-      Component.h(window.QuickActions, {
-        onRefresh: () => this._refresh(),
-      })
+      Component.h(
+        "div",
+        { className: "content-row" },
+        Component.h(window.GpuDetails, {
+          gpuList: this.state.gpuMetrics?.list || [],
+        })
+      )
     );
   }
 }

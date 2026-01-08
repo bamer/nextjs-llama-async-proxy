@@ -35,14 +35,14 @@ class QuickActions extends Component {
   render() {
     return Component.h(
       "div",
-      { className: "actions-section" },
+      { className: "quick-actions" },
       Component.h("h3", {}, "Quick Actions"),
       Component.h(
         "div",
         { className: "action-buttons" },
         Component.h(
           "button",
-          { className: "btn btn-primary", "data-action": "refresh" },
+          { className: "btn btn-secondary", "data-action": "refresh" },
           "🔃 Refresh All"
         ),
         Component.h(

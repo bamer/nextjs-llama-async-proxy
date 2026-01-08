@@ -1,19 +1,23 @@
+/* Empty State */
 .empty {
   padding: var(--xl);
   text-align: center;
   color: var(--text-secondary);
 }
 
-/* Utility */
+/* Utility Colors */
 .color-success {
   border-left: 3px solid var(--success);
 }
+
 .color-danger {
   border-left: 3px solid var(--danger);
 }
+
 .color-warning {
   border-left: 3px solid var(--warning);
 }
+
 .color-info {
   border-left: 3px solid var(--info);
 }
@@ -26,7 +30,8 @@
   padding: var(--sm) var(--md);
   border-radius: var(--radius);
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
+  transition: all 0.2s ease;
 }
 
 .router-indicator::before {
@@ -34,12 +39,15 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
 }
 
 .router-indicator.success {
   background: #d1fae5;
   color: #065f46;
 }
+
 .router-indicator.success::before {
   background: var(--success);
   animation: pulse 2s infinite;
@@ -50,13 +58,18 @@
   color: var(--text-secondary);
 }
 
+.router-indicator.default::before {
+  background: var(--border-color);
+}
+
 html.dark-mode .router-indicator.default {
   background: #064e3b;
   color: #86efac;
 }
 
-.router-indicator.default::before {
-  background: var(--border-color);
+html.dark-mode .router-indicator.success {
+  background: #064e3b;
+  color: #86efac;
 }
 
 @keyframes pulse {
@@ -69,15 +82,20 @@ html.dark-mode .router-indicator.default {
   }
 }
 
-/* Router mode badges */
+/* Model Status Badges */
+.badge {
+  display: inline-block;
+  padding: var(--xs) var(--md);
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  transition: all 0.2s ease;
+}
+
 .badge.loaded {
   background: #d1fae5;
   color: #065f46;
-}
-
-html.dark-mode .badge.loaded {
-  background: #064e3b;
-  color: #86efac;
 }
 
 .badge.unloaded {
@@ -85,12 +103,85 @@ html.dark-mode .badge.loaded {
   color: var(--gray-600);
 }
 
+.badge.loading {
+  background: var(--info);
+  color: #fff;
+  animation: pulse 1s infinite;
+}
+
+.badge.error {
+  background: var(--danger);
+  color: #fff;
+}
+
+html.dark-mode .badge.loaded {
+  background: #064e3b;
+  color: #86efac;
+}
+
 html.dark-mode .badge.unloaded {
   background: var(--bg-tertiary);
   color: var(--text-secondary);
 }
 
-.badge.loaded,
-.badge.unloaded {
-  text-transform: capitalize;
+html.dark-mode .badge.loading {
+  background: var(--info);
+  color: #fff;
+}
+
+html.dark-mode .badge.error {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* Router Status Display */
+.router-status {
+  padding: var(--md);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+/* Dashboard Actions */
+.dashboard-actions {
+  display: flex;
+  gap: var(--md);
+  margin-top: var(--lg);
+  flex-wrap: wrap;
+}
+
+/* Unified Dashboard Styles */
+.dashboard-page .card h2 {
+  margin-bottom: var(--md);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dashboard-page.unified {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Router Section */
+.router-section {
+  margin-bottom: var(--lg);
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-page > * {
+  animation: slideIn 0.3s ease-out;
 }

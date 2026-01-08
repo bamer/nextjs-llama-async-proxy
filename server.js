@@ -14,6 +14,7 @@ import si from "systeminformation";
 
 import DB from "./server/db/index.js";
 import { registerHandlers } from "./server/handlers.js";
+import { updateGpuList } from "./server/handlers/metrics.js";
 import { parseGgufMetadata } from "./server/gguf/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -58,27 +59,59 @@ async function startMetrics(io, db) {
         idle: c.times.idle,
       }));
 
-      // Get GPU data
+      // Get disk usage for root drive
+      let diskUsedPercent = 0;
+      try {
+        const disks = await si.fsSize();
+        if (disks && disks.length > 0) {
+          // Get root filesystem (typically mounted at /)
+          const rootDisk = disks.find((d) => d.mount === "/") || disks[0];
+          diskUsedPercent = Math.round((rootDisk.used / rootDisk.size) * 1000) / 10;
+          console.log("[DEBUG] Disk metrics collected:", {
+            mount: rootDisk.mount,
+            used: rootDisk.used,
+            total: rootDisk.size,
+            percent: diskUsedPercent,
+          });
+        }
+      } catch (e) {
+        console.log("[DEBUG] Disk data not available:", e.message);
+      }
+
+      // Get GPU data - support multiple GPUs
+      let gpuList = [];
       let gpuUsage = 0;
       let gpuMemoryUsed = 0;
       let gpuMemoryTotal = 0;
       try {
         const gpu = await si.graphics();
         if (gpu.controllers && gpu.controllers.length > 0) {
-          const primaryGpu = gpu.controllers[0];
-          // GPU load is in percentage (0-100)
-          gpuUsage = primaryGpu.utilizationGpu || 0;
-          // Memory values are already in MB
-          gpuMemoryUsed = primaryGpu.memoryUsed || 0;
-          gpuMemoryTotal = primaryGpu.memoryTotal || 0;
+          gpuList = gpu.controllers.map((controller) => ({
+            name: controller.model || "Unknown GPU",
+            usage: controller.utilizationGpu || 0,
+            memoryUsed: (controller.memoryUsed || 0) * 1024 * 1024, // Convert MB to bytes
+            memoryTotal: (controller.memoryTotal || 0) * 1024 * 1024, // Convert MB to bytes
+            vendor: controller.vendor || "Unknown",
+          }));
+
+          // Primary GPU for backward compatibility
+          const primaryGpu = gpuList[0];
+          gpuUsage = primaryGpu.usage;
+          gpuMemoryUsed = primaryGpu.memoryUsed;
+          gpuMemoryTotal = primaryGpu.memoryTotal;
+
+          // Update GPU list for metrics responses
+          updateGpuList(gpuList);
+
           console.log("[DEBUG] GPU metrics collected:", {
+            count: gpuList.length,
+            primary: primaryGpu.name,
             usage: gpuUsage,
             memoryUsed: gpuMemoryUsed,
             memoryTotal: gpuMemoryTotal,
           });
         }
       } catch (e) {
-        // GPU data not available, continue with 0 values
         console.log("[DEBUG] GPU data not available:", e.message);
       }
 
@@ -86,6 +119,7 @@ async function startMetrics(io, db) {
       db.saveMetrics({
         cpu_usage: Math.round(cpuUsage * 10) / 10,
         memory_usage: mem.heapUsed,
+        disk_usage: diskUsedPercent,
         uptime: process.uptime(),
         gpu_usage: Math.round(gpuUsage * 10) / 10,
         gpu_memory_used: Math.round(gpuMemoryUsed),
@@ -99,10 +133,12 @@ async function startMetrics(io, db) {
           metrics: {
             cpu: { usage: cpuUsage },
             memory: { used: mem.heapUsed },
+            disk: { used: diskUsedPercent },
             gpu: {
               usage: gpuUsage,
               memoryUsed: gpuMemoryUsed,
               memoryTotal: gpuMemoryTotal,
+              list: gpuList,
             },
             uptime: process.uptime(),
           },
