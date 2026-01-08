@@ -1025,6 +1025,9 @@ describe("SocketClient Branch Coverage", function () {
         client.on("test", handlers[i]);
       }
 
+      // Verify handlers were registered
+      expect(client.handlers.get("test").size).toBe(100);
+
       // Remove every other handler
       for (let i = 0; i < handlers.length; i += 2) {
         client.off("test", handlers[i]);
