@@ -106,7 +106,7 @@ class PresetsController {
       }
     } catch (error) {
       console.error("[PRESETS] Load error:", error.message);
-      showNotification("Failed to load presets: " + error.message, "error");
+      showNotification(`Failed to load presets: ${  error.message}`, "error");
     }
   }
 
@@ -118,7 +118,7 @@ class PresetsController {
       stateManager.set("presets", presets);
     } catch (error) {
       console.error("[PRESETS] Load error:", error.message);
-      showNotification("Failed to load presets: " + error.message, "error");
+      showNotification(`Failed to load presets: ${  error.message}`, "error");
       stateManager.set("presets", []);
     }
   }
@@ -592,7 +592,7 @@ class PresetsPage extends Component {
       this.setState({ models, loading: false });
     } catch (error) {
       console.error("[PRESETS] Error loading models:", error.message);
-      showNotification("Error: " + error.message, "error");
+      showNotification(`Error: ${  error.message}`, "error");
       this.setState({ loading: false });
     }
   }
@@ -624,7 +624,7 @@ class PresetsPage extends Component {
       });
     } catch (error) {
       console.error("[PRESETS] Delete error:", error.message);
-      showNotification("Error: " + error.message, "error");
+      showNotification(`Error: ${  error.message}`, "error");
       this.setState({ loading: false });
     }
   }
@@ -660,7 +660,7 @@ class PresetsPage extends Component {
       });
     } catch (error) {
       console.error("[PRESETS] Create error:", error.message);
-      showNotification("Error: " + error.message, "error");
+      showNotification(`Error: ${  error.message}`, "error");
       this.setState({ loading: false });
     }
   }
@@ -720,7 +720,7 @@ class PresetsPage extends Component {
       this.resetModelForm();
     } catch (error) {
       console.error("[PRESETS] Add model error:", error.message);
-      showNotification("Error: " + error.message, "error");
+      showNotification(`Error: ${  error.message}`, "error");
       this.setState({ loading: false });
     }
   }
@@ -773,7 +773,7 @@ class PresetsPage extends Component {
       this.resetModelForm();
     } catch (error) {
       console.error("[PRESETS] Update error:", error.message);
-      showNotification("Error: " + error.message, "error");
+      showNotification(`Error: ${  error.message}`, "error");
       this.setState({ loading: false });
     }
   }
@@ -798,7 +798,7 @@ class PresetsPage extends Component {
       await this.selectPreset(presetName);
     } catch (error) {
       console.error("[PRESETS] Delete model error:", error.message);
-      showNotification("Error: " + error.message, "error");
+      showNotification(`Error: ${  error.message}`, "error");
       this.setState({ loading: false });
     }
   }
@@ -816,7 +816,7 @@ class PresetsPage extends Component {
       const element = document.createElement("a");
       element.setAttribute(
         "href",
-        "data:text/plain;charset=utf-8," + encodeURIComponent(preset.content)
+        `data:text/plain;charset=utf-8,${  encodeURIComponent(preset.content)}`
       );
       element.setAttribute("download", `${name}.ini`);
       element.style.display = "none";
@@ -825,7 +825,7 @@ class PresetsPage extends Component {
       document.body.removeChild(element);
       showNotification("Preset downloaded", "success");
     } catch (error) {
-      showNotification("Error: " + error.message, "error");
+      showNotification(`Error: ${  error.message}`, "error");
     }
   }
 
