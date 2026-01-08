@@ -9,12 +9,13 @@
  */
 
 import { jest } from "@jest/globals";
+import { fileLogger } from "/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js";
 
 describe("Logger Class - Branch Coverage", () => {
   let LoggerClass;
   let Logger;
   let mockIo;
-  let mockFileLogger;
+  let originalFileLoggerMethods;
 
   beforeEach(async () => {
     const module = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logger.js");
@@ -23,17 +24,210 @@ describe("Logger Class - Branch Coverage", () => {
     mockIo = {
       emit: jest.fn(),
     };
-    // Mock fileLogger to avoid fs operations
-    mockFileLogger = {
-      setIo: jest.fn(),
-      setDb: jest.fn(),
-      log: jest.fn(),
-      info: jest.fn(),
-      error: jest.fn(),
-      warn: jest.fn(),
-      debug: jest.fn(),
+
+    // Store original methods to restore later
+    originalFileLoggerMethods = {
+      setIo: fileLogger.setIo,
+      setDb: fileLogger.setDb,
+      log: fileLogger.log,
+      info: fileLogger.info,
+      error: fileLogger.error,
+      warn: fileLogger.warn,
+      debug: fileLogger.debug,
     };
+
+    // Spy on fileLogger methods
+    jest.spyOn(fileLogger, "setIo");
+    jest.spyOn(fileLogger, "setDb");
+    jest.spyOn(fileLogger, "log");
+    jest.spyOn(fileLogger, "info");
+    jest.spyOn(fileLogger, "error");
+    jest.spyOn(fileLogger, "warn");
+    jest.spyOn(fileLogger, "debug");
   });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  describe("setDb method branches", () => {
+    /**
+     * Objective: Verify setDb method correctly delegates to fileLogger.setDb
+     * Positive Test: Call setDb with mock db object and verify fileLogger.setDb is called
+     */
+    test("should call fileLogger.setDb with provided db object", () => {
+      const mockDb = {
+        addLog: jest.fn(),
+        getLogs: jest.fn(),
+      };
+      Logger.setDb(mockDb);
+      expect(fileLogger.setDb).toHaveBeenCalledWith(mockDb);
+    });
+
+    /**
+     * Objective: Verify setDb handles null input
+     * Negative Test: Call setDb with null and verify fileLogger.setDb is called with null
+     */
+    test("should handle null db input", () => {
+      Logger.setDb(null);
+      expect(fileLogger.setDb).toHaveBeenCalledWith(null);
+    });
+
+    /**
+     * Objective: Verify setDb handles undefined input
+     * Negative Test: Call setDb with undefined and verify fileLogger.setDb is called with undefined
+     */
+    test("should handle undefined db input", () => {
+      Logger.setDb(undefined);
+      expect(fileLogger.setDb).toHaveBeenCalledWith(undefined);
+    });
+
+    /**
+     * Objective: Verify setDb can be called multiple times with different db objects
+     * Positive Test: Call setDb multiple times and verify each call is delegated
+     */
+    test("should allow multiple setDb calls with different objects", () => {
+      const mockDb1 = { addLog: jest.fn() };
+      const mockDb2 = { addLog: jest.fn() };
+      Logger.setDb(mockDb1);
+      Logger.setDb(mockDb2);
+      expect(fileLogger.setDb).toHaveBeenCalledTimes(2);
+      expect(fileLogger.setDb).toHaveBeenCalledWith(mockDb1);
+      expect(fileLogger.setDb).toHaveBeenCalledWith(mockDb2);
+    });
+  });
+
+  describe("debug method branches", () => {
+    /**
+     * Objective: Verify debug method delegates to fileLogger.debug
+     * Positive Test: Call debug with message and source and verify fileLogger.debug is called
+     */
+    test("should call fileLogger.debug with message and source", () => {
+      Logger.debug("Debug message", "test-source");
+      expect(fileLogger.debug).toHaveBeenCalledWith("Debug message", "test-source");
+    });
+
+    /**
+     * Objective: Verify debug method uses default source when not provided
+     * Positive Test: Call debug without source and verify default "server" is used
+     */
+    test("should use default source 'server' when not provided", () => {
+      Logger.debug("Debug message");
+      expect(fileLogger.debug).toHaveBeenCalledWith("Debug message", "server");
+    });
+
+    /**
+     * Objective: Verify debug method handles various message types
+     * Positive Test: Call debug with different message types (string, number, object)
+     */
+    test("should handle string message", () => {
+      Logger.debug("test message");
+      expect(fileLogger.debug).toHaveBeenCalledWith("test message", "server");
+    });
+
+    test("should handle numeric message", () => {
+      Logger.debug(12345);
+      expect(fileLogger.debug).toHaveBeenCalledWith(12345, "server");
+    });
+
+    test("should handle object message", () => {
+      const obj = { key: "value" };
+      Logger.debug(obj);
+      expect(fileLogger.debug).toHaveBeenCalledWith(obj, "server");
+    });
+
+    test("should handle array message", () => {
+      const arr = ["item1", "item2"];
+      Logger.debug(arr);
+      expect(fileLogger.debug).toHaveBeenCalledWith(arr, "server");
+    });
+
+    test("should handle empty string message", () => {
+      Logger.debug("");
+      expect(fileLogger.debug).toHaveBeenCalledWith("", "server");
+    });
+  });
+
+  describe("log level filtering branches", () => {
+    /**
+     * Objective: Verify log method delegates to fileLogger.log
+     * Positive Test: Call log with level, message, and source
+     */
+    test("should call fileLogger.log with all parameters", () => {
+      Logger.log("custom-level", "Test message", "custom-source");
+      expect(fileLogger.log).toHaveBeenCalledWith("custom-level", "Test message", "custom-source");
+    });
+
+    /**
+     * Objective: Verify log method uses default source
+     * Positive Test: Call log without source and verify default is used
+     */
+    test("should use default source 'server' for log method", () => {
+      Logger.log("info", "Test message");
+      expect(fileLogger.log).toHaveBeenCalledWith("info", "Test message", "server");
+    });
+  });
+
+  describe("info method branches", () => {
+    /**
+     * Objective: Verify info method delegates correctly
+     * Positive Test: Call info with custom source
+     */
+    test("should call fileLogger.info with message and custom source", () => {
+      Logger.info("Info message", "custom-source");
+      expect(fileLogger.info).toHaveBeenCalledWith("Info message", "custom-source");
+    });
+
+    /**
+     * Objective: Verify info method handles various message types
+     * Positive Test: Call info with null message
+     */
+    test("should handle null message", () => {
+      Logger.info(null);
+      expect(fileLogger.info).toHaveBeenCalledWith(null, "server");
+    });
+  });
+
+  describe("error method branches", () => {
+    /**
+     * Objective: Verify error method delegates correctly
+     * Positive Test: Call error with custom source
+     */
+    test("should call fileLogger.error with message and custom source", () => {
+      Logger.error("Error message", "custom-source");
+      expect(fileLogger.error).toHaveBeenCalledWith("Error message", "custom-source");
+    });
+
+    /**
+     * Objective: Verify error method handles undefined message
+     * Negative Test: Call error with undefined message
+     */
+    test("should handle undefined message", () => {
+      Logger.error(undefined);
+      expect(fileLogger.error).toHaveBeenCalledWith(undefined, "server");
+    });
+  });
+
+  describe("warn method branches", () => {
+    /**
+     * Objective: Verify warn method delegates correctly
+     * Positive Test: Call warn with custom source
+     */
+    test("should call fileLogger.warn with message and custom source", () => {
+      Logger.warn("Warn message", "custom-source");
+      expect(fileLogger.warn).toHaveBeenCalledWith("Warn message", "custom-source");
+    });
+
+    /**
+     * Objective: Verify warn method handles boolean message
+     * Positive Test: Call warn with boolean message
+     */
+    test("should handle boolean message", () => {
+      Logger.warn(true);
+      expect(fileLogger.warn).toHaveBeenCalledWith(true, "server");
+    });
+  });
+});
 
   afterEach(() => {
     jest.restoreAllMocks();
