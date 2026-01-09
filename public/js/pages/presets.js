@@ -1,6 +1,6 @@
 /**
- * Presets Page - Sparse Configuration for llama.cpp Router Mode
- * Shows only user-configured parameters (not defaults from llama.cpp)
+ * Presets Page - Hierarchical Collapsible Parameter Management
+ * Global Defaults → Groups → Models
  */
 
 class PresetsController {
@@ -91,71 +91,31 @@ class PresetsController {
   }
 }
 
+// Parameter definitions - iniKey is the key sent to backend, key is what's displayed
 const PRESET_PARAMS = [
-  {
-    key: "model",
-    iniKey: "model",
-    label: "Model Path",
-    type: "string",
-    default: "",
-    category: "model",
-  },
   {
     key: "ctx-size",
     iniKey: "ctxSize",
     label: "Context Size",
     type: "number",
     default: 2048,
-    min: 1,
-    max: 131072,
-    category: "model",
+    group: "core",
   },
   {
-    key: "ctx-checkpoints",
-    iniKey: "ctxCheckpoints",
-    label: "Context Checkpoints",
+    key: "batch",
+    iniKey: "batchSize",
+    label: "Batch Size",
     type: "number",
-    default: 8,
-    min: 1,
-    max: 256,
-    category: "model",
+    default: 512,
+    group: "core",
   },
   {
-    key: "n-gpu-layers",
-    iniKey: "nGpuLayers",
-    label: "GPU Layers",
+    key: "ubatch",
+    iniKey: "ubatchSize",
+    label: "Micro Batch",
     type: "number",
-    default: 0,
-    min: 0,
-    max: 1000,
-    category: "model",
-  },
-  {
-    key: "split-mode",
-    iniKey: "splitMode",
-    label: "Split Mode",
-    type: "select",
-    options: ["none", "layer", "row"],
-    default: "none",
-    category: "model",
-  },
-  {
-    key: "tensor-split",
-    iniKey: "tensorSplit",
-    label: "Tensor Split",
-    type: "string",
-    default: "",
-    category: "model",
-  },
-  {
-    key: "main-gpu",
-    iniKey: "mainGpu",
-    label: "Main GPU",
-    type: "number",
-    default: 0,
-    min: 0,
-    max: 16,
-    category: "model",
+    default: 512,
+    group: "core",
   },
   {
     key: "temp",
@@ -164,136 +124,15 @@ const PRESET_PARAMS = [
     type: "number",
     step: "0.01",
     default: 0.7,
-    min: 0.0,
-    max: 2.0,
-    category: "sampling",
+    group: "sampling",
   },
   {
-    key: "top-p",
-    iniKey: "topP",
-    label: "Top-P",
+    key: "n-gpu-layers",
+    iniKey: "nGpuLayers",
+    label: "GPU Layers",
     type: "number",
-    step: "0.01",
-    default: 0.9,
-    min: 0.0,
-    max: 1.0,
-    category: "sampling",
-  },
-  {
-    key: "top-k",
-    iniKey: "topK",
-    label: "Top-K",
-    type: "number",
-    default: 40,
-    min: 1,
-    max: 100,
-    category: "sampling",
-  },
-  {
-    key: "min-p",
-    iniKey: "minP",
-    label: "Min-P",
-    type: "number",
-    step: "0.01",
-    default: 0.0,
-    min: 0.0,
-    max: 1.0,
-    category: "sampling",
-  },
-  {
-    key: "typ-p",
-    iniKey: "typP",
-    label: "Typical P",
-    type: "number",
-    step: "0.01",
-    default: 1.0,
-    min: 0.0,
-    max: 1.0,
-    category: "sampling",
-  },
-  {
-    key: "seed",
-    iniKey: "seed",
-    label: "Random Seed",
-    type: "number",
-    default: -1,
-    min: -1,
-    max: 4294967295,
-    category: "sampling",
-  },
-  {
-    key: "mirostat",
-    iniKey: "mirostat",
-    label: "Mirostat",
-    type: "select",
-    options: ["0", "1", "2"],
-    default: "0",
-    category: "sampling",
-  },
-  {
-    key: "mirostat-lr",
-    iniKey: "mirostat_lr",
-    label: "Mirostat LR",
-    type: "number",
-    step: "0.01",
-    default: 0.1,
-    min: 0.0,
-    max: 1.0,
-    category: "sampling",
-  },
-  {
-    key: "mirostat-ent",
-    iniKey: "mirostat_ent",
-    label: "Mirostat Entropy",
-    type: "number",
-    step: "0.01",
-    default: 5.0,
-    min: 0.0,
-    max: 10.0,
-    category: "sampling",
-  },
-  {
-    key: "repeat-penalty",
-    iniKey: "repeat_penalty",
-    label: "Repeat Penalty",
-    type: "number",
-    step: "0.01",
-    default: 1.0,
-    min: 0.0,
-    max: 2.0,
-    category: "sampling",
-  },
-  {
-    key: "repeat-last-n",
-    iniKey: "repeat_last_n",
-    label: "Repeat Last N",
-    type: "number",
-    default: 64,
-    min: 0,
-    max: 4096,
-    category: "sampling",
-  },
-  {
-    key: "presence-penalty",
-    iniKey: "presence_penalty",
-    label: "Presence Penalty",
-    type: "number",
-    step: "0.01",
-    default: 0.0,
-    min: -2.0,
-    max: 2.0,
-    category: "sampling",
-  },
-  {
-    key: "frequency-penalty",
-    iniKey: "frequency_penalty",
-    label: "Frequency Penalty",
-    type: "number",
-    step: "0.01",
-    default: 0.0,
-    min: -2.0,
-    max: 2.0,
-    category: "sampling",
+    default: 0,
+    group: "hardware",
   },
   {
     key: "threads",
@@ -301,118 +140,14 @@ const PRESET_PARAMS = [
     label: "Threads",
     type: "number",
     default: 0,
-    min: 0,
-    max: 256,
-    category: "performance",
-  },
-  {
-    key: "batch",
-    iniKey: "batchSize",
-    label: "Batch Size",
-    type: "number",
-    default: 512,
-    min: 1,
-    max: 8192,
-    category: "performance",
-  },
-  {
-    key: "ubatch",
-    iniKey: "ubatchSize",
-    label: "Micro Batch",
-    type: "number",
-    default: 512,
-    min: 1,
-    max: 8192,
-    category: "performance",
-  },
-  {
-    key: "threads-http",
-    iniKey: "threadsHttp",
-    label: "HTTP Threads",
-    type: "number",
-    default: 1,
-    min: 1,
-    max: 64,
-    category: "performance",
-  },
-  {
-    key: "cache-ram",
-    iniKey: "cacheRam",
-    label: "RAM Cache (MB)",
-    type: "number",
-    default: 8192,
-    min: 0,
-    max: 131072,
-    category: "server",
-  },
-  {
-    key: "load-on-startup",
-    iniKey: "loadOnStartup",
-    label: "Load on Startup",
-    type: "boolean",
-    default: false,
-    category: "server",
-  },
-  {
-    key: "mmp",
-    iniKey: "mmp",
-    label: "Model Memory Pointer",
-    type: "string",
-    default: "",
-    category: "server",
-  },
-  {
-    key: "draft-min",
-    iniKey: "draft_min",
-    label: "Draft Min Tokens",
-    type: "number",
-    default: 5,
-    min: 1,
-    max: 100,
-    category: "speculative",
-  },
-  {
-    key: "draft-max",
-    iniKey: "draft_max",
-    label: "Draft Max Tokens",
-    type: "number",
-    default: 10,
-    min: 1,
-    max: 100,
-    category: "speculative",
-  },
-  {
-    key: "draft-p-min",
-    iniKey: "draft_p_min",
-    label: "Draft P Min",
-    type: "number",
-    step: "0.01",
-    default: 0.8,
-    min: 0.0,
-    max: 1.0,
-    category: "speculative",
-  },
-  {
-    key: "jinja",
-    iniKey: "jinja",
-    label: "Use Jinja Template",
-    type: "boolean",
-    default: false,
-    category: "chat",
-  },
-  {
-    key: "chat-template",
-    iniKey: "chatTemplate",
-    label: "Chat Template",
-    type: "string",
-    default: "",
-    category: "chat",
+    group: "hardware",
   },
 ];
 
 class PresetsPage extends Component {
   constructor(props) {
     super(props);
+    this._knownGroups = props.knownGroups || new Set();
     this._presetsService = props.presetsService || null;
     this.state = {
       presets: props.presets || [],
@@ -422,14 +157,25 @@ class PresetsPage extends Component {
       standaloneModels: [],
       availableModels: [],
       loading: props.loading !== undefined ? props.loading : true,
+      // Expanded state
       expandedDefaults: true,
       expandedGroups: {},
       expandedModels: {},
+      // Editing state
+      editingDefaults: false,
+      editingGroup: null,
+      editingModel: null,
+      editingData: null,
+      // Search/filter state
+      parameterFilter: "",
+      // Copy feedback
+      copiedParam: null,
     };
     this.controller = props.controller;
     this._isUnmounting = false;
   }
 
+  // Get service - use controller's service if available
   _getService() {
     return this._presetsService || (this.controller ? this.controller.presetsService : null);
   }
@@ -451,7 +197,7 @@ class PresetsPage extends Component {
       Component.h(
         "p",
         { className: "presets-subtitle" },
-        "Sparse configuration - only explicitly set parameters are saved"
+        "Configure llama.cpp parameters - Global Defaults → Groups → Models"
       )
     );
   }
@@ -507,14 +253,14 @@ class PresetsPage extends Component {
           Component.h("span", { className: "preset-name" }, preset.name),
           preset.name !== "default"
             ? Component.h(
-                "span",
-                {
-                  className: "preset-delete",
-                  "data-action": "delete-preset",
-                  "data-preset-name": preset.name,
-                },
-                "×"
-              )
+              "span",
+              {
+                className: "preset-delete",
+                "data-action": "delete-preset",
+                "data-preset-name": preset.name,
+              },
+              "×"
+            )
             : null
         )
       ),
@@ -548,15 +294,17 @@ class PresetsPage extends Component {
           this.state.selectedPreset.name === "default" ? "Built-in" : "Custom"
         )
       ),
-      this.renderGlobalDefaults(),
+      this.renderDefaultsSection(),
       this.renderGroupsSection(),
       this.renderStandaloneSection()
     );
   }
 
-  renderGlobalDefaults() {
-    const params = this.state.globalDefaults;
-    const hasParams = Object.keys(params).length > 0;
+  renderDefaultsSection() {
+    const defaults = this.state.globalDefaults || {};
+    const isExpanded = this.state.expandedDefaults;
+    const isEditing = this.state.editingDefaults;
+    const editingData = isEditing && this.state.editingData ? this.state.editingData : defaults;
 
     return Component.h(
       "div",
@@ -564,36 +312,47 @@ class PresetsPage extends Component {
       Component.h(
         "div",
         {
-          className: `section-header ${this.state.expandedDefaults ? "expanded" : ""}`,
+          className: `section-header ${isExpanded ? "expanded" : ""}`,
           "data-action": "toggle-defaults",
         },
         Component.h("span", { className: "section-icon" }, "★"),
-        Component.h("span", { className: "section-title" }, "Global Defaults (*)"),
-        Component.h(
-          "span",
-          { className: "section-toggle" },
-          this.state.expandedDefaults ? "▼" : "▶"
-        )
+        Component.h("span", { className: "section-title" }, "Global Defaults"),
+        Component.h("span", { className: "section-toggle" }, isExpanded ? "▼" : "▶")
       ),
-      this.state.expandedDefaults
+      isExpanded
         ? Component.h(
-            "div",
-            { className: "section-content" },
-            hasParams
-              ? Component.h(
-                  "div",
-                  { className: "params-grid" },
-                  Object.entries(params).map(([key, value]) =>
-                    this.renderParamItem(key, value, "defaults", "*")
-                  )
-                )
-              : Component.h(
-                  "div",
-                  { className: "section-hint" },
-                  "No parameters set. All use llama.cpp defaults."
-                ),
-            this.renderAddParamDropdown("defaults", "*")
-          )
+          "div",
+          { className: "section-content" },
+          this.renderParameterSearch(),
+          // Always in edit mode for defaults
+          this.renderEditableParams(editingData, "defaults", null)
+        )
+        : null
+    );
+  }
+
+  renderParameterSearch() {
+    return Component.h(
+      "div",
+      { className: "params-search-wrapper" },
+      Component.h("span", { className: "params-search-icon" }, "🔍"),
+      Component.h("input", {
+        type: "text",
+        className: "params-search-input",
+        placeholder: "Filter parameters by name...",
+        value: this.state.parameterFilter,
+        "data-action": "search-params",
+      }),
+      this.state.parameterFilter
+        ? Component.h(
+          "button",
+          {
+            className: "params-search-clear",
+            "data-action": "clear-search",
+            title: "Clear search",
+          },
+          "×"
+        )
         : null
     );
   }
@@ -607,20 +366,20 @@ class PresetsPage extends Component {
       Component.h("h3", { className: "section-label" }, "Groups"),
       groups.length === 0
         ? Component.h(
-            "div",
-            { className: "section-empty" },
-            Component.h("p", {}, "No groups defined"),
-            Component.h(
-              "button",
-              { className: "btn btn-secondary btn-sm", "data-action": "new-group" },
-              "+ Add Group"
-            )
+          "div",
+          { className: "section-empty" },
+          Component.h("p", {}, "No groups defined"),
+          Component.h(
+            "button",
+            { className: "btn btn-secondary btn-sm", "data-action": "new-group" },
+            "+ Add Group"
           )
+        )
         : Component.h(
-            "div",
-            { className: "groups-list" },
-            groups.map((group) => this.renderGroup(group))
-          ),
+          "div",
+          { className: "groups-list" },
+          groups.map((group) => this.renderGroupSection(group))
+        ),
       Component.h(
         "button",
         { className: "btn btn-secondary btn-sm add-group-btn", "data-action": "new-group" },
@@ -629,9 +388,10 @@ class PresetsPage extends Component {
     );
   }
 
-  renderGroup(group) {
+  renderGroupSection(group) {
     const isExpanded = this.state.expandedGroups[group.name] || false;
-    const hasParams = Object.keys(group.params || {}).length > 0;
+    const isEditing = this.state.editingGroup === group.name;
+    const editingData = isEditing && this.state.editingData ? this.state.editingData : group;
 
     return Component.h(
       "div",
@@ -667,65 +427,106 @@ class PresetsPage extends Component {
       ),
       isExpanded
         ? Component.h(
+          "div",
+          { className: "section-content" },
+          // Models list section
+          Component.h(
             "div",
-            { className: "section-content" },
-            Component.h(
-              "div",
-              { className: "group-models-section" },
-              Component.h("h4", { className: "subsection-title" }, "Applies to"),
-              group.models && group.models.length > 0
-                ? Component.h(
+            { className: "group-models-section" },
+            Component.h("h4", { className: "subsection-title" }, "Applies to"),
+            group.models && group.models.length > 0
+              ? Component.h(
+                "div",
+                { className: "models-list-compact" },
+                group.models.map((model) =>
+                  Component.h(
                     "div",
-                    { className: "models-tags" },
-                    group.models.map((model) =>
-                      Component.h(
-                        "span",
-                        { className: "model-tag" },
-                        model,
-                        Component.h(
-                          "button",
-                          {
-                            className: "btn-remove-model",
-                            "data-action": "remove-model-from-group",
-                            "data-model-name": model,
-                            "data-group-name": group.name,
-                          },
-                          "×"
-                        )
-                      )
+                    { className: "model-list-item" },
+                    Component.h("span", { className: "model-name" }, model.name),
+                    Component.h(
+                      "button",
+                      {
+                        className: "btn-remove-model",
+                        "data-action": "delete-model",
+                        "data-model-name": model.name,
+                        "data-group-name": group.name,
+                      },
+                      "×"
                     )
                   )
-                : Component.h("div", { className: "empty-list" }, "No models in this group"),
-              Component.h(
-                "button",
-                {
-                  className: "btn btn-secondary btn-sm",
-                  "data-action": "add-model-to-group",
-                  "data-group-name": group.name,
-                },
-                "+ Add Model to Group"
+                )
               )
-            ),
+              : Component.h("div", { className: "empty-list" }, "No models in this group yet"),
             Component.h(
-              "div",
-              { className: "group-params-section" },
-              Component.h("h4", { className: "subsection-title" }, "Group Parameters"),
-              hasParams
-                ? Component.h(
-                    "div",
-                    { className: "params-grid" },
-                    Object.entries(group.params).map(([key, value]) =>
-                      this.renderParamItem(key, value, "group", group.name)
-                    )
-                  )
-                : Component.h(
-                    "div",
-                    { className: "section-hint" },
-                    "No parameters set. Uses global defaults."
-                  ),
-              this.renderAddParamDropdown("group", group.name)
+              "button",
+              {
+                className: "btn btn-secondary btn-sm add-model-inline-btn",
+                "data-action": "new-model",
+                "data-group-name": group.name,
+              },
+              "+ Add Model"
             )
+          ),
+          // Group parameters section - always editable
+          Component.h(
+            "div",
+            { className: "group-params-section" },
+            Component.h("h4", { className: "subsection-title" }, "Group Parameters"),
+            this.renderEditableParams(editingData, "group", group.name)
           )
+        )
+        : null
+    );
+  }
+
+  renderModelSection(model, groupName = null) {
+    const fullName = groupName ? `${groupName}/${model.name}` : model.name;
+    const isExpanded = this.state.expandedModels[fullName] || false;
+    // Only standalone models (groupName = null) can be edited
+    const isEditing = groupName === null && this.state.editingModel === fullName;
+    const editingData = isEditing && this.state.editingData ? this.state.editingData : model;
+
+    return Component.h(
+      "div",
+      { className: `model-section ${isExpanded ? "expanded" : ""}` },
+      Component.h(
+        "div",
+        {
+          className: `section-header model-header ${isExpanded ? "expanded" : ""}`,
+          "data-action": "toggle-model",
+          "data-model-name": model.name,
+          "data-group-name": groupName || "",
+        },
+        Component.h("span", { className: "section-icon" }, "📄"),
+        Component.h(
+          "div",
+          { className: "model-title-delete-wrapper" },
+          Component.h("span", { className: "section-title" }, model.name),
+          Component.h(
+            "button",
+            {
+              type: "button",
+              className: "delete-model-btn",
+              "data-action": "delete-model",
+              "data-model-name": model.name,
+              "data-group-name": groupName || "",
+              title: "Delete model",
+            },
+            "×"
+          )
+        ),
+        Component.h("span", { className: "model-path-badge" }, model.model || "No model"),
+        Component.h("span", { className: "section-toggle" }, isExpanded ? "▼" : "▶")
+      ),
+      isExpanded
+        ? Component.h(
+          "div",
+          { className: "section-content" },
+          // Standalone models always show editable params
+          groupName === null
+            ? this.renderEditableParams(editingData, "model", fullName)
+            : this.renderReadOnlyParams(editingData, "model", fullName)
+        )
         : null
     );
   }
@@ -748,164 +549,174 @@ class PresetsPage extends Component {
       ),
       models.length > 0
         ? Component.h(
-            "div",
-            { className: "standalone-list" },
-            models.map((model) => this.renderStandaloneModel(model))
-          )
+          "div",
+          { className: "standalone-list" },
+          models.map((model) => this.renderModelSection(model, null))
+        )
         : Component.h("div", { className: "empty-list" }, "No standalone models yet")
     );
   }
 
-  renderStandaloneModel(model) {
-    const fullName = model.name;
-    const isExpanded = this.state.expandedModels[fullName] || false;
-    const hasParams = Object.keys(model.params || {}).length > 0;
-
-    return Component.h(
-      "div",
-      { className: `model-section ${isExpanded ? "expanded" : ""}` },
-      Component.h(
-        "div",
-        {
-          className: `section-header model-header ${isExpanded ? "expanded" : ""}`,
-          "data-action": "toggle-model",
-          "data-model-name": model.name,
-          "data-group-name": "",
-        },
-        Component.h("span", { className: "section-icon" }, "📄"),
-        Component.h(
-          "div",
-          { className: "model-title-wrapper" },
-          Component.h("span", { className: "section-title" }, model.name),
-          Component.h(
-            "button",
-            {
-              className: "delete-model-btn",
-              "data-action": "delete-model",
-              "data-model-name": model.name,
-              "data-group-name": "",
-              title: "Delete model",
-            },
-            "×"
-          )
-        ),
-        Component.h("span", { className: "section-toggle" }, isExpanded ? "▼" : "▶")
-      ),
-      isExpanded
-        ? Component.h(
-            "div",
-            { className: "section-content" },
-            hasParams
-              ? Component.h(
-                  "div",
-                  { className: "params-grid" },
-                  Object.entries(model.params).map(([key, value]) =>
-                    this.renderParamItem(key, value, "model", fullName)
-                  )
-                )
-              : Component.h(
-                  "div",
-                  { className: "section-hint" },
-                  "No parameters set. Uses global defaults."
-                ),
-            this.renderAddParamDropdown("model", fullName)
-          )
-        : null
+  renderReadOnlyParams(data, sectionType, sectionName = null) {
+    const filter = this.state.parameterFilter.toLowerCase();
+    const filteredParams = PRESET_PARAMS.filter(
+      (param) =>
+        param.label.toLowerCase().includes(filter) || param.key.toLowerCase().includes(filter)
     );
-  }
-
-  renderParamItem(key, value, sectionType, sectionName) {
-    const paramDef = PRESET_PARAMS.find((p) => p.iniKey === key);
-    if (!paramDef) return null;
 
     return Component.h(
       "div",
-      { className: "param-item" },
-      Component.h("label", { className: "param-label" }, paramDef.label),
-      Component.h(
-        "div",
-        { className: "param-input-wrapper" },
-        paramDef.type === "select"
-          ? Component.h(
-              "select",
+      { className: "params-list" },
+      filteredParams.map((param) => {
+        // data uses iniKey (camelCase) from backend
+        const value = data[param.iniKey];
+        const hasValue = value !== undefined && value !== null;
+        const displayValue = hasValue ? value : param.default;
+        const paramId = `${sectionType}-${sectionName || "root"}-${param.key}`;
+
+        return Component.h(
+          "div",
+          { className: `param-item param-${param.group}`, "data-param-key": param.key },
+          Component.h("label", { className: "param-label" }, param.label),
+          Component.h(
+            "div",
+            { className: "param-value-wrapper" },
+            Component.h(
+              "span",
               {
-                className: "param-input",
-                "data-param": key,
+                className: `param-value ${!hasValue ? "param-inherited" : ""}`,
+                "data-action": "start-edit",
                 "data-section": sectionType,
                 "data-name": sectionName,
+                "data-param": param.key,
               },
-              paramDef.options.map((opt) =>
-                Component.h("option", { value: opt, selected: opt === String(value) }, opt)
-              )
+              displayValue !== undefined ? String(displayValue) : "-"
+            ),
+            Component.h(
+              "button",
+              {
+                className: `copy-btn ${this.state.copiedParam === paramId ? "copied" : ""}`,
+                "data-action": "copy-value",
+                "data-param-id": paramId,
+                "data-value": displayValue !== undefined ? String(displayValue) : "",
+                title: "Copy value",
+              },
+              this.state.copiedParam === paramId ? "✓" : "Copy"
             )
-          : Component.h("input", {
-              type: paramDef.type,
-              className: "param-input",
-              step: paramDef.step || "1",
-              value: value !== undefined && value !== null ? value : "",
-              "data-param": key,
-              "data-section": sectionType,
-              "data-name": sectionName,
-              placeholder: String(paramDef.default),
-              min: paramDef.min,
-              max: paramDef.max,
-            }),
-        Component.h(
-          "button",
-          {
-            className: "btn-remove-param",
-            "data-action": "remove-param",
-            "data-param": key,
-            "data-section": sectionType,
-            "data-name": sectionName,
-            title: "Remove parameter",
-          },
-          "×"
-        )
-      ),
-      Component.h(
-        "span",
-        { className: "param-info" },
-        `default: ${paramDef.default}, min: ${paramDef.min}, max: ${paramDef.max}`
-      )
+          )
+        );
+      })
     );
   }
 
-  renderAddParamDropdown(sectionType, sectionName) {
-    const currentParams = this.getSectionParams(sectionType, sectionName);
-    const availableParams = PRESET_PARAMS.filter((p) => !(p.iniKey in currentParams));
+  renderEditableParams(data, sectionType, sectionName = null) {
+    // Get only the parameters that are set in the data object
+    const setParams = PRESET_PARAMS.filter((param) => data[param.iniKey] !== undefined);
+    // Get available params to add (those not yet set)
+    const availableToAdd = PRESET_PARAMS.filter((param) => data[param.iniKey] === undefined);
+    // For defaults section, show all params (not just set ones)
+    const isDefaults = sectionType === "defaults";
+    const paramsToShow = isDefaults ? PRESET_PARAMS : setParams;
 
     return Component.h(
       "div",
-      { className: "add-param-section" },
-      Component.h(
-        "select",
-        {
-          className: "param-add-select",
-          "data-action": "add-param-select",
-          "data-section": sectionType,
-          "data-name": sectionName,
-          defaultValue: "",
-        },
-        Component.h("option", { value: "" }, "-- Add Parameter --"),
-        availableParams.map((param) =>
-          Component.h("option", { value: param.key }, `${param.label} (default: ${param.default})`)
-        )
-      )
-    );
-  }
+      { className: "params-list" },
+      // Show current parameters
+      paramsToShow.length > 0
+        ? paramsToShow.map((param) => {
+          const value = data[param.iniKey];
+          const displayValue = value !== undefined && value !== null ? value : param.default;
 
-  getSectionParams(sectionType, sectionName) {
-    if (sectionType === "defaults") {
-      return this.state.globalDefaults;
-    } else if (sectionType === "group") {
-      const group = this.state.groups.find((g) => g.name === sectionName);
-      return group?.params || {};
-    } else if (sectionType === "model") {
-      const model = this.state.standaloneModels.find((m) => m.name === sectionName);
-      return model?.params || {};
-    }
-    return {};
+          return Component.h(
+            "div",
+            { className: `param-item param-${param.group}`, "data-param-key": param.key },
+            Component.h("label", { className: "param-label" }, param.label),
+            Component.h(
+              "div",
+              { className: "param-input-wrapper" },
+              Component.h("input", {
+                type: param.type,
+                className: "param-input",
+                step: param.step || "1",
+                value: displayValue !== undefined ? displayValue : "",
+                "data-section": sectionType,
+                "data-name": sectionName,
+                "data-param": param.key,
+                placeholder: String(param.default),
+              }),
+              // Only show remove button for non-defaults and if param is explicitly set
+              !isDefaults && data[param.iniKey] !== undefined
+                ? Component.h(
+                  "button",
+                  {
+                    className: "btn-remove-param",
+                    "data-action": "remove-param",
+                    "data-param": param.key,
+                    "data-section": sectionType,
+                    "data-name": sectionName,
+                    title: "Remove parameter",
+                  },
+                  "×"
+                )
+                : null
+            )
+          );
+        })
+        : null,
+      // For non-defaults sections, show "Add Parameter" button if there are available params
+      !isDefaults && availableToAdd.length > 0
+        ? Component.h(
+          "div",
+          { className: "add-param-section" },
+          Component.h("label", {}, "Add Parameter"),
+          Component.h(
+            "select",
+            {
+              className: "param-add-select",
+              "data-action": "add-param-select",
+              "data-section": sectionType,
+              "data-name": sectionName,
+              defaultValue: "",
+            },
+            Component.h("option", { value: "" }, "-- Select parameter to add --"),
+            availableToAdd.map((param) =>
+              Component.h("option", { value: param.key }, param.label)
+            )
+          )
+        )
+        : null,
+      // Action buttons
+      isDefaults
+        ? // Defaults section: only Save button
+        Component.h(
+          "div",
+          { className: "param-actions" },
+          Component.h(
+            "button",
+            { className: "btn btn-primary btn-sm", "data-action": "save-edit" },
+            "Save Defaults"
+          )
+        )
+        : // Groups/Models: Show Save and Cancel only if editing was initiated
+        sectionType === "group" ||
+            (sectionType === "model" &&
+              this.state.editingModel === (sectionName || this.state.standaloneModels?.[0]?.name))
+          ? Component.h(
+            "div",
+            { className: "param-actions" },
+            Component.h(
+              "button",
+              { className: "btn btn-primary btn-sm", "data-action": "save-edit" },
+              "Save"
+            ),
+            Component.h(
+              "button",
+              { className: "btn btn-secondary btn-sm", "data-action": "cancel-edit" },
+              "Cancel"
+            )
+          )
+          : null
+    );
   }
 
   getEventMap() {
@@ -917,28 +728,43 @@ class PresetsPage extends Component {
       "click [data-action=toggle-group]": "handleToggleGroup",
       "click [data-action=toggle-model]": "handleToggleModel",
       "click [data-action=new-group]": "handleNewGroup",
+      "click [data-action=save-group]": "handleSaveGroup",
       "click [data-action=delete-group]": "handleDeleteGroup",
       "click [data-action=new-model]": "handleNewModel",
+      "click [data-action=save-model]": "handleSaveModel",
       "click [data-action=delete-model]": "handleDeleteModel",
-      "click [data-action=remove-param]": "handleRemoveParam",
+      "click [data-action=start-edit]": "handleStartEdit",
+      "click [data-action=save-edit]": "handleSaveEdit",
+      "click [data-action=cancel-edit]": "handleCancelEdit",
       "change [data-action=add-param-select]": "handleAddParam",
-      "input .param-input": "handleParamChange",
-      "click [data-action=add-model-to-group]": "handleAddModelToGroup",
-      "click [data-action=remove-model-from-group]": "handleRemoveModelFromGroup",
+      "click [data-action=remove-param]": "handleRemoveParam",
+      "change [data-action=new-model-select]": "handleModelSelectChange",
+      "input [data-action=search-params]": "handleSearchParams",
+      "click [data-action=clear-search]": "handleClearSearch",
+      "click [data-action=copy-value]": "handleCopyValue",
     };
   }
 
   handleToggleDefaults() {
+    if (this.state.editingDefaults) {
+      this.setState({ editingDefaults: false, editingData: null });
+    }
     this.setState({ expandedDefaults: !this.state.expandedDefaults });
   }
 
   handleToggleGroup(e) {
-    if (e.target.closest("[data-action=delete-group]")) return;
+    // Don't toggle if delete button was clicked
+    if (e.target.closest("[data-action=delete-group]")) {
+      return;
+    }
 
     const el = e.target.closest("[data-action=toggle-group]");
     if (!el) return;
     const groupName = el.dataset.groupName;
 
+    if (this.state.editingGroup === groupName) {
+      this.setState({ editingGroup: null, editingData: null });
+    }
     this.setState({
       expandedGroups: {
         ...this.state.expandedGroups,
@@ -948,17 +774,126 @@ class PresetsPage extends Component {
   }
 
   handleToggleModel(e) {
-    if (e.target.closest("[data-action=delete-model]")) return;
+    // Don't toggle if delete button was clicked
+    if (e.target.closest("[data-action=delete-model]")) {
+      return;
+    }
 
     const el = e.target.closest("[data-action=toggle-model]");
     if (!el) return;
     const modelName = el.dataset.modelName;
+    const groupName = el.dataset.groupName || "";
+    const fullName = groupName ? `${groupName}/${modelName}` : modelName;
 
+    if (this.state.editingModel === fullName) {
+      this.setState({ editingModel: null, editingData: null });
+    }
     this.setState({
       expandedModels: {
         ...this.state.expandedModels,
-        [modelName]: !this.state.expandedModels[modelName],
+        [fullName]: !this.state.expandedModels[fullName],
       },
+    });
+  }
+
+  handleStartEdit(e) {
+    const el = e.target.closest("[data-action=start-edit]");
+    if (!el) return;
+
+    const section = el.dataset.section;
+    const name = el.dataset.name;
+    const param = el.dataset.param;
+
+    // Prevent editing models in groups - they're read-only
+    if (section === "model" && name?.includes("/")) {
+      showNotification(
+        "Models in groups inherit group parameters. Edit the group or move the model to standalone.",
+        "info"
+      );
+      return;
+    }
+
+    let data;
+    if (section === "defaults") {
+      data = { ...this.state.globalDefaults };
+    } else if (section === "group") {
+      const group = this.state.groups.find((g) => g.name === name);
+      data = group ? { ...group } : {};
+    } else if (section === "model") {
+      const model = this.getModelByFullName(name);
+      data = model ? { ...model } : {};
+    }
+
+    this.setState({
+      editingDefaults: section === "defaults",
+      editingGroup: section === "group" ? name : null,
+      editingModel: section === "model" ? name : null,
+      editingData: data,
+    });
+  }
+
+  handleSaveEdit() {
+    const { editingDefaults, editingGroup, editingModel, selectedPreset } = this.state;
+    if (!selectedPreset) return;
+
+    // Read values from input elements instead of editingData
+    const config = {};
+    const inputs = this._el?.querySelectorAll(".param-input") || [];
+
+    for (const input of inputs) {
+      const paramKey = input.dataset.param;
+      const param = PRESET_PARAMS.find((p) => p.key === paramKey);
+      if (!param) continue;
+
+      const value = input.value?.trim();
+      if (value !== undefined && value !== "" && value !== null) {
+        // Convert to appropriate type
+        if (param.type === "number") {
+          const numValue = parseFloat(value);
+          if (!isNaN(numValue)) {
+            config[param.iniKey] = numValue;
+          }
+        } else {
+          config[param.iniKey] = value;
+        }
+      }
+    }
+
+    let modelName;
+    if (editingDefaults) {
+      modelName = "*";
+    } else if (editingGroup) {
+      modelName = editingGroup;
+    } else if (editingModel) {
+      modelName = editingModel;
+    }
+
+    if (!modelName) return;
+
+    this._getService()
+      .addModel(selectedPreset.name, modelName, config)
+      .then(() => {
+        showNotification("Saved successfully", "success");
+        this.loadPresetData(selectedPreset);
+        this.setState({
+          editingDefaults: false,
+          editingGroup: null,
+          editingModel: null,
+          editingData: null,
+        });
+      })
+      .catch((error) => {
+        console.error("[PRESETS] Save error:", error);
+        showNotification(`Error: ${error.message}`, "error");
+      });
+  }
+
+  handleCancelEdit() {
+    this.setState({
+      editingDefaults: false,
+      editingGroup: null,
+      editingModel: null,
+      editingData: null,
     });
   }
 
@@ -970,33 +905,18 @@ class PresetsPage extends Component {
     const param = PRESET_PARAMS.find((p) => p.key === paramKey);
     if (!param) return;
 
-    const sectionType = select.dataset.section;
-    const sectionName = select.dataset.name;
+    // Add the parameter with its default value to editingData
+    const newData = { ...this.state.editingData };
+    newData[param.iniKey] = param.default;
 
-    this.updateSectionParam(sectionType, sectionName, param.iniKey, param.default);
+    this.setState({
+      editingData: newData,
+    });
 
-    select.value = "";
-  }
-
-  handleParamChange(e) {
-    const input = e.target.closest(".param-input");
-    if (!input) return;
-
-    const paramKey = input.dataset.param;
-    const sectionType = input.dataset.section;
-    const sectionName = input.dataset.name;
-    const param = PRESET_PARAMS.find((p) => p.iniKey === paramKey);
-    if (!param) return;
-
-    let value = input.value;
-    if (param.type === "number") {
-      value = parseFloat(value);
-      if (isNaN(value)) value = param.default;
-    } else if (param.type === "boolean") {
-      value = input.checked;
-    }
-
-    this.updateSectionParam(sectionType, sectionName, paramKey, value);
+    // Reset the select
+    setTimeout(() => {
+      select.value = "";
+    }, 0);
   }
 
   handleRemoveParam(e) {
@@ -1004,115 +924,24 @@ class PresetsPage extends Component {
     if (!btn) return;
 
     const paramKey = btn.dataset.param;
-    const sectionType = btn.dataset.section;
-    const sectionName = btn.dataset.name;
+    const param = PRESET_PARAMS.find((p) => p.key === paramKey);
+    if (!param) return;
 
-    this.removeSectionParam(sectionType, sectionName, paramKey);
+    // Remove the parameter from editingData
+    const newData = { ...this.state.editingData };
+    delete newData[param.iniKey];
+
+    this.setState({
+      editingData: newData,
+    });
   }
 
-  updateSectionParam(sectionType, sectionName, paramKey, value) {
-    let newState = {};
-
-    if (sectionType === "defaults") {
-      newState.globalDefaults = { ...this.state.globalDefaults, [paramKey]: value };
-    } else if (sectionType === "group") {
-      const groups = [...this.state.groups];
-      const groupIndex = groups.findIndex((g) => g.name === sectionName);
-      if (groupIndex >= 0) {
-        groups[groupIndex] = {
-          ...groups[groupIndex],
-          params: { ...groups[groupIndex].params, [paramKey]: value },
-        };
-        newState.groups = groups;
-      }
-    } else if (sectionType === "model") {
-      const models = [...this.state.standaloneModels];
-      const modelIndex = models.findIndex((m) => m.name === sectionName);
-      if (modelIndex >= 0) {
-        models[modelIndex] = {
-          ...models[modelIndex],
-          params: { ...models[modelIndex].params, [paramKey]: value },
-        };
-        newState.standaloneModels = models;
-      }
-    }
-
-    this.setState(newState);
-    this.scheduleSave();
-  }
-
-  removeSectionParam(sectionType, sectionName, paramKey) {
-    let newState = {};
-
-    if (sectionType === "defaults") {
-      const params = { ...this.state.globalDefaults };
-      delete params[paramKey];
-      newState.globalDefaults = params;
-    } else if (sectionType === "group") {
-      const groups = [...this.state.groups];
-      const groupIndex = groups.findIndex((g) => g.name === sectionName);
-      if (groupIndex >= 0) {
-        const params = { ...groups[groupIndex].params };
-        delete params[paramKey];
-        groups[groupIndex] = { ...groups[groupIndex], params };
-        newState.groups = groups;
-      }
-    } else if (sectionType === "model") {
-      const models = [...this.state.standaloneModels];
-      const modelIndex = models.findIndex((m) => m.name === sectionName);
-      if (modelIndex >= 0) {
-        const params = { ...models[modelIndex].params };
-        delete params[paramKey];
-        models[modelIndex] = { ...models[modelIndex], params };
-        newState.standaloneModels = models;
-      }
-    }
-
-    this.setState(newState);
-    this.scheduleSave();
-  }
-
-  scheduleSave() {
-    if (this._saveTimeout) clearTimeout(this._saveTimeout);
-    this._saveTimeout = setTimeout(() => this.savePreset(), 500);
-  }
-
-  async savePreset() {
-    const preset = this.state.selectedPreset;
-    if (!preset) return;
-
-    const config = this.buildIniConfig();
-
-    try {
-      await this._getService().savePreset(preset.name, config);
-      console.log("[PRESETS] Saved preset:", preset.name);
-    } catch (error) {
-      console.error("[PRESETS] Save error:", error.message);
-      showNotification("Failed to save preset: " + error.message, "error");
-    }
-  }
-
-  buildIniConfig() {
-    const config = {
-      LLAMA_CONFIG_VERSION: "1",
-    };
-
-    if (Object.keys(this.state.globalDefaults).length > 0) {
-      config["*"] = this.state.globalDefaults;
-    }
-
+  getModelByFullName(fullName) {
     for (const group of this.state.groups) {
-      config[group.name] = { ...group.params, _is_group: "true" };
-      for (const modelName of group.models) {
-        config[`${group.name}/${modelName}`] = { model: "" };
-      }
+      const model = group.models?.find((m) => `${group.name}/${m.name}` === fullName);
+      if (model) return { ...model, groupName: group.name };
     }
-
-    for (const model of this.state.standaloneModels) {
-      config[model.name] = { ...model.params };
-    }
-
-    return config;
+    return this.state.standaloneModels.find((m) => m.name === fullName);
   }
 
   async handleSelectPreset(e) {
@@ -1141,43 +970,71 @@ class PresetsPage extends Component {
         service.getDefaults(preset.name),
       ]);
 
-      const groups = [];
+      const groups = {};
       const standalone = [];
 
+      // Collect all group names:
+      // 1. Entries with "/" in the name: split and take the first part (group/model)
+      // 2. Entries explicitly marked as groups (having _is_group flag)
+      const groupNames = new Set();
+
+      for (const modelName of Object.keys(models)) {
+        if (modelName === "*") continue;
+
+        if (modelName.includes("/")) {
+          // model/submodel format - this is a model in a group
+          groupNames.add(modelName.split("/")[0]);
+        } else if (models[modelName]._is_group) {
+          // Explicitly marked as a group
+          groupNames.add(modelName);
+        }
+      }
+
+      // Now organize entries into groups and standalone
       for (const [modelName, modelConfig] of Object.entries(models)) {
         if (modelName === "*") continue;
 
         if (modelName.includes("/")) {
+          // This is a model in a group: group/model
           const [groupName, modelOnlyName] = modelName.split("/");
-          let group = groups.find((g) => g.name === groupName);
-          if (!group) {
-            group = { name: groupName, params: {}, models: [] };
-            groups.push(group);
+          if (!groups[groupName]) {
+            groups[groupName] = { name: groupName, models: [] };
           }
-          if (!group.models.includes(modelOnlyName)) {
-            group.models.push(modelOnlyName);
+          groups[groupName].models.push({ name: modelOnlyName, ...modelConfig });
+        } else if (groupNames.has(modelName)) {
+          // This is a group entry
+          if (!groups[modelName]) {
+            groups[modelName] = { name: modelName, models: [] };
           }
-        } else if (modelConfig._is_group) {
-          let group = groups.find((g) => g.name === modelName);
-          if (!group) {
-            group = { name: modelName, params: {}, models: [] };
-            groups.push(group);
+          // Merge config if present (exclude internal _is_group flag)
+          const { _is_group, ...cleanConfig } = modelConfig;
+          if (Object.keys(cleanConfig).length > 0) {
+            groups[modelName] = { ...groups[modelName], ...cleanConfig };
           }
-          const { _is_group, ...cleanParams } = modelConfig;
-          group.params = cleanParams;
         } else {
-          standalone.push({ name: modelName, params: modelConfig });
+          // Standalone model (no children, not a group)
+          standalone.push({ name: modelName, ...modelConfig });
         }
+      }
+
+      const groupNamesList = Object.keys(groups);
+      const expandedGroups = {};
+      if (groupNamesList.length > 0) {
+        expandedGroups[groupNamesList[0]] = true;
       }
 
       this.setState({
         selectedPreset: preset,
         globalDefaults: defaults,
-        groups,
+        groups: groupNamesList.map((name) => groups[name]),
         standaloneModels: standalone,
         expandedDefaults: true,
-        expandedGroups: groups.length > 0 ? { [groups[0]?.name]: true } : {},
+        expandedGroups,
         expandedModels: {},
+        editingDefaults: false,
+        editingGroup: null,
+        editingModel: null,
+        editingData: null,
       });
     } catch (error) {
       console.error("[PRESETS] Error loading preset:", error);
@@ -1195,10 +1052,6 @@ class PresetsPage extends Component {
       .then(() => {
         showNotification(`Preset "${name}" created`, "success");
         return this.controller.loadPresetsData();
-      })
-      .then(() => {
-        const preset = this.state.presets.find((p) => p.name === name);
-        if (preset) this.loadPresetData(preset);
       })
       .catch((error) => {
         console.error("[PRESETS] Create error:", error);
@@ -1242,16 +1095,30 @@ class PresetsPage extends Component {
     const name = prompt("Group name:");
     if (!name || !name.trim()) return;
 
-    const groupName = name.trim();
-    const newGroup = { name: groupName, params: {}, models: [] };
-
-    this.setState({
-      groups: [...this.state.groups, newGroup],
-      expandedGroups: { ...this.state.expandedGroups, [groupName]: true },
-    });
-
-    this.scheduleSave();
-    showNotification(`Group "${groupName}" created`, "success");
+    this.setState({ loading: true });
+    // Mark this as a group with the _is_group flag
+    this._getService()
+      .addModel(this.state.selectedPreset.name, name.trim(), { _is_group: true })
+      .then(() => {
+        showNotification(`Group "${name}" created. Now add parameters.`, "success");
+        return this.loadPresetData(this.state.selectedPreset);
+      })
+      .then(() => {
+        const groupName = name.trim();
+        // Expand the group and automatically start editing
+        this.setState({
+          expandedGroups: { ...this.state.expandedGroups, [groupName]: true },
+          editingGroup: groupName,
+          editingData: {}, // Start with empty parameters
+        });
+      })
+      .catch((error) => {
+        console.error("[PRESETS] Create group error:", error);
+        showNotification(`Error: ${error.message}`, "error");
+      })
+      .finally(() => {
+        this.setState({ loading: false });
+      });
   }
 
   handleDeleteGroup(e) {
@@ -1259,15 +1126,23 @@ class PresetsPage extends Component {
     if (!el) return;
     const groupName = el.dataset.groupName;
 
-    if (!confirm(`Delete group "${groupName}"?`)) return;
+    if (!confirm(`Delete group "${groupName}"? This will also delete all models in this group.`))
+      return;
 
-    const groups = this.state.groups.filter((g) => g.name !== groupName);
-    const expandedGroups = { ...this.state.expandedGroups };
-    delete expandedGroups[groupName];
-
-    this.setState({ groups, expandedGroups });
-    this.scheduleSave();
-    showNotification(`Group "${groupName}" deleted`, "success");
+    this.setState({ loading: true });
+    this._getService()
+      .removeModel(this.state.selectedPreset.name, groupName)
+      .then(() => {
+        showNotification(`Group "${groupName}" deleted`, "success");
+        return this.loadPresetData(this.state.selectedPreset);
+      })
+      .catch((error) => {
+        console.error("[PRESETS] Delete group error:", error);
+        showNotification(`Error: ${error.message}`, "error");
+      })
+      .finally(() => {
+        this.setState({ loading: false });
+      });
   }
 
   handleNewModel(e) {
@@ -1280,23 +1155,54 @@ class PresetsPage extends Component {
       return;
     }
 
-    this.showModelSelectDialog(groupName, models);
-  }
-
-  showModelSelectDialog(groupName, models) {
+    // Create a modal-like select dialog
     const selectHtml = `
-      <div class="model-select-modal">
-        <div class="model-select-backdrop"></div>
-        <div class="model-select-dialog">
-          <h3>Add Model to ${groupName || "standalone"}</h3>
-          <select id="model-select">
+      <div class="model-select-modal" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      ">
+        <div style="
+          background: var(--card-bg);
+          border-radius: var(--radius);
+          padding: var(--lg);
+          max-width: 400px;
+          width: 90%;
+        ">
+          <h3 style="margin: 0 0 var(--md) 0;">Add Model to ${groupName || "standalone"}</h3>
+          <select id="model-select" style="
+            width: 100%;
+            padding: var(--sm) var(--md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            margin-bottom: var(--md);
+          ">
             <option value="">-- Select Model --</option>
-            ${models.map((m) => `<option value="${m.name}">${m.name}</option>`).join("")}
+            ${models.map((m) => `<option value="${m.path}">${m.name} (${AppUtils.formatBytes(m.size)})</option>`).join("")}
           </select>
-          <input type="text" id="model-name-input" placeholder="Model name (optional, uses filename if empty)">
-          <div class="model-select-actions">
-            <button id="model-select-cancel" class="btn btn-secondary">Cancel</button>
-            <button id="model-select-confirm" class="btn btn-primary">Add</button>
+          <input type="text" id="model-name-input" placeholder="Model name (optional, uses filename if empty)" style="
+            width: 100%;
+            padding: var(--sm) var(--md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            margin-bottom: var(--md);
+          ">
+          <div style="display: flex; gap: var(--sm); justify-content: flex-end;">
+            <button id="model-select-cancel" class="btn btn-secondary btn-sm">Cancel</button>
+            <button id="model-select-confirm" class="btn btn-primary btn-sm">Add</button>
           </div>
         </div>
       </div>
@@ -1318,100 +1224,71 @@ class PresetsPage extends Component {
     cancelBtn.onclick = closeModal;
 
     confirmBtn.onclick = () => {
-      const modelName = nameInput.value.trim() || select.value;
-      if (!modelName) {
+      const modelPath = select.value;
+      if (!modelPath) {
         showNotification("Please select a model", "warning");
         return;
       }
+      const modelName = nameInput.value.trim() || modelPath.split("/").pop();
+      const fullName = groupName ? `${groupName}/${modelName}` : modelName;
 
       closeModal();
-
-      if (groupName) {
-        this.addModelToGroup(groupName, modelName);
-      } else {
-        this.addStandaloneModel(modelName);
-      }
+      this.createModel(modelName, groupName, fullName, modelPath);
     };
   }
 
-  addModelToGroup(groupName, modelName) {
-    const groups = [...this.state.groups];
-    const group = groups.find((g) => g.name === groupName);
-    if (group && !group.models.includes(modelName)) {
-      group.models.push(modelName);
-      this.setState({ groups });
-      this.scheduleSave();
-      showNotification(`Model "${modelName}" added to group`, "success");
-    }
-  }
-
-  addStandaloneModel(modelName) {
-    const models = [...this.state.standaloneModels];
-    if (!models.find((m) => m.name === modelName)) {
-      models.push({ name: modelName, params: {} });
-      this.setState({
-        standaloneModels: models,
-        expandedModels: { ...this.state.expandedModels, [modelName]: true },
+  async createModel(name, groupName, fullName, modelPath) {
+    this.setState({ loading: true });
+    try {
+      const service = this._getService();
+      await service.addModel(this.state.selectedPreset.name, fullName, {
+        model: modelPath,
       });
-      this.scheduleSave();
-      showNotification(`Standalone model "${modelName}" created`, "success");
-    }
-  }
-
-  handleAddModelToGroup(e) {
-    const el = e.target.closest("[data-action=add-model-to-group]");
-    const groupName = el?.dataset.groupName;
-    const models = this.state.availableModels;
-
-    if (models.length === 0) {
-      showNotification("No models available", "warning");
-      return;
-    }
-
-    this.showModelSelectDialog(groupName, models);
-  }
-
-  handleRemoveModelFromGroup(e) {
-    const el = e.target.closest("[data-action=remove-model-from-group]");
-    if (!el) return;
-    const modelName = el.dataset.modelName;
-    const groupName = el.dataset.groupName;
-
-    const groups = [...this.state.groups];
-    const group = groups.find((g) => g.name === groupName);
-    if (group) {
-      group.models = group.models.filter((m) => m !== modelName);
-      this.setState({ groups });
-      this.scheduleSave();
-      showNotification(`Model "${modelName}" removed from group`, "success");
+      showNotification(`Model "${name}" created. Now add parameters.`, "success");
+      await this.loadPresetData(this.state.selectedPreset);
+      const fullKey = groupName ? `${groupName}/${name}` : name;
+      // Expand the model and automatically start editing (only for standalone)
+      this.setState({
+        expandedModels: { ...this.state.expandedModels, [fullKey]: true },
+        ...(groupName === "" && {
+          editingModel: fullKey,
+          editingData: {}, // Start with empty parameters
+        }),
+      });
+    } catch (error) {
+      console.error("[PRESETS] Create model error:", error);
+      showNotification(`Error: ${error.message}`, "error");
+    } finally {
+      this.setState({ loading: false });
     }
   }
 
   handleDeleteModel(e) {
+    e.stopPropagation();
     const el = e.target.closest("[data-action=delete-model]");
     if (!el) return;
-    const modelName = el.dataset.modelName;
     const groupName = el.dataset.groupName;
+    const modelName = el.dataset.modelName;
+    const fullName = groupName ? `${groupName}/${modelName}` : modelName;
+
+    console.log("[DEBUG] Delete model clicked:", { groupName, modelName, fullName });
 
     if (!confirm(`Delete model "${modelName}"?`)) return;
 
-    if (groupName) {
-      const groups = [...this.state.groups];
-      const group = groups.find((g) => g.name === groupName);
-      if (group) {
-        group.models = group.models.filter((m) => m !== modelName);
-        this.setState({ groups });
-        this.scheduleSave();
-      }
-    } else {
-      const models = this.state.standaloneModels.filter((m) => m.name !== modelName);
-      const expandedModels = { ...this.state.expandedModels };
-      delete expandedModels[modelName];
-      this.setState({ standaloneModels: models, expandedModels });
-      this.scheduleSave();
-    }
-
-    showNotification(`Model "${modelName}" deleted`, "success");
+    this.setState({ loading: true });
+    this._getService()
+      .removeModel(this.state.selectedPreset.name, fullName)
+      .then(() => {
+        showNotification(`Model "${modelName}" deleted`, "success");
+        return this.loadPresetData(this.state.selectedPreset);
+      })
+      .catch((error) => {
+        console.error("[PRESETS] Delete model error:", error);
+        showNotification(`Error: ${error.message}`, "error");
+      })
+      .finally(() => {
+        this.setState({ loading: false });
+      });
   }
 
   async loadAvailableModels() {
@@ -1424,6 +1301,41 @@ class PresetsPage extends Component {
     } catch (error) {
       console.error("[PRESETS] Failed to load models:", error.message);
     }
+  }
+
+  handleSearchParams(e) {
+    const input = e.target.closest("[data-action=search-params]");
+    if (!input) return;
+    this.setState({ parameterFilter: input.value });
+  }
+
+  handleClearSearch() {
+    this.setState({ parameterFilter: "" });
+  }
+
+  handleCopyValue(e) {
+    const btn = e.target.closest("[data-action=copy-value]");
+    if (!btn) return;
+
+    const value = btn.dataset.value;
+    const paramId = btn.dataset.paramId;
+
+    navigator.clipboard
+      .writeText(value)
+      .then(() => {
+        this.setState({ copiedParam: paramId });
+        // Reset after 2 seconds
+        setTimeout(() => {
+          if (this.state.copiedParam === paramId) {
+            this.setState({ copiedParam: null });
+          }
+        }, 2000);
+        showNotification(`Copied: ${value}`, "success");
+      })
+      .catch((error) => {
+        console.error("[PRESETS] Copy failed:", error);
+        showNotification("Failed to copy value", "error");
+      });
   }
 
   didMount() {
