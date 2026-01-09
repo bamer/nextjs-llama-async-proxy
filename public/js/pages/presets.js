@@ -1,5 +1,5 @@
 /**
- * Presets Page - Hierarchical Preset Management
+ * Presets Page - Hierarchical Collapsible Parameter Management
  * Global Defaults → Groups → Models
  */
 
@@ -9,6 +9,7 @@ class PresetsController {
     this.comp = null;
     this.presetsService = null;
     this.unsubscribers = [];
+    this._knownGroups = new Set();
   }
 
   _ensureService() {
@@ -37,45 +38,33 @@ class PresetsController {
     if (this.comp && this.comp.destroy) {
       this.comp.destroy();
     }
+    this.comp = null;
   }
 
   async render() {
     const service = this._ensureService();
-    if (!service) {
-      // Socket not ready - show loading, will load when didMount is called
-      this.comp = new PresetsPage({ presetsService: null, controller: this, loading: true });
-      const el = this.comp.render();
-      this.comp._el = el;
-      el._component = this.comp;
-      this.comp.bindEvents();
-      return el;
-    }
-
-    await this.load();
     const presets = stateManager.get("presets") || [];
     this.comp = new PresetsPage({
       presets,
       presetsService: service,
       controller: this,
+      knownGroups: this._knownGroups,
     });
     const el = this.comp.render();
     this.comp._el = el;
     el._component = this.comp;
     this.comp.bindEvents();
+    this.comp.didMount();
     return el;
   }
 
   didMount() {
-    if (this.comp && this.comp.didMount) {
-      this.comp.didMount();
-    }
     this.loadPresetsData();
   }
 
   async loadPresetsData() {
     const service = this._ensureService();
     if (!service) {
-      // Wait for socket connection
       const checkSocket = () => {
         if (window.socketClient?.socket?.connected) {
           this.loadPresetsData();
@@ -89,12 +78,7 @@ class PresetsController {
 
     try {
       const presets = await service.listPresets();
-      console.log(
-        "[PRESETS] Loaded",
-        presets.length,
-        "presets:",
-        presets.map((p) => p.name)
-      );
+      console.log("[PRESETS] Loaded", presets.length, "presets");
       stateManager.set("presets", presets);
       if (this.comp) {
         this.comp.setState({ presets, loading: false });
@@ -107,45 +91,50 @@ class PresetsController {
       }
     }
   }
-
-  async load() {
-    const service = this._ensureService();
-    if (!service) return;
-
-    try {
-      const presets = await service.listPresets();
-      stateManager.set("presets", presets);
-    } catch (error) {
-      console.error("[PRESETS] Load error:", error.message);
-      stateManager.set("presets", []);
-    }
-  }
 }
+
+// Parameter definitions
+const PRESET_PARAMS = [
+  { key: "ctx-size", label: "Context Size", type: "number", default: 2048, group: "core" },
+  { key: "batch", label: "Batch Size", type: "number", default: 512, group: "core" },
+  { key: "ubatch", label: "Micro Batch", type: "number", default: 512, group: "core" },
+  {
+    key: "temp",
+    label: "Temperature",
+    type: "number",
+    step: "0.01",
+    default: 0.7,
+    group: "sampling",
+  },
+  { key: "n-gpu-layers", label: "GPU Layers", type: "number", default: 0, group: "hardware" },
+  { key: "threads", label: "Threads", type: "number", default: 0, group: "hardware" },
+];
 
 class PresetsPage extends Component {
   constructor(props) {
     super(props);
+    this._knownGroups = props.knownGroups || new Set();
     this.state = {
       presets: props.presets || [],
       selectedPreset: null,
-      globalDefaults: null,
+      globalDefaults: {},
       groups: [],
       standaloneModels: [],
       availableModels: [],
-      showGlobalModal: false,
-      showGroupModal: false,
-      showModelModal: false,
-      showInheritanceModal: false,
+      loading: props.loading !== undefined ? props.loading : true,
+      // Expanded state
+      expandedDefaults: true,
+      expandedGroups: {},
+      expandedModels: {},
+      // Editing state
+      editingDefaults: false,
       editingGroup: null,
       editingModel: null,
-      currentGroup: {},
-      currentModel: {},
-      inheritanceData: null,
-      validationErrors: {},
-      loading: props.loading !== undefined ? props.loading : false,
+      editingData: null,
     };
     this.presetsService = props.presetsService;
     this.controller = props.controller;
+    this._isUnmounting = false;
   }
 
   render() {
@@ -153,8 +142,7 @@ class PresetsPage extends Component {
       "div",
       { className: "presets-page" },
       this.renderHeader(),
-      this.renderContent(),
-      this.renderModals()
+      this.renderContent()
     );
   }
 
@@ -166,13 +154,12 @@ class PresetsPage extends Component {
       Component.h(
         "p",
         { className: "presets-subtitle" },
-        "Configure llama.cpp parameters with global defaults, groups, and per-model settings"
+        "Configure llama.cpp parameters - Global Defaults → Groups → Models"
       )
     );
   }
 
   renderContent() {
-    // Show loading state
     if (this.state.loading) {
       return Component.h(
         "div",
@@ -220,15 +207,23 @@ class PresetsPage extends Component {
             "data-action": "select-preset",
             "data-preset-name": preset.name,
           },
-          Component.h("span", { className: "preset-name" }, preset.name)
+          Component.h("span", { className: "preset-name" }, preset.name),
+          preset.name !== "default"
+            ? Component.h(
+                "span",
+                {
+                  className: "preset-delete",
+                  "data-action": "delete-preset",
+                  "data-preset-name": preset.name,
+                },
+                "×"
+              )
+            : null
         )
       ),
       Component.h(
         "button",
-        {
-          className: "btn btn-secondary add-preset-btn",
-          "data-action": "new-preset",
-        },
+        { className: "btn btn-secondary add-preset-btn", "data-action": "new-preset" },
         "+ New Preset"
       )
     );
@@ -251,77 +246,109 @@ class PresetsPage extends Component {
         { className: "editor-header" },
         Component.h("h2", {}, this.state.selectedPreset.name),
         Component.h(
-          "div",
-          { className: "editor-actions" },
-          Component.h(
-            "button",
-            { className: "btn btn-secondary btn-sm", "data-action": "edit-defaults" },
-            "Global Defaults"
-          ),
-          Component.h(
-            "button",
-            { className: "btn btn-secondary btn-sm", "data-action": "new-group" },
-            "+ Add Group"
-          ),
-          Component.h(
-            "button",
-            { className: "btn btn-secondary btn-sm", "data-action": "new-model" },
-            "+ Add Model"
-          )
+          "span",
+          { className: "preset-type-badge" },
+          this.state.selectedPreset.name === "default" ? "Built-in" : "Custom"
         )
       ),
-      this.renderGroups(),
-      this.renderStandaloneModels()
+      this.renderDefaultsSection(),
+      this.renderGroupsSection(),
+      this.renderStandaloneSection()
     );
   }
 
-  renderGroups() {
-    const groups = this.state.groups;
-
-    if (groups.length === 0 && this.state.standaloneModels.length === 0) {
-      return Component.h(
-        "div",
-        { className: "presets-empty-state" },
-        Component.h("p", {}, "No groups or models yet. Add one to get started.")
-      );
-    }
+  renderDefaultsSection() {
+    const defaults = this.state.globalDefaults || {};
+    const isExpanded = this.state.expandedDefaults;
+    const isEditing = this.state.editingDefaults;
+    const editingData = isEditing && this.state.editingData ? this.state.editingData : defaults;
 
     return Component.h(
       "div",
-      { className: "presets-groups" },
-      groups.map((group) => this.renderGroup(group))
-    );
-  }
-
-  renderGroup(group) {
-    return Component.h(
-      "div",
-      { className: "card group-card" },
+      { className: "collapsible-section defaults-section" },
       Component.h(
         "div",
-        { className: "group-header" },
-        Component.h("h3", { className: "group-title" }, group.name),
+        {
+          className: `section-header ${isExpanded ? "expanded" : ""}`,
+          "data-action": "toggle-defaults",
+        },
+        Component.h("span", { className: "section-icon" }, "★"),
+        Component.h("span", { className: "section-title" }, "Global Defaults"),
+        Component.h("span", { className: "section-toggle" }, isExpanded ? "▼" : "▶")
+      ),
+      isExpanded
+        ? Component.h(
+            "div",
+            { className: "section-content" },
+            isEditing
+              ? this.renderEditableParams(editingData, "defaults", null)
+              : this.renderReadOnlyParams(defaults, "defaults", null)
+          )
+        : null
+    );
+  }
+
+  renderGroupsSection() {
+    const groups = this.state.groups;
+
+    return Component.h(
+      "div",
+      { className: "collapsible-section groups-section" },
+      Component.h("h3", { className: "section-label" }, "Groups"),
+      groups.length === 0
+        ? Component.h(
+            "div",
+            { className: "section-empty" },
+            Component.h("p", {}, "No groups defined"),
+            Component.h(
+              "button",
+              { className: "btn btn-secondary btn-sm", "data-action": "new-group" },
+              "+ Add Group"
+            )
+          )
+        : Component.h(
+            "div",
+            { className: "groups-list" },
+            groups.map((group) => this.renderGroupSection(group))
+          ),
+      Component.h(
+        "button",
+        { className: "btn btn-secondary btn-sm add-group-btn", "data-action": "new-group" },
+        "+ Add Group"
+      )
+    );
+  }
+
+  renderGroupSection(group) {
+    const isExpanded = this.state.expandedGroups[group.name] || false;
+    const isEditing = this.state.editingGroup === group.name;
+    const editingData = isEditing && this.state.editingData ? this.state.editingData : group;
+
+    return Component.h(
+      "div",
+      { className: `group-section ${isExpanded ? "expanded" : ""}` },
+      Component.h(
+        "div",
+        {
+          className: `section-header group-header ${isExpanded ? "expanded" : ""}`,
+          "data-action": "toggle-group",
+          "data-group-name": group.name,
+        },
+        Component.h("span", { className: "section-icon" }, "📁"),
+        Component.h("span", { className: "section-title" }, group.name),
         Component.h(
           "span",
-          { className: "model-count" },
+          { className: "model-count-badge" },
           `${group.models?.length || 0} model${group.models?.length !== 1 ? "s" : ""}`
         ),
+        Component.h("span", { className: "section-toggle" }, isExpanded ? "▼" : "▶"),
         Component.h(
-          "div",
-          { className: "group-actions" },
+          "span",
+          { className: "section-actions" },
           Component.h(
-            "button",
+            "span",
             {
-              className: "btn btn-secondary btn-sm",
-              "data-action": "edit-group",
-              "data-group-name": group.name,
-            },
-            "Edit"
-          ),
-          Component.h(
-            "button",
-            {
-              className: "btn btn-danger btn-sm",
+              className: "action-btn danger",
               "data-action": "delete-group",
               "data-group-name": group.name,
             },
@@ -329,346 +356,174 @@ class PresetsPage extends Component {
           )
         )
       ),
-      group.models && group.models.length > 0
+      isExpanded
         ? Component.h(
             "div",
-            { className: "group-models" },
-            group.models.map((model) => this.renderModelItem(model, group.name))
+            { className: "section-content" },
+            isEditing
+              ? this.renderEditableParams(editingData, "group", group.name)
+              : this.renderReadOnlyParams(editingData, "group", group.name),
+            group.models && group.models.length > 0
+              ? Component.h(
+                  "div",
+                  { className: "group-models" },
+                  Component.h("h4", { className: "subsection-title" }, "Models"),
+                  group.models.map((model) => this.renderModelSection(model, group.name))
+                )
+              : null,
+            Component.h(
+              "button",
+              {
+                className: "btn btn-secondary btn-sm add-model-inline-btn",
+                "data-action": "new-model",
+                "data-group-name": group.name,
+              },
+              "+ Add Model to " + group.name
+            )
           )
-        : null,
-      Component.h(
-        "button",
-        {
-          className: "btn btn-secondary btn-sm add-model-btn",
-          "data-action": "new-model",
-          "data-group-name": group.name,
-        },
-        "+ Add Model"
-      )
+        : null
     );
   }
 
-  renderStandaloneModels() {
+  renderModelSection(model, groupName = null) {
+    const fullName = groupName ? `${groupName}/${model.name}` : model.name;
+    const isExpanded = this.state.expandedModels[fullName] || false;
+    const isEditing = this.state.editingModel === fullName;
+    const editingData = isEditing && this.state.editingData ? this.state.editingData : model;
+
+    return Component.h(
+      "div",
+      { className: `model-section ${isExpanded ? "expanded" : ""}` },
+      Component.h(
+        "div",
+        {
+          className: `section-header model-header ${isExpanded ? "expanded" : ""}`,
+          "data-action": "toggle-model",
+          "data-model-name": model.name,
+          "data-group-name": groupName || "",
+        },
+        Component.h("span", { className: "section-icon" }, "📄"),
+        Component.h("span", { className: "section-title" }, model.name),
+        Component.h("span", { className: "model-path-badge" }, model.model || "No model"),
+        Component.h("span", { className: "section-toggle" }, isExpanded ? "▼" : "▶"),
+        Component.h(
+          "span",
+          { className: "section-actions" },
+          Component.h(
+            "span",
+            {
+              className: "action-btn danger",
+              "data-action": "delete-model",
+              "data-model-name": model.name,
+              "data-group-name": groupName || "",
+            },
+            "×"
+          )
+        )
+      ),
+      isExpanded
+        ? Component.h(
+            "div",
+            { className: "section-content" },
+            isEditing
+              ? this.renderEditableParams(editingData, "model", fullName)
+              : this.renderReadOnlyParams(editingData, "model", fullName)
+          )
+        : null
+    );
+  }
+
+  renderStandaloneSection() {
     const models = this.state.standaloneModels;
 
     if (models.length === 0) return null;
 
     return Component.h(
       "div",
-      { className: "card standalone-section" },
-      Component.h("h3", { className: "section-title" }, "Standalone Models"),
-      models.map((model) => this.renderModelItem(model, null))
-    );
-  }
-
-  renderModelItem(model, groupName) {
-    return Component.h(
-      "div",
-      { className: "model-item" },
+      { className: "collapsible-section standalone-section" },
+      Component.h("h3", { className: "section-label" }, "Standalone Models"),
       Component.h(
-        "div",
-        { className: "model-info" },
-        Component.h("span", { className: "model-name" }, model.name || "Unnamed"),
-        Component.h("span", { className: "model-path" }, model.model || "No model set")
+        "button",
+        {
+          className: "btn btn-secondary btn-sm",
+          "data-action": "new-model",
+          "data-group-name": "",
+        },
+        "+ Add Standalone Model"
       ),
       Component.h(
         "div",
-        { className: "model-actions" },
+        { className: "standalone-list" },
+        models.map((model) => this.renderModelSection(model, null))
+      )
+    );
+  }
+
+  renderReadOnlyParams(data, sectionType, sectionName = null) {
+    return Component.h(
+      "div",
+      { className: "params-list" },
+      PRESET_PARAMS.map((param) => {
+        let value = data[param.key];
+        const hasValue = value !== undefined && value !== null;
+        const displayValue = hasValue ? value : param.default;
+
+        return Component.h(
+          "div",
+          { className: `param-item param-${param.group}`, "data-param-key": param.key },
+          Component.h("label", { className: "param-label" }, param.label),
+          Component.h(
+            "span",
+            {
+              className: `param-value ${!hasValue ? "param-inherited" : ""}`,
+              "data-action": "start-edit",
+              "data-section": sectionType,
+              "data-name": sectionName,
+              "data-param": param.key,
+            },
+            displayValue !== undefined ? String(displayValue) : "-"
+          )
+        );
+      })
+    );
+  }
+
+  renderEditableParams(data, sectionType, sectionName = null) {
+    return Component.h(
+      "div",
+      { className: "params-list" },
+      PRESET_PARAMS.map((param) => {
+        let value = data[param.key];
+        const displayValue = value !== undefined && value !== null ? value : param.default;
+
+        return Component.h(
+          "div",
+          { className: `param-item param-${param.group}`, "data-param-key": param.key },
+          Component.h("label", { className: "param-label" }, param.label),
+          Component.h("input", {
+            type: param.type,
+            className: "param-input",
+            step: param.step || "1",
+            value: displayValue !== undefined ? displayValue : "",
+            "data-section": sectionType,
+            "data-name": sectionName,
+            "data-param": param.key,
+            placeholder: String(param.default),
+          })
+        );
+      }),
+      Component.h(
+        "div",
+        { className: "param-actions" },
         Component.h(
           "button",
-          {
-            className: "btn btn-secondary btn-sm",
-            "data-action": "edit-model",
-            "data-group-name": groupName || "",
-            "data-model-name": model.name,
-          },
-          "Edit"
+          { className: "btn btn-primary btn-sm", "data-action": "save-edit" },
+          "Save"
         ),
         Component.h(
           "button",
-          {
-            className: "btn btn-danger btn-sm",
-            "data-action": "delete-model",
-            "data-group-name": groupName || "",
-            "data-model-name": model.name,
-          },
-          "×"
-        )
-      )
-    );
-  }
-
-  renderModals() {
-    if (!this.state.showGlobalModal && !this.state.showGroupModal && !this.state.showModelModal) {
-      return null;
-    }
-
-    return Component.h(
-      "div",
-      { className: "modals-container" },
-      this.state.showGlobalModal ? this.renderGlobalModal() : null,
-      this.state.showGroupModal ? this.renderGroupModal() : null,
-      this.state.showModelModal ? this.renderModelModal() : null
-    );
-  }
-
-  renderGlobalModal() {
-    return Component.h(
-      "div",
-      { className: "modal-overlay", "data-action": "close-modal" },
-      Component.h(
-        "div",
-        { className: "modal-content" },
-        Component.h(
-          "div",
-          { className: "modal-header" },
-          Component.h("h2", {}, "Global Defaults"),
-          Component.h("button", { className: "modal-close", "data-action": "close-modal" }, "×")
-        ),
-        Component.h(
-          "div",
-          { className: "modal-body" },
-          Component.h(
-            "div",
-            { className: "form-group" },
-            Component.h("label", {}, "Context Size"),
-            Component.h("input", {
-              type: "number",
-              className: "form-input",
-              value: this.state.globalDefaults?.ctxSize || 2048,
-              "data-field": "ctxSize",
-            }),
-            Component.h("label", {}, "Temperature"),
-            Component.h("input", {
-              type: "number",
-              className: "form-input",
-              step: "0.1",
-              value: this.state.globalDefaults?.temperature || 0.7,
-              "data-field": "temperature",
-            }),
-            Component.h("label", {}, "GPU Layers"),
-            Component.h("input", {
-              type: "number",
-              className: "form-input",
-              value: this.state.globalDefaults?.nGpuLayers || 0,
-              "data-field": "nGpuLayers",
-            }),
-            Component.h("label", {}, "Threads"),
-            Component.h("input", {
-              type: "number",
-              className: "form-input",
-              value: this.state.globalDefaults?.threads || 0,
-              "data-field": "threads",
-            }),
-            Component.h("label", {}, "Batch Size"),
-            Component.h("input", {
-              type: "number",
-              className: "form-input",
-              value: this.state.globalDefaults?.batchSize || 512,
-              "data-field": "batchSize",
-            })
-          )
-        ),
-        Component.h(
-          "div",
-          { className: "modal-footer" },
-          Component.h(
-            "button",
-            { className: "btn btn-secondary", "data-action": "close-modal" },
-            "Cancel"
-          ),
-          Component.h(
-            "button",
-            { className: "btn btn-primary", "data-action": "save-defaults" },
-            "Save"
-          )
-        )
-      )
-    );
-  }
-
-  renderGroupModal() {
-    const isEditing = !!this.state.editingGroup;
-    const group = this.state.currentGroup || {};
-
-    return Component.h(
-      "div",
-      { className: "modal-overlay", "data-action": "close-modal" },
-      Component.h(
-        "div",
-        { className: "modal-content" },
-        Component.h(
-          "div",
-          { className: "modal-header" },
-          Component.h("h2", {}, isEditing ? "Edit Group" : "New Group"),
-          Component.h("button", { className: "modal-close", "data-action": "close-modal" }, "×")
-        ),
-        Component.h(
-          "div",
-          { className: "modal-body" },
-          Component.h(
-            "div",
-            { className: "form-group" },
-            Component.h("label", {}, "Group Name"),
-            Component.h("input", {
-              type: "text",
-              className: "form-input",
-              value: group.name || "",
-              "data-field": "name",
-              disabled: isEditing,
-            }),
-            Component.h("label", {}, "Context Size"),
-            Component.h("input", {
-              type: "number",
-              className: "form-input",
-              value: group.ctxSize || "",
-              "data-field": "ctxSize",
-            }),
-            Component.h("label", {}, "Temperature"),
-            Component.h("input", {
-              type: "number",
-              className: "form-input",
-              step: "0.1",
-              value: group.temperature || "",
-              "data-field": "temperature",
-            }),
-            Component.h("label", {}, "GPU Layers"),
-            Component.h("input", {
-              type: "number",
-              className: "form-input",
-              value: group.nGpuLayers || "",
-              "data-field": "nGpuLayers",
-            }),
-            Component.h("label", {}, "Threads"),
-            Component.h("input", {
-              type: "number",
-              className: "form-input",
-              value: group.threads || "",
-              "data-field": "threads",
-            })
-          )
-        ),
-        Component.h(
-          "div",
-          { className: "modal-footer" },
-          Component.h(
-            "button",
-            { className: "btn btn-secondary", "data-action": "close-modal" },
-            "Cancel"
-          ),
-          Component.h(
-            "button",
-            { className: "btn btn-primary", "data-action": "save-group" },
-            isEditing ? "Update" : "Create"
-          )
-        )
-      )
-    );
-  }
-
-  renderModelModal() {
-    const isEditing = !!this.state.editingModel;
-    const model = this.state.currentModel || {};
-    const models = this.state.availableModels || [];
-
-    return Component.h(
-      "div",
-      { className: "modal-overlay", "data-action": "close-modal" },
-      Component.h(
-        "div",
-        { className: "modal-content" },
-        Component.h(
-          "div",
-          { className: "modal-header" },
-          Component.h("h2", {}, isEditing ? "Edit Model" : "New Model"),
-          Component.h("button", { className: "modal-close", "data-action": "close-modal" }, "×")
-        ),
-        Component.h(
-          "div",
-          { className: "modal-body" },
-          Component.h(
-            "div",
-            { className: "form-group" },
-            Component.h("label", {}, "Model Name"),
-            Component.h("input", {
-              type: "text",
-              className: "form-input",
-              value: model.name || "",
-              "data-field": "name",
-              disabled: isEditing,
-            }),
-            Component.h("label", {}, "Group"),
-            Component.h(
-              "select",
-              {
-                className: "form-input",
-                value: model.groupName || "",
-                "data-field": "groupName",
-                disabled: isEditing,
-              },
-              Component.h("option", { value: "" }, "-- Select Group --"),
-              ...this.state.groups.map((g) =>
-                Component.h(
-                  "option",
-                  { value: g.name, selected: g.name === model.groupName },
-                  g.name
-                )
-              )
-            ),
-            Component.h("label", {}, "Model File"),
-            Component.h(
-              "select",
-              {
-                className: "form-input",
-                value: model.model || "",
-                "data-field": "model",
-              },
-              Component.h("option", { value: "" }, "-- Select Model --"),
-              ...models.map((m) =>
-                Component.h(
-                  "option",
-                  { value: m.path, selected: m.path === model.model },
-                  `${m.name} (${AppUtils.formatBytes(m.size)})`
-                )
-              )
-            ),
-            Component.h("label", {}, "Context Size"),
-            Component.h("input", {
-              type: "number",
-              className: "form-input",
-              value: model.ctxSize || "",
-              "data-field": "ctxSize",
-            }),
-            Component.h("label", {}, "Temperature"),
-            Component.h("input", {
-              type: "number",
-              className: "form-input",
-              step: "0.1",
-              value: model.temperature || "",
-              "data-field": "temperature",
-            }),
-            Component.h("label", {}, "GPU Layers"),
-            Component.h("input", {
-              type: "number",
-              className: "form-input",
-              value: model.nGpuLayers || "",
-              "data-field": "nGpuLayers",
-            })
-          )
-        ),
-        Component.h(
-          "div",
-          { className: "modal-footer" },
-          Component.h(
-            "button",
-            { className: "btn btn-secondary", "data-action": "close-modal" },
-            "Cancel"
-          ),
-          Component.h(
-            "button",
-            { className: "btn btn-primary", "data-action": "save-model" },
-            isEditing ? "Update" : "Create"
-          )
+          { className: "btn btn-secondary btn-sm", "data-action": "cancel-edit" },
+          "Cancel"
         )
       )
     );
@@ -679,52 +534,146 @@ class PresetsPage extends Component {
       "click [data-action=select-preset]": "handleSelectPreset",
       "click [data-action=new-preset]": "handleNewPreset",
       "click [data-action=delete-preset]": "handleDeletePreset",
-      "click [data-action=edit-defaults]": "handleEditDefaults",
+      "click [data-action=toggle-defaults]": "handleToggleDefaults",
+      "click [data-action=toggle-group]": "handleToggleGroup",
+      "click [data-action=toggle-model]": "handleToggleModel",
       "click [data-action=new-group]": "handleNewGroup",
-      "click [data-action=edit-group]": "handleEditGroup",
       "click [data-action=save-group]": "handleSaveGroup",
       "click [data-action=delete-group]": "handleDeleteGroup",
       "click [data-action=new-model]": "handleNewModel",
-      "click [data-action=edit-model]": "handleEditModel",
       "click [data-action=save-model]": "handleSaveModel",
       "click [data-action=delete-model]": "handleDeleteModel",
-      "click [data-action=close-modal]": "handleCloseModal",
-      "change [data-field]": "handleFieldChange",
-      "input [data-field]": "handleFieldChange",
+      "click [data-action=start-edit]": "handleStartEdit",
+      "click [data-action=save-edit]": "handleSaveEdit",
+      "click [data-action=cancel-edit]": "handleCancelEdit",
+      "change [data-action=new-model-select]": "handleModelSelectChange",
     };
   }
 
-  handleFieldChange(e) {
-    const el = e.target.closest("[data-field]");
+  handleToggleDefaults() {
+    if (this.state.editingDefaults) {
+      this.setState({ editingDefaults: false, editingData: null });
+    }
+    this.setState({ expandedDefaults: !this.state.expandedDefaults });
+  }
+
+  handleToggleGroup(e) {
+    const el = e.target.closest("[data-action=toggle-group]");
+    if (!el) return;
+    const groupName = el.dataset.groupName;
+
+    if (this.state.editingGroup === groupName) {
+      this.setState({ editingGroup: null, editingData: null });
+    }
+    this.setState({
+      expandedGroups: {
+        ...this.state.expandedGroups,
+        [groupName]: !this.state.expandedGroups[groupName],
+      },
+    });
+  }
+
+  handleToggleModel(e) {
+    const el = e.target.closest("[data-action=toggle-model]");
+    if (!el) return;
+    const modelName = el.dataset.modelName;
+    const groupName = el.dataset.groupName || "";
+    const fullName = groupName ? `${groupName}/${modelName}` : modelName;
+
+    if (this.state.editingModel === fullName) {
+      this.setState({ editingModel: null, editingData: null });
+    }
+    this.setState({
+      expandedModels: {
+        ...this.state.expandedModels,
+        [fullName]: !this.state.expandedModels[fullName],
+      },
+    });
+  }
+
+  handleStartEdit(e) {
+    const el = e.target.closest("[data-action=start-edit]");
     if (!el) return;
 
-    const field = el.dataset.field;
-    const value = el.type === "checkbox" ? el.checked : el.value;
-    const numValue = el.type === "number" ? (value === "" ? null : Number(value)) : value;
+    const section = el.dataset.section;
+    const name = el.dataset.name;
+    const param = el.dataset.param;
 
-    // Update the appropriate state based on which modal is open
-    if (this.state.showGlobalModal) {
-      this.setState({
-        globalDefaults: {
-          ...this.state.globalDefaults,
-          [field]: numValue !== null ? numValue : value,
-        },
-      });
-    } else if (this.state.showGroupModal) {
-      this.setState({
-        currentGroup: {
-          ...this.state.currentGroup,
-          [field]: numValue !== null ? numValue : value,
-        },
-      });
-    } else if (this.state.showModelModal) {
-      this.setState({
-        currentModel: {
-          ...this.state.currentModel,
-          [field]: numValue !== null ? numValue : value,
-        },
-      });
+    let data;
+    if (section === "defaults") {
+      data = { ...this.state.globalDefaults };
+    } else if (section === "group") {
+      const group = this.state.groups.find((g) => g.name === name);
+      data = group ? { ...group } : {};
+    } else if (section === "model") {
+      const model = this.getModelByFullName(name);
+      data = model ? { ...model } : {};
     }
+
+    this.setState({
+      editingDefaults: section === "defaults",
+      editingGroup: section === "group" ? name : null,
+      editingModel: section === "model" ? name : null,
+      editingData: data,
+    });
+  }
+
+  handleSaveEdit() {
+    const { editingDefaults, editingGroup, editingModel, editingData, selectedPreset } = this.state;
+    if (!editingData || !selectedPreset) return;
+
+    const config = {};
+    for (const param of PRESET_PARAMS) {
+      const value = editingData[param.key];
+      if (value !== undefined && value !== null) {
+        config[param.iniKey || param.key] = value;
+      }
+    }
+
+    let modelName;
+    if (editingDefaults) {
+      modelName = "*";
+    } else if (editingGroup) {
+      modelName = editingGroup;
+    } else if (editingModel) {
+      modelName = editingModel;
+    }
+
+    if (!modelName) return;
+
+    this.presetsService
+      .addModel(selectedPreset.name, modelName, config)
+      .then(() => {
+        showNotification("Saved successfully", "success");
+        this.loadPresetData(selectedPreset);
+        this.setState({
+          editingDefaults: false,
+          editingGroup: null,
+          editingModel: null,
+          editingData: null,
+        });
+      })
+      .catch((error) => {
+        console.error("[PRESETS] Save error:", error);
+        showNotification(`Error: ${error.message}`, "error");
+      });
+  }
+
+  handleCancelEdit() {
+    this.setState({
+      editingDefaults: false,
+      editingGroup: null,
+      editingModel: null,
+      editingData: null,
+    });
+  }
+
+  getModelByFullName(fullName) {
+    for (const group of this.state.groups) {
+      const model = group.models?.find((m) => `${group.name}/${m.name}` === fullName);
+      if (model) return { ...model, groupName: group.name };
+    }
+    return this.state.standaloneModels.find((m) => m.name === fullName);
   }
 
   async handleSelectPreset(e) {
@@ -744,17 +693,28 @@ class PresetsPage extends Component {
   }
 
   async loadPresetData(preset) {
-    if (!this.presetsService) {
-      console.error("[PRESETS] Service not available");
-      return;
-    }
+    if (!this.presetsService) return;
 
     try {
-      const models = await this.presetsService.getModelsFromPreset(preset.name);
-      const defaults = await this.presetsService.getDefaults(preset.name);
+      const [models, defaults] = await Promise.all([
+        this.presetsService.getModelsFromPreset(preset.name),
+        this.presetsService.getDefaults(preset.name),
+      ]);
 
       const groups = {};
       const standalone = [];
+      const groupNames = new Set();
+
+      for (const modelName of Object.keys(models)) {
+        if (modelName === "*") continue;
+        const parts = modelName.split("/");
+        if (parts.length === 2) {
+          groupNames.add(parts[0]);
+        }
+      }
+      for (const name of this._knownGroups) {
+        groupNames.add(name);
+      }
 
       for (const [modelName, modelConfig] of Object.entries(models)) {
         if (modelName === "*") continue;
@@ -765,23 +725,35 @@ class PresetsPage extends Component {
           if (!groups[groupName]) {
             groups[groupName] = { name: groupName, models: [] };
           }
-          groups[groupName].models.push({
-            name: parts[1],
-            ...modelConfig,
-          });
+          groups[groupName].models.push({ name: parts[1], ...modelConfig });
+        } else if (groupNames.has(modelName)) {
+          if (!groups[modelName]) {
+            groups[modelName] = { name: modelName, models: [] };
+          }
+          groups[modelName] = { ...groups[modelName], ...modelConfig };
         } else {
-          standalone.push({
-            name: modelName,
-            ...modelConfig,
-          });
+          standalone.push({ name: modelName, ...modelConfig });
         }
+      }
+
+      const groupNamesList = Object.keys(groups);
+      const expandedGroups = {};
+      if (groupNamesList.length > 0) {
+        expandedGroups[groupNamesList[0]] = true;
       }
 
       this.setState({
         selectedPreset: preset,
         globalDefaults: defaults,
-        groups: Object.values(groups),
+        groups: groupNamesList.map((name) => groups[name]),
         standaloneModels: standalone,
+        expandedDefaults: true,
+        expandedGroups,
+        expandedModels: {},
+        editingDefaults: false,
+        editingGroup: null,
+        editingModel: null,
+        editingData: null,
       });
     } catch (error) {
       console.error("[PRESETS] Error loading preset:", error);
@@ -793,21 +765,20 @@ class PresetsPage extends Component {
     const name = prompt("Preset name:");
     if (!name) return;
 
-    this.createPreset(name);
-  }
-
-  async createPreset(name) {
     this.setState({ loading: true });
-    try {
-      await this.presetsService.createPreset(name);
-      showNotification(`Preset "${name}" created`, "success");
-      await this.controller.loadPresetsData();
-    } catch (error) {
-      console.error("[PRESETS] Create error:", error);
-      showNotification(`Error: ${error.message}`, "error");
-    } finally {
-      this.setState({ loading: false });
-    }
+    this.presetsService
+      .createPreset(name)
+      .then(() => {
+        showNotification(`Preset "${name}" created`, "success");
+        return this.controller.loadPresetsData();
+      })
+      .catch((error) => {
+        console.error("[PRESETS] Create error:", error);
+        showNotification(`Error: ${error.message}`, "error");
+      })
+      .finally(() => {
+        this.setState({ loading: false });
+      });
   }
 
   handleDeletePreset(e) {
@@ -816,179 +787,193 @@ class PresetsPage extends Component {
     const name = el.dataset.presetName;
 
     if (!confirm(`Delete preset "${name}"?`)) return;
-    this.deletePreset(name);
+
+    this.setState({ loading: true });
+    this.presetsService
+      .deletePreset(name)
+      .then(() => {
+        showNotification("Preset deleted", "success");
+        this.setState({
+          selectedPreset: null,
+          groups: [],
+          standaloneModels: [],
+          globalDefaults: {},
+        });
+        return this.controller.loadPresetsData();
+      })
+      .catch((error) => {
+        console.error("[PRESETS] Delete error:", error);
+        showNotification(`Error: ${error.message}`, "error");
+      })
+      .finally(() => {
+        this.setState({ loading: false });
+      });
   }
 
-  async deletePreset(name) {
+  handleNewGroup() {
+    const name = prompt("Group name:");
+    if (!name || !name.trim()) return;
+
+    this.setState({ loading: true });
+    this.presetsService
+      .addModel(this.state.selectedPreset.name, name.trim(), {})
+      .then(() => {
+        showNotification(`Group "${name}" created`, "success");
+        this._knownGroups.add(name.trim());
+        return this.loadPresetData(this.state.selectedPreset);
+      })
+      .then(() => {
+        this.setState({
+          expandedGroups: { ...this.state.expandedGroups, [name.trim()]: true },
+        });
+      })
+      .catch((error) => {
+        console.error("[PRESETS] Create group error:", error);
+        showNotification(`Error: ${error.message}`, "error");
+      })
+      .finally(() => {
+        this.setState({ loading: false });
+      });
+  }
+
+  handleDeleteGroup(e) {
+    const el = e.target.closest("[data-action=delete-group]");
+    if (!el) return;
+    const groupName = el.dataset.groupName;
+
+    if (!confirm(`Delete group "${groupName}"? This will also delete all models in this group.`))
+      return;
+
+    this.setState({ loading: true });
+    this.presetsService
+      .removeModel(this.state.selectedPreset.name, groupName)
+      .then(() => {
+        showNotification(`Group "${groupName}" deleted`, "success");
+        this._knownGroups.delete(groupName);
+        return this.loadPresetData(this.state.selectedPreset);
+      })
+      .catch((error) => {
+        console.error("[PRESETS] Delete group error:", error);
+        showNotification(`Error: ${error.message}`, "error");
+      })
+      .finally(() => {
+        this.setState({ loading: false });
+      });
+  }
+
+  handleNewModel(e) {
+    const el = e.target.closest("[data-action=new-model]");
+    const groupName = el?.dataset.groupName || "";
+    const models = this.state.availableModels;
+
+    if (models.length === 0) {
+      showNotification("No models available. Please scan for models first.", "warning");
+      return;
+    }
+
+    // Create a modal-like select dialog
+    const selectHtml = `
+      <div class="model-select-modal" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      ">
+        <div style="
+          background: var(--card-bg);
+          border-radius: var(--radius);
+          padding: var(--lg);
+          max-width: 400px;
+          width: 90%;
+        ">
+          <h3 style="margin: 0 0 var(--md) 0;">Add Model to ${groupName || "standalone"}</h3>
+          <select id="model-select" style="
+            width: 100%;
+            padding: var(--sm) var(--md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            margin-bottom: var(--md);
+          ">
+            <option value="">-- Select Model --</option>
+            ${models.map((m) => `<option value="${m.path}">${m.name} (${AppUtils.formatBytes(m.size)})</option>`).join("")}
+          </select>
+          <input type="text" id="model-name-input" placeholder="Model name (optional, uses filename if empty)" style="
+            width: 100%;
+            padding: var(--sm) var(--md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            margin-bottom: var(--md);
+          ">
+          <div style="display: flex; gap: var(--sm); justify-content: flex-end;">
+            <button id="model-select-cancel" class="btn btn-secondary btn-sm">Cancel</button>
+            <button id="model-select-confirm" class="btn btn-primary btn-sm">Add</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const container = document.createElement("div");
+    container.innerHTML = selectHtml;
+    document.body.appendChild(container);
+
+    const select = container.querySelector("#model-select");
+    const nameInput = container.querySelector("#model-name-input");
+    const confirmBtn = container.querySelector("#model-select-confirm");
+    const cancelBtn = container.querySelector("#model-select-cancel");
+
+    const closeModal = () => {
+      document.body.removeChild(container);
+    };
+
+    cancelBtn.onclick = closeModal;
+
+    confirmBtn.onclick = () => {
+      const modelPath = select.value;
+      if (!modelPath) {
+        showNotification("Please select a model", "warning");
+        return;
+      }
+      const modelName = nameInput.value.trim() || modelPath.split("/").pop();
+      const fullName = groupName ? `${groupName}/${modelName}` : modelName;
+
+      closeModal();
+      this.createModel(modelName, groupName, fullName, modelPath);
+    };
+  }
+
+  async createModel(name, groupName, fullName, modelPath) {
     this.setState({ loading: true });
     try {
-      await this.presetsService.deletePreset(name);
-      showNotification("Preset deleted", "success");
-      this.setState({
-        selectedPreset: null,
-        groups: [],
-        standaloneModels: [],
-        globalDefaults: null,
+      await this.presetsService.addModel(this.state.selectedPreset.name, fullName, {
+        model: modelPath,
       });
-      await this.controller.loadPresetsData();
+      showNotification(`Model "${name}" created`, "success");
+      await this.loadPresetData(this.state.selectedPreset);
+      const fullKey = groupName ? `${groupName}/${name}` : name;
+      this.setState({
+        expandedModels: { ...this.state.expandedModels, [fullKey]: true },
+      });
     } catch (error) {
-      console.error("[PRESETS] Delete error:", error);
+      console.error("[PRESETS] Create model error:", error);
       showNotification(`Error: ${error.message}`, "error");
     } finally {
       this.setState({ loading: false });
     }
   }
 
-  handleEditDefaults() {
-    this.setState({ showGlobalModal: true });
-  }
-
-  async handleSaveDefaults() {
-    try {
-      const { globalDefaults, selectedPreset } = this.state;
-      await this.presetsService.updateDefaults(selectedPreset.name, globalDefaults);
-      showNotification("Global defaults saved", "success");
-      await this.loadPresetData(selectedPreset);
-    } catch (error) {
-      console.error("[PRESETS] Save defaults error:", error);
-      showNotification(`Error: ${error.message}`, "error");
-    }
-    this.setState({ showGlobalModal: false });
-  }
-
-  handleNewGroup() {
-    this.setState({ showGroupModal: true, editingGroup: null, currentGroup: { name: "" } });
-  }
-
-  handleEditGroup(e) {
-    const el = e.target.closest("[data-action=edit-group]");
-    if (!el) return;
-    const groupName = el.dataset.groupName;
-    const group = this.state.groups.find((g) => g.name === groupName);
-    if (!group) return;
-
-    this.setState({
-      showGroupModal: true,
-      editingGroup: groupName,
-      currentGroup: { ...group },
-    });
-  }
-
-  async handleSaveGroup() {
-    try {
-      const { currentGroup, editingGroup, selectedPreset } = this.state;
-      const groupName = currentGroup.name;
-
-      if (!groupName || groupName.trim() === "") {
-        showNotification("Group name is required", "error");
-        return;
-      }
-
-      const config = {
-        ctxSize: currentGroup.ctxSize,
-        temperature: currentGroup.temperature,
-        nGpuLayers: currentGroup.nGpuLayers,
-        threads: currentGroup.threads,
-        batchSize: currentGroup.batchSize,
-      };
-
-      await this.presetsService.addModel(selectedPreset.name, groupName, config);
-      showNotification(`Group "${groupName}" saved`, "success");
-      await this.loadPresetData(selectedPreset);
-    } catch (error) {
-      console.error("[PRESETS] Save group error:", error);
-      showNotification(`Error: ${error.message}`, "error");
-    }
-    this.setState({ showGroupModal: false, editingGroup: null, currentGroup: {} });
-  }
-
-  async handleDeleteGroup(e) {
-    const el = e.target.closest("[data-action=delete-group]");
-    if (!el) return;
-    const groupName = el.dataset.groupName;
-
-    if (!confirm(`Delete group "${groupName}"?`)) return;
-
-    try {
-      await this.presetsService.removeModel(this.state.selectedPreset.name, groupName);
-      showNotification(`Group "${groupName}" deleted`, "success");
-      await this.loadPresetData(this.state.selectedPreset);
-    } catch (error) {
-      console.error("[PRESETS] Delete group error:", error);
-      showNotification(`Error: ${error.message}`, "error");
-    }
-  }
-
-  handleNewModel(e) {
-    const el = e.target.closest("[data-action=new-model]");
-    const groupName = el?.dataset.groupName || "";
-
-    this.setState({
-      showModelModal: true,
-      editingModel: null,
-      currentModel: { name: "", model: "", groupName },
-    });
-  }
-
-  handleEditModel(e) {
-    const el = e.target.closest("[data-action=edit-model]");
-    if (!el) return;
-    const groupName = el.dataset.groupName;
-    const modelName = el.dataset.modelName;
-
-    let model;
-    if (groupName) {
-      const group = this.state.groups.find((g) => g.name === groupName);
-      model = group?.models?.find((m) => m.name === modelName);
-    } else {
-      model = this.state.standaloneModels.find((m) => m.name === modelName);
-    }
-
-    if (!model) return;
-
-    this.setState({
-      showModelModal: true,
-      editingModel: modelName,
-      currentModel: { ...model, groupName },
-    });
-  }
-
-  async handleSaveModel() {
-    try {
-      const { currentModel, editingModel, selectedPreset } = this.state;
-      const { name, model: modelPath, groupName } = currentModel;
-
-      if (!name || name.trim() === "") {
-        showNotification("Model name is required", "error");
-        return;
-      }
-
-      if (!modelPath || modelPath.trim() === "") {
-        showNotification("Model path is required", "error");
-        return;
-      }
-
-      const fullName = groupName ? `${groupName}/${name}` : name;
-      const config = {
-        model: modelPath,
-        ctxSize: currentModel.ctxSize,
-        temperature: currentModel.temperature,
-        nGpuLayers: currentModel.nGpuLayers,
-        threads: currentModel.threads,
-        batchSize: currentModel.batchSize,
-      };
-
-      await this.presetsService.addModel(selectedPreset.name, fullName, config);
-      showNotification("Model saved", "success");
-      await this.loadPresetData(selectedPreset);
-    } catch (error) {
-      console.error("[PRESETS] Save model error:", error);
-      showNotification(`Error: ${error.message}`, "error");
-    }
-    this.setState({ showModelModal: false, editingModel: null, currentModel: {} });
-  }
-
-  async handleDeleteModel(e) {
+  handleDeleteModel(e) {
     const el = e.target.closest("[data-action=delete-model]");
     if (!el) return;
     const groupName = el.dataset.groupName;
@@ -997,25 +982,20 @@ class PresetsPage extends Component {
 
     if (!confirm(`Delete model "${modelName}"?`)) return;
 
-    try {
-      await this.presetsService.removeModel(this.state.selectedPreset.name, fullName);
-      showNotification(`Model "${modelName}" deleted`, "success");
-      await this.loadPresetData(this.state.selectedPreset);
-    } catch (error) {
-      console.error("[PRESETS] Delete model error:", error);
-      showNotification(`Error: ${error.message}`, "error");
-    }
-  }
-
-  handleCloseModal(e) {
-    if (e.target.dataset.action === "close-modal") {
-      this.setState({
-        showGlobalModal: false,
-        showGroupModal: false,
-        showModelModal: false,
-        showInheritanceModal: false,
+    this.setState({ loading: true });
+    this.presetsService
+      .removeModel(this.state.selectedPreset.name, fullName)
+      .then(() => {
+        showNotification(`Model "${modelName}" deleted`, "success");
+        return this.loadPresetData(this.state.selectedPreset);
+      })
+      .catch((error) => {
+        console.error("[PRESETS] Delete model error:", error);
+        showNotification(`Error: ${error.message}`, "error");
+      })
+      .finally(() => {
+        this.setState({ loading: false });
       });
-    }
   }
 
   async loadAvailableModels() {
