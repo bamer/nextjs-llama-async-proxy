@@ -416,7 +416,7 @@ class PresetsPage extends Component {
           "span",
           { className: "section-actions" },
           Component.h(
-            "span",
+            "button",
             {
               className: "action-btn danger",
               "data-action": "delete-group",
@@ -501,23 +501,25 @@ class PresetsPage extends Component {
           "data-group-name": groupName || "",
         },
         Component.h("span", { className: "section-icon" }, "📄"),
-        Component.h("span", { className: "section-title" }, model.name),
-        Component.h("span", { className: "model-path-badge" }, model.model || "No model"),
-        Component.h("span", { className: "section-toggle" }, isExpanded ? "▼" : "▶"),
         Component.h(
-          "span",
-          { className: "section-actions" },
+          "div",
+          { className: "model-title-delete-wrapper" },
+          Component.h("span", { className: "section-title" }, model.name),
           Component.h(
-            "span",
+            "button",
             {
-              className: "action-btn danger",
+              type: "button",
+              className: "delete-model-btn",
               "data-action": "delete-model",
               "data-model-name": model.name,
               "data-group-name": groupName || "",
+              title: "Delete model",
             },
             "×"
           )
-        )
+        ),
+        Component.h("span", { className: "model-path-badge" }, model.model || "No model"),
+        Component.h("span", { className: "section-toggle" }, isExpanded ? "▼" : "▶")
       ),
       isExpanded
         ? Component.h(
@@ -683,6 +685,11 @@ class PresetsPage extends Component {
   }
 
   handleToggleGroup(e) {
+    // Don't toggle if delete button was clicked
+    if (e.target.closest("[data-action=delete-group]")) {
+      return;
+    }
+
     const el = e.target.closest("[data-action=toggle-group]");
     if (!el) return;
     const groupName = el.dataset.groupName;
@@ -699,6 +706,11 @@ class PresetsPage extends Component {
   }
 
   handleToggleModel(e) {
+    // Don't toggle if delete button was clicked
+    if (e.target.closest("[data-action=delete-model]")) {
+      return;
+    }
+
     const el = e.target.closest("[data-action=toggle-model]");
     if (!el) return;
     const modelName = el.dataset.modelName;
@@ -1136,11 +1148,14 @@ class PresetsPage extends Component {
   }
 
   handleDeleteModel(e) {
+    e.stopPropagation();
     const el = e.target.closest("[data-action=delete-model]");
     if (!el) return;
     const groupName = el.dataset.groupName;
     const modelName = el.dataset.modelName;
     const fullName = groupName ? `${groupName}/${modelName}` : modelName;
+
+    console.log("[DEBUG] Delete model clicked:", { groupName, modelName, fullName });
 
     if (!confirm(`Delete model "${modelName}"?`)) return;
 

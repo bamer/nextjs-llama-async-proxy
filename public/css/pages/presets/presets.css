@@ -807,6 +807,45 @@
   color: white;
 }
 
+/* Title and delete button wrapper */
+.model-title-delete-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+/* Delete model button in header */
+.delete-model-btn {
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  background: transparent;
+  border: none;
+  color: var(--danger);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.delete-model-btn:hover {
+  color: #ff4444;
+  transform: scale(1.2);
+}
+
+.delete-model-btn:active {
+  transform: scale(0.9);
+}
+
 /* Group parameters section */
 .group-params-section {
   padding: var(--md);
