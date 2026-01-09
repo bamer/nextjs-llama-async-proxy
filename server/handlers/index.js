@@ -29,6 +29,7 @@ import { registerMetricsHandlers } from "./metrics.js";
 import { registerLogsHandlers } from "./logs.js";
 import { registerConfigHandlers } from "./config.js";
 import { registerLlamaHandlers } from "./llama.js";
+import { registerPresetsHandlers } from "./presets.js";
 import { logger } from "./logger.js";
 
 /**
@@ -49,5 +50,6 @@ export function registerHandlers(io, db, ggufParser) {
     registerLogsHandlers(socket, db);
     registerConfigHandlers(socket, db);
     registerLlamaHandlers(socket, io, db);
+    registerPresetsHandlers(socket, db);
   });
 }
