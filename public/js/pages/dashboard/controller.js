@@ -31,6 +31,8 @@ class DashboardController {
       const routerStatus = stateManager.get("routerStatus");
       const config = stateManager.get("config") || {};
       const history = stateManager.get("metricsHistory") || [];
+      const presets = stateManager.get("presets") || [];
+      const settings = stateManager.get("settings") || {};
 
       this.chartManager = new window.ChartManager({
         state: { chartType: "usage", history },
@@ -43,6 +45,9 @@ class DashboardController {
         routerStatus,
         config,
         history,
+        presets,
+        maxModelsLoaded: settings.maxModelsLoaded || 4,
+        ctxSize: config.ctx_size || 4096,
         chartManager: this.chartManager,
         controller: this,
       });
@@ -104,6 +109,20 @@ class DashboardController {
           const rs = await stateManager.getRouterStatus();
           stateManager.set("routerStatus", rs.routerStatus);
         } catch (e) {}
+      }
+
+      // Load settings
+      try {
+        const st = await stateManager.getSettings();
+        stateManager.set("settings", st.settings || {});
+      } catch (e) {}
+
+      // Load presets for preset launcher
+      try {
+        const p = await stateManager.request("presets:list");
+        stateManager.set("presets", p?.presets || []);
+      } catch (e) {
+        stateManager.set("presets", []);
       }
     } catch (e) {
       console.error("[DASHBOARD] Load error:", e.message);

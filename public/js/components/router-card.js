@@ -1,6 +1,7 @@
 /**
  * Unified Router Card Component
- * Used in both Dashboard and Settings with real-time state reflection
+ * Consolidates router controls and preset launcher into single card
+ * Used in both Dashboard and Settings
  */
 
 class RouterCard extends Component {
@@ -28,17 +29,22 @@ class RouterCard extends Component {
       "click [data-action=start]": "handleStart",
       "click [data-action=stop]": "handleStop",
       "click [data-action=restart]": "handleRestart",
-      "click [data-action=launch-preset]": "handleLaunchPreset",
       "change #preset-select": "handlePresetChange",
     };
   }
 
-  handleStart(event) {
+  async handleStart(event) {
     event.preventDefault();
     event.stopPropagation();
     this.state.routerLoading = true;
     this._updateUI();
-    this.state.onAction("start");
+
+    // If preset selected, launch with preset; otherwise start normally
+    if (this.state.selectedPreset) {
+      await this.handleLaunchPreset(event);
+    } else {
+      this.state.onAction("start");
+    }
   }
 
   handleStop(event) {
@@ -83,16 +89,10 @@ class RouterCard extends Component {
       });
 
       if (response?.success) {
-        showNotification(
-          `✓ Server started on port ${response.data.port}`,
-          "success"
-        );
+        showNotification(`✓ Server started on port ${response.data.port}`, "success");
         this.state.selectedPreset = null;
       } else {
-        showNotification(
-          `Error: ${response?.error?.message || "Unknown error"}`,
-          "error"
-        );
+        showNotification(`Error: ${response?.error?.message || "Unknown error"}`, "error");
       }
     } catch (error) {
       console.error("[ROUTER-CARD] Launch preset error:", error);
@@ -157,7 +157,12 @@ class RouterCard extends Component {
       } else {
         startStopBtn.setAttribute("data-action", "start");
         startStopBtn.className = "btn btn-primary";
-        startStopBtn.textContent = routerLoading ? "▶ Starting..." : "▶ Start Router";
+        const btnText = routerLoading
+          ? "▶ Starting..."
+          : this.state.selectedPreset
+          ? "▶ Start with Preset"
+          : "▶ Start Router";
+        startStopBtn.textContent = btnText;
       }
       startStopBtn.disabled = routerLoading;
     }
@@ -210,6 +215,26 @@ class RouterCard extends Component {
         Component.h(
           "div",
           { className: "router-controls" },
+          // Preset selection (if presets available)
+          this.state.presets &&
+            this.state.presets.length > 0 &&
+            Component.h(
+              "div",
+              { className: "preset-selector" },
+              Component.h(
+                "select",
+                {
+                  id: "preset-select",
+                  className: "preset-dropdown",
+                  value: this.state.selectedPreset || "",
+                },
+                Component.h("option", { value: "" }, "📋 Select Preset..."),
+                ...this.state.presets.map((preset) =>
+                  Component.h("option", { value: preset.name }, preset.name)
+                )
+              )
+            ),
+          // Action buttons
           isRunning
             ? Component.h(
                 "button",
@@ -219,7 +244,11 @@ class RouterCard extends Component {
             : Component.h(
                 "button",
                 { className: "btn btn-primary", "data-action": "start" },
-                "▶ Start Router"
+                this.state.routerLoading
+                  ? "▶ Starting..."
+                  : this.state.selectedPreset
+                  ? "▶ Start with Preset"
+                  : "▶ Start Router"
               ),
           Component.h(
             "button",
@@ -227,44 +256,7 @@ class RouterCard extends Component {
             "🔄 Restart"
           )
         )
-      ),
-      // Launch with Preset Section
-      this.state.presets && this.state.presets.length > 0 &&
-        Component.h(
-          "div",
-          { className: "preset-launcher-card card" },
-          Component.h("h3", {}, "Launch with Preset"),
-          Component.h(
-            "div",
-            { className: "form-group" },
-            Component.h("label", {}, "Select Preset"),
-            Component.h(
-              "select",
-              {
-                id: "preset-select",
-                value: this.state.selectedPreset || "",
-              },
-              Component.h("option", { value: "" }, "-- Choose a preset --"),
-              ...this.state.presets.map((preset) =>
-                Component.h("option", { value: preset.name }, preset.name)
-              )
-            ),
-            Component.h(
-              "small",
-              {},
-              "Presets are created and configured in the Presets page"
-            )
-          ),
-          Component.h(
-            "button",
-            {
-              className: "btn btn-primary",
-              "data-action": "launch-preset",
-              disabled: this.state.routerLoading,
-            },
-            this.state.routerLoading ? "🚀 Starting..." : "🚀 Launch Server with Preset"
-          )
-        )
+      )
     );
   }
 }
