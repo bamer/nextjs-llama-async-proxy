@@ -35,7 +35,7 @@ class SettingsPage extends Component {
   }
 
   async _save() {
-    const btn = this._el?.querySelector("[data-action=\"save\"]");
+    const btn = this._el?.querySelector('[data-action="save"]');
     if (btn) {
       btn.textContent = "Saving...";
       btn.disabled = true;

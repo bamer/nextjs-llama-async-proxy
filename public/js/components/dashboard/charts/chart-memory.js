@@ -84,7 +84,7 @@ class MemoryChart {
             ticks: {
               stepSize: 25,
               callback: function (value) {
-                return `${value.toFixed(0)  }%`;
+                return `${value.toFixed(0)}%`;
               },
             },
           },

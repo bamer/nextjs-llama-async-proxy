@@ -184,15 +184,15 @@ class ParameterInput extends Component {
 
     const infoButton = param.description
       ? Component.h(
-        "button",
-        {
-          type: "button",
-          className: "param-info-btn",
-          "data-action": "toggle-tooltip",
-          title: "Show description",
-        },
-        "?"
-      )
+          "button",
+          {
+            type: "button",
+            className: "param-info-btn",
+            "data-action": "toggle-tooltip",
+            title: "Show description",
+          },
+          "?"
+        )
       : null;
 
     return Component.h(
@@ -234,16 +234,16 @@ class ParameterInput extends Component {
     }
 
     switch (param.type) {
-    case "select":
-      return this.renderSelect(param, paramId, value, isEditable);
-    case "multiselect":
-      return this.renderMultiSelect(param, paramId, value, isEditable);
-    case "boolean":
-      return this.renderBoolean(param, paramId, value, isEditable);
-    case "number":
-    case "text":
-    default:
-      return Component.h("input", inputProps);
+      case "select":
+        return this.renderSelect(param, paramId, value, isEditable);
+      case "multiselect":
+        return this.renderMultiSelect(param, paramId, value, isEditable);
+      case "boolean":
+        return this.renderBoolean(param, paramId, value, isEditable);
+      case "number":
+      case "text":
+      default:
+        return Component.h("input", inputProps);
     }
   }
 

@@ -139,7 +139,8 @@ function modelToIniSection(modelName, config) {
 
 /**
  * Convert INI section to model config object
- * Returns only the values that are set in the section (sparse config)
+ * Returns ONLY values that are explicitly set in the section (sparse config)
+ * Does NOT merge with hardcoded defaults
  */
 function iniSectionToModel(section, defaultsSection = {}) {
   const result = {};

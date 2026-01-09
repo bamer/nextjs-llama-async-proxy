@@ -87,7 +87,7 @@ class LogsPage extends Component {
 
   didUpdate() {
     // Restore focus and cursor position to search input after update
-    const searchInput = this._el?.querySelector("[data-field=\"search\"]");
+    const searchInput = this._el?.querySelector('[data-field="search"]');
     if (searchInput && document.activeElement === searchInput) {
       // Focus already restored by browser, no action needed
     } else if (searchInput && this.lastSearchValue === this.state.filters.search) {
@@ -137,22 +137,22 @@ class LogsPage extends Component {
         filtered.length === 0
           ? Component.h("p", { className: "empty" }, "No logs found")
           : Component.h(
-            "div",
-            {},
-            ...visibleLogs.map((l) =>
-              Component.h(
-                "div",
-                { className: `log-entry level-${l.level || "info"}` },
-                Component.h("span", { className: "log-time" }, this._time(l.timestamp)),
+              "div",
+              {},
+              ...visibleLogs.map((l) =>
                 Component.h(
-                  "span",
-                  { className: "log-level" },
-                  (l.level || "info").toUpperCase()
-                ),
-                Component.h("span", { className: "log-msg" }, String(l.message))
+                  "div",
+                  { className: `log-entry level-${l.level || "info"}` },
+                  Component.h("span", { className: "log-time" }, this._time(l.timestamp)),
+                  Component.h(
+                    "span",
+                    { className: "log-level" },
+                    (l.level || "info").toUpperCase()
+                  ),
+                  Component.h("span", { className: "log-msg" }, String(l.message))
+                )
               )
             )
-          )
       )
     );
   }

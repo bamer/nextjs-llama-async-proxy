@@ -91,48 +91,54 @@ class PresetsController {
   }
 }
 
-// Parameter definitions - iniKey is the key sent to backend, key is what's displayed
-const PRESET_PARAMS = [
+const LLAMA_PARAMS = [
   {
     key: "ctx-size",
     iniKey: "ctxSize",
     label: "Context Size",
     type: "number",
-    default: 2048,
+    default: 0,
+    min: 0,
+    max: 32768,
+    step: 512,
     group: "core",
+    description: "Size of the prompt context (0 = loaded from model)",
   },
   {
-    key: "batch",
+    key: "batch-size",
     iniKey: "batchSize",
     label: "Batch Size",
     type: "number",
-    default: 512,
+    default: 2048,
+    min: 1,
+    max: 65536,
+    step: 1,
     group: "core",
+    description: "Logical maximum batch size",
   },
   {
-    key: "ubatch",
+    key: "ubatch-size",
     iniKey: "ubatchSize",
-    label: "Micro Batch",
+    label: "Micro Batch Size",
     type: "number",
     default: 512,
+    min: 1,
+    max: 65536,
+    step: 1,
     group: "core",
+    description: "Physical maximum batch size",
   },
   {
-    key: "temp",
-    iniKey: "temperature",
-    label: "Temperature",
+    key: "n-predict",
+    iniKey: "nPredict",
+    label: "Max Tokens",
     type: "number",
-    step: "0.01",
-    default: 0.7,
-    group: "sampling",
-  },
-  {
-    key: "n-gpu-layers",
-    iniKey: "nGpuLayers",
-    label: "GPU Layers",
-    type: "number",
-    default: 0,
-    group: "hardware",
+    default: -1,
+    min: -1,
+    max: 2147483647,
+    step: 1,
+    group: "core",
+    description: "Number of tokens to predict (-1 = infinite)",
   },
   {
     key: "threads",
@@ -140,7 +146,693 @@ const PRESET_PARAMS = [
     label: "Threads",
     type: "number",
     default: 0,
+    min: 0,
+    max: 256,
+    step: 1,
     group: "hardware",
+    description: "Number of CPU threads (0 = all CPUs)",
+  },
+  {
+    key: "threads-batch",
+    iniKey: "threadsBatch",
+    label: "Threads (Batch)",
+    type: "number",
+    default: 0,
+    min: 0,
+    max: 256,
+    step: 1,
+    group: "hardware",
+    description: "Threads for batch and prompt processing (0 = same as --threads)",
+  },
+  {
+    key: "n-gpu-layers",
+    iniKey: "nGpuLayers",
+    label: "GPU Layers",
+    type: "number",
+    default: -1,
+    min: -1,
+    max: 256,
+    step: 1,
+    group: "hardware",
+    description: "Max layers to store in VRAM (-1=auto, 0=CPU)",
+  },
+  {
+    key: "split-mode",
+    iniKey: "splitMode",
+    label: "Split Mode",
+    type: "select",
+    default: "layer",
+    options: ["none", "layer", "row"],
+    group: "hardware",
+    description: "How to split model across multiple GPUs",
+  },
+  {
+    key: "tensor-split",
+    iniKey: "tensorSplit",
+    label: "Tensor Split",
+    type: "text",
+    default: "",
+    group: "hardware",
+    description: "Fraction of model to offload to each GPU (comma-separated)",
+  },
+  {
+    key: "main-gpu",
+    iniKey: "mainGpu",
+    label: "Main GPU",
+    type: "number",
+    default: 0,
+    min: 0,
+    max: 8,
+    step: 1,
+    group: "hardware",
+    description: "GPU index to use for model/KV",
+  },
+  {
+    key: "temp",
+    iniKey: "temperature",
+    label: "Temperature",
+    type: "number",
+    default: 0.8,
+    min: 0,
+    max: 2,
+    step: 0.01,
+    group: "sampling",
+    description: "Sampling temperature",
+  },
+  {
+    key: "top-k",
+    iniKey: "topK",
+    label: "Top K",
+    type: "number",
+    default: 40,
+    min: 0,
+    max: 1000,
+    step: 1,
+    group: "sampling",
+    description: "Top-k sampling (0 = disabled)",
+  },
+  {
+    key: "top-p",
+    iniKey: "topP",
+    label: "Top P",
+    type: "number",
+    default: 0.9,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    group: "sampling",
+    description: "Top-p sampling (1.0 = disabled)",
+  },
+  {
+    key: "min-p",
+    iniKey: "minP",
+    label: "Min P",
+    type: "number",
+    default: 0.1,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    group: "sampling",
+    description: "Min-p sampling (0.0 = disabled)",
+  },
+  {
+    key: "typical",
+    iniKey: "typical",
+    label: "Typical",
+    type: "number",
+    default: 1.0,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    group: "sampling",
+    description: "Locally typical sampling, parameter p (1.0 = disabled)",
+  },
+  {
+    key: "repeat-last-n",
+    iniKey: "repeatLastN",
+    label: "Repeat Penalty N",
+    type: "number",
+    default: 64,
+    min: 0,
+    max: 32768,
+    step: 1,
+    group: "sampling",
+    description: "Last n tokens to consider for repeat penalty (0 = disabled)",
+  },
+  {
+    key: "repeat-penalty",
+    iniKey: "repeatPenalty",
+    label: "Repeat Penalty",
+    type: "number",
+    default: 1.0,
+    min: 0,
+    max: 2,
+    step: 0.01,
+    group: "sampling",
+    description: "Penalize repeat sequences (1.0 = disabled)",
+  },
+  {
+    key: "presence-penalty",
+    iniKey: "presencePenalty",
+    label: "Presence Penalty",
+    type: "number",
+    default: 0.0,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    group: "sampling",
+    description: "Repeat alpha presence penalty (0.0 = disabled)",
+  },
+  {
+    key: "frequency-penalty",
+    iniKey: "frequencyPenalty",
+    label: "Frequency Penalty",
+    type: "number",
+    default: 0.0,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    group: "sampling",
+    description: "Repeat alpha frequency penalty (0.0 = disabled)",
+  },
+  {
+    key: "dry-multiplier",
+    iniKey: "dryMultiplier",
+    label: "DRY Multiplier",
+    type: "number",
+    default: 0.0,
+    min: 0,
+    max: 2,
+    step: 0.01,
+    group: "sampling",
+    description: "DRY sampling multiplier (0.0 = disabled)",
+  },
+  {
+    key: "dry-base",
+    iniKey: "dryBase",
+    label: "DRY Base",
+    type: "number",
+    default: 1.75,
+    min: 1,
+    max: 3,
+    step: 0.01,
+    group: "sampling",
+    description: "DRY sampling base value",
+  },
+  {
+    key: "dry-allowed-length",
+    iniKey: "dryAllowedLength",
+    label: "DRY Allowed Length",
+    type: "number",
+    default: 2,
+    min: 0,
+    max: 100,
+    step: 1,
+    group: "sampling",
+    description: "Allowed length for DRY sampling",
+  },
+  {
+    key: "dry-penalty-last-n",
+    iniKey: "dryPenaltyLastN",
+    label: "DRY Penalty Last N",
+    type: "number",
+    default: -1,
+    min: -1,
+    max: 32768,
+    step: 1,
+    group: "sampling",
+    description: "DRY penalty for last n tokens (-1 = disable)",
+  },
+  {
+    key: "dynatemp-range",
+    iniKey: "dynatempRange",
+    label: "Dynatemp Range",
+    type: "number",
+    default: 0.0,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    group: "sampling",
+    description: "Dynamic temperature range (0.0 = disabled)",
+  },
+  {
+    key: "dynatemp-exp",
+    iniKey: "dynatempExp",
+    label: "Dynatemp Exp",
+    type: "number",
+    default: 1.0,
+    min: 0,
+    max: 2,
+    step: 0.01,
+    group: "sampling",
+    description: "Dynamic temperature exponent",
+  },
+  {
+    key: "mirostat",
+    iniKey: "mirostat",
+    label: "Mirostat",
+    type: "number",
+    default: 0,
+    min: 0,
+    max: 2,
+    step: 1,
+    group: "sampling",
+    description: "Use Mirostat sampling (0 = disabled, 1 = Mirostat, 2 = Mirostat 2.0)",
+  },
+  {
+    key: "mirostat-lr",
+    iniKey: "mirostatLr",
+    label: "Mirostat LR",
+    type: "number",
+    default: 0.1,
+    min: 0,
+    max: 1,
+    step: 0.001,
+    group: "sampling",
+    description: "Mirostat learning rate (eta)",
+  },
+  {
+    key: "mirostat-ent",
+    iniKey: "mirostatEnt",
+    label: "Mirostat Ent",
+    type: "number",
+    default: 5.0,
+    min: 0,
+    max: 10,
+    step: 0.1,
+    group: "sampling",
+    description: "Mirostat target entropy (tau)",
+  },
+  {
+    key: "seed",
+    iniKey: "seed",
+    label: "Seed",
+    type: "number",
+    default: -1,
+    min: -1,
+    max: 4294967295,
+    step: 1,
+    group: "sampling",
+    description: "RNG seed (-1 = random)",
+  },
+  {
+    key: "grammar",
+    iniKey: "grammar",
+    label: "Grammar",
+    type: "text",
+    default: "",
+    group: "sampling",
+    description: "BNF-like grammar to constrain generations",
+  },
+  {
+    key: "json-schema",
+    iniKey: "jsonSchema",
+    label: "JSON Schema",
+    type: "text",
+    default: "",
+    group: "sampling",
+    description: "JSON schema to constrain generations",
+  },
+  {
+    key: "flash-attn",
+    iniKey: "flashAttn",
+    label: "Flash Attention",
+    type: "select",
+    default: "auto",
+    options: ["on", "off", "auto"],
+    group: "performance",
+    description: "Set Flash Attention use",
+  },
+  {
+    key: "cache-type-k",
+    iniKey: "cacheTypeK",
+    label: "Cache Type K",
+    type: "select",
+    default: "f16",
+    options: ["f32", "f16", "bf16", "q8_0", "q4_0", "q4_1", "iq4_nl", "q5_0", "q5_1"],
+    group: "performance",
+    description: "KV cache data type for K",
+  },
+  {
+    key: "cache-type-v",
+    iniKey: "cacheTypeV",
+    label: "Cache Type V",
+    type: "select",
+    default: "f16",
+    options: ["f32", "f16", "bf16", "q8_0", "q4_0", "q4_1", "iq4_nl", "q5_0", "q5_1"],
+    group: "performance",
+    description: "KV cache data type for V",
+  },
+  {
+    key: "kv-offload",
+    iniKey: "kvOffload",
+    label: "KV Offload",
+    type: "boolean",
+    default: true,
+    group: "performance",
+    description: "Enable KV cache offloading",
+  },
+  {
+    key: "no-mmap",
+    iniKey: "noMmap",
+    label: "Disable MMAP",
+    type: "boolean",
+    default: false,
+    group: "performance",
+    description: "Disable memory-mapping (slower load, may reduce pageouts)",
+  },
+  {
+    key: "mlock",
+    iniKey: "mlock",
+    label: "MLock",
+    type: "boolean",
+    default: false,
+    group: "performance",
+    description: "Force system to keep model in RAM",
+  },
+  {
+    key: "rope-scaling",
+    iniKey: "ropeScaling",
+    label: "RoPE Scaling",
+    type: "select",
+    default: "linear",
+    options: ["none", "linear", "yarn"],
+    group: "context",
+    description: "RoPE frequency scaling method",
+  },
+  {
+    key: "rope-scale",
+    iniKey: "ropeScale",
+    label: "RoPE Scale",
+    type: "number",
+    default: 0,
+    min: 0,
+    max: 10,
+    step: 0.01,
+    group: "context",
+    description: "RoPE context scaling factor (0 = model default)",
+  },
+  {
+    key: "rope-freq-base",
+    iniKey: "ropeFreqBase",
+    label: "RoPE Freq Base",
+    type: "number",
+    default: 0,
+    min: 0,
+    max: 1000000,
+    step: 1,
+    group: "context",
+    description: "RoPE base frequency (0 = model default)",
+  },
+  {
+    key: "yarn-orig-ctx",
+    iniKey: "yarnOrigCtx",
+    label: "YaRN Orig Ctx",
+    type: "number",
+    default: 0,
+    min: 0,
+    max: 32768,
+    step: 1,
+    group: "context",
+    description: "YaRN original context size (0 = model training context)",
+  },
+  {
+    key: "yarn-ext-factor",
+    iniKey: "yarnExtFactor",
+    label: "YaRN Ext Factor",
+    type: "number",
+    default: -1.0,
+    min: -1,
+    max: 2,
+    step: 0.01,
+    group: "context",
+    description: "YaRN extrapolation mix factor (-1 = full interpolation)",
+  },
+  {
+    key: "yarn-attn-factor",
+    iniKey: "yarnAttnFactor",
+    label: "YaRN Attn Factor",
+    type: "number",
+    default: -1.0,
+    min: -1,
+    max: 2,
+    step: 0.01,
+    group: "context",
+    description: "YaRN scale sqrt(t) or attention magnitude",
+  },
+  {
+    key: "yarn-beta-slow",
+    iniKey: "yarnBetaSlow",
+    label: "YaRN Beta Slow",
+    type: "number",
+    default: -1.0,
+    min: -1,
+    max: 2,
+    step: 0.01,
+    group: "context",
+    description: "YaRN high correction dim or alpha",
+  },
+  {
+    key: "yarn-beta-fast",
+    iniKey: "yarnBetaFast",
+    label: "YaRN Beta Fast",
+    type: "number",
+    default: -1.0,
+    min: -1,
+    max: 2,
+    step: 0.01,
+    group: "context",
+    description: "YaRN low correction dim or beta",
+  },
+  {
+    key: "keep",
+    iniKey: "keep",
+    label: "Keep Tokens",
+    type: "number",
+    default: 0,
+    min: 0,
+    max: 32768,
+    step: 1,
+    group: "context",
+    description: "Number of tokens to keep from initial prompt (0 = all except last, -1 = all)",
+  },
+  {
+    key: "swa-full",
+    iniKey: "swaFull",
+    label: "SWA Full",
+    type: "boolean",
+    default: false,
+    group: "context",
+    description: "Use full-size SWA cache",
+  },
+  {
+    key: "logit-bias",
+    iniKey: "logitBias",
+    label: "Logit Bias",
+    type: "text",
+    default: "",
+    group: "sampling",
+    description: "Modify token likelihood (format: TOKEN_ID(+/-)BIAS)",
+  },
+  {
+    key: "ignore-eos",
+    iniKey: "ignoreEos",
+    label: "Ignore EOS",
+    type: "boolean",
+    default: false,
+    group: "sampling",
+    description: "Ignore end of stream token and continue generating",
+  },
+  {
+    key: "top-nsigma",
+    iniKey: "topNsigma",
+    label: "Top N Sigma",
+    type: "number",
+    default: -1.0,
+    min: -1,
+    max: 10,
+    step: 0.1,
+    group: "sampling",
+    description: "Top-n-sigma sampling (-1 = disabled)",
+  },
+  {
+    key: "xtc-probability",
+    iniKey: "xtcProbability",
+    label: "XTC Probability",
+    type: "number",
+    default: 0.0,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    group: "sampling",
+    description: "XTC probability (0 = disabled)",
+  },
+  {
+    key: "xtc-threshold",
+    iniKey: "xtcThreshold",
+    label: "XTC Threshold",
+    type: "number",
+    default: 0.1,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    group: "sampling",
+    description: "XTC threshold (1 = disabled)",
+  },
+  {
+    key: "min-p-keep",
+    iniKey: "minPKeep",
+    label: "Min P Keep",
+    type: "number",
+    default: 0,
+    min: 0,
+    max: 32768,
+    step: 1,
+    group: "sampling",
+    description: "Min P keeps at least this many tokens",
+  },
+  {
+    key: "cont-batching",
+    iniKey: "contBatching",
+    label: "Continuous Batching",
+    type: "boolean",
+    default: true,
+    group: "performance",
+    description: "Enable continuous batching (dynamic batching)",
+  },
+  {
+    key: "cache-reuse",
+    iniKey: "cacheReuse",
+    label: "Cache Reuse",
+    type: "number",
+    default: 0,
+    min: 0,
+    max: 8192,
+    step: 1,
+    group: "performance",
+    description: "Min chunk size to attempt reusing from cache via KV shifting",
+  },
+  {
+    key: "parallel",
+    iniKey: "parallel",
+    label: "Parallel Slots",
+    type: "number",
+    default: -1,
+    min: -1,
+    max: 16,
+    step: 1,
+    group: "server",
+    description: "Number of server slots (-1 = auto)",
+  },
+  {
+    key: "draft-max",
+    iniKey: "draftMax",
+    label: "Draft Max",
+    type: "number",
+    default: 16,
+    min: 0,
+    max: 256,
+    step: 1,
+    group: "speculative",
+    description: "Max tokens to draft for speculative decoding",
+  },
+  {
+    key: "draft-min",
+    iniKey: "draftMin",
+    label: "Draft Min",
+    type: "number",
+    default: 0,
+    min: 0,
+    max: 256,
+    step: 1,
+    group: "speculative",
+    description: "Min draft tokens to use for speculative decoding",
+  },
+  {
+    key: "draft-p-min",
+    iniKey: "draftPMin",
+    label: "Draft P Min",
+    type: "number",
+    default: 0.8,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    group: "speculative",
+    description: "Min speculative decoding probability",
+  },
+  {
+    key: "ctx-size-draft",
+    iniKey: "ctxSizeDraft",
+    label: "Draft Context Size",
+    type: "number",
+    default: 0,
+    min: 0,
+    max: 32768,
+    step: 1,
+    group: "speculative",
+    description: "Draft model context size (0 = loaded from model)",
+  },
+  {
+    key: "n-gpu-layers-draft",
+    iniKey: "nGpuLayersDraft",
+    label: "Draft GPU Layers",
+    type: "number",
+    default: -1,
+    min: -1,
+    max: 256,
+    step: 1,
+    group: "speculative",
+    description: "Max draft model layers in VRAM (-1 = auto)",
+  },
+  {
+    key: "cpu-moe",
+    iniKey: "cpuMoe",
+    label: "CPU MoE",
+    type: "boolean",
+    default: false,
+    group: "hardware",
+    description: "Keep all MoE weights in CPU",
+  },
+  {
+    key: "n-cpu-moe",
+    iniKey: "nCpuMoe",
+    label: "N CPU MoE",
+    type: "number",
+    default: 0,
+    min: 0,
+    max: 128,
+    step: 1,
+    group: "hardware",
+    description: "Keep MoE weights of first N layers in CPU",
+  },
+  {
+    key: "pooling",
+    iniKey: "pooling",
+    label: "Pooling",
+    type: "select",
+    default: "",
+    options: ["", "none", "mean", "cls", "last", "rank"],
+    group: "embeddings",
+    description: "Pooling type for embeddings",
+  },
+  {
+    key: "reasoning-format",
+    iniKey: "reasoningFormat",
+    label: "Reasoning Format",
+    type: "select",
+    default: "auto",
+    options: ["none", "auto", "deepseek", "deepseek-legacy"],
+    group: "reasoning",
+    description: "Controls thought tags in response",
+  },
+  {
+    key: "dry-sequence-breaker",
+    iniKey: "drySequenceBreaker",
+    label: "DRY Sequence Breaker",
+    type: "text",
+    default: "",
+    group: "sampling",
+    description: "Add sequence breaker for DRY sampling (none = no breakers)",
   },
 ];
 
@@ -242,6 +934,11 @@ class PresetsPage extends Component {
       "div",
       { className: "presets-list" },
       Component.h("h3", { className: "list-title" }, "Presets"),
+      Component.h(
+        "button",
+        { className: "btn btn-secondary add-preset-btn", "data-action": "new-preset" },
+        "+ New Preset"
+      ),
       this.state.presets.map((preset) =>
         Component.h(
           "div",
@@ -253,21 +950,16 @@ class PresetsPage extends Component {
           Component.h("span", { className: "preset-name" }, preset.name),
           preset.name !== "default"
             ? Component.h(
-              "span",
-              {
-                className: "preset-delete",
-                "data-action": "delete-preset",
-                "data-preset-name": preset.name,
-              },
-              "×"
-            )
+                "span",
+                {
+                  className: "preset-delete",
+                  "data-action": "delete-preset",
+                  "data-preset-name": preset.name,
+                },
+                "×"
+              )
             : null
         )
-      ),
-      Component.h(
-        "button",
-        { className: "btn btn-secondary add-preset-btn", "data-action": "new-preset" },
-        "+ New Preset"
       )
     );
   }
@@ -321,12 +1013,12 @@ class PresetsPage extends Component {
       ),
       isExpanded
         ? Component.h(
-          "div",
-          { className: "section-content" },
-          this.renderParameterSearch(),
-          // Always in edit mode for defaults
-          this.renderEditableParams(editingData, "defaults", null)
-        )
+            "div",
+            { className: "section-content" },
+            this.renderParameterSearch(),
+            // Always in edit mode for defaults
+            this.renderEditableParams(editingData, "defaults", null)
+          )
         : null
     );
   }
@@ -345,14 +1037,14 @@ class PresetsPage extends Component {
       }),
       this.state.parameterFilter
         ? Component.h(
-          "button",
-          {
-            className: "params-search-clear",
-            "data-action": "clear-search",
-            title: "Clear search",
-          },
-          "×"
-        )
+            "button",
+            {
+              className: "params-search-clear",
+              "data-action": "clear-search",
+              title: "Clear search",
+            },
+            "×"
+          )
         : null
     );
   }
@@ -366,20 +1058,20 @@ class PresetsPage extends Component {
       Component.h("h3", { className: "section-label" }, "Groups"),
       groups.length === 0
         ? Component.h(
-          "div",
-          { className: "section-empty" },
-          Component.h("p", {}, "No groups defined"),
-          Component.h(
-            "button",
-            { className: "btn btn-secondary btn-sm", "data-action": "new-group" },
-            "+ Add Group"
+            "div",
+            { className: "section-empty" },
+            Component.h("p", {}, "No groups defined"),
+            Component.h(
+              "button",
+              { className: "btn btn-secondary btn-sm", "data-action": "new-group" },
+              "+ Add Group"
+            )
           )
-        )
         : Component.h(
-          "div",
-          { className: "groups-list" },
-          groups.map((group) => this.renderGroupSection(group))
-        ),
+            "div",
+            { className: "groups-list" },
+            groups.map((group) => this.renderGroupSection(group))
+          ),
       Component.h(
         "button",
         { className: "btn btn-secondary btn-sm add-group-btn", "data-action": "new-group" },
@@ -427,54 +1119,54 @@ class PresetsPage extends Component {
       ),
       isExpanded
         ? Component.h(
-          "div",
-          { className: "section-content" },
-          // Models list section
-          Component.h(
             "div",
-            { className: "group-models-section" },
-            Component.h("h4", { className: "subsection-title" }, "Applies to"),
-            group.models && group.models.length > 0
-              ? Component.h(
-                "div",
-                { className: "models-list-compact" },
-                group.models.map((model) =>
-                  Component.h(
+            { className: "section-content" },
+            // Models list section
+            Component.h(
+              "div",
+              { className: "group-models-section" },
+              Component.h("h4", { className: "subsection-title" }, "Applies to"),
+              group.models && group.models.length > 0
+                ? Component.h(
                     "div",
-                    { className: "model-list-item" },
-                    Component.h("span", { className: "model-name" }, model.name),
-                    Component.h(
-                      "button",
-                      {
-                        className: "btn-remove-model",
-                        "data-action": "delete-model",
-                        "data-model-name": model.name,
-                        "data-group-name": group.name,
-                      },
-                      "×"
+                    { className: "models-list-compact" },
+                    group.models.map((model) =>
+                      Component.h(
+                        "div",
+                        { className: "model-list-item" },
+                        Component.h("span", { className: "model-name" }, model.name),
+                        Component.h(
+                          "button",
+                          {
+                            className: "btn-remove-model",
+                            "data-action": "delete-model",
+                            "data-model-name": model.name,
+                            "data-group-name": group.name,
+                          },
+                          "×"
+                        )
+                      )
                     )
                   )
-                )
+                : Component.h("div", { className: "empty-list" }, "No models in this group yet"),
+              Component.h(
+                "button",
+                {
+                  className: "btn btn-secondary btn-sm add-model-inline-btn",
+                  "data-action": "new-model",
+                  "data-group-name": group.name,
+                },
+                "+ Add Model"
               )
-              : Component.h("div", { className: "empty-list" }, "No models in this group yet"),
+            ),
+            // Group parameters section - always editable
             Component.h(
-              "button",
-              {
-                className: "btn btn-secondary btn-sm add-model-inline-btn",
-                "data-action": "new-model",
-                "data-group-name": group.name,
-              },
-              "+ Add Model"
+              "div",
+              { className: "group-params-section" },
+              Component.h("h4", { className: "subsection-title" }, "Group Parameters"),
+              this.renderEditableParams(editingData, "group", group.name)
             )
-          ),
-          // Group parameters section - always editable
-          Component.h(
-            "div",
-            { className: "group-params-section" },
-            Component.h("h4", { className: "subsection-title" }, "Group Parameters"),
-            this.renderEditableParams(editingData, "group", group.name)
           )
-        )
         : null
     );
   }
@@ -520,13 +1212,13 @@ class PresetsPage extends Component {
       ),
       isExpanded
         ? Component.h(
-          "div",
-          { className: "section-content" },
-          // Standalone models always show editable params
-          groupName === null
-            ? this.renderEditableParams(editingData, "model", fullName)
-            : this.renderReadOnlyParams(editingData, "model", fullName)
-        )
+            "div",
+            { className: "section-content" },
+            // Standalone models always show editable params
+            groupName === null
+              ? this.renderEditableParams(editingData, "model", fullName)
+              : this.renderReadOnlyParams(editingData, "model", fullName)
+          )
         : null
     );
   }
@@ -549,17 +1241,17 @@ class PresetsPage extends Component {
       ),
       models.length > 0
         ? Component.h(
-          "div",
-          { className: "standalone-list" },
-          models.map((model) => this.renderModelSection(model, null))
-        )
+            "div",
+            { className: "standalone-list" },
+            models.map((model) => this.renderModelSection(model, null))
+          )
         : Component.h("div", { className: "empty-list" }, "No standalone models yet")
     );
   }
 
   renderReadOnlyParams(data, sectionType, sectionName = null) {
     const filter = this.state.parameterFilter.toLowerCase();
-    const filteredParams = PRESET_PARAMS.filter(
+    const filteredParams = LLAMA_PARAMS.filter(
       (param) =>
         param.label.toLowerCase().includes(filter) || param.key.toLowerCase().includes(filter)
     );
@@ -568,7 +1260,6 @@ class PresetsPage extends Component {
       "div",
       { className: "params-list" },
       filteredParams.map((param) => {
-        // data uses iniKey (camelCase) from backend
         const value = data[param.iniKey];
         const hasValue = value !== undefined && value !== null;
         const displayValue = hasValue ? value : param.default;
@@ -610,43 +1301,30 @@ class PresetsPage extends Component {
   }
 
   renderEditableParams(data, sectionType, sectionName = null) {
-    // Get only the parameters that are set in the data object
-    const setParams = PRESET_PARAMS.filter((param) => data[param.iniKey] !== undefined);
-    // Get available params to add (those not yet set)
-    const availableToAdd = PRESET_PARAMS.filter((param) => data[param.iniKey] === undefined);
-    // For defaults section, show all params (not just set ones)
+    const setParams = LLAMA_PARAMS.filter((param) => data[param.iniKey] !== undefined);
+    const availableToAdd = LLAMA_PARAMS.filter((param) => data[param.iniKey] === undefined);
     const isDefaults = sectionType === "defaults";
-    const paramsToShow = isDefaults ? PRESET_PARAMS : setParams;
+    const paramsToShow = isDefaults ? [] : setParams;
 
     return Component.h(
       "div",
       { className: "params-list" },
-      // Show current parameters
       paramsToShow.length > 0
         ? paramsToShow.map((param) => {
-          const value = data[param.iniKey];
-          const displayValue = value !== undefined && value !== null ? value : param.default;
+            const value = data[param.iniKey];
+            const displayValue = value !== undefined && value !== null ? value : param.default;
 
-          return Component.h(
-            "div",
-            { className: `param-item param-${param.group}`, "data-param-key": param.key },
-            Component.h("label", { className: "param-label" }, param.label),
-            Component.h(
+            return Component.h(
               "div",
-              { className: "param-input-wrapper" },
-              Component.h("input", {
-                type: param.type,
-                className: "param-input",
-                step: param.step || "1",
-                value: displayValue !== undefined ? displayValue : "",
-                "data-section": sectionType,
-                "data-name": sectionName,
-                "data-param": param.key,
-                placeholder: String(param.default),
-              }),
-              // Only show remove button for non-defaults and if param is explicitly set
-              !isDefaults && data[param.iniKey] !== undefined
-                ? Component.h(
+              {
+                className: `param-item param-${param.group} param-editable`,
+                "data-param-key": param.key,
+              },
+              Component.h(
+                "div",
+                { className: "param-header" },
+                Component.h("label", { className: "param-label" }, param.label),
+                Component.h(
                   "button",
                   {
                     className: "btn-remove-param",
@@ -658,63 +1336,133 @@ class PresetsPage extends Component {
                   },
                   "×"
                 )
-                : null
-            )
-          );
-        })
+              ),
+              param.type === "select"
+                ? Component.h(
+                    "select",
+                    {
+                      className: "param-input",
+                      "data-section": sectionType,
+                      "data-name": sectionName,
+                      "data-param": param.key,
+                    },
+                    param.options.map((opt) =>
+                      Component.h(
+                        "option",
+                        { value: opt, selected: String(displayValue) === opt },
+                        opt
+                      )
+                    )
+                  )
+                : Component.h("input", {
+                    type: param.type === "boolean" ? "checkbox" : param.type,
+                    className: "param-input",
+                    step: param.step || (param.type === "number" ? "0.01" : "1"),
+                    min: param.min !== undefined ? param.min : undefined,
+                    max: param.max !== undefined ? param.max : undefined,
+                    value:
+                      displayValue !== undefined
+                        ? displayValue
+                        : param.type === "boolean"
+                          ? false
+                          : "",
+                    "data-section": sectionType,
+                    "data-name": sectionName,
+                    "data-param": param.key,
+                  }),
+              Component.h(
+                "div",
+                { className: "param-meta" },
+                (param.min !== undefined || param.max !== undefined) &&
+                  Component.h(
+                    "span",
+                    { className: "param-range" },
+                    param.min !== undefined && param.max !== undefined
+                      ? `Range: ${param.min} - ${param.max}`
+                      : param.min !== undefined
+                        ? `Min: ${param.min}`
+                        : `Max: ${param.max}`
+                  ),
+                param.default !== undefined &&
+                  Component.h("span", { className: "param-default" }, `Default: ${param.default}`),
+                param.description &&
+                  Component.h(
+                    "span",
+                    { className: "param-description", title: param.description },
+                    param.description
+                  )
+              )
+            );
+          })
         : null,
-      // For non-defaults sections, show "Add Parameter" button if there are available params
       !isDefaults && availableToAdd.length > 0
         ? Component.h(
-          "div",
-          { className: "add-param-section" },
-          Component.h("label", {}, "Add Parameter"),
-          Component.h(
-            "select",
-            {
-              className: "param-add-select",
-              "data-action": "add-param-select",
-              "data-section": sectionType,
-              "data-name": sectionName,
-              defaultValue: "",
-            },
-            Component.h("option", { value: "" }, "-- Select parameter to add --"),
-            availableToAdd.map((param) =>
-              Component.h("option", { value: param.key }, param.label)
-            )
-          )
-        )
-        : null,
-      // Action buttons
-      isDefaults
-        ? // Defaults section: only Save button
-        Component.h(
-          "div",
-          { className: "param-actions" },
-          Component.h(
-            "button",
-            { className: "btn btn-primary btn-sm", "data-action": "save-edit" },
-            "Save Defaults"
-          )
-        )
-        : // Groups/Models: Show Save and Cancel only if editing was initiated
-        sectionType === "group" ||
-            (sectionType === "model" &&
-              this.state.editingModel === (sectionName || this.state.standaloneModels?.[0]?.name))
-          ? Component.h(
             "div",
-            { className: "param-actions" },
+            { className: "add-param-section" },
+            Component.h("label", {}, "Add Parameter"),
             Component.h(
-              "button",
-              { className: "btn btn-primary btn-sm", "data-action": "save-edit" },
-              "Save"
-            ),
-            Component.h(
-              "button",
-              { className: "btn btn-secondary btn-sm", "data-action": "cancel-edit" },
-              "Cancel"
+              "select",
+              {
+                className: "param-add-select",
+                "data-action": "add-param-select",
+                "data-section": sectionType,
+                "data-name": sectionName,
+                defaultValue: "",
+              },
+              Component.h("option", { value: "" }, "-- Select parameter to add --"),
+              availableToAdd.map((param) =>
+                Component.h("option", { value: param.key }, `${param.label} (${param.group})`)
+              )
             )
           )
+        : null,
+      isDefaults
+        ? Component.h(
+            "div",
+            { className: "param-actions defaults-actions" },
+            Component.h(
+              "p",
+              { className: "defaults-hint" },
+              "Default preset starts empty - all default values are in llama-router"
+            ),
+            Component.h("label", { className: "add-param-label" }, "Add Parameter to Defaults"),
+            Component.h(
+              "select",
+              {
+                className: "param-add-select",
+                "data-action": "add-param-select",
+                "data-section": sectionType,
+                "data-name": sectionName,
+                defaultValue: "",
+              },
+              Component.h("option", { value: "" }, "-- Select parameter to add --"),
+              LLAMA_PARAMS.map((param) =>
+                Component.h("option", { value: param.key }, `${param.label} (${param.group})`)
+              )
+            )
+          )
+        : sectionType === "group" || sectionType === "model"
+          ? Component.h(
+              "div",
+              { className: "param-actions" },
+              Component.h(
+                "p",
+                { className: "section-hint" },
+                sectionType === "group" && sectionName
+                  ? `Models in group "${sectionName}" inherit group parameters. To override, move to standalone.`
+                  : "Model parameters override group defaults."
+              ),
+              Component.h(
+                "button",
+                { className: "btn btn-primary btn-sm", "data-action": "save-edit" },
+                "Save"
+              ),
+              Component.h(
+                "button",
+                { className: "btn btn-secondary btn-sm", "data-action": "cancel-edit" },
+                "Cancel"
+              )
+            )
           : null
     );
   }
@@ -740,6 +1488,7 @@ class PresetsPage extends Component {
       "click [data-action=remove-param]": "handleRemoveParam",
       "change [data-action=new-model-select]": "handleModelSelectChange",
       "input [data-action=search-params]": "handleSearchParams",
+      "input [data-action=search-defaults]": "handleSearchParams",
       "click [data-action=clear-search]": "handleClearSearch",
       "click [data-action=copy-value]": "handleCopyValue",
     };
@@ -807,7 +1556,7 @@ class PresetsPage extends Component {
     // Prevent editing models in groups - they're read-only
     if (section === "model" && name?.includes("/")) {
       showNotification(
-        "Models in groups inherit group parameters. Edit the group or move the model to standalone.",
+        "Models in groups inherit group parameters. Edit the group or move model to standalone to set parameters.",
         "info"
       );
       return;
@@ -836,18 +1585,24 @@ class PresetsPage extends Component {
     const { editingDefaults, editingGroup, editingModel, selectedPreset } = this.state;
     if (!selectedPreset) return;
 
-    // Read values from input elements instead of editingData
     const config = {};
     const inputs = this._el?.querySelectorAll(".param-input") || [];
 
     for (const input of inputs) {
       const paramKey = input.dataset.param;
-      const param = PRESET_PARAMS.find((p) => p.key === paramKey);
+      const param = LLAMA_PARAMS.find((p) => p.key === paramKey);
       if (!param) continue;
 
-      const value = input.value?.trim();
+      let value;
+      if (param.type === "boolean") {
+        value = input.checked;
+      } else if (param.type === "select") {
+        value = input.value;
+      } else {
+        value = input.value?.trim();
+      }
+
       if (value !== undefined && value !== "" && value !== null) {
-        // Convert to appropriate type
         if (param.type === "number") {
           const numValue = parseFloat(value);
           if (!isNaN(numValue)) {
@@ -902,10 +1657,10 @@ class PresetsPage extends Component {
     if (!select || !select.value) return;
 
     const paramKey = select.value;
-    const param = PRESET_PARAMS.find((p) => p.key === paramKey);
+    const param = LLAMA_PARAMS.find((p) => p.key === paramKey);
     if (!param) return;
 
-    // Add the parameter with its default value to editingData
+    // Add parameter with its default value to editingData
     const newData = { ...this.state.editingData };
     newData[param.iniKey] = param.default;
 
@@ -913,7 +1668,7 @@ class PresetsPage extends Component {
       editingData: newData,
     });
 
-    // Reset the select
+    // Reset select
     setTimeout(() => {
       select.value = "";
     }, 0);
@@ -924,10 +1679,10 @@ class PresetsPage extends Component {
     if (!btn) return;
 
     const paramKey = btn.dataset.param;
-    const param = PRESET_PARAMS.find((p) => p.key === paramKey);
+    const param = LLAMA_PARAMS.find((p) => p.key === paramKey);
     if (!param) return;
 
-    // Remove the parameter from editingData
+    // Remove parameter from editingData
     const newData = { ...this.state.editingData };
     delete newData[param.iniKey];
 
@@ -975,7 +1730,7 @@ class PresetsPage extends Component {
 
       // Collect all group names:
       // 1. Entries with "/" in the name: split and take the first part (group/model)
-      // 2. Entries explicitly marked as groups (having _is_group flag)
+      // 2. Entries explicitly marked as groups (having is_group flag)
       const groupNames = new Set();
 
       for (const modelName of Object.keys(models)) {
@@ -984,7 +1739,7 @@ class PresetsPage extends Component {
         if (modelName.includes("/")) {
           // model/submodel format - this is a model in a group
           groupNames.add(modelName.split("/")[0]);
-        } else if (models[modelName]._is_group) {
+        } else if (models[modelName].is_group) {
           // Explicitly marked as a group
           groupNames.add(modelName);
         }
@@ -1006,8 +1761,8 @@ class PresetsPage extends Component {
           if (!groups[modelName]) {
             groups[modelName] = { name: modelName, models: [] };
           }
-          // Merge config if present (exclude internal _is_group flag)
-          const { _is_group, ...cleanConfig } = modelConfig;
+          // Merge config if present (exclude internal is_group flag)
+          const { is_group, ...cleanConfig } = modelConfig;
           if (Object.keys(cleanConfig).length > 0) {
             groups[modelName] = { ...groups[modelName], ...cleanConfig };
           }
@@ -1050,7 +1805,7 @@ class PresetsPage extends Component {
     this._getService()
       .createPreset(name)
       .then(() => {
-        showNotification(`Preset "${name}" created`, "success");
+        showNotification(`Preset "${name}" created with empty configuration`, "success");
         return this.controller.loadPresetsData();
       })
       .catch((error) => {
@@ -1096,9 +1851,9 @@ class PresetsPage extends Component {
     if (!name || !name.trim()) return;
 
     this.setState({ loading: true });
-    // Mark this as a group with the _is_group flag
+    // Mark this as a group with the is_group flag
     this._getService()
-      .addModel(this.state.selectedPreset.name, name.trim(), { _is_group: true })
+      .addModel(this.state.selectedPreset.name, name.trim(), { is_group: true })
       .then(() => {
         showNotification(`Group "${name}" created. Now add parameters.`, "success");
         return this.loadPresetData(this.state.selectedPreset);

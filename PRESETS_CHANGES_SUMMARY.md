@@ -3,6 +3,7 @@
 ## What Changed
 
 ### Before
+
 ```
 Group: "high-perf"
 ├─ Model: llama2-7b
@@ -26,6 +27,7 @@ Group: "high-perf"
 ---
 
 ### After
+
 ```
 Group: "high-perf"
 ├─ Applies to
@@ -40,6 +42,7 @@ Group: "high-perf"
 ```
 
 **Benefits:**
+
 - Clear visual hierarchy
 - No duplicate parameter editing
 - Models only show names, not parameters
@@ -51,18 +54,23 @@ Group: "high-perf"
 ## Logic Changes
 
 ### Group Model Management
+
 ✅ **Correct Workflow:**
+
 1. Add model to group → Model inherits all group parameters
 2. To customize: Move model to Standalone section
 3. To remove from group: Click [×] next to model name
 
 ❌ **Old Workflow:**
+
 1. Add model to group
 2. Edit parameters in group (confusing - are these group params or model params?)
 3. No clear distinction
 
 ### Standalone Models
+
 ✅ Models in Standalone section:
+
 - Can customize ALL parameters individually
 - NOT affected by any group
 - Fully independent
@@ -72,14 +80,16 @@ Group: "high-perf"
 ## Code Changes
 
 **File: `public/js/pages/presets.js`**
+
 - Redesigned `renderGroupSection()` - no longer renders individual models
 - Simplified `renderModelSection()` - only used for standalone
 - Added guard in `handleStartEdit()` to prevent editing group models
 - Fixed linting issues (unused variables, long lines)
 
 **File: `public/css/pages/presets/presets.css`**
+
 - Added `.group-models-section` - wrapper for models list
-- Added `.models-list-compact` - flex container  
+- Added `.models-list-compact` - flex container
 - Added `.model-list-item` - individual model in list
 - Added `.btn-remove-model` - red X button
 - Added `.group-params-section` - parameters wrapper

@@ -1,10 +1,13 @@
 # Presets - Model Loading Fix
 
 ## Problem
+
 When trying to add models to a group or as standalone, users got "Please scan for models first" error, even though models were already visible in the Models page.
 
 ## Root Cause
+
 The `availableModels` list was empty because:
+
 1. `loadAvailableModels()` was called in `didMount()` but happened before the socket was ready
 2. Models were never actually loaded until the user tried to add one
 3. The service call to `getAvailableModels()` returned an empty list
@@ -12,13 +15,15 @@ The `availableModels` list was empty because:
 ## Solution
 
 ### 1. **Load Models with Preset Data**
+
 Models are now loaded **when a preset is selected**, not when the page mounts:
+
 ```javascript
 // In loadPresetData()
 const [models, defaults, availableModels] = await Promise.all([
   service.getModelsFromPreset(preset.name),
   service.getDefaults(preset.name),
-  service.getAvailableModels(),  // NEW: Load available models
+  service.getAvailableModels(), // NEW: Load available models
 ]);
 this.setState({ availableModels });
 ```
@@ -26,17 +31,21 @@ this.setState({ availableModels });
 **Why this works:** By the time a preset is selected, the socket is definitely connected and ready.
 
 ### 2. **Add Manual Refresh Button**
+
 Users can now click "↻ Refresh Models" in the header to reload the available models list:
+
 - Click the button anytime
 - Shows count of found models
 - Updates the list for adding
 
 **User workflow:**
+
 1. Create/select preset
 2. Click "↻ Refresh Models" if needed
 3. Click "+ Add Model" - list is now populated
 
 ### 3. **Removed Unnecessary Code**
+
 - Removed `loadAvailableModels()` method (no longer needed)
 - Cleaned up `didMount()` comment
 - Consolidated all loading into `loadPresetData()`
@@ -48,6 +57,7 @@ Users can now click "↻ Refresh Models" in the header to reload the available m
 ### File: `public/js/pages/presets.js`
 
 **1. Updated `loadPresetData()`**
+
 ```javascript
 // Before: Only loaded models and defaults
 const [models, defaults] = await Promise.all([...])
@@ -62,6 +72,7 @@ this.setState({ availableModels });  // NEW
 ```
 
 **2. Added `handleRefreshModels()` handler**
+
 ```javascript
 handleRefreshModels() {
   // Load available models on demand
@@ -70,27 +81,35 @@ handleRefreshModels() {
 ```
 
 **3. Updated `renderHeader()`**
+
 ```javascript
 // Added refresh button in header-top section
-Component.h("button", {
-  className: "btn btn-secondary btn-sm refresh-models-btn",
-  "data-action": "refresh-models",
-  title: "Refresh available models list",
-}, "↻ Refresh Models")
+Component.h(
+  "button",
+  {
+    className: "btn btn-secondary btn-sm refresh-models-btn",
+    "data-action": "refresh-models",
+    title: "Refresh available models list",
+  },
+  "↻ Refresh Models"
+);
 ```
 
 **4. Updated event map**
+
 ```javascript
 "click [data-action=refresh-models]": "handleRefreshModels",
 ```
 
 **5. Removed/cleaned up**
+
 - Removed `loadAvailableModels()` method
 - Cleaned `didMount()` with comment
 
 ### File: `public/css/pages/presets/presets.css`
 
 **Added styles:**
+
 ```css
 .presets-header .header-top {
   display: flex;
@@ -108,6 +127,7 @@ Component.h("button", {
 ## User Workflow
 
 ### Scenario 1: Normal Usage
+
 1. Navigate to Presets page
 2. Create a new preset (or select existing)
 3. Models automatically load ✅
@@ -115,12 +135,14 @@ Component.h("button", {
 5. Select from the populated list ✅
 
 ### Scenario 2: Added Models Since Last Visit
+
 1. Go to Models page, add new models to filesystem
 2. Return to Presets
 3. Click "↻ Refresh Models"
 4. List updates with new models ✅
 
 ### Scenario 3: Models Not Showing
+
 1. Check that models exist in the models directory
 2. Click "↻ Refresh Models" button
 3. If still empty, check server logs for errors
@@ -156,8 +178,9 @@ If models still don't show:
 5. **Click Refresh** to retry loading
 
 **Error message:** If models can't be found, you'll see:
+
 ```
-"Please scan for models first." 
+"Please scan for models first."
 ```
 
 **Solution:** Click "↻ Refresh Models" or check configuration.
@@ -167,11 +190,13 @@ If models still don't show:
 ## Performance Impact
 
 ✅ **Positive:**
+
 - Models only loaded once per preset selection (not on page mount)
 - Prevents unnecessary scans
 - User has control with refresh button
 
 ⚠️ **Consideration:**
+
 - If models directory is very large, first selection might be slow
 - Subsequent refreshes are the same speed
 - Recommend keeping model directory reasonably organized
@@ -181,6 +206,7 @@ If models still don't show:
 ## Backward Compatibility
 
 ✅ **Fully compatible:**
+
 - No database changes
 - No API changes
 - Just UI/loading behavior changed
@@ -198,11 +224,13 @@ If models still don't show:
 ## Testing Status
 
 ✅ **Code Quality:**
+
 - Syntax: VALID
 - Linting: CLEAN
 - Formatting: APPLIED
 
 ⏳ **Functional Testing:**
+
 - PENDING - Browser testing needed
 
 ---

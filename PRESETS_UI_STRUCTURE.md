@@ -1,6 +1,7 @@
 # Presets UI Structure - Corrected
 
 ## Overview
+
 The preset system now has a clear separation of concerns:
 
 1. **Global Defaults** - Apply to all models unless overridden
@@ -10,11 +11,13 @@ The preset system now has a clear separation of concerns:
 ## UI Layout
 
 ### Global Defaults Section
+
 - Expandable section
 - Shows default parameters that apply to all models
 - Editable (click parameter to edit)
 
 ### Groups Section
+
 When expanded, each group shows:
 
 ```
@@ -32,6 +35,7 @@ When expanded, each group shows:
 ```
 
 **Key Points:**
+
 - Models list shows only names, no individual parameter editing
 - Remove button (×) lets you remove model from group
 - Add Model button to add new models to group
@@ -39,6 +43,7 @@ When expanded, each group shows:
 - All models in group inherit group parameters
 
 ### Standalone Models Section
+
 When expanded, each model shows:
 
 ```
@@ -49,6 +54,7 @@ When expanded, each model shows:
 ```
 
 **Key Points:**
+
 - Expandable to show/edit individual parameters
 - Click parameter value to edit it
 - Parameters can be different from group or defaults
@@ -57,18 +63,21 @@ When expanded, each model shows:
 ## Data Flow
 
 ### Adding a Model to a Group
+
 1. Click "+ Add Model" in group
 2. Select model from available models
 3. Model is added to group's model list
 4. Model inherits group parameters
 
 ### Customizing Model Parameters
+
 1. Model must be in Standalone Models section
 2. Expand the model
 3. Click parameter value to edit
 4. Save changes
 
 ### Moving Model from Group to Standalone
+
 1. Remove from group (click × in model list)
 2. Add to standalone section (click "+ Add Standalone Model")
 3. Now can customize its parameters

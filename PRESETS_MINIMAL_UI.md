@@ -5,7 +5,7 @@
 Refactored presets to show **only explicitly-set parameters**. This is a clean, minimal-first UI where:
 
 - Only parameters the user explicitly adds are shown
-- Global defaults "*" starts empty - user adds overrides as needed
+- Global defaults "\*" starts empty - user adds overrides as needed
 - Groups start empty - user adds parameters one-by-one
 - Standalone models start empty - user adds parameters one-by-one
 
@@ -13,13 +13,15 @@ Refactored presets to show **only explicitly-set parameters**. This is a clean, 
 
 ## Key Changes
 
-### 1. Global Defaults (*) - Minimal Empty Start
+### 1. Global Defaults (\*) - Minimal Empty Start
 
 **Before:**
+
 - Global defaults always showed all parameters
 - Could be confusing for new users
 
 **After:**
+
 - Starts completely empty
 - User clicks "Add Parameter" dropdown
 - Selects parameters they want to override from llama-server defaults
@@ -33,6 +35,7 @@ Refactored presets to show **only explicitly-set parameters**. This is a clean, 
 ### 2. Groups - Minimal Start
 
 When creating a new group:
+
 1. Group created with empty parameters
 2. Auto-expands and enters edit mode
 3. User sees "Add Parameter" dropdown
@@ -42,6 +45,7 @@ When creating a new group:
 7. Click "Save"
 
 **Benefits**:
+
 - Only overrides visible
 - No clutter from unused parameters
 - Clear focus on what needs configuration
@@ -68,6 +72,7 @@ const paramsToShow = setParams;
 ```
 
 **Logic**:
+
 - `paramsToShow`: Only parameters with values (shows in list)
 - `availableToAdd`: Dropdown shows only parameters not yet added
 - Remove buttons: Always available for all sections
@@ -135,7 +140,7 @@ User Data Examples:
 
 ```javascript
 // Available to add = not in current data
-availableToAdd = PRESET_PARAMS.filter(p => data[p.iniKey] === undefined)
+availableToAdd = PRESET_PARAMS.filter((p) => data[p.iniKey] === undefined);
 
 // Example: if data has { ctxSize: 4096 }
 // availableToAdd shows all 5 other parameters
@@ -184,7 +189,7 @@ availableToAdd = PRESET_PARAMS.filter(p => data[p.iniKey] === undefined)
 1. **`renderDefaultsSection()`**
    - Simplified: removed `isEditing` flag
    - Always shows editable params (empty to start)
-   - Updated label to "Global Defaults (*)"
+   - Updated label to "Global Defaults (\*)"
 
 2. **`renderEditableParams()`**
    - Changed: Always show only `setParams` (not `PRESET_PARAMS`)

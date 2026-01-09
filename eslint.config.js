@@ -32,6 +32,8 @@ export default [
         Blob: "readonly",
         confirm: "readonly",
         alert: "readonly",
+        prompt: "readonly",
+        navigator: "readonly",
 
         // Chart.js global
         Chart: "readonly",
@@ -51,6 +53,9 @@ export default [
         ValidationUtils: "readonly",
         StorageUtils: "readonly",
 
+        // Services
+        PresetsService: "readonly",
+
         // Page Controllers
         DashboardController: "readonly",
         ModelsController: "readonly",
@@ -58,6 +63,7 @@ export default [
         SettingsController: "readonly",
         LogsController: "readonly",
         NotFoundController: "readonly",
+        PresetsController: "readonly",
 
         // Layout Component
         Layout: "readonly",

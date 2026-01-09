@@ -4,7 +4,7 @@
 
 Refactored the presets page to provide a cleaner, more user-friendly parameter management experience:
 
-1. **Global Defaults ("*")**: Always in edit mode - no toggle between view/edit
+1. **Global Defaults ("\*")**: Always in edit mode - no toggle between view/edit
 2. **Groups & Standalone Models**: Start with empty parameters - users add params one-by-one
 3. **Parameter Management**: Simple dropdown to add parameters, × button to remove
 
@@ -22,6 +22,7 @@ Changed `renderDefaultsSection()` to always display editable parameters instead 
 ```
 
 **Benefits**:
+
 - No confusion about edit/view modes
 - Direct access to parameters
 - Simpler UI for frequently-used defaults
@@ -31,6 +32,7 @@ Changed `renderDefaultsSection()` to always display editable parameters instead 
 ### 2. Groups - Direct Editing Interface
 
 When creating a new group:
+
 - Auto-expands the group section
 - Automatically enters editing mode with empty parameters
 - User immediately sees "Add Parameter" dropdown
@@ -53,6 +55,7 @@ Groups always show the editable parameter interface (no read-only view).
 ### 3. Standalone Models - Direct Editing Interface
 
 When creating a new standalone model:
+
 - Auto-expands the model section
 - Automatically enters editing mode with empty parameters
 - User immediately sees "Add Parameter" dropdown
@@ -82,14 +85,14 @@ Only standalone models (not models in groups) can be edited directly.
 handleAddParam(e) {
   const select = e.target.closest("[data-action=add-param-select]");
   if (!select || !select.value) return;
-  
+
   const paramKey = select.value;
   const param = PRESET_PARAMS.find((p) => p.key === paramKey);
-  
+
   // Add parameter with default value
   const newData = { ...this.state.editingData };
   newData[param.iniKey] = param.default;
-  
+
   this.setState({ editingData: newData });
   // Reset select for next addition
   setTimeout(() => { select.value = ""; }, 0);
@@ -102,14 +105,14 @@ handleAddParam(e) {
 handleRemoveParam(e) {
   const btn = e.target.closest("[data-action=remove-param]");
   if (!btn) return;
-  
+
   const paramKey = btn.dataset.param;
   const param = PRESET_PARAMS.find((p) => p.key === paramKey);
-  
+
   // Remove parameter from editing data
   const newData = { ...this.state.editingData };
   delete newData[param.iniKey];
-  
+
   this.setState({ editingData: newData });
 }
 ```
@@ -120,12 +123,14 @@ handleRemoveParam(e) {
 
 Smart parameter rendering based on section type:
 
-#### For Global Defaults ("*"):
+#### For Global Defaults ("\*"):
+
 - Shows ALL parameters
 - No remove buttons (can't remove defaults)
 - Only "Save Defaults" button
 
 #### For Groups & Standalone Models:
+
 - Shows only parameters that are explicitly set
 - Add remaining parameters via dropdown
 - × button to remove each parameter
@@ -211,4 +216,4 @@ getEventMap() {
 - [ ] Add multiple parameters - verify each can be added
 - [ ] Save group/model - verify parameters persist
 - [ ] Edit global defaults - verify always in edit mode
-- [ ] Save defaults - verify changes apply to "*" entry
+- [ ] Save defaults - verify changes apply to "\*" entry

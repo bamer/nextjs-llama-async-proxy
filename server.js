@@ -76,12 +76,12 @@ async function startMetrics(io, db) {
           }
 
           console.log("[DEBUG] Memory metrics collected:", {
-            total: `${(memInfo.total / 1024 / 1024 / 1024).toFixed(2)  } GB`,
-            used: `${(actualUsed / 1024 / 1024 / 1024).toFixed(2)  } GB`,
-            available: `${(memInfo.available / 1024 / 1024 / 1024).toFixed(2)  } GB`,
+            total: `${(memInfo.total / 1024 / 1024 / 1024).toFixed(2)} GB`,
+            used: `${(actualUsed / 1024 / 1024 / 1024).toFixed(2)} GB`,
+            available: `${(memInfo.available / 1024 / 1024 / 1024).toFixed(2)} GB`,
             percent: memoryUsedPercent,
-            swapUsed: `${(memInfo.swapused / 1024 / 1024 / 1024).toFixed(2)  } GB`,
-            swapTotal: `${(memInfo.swaptotal / 1024 / 1024 / 1024).toFixed(2)  } GB`,
+            swapUsed: `${(memInfo.swapused / 1024 / 1024 / 1024).toFixed(2)} GB`,
+            swapTotal: `${(memInfo.swaptotal / 1024 / 1024 / 1024).toFixed(2)} GB`,
             swapPercent: swapUsedPercent,
           });
         }

@@ -1,10 +1,13 @@
 # Presets Fix - Quick Reference
 
 ## The Problem
+
 Models could be edited individually inside groups, conflicting with the design where models should inherit all group parameters.
 
 ## The Solution
+
 Groups now show:
+
 1. **Model List** - Just names with remove buttons
 2. **Group Parameters** - Centrally managed, all models inherit
 
@@ -41,10 +44,10 @@ STANDALONE SECTION
 
 ## Key Files Modified
 
-| File | Changes |
-|------|---------|
-| `public/js/pages/presets.js` | Group rendering redesigned, model section simplified |
-| `public/css/pages/presets/presets.css` | New CSS for group model list and parameters |
+| File                                   | Changes                                              |
+| -------------------------------------- | ---------------------------------------------------- |
+| `public/js/pages/presets.js`           | Group rendering redesigned, model section simplified |
+| `public/css/pages/presets/presets.css` | New CSS for group model list and parameters          |
 
 ---
 
@@ -64,14 +67,17 @@ STANDALONE SECTION
 ## What Changed in Code
 
 ### renderGroupSection()
+
 **Before:** Rendered models with all their parameters
 **After:** Renders compact model list + group parameters
 
 ### renderModelSection()
+
 **Before:** Handled both group and standalone
 **After:** Only handles standalone (simplified)
 
 ### handleStartEdit()
+
 **Before:** Allowed editing everywhere
 **After:** Added guard to prevent editing group models
 
@@ -82,7 +88,6 @@ STANDALONE SECTION
 1. **Create Group**
    - Click "+ Add Group"
    - Name it
-   
 2. **Add Models**
    - Click "+ Add Model"
    - Select from available models
@@ -107,6 +112,7 @@ STANDALONE SECTION
 ## Data Model
 
 **Group in Preset:**
+
 ```javascript
 {
   name: "group-name",
@@ -120,6 +126,7 @@ STANDALONE SECTION
 ```
 
 **Standalone Model:**
+
 ```javascript
 {
   name: "model-name",
@@ -134,6 +141,7 @@ STANDALONE SECTION
 ## Common Tasks
 
 ### Add Model to Group
+
 1. Expand group
 2. Click "+ Add Model"
 3. Select model
@@ -141,6 +149,7 @@ STANDALONE SECTION
 5. Model appears in list with [×]
 
 ### Customize Model Parameters
+
 1. Model must be in Standalone
 2. Expand model
 3. Click parameter value
@@ -148,12 +157,14 @@ STANDALONE SECTION
 5. Save
 
 ### Move Model from Group to Standalone
+
 1. Click [×] in group model list
 2. Click "+ Add Standalone Model"
 3. Select same model
 4. Now editable
 
 ### Delete Group
+
 1. Click Delete button in group header
 2. Confirm
 3. Group and all its models deleted
@@ -162,19 +173,20 @@ STANDALONE SECTION
 
 ## Error Messages & User Feedback
 
-| Action | Feedback |
-|--------|----------|
-| Add model to group | "Model 'X' added" (success) |
-| Remove model from group | "Model 'X' removed" (success) |
-| Save group parameters | "Saved successfully" (success) |
+| Action                  | Feedback                                              |
+| ----------------------- | ----------------------------------------------------- |
+| Add model to group      | "Model 'X' added" (success)                           |
+| Remove model from group | "Model 'X' removed" (success)                         |
+| Save group parameters   | "Saved successfully" (success)                        |
 | Try to edit group model | "Models in groups inherit group parameters..." (info) |
-| Delete group | Confirmation required |
+| Delete group            | Confirmation required                                 |
 
 ---
 
 ## Browser Compatibility
 
 ✅ Works with:
+
 - Chrome/Edge 90+
 - Firefox 88+
 - Safari 14+
@@ -192,12 +204,12 @@ STANDALONE SECTION
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
+| Issue                     | Solution                                    |
+| ------------------------- | ------------------------------------------- |
 | Can't edit model in group | This is by design. Remove from group first. |
-| Parameters not showing | Expand the section by clicking header |
-| Model won't add | Check if already in group or standalone |
-| Style looks weird | Try refreshing browser cache (Ctrl+Shift+R) |
+| Parameters not showing    | Expand the section by clicking header       |
+| Model won't add           | Check if already in group or standalone     |
+| Style looks weird         | Try refreshing browser cache (Ctrl+Shift+R) |
 
 ---
 
