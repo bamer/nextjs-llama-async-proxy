@@ -1,5 +1,5 @@
 /**
- * Simple Component Base Class
+ * Simple Component Base Class with Event-Based Rendering
  */
 
 class Component {
@@ -10,6 +10,8 @@ class Component {
     this._mounted = false;
     this._events = {};
     this._delegatedHandlers = {};
+    this._subscribedKeys = new Set(); // State keys this component subscribes to
+    this._renderId = 0; // Track renders for debugging
   }
 
   // Override in subclasses
@@ -25,6 +27,7 @@ class Component {
     this.willMount && this.willMount();
 
     const rendered = this.render();
+    this._renderId++;
 
     if (typeof rendered === "string") {
       const div = document.createElement("div");
@@ -44,9 +47,74 @@ class Component {
     return this;
   }
 
-  // Update state and re-render
-  setState(updates) {
+  // Subscribe to specific state keys for selective re-rendering
+  subscribe(...keys) {
+    keys.forEach((key) => this._subscribedKeys.add(key));
+  }
+
+  unsubscribe(...keys) {
+    keys.forEach((key) => this._subscribedKeys.delete(key));
+  }
+
+  // Check if this component cares about a state change
+  shouldRerender(changedKeys) {
+    // If no specific subscriptions, re-render on any change (legacy behavior)
+    if (this._subscribedKeys.size === 0) return true;
+    // Re-render if any of the changed keys are in our subscription
+    return changedKeys.some((key) => this._subscribedKeys.has(key));
+  }
+
+  // Update state with selective re-rendering
+  setState(updates, options = {}) {
+    const changedKeys = Object.keys(updates);
+    const oldState = { ...this.state };
     this.state = { ...this.state, ...updates };
+
+    // Legacy: always update if no options provided
+    if (options.immediate) {
+      if (this._el) {
+        this._conditionalUpdate(changedKeys, oldState);
+      }
+      return this;
+    }
+
+    // New: emit event for selective updates
+    if (window.stateEvents) {
+      window.stateEvents.emit("state:change", {
+        component: this,
+        keys: changedKeys,
+        oldState,
+        newState: this.state,
+      });
+    }
+
+    // Debounced update for legacy components
+    if (this._el) {
+      if (!this._updateTimeout) {
+        this._updateTimeout = setTimeout(() => {
+          this._updateTimeout = null;
+          this._conditionalUpdate(changedKeys, oldState);
+        }, 16); // ~60fps
+      }
+    }
+
+    return this;
+  }
+
+  // Conditional update based on subscriptions
+  _conditionalUpdate(changedKeys, oldState) {
+    if (!this._el) return;
+
+    // Check if we should re-render
+    if (!this.shouldRerender(changedKeys)) {
+      return;
+    }
+
+    this.update();
+  }
+
+  // Force immediate update (bypasses subscription check)
+  forceUpdate() {
     if (this._el) {
       this.update();
     }
@@ -61,6 +129,7 @@ class Component {
     }
 
     const oldEl = this._el;
+    this._renderId++;
 
     const rendered = this.render();
 
@@ -162,6 +231,15 @@ class Component {
     this._cleanupEvents();
     this._delegatedHandlers = null;
 
+    // Clear update timeout
+    if (this._updateTimeout) {
+      clearTimeout(this._updateTimeout);
+      this._updateTimeout = null;
+    }
+
+    // Unsubscribe from all state events
+    this._subscribedKeys.clear();
+
     if (this._el && this._el.parentNode) {
       this._el.parentNode.removeChild(this._el);
     }
@@ -214,6 +292,7 @@ class Component {
 
     const el = document.createElement(tag);
     let valueAttr = null;
+    let refCallback = null;
 
     Object.entries(attrs).forEach(([k, v]) => {
       if (k === "className") {
@@ -222,6 +301,9 @@ class Component {
         Object.assign(el.style, v);
       } else if (k.startsWith("on") && typeof v === "function") {
         el.addEventListener(k.slice(2).toLowerCase(), v);
+      } else if (k === "ref" && typeof v === "function") {
+        // Store ref callback to call after element is fully constructed
+        refCallback = v;
       } else if (k === "dataset") {
         Object.entries(v).forEach(([dk, dv]) => {
           el.dataset[dk] = dv;
@@ -278,6 +360,11 @@ class Component {
     // Set select value AFTER children are added
     if (valueAttr !== null && tag === "select") {
       el.value = valueAttr;
+    }
+
+    // Call ref callback AFTER element is fully constructed
+    if (refCallback) {
+      refCallback(el);
     }
 
     return el;

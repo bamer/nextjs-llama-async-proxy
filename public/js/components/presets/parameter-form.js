@@ -94,7 +94,7 @@ class ParameterForm extends Component {
     const categoryIds = window.getCategoryIds();
     const allCollapsed = {};
     categoryIds.forEach((catId) => {
-      allExpanded[catId] = false;
+      allCollapsed[catId] = false;
     });
     this.setState({ expandedSections: allCollapsed });
   }

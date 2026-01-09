@@ -60,9 +60,10 @@ function generateIni(config) {
     content += `[${section}]\n`;
 
     for (const [key, value] of Object.entries(params)) {
-      if (key.startsWith("_")) continue;
       if (value === undefined || value === null || value === "") continue;
-      content += `${key} = ${value}\n`;
+      // Write underscore-prefixed fields without underscore in INI (e.g., _is_group -> is_group)
+      const iniKey = key.startsWith("_") ? key.substring(1) : key;
+      content += `${iniKey} = ${value}\n`;
     }
 
     content += "\n";
@@ -127,8 +128,16 @@ function modelToIniSection(modelName, config) {
   const section = {};
 
   for (const [key, value] of Object.entries(config)) {
-    if (key.startsWith("_")) continue;
     if (value === undefined || value === null || value === "") continue;
+
+    // Handle underscore-prefixed metadata fields (store without underscore in INI)
+    if (key === "_is_group") {
+      section["is_group"] = String(value);
+      continue;
+    }
+
+    // Skip other underscore-prefixed internal fields
+    if (key.startsWith("_")) continue;
 
     const iniKey = key.replace(/([A-Z])/g, "-$1").toLowerCase();
     section[iniKey] = String(value);
