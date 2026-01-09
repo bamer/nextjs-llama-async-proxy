@@ -16,13 +16,24 @@ class RouterConfig extends Component {
   }
 
   willReceiveProps(newProps) {
-    this.setState({
-      maxModelsLoaded: newProps.maxModelsLoaded || 4,
-      parallelSlots: newProps.parallelSlots || 1,
-      ctx_size: newProps.ctx_size || 4096,
-      gpuLayers: newProps.gpuLayers || 0,
-    });
+    // Update state from new props
+    const updates = {};
+    const newMaxModels = newProps.maxModelsLoaded || 4;
+    const newParallelSlots = newProps.parallelSlots || 1;
+    const newCtxSize = newProps.ctx_size || 4096;
+    const newGpuLayers = newProps.gpuLayers || 0;
+
+    if (newMaxModels !== this.state.maxModelsLoaded) updates.maxModelsLoaded = newMaxModels;
+    if (newParallelSlots !== this.state.parallelSlots) updates.parallelSlots = newParallelSlots;
+    if (newCtxSize !== this.state.ctx_size) updates.ctx_size = newCtxSize;
+    if (newGpuLayers !== this.state.gpuLayers) updates.gpuLayers = newGpuLayers;
+
+    if (Object.keys(updates).length > 0) {
+      this.setState(updates);
+    }
   }
+
+
 
   render() {
     return Component.h(
@@ -55,7 +66,6 @@ class RouterConfig extends Component {
             }),
             Component.h("small", {}, "Maximum number of models to keep in memory")
           ),
-
           // Parallel Slots
           Component.h(
             "div",
@@ -75,7 +85,6 @@ class RouterConfig extends Component {
             }),
             Component.h("small", {}, "Number of parallel processing slots")
           ),
-
           // Context Size
           Component.h(
             "div",
@@ -96,7 +105,6 @@ class RouterConfig extends Component {
             }),
             Component.h("small", {}, "Token context window size")
           ),
-
           // GPU Layers
           Component.h(
             "div",

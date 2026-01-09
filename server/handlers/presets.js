@@ -7,6 +7,8 @@ import fs from "fs";
 import path from "path";
 import { execSync, exec } from "child_process";
 import { logger } from "./logger.js";
+import { startLlamaServerRouter, stopLlamaServerRouter } from "./llama-router/index.js";
+import { ok, err } from "./response.js";
 
 const PRESETS_DIR = path.join(process.cwd(), "config");
 
@@ -457,16 +459,14 @@ function removeModelFromPreset(filename, modelName) {
 export function registerPresetsHandlers(socket, db) {
   console.log("[DEBUG] Registering preset handlers");
 
-  socket.on("presets:list", async (data, ack) => {
+  socket.on("presets:list", (data) => {
     console.log("[DEBUG] Event: presets:list");
     try {
       const presets = listPresets();
-      const response = { success: true, data: { presets } };
-      if (typeof ack === "function") ack(response);
+      ok(socket, "presets:list:result", { presets }, data.requestId);
     } catch (error) {
       console.error("[DEBUG] Error in presets:list:", error.message);
-      const response = { success: false, error: { message: error.message } };
-      if (typeof ack === "function") ack(response);
+      err(socket, "presets:list:result", error.message, data.requestId);
     }
   });
 
@@ -833,6 +833,92 @@ export function registerPresetsHandlers(socket, db) {
       if (typeof ack === "function") ack(response);
     } catch (error) {
       console.error("[DEBUG] Error in presets:available-models:", error.message);
+      const response = { success: false, error: { message: error.message } };
+      if (typeof ack === "function") ack(response);
+    }
+  });
+
+  /**
+   * Start llama-server with a preset file
+   */
+  socket.on("presets:start-with-preset", async (data, ack) => {
+    console.log("[DEBUG] Event: presets:start-with-preset", {
+      filename: data.filename,
+      options: data.options,
+    });
+    try {
+      const { filename, options } = data;
+
+      // Build full path to preset file
+      const presetPath = path.join(PRESETS_DIR, `${filename}.ini`);
+
+      if (!fs.existsSync(presetPath)) {
+        const response = {
+          success: false,
+          error: { message: `Preset file not found: ${filename}` },
+        };
+        if (typeof ack === "function") ack(response);
+        return;
+      }
+
+      console.log("[DEBUG] Starting llama-server with preset:", presetPath);
+      logger.info(`Starting llama-server with preset: ${filename}`);
+
+      // Start llama-server with preset file
+      const result = await startLlamaServerRouter(presetPath, db, {
+        ...options,
+        usePreset: true, // Flag to use preset mode instead of directory mode
+      });
+
+      if (result.success) {
+        logger.info(`llama-server started successfully on port ${result.port}`);
+        const response = {
+          success: true,
+          data: {
+            port: result.port,
+            url: result.url,
+            mode: result.mode,
+            preset: filename,
+          },
+        };
+        if (typeof ack === "function") ack(response);
+      } else {
+        logger.error(`Failed to start llama-server: ${result.error}`);
+        const response = {
+          success: false,
+          error: { message: result.error },
+        };
+        if (typeof ack === "function") ack(response);
+      }
+    } catch (error) {
+      console.error("[DEBUG] Error in presets:start-with-preset:", error.message);
+      const response = { success: false, error: { message: error.message } };
+      if (typeof ack === "function") ack(response);
+    }
+  });
+
+  /**
+   * Stop llama-server
+   */
+  socket.on("presets:stop-server", async (data, ack) => {
+    console.log("[DEBUG] Event: presets:stop-server");
+    try {
+      const result = await stopLlamaServerRouter();
+
+      if (result.success) {
+        logger.info("llama-server stopped successfully");
+        const response = { success: true, data: result };
+        if (typeof ack === "function") ack(response);
+      } else {
+        logger.error(`Failed to stop llama-server: ${result.error}`);
+        const response = {
+          success: false,
+          error: { message: result.error },
+        };
+        if (typeof ack === "function") ack(response);
+      }
+    } catch (error) {
+      console.error("[DEBUG] Error in presets:stop-server:", error.message);
       const response = { success: false, error: { message: error.message } };
       if (typeof ack === "function") ack(response);
     }

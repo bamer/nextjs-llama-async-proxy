@@ -47,10 +47,11 @@ export function getServerProcess() {
 
 /**
  * Start llama-server in router mode
+ * Can use either --models-dir (auto-discovery) or --models-preset (INI config file)
  */
 export async function startLlamaServerRouter(modelsDir, db, options = {}) {
   console.log("[LLAMA] === STARTING LLAMA-SERVER IN ROUTER MODE ===");
-  console.log("[LLAMA] Models directory:", modelsDir);
+  console.log("[LLAMA] Models directory/preset:", modelsDir);
   console.log("[LLAMA] Options:", options);
 
   const llamaBin = findLlamaServer();
@@ -81,27 +82,50 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
   llamaServerUrl = `http://127.0.0.1:${llamaServerPort}`;
   console.log("[LLAMA] Final port:", llamaServerPort);
 
-  // Check models directory
-  if (!fs.existsSync(modelsDir)) {
-    return { success: false, error: `Models directory not found: ${modelsDir}` };
-  }
-
-  // Build command
+  // Build command - support both directory and preset file modes
   const optionsToUse = options || {};
   const args = [
     "--port",
     String(llamaServerPort),
     "--host",
     "127.0.0.1",
-    "--models-dir",
-    modelsDir,
+  ];
+
+  // Determine if modelsDir is an INI preset file or a directory
+  const isPresetFile = modelsDir.endsWith(".ini") || options.usePreset;
+  
+  if (isPresetFile) {
+    // Use preset mode (INI config file)
+    if (!fs.existsSync(modelsDir)) {
+      return { success: false, error: `Preset file not found: ${modelsDir}` };
+    }
+    console.log("[LLAMA] Using preset file mode:", modelsDir);
+    args.push("--models-preset", modelsDir);
+
+    // When using preset, also add the models directory from config
+    const baseModelsPath = config.baseModelsPath || "./models";
+    if (fs.existsSync(baseModelsPath)) {
+      console.log("[LLAMA] Adding models directory:", baseModelsPath);
+      args.push("--models-dir", baseModelsPath);
+    }
+  } else {
+    // Use directory mode (auto-discovery)
+    if (!fs.existsSync(modelsDir)) {
+      return { success: false, error: `Models directory not found: ${modelsDir}` };
+    }
+    console.log("[LLAMA] Using models directory mode:", modelsDir);
+    args.push("--models-dir", modelsDir);
+  }
+
+  // Add common options
+  args.push(
     "--models-max",
     String(optionsToUse.maxModels || 4),
     "--threads",
     String(optionsToUse.threads || 4),
     "--ctx-size",
-    String(optionsToUse.ctxSize || 4096),
-  ];
+    String(optionsToUse.ctxSize || 4096)
+  );
 
   if (optionsToUse.noAutoLoad) {
     args.push("--no-models-autoload");

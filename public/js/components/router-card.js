@@ -15,6 +15,11 @@ class RouterCard extends Component {
       onAction: props.onAction || (() => {}),
       // Loading states
       routerLoading: false,
+      // Preset states
+      presets: props.presets || [],
+      selectedPreset: null,
+      maxModelsLoaded: props.maxModelsLoaded || 4,
+      ctxSize: props.ctxSize || 4096,
     };
   }
 
@@ -23,6 +28,8 @@ class RouterCard extends Component {
       "click [data-action=start]": "handleStart",
       "click [data-action=stop]": "handleStop",
       "click [data-action=restart]": "handleRestart",
+      "click [data-action=launch-preset]": "handleLaunchPreset",
+      "change #preset-select": "handlePresetChange",
     };
   }
 
@@ -48,6 +55,52 @@ class RouterCard extends Component {
     this.state.routerLoading = true;
     this._updateUI();
     this.state.onAction("restart");
+  }
+
+  handlePresetChange(event) {
+    this.state.selectedPreset = event.target.value;
+  }
+
+  async handleLaunchPreset(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!this.state.selectedPreset) {
+      showNotification("Please select a preset", "warning");
+      return;
+    }
+
+    this.state.routerLoading = true;
+    this._updateUI();
+    showNotification("Starting llama-server with preset...", "info");
+
+    try {
+      const response = await stateManager.request("llama:start-with-preset", {
+        presetName: this.state.selectedPreset,
+        maxModels: this.state.maxModelsLoaded,
+        ctxSize: this.state.ctxSize,
+        threads: 4,
+      });
+
+      if (response?.success) {
+        showNotification(
+          `✓ Server started on port ${response.data.port}`,
+          "success"
+        );
+        this.state.selectedPreset = null;
+      } else {
+        showNotification(
+          `Error: ${response?.error?.message || "Unknown error"}`,
+          "error"
+        );
+      }
+    } catch (error) {
+      console.error("[ROUTER-CARD] Launch preset error:", error);
+      showNotification("Failed to start server", "error");
+    } finally {
+      this.state.routerLoading = false;
+      this._updateUI();
+    }
   }
 
   didMount() {
@@ -174,7 +227,44 @@ class RouterCard extends Component {
             "🔄 Restart"
           )
         )
-      )
+      ),
+      // Launch with Preset Section
+      this.state.presets && this.state.presets.length > 0 &&
+        Component.h(
+          "div",
+          { className: "preset-launcher-card card" },
+          Component.h("h3", {}, "Launch with Preset"),
+          Component.h(
+            "div",
+            { className: "form-group" },
+            Component.h("label", {}, "Select Preset"),
+            Component.h(
+              "select",
+              {
+                id: "preset-select",
+                value: this.state.selectedPreset || "",
+              },
+              Component.h("option", { value: "" }, "-- Choose a preset --"),
+              ...this.state.presets.map((preset) =>
+                Component.h("option", { value: preset.name }, preset.name)
+              )
+            ),
+            Component.h(
+              "small",
+              {},
+              "Presets are created and configured in the Presets page"
+            )
+          ),
+          Component.h(
+            "button",
+            {
+              className: "btn btn-primary",
+              "data-action": "launch-preset",
+              disabled: this.state.routerLoading,
+            },
+            this.state.routerLoading ? "🚀 Starting..." : "🚀 Launch Server with Preset"
+          )
+        )
     );
   }
 }

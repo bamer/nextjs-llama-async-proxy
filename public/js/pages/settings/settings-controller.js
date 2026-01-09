@@ -42,20 +42,26 @@ class SettingsController {
     const settings = stateManager.get("settings") || {};
     const llamaStatus = stateManager.get("llamaStatus") || null;
     const routerStatus = stateManager.get("routerStatus") || null;
+    const presets = stateManager.get("presets") || [];
 
     this.comp = new window.SettingsPage({
       config,
       settings,
       llamaStatus,
       routerStatus,
+      presets,
       controller: this,
     });
 
     const el = this.comp.render();
     this.comp._el = el;
     this.comp._controller = this;
+    this.comp._mounted = true;
     el._component = this.comp;
     this.comp.bindEvents();
+    
+    // Call didMount on main component - child didMount calls are handled by Component.h
+    this.comp.didMount && this.comp.didMount();
 
     this.init();
 
@@ -78,6 +84,14 @@ class SettingsController {
         stateManager.set("routerStatus", rs.routerStatus || null);
       } catch (e) {
         stateManager.set("routerStatus", null);
+      }
+
+      // Load presets for RouterConfig component
+      try {
+        const p = await stateManager.request("presets:list");
+        stateManager.set("presets", p?.presets || []);
+      } catch (e) {
+        stateManager.set("presets", []);
       }
     } catch (e) {}
   }

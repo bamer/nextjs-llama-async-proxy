@@ -437,26 +437,85 @@
   background: var(--bg-primary);
 }
 
-/* Model Items */
-.model-item {
+/* Model Sections */
+.model-section {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: var(--md);
+}
+
+.model-header {
   display: flex;
   align-items: center;
   gap: var(--md);
-  padding: var(--sm) var(--md);
-  background: var(--bg-primary);
+  padding: var(--md);
+  background: var(--bg-secondary);
   cursor: pointer;
   user-select: none;
   transition: background 0.2s;
-  border-bottom: 1px solid var(--border-color);
-  font-size: 0.875rem;
 }
 
-.model-item:last-child {
-  border-bottom: none;
-}
-
-.model-item:hover {
+.model-header:hover {
   background: var(--bg-tertiary);
+}
+
+.model-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.model-name {
+  flex: 1;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.model-toggle {
+  opacity: 0.6;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  transition: opacity 0.2s;
+}
+
+.model-header:hover .model-toggle {
+  opacity: 1;
+}
+
+.btn-model-delete {
+  padding: 4px 8px;
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 1.25rem;
+  font-weight: bold;
+  transition: color 0.2s;
+}
+
+.btn-model-delete:hover {
+  color: #ff4444;
+}
+
+.model-content {
+  padding: var(--md);
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  gap: var(--md);
+}
+
+.model-params-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sm);
+}
+
+.model-params-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--md);
 }
 
 /* Add Model Controls */

@@ -151,6 +151,12 @@ class StateManager {
     return this.api.clearLogFiles();
   }
 
+  // ===== Direct Request Operations (delegate to StateSocket) =====
+
+  async request(event, data = {}) {
+    return this.socket.request(event, data);
+  }
+
   // ===== Config Operations (delegate to StateAPI) =====
 
   async getConfig() {

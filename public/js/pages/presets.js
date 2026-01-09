@@ -691,7 +691,11 @@ class PresetsPage extends Component {
       availableModels: props.availableModels || [],
       loading: true,
       expandedDefaults: true,
+      expandedModels: {},
       parameterFilter: "",
+      serverRunning: false,
+      serverPort: null,
+      serverUrl: null,
     };
     this.controller = props.controller;
     this._domCache = new Map();
@@ -707,21 +711,21 @@ class PresetsPage extends Component {
     if (!this._el) return;
 
     switch (event) {
-    case "preset:select":
-      this._handlePresetSelect(data);
-      break;
-    case "preset:loaded":
-      this._handlePresetLoaded(data);
-      break;
-    case "presets:update":
-      this._updatePresetsList(data);
-      break;
-    case "defaults:toggle":
-      this._toggleDefaultsSection();
-      break;
-    case "param:add":
-      this._handleAddParam(data);
-      break;
+      case "preset:select":
+        this._handlePresetSelect(data);
+        break;
+      case "preset:loaded":
+        this._handlePresetLoaded(data);
+        break;
+      case "presets:update":
+        this._updatePresetsList(data);
+        break;
+      case "defaults:toggle":
+        this._toggleDefaultsSection();
+        break;
+      case "param:add":
+        this._handleAddParam(data);
+        break;
     }
   }
 
@@ -763,7 +767,7 @@ class PresetsPage extends Component {
     if (!editor) return;
 
     // Show loading state
-    editor.innerHTML = "<div style=\"padding: 20px; text-align: center;\">Loading editor...</div>";
+    editor.innerHTML = '<div style="padding: 20px; text-align: center;">Loading editor...</div>';
 
     // Defer update to avoid blocking UI
     requestAnimationFrame(() => this._renderEditor());
@@ -799,38 +803,38 @@ class PresetsPage extends Component {
           <span class="section-toggle">${this.state.expandedDefaults ? "▼" : "▶"}</span>
         </div>
         ${
-  this.state.expandedDefaults
-    ? `
+          this.state.expandedDefaults
+            ? `
           <div class="section-content" id="content-defaults">
             <div class="search-box">
               <span class="search-icon">🔍</span>
               <input type="text" class="search-input" placeholder="Filter parameters by name..." id="param-filter">
             </div>
             ${
-  Object.keys(this.state.globalDefaults || {}).length > 0
-    ? `
+              Object.keys(this.state.globalDefaults || {}).length > 0
+                ? `
              <div class="added-params-section">
                <strong>Added Parameters:</strong>
                <div class="added-params-list">
                  ${Object.entries(this.state.globalDefaults)
-    .map(([key, value]) => {
-      const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
-      // Format value for display: handle arrays/strings properly
-      let displayValue = value;
-      if (typeof value === "string") {
-        displayValue = value;
-      } else if (Array.isArray(value)) {
-        displayValue = value.join(",");
-      } else {
-        displayValue = String(value);
-      }
-      // Escape HTML special characters in the value
-      const escaped = displayValue
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-      return `
+                   .map(([key, value]) => {
+                     const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
+                     // Format value for display: handle arrays/strings properly
+                     let displayValue = value;
+                     if (typeof value === "string") {
+                       displayValue = value;
+                     } else if (Array.isArray(value)) {
+                       displayValue = value.join(",");
+                     } else {
+                       displayValue = String(value);
+                     }
+                     // Escape HTML special characters in the value
+                     const escaped = displayValue
+                       .replace(/&/g, "&amp;")
+                       .replace(/</g, "&lt;")
+                       .replace(/>/g, "&gt;")
+                       .replace(/"/g, "&quot;");
+                     return `
                         <div class="param-item-display" data-param-key="${key}">
                           <div class="param-name"><strong>${param?.label || key}</strong></div>
                           <div class="param-controls">
@@ -839,13 +843,13 @@ class PresetsPage extends Component {
                           </div>
                         </div>
                       `;
-    })
-    .join("")}
+                   })
+                   .join("")}
                </div>
              </div>
             `
-    : "<p class=\"defaults-hint\">Default preset starts empty - all default values are in llama-router</p>"
-}
+                : '<p class="defaults-hint">Default preset starts empty - all default values are in llama-router</p>'
+            }
             <label class="add-param-label">Add Parameter to Defaults</label>
             <select class="param-add-select" id="select-add-param" data-section="defaults" data-name="*">
               <option value="">-- Select parameter to add --</option>
@@ -853,8 +857,8 @@ class PresetsPage extends Component {
             </select>
           </div>
         `
-    : ""
-}
+            : ""
+        }
       </div>
 
       <div class="section standalone-section">
@@ -863,11 +867,11 @@ class PresetsPage extends Component {
           <select class="model-select" id="select-add-model">
             <option value="">-- Select a model --</option>
             ${(this.state.availableModels || [])
-    .map(
-      (model) =>
-        `<option value="${this._escapeHtml(model.name)}">${this._escapeHtml(model.name)}</option>`
-    )
-    .join("")}
+              .map(
+                (model) =>
+                  `<option value="${this._escapeHtml(model.name)}">${this._escapeHtml(model.name)}</option>`
+              )
+              .join("")}
           </select>
           <button class="btn btn-secondary" id="btn-add-standalone">+ Add Selected Model</button>
         </div>
@@ -884,8 +888,22 @@ class PresetsPage extends Component {
   _bindParamInputs() {
     const inputs = this._el?.querySelectorAll(".param-value-input") || [];
     inputs.forEach((input) => {
-      input.onchange = (e) => this._handleParamChange(e.target);
-      input.onblur = (e) => this._handleParamChange(e.target);
+      input.onchange = (e) => {
+        const modelName = e.target.dataset.model;
+        if (modelName) {
+          this._handleModelParamChange(e.target);
+        } else {
+          this._handleParamChange(e.target);
+        }
+      };
+      input.onblur = (e) => {
+        const modelName = e.target.dataset.model;
+        if (modelName) {
+          this._handleModelParamChange(e.target);
+        } else {
+          this._handleParamChange(e.target);
+        }
+      };
     });
 
     // Bind delete buttons
@@ -894,7 +912,12 @@ class PresetsPage extends Component {
       btn.onclick = (e) => {
         e.preventDefault();
         const paramKey = btn.dataset.paramKey;
-        this._handleDeleteParam(paramKey);
+        const modelName = btn.dataset.model;
+        if (modelName) {
+          this._handleDeleteModelParam(paramKey, modelName);
+        } else {
+          this._handleDeleteParam(paramKey);
+        }
       };
     });
   }
@@ -964,6 +987,111 @@ class PresetsPage extends Component {
     }
   }
 
+  async _handleModelParamChange(input) {
+    const paramKey = input.dataset.paramKey;
+    const modelName = input.dataset.model;
+    const newValue = input.value;
+
+    if (!paramKey || !modelName || !this.state.selectedPreset) return;
+
+    try {
+      const param = LLAMA_PARAMS.find((p) => p.iniKey === paramKey);
+      if (!param) return;
+
+      let value;
+      if (param.type === "number") {
+        value = parseFloat(newValue);
+        if (isNaN(value)) {
+          throw new Error(`Invalid number: ${newValue}`);
+        }
+      } else if (param.type === "select") {
+        value = newValue;
+      } else {
+        value = newValue;
+      }
+
+      await this._getService().updateModel(this.state.selectedPreset.name, modelName, {
+        [paramKey]: value,
+      });
+
+      const modelIdx = this.state.standaloneModels.findIndex((m) => m.name === modelName);
+      if (modelIdx >= 0) {
+        this.state.standaloneModels[modelIdx][paramKey] = value;
+      }
+
+      showNotification("Parameter updated", "success");
+    } catch (error) {
+      console.error("[PRESETS] Model parameter update error:", error);
+      showNotification(`Error updating parameter: ${error.message}`, "error");
+    }
+  }
+
+  async _handleDeleteModelParam(paramKey, modelName) {
+    if (!paramKey || !modelName || !this.state.selectedPreset) return;
+
+    const param = LLAMA_PARAMS.find((p) => p.iniKey === paramKey);
+    if (!param) return;
+
+    try {
+      const modelIdx = this.state.standaloneModels.findIndex((m) => m.name === modelName);
+      if (modelIdx < 0) return;
+
+      const model = this.state.standaloneModels[modelIdx];
+      const newConfig = { ...model };
+      delete newConfig.name;
+      delete newConfig.fullName;
+      delete newConfig[paramKey];
+
+      await this._getService().updateModel(this.state.selectedPreset.name, modelName, newConfig);
+
+      delete this.state.standaloneModels[modelIdx][paramKey];
+      showNotification(`Parameter "${param.label}" deleted`, "success");
+      this._updateEditor();
+    } catch (error) {
+      console.error("[PRESETS] Delete model parameter error:", error);
+      showNotification(`Error deleting parameter: ${error.message}`, "error");
+    }
+  }
+
+  async _handleAddModelParam(data) {
+    const { paramKey, modelName } = data;
+    const param = LLAMA_PARAMS.find((p) => p.key === paramKey);
+    if (!param || !modelName || !this.state.selectedPreset) return;
+
+    try {
+      await this._getService().updateModel(this.state.selectedPreset.name, modelName, {
+        [param.iniKey]: param.default,
+      });
+      showNotification(`Parameter "${param.label}" added`, "success");
+
+      const modelIdx = this.state.standaloneModels.findIndex((m) => m.name === modelName);
+      if (modelIdx >= 0) {
+        this.state.standaloneModels[modelIdx][param.iniKey] = param.default;
+      }
+
+      this._updateEditor();
+    } catch (error) {
+      console.error("[PRESETS] Add model parameter error:", error);
+      showNotification(`Error: ${error.message}`, "error");
+    }
+  }
+
+  async _handleDeleteModel(modelName) {
+    if (!modelName || !this.state.selectedPreset) return;
+
+    if (!confirm(`Delete model "${modelName}" from preset?`)) return;
+
+    try {
+      await this._getService().removeModel(this.state.selectedPreset.name, modelName);
+      this.state.standaloneModels = this.state.standaloneModels.filter((m) => m.name !== modelName);
+      showNotification(`Model "${modelName}" deleted`, "success");
+      this._updateEditor();
+    } catch (error) {
+      console.error("[PRESETS] Delete model error:", error);
+      showNotification(`Error: ${error.message}`, "error");
+    }
+  }
+
   _escapeHtml(text) {
     if (!text) return "";
     const div = document.createElement("div");
@@ -973,15 +1101,69 @@ class PresetsPage extends Component {
 
   _renderStandaloneHtml() {
     return this.state.standaloneModels
-      .map(
-        (model) => `
-      <div class="model-item" data-model="${model.name}">
-        <span>📄</span>
-        <span>${model.name}</span>
-        <span class="model-toggle">▶</span>
+      .map((model) => {
+        const modelParams = Object.entries(model).filter(
+          ([key]) => key !== "name" && key !== "fullName"
+        );
+        const isExpanded = this.state.expandedModels?.[model.name] || false;
+
+        return `
+      <div class="model-section" data-model="${model.name}">
+        <div class="model-header" data-model-name="${model.name}">
+          <span class="model-icon">📄</span>
+          <span class="model-name">${model.name}</span>
+          <span class="model-toggle">${isExpanded ? "▼" : "▶"}</span>
+          <button class="btn-model-delete" data-model-name="${model.name}" title="Delete model">×</button>
+        </div>
+        ${
+          isExpanded
+            ? `
+        <div class="model-content">
+          ${
+            modelParams.length > 0
+              ? `
+          <div class="model-params-section">
+            <strong>Parameters:</strong>
+            <div class="model-params-list">
+              ${modelParams
+                .map(([key, value]) => {
+                  const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
+                  const displayValue = Array.isArray(value) ? value.join(",") : String(value);
+                  const escaped = displayValue
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;");
+                  return `
+                <div class="param-item-display" data-param-key="${key}" data-model="${model.name}">
+                  <div class="param-name"><strong>${param?.label || key}</strong></div>
+                  <div class="param-controls">
+                    <input type="text" class="param-value-input" value="${escaped}" data-param-key="${key}" data-model="${model.name}" placeholder="Value">
+                    <button class="btn-param-delete" data-param-key="${key}" data-model="${model.name}" title="Delete parameter">×</button>
+                  </div>
+                </div>
+              `;
+                })
+                .join("")}
+            </div>
+          </div>
+          `
+              : "<p>No parameters added</p>"
+          }
+          <label class="add-param-label">Add Parameter</label>
+          <select class="param-add-select" data-section="model" data-model="${model.name}">
+            <option value="">-- Select parameter to add --</option>
+            ${LLAMA_PARAMS.filter((p) => !Object.keys(model).includes(p.iniKey))
+              .map((p) => `<option value="${p.key}">${p.label} (${p.group})</option>`)
+              .join("")}
+          </select>
+        </div>
+        `
+            : ""
+        }
       </div>
-    `
-      )
+    `;
+      })
       .join("");
   }
 
@@ -1011,7 +1193,7 @@ class PresetsPage extends Component {
     const defaultsHeader = document.getElementById("header-defaults");
     defaultsHeader && (defaultsHeader.onclick = () => this._emit("defaults:toggle"));
 
-    // Add param dropdown
+    // Add param dropdown for defaults
     const addParamSelect = document.getElementById("select-add-param");
     if (addParamSelect) {
       addParamSelect.onchange = (e) => {
@@ -1033,6 +1215,43 @@ class PresetsPage extends Component {
     // Filter input
     const filterInput = document.getElementById("param-filter");
     filterInput && (filterInput.oninput = (e) => this._filterParams(e.target.value));
+
+    // Model header toggles
+    const modelHeaders = this._el?.querySelectorAll(".model-header") || [];
+    modelHeaders.forEach((header) => {
+      header.onclick = (e) => {
+        if (e.target.classList.contains("btn-model-delete")) return;
+        const modelName = header.dataset.modelName;
+        this.state.expandedModels[modelName] = !this.state.expandedModels[modelName];
+        this._updateEditor();
+      };
+    });
+
+    // Model delete buttons
+    const modelDeleteBtns = this._el?.querySelectorAll(".btn-model-delete") || [];
+    modelDeleteBtns.forEach((btn) => {
+      btn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const modelName = btn.dataset.modelName;
+        this._handleDeleteModel(modelName);
+      };
+    });
+
+    // Add param dropdown for models
+    const modelParamSelects =
+      this._el?.querySelectorAll(".param-add-select[data-section='model']") || [];
+    modelParamSelects.forEach((select) => {
+      select.onchange = (e) => {
+        if (e.target.value) {
+          this._handleAddModelParam({
+            paramKey: e.target.value,
+            modelName: e.target.dataset.model,
+          });
+          e.target.value = "";
+        }
+      };
+    });
   }
 
   _filterParams(query) {
@@ -1087,7 +1306,7 @@ class PresetsPage extends Component {
           this._emit("preset:select", this.state.selectedPreset.name);
         } else {
           this._domCache.get("editor").innerHTML =
-            "<div class=\"empty-state\">Select a preset to edit</div>";
+            '<div class="empty-state">Select a preset to edit</div>';
         }
       }
     } catch (error) {
@@ -1148,6 +1367,11 @@ class PresetsPage extends Component {
         { className: "presets-container" },
         Component.h(
           "div",
+          { className: "server-status-panel", ref: (el) => this._domCache.set("server-status", el) },
+          Component.h("div", { className: "empty-state" }, "Select a preset to launch server")
+        ),
+        Component.h(
+          "div",
           { className: "presets-editor", ref: (el) => this._domCache.set("editor", el) },
           Component.h("div", { className: "empty-state" }, "Select a preset to edit")
         )
@@ -1159,6 +1383,14 @@ class PresetsPage extends Component {
     // New preset button
     const newBtn = document.getElementById("btn-new-preset");
     newBtn && (newBtn.onclick = () => this._handleNewPreset());
+
+    // Launch server button
+    const launchBtn = document.getElementById("btn-launch-server");
+    launchBtn && (launchBtn.onclick = () => this._handleLaunchServer());
+
+    // Stop server button
+    const stopBtn = document.getElementById("btn-stop-server");
+    stopBtn && (stopBtn.onclick = () => this._handleStopServer());
   }
 
   async _handleNewPreset() {

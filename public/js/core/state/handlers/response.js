@@ -53,6 +53,7 @@ class StateResponseHandlers {
       "llama:stop:result",
       "llama:restart:result",
       "llama:config:result",
+      "presets:list:result",
     ];
 
     responseEvents.forEach((evt) => {

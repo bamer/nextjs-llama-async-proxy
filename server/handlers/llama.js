@@ -9,6 +9,7 @@ import {
   stopLlamaServerRouter,
   getLlamaStatus,
 } from "./llama-router/index.js";
+import path from "path";
 
 /**
  * Register llama router handlers
@@ -115,6 +116,50 @@ export function registerLlamaHandlers(socket, io, db) {
       ok(socket, "llama:config:result", { settings }, id);
     } catch (e) {
       err(socket, "llama:config:result", e.message, id);
+    }
+  });
+
+  /**
+   * Start llama server with preset
+   */
+  socket.on("llama:start-with-preset", (req) => {
+    const id = req?.requestId || Date.now();
+
+    try {
+      const presetName = req?.presetName;
+      if (!presetName) {
+        err(socket, "llama:start:result", "Preset name required", id);
+        return;
+      }
+
+      const presetPath = path.join(process.cwd(), "config", `${presetName}.ini`);
+      const settings = db.getMeta("user_settings") || {};
+
+      startLlamaServerRouter(presetPath, db, {
+        maxModels: req?.maxModels || settings.maxModelsLoaded || 4,
+        ctxSize: req?.ctxSize || 4096,
+        threads: req?.threads || settings.threads || 4,
+        usePreset: true,
+      })
+        .then((result) => {
+          if (result.success) {
+            io.emit("llama:status", {
+              status: "running",
+              port: result.port,
+              url: result.url,
+              mode: "router",
+              preset: presetName,
+            });
+            ok(socket, "llama:start:result", { success: true, ...result }, id);
+          } else {
+            err(socket, "llama:start:result", result.error, id);
+          }
+        })
+        .catch((e) => {
+          err(socket, "llama:start:result", e.message, id);
+        });
+    } catch (e) {
+      err(socket, "llama:start:result", e.message, id);
     }
   });
 }

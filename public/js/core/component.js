@@ -259,6 +259,7 @@ class Component {
       if (el instanceof HTMLElement) {
         el._component = comp;
         comp._el = el;
+        comp._mounted = true;
         // Call bindEvents on the child component to attach event listeners
         comp.bindEvents();
 
@@ -274,18 +275,30 @@ class Component {
               appendChildren(parent, c);
             } else if (c instanceof HTMLElement) {
               parent.appendChild(c);
+              // If the appended element has a _component, call its didMount
+              if (c._component && c._component.didMount) {
+                c._component.didMount();
+              }
             } else if (c instanceof Component) {
               const cel = c.render();
               if (cel instanceof HTMLElement) {
                 parent.appendChild(cel);
                 c._el = cel;
+                c._mounted = true;
                 c.bindEvents();
+                // Call didMount on nested components
+                c.didMount && c.didMount();
               }
             }
           });
         };
 
         appendChildren(el, children);
+        
+        // Call didMount on the main component created via Component.h
+        if (comp.didMount) {
+          comp.didMount();
+        }
       }
       return el;
     }

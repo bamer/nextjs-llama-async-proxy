@@ -31,6 +31,7 @@ class SettingsPage extends Component {
       enableConsoleLogging: settings.enableConsoleLogging !== false,
       routerStatus: props.routerStatus || null,
       llamaStatus: props.llamaStatus || null,
+      presets: props.presets || [],
     };
   }
 
@@ -119,6 +120,9 @@ class SettingsPage extends Component {
         routerStatus: this.state.routerStatus,
         models: this.state.models || [],
         configPort: this.state.port,
+        presets: this.state.presets,
+        maxModelsLoaded: this.state.maxModelsLoaded,
+        ctxSize: this.state.ctx_size,
         onAction: (action) => {
           this.props.controller?.handleRouterAction(action);
         },
