@@ -559,6 +559,19 @@ class PresetsController {
 
   didMount() {
     this.loadPresetsData();
+    // Subscribe to model changes from models page
+    if (window.stateManager) {
+      this.unsubscribers.push(
+        window.stateManager.subscribe("models", (models) => {
+          if (this.comp) {
+            this.comp.state.availableModels = models || [];
+            if (this.comp.state.selectedPreset) {
+              this.comp._updateEditor();
+            }
+          }
+        })
+      );
+    }
   }
 
   async loadPresetsData() {
@@ -591,12 +604,30 @@ class PresetsController {
           this.comp._emit("preset:select", presets[0].name);
         }
       }
+
+      // Load available models from state manager
+      this.loadAvailableModels();
     } catch (error) {
       console.error("[PRESETS] Load presets error:", error.message);
       showNotification("Failed to load presets", "error");
       if (this.comp) {
         this.comp.state.loading = false;
       }
+    }
+  }
+
+  async loadAvailableModels() {
+    try {
+      const models = stateManager.get("models") || [];
+      if (this.comp) {
+        this.comp.state.availableModels = models;
+        // Re-render editor to update model dropdown
+        if (this.comp.state.selectedPreset) {
+          this.comp._updateEditor();
+        }
+      }
+    } catch (error) {
+      console.error("[PRESETS] Load available models error:", error.message);
     }
   }
 
@@ -642,6 +673,7 @@ class PresetsPage extends Component {
       selectedPreset: null,
       globalDefaults: {},
       standaloneModels: [],
+      availableModels: [],
       loading: true,
       expandedDefaults: true,
       parameterFilter: "",
@@ -809,7 +841,18 @@ class PresetsPage extends Component {
 
       <div class="section standalone-section">
         <h3>Models</h3>
-        <button class="btn btn-secondary" id="btn-add-standalone">+ Add Model</button>
+        <div class="add-model-controls">
+          <select class="model-select" id="select-add-model">
+            <option value="">-- Select a model --</option>
+            ${(this.state.availableModels || [])
+    .map(
+      (model) =>
+        `<option value="${this._escapeHtml(model.name)}">${this._escapeHtml(model.name)}</option>`
+    )
+    .join("")}
+          </select>
+          <button class="btn btn-secondary" id="btn-add-standalone">+ Add Selected Model</button>
+        </div>
         <div class="standalone-list" id="standalone-list">
           ${this.state.standaloneModels.length === 0 ? "<p>No models added yet</p>" : this._renderStandaloneHtml()}
         </div>
@@ -865,6 +908,13 @@ class PresetsPage extends Component {
       console.error("[PRESETS] Parameter update error:", error);
       showNotification(`Error updating parameter: ${error.message}`, "error");
     }
+  }
+
+  _escapeHtml(text) {
+    if (!text) return "";
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   _renderStandaloneHtml() {
@@ -993,12 +1043,18 @@ class PresetsPage extends Component {
   }
 
   async _handleAddStandalone() {
-    const name = prompt("Model path (e.g., /path/to/model.gguf):");
-    if (!name) return;
+    const select = document.getElementById("select-add-model");
+    const modelName = select?.value?.trim();
+
+    if (!modelName) {
+      showNotification("Please select a model from the dropdown", "warning");
+      return;
+    }
 
     try {
-      await this._getService().addModel(this.state.selectedPreset.name, name, {});
-      showNotification(`Model "${name}" added`, "success");
+      await this._getService().addModel(this.state.selectedPreset.name, modelName, {});
+      showNotification(`Model "${modelName}" added`, "success");
+      select.value = "";
       this.controller?.loadPresetData(this.state.selectedPreset);
     } catch (error) {
       console.error("[PRESETS] Add model error:", error);
@@ -1012,16 +1068,16 @@ class PresetsPage extends Component {
       { className: "presets-page" },
       Component.h(
         "div",
-        { className: "presets-header" },
-        Component.h("h1", {}, "Model Presets"),
-        Component.h("p", { className: "presets-subtitle" }, "Configure llama.cpp parameters")
-      ),
-      Component.h(
-        "div",
         { className: "presets-container" },
         Component.h(
           "div",
           { className: "presets-list" },
+          Component.h(
+            "div",
+            { className: "presets-card-header" },
+            Component.h("h1", {}, "Model Presets"),
+            Component.h("p", { className: "presets-subtitle" }, "Configure llama.cpp parameters")
+          ),
           Component.h("h3", { className: "list-title" }, "Presets"),
           Component.h(
             "button",
