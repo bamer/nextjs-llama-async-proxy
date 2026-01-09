@@ -42,11 +42,11 @@ class PresetsController {
   }
 
   async render() {
-    const service = this._ensureService();
+    this._ensureService();
     const presets = stateManager.get("presets") || [];
     this.comp = new PresetsPage({
       presets,
-      presetsService: service,
+      presetsService: this.presetsService,
       controller: this,
       knownGroups: this._knownGroups,
     });
@@ -114,6 +114,7 @@ class PresetsPage extends Component {
   constructor(props) {
     super(props);
     this._knownGroups = props.knownGroups || new Set();
+    this._presetsService = props.presetsService || null;
     this.state = {
       presets: props.presets || [],
       selectedPreset: null,
@@ -132,9 +133,13 @@ class PresetsPage extends Component {
       editingModel: null,
       editingData: null,
     };
-    this.presetsService = props.presetsService;
     this.controller = props.controller;
     this._isUnmounting = false;
+  }
+
+  // Get service - use controller's service if available
+  _getService() {
+    return this._presetsService || (this.controller ? this.controller.presetsService : null);
   }
 
   render() {
@@ -641,7 +646,7 @@ class PresetsPage extends Component {
 
     if (!modelName) return;
 
-    this.presetsService
+    this._getService()
       .addModel(selectedPreset.name, modelName, config)
       .then(() => {
         showNotification("Saved successfully", "success");
@@ -693,12 +698,13 @@ class PresetsPage extends Component {
   }
 
   async loadPresetData(preset) {
-    if (!this.presetsService) return;
+    const service = this._getService();
+    if (!service) return;
 
     try {
       const [models, defaults] = await Promise.all([
-        this.presetsService.getModelsFromPreset(preset.name),
-        this.presetsService.getDefaults(preset.name),
+        service.getModelsFromPreset(preset.name),
+        service.getDefaults(preset.name),
       ]);
 
       const groups = {};
@@ -766,7 +772,7 @@ class PresetsPage extends Component {
     if (!name) return;
 
     this.setState({ loading: true });
-    this.presetsService
+    this._getService()
       .createPreset(name)
       .then(() => {
         showNotification(`Preset "${name}" created`, "success");
@@ -789,7 +795,7 @@ class PresetsPage extends Component {
     if (!confirm(`Delete preset "${name}"?`)) return;
 
     this.setState({ loading: true });
-    this.presetsService
+    this._getService()
       .deletePreset(name)
       .then(() => {
         showNotification("Preset deleted", "success");
@@ -815,7 +821,7 @@ class PresetsPage extends Component {
     if (!name || !name.trim()) return;
 
     this.setState({ loading: true });
-    this.presetsService
+    this._getService()
       .addModel(this.state.selectedPreset.name, name.trim(), {})
       .then(() => {
         showNotification(`Group "${name}" created`, "success");
@@ -845,7 +851,7 @@ class PresetsPage extends Component {
       return;
 
     this.setState({ loading: true });
-    this.presetsService
+    this._getService()
       .removeModel(this.state.selectedPreset.name, groupName)
       .then(() => {
         showNotification(`Group "${groupName}" deleted`, "success");
@@ -956,7 +962,8 @@ class PresetsPage extends Component {
   async createModel(name, groupName, fullName, modelPath) {
     this.setState({ loading: true });
     try {
-      await this.presetsService.addModel(this.state.selectedPreset.name, fullName, {
+      const service = this._getService();
+      await service.addModel(this.state.selectedPreset.name, fullName, {
         model: modelPath,
       });
       showNotification(`Model "${name}" created`, "success");
@@ -983,7 +990,7 @@ class PresetsPage extends Component {
     if (!confirm(`Delete model "${modelName}"?`)) return;
 
     this.setState({ loading: true });
-    this.presetsService
+    this._getService()
       .removeModel(this.state.selectedPreset.name, fullName)
       .then(() => {
         showNotification(`Model "${modelName}" deleted`, "success");
@@ -999,10 +1006,11 @@ class PresetsPage extends Component {
   }
 
   async loadAvailableModels() {
-    if (!this.presetsService) return;
+    const service = this._getService();
+    if (!service) return;
 
     try {
-      const models = await this.presetsService.getAvailableModels();
+      const models = await service.getAvailableModels();
       this.setState({ availableModels: models });
     } catch (error) {
       console.error("[PRESETS] Failed to load models:", error.message);
