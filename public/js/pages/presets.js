@@ -582,10 +582,10 @@ class PresetsController {
         // Update state directly without re-rendering
         this.comp.state.presets = presets;
         this.comp.state.loading = false;
-        
+
         // Update DOM without re-rendering
         this.comp._updatePresetsList();
-        
+
         // Auto-select first preset
         if (presets.length > 0 && !this.comp.state.selectedPreset) {
           this.comp._emit("preset:select", presets[0].name);
@@ -728,10 +728,12 @@ class PresetsPage extends Component {
 
     // Build param options only for parameters not yet added to defaults
     const defaults = this.state.globalDefaults || {};
-    const addedParamKeys = Object.keys(defaults).map((iniKey) => {
-      // Find the param with this iniKey
-      return LLAMA_PARAMS.find((p) => p.iniKey === iniKey)?.key;
-    }).filter(Boolean);
+    const addedParamKeys = Object.keys(defaults)
+      .map((iniKey) => {
+        // Find the param with this iniKey
+        return LLAMA_PARAMS.find((p) => p.iniKey === iniKey)?.key;
+      })
+      .filter(Boolean);
 
     const paramOptions = LLAMA_PARAMS.filter((p) => !addedParamKeys.includes(p.key))
       .map((p) => `<option value="${p.key}">${p.label} (${p.group})</option>`)
@@ -758,18 +760,33 @@ class PresetsPage extends Component {
               <input type="text" class="search-input" placeholder="Filter parameters by name..." id="param-filter">
             </div>
             ${
-             Object.keys(this.state.globalDefaults || {}).length > 0
-               ? `
+              Object.keys(this.state.globalDefaults || {}).length > 0
+                ? `
              <div class="added-params-section">
                <strong>Added Parameters:</strong>
                <div class="added-params-list">
                  ${Object.entries(this.state.globalDefaults)
                    .map(([key, value]) => {
                      const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
+                     // Format value for display: handle arrays/strings properly
+                     let displayValue = value;
+                     if (typeof value === "string") {
+                       displayValue = value;
+                     } else if (Array.isArray(value)) {
+                       displayValue = value.join(",");
+                     } else {
+                       displayValue = String(value);
+                     }
+                     // Escape HTML special characters in the value
+                     const escaped = displayValue
+                       .replace(/&/g, "&amp;")
+                       .replace(/</g, "&lt;")
+                       .replace(/>/g, "&gt;")
+                       .replace(/"/g, "&quot;");
                      return `
                        <div class="param-item-display" data-param-key="${key}">
                          <div class="param-name"><strong>${param?.label || key}</strong></div>
-                         <input type="text" class="param-value-input" value="${JSON.stringify(value)}" data-param-key="${key}" placeholder="Value">
+                         <input type="text" class="param-value-input" value="${escaped}" data-param-key="${key}" placeholder="Value">
                        </div>
                      `;
                    })
@@ -777,7 +794,7 @@ class PresetsPage extends Component {
                </div>
              </div>
             `
-               : `<p class="defaults-hint">Default preset starts empty - all default values are in llama-router</p>`
+                : `<p class="defaults-hint">Default preset starts empty - all default values are in llama-router</p>`
             }
             <label class="add-param-label">Add Parameter to Defaults</label>
             <select class="param-add-select" id="select-add-param" data-section="defaults" data-name="*">
@@ -818,17 +835,23 @@ class PresetsPage extends Component {
     if (!paramKey || !this.state.selectedPreset) return;
 
     try {
-      // Parse the value
-      let value;
-      try {
-        value = JSON.parse(newValue);
-      } catch {
-        value = newValue;
-      }
-
-      // Find the param to get its iniKey
+      // Find the param to get its type and details
       const param = LLAMA_PARAMS.find((p) => p.iniKey === paramKey);
       if (!param) return;
+
+      // Parse the value based on parameter type
+      let value;
+      if (param.type === "number") {
+        value = parseFloat(newValue);
+        if (isNaN(value)) {
+          throw new Error(`Invalid number: ${newValue}`);
+        }
+      } else if (param.type === "select") {
+        value = newValue; // Select values stay as strings
+      } else {
+        // For text and other types, keep as string
+        value = newValue;
+      }
 
       // Update the parameter
       await this._getService().addModel(this.state.selectedPreset.name, "*", {
@@ -930,7 +953,7 @@ class PresetsPage extends Component {
         [param.iniKey]: param.default,
       });
       showNotification(`Parameter "${param.label}" added`, "success");
-      
+
       // Optimistically update the UI immediately
       if (section === "defaults") {
         this.state.globalDefaults[param.iniKey] = param.default;
@@ -991,11 +1014,7 @@ class PresetsPage extends Component {
         "div",
         { className: "presets-header" },
         Component.h("h1", {}, "Model Presets"),
-        Component.h(
-          "p",
-          { className: "presets-subtitle" },
-          "Configure llama.cpp parameters"
-        )
+        Component.h("p", { className: "presets-subtitle" }, "Configure llama.cpp parameters")
       ),
       Component.h(
         "div",

@@ -161,8 +161,10 @@ function iniSectionToModel(section, defaultsSection = {}) {
     { ini: "temp", key: "temperature", type: "float" },
     { ini: "n-gpu-layers", key: "nGpuLayers", type: "int" },
     { ini: "threads", key: "threads", type: "int" },
-    { ini: "batch", key: "batchSize", type: "int" },
-    { ini: "ubatch", key: "ubatchSize", type: "int" },
+    { ini: "batch-size", key: "batchSize", type: "int" },
+    { ini: "batch", key: "batchSize", type: "int" }, // Alternative name
+    { ini: "ubatch-size", key: "ubatchSize", type: "int" },
+    { ini: "ubatch", key: "ubatchSize", type: "int" }, // Alternative name
     { ini: "ctx-checkpoints", key: "ctxCheckpoints", type: "int" },
     { ini: "top-p", key: "topP", type: "float" },
     { ini: "top-k", key: "topK", type: "int" },
@@ -178,6 +180,7 @@ function iniSectionToModel(section, defaultsSection = {}) {
     { ini: "frequency-penalty", key: "frequency_penalty", type: "float" },
     { ini: "threads-http", key: "threadsHttp", type: "int" },
     { ini: "cache-ram", key: "cacheRam", type: "int" },
+    { ini: "cache-reuse", key: "cacheReuse", type: "int" },
     { ini: "main-gpu", key: "mainGpu", type: "int" },
     { ini: "draft-min", key: "draft_min", type: "int" },
     { ini: "draft-max", key: "draft_max", type: "int" },
