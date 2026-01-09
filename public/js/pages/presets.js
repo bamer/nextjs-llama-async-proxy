@@ -1122,27 +1122,30 @@ class PresetsPage extends Component {
       { className: "presets-page" },
       Component.h(
         "div",
-        { className: "presets-container" },
+        { className: "presets-page-header" },
+        Component.h("h1", {}, "Model Presets")
+      ),
+      Component.h(
+        "div",
+        { className: "presets-list" },
         Component.h(
           "div",
-          { className: "presets-list" },
-          Component.h(
-            "div",
-            { className: "presets-card-header" },
-            Component.h("h1", {}, "Model Presets"),
-            Component.h("p", { className: "presets-subtitle" }, "Configure llama.cpp parameters")
-          ),
-          Component.h("h3", { className: "list-title" }, "Presets"),
+          { className: "presets-header-row" },
+          Component.h("span", { className: "presets-label" }, "Presets:"),
+          Component.h("div", {
+            className: "presets-items",
+            ref: (el) => this._domCache.set("presets-items", el),
+          }),
           Component.h(
             "button",
             { className: "btn btn-secondary add-preset-btn", id: "btn-new-preset" },
             "+ New Preset"
-          ),
-          Component.h("div", {
-            className: "presets-items",
-            ref: (el) => this._domCache.set("presets-items", el),
-          })
-        ),
+          )
+        )
+      ),
+      Component.h(
+        "div",
+        { className: "presets-container" },
         Component.h(
           "div",
           { className: "presets-editor", ref: (el) => this._domCache.set("editor", el) },
