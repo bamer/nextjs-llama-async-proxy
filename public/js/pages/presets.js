@@ -707,21 +707,21 @@ class PresetsPage extends Component {
     if (!this._el) return;
 
     switch (event) {
-      case "preset:select":
-        this._handlePresetSelect(data);
-        break;
-      case "preset:loaded":
-        this._handlePresetLoaded(data);
-        break;
-      case "presets:update":
-        this._updatePresetsList(data);
-        break;
-      case "defaults:toggle":
-        this._toggleDefaultsSection();
-        break;
-      case "param:add":
-        this._handleAddParam(data);
-        break;
+    case "preset:select":
+      this._handlePresetSelect(data);
+      break;
+    case "preset:loaded":
+      this._handlePresetLoaded(data);
+      break;
+    case "presets:update":
+      this._updatePresetsList(data);
+      break;
+    case "defaults:toggle":
+      this._toggleDefaultsSection();
+      break;
+    case "param:add":
+      this._handleAddParam(data);
+      break;
     }
   }
 
@@ -763,7 +763,7 @@ class PresetsPage extends Component {
     if (!editor) return;
 
     // Show loading state
-    editor.innerHTML = '<div style="padding: 20px; text-align: center;">Loading editor...</div>';
+    editor.innerHTML = "<div style=\"padding: 20px; text-align: center;\">Loading editor...</div>";
 
     // Defer update to avoid blocking UI
     requestAnimationFrame(() => this._renderEditor());
@@ -799,50 +799,50 @@ class PresetsPage extends Component {
           <span class="section-toggle">${this.state.expandedDefaults ? "▼" : "▶"}</span>
         </div>
         ${
-          this.state.expandedDefaults
-            ? `
+  this.state.expandedDefaults
+    ? `
           <div class="section-content" id="content-defaults">
             <div class="search-box">
               <span class="search-icon">🔍</span>
               <input type="text" class="search-input" placeholder="Filter parameters by name..." id="param-filter">
             </div>
             ${
-              Object.keys(this.state.globalDefaults || {}).length > 0
-                ? `
+  Object.keys(this.state.globalDefaults || {}).length > 0
+    ? `
              <div class="added-params-section">
                <strong>Added Parameters:</strong>
                <div class="added-params-list">
                  ${Object.entries(this.state.globalDefaults)
-                   .map(([key, value]) => {
-                     const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
-                     // Format value for display: handle arrays/strings properly
-                     let displayValue = value;
-                     if (typeof value === "string") {
-                       displayValue = value;
-                     } else if (Array.isArray(value)) {
-                       displayValue = value.join(",");
-                     } else {
-                       displayValue = String(value);
-                     }
-                     // Escape HTML special characters in the value
-                     const escaped = displayValue
-                       .replace(/&/g, "&amp;")
-                       .replace(/</g, "&lt;")
-                       .replace(/>/g, "&gt;")
-                       .replace(/"/g, "&quot;");
-                     return `
+    .map(([key, value]) => {
+      const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
+      // Format value for display: handle arrays/strings properly
+      let displayValue = value;
+      if (typeof value === "string") {
+        displayValue = value;
+      } else if (Array.isArray(value)) {
+        displayValue = value.join(",");
+      } else {
+        displayValue = String(value);
+      }
+      // Escape HTML special characters in the value
+      const escaped = displayValue
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+      return `
                        <div class="param-item-display" data-param-key="${key}">
                          <div class="param-name"><strong>${param?.label || key}</strong></div>
                          <input type="text" class="param-value-input" value="${escaped}" data-param-key="${key}" placeholder="Value">
                        </div>
                      `;
-                   })
-                   .join("")}
+    })
+    .join("")}
                </div>
              </div>
             `
-                : '<p class="defaults-hint">Default preset starts empty - all default values are in llama-router</p>'
-            }
+    : "<p class=\"defaults-hint\">Default preset starts empty - all default values are in llama-router</p>"
+}
             <label class="add-param-label">Add Parameter to Defaults</label>
             <select class="param-add-select" id="select-add-param" data-section="defaults" data-name="*">
               <option value="">-- Select parameter to add --</option>
@@ -850,8 +850,8 @@ class PresetsPage extends Component {
             </select>
           </div>
         `
-            : ""
-        }
+    : ""
+}
       </div>
 
       <div class="section standalone-section">
@@ -860,11 +860,11 @@ class PresetsPage extends Component {
           <select class="model-select" id="select-add-model">
             <option value="">-- Select a model --</option>
             ${(this.state.availableModels || [])
-              .map(
-                (model) =>
-                  `<option value="${this._escapeHtml(model.name)}">${this._escapeHtml(model.name)}</option>`
-              )
-              .join("")}
+    .map(
+      (model) =>
+        `<option value="${this._escapeHtml(model.name)}">${this._escapeHtml(model.name)}</option>`
+    )
+    .join("")}
           </select>
           <button class="btn btn-secondary" id="btn-add-standalone">+ Add Selected Model</button>
         </div>
@@ -1048,7 +1048,7 @@ class PresetsPage extends Component {
           this._emit("preset:select", this.state.selectedPreset.name);
         } else {
           this._domCache.get("editor").innerHTML =
-            '<div class="empty-state">Select a preset to edit</div>';
+            "<div class=\"empty-state\">Select a preset to edit</div>";
         }
       }
     } catch (error) {
