@@ -28,17 +28,22 @@ class RouterCard extends Component {
       "click [data-action=start]": "handleStart",
       "click [data-action=stop]": "handleStop",
       "click [data-action=restart]": "handleRestart",
-      "click [data-action=launch-preset]": "handleLaunchPreset",
       "change #preset-select": "handlePresetChange",
     };
   }
 
-  handleStart(event) {
+  async handleStart(event) {
     event.preventDefault();
     event.stopPropagation();
     this.state.routerLoading = true;
     this._updateUI();
-    this.state.onAction("start");
+
+    // If preset selected, launch with preset; otherwise start normally
+    if (this.state.selectedPreset) {
+      await this.handleLaunchPreset(event);
+    } else {
+      this.state.onAction("start");
+    }
   }
 
   handleStop(event) {
@@ -142,7 +147,7 @@ class RouterCard extends Component {
     }
 
     // Update buttons
-    const startStopBtn = this._el.querySelector("[data-action=\"start\"], [data-action=\"stop\"]");
+    const startStopBtn = this._el.querySelector('[data-action="start"], [data-action="stop"]');
     if (startStopBtn) {
       if (isRunning) {
         startStopBtn.setAttribute("data-action", "stop");
@@ -151,13 +156,18 @@ class RouterCard extends Component {
       } else {
         startStopBtn.setAttribute("data-action", "start");
         startStopBtn.className = "btn btn-primary";
-        startStopBtn.textContent = routerLoading ? "▶ Starting..." : "▶ Start Router";
+        const btnText = routerLoading
+          ? "▶ Starting..."
+          : this.state.selectedPreset
+          ? "▶ Start with Preset"
+          : "▶ Start Router";
+        startStopBtn.textContent = btnText;
       }
       startStopBtn.disabled = routerLoading;
     }
 
     // Update restart button
-    const restartBtn = this._el.querySelector("[data-action=\"restart\"]");
+    const restartBtn = this._el.querySelector('[data-action="restart"]');
     if (restartBtn) {
       restartBtn.disabled = !isRunning || routerLoading;
       restartBtn.textContent = routerLoading ? "🔄 Restarting..." : "🔄 Restart";
@@ -204,17 +214,41 @@ class RouterCard extends Component {
         Component.h(
           "div",
           { className: "router-controls" },
+          // Preset selection (if presets available)
+          this.state.presets &&
+            this.state.presets.length > 0 &&
+            Component.h(
+              "div",
+              { className: "preset-selector" },
+              Component.h(
+                "select",
+                {
+                  id: "preset-select",
+                  className: "preset-dropdown",
+                  value: this.state.selectedPreset || "",
+                },
+                Component.h("option", { value: "" }, "📋 Select Preset..."),
+                ...this.state.presets.map((preset) =>
+                  Component.h("option", { value: preset.name }, preset.name)
+                )
+              )
+            ),
+          // Action buttons
           isRunning
             ? Component.h(
-              "button",
-              { className: "btn btn-danger", "data-action": "stop" },
-              "⏹ Stop Router"
-            )
+                "button",
+                { className: "btn btn-danger", "data-action": "stop" },
+                "⏹ Stop Router"
+              )
             : Component.h(
-              "button",
-              { className: "btn btn-primary", "data-action": "start" },
-              "▶ Start Router"
-            ),
+                "button",
+                { className: "btn btn-primary", "data-action": "start" },
+                this.state.routerLoading
+                  ? "▶ Starting..."
+                  : this.state.selectedPreset
+                    ? "▶ Start with Preset"
+                    : "▶ Start Router"
+              ),
           Component.h(
             "button",
             { className: "btn btn-secondary", "data-action": "restart", disabled: !isRunning },
