@@ -49,17 +49,22 @@ function parseIni(content) {
 }
 
 /**
- * Generate INI file content
+ * Generate INI file content - Sparse format (only user-set values)
  */
 function generateIni(config) {
   let content = "LLAMA_CONFIG_VERSION = 1\n\n";
 
   for (const [section, params] of Object.entries(config)) {
     if (section === "LLAMA_CONFIG_VERSION") continue;
+
     content += `[${section}]\n`;
+
     for (const [key, value] of Object.entries(params)) {
+      if (key.startsWith("_")) continue;
+      if (value === undefined || value === null || value === "") continue;
       content += `${key} = ${value}\n`;
     }
+
     content += "\n";
   }
 
@@ -116,74 +121,84 @@ function getDefaultParameters() {
 
 /**
  * Convert model config object to INI format
+ * Maps camelCase keys from frontend to kebab-case for INI
  */
 function modelToIniSection(modelName, config) {
-  const section = {
-    model: config.model || "",
-  };
+  const section = {};
 
-  // Map common parameters - handle both key formats (camelCase and kebab-case)
-  // Frontend sends kebab-case (ctx-size), llama.cpp uses ctx-size in INI
-  if (config.ctxSize) section["ctx-size"] = String(config.ctxSize);
-  else if (config["ctx-size"]) section["ctx-size"] = String(config["ctx-size"]);
+  for (const [key, value] of Object.entries(config)) {
+    if (key.startsWith("_")) continue;
+    if (value === undefined || value === null || value === "") continue;
 
-  if (config.temperature !== undefined) section["temp"] = String(config.temperature);
-  else if (config["temp"] !== undefined) section["temp"] = String(config["temp"]);
-
-  if (config.nGpuLayers !== undefined) section["n-gpu-layers"] = String(config.nGpuLayers);
-  else if (config["n-gpu-layers"] !== undefined)
-    section["n-gpu-layers"] = String(config["n-gpu-layers"]);
-
-  if (config.threads !== undefined) section["threads"] = String(config.threads);
-  else if (config["threads"] !== undefined) section["threads"] = String(config["threads"]);
-
-  if (config.batchSize !== undefined) section["batch"] = String(config.batchSize);
-  else if (config["batch"] !== undefined) section["batch"] = String(config["batch"]);
-
-  if (config.ubatchSize !== undefined) section["ubatch"] = String(config.ubatchSize);
-  else if (config["ubatch"] !== undefined) section["ubatch"] = String(config["ubatch"]);
-
-  if (config.tensorSplit) section["tensor-split"] = config.tensorSplit;
-  if (config.splitMode) section["split-mode"] = String(config.splitMode);
-  if (config.mainGpu !== undefined) section["main-gpu"] = String(config.mainGpu);
-  if (config.mmp) section["mmp"] = config.mmp;
-  if (config.seed !== undefined) section["seed"] = String(config.seed);
-  if (config.loadOnStartup !== undefined) section["load-on-startup"] = String(config.loadOnStartup);
-
-  // Preserve internal flags
-  if (config._is_group) section["_is_group"] = "true";
+    const iniKey = key.replace(/([A-Z])/g, "-$1").toLowerCase();
+    section[iniKey] = String(value);
+  }
 
   return section;
 }
 
 /**
- * Convert INI section to model config object with inheritance from defaults
+ * Convert INI section to model config object
+ * Returns only the values that are set in the section (sparse config)
  */
 function iniSectionToModel(section, defaultsSection = {}) {
-  const fullDefaults = getDefaultParameters();
-  const mergedDefaults = { ...fullDefaults, ...defaultsSection };
+  const result = {};
 
-  const result = {
-    model: section.model || mergedDefaults.model || "",
-    ctxSize: section["ctx-size"] ? parseInt(section["ctx-size"]) : mergedDefaults["ctx-size"],
-    temperature: section.temp ? parseFloat(section.temp) : mergedDefaults.temp,
-    nGpuLayers: section["n-gpu-layers"]
-      ? parseInt(section["n-gpu-layers"])
-      : mergedDefaults["n-gpu-layers"],
-    threads: section.threads ? parseInt(section.threads) : mergedDefaults.threads,
-    batchSize: section.batch ? parseInt(section.batch) : mergedDefaults.batch,
-    ubatchSize: section.ubatch ? parseInt(section.ubatch) : mergedDefaults.ubatch,
-    tensorSplit: section["tensor-split"] || mergedDefaults["tensor-split"] || null,
-    splitMode: section["split-mode"] || mergedDefaults["split-mode"] || "none",
-    mainGpu: section["main-gpu"] ? parseInt(section["main-gpu"]) : mergedDefaults["main-gpu"],
-    mmp: section.mmp || mergedDefaults.mmp || null,
-    seed: section.seed ? parseInt(section.seed) : mergedDefaults.seed,
-    loadOnStartup: section["load-on-startup"]
-      ? section["load-on-startup"].toLowerCase() === "true"
-      : mergedDefaults["load-on-startup"],
-  };
+  if (section.model) result.model = section.model;
 
-  // Preserve internal flags
+  const paramMappings = [
+    { ini: "ctx-size", key: "ctxSize", type: "int" },
+    { ini: "temp", key: "temperature", type: "float" },
+    { ini: "n-gpu-layers", key: "nGpuLayers", type: "int" },
+    { ini: "threads", key: "threads", type: "int" },
+    { ini: "batch", key: "batchSize", type: "int" },
+    { ini: "ubatch", key: "ubatchSize", type: "int" },
+    { ini: "ctx-checkpoints", key: "ctxCheckpoints", type: "int" },
+    { ini: "top-p", key: "topP", type: "float" },
+    { ini: "top-k", key: "topK", type: "int" },
+    { ini: "min-p", key: "minP", type: "float" },
+    { ini: "typ-p", key: "typP", type: "float" },
+    { ini: "seed", key: "seed", type: "int" },
+    { ini: "mirostat", key: "mirostat", type: "int" },
+    { ini: "mirostat-lr", key: "mirostat_lr", type: "float" },
+    { ini: "mirostat-ent", key: "mirostat_ent", type: "float" },
+    { ini: "repeat-penalty", key: "repeat_penalty", type: "float" },
+    { ini: "repeat-last-n", key: "repeat_last_n", type: "int" },
+    { ini: "presence-penalty", key: "presence_penalty", type: "float" },
+    { ini: "frequency-penalty", key: "frequency_penalty", type: "float" },
+    { ini: "threads-http", key: "threadsHttp", type: "int" },
+    { ini: "cache-ram", key: "cacheRam", type: "int" },
+    { ini: "main-gpu", key: "mainGpu", type: "int" },
+    { ini: "draft-min", key: "draft_min", type: "int" },
+    { ini: "draft-max", key: "draft_max", type: "int" },
+    { ini: "draft-p-min", key: "draft_p_min", type: "float" },
+    { ini: "tensor-split", key: "tensorSplit", type: "string" },
+    { ini: "split-mode", key: "splitMode", type: "string" },
+    { ini: "mmp", key: "mmp", type: "string" },
+    { ini: "chat-template", key: "chatTemplate", type: "string" },
+  ];
+
+  for (const mapping of paramMappings) {
+    if (section[mapping.ini] !== undefined) {
+      const value = section[mapping.ini];
+      if (mapping.type === "int") {
+        result[mapping.key] = parseInt(value);
+      } else if (mapping.type === "float") {
+        result[mapping.key] = parseFloat(value);
+      } else {
+        result[mapping.key] = value;
+      }
+    }
+  }
+
+  if (section["load-on-startup"] !== undefined) {
+    result.loadOnStartup = section["load-on-startup"].toLowerCase() === "true";
+  }
+
+  if (section.jinja !== undefined) {
+    result.jinja = section.jinja.toLowerCase() === "true";
+  }
+
   if (section._is_group === "true" || section._is_group === true) {
     result._is_group = true;
   }

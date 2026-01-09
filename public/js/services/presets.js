@@ -256,7 +256,7 @@ class PresetsService {
   getLlamaParameters() {
     return new Promise((resolve, reject) => {
       console.log("[DEBUG] PresetsService: getLlamaParameters");
-      this.socket.emit("presets:llama-parameters", {}, (response) => {
+      this.socket.emit("presets:get-llama-params", {}, (response) => {
         if (response.success) {
           resolve(response.data.parameters);
         } else {
@@ -294,7 +294,7 @@ class PresetsService {
   getInheritance(filename, modelName) {
     return new Promise((resolve, reject) => {
       console.log("[DEBUG] PresetsService: getInheritance", { filename, modelName });
-      this.socket.emit("presets:inheritance", { filename, modelName }, (response) => {
+      this.socket.emit("presets:show-inheritance", { filename, modelName }, (response) => {
         if (response.success) {
           resolve(response.data);
         } else {
