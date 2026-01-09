@@ -31,13 +31,13 @@ http://localhost:3000
 
 ## 📂 Key Files
 
-| File | Purpose | Lines |
-|------|---------|-------|
-| server/handlers/presets.js | Backend logic | 456 |
-| public/js/pages/presets.js | UI component | 700+ |
-| public/js/services/presets.js | Socket.IO API | 207 |
-| public/css/pages/presets/presets.css | Styling | 230+ |
-| public/js/components/layout/layout.js | Navigation | Updated |
+| File                                  | Purpose       | Lines   |
+| ------------------------------------- | ------------- | ------- |
+| server/handlers/presets.js            | Backend logic | 456     |
+| public/js/pages/presets.js            | UI component  | 700+    |
+| public/js/services/presets.js         | Socket.IO API | 207     |
+| public/css/pages/presets/presets.css  | Styling       | 230+    |
+| public/js/components/layout/layout.js | Navigation    | Updated |
 
 ---
 
@@ -89,30 +89,36 @@ batch = 512
 ## 🎯 Common Tasks
 
 ### Create Preset
+
 1. Click "+ New Preset"
 2. Enter name
 3. Click "Create"
 
 ### Add Model
+
 1. Select preset
 2. Click "+ Add Model"
 3. Fill form
 4. Click "Add"
 
 ### Edit Model
+
 1. Click "Edit" on model row
 2. Change values
 3. Click "Update"
 
 ### Delete Model
+
 1. Click "Delete" on model row
 2. Confirm
 
 ### Download INI
+
 1. Click "⬇ Download"
 2. File saved to computer
 
 ### Get Start Command
+
 1. Click "📋 Copy Command"
 2. Paste in terminal
 3. Run llama-server
@@ -122,21 +128,25 @@ batch = 512
 ## 🐛 Troubleshooting
 
 **Page appears empty?**
+
 - Refresh browser (Ctrl+R)
 - Check browser console (F12)
 - Check server logs
 
 **Socket.IO not working?**
+
 - Verify server is running
 - Check /llamaproxws in Network tab
 - Look for connection errors in console
 
 **Files not saving?**
+
 - Check config/ directory exists
 - Verify file permissions
 - Look for error message in notification
 
 **Buttons not responding?**
+
 - Check console for JavaScript errors
 - Refresh page
 - Try different preset
@@ -153,6 +163,7 @@ batch = 512
 ```
 
 Each file contains:
+
 - Preset name as filename
 - INI format with model sections
 - Full model configurations
@@ -174,6 +185,7 @@ All operations are instant from user perspective.
 ## 🔐 Data
 
 All data stored locally:
+
 - No cloud upload
 - No tracking
 - No authentication
@@ -199,6 +211,7 @@ All data stored locally:
 ## 📞 Need Help?
 
 Check the documentation:
+
 - INTEGRATION_COMPLETE.md - Overview
 - PRESETS_FINAL_STATUS.md - Detailed docs
 - PRESET_QUICKSTART.md - Examples

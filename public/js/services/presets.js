@@ -146,17 +146,13 @@ class PresetsService {
   addModel(filename, modelName, config) {
     return new Promise((resolve, reject) => {
       console.log("[DEBUG] PresetsService: addModel", { filename, modelName });
-      this.socket.emit(
-        "presets:add-model",
-        { filename, modelName, config },
-        (response) => {
-          if (response.success) {
-            resolve(response.data);
-          } else {
-            reject(new Error(response.error.message));
-          }
+      this.socket.emit("presets:add-model", { filename, modelName, config }, (response) => {
+        if (response.success) {
+          resolve(response.data);
+        } else {
+          reject(new Error(response.error.message));
         }
-      );
+      });
     });
   }
 
@@ -170,17 +166,13 @@ class PresetsService {
   updateModel(filename, modelName, config) {
     return new Promise((resolve, reject) => {
       console.log("[DEBUG] PresetsService: updateModel", { filename, modelName });
-      this.socket.emit(
-        "presets:update-model",
-        { filename, modelName, config },
-        (response) => {
-          if (response.success) {
-            resolve(response.data);
-          } else {
-            reject(new Error(response.error.message));
-          }
+      this.socket.emit("presets:update-model", { filename, modelName, config }, (response) => {
+        if (response.success) {
+          resolve(response.data);
+        } else {
+          reject(new Error(response.error.message));
         }
-      );
+      });
     });
   }
 
@@ -230,17 +222,158 @@ class PresetsService {
   updateDefaults(filename, config) {
     return new Promise((resolve, reject) => {
       console.log("[DEBUG] PresetsService: updateDefaults", { filename });
-      this.socket.emit(
-        "presets:update-defaults",
-        { filename, config },
-        (response) => {
-          if (response.success) {
-            resolve(response.data);
-          } else {
-            reject(new Error(response.error.message));
-          }
+      this.socket.emit("presets:update-defaults", { filename, config }, (response) => {
+        if (response.success) {
+          resolve(response.data);
+        } else {
+          reject(new Error(response.error.message));
         }
-      );
+      });
+    });
+  }
+
+  /**
+   * Get available models from baseModelsPath
+   * @returns {Promise<Array>} Array of model objects with name, path, size, vram
+   */
+  getAvailableModels() {
+    return new Promise((resolve, reject) => {
+      console.log("[DEBUG] PresetsService: getAvailableModels");
+      this.socket.emit("presets:available-models", {}, (response) => {
+        if (response.success) {
+          resolve(response.data.models);
+        } else {
+          reject(new Error(response.error.message));
+        }
+      });
+    });
+  }
+
+  /**
+   * Get all parameters from llama-server --help
+   * @returns {Promise<Object>} Parameters organized by category
+   */
+  getLlamaParameters() {
+    return new Promise((resolve, reject) => {
+      console.log("[DEBUG] PresetsService: getLlamaParameters");
+      this.socket.emit("presets:llama-parameters", {}, (response) => {
+        if (response.success) {
+          resolve(response.data.parameters);
+        } else {
+          reject(new Error(response.error.message));
+        }
+      });
+    });
+  }
+
+  /**
+   * Validate a complete configuration
+   * @param {string} filename - Preset filename (without .ini extension)
+   * @param {Object} config - Full configuration object to validate
+   * @returns {Promise<Object>} Validation result with valid, errors, warnings
+   */
+  validateConfig(filename, config) {
+    return new Promise((resolve, reject) => {
+      console.log("[DEBUG] PresetsService: validateConfig", { filename });
+      this.socket.emit("presets:validate-config", { filename, config }, (response) => {
+        if (response.success) {
+          resolve(response.data);
+        } else {
+          reject(new Error(response.error.message));
+        }
+      });
+    });
+  }
+
+  /**
+   * Get merged config showing inheritance from defaults
+   * @param {string} filename - Preset filename (without .ini extension)
+   * @param {string} modelName - Specific model name to get inheritance for
+   * @returns {Promise<Object>} Result with finalConfig and sources
+   */
+  getInheritance(filename, modelName) {
+    return new Promise((resolve, reject) => {
+      console.log("[DEBUG] PresetsService: getInheritance", { filename, modelName });
+      this.socket.emit("presets:inheritance", { filename, modelName }, (response) => {
+        if (response.success) {
+          resolve(response.data);
+        } else {
+          reject(new Error(response.error.message));
+        }
+      });
+    });
+  }
+
+  /**
+   * Estimate VRAM usage for a model
+   * @param {string} modelPath - Path to the model file
+   * @returns {Promise<number>} Estimated VRAM usage in bytes
+   */
+  estimateVram(modelPath) {
+    return new Promise((resolve, reject) => {
+      console.log("[DEBUG] PresetsService: estimateVram", { modelPath });
+      this.socket.emit("presets:estimate-vram", { modelPath }, (response) => {
+        if (response.success) {
+          resolve(response.data.vram);
+        } else {
+          reject(new Error(response.error.message));
+        }
+      });
+    });
+  }
+
+  /**
+   * Import configuration from a running model
+   * @param {string} modelId - Running model identifier
+   * @returns {Promise<Object>} Imported configuration object
+   */
+  importFromModel(modelId) {
+    return new Promise((resolve, reject) => {
+      console.log("[DEBUG] PresetsService: importFromModel", { modelId });
+      this.socket.emit("presets:import-model", { modelId }, (response) => {
+        if (response.success) {
+          resolve(response.data.config);
+        } else {
+          reject(new Error(response.error.message));
+        }
+      });
+    });
+  }
+
+  /**
+   * Duplicate a preset file with a new name
+   * @param {string} sourceName - Source preset filename (without .ini extension)
+   * @param {string} targetName - Target preset filename (without .ini extension)
+   * @returns {Promise<void>} Resolves when complete
+   */
+  duplicatePreset(sourceName, targetName) {
+    return new Promise((resolve, reject) => {
+      console.log("[DEBUG] PresetsService: duplicatePreset", { sourceName, targetName });
+      this.socket.emit("presets:duplicate", { sourceName, targetName }, (response) => {
+        if (response.success) {
+          resolve();
+        } else {
+          reject(new Error(response.error.message));
+        }
+      });
+    });
+  }
+
+  /**
+   * Export preset as raw INI content
+   * @param {string} filename - Preset filename (without .ini extension)
+   * @returns {Promise<string>} Raw INI file content
+   */
+  exportPreset(filename) {
+    return new Promise((resolve, reject) => {
+      console.log("[DEBUG] PresetsService: exportPreset", { filename });
+      this.socket.emit("presets:export", { filename }, (response) => {
+        if (response.success) {
+          resolve(response.data.content);
+        } else {
+          reject(new Error(response.error.message));
+        }
+      });
     });
   }
 }

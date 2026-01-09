@@ -5,10 +5,12 @@ WebSocket-based INI file management for llama.cpp router mode.
 ## What Was Added
 
 ### Backend (Server)
+
 - `server/handlers/presets.js` - Socket.IO event handlers for INI file operations
 - Updated `server/handlers.js` to register preset handlers
 
 ### Frontend (Client)
+
 - `public/js/services/presets.js` - PresetsService for socket communication
 
 ## File Location
@@ -201,17 +203,17 @@ tensor-split = 0,1
 
 Supported parameters in model config:
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `model` | string | - | Path to GGUF model file (required) |
-| `ctxSize` | number | 2048 | Context size |
-| `temperature` | number | 0.7 | Temperature for sampling |
-| `nGpuLayers` | number | 0 | GPU layers to offload |
-| `threads` | number | 0 | Number of threads (0 = auto) |
-| `batchSize` | number | 512 | Batch size |
-| `ubatchSize` | number | 512 | Ubatch size |
-| `tensorSplit` | string | null | GPU split ratio (e.g., "0.5,0.5") |
-| `mmp` | string | null | Multimodal project path |
+| Parameter     | Type   | Default | Description                        |
+| ------------- | ------ | ------- | ---------------------------------- |
+| `model`       | string | -       | Path to GGUF model file (required) |
+| `ctxSize`     | number | 2048    | Context size                       |
+| `temperature` | number | 0.7     | Temperature for sampling           |
+| `nGpuLayers`  | number | 0       | GPU layers to offload              |
+| `threads`     | number | 0       | Number of threads (0 = auto)       |
+| `batchSize`   | number | 512     | Batch size                         |
+| `ubatchSize`  | number | 512     | Ubatch size                        |
+| `tensorSplit` | string | null    | GPU split ratio (e.g., "0.5,0.5")  |
+| `mmp`         | string | null    | Multimodal project path            |
 
 ## Error Handling
 
@@ -224,6 +226,7 @@ All methods reject with errors like:
 - `[model-name]: Invalid ctx-size value: abc`
 
 Example:
+
 ```javascript
 try {
   await presetsService.readPreset("nonexistent");
@@ -293,6 +296,7 @@ presets:remove-model      →  Remove model from preset
 ### Response ← Server
 
 All responses follow standard format:
+
 ```javascript
 {
   success: true|false,
@@ -305,15 +309,18 @@ All responses follow standard format:
 ## Troubleshooting
 
 ### Config directory not created
+
 - Automatically created on first operation
 - Check file permissions in project root
 
 ### INI parsing errors
+
 - Use `validateIni()` before saving
 - Ensure each model section has `model` parameter
 - Check numeric values for correctness
 
 ### WebSocket connection issues
+
 - Ensure socket is connected before calling service methods
 - Check browser console for connection errors
 - Verify Socket.IO path: `/llamaproxws`

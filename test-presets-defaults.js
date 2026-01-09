@@ -84,84 +84,72 @@ async function runTests() {
   // Test 1: List presets
   console.log("\n[Test 1] List presets");
   await new Promise((resolve) => {
-    socket.emit(
-      "presets:list",
-      {},
-      (response) => {
-        if (response.success) {
-          console.log("✓ Presets found:", response.data.presets.length);
-          response.data.presets.forEach((p) => console.log(`  - ${p.name}`));
-          resolve();
-        } else {
-          console.error("✗ Error:", response.error.message);
-          resolve();
-        }
+    socket.emit("presets:list", {}, (response) => {
+      if (response.success) {
+        console.log("✓ Presets found:", response.data.presets.length);
+        response.data.presets.forEach((p) => console.log(`  - ${p.name}`));
+        resolve();
+      } else {
+        console.error("✗ Error:", response.error.message);
+        resolve();
       }
-    );
+    });
   });
 
   // Test 2: Get defaults from preset
   console.log("\n[Test 2] Get defaults from preset");
   await new Promise((resolve) => {
-    socket.emit(
-      "presets:get-defaults",
-      { filename: "test-preset" },
-      (response) => {
-        if (response.success) {
-          console.log("✓ Defaults retrieved:");
-          const defaults = response.data.defaults;
-          console.log(`  - Context Size: ${defaults.ctxSize}`);
-          console.log(`  - GPU Layers: ${defaults.nGpuLayers}`);
-          console.log(`  - Temperature: ${defaults.temperature}`);
-          console.log(`  - Threads: ${defaults.threads}`);
-          console.log(`  - Split Mode: ${defaults.splitMode}`);
-          resolve();
-        } else {
-          console.error("✗ Error:", response.error.message);
-          resolve();
-        }
+    socket.emit("presets:get-defaults", { filename: "test-preset" }, (response) => {
+      if (response.success) {
+        console.log("✓ Defaults retrieved:");
+        const defaults = response.data.defaults;
+        console.log(`  - Context Size: ${defaults.ctxSize}`);
+        console.log(`  - GPU Layers: ${defaults.nGpuLayers}`);
+        console.log(`  - Temperature: ${defaults.temperature}`);
+        console.log(`  - Threads: ${defaults.threads}`);
+        console.log(`  - Split Mode: ${defaults.splitMode}`);
+        resolve();
+      } else {
+        console.error("✗ Error:", response.error.message);
+        resolve();
       }
-    );
+    });
   });
 
   // Test 3: Get models with inheritance from defaults
   console.log("\n[Test 3] Get models with inheritance from defaults");
   await new Promise((resolve) => {
-    socket.emit(
-      "presets:get-models",
-      { filename: "test-preset" },
-      (response) => {
-        if (response.success) {
-          const models = response.data.models;
-          console.log(`✓ Models retrieved: ${Object.keys(models).length}`);
+    socket.emit("presets:get-models", { filename: "test-preset" }, (response) => {
+      if (response.success) {
+        const models = response.data.models;
+        console.log(`✓ Models retrieved: ${Object.keys(models).length}`);
 
-          // Check llama-70b (has overrides)
-          if (models["llama-70b"]) {
-            const m = models["llama-70b"];
-            console.log("\n  Model: llama-70b");
-            console.log(`    - Context Size: ${m.ctxSize} (overridden from 4096)`);
-            console.log(`    - GPU Layers: ${m.nGpuLayers} (overridden from 40)`);
-            console.log(`    - Temperature: ${m.temperature} (inherited: 0.7)`);
-            console.log(`    - Threads: ${m.threads} (inherited: 8)`);
-          }
-
-          // Check mistral-7b (has minimal overrides)
-          if (models["mistral-7b"]) {
-            const m = models["mistral-7b"];
-            console.log("\n  Model: mistral-7b");
-            console.log(`    - Context Size: ${m.ctxSize} (inherited: 4096)`);
-            console.log(`    - GPU Layers: ${m.nGpuLayers} (inherited: 40)`);
-            console.log(`    - Temperature: ${m.temperature} (overridden from 0.7)`);
-            console.log(`    - Threads: ${m.threads} (inherited: 8)`);
-          }
-
-          resolve();
-        } else {
-          console.error("✗ Error:", response.error.message);
-          resolve();
+        // Check llama-70b (has overrides)
+        if (models["llama-70b"]) {
+          const m = models["llama-70b"];
+          console.log("\n  Model: llama-70b");
+          console.log(`    - Context Size: ${m.ctxSize} (overridden from 4096)`);
+          console.log(`    - GPU Layers: ${m.nGpuLayers} (overridden from 40)`);
+          console.log(`    - Temperature: ${m.temperature} (inherited: 0.7)`);
+          console.log(`    - Threads: ${m.threads} (inherited: 8)`);
         }
+
+        // Check mistral-7b (has minimal overrides)
+        if (models["mistral-7b"]) {
+          const m = models["mistral-7b"];
+          console.log("\n  Model: mistral-7b");
+          console.log(`    - Context Size: ${m.ctxSize} (inherited: 4096)`);
+          console.log(`    - GPU Layers: ${m.nGpuLayers} (inherited: 40)`);
+          console.log(`    - Temperature: ${m.temperature} (overridden from 0.7)`);
+          console.log(`    - Threads: ${m.threads} (inherited: 8)`);
+        }
+
+        resolve();
+      } else {
+        console.error("✗ Error:", response.error.message);
+        resolve();
       }
-    );
+    });
   });
 
   // Test 4: Update defaults
@@ -200,28 +188,24 @@ async function runTests() {
   // Test 5: Verify updated defaults apply to models
   console.log("\n[Test 5] Verify updated defaults inheritance");
   await new Promise((resolve) => {
-    socket.emit(
-      "presets:get-models",
-      { filename: "test-preset" },
-      (response) => {
-        if (response.success) {
-          const models = response.data.models;
+    socket.emit("presets:get-models", { filename: "test-preset" }, (response) => {
+      if (response.success) {
+        const models = response.data.models;
 
-          // Check mistral-7b now uses new context size from defaults
-          if (models["mistral-7b"]) {
-            const m = models["mistral-7b"];
-            console.log("✓ mistral-7b now inherits updated defaults:");
-            console.log(`  - Context Size: ${m.ctxSize} (updated from 4096 to 8192)`);
-            console.log(`  - GPU Layers: ${m.nGpuLayers} (updated from 40 to 60)`);
-          }
-
-          resolve();
-        } else {
-          console.error("✗ Error:", response.error.message);
-          resolve();
+        // Check mistral-7b now uses new context size from defaults
+        if (models["mistral-7b"]) {
+          const m = models["mistral-7b"];
+          console.log("✓ mistral-7b now inherits updated defaults:");
+          console.log(`  - Context Size: ${m.ctxSize} (updated from 4096 to 8192)`);
+          console.log(`  - GPU Layers: ${m.nGpuLayers} (updated from 40 to 60)`);
         }
+
+        resolve();
+      } else {
+        console.error("✗ Error:", response.error.message);
+        resolve();
       }
-    );
+    });
   });
 
   // Cleanup
@@ -229,10 +213,7 @@ async function runTests() {
   console.log("✓ All preset defaults tests passed!");
 
   // Read and display final preset file
-  const content = fs.readFileSync(
-    path.join(PRESETS_DIR, "test-preset.ini"),
-    "utf-8"
-  );
+  const content = fs.readFileSync(path.join(PRESETS_DIR, "test-preset.ini"), "utf-8");
   console.log("\nFinal preset file:");
   console.log("─".repeat(50));
   console.log(content);

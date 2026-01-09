@@ -16,25 +16,26 @@ Frontend → WebSocket Event → Server Handler → File System → WebSocket Re
 
 ```javascript
 // Read operations
-socket.on("presets:list", (data) => {})           // List all INI files
-socket.on("presets:read", (data) => {})           // Read specific INI file
-socket.on("presets:get-models", (data) => {})     // Get all model configs from INI
+socket.on("presets:list", (data) => {}); // List all INI files
+socket.on("presets:read", (data) => {}); // Read specific INI file
+socket.on("presets:get-models", (data) => {}); // Get all model configs from INI
 
 // Write operations
-socket.on("presets:create", (data) => {})         // Create new INI file
-socket.on("presets:save", (data) => {})           // Save INI file
-socket.on("presets:delete", (data) => {})         // Delete INI file
-socket.on("presets:validate", (data) => {})       // Validate INI syntax
+socket.on("presets:create", (data) => {}); // Create new INI file
+socket.on("presets:save", (data) => {}); // Save INI file
+socket.on("presets:delete", (data) => {}); // Delete INI file
+socket.on("presets:validate", (data) => {}); // Validate INI syntax
 
 // Model-specific operations
-socket.on("presets:add-model", (data) => {})      // Add model to INI
-socket.on("presets:update-model", (data) => {})   // Update model config in INI
-socket.on("presets:remove-model", (data) => {})   // Remove model from INI
+socket.on("presets:add-model", (data) => {}); // Add model to INI
+socket.on("presets:update-model", (data) => {}); // Update model config in INI
+socket.on("presets:remove-model", (data) => {}); // Remove model from INI
 ```
 
 ### Server Responds With (Server → Client)
 
 Standard response format:
+
 ```javascript
 {
   success: boolean,
@@ -481,7 +482,7 @@ export function registerHandlers(io, db, ggufParser) {
     registerLogsHandlers(socket, db);
     registerConfigHandlers(socket, db);
     registerLlamaHandlers(socket, io, db);
-    registerPresetsHandlers(socket, db);  // ADD THIS LINE
+    registerPresetsHandlers(socket, db); // ADD THIS LINE
   });
 }
 ```
@@ -626,17 +627,13 @@ class PresetsService {
    */
   updateModel(filename, modelName, config) {
     return new Promise((resolve, reject) => {
-      this.socket.emit(
-        "presets:update-model",
-        { filename, modelName, config },
-        (response) => {
-          if (response.success) {
-            resolve(response.data);
-          } else {
-            reject(new Error(response.error.message));
-          }
+      this.socket.emit("presets:update-model", { filename, modelName, config }, (response) => {
+        if (response.success) {
+          resolve(response.data);
+        } else {
+          reject(new Error(response.error.message));
         }
-      );
+      });
     });
   }
 
@@ -716,6 +713,7 @@ tensor-split = 0,1
 ## Error Handling
 
 Standard error responses:
+
 - `Preset file not found`
 - `Failed to read preset`
 - `Invalid INI syntax`

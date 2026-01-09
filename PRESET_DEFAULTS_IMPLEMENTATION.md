@@ -2,7 +2,7 @@
 
 ## Overview
 
-This implements the **state-of-the-art hierarchical preset system** for llama.cpp router mode with proper "*" (wildcard) defaults support.
+This implements the **state-of-the-art hierarchical preset system** for llama.cpp router mode with proper "\*" (wildcard) defaults support.
 
 ## Architecture
 
@@ -68,23 +68,29 @@ mmp =
 ### New Functions
 
 #### `getDefaultParameters()`
+
 Returns all default parameters for llama.cpp router mode.
 
 #### `iniSectionToModel(section, defaultsSection)`
+
 Converts INI section to model config with inheritance:
+
 - First applies built-in defaults
 - Then merges in preset `[*]` defaults
 - Finally applies model-specific overrides
 
 #### `getPresetsDefaults(filename)`
+
 Retrieves the `[*]` section from preset.
 
 #### `getModelsFromPreset(filename)`
+
 **Updated** to support inheritance from `[*]` defaults.
 
 ### New Socket.IO Events
 
 #### `presets:get-defaults`
+
 ```javascript
 // Request
 { filename: "mypreset" }
@@ -94,6 +100,7 @@ Retrieves the `[*]` section from preset.
 ```
 
 #### `presets:update-defaults`
+
 ```javascript
 // Request
 { filename: "mypreset", config: {...} }
@@ -107,13 +114,14 @@ Retrieves the `[*]` section from preset.
 ### PresetsService Updates
 
 New methods:
+
 - `getDefaults(filename)` - Fetch `[*]` defaults
 - `updateDefaults(filename, config)` - Update `[*]` defaults
 
 ### UI Enhancements (Next Steps)
 
 1. **Default Preset Display**
-   - Show "*" at top of preset list
+   - Show "\*" at top of preset list
    - Display all parameters with categorized layout
    - Label as "Global Defaults"
 
@@ -156,16 +164,16 @@ temp = 0.3
 
 ### Effective Configuration (After Inheritance)
 
-| Parameter | llama-2-70b | llama-2-13b | mistral-7b |
-|-----------|------------|------------|-----------|
-| ctx-size | 8192* | 4096 | 4096 |
-| n-gpu-layers | 80* | 40 | 40 |
-| temp | 0.7 | 0.7 | 0.3* |
-| threads | 8 | 8 | 8 |
-| batch | 512 | 512 | 512 |
-| load-on-startup | false | true* | false |
+| Parameter       | llama-2-70b | llama-2-13b | mistral-7b |
+| --------------- | ----------- | ----------- | ---------- |
+| ctx-size        | 8192\*      | 4096        | 4096       |
+| n-gpu-layers    | 80\*        | 40          | 40         |
+| temp            | 0.7         | 0.7         | 0.3\*      |
+| threads         | 8           | 8           | 8          |
+| batch           | 512         | 512         | 512        |
+| load-on-startup | false       | true\*      | false      |
 
-*Overridden values
+\*Overridden values
 
 ## Benefits
 
@@ -179,6 +187,7 @@ temp = 0.3
 ## Testing
 
 The implementation should be tested with:
+
 1. Create preset with `[*]` section
 2. Add models without all parameters (they inherit from `[*]`)
 3. Verify `getModelsFromPreset()` merges correctly

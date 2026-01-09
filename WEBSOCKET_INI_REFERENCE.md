@@ -14,31 +14,33 @@
 
 ```javascript
 // CRUD Operations
-socket.emit("presets:list", {}, callback)
-socket.emit("presets:read", { filename }, callback)
-socket.emit("presets:create", { filename }, callback)
-socket.emit("presets:save", { filename, config }, callback)
-socket.emit("presets:delete", { filename }, callback)
+socket.emit("presets:list", {}, callback);
+socket.emit("presets:read", { filename }, callback);
+socket.emit("presets:create", { filename }, callback);
+socket.emit("presets:save", { filename, config }, callback);
+socket.emit("presets:delete", { filename }, callback);
 
 // Model Operations
-socket.emit("presets:get-models", { filename }, callback)
-socket.emit("presets:add-model", { filename, modelName, config }, callback)
-socket.emit("presets:update-model", { filename, modelName, config }, callback)
-socket.emit("presets:remove-model", { filename, modelName }, callback)
+socket.emit("presets:get-models", { filename }, callback);
+socket.emit("presets:add-model", { filename, modelName, config }, callback);
+socket.emit("presets:update-model", { filename, modelName, config }, callback);
+socket.emit("presets:remove-model", { filename, modelName }, callback);
 
 // Validation
-socket.emit("presets:validate", { content }, callback)
+socket.emit("presets:validate", { content }, callback);
 ```
 
 ### Response Format
 
 ```javascript
 callback({
-  success: true,              // or false
-  data: { /* result */ },     // only if success=true
-  error: { message: "..." },  // only if success=false
-  timestamp: "ISO-string"
-})
+  success: true, // or false
+  data: {
+    /* result */
+  }, // only if success=true
+  error: { message: "..." }, // only if success=false
+  timestamp: "ISO-string",
+});
 ```
 
 ## 🔧 API Methods
@@ -121,6 +123,7 @@ tensor-split = 0.5,0.5
 ## 🔄 Data Type Conversions
 
 ### JavaScript Config Object
+
 ```javascript
 {
   model: "./models/model.gguf",      // string
@@ -136,6 +139,7 @@ tensor-split = 0.5,0.5
 ```
 
 ### INI Section
+
 ```ini
 [model-name]
 model = ./models/model.gguf
@@ -150,6 +154,7 @@ mmp = ./mmproj.gguf
 ```
 
 **Key Differences:**
+
 - JavaScript uses camelCase (ctxSize, nGpuLayers)
 - INI uses kebab-case (ctx-size, n-gpu-layers)
 - Service handles conversion automatically
@@ -161,8 +166,8 @@ mmp = ./mmproj.gguf
 ```javascript
 try {
   const presets = await service.listPresets();
-  
-  presets.forEach(preset => {
+
+  presets.forEach((preset) => {
     console.log(`${preset.name} - ${preset.file}`);
   });
 } catch (error) {
@@ -175,7 +180,7 @@ try {
 ```javascript
 try {
   const models = await service.getModelsFromPreset("default");
-  
+
   for (const [name, config] of Object.entries(models)) {
     console.log(`${name}: ${config.model}`);
   }
@@ -190,14 +195,14 @@ try {
 try {
   // Read current preset
   const preset = await service.readPreset("default");
-  
+
   // Modify
   preset.parsed["new-model"] = {
     model: "./models/new.gguf",
     "ctx-size": "8192",
-    temp: "0.7"
+    temp: "0.7",
   };
-  
+
   // Save changes
   await service.savePreset("default", preset.parsed);
 } catch (error) {
@@ -212,12 +217,12 @@ const createPresetFromTemplate = async (name, template) => {
   try {
     // Create
     await service.createPreset(name);
-    
+
     // Add models from template
     for (const [modelName, config] of Object.entries(template)) {
       await service.addModel(name, modelName, config);
     }
-    
+
     return true;
   } catch (error) {
     console.error(error.message);
@@ -230,13 +235,13 @@ const gpuHeavyTemplate = {
   "large-model": {
     model: "./models/llama-70b.gguf",
     ctxSize: 4096,
-    nGpuLayers: 99
+    nGpuLayers: 99,
   },
   "tiny-model": {
     model: "./models/tinyllama.gguf",
     ctxSize: 2048,
-    nGpuLayers: 99
-  }
+    nGpuLayers: 99,
+  },
 };
 
 await createPresetFromTemplate("gpu-heavy", gpuHeavyTemplate);
@@ -260,10 +265,10 @@ try {
 ```javascript
 try {
   const validation = await service.validateIni(content);
-  
+
   if (!validation.valid) {
     // validation.errors is array of strings
-    validation.errors.forEach(err => {
+    validation.errors.forEach((err) => {
       console.error(err);
       // "[model]: Missing required 'model' parameter"
       // "[model]: Invalid ctx-size value: abc"
@@ -327,7 +332,7 @@ await ps.createPreset("test-preset");
 // Add model
 await ps.addModel("test-preset", "test-model", {
   model: "./models/test.gguf",
-  ctxSize: 2048
+  ctxSize: 2048,
 });
 
 // Get models
@@ -344,13 +349,13 @@ await ps.deletePreset("test-preset");
 
 ## 📚 Documentation Map
 
-| Document | Purpose |
-|----------|---------|
-| **INI_WEBSOCKET_INTEGRATION.md** | Complete technical guide + implementation steps |
-| **PRESET_QUICKSTART.md** | Usage examples + API reference |
-| **PRESET_IMPLEMENTATION_NOTES.md** | Architecture details + technical deep dive |
-| **PRESET_IMPLEMENTATION_SUMMARY.md** | Overview + next steps |
-| **WEBSOCKET_INI_REFERENCE.md** | Quick reference (this file) |
+| Document                             | Purpose                                         |
+| ------------------------------------ | ----------------------------------------------- |
+| **INI_WEBSOCKET_INTEGRATION.md**     | Complete technical guide + implementation steps |
+| **PRESET_QUICKSTART.md**             | Usage examples + API reference                  |
+| **PRESET_IMPLEMENTATION_NOTES.md**   | Architecture details + technical deep dive      |
+| **PRESET_IMPLEMENTATION_SUMMARY.md** | Overview + next steps                           |
+| **WEBSOCKET_INI_REFERENCE.md**       | Quick reference (this file)                     |
 
 ## 🔗 Quick Links
 

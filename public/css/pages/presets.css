@@ -92,8 +92,13 @@
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 .presets-empty-state h2 {
@@ -292,11 +297,7 @@
 /* Global Section */
 .global-section {
   border: 1px solid rgba(59, 130, 246, 0.2);
-  background: linear-gradient(
-    135deg,
-    rgba(59, 130, 246, 0.02) 0%,
-    rgba(59, 130, 246, 0) 100%
-  );
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.02) 0%, rgba(59, 130, 246, 0) 100%);
 }
 
 .defaults-summary {
@@ -347,11 +348,7 @@
   gap: 1rem;
   border: none !important;
   padding: 1.5rem !important;
-  background: linear-gradient(
-    135deg,
-    rgba(16, 185, 129, 0.02) 0%,
-    rgba(16, 185, 129, 0) 100%
-  );
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.02) 0%, rgba(16, 185, 129, 0) 100%);
 }
 
 .groups-header .section-header {
@@ -538,8 +535,12 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modal-content {

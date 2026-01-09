@@ -41,6 +41,7 @@
 
 /* Presets */
 @import "pages/presets/presets.css";
+@import "pages/presets/parameter-form.css";
 
 /* Responsive */
 @media (max-width: 768px) {

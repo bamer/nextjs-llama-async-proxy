@@ -1,0 +1,296 @@
+{
+  "documentation": {
+    "purpose": "Complete CSS system for the presets management UI",
+    "file": "/home/bamer/nextjs-llama-async-proxy/public/css/pages/presets/presets.css",
+    "lines": 1048
+  },
+  "cssVariables": {
+    "layout": {
+      "--presets-sidebar-width": "280px",
+      "--presets-hierarchy-width": "300px",
+      "--presets-panel-gap": "1rem",
+      "--presets-panel-padding": "1.25rem"
+    },
+    "inheritanceColors": {
+      "--inheritance-global": "var(--gray-400) / #9ca3af",
+      "--inheritance-global-bg": "rgba(156, 163, 175, 0.1)",
+      "--inheritance-group": "var(--warning) / #f59e0b",
+      "--inheritance-group-bg": "rgba(245, 158, 11, 0.1)",
+      "--inheritance-model": "var(--success) / #10b981",
+      "--inheritance-model-bg": "rgba(16, 185, 129, 0.1)",
+      "--inheritance-error": "var(--danger) / #ef4444",
+      "--inheritance-error-bg": "rgba(239, 68, 68, 0.1)",
+      "--inheritance-info": "var(--info) / #06b6d4",
+      "--inheritance-info-bg": "rgba(6, 182, 212, 0.1)"
+    },
+    "statusColors": {
+      "--preset-active": "var(--primary) / #3b82f6",
+      "--preset-active-bg": "rgba(59, 130, 246, 0.1)",
+      "--preset-draft": "var(--gray-500)",
+      "--preset-published": "var(--success)"
+    },
+    "componentStyles": {
+      "--preset-card-border-radius": "8px",
+      "--preset-card-shadow": "0 1px 3px rgba(0,0,0,0.08)",
+      "--preset-card-shadow-hover": "0 4px 12px rgba(0,0,0,0.12)",
+      "--tree-indent": "1.25rem",
+      "--tree-item-height": "2.5rem",
+      "--modal-shadow": "0 8px 32px rgba(0,0,0,0.2)"
+    },
+    "zIndexLayers": {
+      "--z-presets-overlay": "100",
+      "--z-presets-modal": "200",
+      "--z-presets-tooltip": "300"
+    }
+  },
+  "cssClasses": {
+    "layout": [
+      ".presets-page",
+      ".presets-header",
+      ".presets-header-actions",
+      ".presets-sidebar",
+      ".presets-hierarchy",
+      ".presets-editor",
+      ".sidebar-header",
+      ".hierarchy-header"
+    ],
+    "presetCards": [
+      ".preset-card",
+      ".preset-card-header",
+      ".preset-name",
+      ".preset-description",
+      ".preset-meta",
+      ".preset-info",
+      ".preset-actions",
+      ".preset-action-btn",
+      ".preset-card.active",
+      ".preset-card.disabled",
+      ".preset-card.dragging"
+    ],
+    "hierarchyTree": [
+      ".hierarchy-tree",
+      ".tree-item",
+      ".tree-item-content",
+      ".tree-toggle",
+      ".tree-toggle.expanded",
+      ".tree-toggle.hidden",
+      ".tree-icon",
+      ".tree-label",
+      ".tree-badge",
+      ".tree-children",
+      ".tree-children.expanded",
+      ".tree-group-item",
+      ".tree-model-item"
+    ],
+    "inheritanceIndicators": [
+      ".inheritance-indicator",
+      ".inheritance-indicator.global",
+      ".inheritance-indicator.group",
+      ".inheritance-indicator.model",
+      ".inheritance-indicator.error"
+    ],
+    "badges": [
+      ".inheritance-badge",
+      ".inheritance-badge.global",
+      ".inheritance-badge.group",
+      ".inheritance-badge.model",
+      ".inheritance-badge.error",
+      ".inheritance-badge.info",
+      ".override-badge"
+    ],
+    "editorComponents": [
+      ".editor-header",
+      ".editor-title",
+      ".editor-toolbar",
+      ".editor-content",
+      ".parameter-section",
+      ".section-header",
+      ".section-header.expanded",
+      ".section-content",
+      ".section-content.expanded",
+      ".parameter-group",
+      ".parameter-group-title",
+      ".parameter-field",
+      ".parameter-label",
+      ".parameter-input"
+    ],
+    "formElements": [
+      ".parameter-input input[type='text']",
+      ".parameter-input input[type='number']",
+      ".parameter-input select",
+      ".parameter-input input[type='range']",
+      ".toggle-switch",
+      ".toggle-slider",
+      ".value-display",
+      ".reset-btn"
+    ],
+    "validation": [
+      ".validation-message",
+      ".validation-message.error",
+      ".validation-message.warning",
+      ".validation-message.success",
+      ".validation-message.info"
+    ],
+    "tooltips": [".tooltip", ".tooltip::after"],
+    "modals": [
+      ".modal-overlay",
+      ".modal",
+      ".modal.large",
+      ".modal.small",
+      ".modal-header",
+      ".modal-close",
+      ".modal-body",
+      ".modal-form",
+      ".modal-footer",
+      ".modal-enter",
+      ".modal-enter-active",
+      ".modal-exit",
+      ".modal-exit-active"
+    ],
+    "emptyStates": [".empty-state", ".empty-state.illustrated", ".empty-state svg"],
+    "loadingStates": [".loading-spinner", ".loading-overlay", ".skeleton"],
+    "animations": [
+      ".success-animation",
+      ".error-state",
+      ".modalSlideIn",
+      ".successScale",
+      ".shimmer"
+    ]
+  },
+  "responsiveBreakpoints": {
+    "desktop": {
+      "minWidth": "1201px",
+      "layout": "3 columns (280px sidebar + 300px hierarchy + fluid editor)",
+      "panels": ["Sidebar", "Hierarchy", "Editor"]
+    },
+    "tablet": {
+      "minWidth": "768px",
+      "maxWidth": "1200px",
+      "layout": "2 columns (260px sidebar + fluid editor)",
+      "panels": ["Sidebar", "Editor"],
+      "hierarchyHidden": true
+    },
+    "mobile": {
+      "maxWidth": "767px",
+      "layout": "1 column with mobile tabs",
+      "panels": ["Sidebar", "Hierarchy", "Editor"],
+      "features": [
+        "Mobile tab navigation",
+        "Stacked parameter fields",
+        "Full-width buttons",
+        "Touch-friendly interactions"
+      ]
+    },
+    "smallMobile": {
+      "maxWidth": "479px",
+      "layout": "Single column",
+      "features": ["Reduced padding", "Compact tabs", "Smaller card content"]
+    }
+  },
+  "colorScheme": {
+    "inheritanceColors": {
+      "global": {
+        "hex": "#9ca3af",
+        "cssVar": "--inheritance-global",
+        "bgVar": "--inheritance-global-bg",
+        "meaning": "Global default (inherited value)"
+      },
+      "group": {
+        "hex": "#f59e0b",
+        "cssVar": "--inheritance-group",
+        "bgVar": "--inheritance-group-bg",
+        "meaning": "Group-level override"
+      },
+      "model": {
+        "hex": "#10b981",
+        "cssVar": "--inheritance-model",
+        "bgVar": "--inheritance-model-bg",
+        "meaning": "Model-specific override"
+      },
+      "error": {
+        "hex": "#ef4444",
+        "cssVar": "--inheritance-error",
+        "bgVar": "--inheritance-error-bg",
+        "meaning": "Invalid configuration or error state"
+      },
+      "info": {
+        "hex": "#06b6d4",
+        "cssVar": "--inheritance-info",
+        "bgVar": "--inheritance-info-bg",
+        "meaning": "Information message"
+      }
+    },
+    "statusColors": {
+      "active": "#3b82f6",
+      "draft": "#6b7280",
+      "published": "#10b981"
+    }
+  },
+  "animations": {
+    "transitions": [
+      {
+        "name": "modalSlideIn",
+        "duration": "0.3s",
+        "ease": "ease",
+        "properties": ["opacity", "transform"]
+      },
+      {
+        "name": "successScale",
+        "duration": "0.4s",
+        "ease": "ease",
+        "properties": ["transform", "opacity"]
+      },
+      {
+        "name": "spin",
+        "duration": "0.8s",
+        "ease": "linear",
+        "properties": ["transform"]
+      },
+      {
+        "name": "shimmer",
+        "duration": "1.5s",
+        "ease": "ease-in-out",
+        "properties": ["background-position"]
+      }
+    ],
+    "hoverEffects": [
+      "Card lift and shadow increase",
+      "Button background color change",
+      "Input border highlight",
+      "Tree item background highlight"
+    ]
+  },
+  "componentPatterns": {
+    "cardStructure": {
+      "selector": ".preset-card",
+      "variants": [".active", ".disabled", ".dragging"],
+      "hoverEffects": ["translateX(4px)", "border-color change", "shadow increase"]
+    },
+    "treeStructure": {
+      "selector": ".tree-item",
+      "children": ".tree-children",
+      "animation": "max-height + opacity transition (0.3s)"
+    },
+    "parameterField": {
+      "selector": ".parameter-field",
+      "parts": [".parameter-label", ".parameter-input", ".reset-btn"],
+      "responsive": "Stack on mobile, inline on desktop"
+    }
+  },
+  "darkMode": {
+    "supported": true,
+    "adjustments": [
+      "Inheritance backgrounds with higher opacity (0.15)",
+      "Darker shadows for depth",
+      "Lighter text colors for contrast"
+    ]
+  },
+  "printStyles": {
+    "supported": true,
+    "features": [
+      "Hide sidebar and hierarchy panels",
+      "Full-width editor",
+      "Remove toolbars and actions"
+    ]
+  }
+}

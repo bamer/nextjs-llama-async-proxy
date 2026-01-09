@@ -9,6 +9,7 @@ The Presets system has been fully integrated into your Llama Proxy Dashboard.
 ### Backend (Server-side)
 
 **File: `/server/handlers/presets.js`** (456 lines)
+
 - Complete implementation of all preset operations
 - 10 Socket.IO event handlers
 - INI file parsing and generation
@@ -17,17 +18,20 @@ The Presets system has been fully integrated into your Llama Proxy Dashboard.
 - Automatic config directory creation
 
 **File: `/server/handlers.js`**
+
 - Added import of `registerPresetsHandlers`
 - Handlers automatically register on client connection
 
 ### Frontend (Client-side)
 
 **Service: `/public/js/services/presets.js`** (207 lines)
+
 - `PresetsService` class for Socket.IO communication
 - Promise-based API for all operations
 - 10 methods matching backend events
 
 **Page: `/public/js/pages/presets.js`** (700+ lines)
+
 - `PresetsController` for page lifecycle
 - `PresetsPage` component for rendering
 - Full event handling via `getEventMap()`
@@ -36,6 +40,7 @@ The Presets system has been fully integrated into your Llama Proxy Dashboard.
 - Download and copy functionality
 
 **Navigation: `/public/js/components/layout/layout.js`**
+
 - Added "⚡ Presets" link to sidebar
 - Updated page title mapping
 - Navigation working for `/presets` route
@@ -43,6 +48,7 @@ The Presets system has been fully integrated into your Llama Proxy Dashboard.
 ### Styling
 
 **File: `/public/css/pages/presets/presets.css`** (230+ lines)
+
 - Responsive grid layout
 - Modal dialog styling
 - Form input styling
@@ -51,6 +57,7 @@ The Presets system has been fully integrated into your Llama Proxy Dashboard.
 - Mobile responsive
 
 **File: `/public/css/main.css`**
+
 - Added import of presets.css
 
 ---
@@ -58,34 +65,41 @@ The Presets system has been fully integrated into your Llama Proxy Dashboard.
 ## 🎯 What Works
 
 ✅ **Creating Presets**
+
 - Click "+ New Preset"
 - Enter preset name
 - INI file created in `/config/` directory
 
 ✅ **Adding Models**
+
 - Select a preset
 - Click "+ Add Model"
 - Enter model configuration
 - Save to preset file
 
 ✅ **Editing Models**
+
 - Click "Edit" on any model
 - Modify configuration
 - Update saved to file
 
 ✅ **Deleting Models**
+
 - Click "Delete" on any model
 - Model removed from preset
 
 ✅ **Deleting Presets**
+
 - Click "×" next to preset name
 - Entire preset file deleted
 
 ✅ **Downloading Presets**
+
 - Click "⬇ Download" button
 - Saves `.ini` file to computer
 
 ✅ **Copy Start Command**
+
 - Click "📋 Copy Command"
 - Command copied to clipboard ready to use
 
@@ -94,19 +108,23 @@ The Presets system has been fully integrated into your Llama Proxy Dashboard.
 ## 🚀 How to Use
 
 ### Step 1: Open the App
+
 ```
 http://localhost:3000
 ```
 
 ### Step 2: Navigate to Presets
+
 Click the "⚡ Presets" link in the left sidebar
 
 ### Step 3: Create Your First Preset
+
 - Click "+ New Preset"
 - Enter a name (e.g., "default")
 - Click "Create"
 
 ### Step 4: Add Models
+
 - Select the preset you just created
 - Click "+ Add Model"
 - Fill in the form:
@@ -120,8 +138,10 @@ Click the "⚡ Presets" link in the left sidebar
 - Click "Add"
 
 ### Step 5: Use the Preset
+
 - Click "📋 Copy Command"
 - Run in terminal:
+
 ```bash
 llama-server --models-preset ./config/default.ini --models-max 4
 ```
@@ -164,6 +184,7 @@ llama-server --models-preset ./config/default.ini --models-max 4
 ### How It Works
 
 1. **Client** sends request with callback:
+
 ```javascript
 socket.emit("presets:list", {}, (response) => {
   if (response.success) {
@@ -175,6 +196,7 @@ socket.emit("presets:list", {}, (response) => {
 ```
 
 2. **Server** receives and processes:
+
 ```javascript
 socket.on("presets:list", (data, ack) => {
   try {
@@ -188,18 +210,18 @@ socket.on("presets:list", (data, ack) => {
 
 ### All 10 Events
 
-| Event | Purpose |
-|-------|---------|
-| `presets:list` | Get all presets |
-| `presets:read` | Read preset content |
-| `presets:create` | Create new preset |
-| `presets:delete` | Delete preset |
-| `presets:save` | Save preset with config |
-| `presets:get-models` | Get models in preset |
-| `presets:add-model` | Add model to preset |
-| `presets:update-model` | Update model config |
-| `presets:remove-model` | Remove model |
-| `presets:validate` | Validate INI syntax |
+| Event                  | Purpose                 |
+| ---------------------- | ----------------------- |
+| `presets:list`         | Get all presets         |
+| `presets:read`         | Read preset content     |
+| `presets:create`       | Create new preset       |
+| `presets:delete`       | Delete preset           |
+| `presets:save`         | Save preset with config |
+| `presets:get-models`   | Get models in preset    |
+| `presets:add-model`    | Add model to preset     |
+| `presets:update-model` | Update model config     |
+| `presets:remove-model` | Remove model            |
+| `presets:validate`     | Validate INI syntax     |
 
 ---
 
@@ -269,13 +291,14 @@ If the presets page appears empty:
    - Check Network tab for failed requests
 
 2. **Check Server Logs**:
+
    ```bash
    tail -f /tmp/server.log | grep -E "presets|Error"
    ```
 
 3. **Reload Page**: Ctrl+R (or Cmd+R on Mac)
 
-4. **Create a Preset**: 
+4. **Create a Preset**:
    - Click "+ New Preset"
    - Enter name and click "Create"
    - Page should update to show the new preset
@@ -314,7 +337,7 @@ If the presets page appears empty:
 ## ✅ Status
 
 - ✅ Backend: Fully implemented
-- ✅ Frontend: Fully implemented  
+- ✅ Frontend: Fully implemented
 - ✅ Styling: Fully implemented
 - ✅ Navigation: Fully integrated
 - ✅ Socket.IO: Fully connected

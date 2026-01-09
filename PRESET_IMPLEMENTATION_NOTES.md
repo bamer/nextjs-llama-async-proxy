@@ -46,14 +46,16 @@ Project Root
 **Key Functions:**
 
 1. **parseIni(content)** - Parses INI file content into JS object
+
    ```javascript
-   parseIni("[model]\nkey=value") 
+   parseIni("[model]\nkey=value");
    // → { model: { key: "value" } }
    ```
 
 2. **generateIni(config)** - Converts config object to INI format
+
    ```javascript
-   generateIni({ model: { key: "value" } })
+   generateIni({ model: { key: "value" } });
    // → "[model]\nkey=value\n"
    ```
 
@@ -73,17 +75,17 @@ Project Root
 // Constructor
 new PresetsService(socket)
 
-// Methods
-.listPresets()               // → Array<preset>
-.readPreset(filename)        // → { filename, content, parsed }
-.savePreset(filename, config) // → { filename, path }
-.createPreset(filename)      // → { filename, path }
-.deletePreset(filename)      // → { filename }
-.validateIni(content)        // → { valid, errors }
-.getModelsFromPreset(filename) // → { modelName: config }
-.addModel(filename, name, config) // → { filename, modelName, config }
-.updateModel(filename, name, config) // → { filename, modelName, config }
-.removeModel(filename, name)  // → { filename, modelName }
+  // Methods
+  .listPresets() // → Array<preset>
+  .readPreset(filename) // → { filename, content, parsed }
+  .savePreset(filename, config) // → { filename, path }
+  .createPreset(filename) // → { filename, path }
+  .deletePreset(filename) // → { filename }
+  .validateIni(content) // → { valid, errors }
+  .getModelsFromPreset(filename) // → { modelName: config }
+  .addModel(filename, name, config) // → { filename, modelName, config }
+  .updateModel(filename, name, config) // → { filename, modelName, config }
+  .removeModel(filename, name); // → { filename, modelName }
 ```
 
 ## Socket.IO Events
@@ -91,37 +93,40 @@ new PresetsService(socket)
 ### Event Signature
 
 ```javascript
-socket.emit("presets:operation", data, callback)
+socket.emit("presets:operation", data, callback);
 
 // Server responds via callback
 callback({
-  success: true/false,
-  data: { /* operation result */ },
+  success: true / false,
+  data: {
+    /* operation result */
+  },
   error: { message: "error text" },
-  timestamp: "2025-01-08T..." 
-})
+  timestamp: "2025-01-08T...",
+});
 ```
 
 ### All Events
 
-| Event | Input | Output |
-|-------|-------|--------|
-| `presets:list` | `{}` | `{ presets: [{ name, path, file }] }` |
-| `presets:read` | `{ filename }` | `{ filename, content, parsed }` |
-| `presets:save` | `{ filename, config }` | `{ filename, path }` |
-| `presets:create` | `{ filename, description? }` | `{ filename, path }` |
-| `presets:delete` | `{ filename }` | `{ filename }` |
-| `presets:validate` | `{ content }` | `{ valid, errors[] }` |
-| `presets:get-models` | `{ filename }` | `{ models: { name: config } }` |
-| `presets:add-model` | `{ filename, modelName, config }` | `{ filename, modelName, config }` |
-| `presets:update-model` | `{ filename, modelName, config }` | `{ filename, modelName, config }` |
-| `presets:remove-model` | `{ filename, modelName }` | `{ filename, modelName }` |
+| Event                  | Input                             | Output                                |
+| ---------------------- | --------------------------------- | ------------------------------------- |
+| `presets:list`         | `{}`                              | `{ presets: [{ name, path, file }] }` |
+| `presets:read`         | `{ filename }`                    | `{ filename, content, parsed }`       |
+| `presets:save`         | `{ filename, config }`            | `{ filename, path }`                  |
+| `presets:create`       | `{ filename, description? }`      | `{ filename, path }`                  |
+| `presets:delete`       | `{ filename }`                    | `{ filename }`                        |
+| `presets:validate`     | `{ content }`                     | `{ valid, errors[] }`                 |
+| `presets:get-models`   | `{ filename }`                    | `{ models: { name: config } }`        |
+| `presets:add-model`    | `{ filename, modelName, config }` | `{ filename, modelName, config }`     |
+| `presets:update-model` | `{ filename, modelName, config }` | `{ filename, modelName, config }`     |
+| `presets:remove-model` | `{ filename, modelName }`         | `{ filename, modelName }`             |
 
 ## Data Transformations
 
 ### Model Config Object ↔ INI Section
 
 **JavaScript Object (camelCase):**
+
 ```javascript
 {
   model: "./models/model.gguf",
@@ -133,6 +138,7 @@ callback({
 ```
 
 **INI Section (kebab-case):**
+
 ```ini
 [model-name]
 model = ./models/model.gguf
@@ -143,6 +149,7 @@ tensor-split = 0.5,0.5
 ```
 
 **Conversion Logic:**
+
 - Backend handles camelCase ↔ kebab-case conversion
 - Frontend uses camelCase internally
 - Service methods handle translation
@@ -186,6 +193,7 @@ socket.on("presets:read", (data, callback) => {
 ```
 
 Response:
+
 ```javascript
 {
   success: false,
@@ -270,12 +278,13 @@ class PresetSelector extends Component {
   }
 
   handleSelectPreset(presetName) {
-    window.presetsService.readPreset(presetName)
-      .then(data => {
-        const models = this.state.presets.find(p => p.name === presetName);
+    window.presetsService
+      .readPreset(presetName)
+      .then((data) => {
+        const models = this.state.presets.find((p) => p.name === presetName);
         // Update UI...
       })
-      .catch(error => showNotification(error.message, "error"));
+      .catch((error) => showNotification(error.message, "error"));
   }
 }
 ```
@@ -295,6 +304,7 @@ console.log("[DEBUG] PresetsService: addModel", { filename, modelName });
 ```
 
 View logs in:
+
 - **Browser Console**: Frontend debug logs
 - **Server Console**: Backend debug logs and errors
 

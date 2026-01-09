@@ -18,6 +18,7 @@ Successfully implemented a **state-of-the-art hierarchical preset system** for t
 #### Default Parameters Supported
 
 All llama.cpp router mode parameters including:
+
 - Context & Memory: `ctx-size`, `ctx-checkpoints`
 - GPU Offloading: `n-gpu-layers`, `split-mode`, `tensor-split`, `main-gpu`
 - Performance: `threads`, `batch`, `ubatch`, `threads-http`
@@ -42,12 +43,14 @@ All llama.cpp router mode parameters including:
 #### UI Component Updates (`public/js/pages/presets.js`)
 
 **State additions:**
+
 - `showDefaultsModal` - Controls defaults editing modal visibility
 - `defaultsForm` - Form data for editing defaults
 - `defaults` - Loaded default parameters
 - `isDefaultsPreset` - Flag indicating if showing defaults view
 
 **New render methods:**
+
 - **`renderDefaultsPresetDetail()`** - Special view for defaults (marked as `* Global Defaults`)
 - **`renderDefaultsView()`** - Displays defaults categorized by type
 - **`renderDefaultsModal()`** - Modal form for editing defaults with fields:
@@ -60,6 +63,7 @@ All llama.cpp router mode parameters including:
   - Main GPU
 
 **Event handlers:**
+
 - **`handleEditDefaults()`** - Opens defaults modal with current values
 - **`handleSaveDefaults()`** - Updates defaults via service and reloads preset
 - **Updated `selectPreset()`** - Now loads defaults along with models
@@ -176,18 +180,21 @@ temp = 0.3
 ✅ **Llama.cpp Native** - Uses standard `.ini` format with `[*]` section  
 ✅ **Type Safety** - Proper parsing of integers, floats, booleans  
 ✅ **Comprehensive** - Supports 40+ llama.cpp router parameters  
-✅ **State-of-Art** - Matches Kubernetes, Terraform, CloudFormation patterns  
+✅ **State-of-Art** - Matches Kubernetes, Terraform, CloudFormation patterns
 
 ## Files Modified
 
 ### Backend
+
 - `/server/handlers/presets.js` - Added `getDefaultParameters()`, updated `iniSectionToModel()`, new handlers for defaults
 
 ### Frontend
+
 - `/public/js/services/presets.js` - Added `getDefaults()` and `updateDefaults()` methods
 - `/public/js/pages/presets.js` - Added UI for defaults display and editing
 
 ### Documentation
+
 - `/PRESET_DEFAULTS_IMPLEMENTATION.md` - Technical documentation
 - `/test-presets-defaults.js` - Comprehensive test suite
 
@@ -304,6 +311,7 @@ python test-presets-ui.py
 ## Conclusion
 
 The implementation provides a production-ready hierarchical preset system that:
+
 - ✅ Follows state-of-art configuration management patterns
 - ✅ Fully supports llama.cpp router mode
 - ✅ Is well-tested and documented

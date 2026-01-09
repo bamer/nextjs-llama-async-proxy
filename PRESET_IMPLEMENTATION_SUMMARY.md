@@ -53,6 +53,7 @@ Frontend Promise Callback
 ## 🚀 Available Operations
 
 ### Preset Management
+
 - `listPresets()` - List all INI files
 - `readPreset(filename)` - Read preset content
 - `createPreset(filename)` - Create new preset
@@ -60,12 +61,14 @@ Frontend Promise Callback
 - `savePreset(filename, config)` - Save full config
 
 ### Model Management
+
 - `getModelsFromPreset(filename)` - Get all models
 - `addModel(filename, modelName, config)` - Add/update model
 - `updateModel(filename, modelName, config)` - Update model
 - `removeModel(filename, modelName)` - Remove model
 
 ### Utilities
+
 - `validateIni(content)` - Validate INI syntax
 
 ## 📋 Socket.IO Events
@@ -119,20 +122,20 @@ class MyController {
     try {
       // List all presets
       const presets = await this.presetsService.listPresets();
-      
+
       // Get models from a preset
       const models = await this.presetsService.getModelsFromPreset("default");
-      
+
       // Create new preset with a model
       await this.presetsService.createPreset("my-preset");
-      
+
       await this.presetsService.addModel("my-preset", "gemma-4b", {
         model: "./models/gemma-4b.gguf",
         ctxSize: 8192,
         temperature: 0.7,
-        nGpuLayers: 99
+        nGpuLayers: 99,
       });
-      
+
       showNotification("Preset created successfully", "success");
     } catch (error) {
       showNotification(`Error: ${error.message}`, "error");
@@ -146,12 +149,14 @@ class MyController {
 ### For Developers Adding UI
 
 1. **Import the service**
+
    ```javascript
    import PresetsService from "./services/presets.js";
    const presetsService = new PresetsService(socket);
    ```
 
 2. **Use in your component/controller**
+
    ```javascript
    const presets = await presetsService.listPresets();
    const models = await presetsService.getModelsFromPreset(name);
@@ -207,6 +212,7 @@ tensor-split = 0.5,0.5
 ## 🔍 Debug Logging
 
 **Backend Logs** (server console):
+
 ```
 [DEBUG] Registering preset handlers
 [DEBUG] Event: presets:list
@@ -215,6 +221,7 @@ tensor-split = 0.5,0.5
 ```
 
 **Frontend Logs** (browser console):
+
 ```
 [DEBUG] PresetsService: listPresets
 [DEBUG] PresetsService: addModel { filename: "default", modelName: "gemma" }
@@ -287,17 +294,18 @@ tensor-split = 0.5,0.5
 
 ## 🐛 Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| Socket events not firing | Verify socket connected, check event names |
-| Config dir not created | Check file permissions, manual mkdir if needed |
-| INI parse errors | Use `validateIni()` before saving |
-| Model config mismatch | Check parameter name conversion (camelCase) |
-| File not found errors | Ensure preset exists with `.ini` extension |
+| Issue                    | Solution                                       |
+| ------------------------ | ---------------------------------------------- |
+| Socket events not firing | Verify socket connected, check event names     |
+| Config dir not created   | Check file permissions, manual mkdir if needed |
+| INI parse errors         | Use `validateIni()` before saving              |
+| Model config mismatch    | Check parameter name conversion (camelCase)    |
+| File not found errors    | Ensure preset exists with `.ini` extension     |
 
 ## 📞 Support
 
 Check console logs:
+
 - **Browser console**: Frontend socket/service logs
 - **Server console**: Backend handler logs
 - Both prefixed with `[DEBUG]` for quick identification

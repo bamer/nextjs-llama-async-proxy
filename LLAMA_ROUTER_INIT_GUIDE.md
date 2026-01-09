@@ -9,6 +9,7 @@ This guide explains how to properly integrate an initialization file for llama-r
 ## What is Llama Router Mode?
 
 **Router Mode** is a feature in llama.cpp that:
+
 - Runs a **single server process** managing multiple models
 - **Auto-discovers** models from a directory
 - Loads/unloads models **on-demand** (LRU eviction when max reached)
@@ -17,24 +18,26 @@ This guide explains how to properly integrate an initialization file for llama-r
 
 ### Key Benefits
 
-| Feature | Router Mode | API Mode |
-|---------|-----------|----------|
-| Multiple Models | ✓ Single server | ✗ Multiple servers |
-| Dynamic Loading | ✓ On-demand | ✗ Restart required |
-| Memory Efficient | ✓ LRU eviction | ✗ All loaded |
-| Port Management | ✓ Single port | ✗ Multiple ports |
+| Feature          | Router Mode     | API Mode           |
+| ---------------- | --------------- | ------------------ |
+| Multiple Models  | ✓ Single server | ✗ Multiple servers |
+| Dynamic Loading  | ✓ On-demand     | ✗ Restart required |
+| Memory Efficient | ✓ LRU eviction  | ✗ All loaded       |
+| Port Management  | ✓ Single port   | ✗ Multiple ports   |
 
 ---
 
 ## Current Architecture
 
 Your project uses:
+
 - **Backend**: Node.js + Express + Socket.IO
 - **Configuration**: `llama-server-config.json`
 - **Router Module**: `/server/handlers/llama-router/`
 - **Entry Point**: `server.js`
 
 ### Current Config Structure
+
 ```json
 {
   "host": "localhost",
@@ -64,17 +67,18 @@ llama-server \
   --port 8134
 ```
 
-| Flag | Purpose | Default |
-|------|---------|---------|
-| `--models-dir` | Directory with GGUF files | `~/.cache/llama.cpp` |
-| `--models-max` | Max concurrent models | 4 |
-| `-c` | Context size per model | 512 |
-| `-ngl` | GPU layers to offload | 0 |
-| `--np` | Parallel processing slots | 1 |
-| `--threads-http` | HTTP threads for requests | 1 |
-| `--port` | Server port | 8080 |
+| Flag             | Purpose                   | Default              |
+| ---------------- | ------------------------- | -------------------- |
+| `--models-dir`   | Directory with GGUF files | `~/.cache/llama.cpp` |
+| `--models-max`   | Max concurrent models     | 4                    |
+| `-c`             | Context size per model    | 512                  |
+| `-ngl`           | GPU layers to offload     | 0                    |
+| `--np`           | Parallel processing slots | 1                    |
+| `--threads-http` | HTTP threads for requests | 1                    |
+| `--port`         | Server port               | 8080                 |
 
 ### Example Full Command
+
 ```bash
 llama-server \
   --models-dir ./models \
@@ -137,7 +141,7 @@ export const llamaRouterConfig = {
     port: 8134,
     host: "localhost",
   },
-  
+
   models: {
     directory: "/media/bamer/crucial MX300/llm/llama/models",
     maxLoaded: 4,
@@ -148,7 +152,7 @@ export const llamaRouterConfig = {
       ttl: 3600000, // 1 hour
     },
   },
-  
+
   performance: {
     contextSize: 8192,
     batchSize: 512,
@@ -157,13 +161,13 @@ export const llamaRouterConfig = {
     httpThreads: 4,
     threads: -1,
   },
-  
+
   logging: {
     level: "debug",
     enableDebugOutput: true,
     logFile: "./logs/router.log",
   },
-  
+
   startup: {
     autoStart: true,
     timeout: 30000,
@@ -207,22 +211,20 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * Load router configuration from init file
  */
 export function loadRouterConfig(initFilePath = null) {
-  const configPath = 
-    initFilePath || 
-    path.join(process.cwd(), "llama-router.init.json");
-  
+  const configPath = initFilePath || path.join(process.cwd(), "llama-router.init.json");
+
   console.log("[ROUTER-INIT] Loading config from:", configPath);
-  
+
   if (!fs.existsSync(configPath)) {
     throw new Error(`Router init file not found: ${configPath}`);
   }
-  
+
   const raw = fs.readFileSync(configPath, "utf-8");
   const config = JSON.parse(raw);
-  
+
   validateRouterConfig(config);
   console.log("[ROUTER-INIT] Configuration loaded and validated");
-  
+
   return config;
 }
 
@@ -234,21 +236,21 @@ export function validateRouterConfig(config) {
   if (!config.router?.port) {
     throw new Error("Missing router.port in configuration");
   }
-  
+
   if (!config.models?.directory) {
     throw new Error("Missing models.directory in configuration");
   }
-  
+
   // Validate paths exist
   if (!fs.existsSync(config.models.directory)) {
     throw new Error(`Models directory not found: ${config.models.directory}`);
   }
-  
+
   // Validate performance settings
   if (config.performance?.contextSize < 128) {
     throw new Error("Context size must be at least 128");
   }
-  
+
   return true;
 }
 
@@ -257,21 +259,30 @@ export function validateRouterConfig(config) {
  */
 export function buildRouterArgs(config) {
   const args = [
-    "--models-dir", config.models.directory,
-    "--models-max", String(config.models.maxLoaded || 4),
-    "-c", String(config.performance.contextSize || 8192),
-    "-b", String(config.performance.batchSize || 512),
-    "-ngl", String(config.performance.gpuLayers || -1),
-    "--np", String(config.performance.parallelSlots || 4),
-    "--threads-http", String(config.performance.httpThreads || 4),
-    "-t", String(config.performance.threads || -1),
-    "--port", String(config.router.port || 8134),
+    "--models-dir",
+    config.models.directory,
+    "--models-max",
+    String(config.models.maxLoaded || 4),
+    "-c",
+    String(config.performance.contextSize || 8192),
+    "-b",
+    String(config.performance.batchSize || 512),
+    "-ngl",
+    String(config.performance.gpuLayers || -1),
+    "--np",
+    String(config.performance.parallelSlots || 4),
+    "--threads-http",
+    String(config.performance.httpThreads || 4),
+    "-t",
+    String(config.performance.threads || -1),
+    "--port",
+    String(config.router.port || 8134),
   ];
-  
+
   if (config.logging?.enableDebugOutput) {
     args.push("--verbose");
   }
-  
+
   return args;
 }
 
@@ -301,11 +312,7 @@ Modify `/server/handlers/llama-router/start.js`:
 
 ```javascript
 // Add to imports
-import {
-  loadRouterConfig,
-  buildRouterArgs,
-  getStartupOptions,
-} from "./init.js";
+import { loadRouterConfig, buildRouterArgs, getStartupOptions } from "./init.js";
 
 // In startLlamaServerRouter function
 export async function startLlamaServerRouter(config = null) {
@@ -315,12 +322,12 @@ export async function startLlamaServerRouter(config = null) {
     if (!routerConfig) {
       routerConfig = loadRouterConfig();
     }
-    
+
     const args = buildRouterArgs(routerConfig);
     const startupOpts = getStartupOptions(routerConfig);
-    
+
     console.log("[LLAMA] Starting router with args:", args);
-    
+
     // ... rest of startup logic using args and startupOpts
   } catch (error) {
     console.error("[LLAMA-INIT] Failed to start:", error.message);
@@ -339,11 +346,7 @@ Create `/server/handlers/router-init.js`:
  * Socket.IO events for init operations
  */
 
-import {
-  loadRouterConfig,
-  validateRouterConfig,
-  buildRouterArgs,
-} from "./llama-router/init.js";
+import { loadRouterConfig, validateRouterConfig, buildRouterArgs } from "./llama-router/init.js";
 
 export function registerRouterInitHandlers(socket, io) {
   /**
@@ -363,7 +366,7 @@ export function registerRouterInitHandlers(socket, io) {
       });
     }
   });
-  
+
   /**
    * Validate router configuration
    */
@@ -382,7 +385,7 @@ export function registerRouterInitHandlers(socket, io) {
       });
     }
   });
-  
+
   /**
    * Get router configuration status
    */
@@ -427,11 +430,11 @@ class RouterInitStatus extends Component {
       error: null,
     };
   }
-  
+
   willMount() {
     this.loadInitStatus();
   }
-  
+
   loadInitStatus() {
     stateManager.request("router:init:status", {}, (response) => {
       if (response.success) {
@@ -447,27 +450,25 @@ class RouterInitStatus extends Component {
       }
     });
   }
-  
+
   render() {
     if (this.state.loading) {
       return Component.h("div", { className: "loading" }, "Loading router config...");
     }
-    
+
     if (this.state.error) {
-      return Component.h(
-        "div",
-        { className: "error" },
-        "Error: " + this.state.error
-      );
+      return Component.h("div", { className: "error" }, "Error: " + this.state.error);
     }
-    
+
     const config = this.state.config;
-    
+
     return Component.h(
       "div",
       { className: "router-init-status" },
       Component.h("h3", {}, "Router Configuration"),
-      Component.h("dl", {},
+      Component.h(
+        "dl",
+        {},
         Component.h("dt", {}, "Port:"),
         Component.h("dd", {}, config.port),
         Component.h("dt", {}, "Models Directory:"),
@@ -477,7 +478,7 @@ class RouterInitStatus extends Component {
         Component.h("dt", {}, "Context Size:"),
         Component.h("dd", {}, config.contextSize),
         Component.h("dt", {}, "Auto-Start:"),
-        Component.h("dd", {}, config.autoStart ? "Yes" : "No"),
+        Component.h("dd", {}, config.autoStart ? "Yes" : "No")
       )
     );
   }
@@ -512,40 +513,40 @@ class RouterInitStatus extends Component {
 async function initializeRouter() {
   try {
     console.log("[INIT] Starting router initialization...");
-    
+
     // Step 1: Load config
     const config = loadRouterConfig();
     console.log("[INIT] Configuration loaded");
-    
+
     // Step 2: Validate
     validateRouterConfig(config);
     console.log("[INIT] Configuration validated");
-    
+
     // Step 3: Check directory
     const modelsDir = config.models.directory;
     if (!fs.existsSync(modelsDir)) {
       throw new Error(`Models directory not found: ${modelsDir}`);
     }
     console.log("[INIT] Models directory accessible");
-    
+
     // Step 4: Start router (if configured)
     if (config.startup.autoStart) {
       const startOpts = getStartupOptions(config);
       await startLlamaServerRouter(config);
       console.log("[INIT] Router started successfully");
     }
-    
+
     // Step 5: Wait for readiness
     await waitForRouterReady(config.router.port, startOpts.timeout);
     console.log("[INIT] Router is ready");
-    
+
     // Step 6: Preload models
     const preload = getPreloadModels(config);
     for (const model of preload) {
       await loadModel(model);
       console.log("[INIT] Preloaded:", model);
     }
-    
+
     return { success: true, config };
   } catch (error) {
     console.error("[INIT] Initialization failed:", error);
@@ -607,7 +608,7 @@ export function loadRouterConfig(initFilePath = null) {
       // ... etc
     };
   }
-  
+
   // Fall back to file
   // ...
 }
@@ -618,27 +619,32 @@ export function loadRouterConfig(initFilePath = null) {
 ## Best Practices
 
 ### 1. Configuration Validation
+
 - Always validate paths exist
 - Check port availability before startup
 - Validate performance settings are reasonable
 
 ### 2. Error Handling
+
 - Wrap init in try-catch
 - Provide clear error messages
 - Log initialization steps with `[ROUTER-INIT]` prefix
 
 ### 3. Logging
+
 - Use consistent logging format: `[ROUTER-INIT]`
 - Log configuration values (sanitized)
 - Log startup timing information
 
 ### 4. Performance Tuning
+
 - `--np`: Match CPU cores for best throughput
 - `--threads-http`: Set to 2-4 for concurrent requests
 - `-ngl`: Maximum for your GPU memory
 - `--models-max`: Based on VRAM available
 
 ### 5. Memory Management
+
 - Monitor LRU eviction with debug logs
 - Preload frequently-used models
 - Monitor `/metrics` for memory trends
@@ -677,13 +683,13 @@ If upgrading from API mode:
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| Port already in use | Check `lsof -i :8134` and update port in config |
+| Issue                 | Solution                                                        |
+| --------------------- | --------------------------------------------------------------- |
+| Port already in use   | Check `lsof -i :8134` and update port in config                 |
 | Models not discovered | Verify `models.directory` is correct and contains `.gguf` files |
-| Memory issues | Reduce `models.maxLoaded` or increase VRAM |
-| Slow startup | Reduce preload models or increase startup timeout |
-| Request failures | Check `--np` and `--threads-http` values |
+| Memory issues         | Reduce `models.maxLoaded` or increase VRAM                      |
+| Slow startup          | Reduce preload models or increase startup timeout               |
+| Request failures      | Check `--np` and `--threads-http` values                        |
 
 ---
 
