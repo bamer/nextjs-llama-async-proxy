@@ -1,10 +1,8 @@
 /**
  * Presets Page - Hierarchical Collapsible Parameter Management
  * Global Defaults → Groups → Models
- * @typedef {import("../services/presets.js").PresetsService} PresetsService
  */
 
-// eslint-disable-next-line no-undef
 class PresetsController {
   constructor(options = {}) {
     this.router = options.router || window.router;
@@ -195,20 +193,7 @@ class PresetsPage extends Component {
     return Component.h(
       "div",
       { className: "presets-header" },
-      Component.h(
-        "div",
-        { className: "header-top" },
-        Component.h("h1", {}, "Model Presets"),
-        Component.h(
-          "button",
-          {
-            className: "btn btn-secondary btn-sm refresh-models-btn",
-            "data-action": "refresh-models",
-            title: "Refresh available models list",
-          },
-          "↻ Refresh Models"
-        )
-      ),
+      Component.h("h1", {}, "Model Presets"),
       Component.h(
         "p",
         { className: "presets-subtitle" },
@@ -261,9 +246,7 @@ class PresetsPage extends Component {
         Component.h(
           "div",
           {
-            className: `preset-item ${
-              this.state.selectedPreset?.name === preset.name ? "active" : ""
-            }`,
+            className: `preset-item ${this.state.selectedPreset?.name === preset.name ? "active" : ""}`,
             "data-action": "select-preset",
             "data-preset-name": preset.name,
           },
@@ -673,7 +656,6 @@ class PresetsPage extends Component {
       "click [data-action=select-preset]": "handleSelectPreset",
       "click [data-action=new-preset]": "handleNewPreset",
       "click [data-action=delete-preset]": "handleDeletePreset",
-      "click [data-action=refresh-models]": "handleRefreshModels",
       "click [data-action=toggle-defaults]": "handleToggleDefaults",
       "click [data-action=toggle-group]": "handleToggleGroup",
       "click [data-action=toggle-model]": "handleToggleModel",
@@ -740,13 +722,14 @@ class PresetsPage extends Component {
 
     const section = el.dataset.section;
     const name = el.dataset.name;
+    const param = el.dataset.param;
 
     // Prevent editing models in groups - they're read-only
     if (section === "model" && name?.includes("/")) {
-      const msg =
-        "Models in groups inherit group parameters. " +
-        "Edit the group or move the model to standalone.";
-      showNotification(msg, "info");
+      showNotification(
+        "Models in groups inherit group parameters. Edit the group or move the model to standalone.",
+        "info"
+      );
       return;
     }
 
@@ -834,29 +817,6 @@ class PresetsPage extends Component {
     });
   }
 
-  handleRefreshModels() {
-    if (!this.state.selectedPreset) {
-      showNotification("Select a preset first", "warning");
-      return;
-    }
-
-    this.setState({ loading: true });
-    this._getService()
-      .getAvailableModels()
-      .then((models) => {
-        this.setState({ availableModels: models, loading: false });
-        showNotification(
-          `Found ${models.length} available models`,
-          "success"
-        );
-      })
-      .catch((error) => {
-        console.error("[PRESETS] Refresh models error:", error);
-        showNotification(`Error: ${error.message}`, "error");
-        this.setState({ loading: false });
-      });
-  }
-
   getModelByFullName(fullName) {
     for (const group of this.state.groups) {
       const model = group.models?.find((m) => `${group.name}/${m.name}` === fullName);
@@ -886,14 +846,10 @@ class PresetsPage extends Component {
     if (!service) return;
 
     try {
-      const [models, defaults, availableModels] = await Promise.all([
+      const [models, defaults] = await Promise.all([
         service.getModelsFromPreset(preset.name),
         service.getDefaults(preset.name),
-        service.getAvailableModels(),
       ]);
-      
-      // Update available models
-      this.setState({ availableModels });
 
       const groups = {};
       const standalone = [];
@@ -932,7 +888,6 @@ class PresetsPage extends Component {
             groups[modelName] = { name: modelName, models: [] };
           }
           // Merge config if present (exclude internal _is_group flag)
-          // eslint-disable-next-line no-unused-vars
           const { _is_group, ...cleanConfig } = modelConfig;
           if (Object.keys(cleanConfig).length > 0) {
             groups[modelName] = { ...groups[modelName], ...cleanConfig };
@@ -1044,7 +999,6 @@ class PresetsPage extends Component {
   }
 
   handleDeleteGroup(e) {
-    e.stopPropagation();
     const el = e.target.closest("[data-action=delete-group]");
     if (!el) return;
     const groupName = el.dataset.groupName;
@@ -1111,14 +1065,9 @@ class PresetsPage extends Component {
             margin-bottom: var(--md);
           ">
             <option value="">-- Select Model --</option>
-            ${models
-              .map(
-                (m) =>
-                  `<option value="${m.path}">${m.name} (${AppUtils.formatBytes(m.size)})</option>`
-              )
-              .join("")}
+            ${models.map((m) => `<option value="${m.path}">${m.name} (${AppUtils.formatBytes(m.size)})</option>`).join("")}
           </select>
-          <input type="text" id="model-name-input" placeholder="Model name (optional)" style="
+          <input type="text" id="model-name-input" placeholder="Model name (optional, uses filename if empty)" style="
             width: 100%;
             padding: var(--sm) var(--md);
             border: 1px solid var(--border-color);
@@ -1187,7 +1136,6 @@ class PresetsPage extends Component {
   }
 
   handleDeleteModel(e) {
-    e.stopPropagation();
     const el = e.target.closest("[data-action=delete-model]");
     if (!el) return;
     const groupName = el.dataset.groupName;
@@ -1210,6 +1158,18 @@ class PresetsPage extends Component {
       .finally(() => {
         this.setState({ loading: false });
       });
+  }
+
+  async loadAvailableModels() {
+    const service = this._getService();
+    if (!service) return;
+
+    try {
+      const models = await service.getAvailableModels();
+      this.setState({ availableModels: models });
+    } catch (error) {
+      console.error("[PRESETS] Failed to load models:", error.message);
+    }
   }
 
   handleSearchParams(e) {
@@ -1248,7 +1208,7 @@ class PresetsPage extends Component {
   }
 
   didMount() {
-    // Available models are loaded with preset data
+    this.loadAvailableModels();
   }
 }
 
