@@ -831,11 +831,14 @@ class PresetsPage extends Component {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
       return `
-                       <div class="param-item-display" data-param-key="${key}">
-                         <div class="param-name"><strong>${param?.label || key}</strong></div>
-                         <input type="text" class="param-value-input" value="${escaped}" data-param-key="${key}" placeholder="Value">
-                       </div>
-                     `;
+                        <div class="param-item-display" data-param-key="${key}">
+                          <div class="param-name"><strong>${param?.label || key}</strong></div>
+                          <div class="param-controls">
+                            <input type="text" class="param-value-input" value="${escaped}" data-param-key="${key}" placeholder="Value">
+                            <button class="btn-param-delete" data-param-key="${key}" title="Delete parameter">×</button>
+                          </div>
+                        </div>
+                      `;
     })
     .join("")}
                </div>
@@ -884,6 +887,16 @@ class PresetsPage extends Component {
       input.onchange = (e) => this._handleParamChange(e.target);
       input.onblur = (e) => this._handleParamChange(e.target);
     });
+
+    // Bind delete buttons
+    const deleteButtons = this._el?.querySelectorAll(".btn-param-delete") || [];
+    deleteButtons.forEach((btn) => {
+      btn.onclick = (e) => {
+        e.preventDefault();
+        const paramKey = btn.dataset.paramKey;
+        this._handleDeleteParam(paramKey);
+      };
+    });
   }
 
   async _handleParamChange(input) {
@@ -922,6 +935,32 @@ class PresetsPage extends Component {
     } catch (error) {
       console.error("[PRESETS] Parameter update error:", error);
       showNotification(`Error updating parameter: ${error.message}`, "error");
+    }
+  }
+
+  async _handleDeleteParam(paramKey) {
+    if (!paramKey || !this.state.selectedPreset) return;
+
+    const param = LLAMA_PARAMS.find((p) => p.iniKey === paramKey);
+    if (!param) return;
+
+    try {
+      // Create new defaults without the parameter to delete
+      const newDefaults = { ...this.state.globalDefaults };
+      delete newDefaults[paramKey];
+
+      // Update the defaults in the preset
+      await this._getService().updateDefaults(this.state.selectedPreset.name, newDefaults);
+
+      // Update state
+      this.state.globalDefaults = newDefaults;
+      showNotification(`Parameter "${param.label}" deleted`, "success");
+
+      // Re-render editor to update the UI
+      this._updateEditor();
+    } catch (error) {
+      console.error("[PRESETS] Delete parameter error:", error);
+      showNotification(`Error deleting parameter: ${error.message}`, "error");
     }
   }
 
