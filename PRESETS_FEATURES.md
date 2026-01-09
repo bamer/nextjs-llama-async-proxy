@@ -7,26 +7,32 @@ Three new interactive features have been added to the Presets page to improve us
 ## 1. Section Expand/Collapse Animations
 
 ### What's New
+
 Smooth slide-down and slide-up animations when expanding and collapsing sections (Defaults, Groups, Models).
 
 ### Implementation
+
 - **Slide Down**: 0.3s ease-out animation when expanding (opacity fade + height expansion)
 - **Slide Up**: 0.3s ease-out animation when collapsing (opacity fade + height contraction)
 - Used for: Global Defaults, Groups, and Model sections
 
 ### Files Modified
+
 - `public/css/pages/presets/presets.css` - Added `@keyframes slideDown` and `slideUp`
 
 ### Browser Support
+
 - Works in all modern browsers (Chrome, Firefox, Safari, Edge)
 - Uses standard CSS animations (no JavaScript required)
 
 ## 2. Parameter Value Copy Buttons
 
 ### What's New
+
 Quick-copy buttons next to parameter values for easy clipboard access.
 
 ### Features
+
 - **Copy Button**: Appears next to each parameter value (in read-only mode)
 - **Hover Effect**: Button turns blue on hover
 - **Copied Feedback**: Changes to green checkmark (✓) for 2 seconds after copying
@@ -34,6 +40,7 @@ Quick-copy buttons next to parameter values for easy clipboard access.
 - **Copy Animation**: Subtle pulse effect when button is clicked
 
 ### How to Use
+
 1. Navigate to Presets page
 2. Select a preset to view its parameters
 3. Click the "Copy" button next to any parameter value
@@ -41,21 +48,25 @@ Quick-copy buttons next to parameter values for easy clipboard access.
 5. Button shows checkmark for 2 seconds, then reverts
 
 ### Implementation
+
 - Uses `navigator.clipboard.writeText()` API
 - State tracking: `copiedParam` tracks which parameter was just copied
 - Auto-reset after 2 seconds for fresh UX
 - Graceful error handling with fallback notification
 
 ### Files Modified
+
 - `public/css/pages/presets/presets.css` - Added `.copy-btn` and `.copied` styles
 - `public/js/pages/presets.js` - Added `handleCopyValue()` method and copy button rendering
 
 ## 3. Parameter Search/Filter
 
 ### What's New
+
 Search box to filter parameters by name or label.
 
 ### Features
+
 - **Real-time Search**: Filters parameters as you type
 - **Search Scope**: Matches against both parameter name and label
 - **Case-Insensitive**: Searches work regardless of case
@@ -63,6 +74,7 @@ Search box to filter parameters by name or label.
 - **Visual Feedback**: Search box only appears when section is expanded
 
 ### How to Use
+
 1. Navigate to Presets page and select a preset
 2. Expand Global Defaults (or any section)
 3. Use the search box at the top: "Filter parameters by name..."
@@ -70,6 +82,7 @@ Search box to filter parameters by name or label.
 5. Click "×" to clear search and show all parameters
 
 ### Examples
+
 - Type "temp" → shows Temperature parameter
 - Type "ctx" → shows Context Size parameter
 - Type "batch" → shows Batch Size and Micro Batch parameters
@@ -78,24 +91,26 @@ Search box to filter parameters by name or label.
 ### Implementation Details
 
 #### State Management
+
 - `parameterFilter`: Stores the current search term
 - Stored in component state and passed to render methods
 
 #### Filtering Logic
+
 ```javascript
 const filteredParams = PRESET_PARAMS.filter(
-  (param) =>
-    param.label.toLowerCase().includes(filter) ||
-    param.key.toLowerCase().includes(filter)
+  (param) => param.label.toLowerCase().includes(filter) || param.key.toLowerCase().includes(filter)
 );
 ```
 
 #### Performance
+
 - Filter computation is O(n) where n = number of parameters
 - Only rerenders matching parameters (efficient for large lists)
 - No debouncing needed due to small parameter set
 
 ### Files Modified
+
 - `public/css/pages/presets/presets.css` - Added `.params-search-wrapper`, `.params-search-input`, `.params-search-clear` styles
 - `public/js/pages/presets.js`:
   - Added `parameterFilter` state variable
@@ -108,6 +123,7 @@ const filteredParams = PRESET_PARAMS.filter(
 ## User Interface
 
 ### Search Box Appearance
+
 ```
 🔍 [Filter parameters by name...] ×
 ```
@@ -116,6 +132,7 @@ When search is empty, the "×" button is hidden.
 When search has text, the "×" button appears to quickly clear.
 
 ### Copy Button Appearance
+
 Normal state: `[Copy]` button (gray)
 Hover state: `[Copy]` button (blue)
 After copy: `[✓]` button (green) for 2 seconds, then resets
@@ -129,11 +146,13 @@ After copy: `[✓]` button (green) for 2 seconds, then resets
 ## Mobile/Responsive Design
 
 ### Search Box
+
 - Full width on mobile
 - Proper touch targets (min 44px height)
 - Works well on tablets
 
 ### Copy Button
+
 - Sized appropriately for touch (minimum 44px height)
 - Inline with value for efficient layout
 - Visible on all screen sizes
@@ -141,11 +160,13 @@ After copy: `[✓]` button (green) for 2 seconds, then resets
 ## Accessibility
 
 ### Search Input
+
 - Proper `placeholder` text for guidance
 - High contrast in both light and dark modes
 - Keyboard accessible (Tab navigation)
 
 ### Copy Button
+
 - `title` attribute for tooltip ("Copy value")
 - Clear visual feedback (color changes)
 - Works with keyboard (Enter key on focused button)
@@ -159,16 +180,17 @@ After copy: `[✓]` button (green) for 2 seconds, then resets
 
 ## Browser Compatibility
 
-| Feature | Chrome | Firefox | Safari | Edge |
-|---------|--------|---------|--------|------|
-| Slide Animations | ✓ | ✓ | ✓ | ✓ |
-| Copy Button | ✓ | ✓ | ✓ | ✓ |
-| Clipboard API | ✓ | ✓ | ✓ (13.1+) | ✓ |
-| CSS Variables | ✓ | ✓ | ✓ | ✓ |
+| Feature          | Chrome | Firefox | Safari    | Edge |
+| ---------------- | ------ | ------- | --------- | ---- |
+| Slide Animations | ✓      | ✓       | ✓         | ✓    |
+| Copy Button      | ✓      | ✓       | ✓         | ✓    |
+| Clipboard API    | ✓      | ✓       | ✓ (13.1+) | ✓    |
+| CSS Variables    | ✓      | ✓       | ✓         | ✓    |
 
 ## Future Enhancements
 
 Potential improvements for future versions:
+
 - **Keyboard Shortcuts**: Ctrl+C on selected value
 - **Bulk Copy**: Export all parameters as JSON
 - **Advanced Search**: Support for regex patterns

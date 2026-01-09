@@ -535,8 +535,7 @@ class PresetsPage extends Component {
     const filter = this.state.parameterFilter.toLowerCase();
     const filteredParams = PRESET_PARAMS.filter(
       (param) =>
-        param.label.toLowerCase().includes(filter) ||
-        param.key.toLowerCase().includes(filter)
+        param.label.toLowerCase().includes(filter) || param.key.toLowerCase().includes(filter)
     );
 
     return Component.h(
@@ -725,7 +724,7 @@ class PresetsPage extends Component {
     // Read values from input elements instead of editingData
     const config = {};
     const inputs = this._el?.querySelectorAll(".param-input") || [];
-    
+
     for (const input of inputs) {
       const paramKey = input.dataset.param;
       const param = PRESET_PARAMS.find((p) => p.key === paramKey);
@@ -819,35 +818,55 @@ class PresetsPage extends Component {
 
       const groups = {};
       const standalone = [];
-      const groupNames = new Set();
+      const groupNamesSet = new Set();
 
+      // First pass: identify all group names from model paths like "group/model"
       for (const modelName of Object.keys(models)) {
         if (modelName === "*") continue;
         const parts = modelName.split("/");
         if (parts.length === 2) {
-          groupNames.add(parts[0]);
+          // This is a model in a group, add group name
+          groupNamesSet.add(parts[0]);
         }
       }
-      for (const name of this._knownGroups) {
-        groupNames.add(name);
+
+      // Second pass: identify group entries (entries with just groupName, no slash)
+      // These are group-level configs or empty groups
+      for (const modelName of Object.keys(models)) {
+        if (modelName === "*") continue;
+        // If entry doesn't have "/" and doesn't look like a model file, it's likely a group
+        if (!modelName.includes("/")) {
+          // Check if it's a known group or if it has children with "/" prefix
+          const hasChildren = Object.keys(models).some((m) => m.startsWith(modelName + "/"));
+          if (hasChildren || this._knownGroups.has(modelName)) {
+            groupNamesSet.add(modelName);
+          }
+        }
       }
 
+      // Third pass: organize into groups and standalone
       for (const [modelName, modelConfig] of Object.entries(models)) {
         if (modelName === "*") continue;
 
         const parts = modelName.split("/");
         if (parts.length === 2) {
+          // Model in group format: group/model
           const groupName = parts[0];
           if (!groups[groupName]) {
             groups[groupName] = { name: groupName, models: [] };
           }
           groups[groupName].models.push({ name: parts[1], ...modelConfig });
-        } else if (groupNames.has(modelName)) {
+        } else if (groupNamesSet.has(modelName)) {
+          // This is a group entry (with or without children)
           if (!groups[modelName]) {
             groups[modelName] = { name: modelName, models: [] };
           }
-          groups[modelName] = { ...groups[modelName], ...modelConfig };
+          // Merge config if present
+          if (Object.keys(modelConfig).length > 0) {
+            groups[modelName] = { ...groups[modelName], ...modelConfig };
+          }
         } else {
+          // Standalone model
           standalone.push({ name: modelName, ...modelConfig });
         }
       }

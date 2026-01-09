@@ -7,9 +7,11 @@ The Presets page has been updated to match the rest of the application's dark an
 ## Changes Made
 
 ### 1. New CSS File
+
 **File**: `public/css/pages/presets/presets.css` (new)
 
 Complete styling for the presets page with:
+
 - Proper color scheme using CSS variables
 - Dark and light mode support
 - Consistent spacing and typography
@@ -18,9 +20,11 @@ Complete styling for the presets page with:
 - Color-coded sections (blue for defaults, yellow for groups, cyan for models)
 
 ### 2. Updated CSS Variables
+
 **File**: `public/css/variables.css`
 
 Added missing variables that are used throughout the app:
+
 - `--text-muted`: Muted text color for secondary information
 - `--bg-hover`: Background color for hover states
 - `--color-primary-rgb`: RGB values for primary color (used in shadow/rgba effects)
@@ -56,15 +60,16 @@ The presets.css file provides styling for all major components:
 ## Features
 
 ### Color Coding by Section Type
+
 - **Defaults** (★): Blue accent - `--primary`
 - **Groups** (📁): Yellow accent - `--warning`
 - **Models** (📄): Cyan accent - `--info`
 
 ### Responsive Design
+
 - **Desktop (1024px+)**: Two-column layout
   - Left sidebar: Preset list (sticky)
   - Right panel: Editor with scrolling
-  
 - **Tablet (768px - 1023px)**: Single column, grid preset list
   - Presets in responsive grid
   - Editor below
@@ -74,7 +79,9 @@ The presets.css file provides styling for all major components:
   - Full-width buttons and inputs
 
 ### Dark Mode Support
+
 All colors automatically adjust when dark mode is enabled via the `html.dark-mode` class:
+
 - Text contrast optimized for readability
 - Background colors use darker shades
 - Borders and separators have appropriate visibility
@@ -83,6 +90,7 @@ All colors automatically adjust when dark mode is enabled via the `html.dark-mod
 ## CSS Variables Used
 
 ### Colors
+
 - `--primary` / `--primary-hover`: Blue accent
 - `--success`, `--warning`, `--danger`, `--info`: Status colors
 - `--text-primary`, `--text-secondary`, `--text-muted`: Text colors
@@ -91,6 +99,7 @@ All colors automatically adjust when dark mode is enabled via the `html.dark-mod
 - `--border-color`: Border and separator colors
 
 ### Spacing
+
 - `--xs` (0.25rem): Smallest spacing
 - `--sm` (0.5rem): Small gaps
 - `--md` (1rem): Medium gaps
@@ -98,6 +107,7 @@ All colors automatically adjust when dark mode is enabled via the `html.dark-mod
 - `--xl` (2rem): Extra large gaps
 
 ### Effects
+
 - `--radius`: Border radius
 - `--shadow`: Box shadow
 - `--transition-fast`: Quick transitions (150ms)
@@ -128,6 +138,7 @@ To verify the theming:
 ## Browser Compatibility
 
 The styling uses only standard CSS features:
+
 - CSS Variables (supported in all modern browsers)
 - CSS Grid and Flexbox
 - Transitions and animations
@@ -136,6 +147,7 @@ The styling uses only standard CSS features:
 ## Consistency
 
 The presets page now matches the styling patterns of:
+
 - Dashboard page: Same color scheme, spacing, transitions
 - Models page: Similar card and list styling
 - Settings page: Consistent form and section styling
@@ -144,6 +156,7 @@ The presets page now matches the styling patterns of:
 ## Future Improvements
 
 Potential enhancements:
+
 - Add animations when collapsing/expanding sections
 - Add keyboard shortcuts for editing
 - Add copy/paste for parameter values

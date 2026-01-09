@@ -3,6 +3,7 @@
 ## Problem
 
 When editing preset values in the presets page, the changes would not persist. After clicking "Save", the values would revert back to their original state. This affected all preset types:
+
 - Default presets (global defaults with `*` model name)
 - Group presets
 - Standalone model presets
@@ -44,7 +45,7 @@ handleSaveEdit() {
   // Read values from input elements instead of editingData
   const config = {};
   const inputs = this._el?.querySelectorAll(".param-input") || [];
-  
+
   for (const input of inputs) {
     const paramKey = input.dataset.param;
     const param = PRESET_PARAMS.find((p) => p.key === paramKey);
@@ -95,6 +96,7 @@ All tests pass ✓
 ## Verification
 
 The fix has been tested and verified to:
+
 - ✓ Read values from input DOM elements
 - ✓ Convert string values to correct types (number, string)
 - ✓ Handle edge cases (empty values, NaN)

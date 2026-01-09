@@ -3,6 +3,7 @@
 ## Visual Layout
 
 ### Desktop View (2-Column Layout)
+
 ```
 ┌─ Presets Page ─────────────────────────────────────────┐
 │                                                         │
@@ -34,6 +35,7 @@
 ### 1. Search/Filter Example
 
 **Type "temp" in search box:**
+
 ```
 Global Defaults
 🔍 [temp]                                    ×
@@ -42,6 +44,7 @@ Temperature       [0.7]  [Copy]
 ```
 
 **Type "batch" in search box:**
+
 ```
 Global Defaults
 🔍 [batch]                                   ×
@@ -51,9 +54,10 @@ Micro Batch       [512]  [Copy]
 ```
 
 **Clear search (click ×):**
+
 ```
 Global Defaults
-🔍 []                                        
+🔍 []
 
 All parameters shown again
 ```
@@ -63,12 +67,14 @@ All parameters shown again
 ### 2. Copy Button Example
 
 **Normal State:**
+
 ```
 Context Size      [2048]  [Copy]
                                   ↑ Click to copy
 ```
 
 **After Click (2 seconds):**
+
 ```
 Context Size      [2048]  [✓]
                             ↑ Success feedback
@@ -76,6 +82,7 @@ Context Size      [2048]  [✓]
 ```
 
 **Toast Notification:**
+
 ```
 ✓ Copied: 2048
 ```
@@ -85,17 +92,20 @@ Context Size      [2048]  [✓]
 ### 3. Expand/Collapse Animation
 
 **Collapsed (Click to Expand):**
+
 ```
 ▶ 📁 gaming (1 model)
 ```
 
 **Expanding (Smooth slide-down, 0.3s):**
+
 ```
 ▼ 📁 gaming (1 model)
   [Content sliding in...]
 ```
 
 **Expanded:**
+
 ```
 ▼ 📁 gaming (1 model)
   📄 model-name
@@ -151,18 +161,19 @@ Dark Gray (#6b7280)   - Muted text
 
 ## Keyboard Navigation
 
-| Key | Action |
-|-----|--------|
-| `Tab` | Navigate between elements |
-| `Enter` | Click focused button |
-| `Escape` | (Future: Close modals) |
-| `Ctrl+C` | (Future: Copy value) |
+| Key      | Action                    |
+| -------- | ------------------------- |
+| `Tab`    | Navigate between elements |
+| `Enter`  | Click focused button      |
+| `Escape` | (Future: Close modals)    |
+| `Ctrl+C` | (Future: Copy value)      |
 
 ---
 
 ## Touch Targets (Mobile)
 
 All interactive elements have minimum 44px height:
+
 - ✓ Copy buttons
 - ✓ Search input
 - ✓ Clear button
@@ -173,17 +184,18 @@ All interactive elements have minimum 44px height:
 
 ## Responsive Breakpoints
 
-| Width | Layout | Changes |
-|-------|--------|---------|
-| 1024px+ | 2-Column | Sidebar + Editor |
-| 768-1024px | 1-Column Grid | Presets in responsive grid |
-| <768px | 1-Column Stack | All vertical, full-width |
+| Width      | Layout         | Changes                    |
+| ---------- | -------------- | -------------------------- |
+| 1024px+    | 2-Column       | Sidebar + Editor           |
+| 768-1024px | 1-Column Grid  | Presets in responsive grid |
+| <768px     | 1-Column Stack | All vertical, full-width   |
 
 ---
 
 ## State Management
 
 ### Component State
+
 ```javascript
 {
   // Basic state
@@ -192,18 +204,18 @@ All interactive elements have minimum 44px height:
   globalDefaults: {},
   groups: [],
   standaloneModels: [],
-  
+
   // Expanded/Collapsed
   expandedDefaults: true,
   expandedGroups: {},
   expandedModels: {},
-  
+
   // Editing
   editingDefaults: false,
   editingGroup: null,
   editingModel: null,
   editingData: null,
-  
+
   // NEW: Search & Copy
   parameterFilter: "",        // ← Search filter
   copiedParam: null,          // ← Tracks copied parameter
@@ -214,31 +226,34 @@ All interactive elements have minimum 44px height:
 
 ## Event Handlers
 
-| Event | Handler | Action |
-|-------|---------|--------|
-| `input [data-action=search-params]` | `handleSearchParams()` | Update filter state |
-| `click [data-action=clear-search]` | `handleClearSearch()` | Clear search |
-| `click [data-action=copy-value]` | `handleCopyValue()` | Copy to clipboard |
-| `click [data-action=toggle-defaults]` | `handleToggleDefaults()` | Expand/collapse |
-| `click [data-action=start-edit]` | `handleStartEdit()` | Enter edit mode |
-| `click [data-action=save-edit]` | `handleSaveEdit()` | Save changes |
+| Event                                 | Handler                  | Action              |
+| ------------------------------------- | ------------------------ | ------------------- |
+| `input [data-action=search-params]`   | `handleSearchParams()`   | Update filter state |
+| `click [data-action=clear-search]`    | `handleClearSearch()`    | Clear search        |
+| `click [data-action=copy-value]`      | `handleCopyValue()`      | Copy to clipboard   |
+| `click [data-action=toggle-defaults]` | `handleToggleDefaults()` | Expand/collapse     |
+| `click [data-action=start-edit]`      | `handleStartEdit()`      | Enter edit mode     |
+| `click [data-action=save-edit]`       | `handleSaveEdit()`       | Save changes        |
 
 ---
 
 ## CSS Classes Reference
 
 ### Layout
+
 - `.presets-page` - Main container
 - `.presets-container` - Two-column grid
 - `.presets-list` - Sidebar
 - `.presets-editor` - Main editor area
 
 ### Sections
+
 - `.collapsible-section` - Expandable section
 - `.section-header` - Section title bar
 - `.section-content` - Section content (animated)
 
 ### Parameters
+
 - `.params-list` - List of parameters
 - `.param-item` - Single parameter
 - `.param-label` - Parameter name
@@ -247,11 +262,13 @@ All interactive elements have minimum 44px height:
 - `.param-input` - Parameter input (edit mode)
 
 ### Search
+
 - `.params-search-wrapper` - Search box container
 - `.params-search-input` - Search input field
 - `.params-search-clear` - Clear button
 
 ### Copy
+
 - `.copy-btn` - Copy button
 - `.copied` - Button in copied state (green)
 
@@ -260,11 +277,13 @@ All interactive elements have minimum 44px height:
 ## Animations
 
 ### Expand/Collapse
+
 - **Property**: `animation: slideDown 0.3s ease-out`
 - **Elements**: `.section-content`
 - **Effect**: Opacity fade + height expansion
 
 ### Copy Feedback
+
 - **Property**: `animation: copyPulse 0.4s ease-out`
 - **Elements**: `.copy-btn.copied`
 - **Effect**: Subtle scale pulse (1.0 → 1.1 → 1.0)
@@ -286,6 +305,7 @@ All interactive elements have minimum 44px height:
 ## Common Actions
 
 ### Search for a Parameter
+
 1. Expand a section
 2. Click/tap in search box
 3. Type parameter name (e.g., "temp", "gpu", "batch")
@@ -293,6 +313,7 @@ All interactive elements have minimum 44px height:
 5. Click × to clear search
 
 ### Copy a Value
+
 1. Find parameter with value you want
 2. Click "Copy" button next to value
 3. See green ✓ and notification
@@ -300,6 +321,7 @@ All interactive elements have minimum 44px height:
 5. Button auto-resets after 2 seconds
 
 ### Edit a Value
+
 1. Click on parameter value
 2. Enter edit mode (input appears)
 3. Type new value
@@ -307,6 +329,7 @@ All interactive elements have minimum 44px height:
 5. Or "Cancel" to discard
 
 ### Expand/Collapse
+
 1. Click section header
 2. Watch smooth slide animation
 3. Content appears/disappears
@@ -326,13 +349,13 @@ All interactive elements have minimum 44px height:
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| Copy doesn't work | Browser doesn't support Clipboard API (IE11) |
-| Search not filtering | Try different parameter name or label |
+| Issue                 | Solution                                            |
+| --------------------- | --------------------------------------------------- |
+| Copy doesn't work     | Browser doesn't support Clipboard API (IE11)        |
+| Search not filtering  | Try different parameter name or label               |
 | Animations stuttering | Disable other animations, check browser performance |
-| Values revert | Make sure to click "Save" button |
-| Dark mode colors off | Clear browser cache, reload page |
+| Values revert         | Make sure to click "Save" button                    |
+| Dark mode colors off  | Clear browser cache, reload page                    |
 
 ---
 
