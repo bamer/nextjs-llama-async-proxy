@@ -78,7 +78,7 @@ class UsageChart {
             max: 100,
             ticks: {
               callback: function (value) {
-                return value.toFixed(0) + "%";
+                return `${value.toFixed(0)  }%`;
               },
             },
           },

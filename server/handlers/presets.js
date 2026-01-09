@@ -150,6 +150,9 @@ function modelToIniSection(modelName, config) {
   if (config.seed !== undefined) section["seed"] = String(config.seed);
   if (config.loadOnStartup !== undefined) section["load-on-startup"] = String(config.loadOnStartup);
 
+  // Preserve internal flags
+  if (config._is_group) section["_is_group"] = "true";
+
   return section;
 }
 
@@ -160,7 +163,7 @@ function iniSectionToModel(section, defaultsSection = {}) {
   const fullDefaults = getDefaultParameters();
   const mergedDefaults = { ...fullDefaults, ...defaultsSection };
 
-  return {
+  const result = {
     model: section.model || mergedDefaults.model || "",
     ctxSize: section["ctx-size"] ? parseInt(section["ctx-size"]) : mergedDefaults["ctx-size"],
     temperature: section.temp ? parseFloat(section.temp) : mergedDefaults.temp,
@@ -179,6 +182,13 @@ function iniSectionToModel(section, defaultsSection = {}) {
       ? section["load-on-startup"].toLowerCase() === "true"
       : mergedDefaults["load-on-startup"],
   };
+
+  // Preserve internal flags
+  if (section._is_group === "true" || section._is_group === true) {
+    result._is_group = true;
+  }
+
+  return result;
 }
 
 /**
@@ -632,19 +642,21 @@ export function registerPresetsHandlers(socket, db) {
 
       const models = [];
 
-      // Check if directory exists
-      if (fs.existsSync(modelsDir)) {
-        const files = fs.readdirSync(modelsDir);
+      // Recursive function to find .gguf files
+      function scanDirectory(dir) {
+        if (!fs.existsSync(dir)) return;
+
+        const files = fs.readdirSync(dir);
 
         for (const file of files) {
-          const filePath = path.join(modelsDir, file);
+          const filePath = path.join(dir, file);
+          const stats = fs.statSync(filePath);
 
-          // Check if it's a file with .gguf extension
-          if (fs.statSync(filePath).isFile() && file.endsWith(".gguf")) {
-            const stats = fs.statSync(filePath);
+          // Check if it's a .gguf file
+          if (stats.isFile() && file.endsWith(".gguf")) {
             const modelName = file.replace(".gguf", "");
 
-            // Estimate VRAM using llama-server --help 2>/dev/null
+            // Estimate VRAM
             let vramEstimate = null;
             try {
               vramEstimate = estimateVram(filePath, config);
@@ -661,8 +673,14 @@ export function registerPresetsHandlers(socket, db) {
               vramFormatted: vramEstimate ? formatBytes(vramEstimate) : null,
             });
           }
+          // Recursively scan subdirectories
+          else if (stats.isDirectory()) {
+            scanDirectory(filePath);
+          }
         }
       }
+
+      scanDirectory(modelsDir);
 
       console.log("[DEBUG] Models found:", models.length);
       const response = { success: true, data: { models, directory: modelsDir } };
@@ -724,6 +742,69 @@ export function registerPresetsHandlers(socket, db) {
       if (typeof ack === "function") ack(response);
     } catch (error) {
       console.error("[DEBUG] Error in presets:show-inheritance:", error.message);
+      const response = { success: false, error: { message: error.message } };
+      if (typeof ack === "function") ack(response);
+    }
+  });
+
+  /**
+   * Get available models from baseModelsPath (alias for get-models-dir for frontend compatibility)
+   */
+  socket.on("presets:available-models", async (data, ack) => {
+    console.log("[DEBUG] Event: presets:available-models");
+    try {
+      const config = db.getConfig();
+      const modelsDir = config.baseModelsPath || path.join(process.cwd(), "models");
+
+      console.log("[DEBUG] Scanning models directory:", modelsDir);
+
+      const models = [];
+
+      // Recursive function to find .gguf files
+      function scanDirectory(dir) {
+        if (!fs.existsSync(dir)) return;
+
+        const files = fs.readdirSync(dir);
+
+        for (const file of files) {
+          const filePath = path.join(dir, file);
+          const stats = fs.statSync(filePath);
+
+          // Check if it's a .gguf file
+          if (stats.isFile() && file.endsWith(".gguf")) {
+            const modelName = file.replace(".gguf", "");
+
+            // Estimate VRAM
+            let vramEstimate = null;
+            try {
+              vramEstimate = estimateVram(filePath, config);
+            } catch (vramError) {
+              console.log("[DEBUG] VRAM estimation failed for", file, ":", vramError.message);
+            }
+
+            models.push({
+              name: modelName,
+              path: filePath,
+              size: stats.size,
+              sizeFormatted: formatBytes(stats.size),
+              vram: vramEstimate,
+              vramFormatted: vramEstimate ? formatBytes(vramEstimate) : null,
+            });
+          }
+          // Recursively scan subdirectories
+          else if (stats.isDirectory()) {
+            scanDirectory(filePath);
+          }
+        }
+      }
+
+      scanDirectory(modelsDir);
+
+      console.log("[DEBUG] Models found:", models.length);
+      const response = { success: true, data: { models, directory: modelsDir } };
+      if (typeof ack === "function") ack(response);
+    } catch (error) {
+      console.error("[DEBUG] Error in presets:available-models:", error.message);
       const response = { success: false, error: { message: error.message } };
       if (typeof ack === "function") ack(response);
     }

@@ -1,15 +1,16 @@
 /**
  * Presets Page - Hierarchical Collapsible Parameter Management
  * Global Defaults → Groups → Models
+ * @typedef {import("../services/presets.js").PresetsService} PresetsService
  */
 
+// eslint-disable-next-line no-undef
 class PresetsController {
   constructor(options = {}) {
     this.router = options.router || window.router;
     this.comp = null;
     this.presetsService = null;
     this.unsubscribers = [];
-    this._knownGroups = new Set();
   }
 
   _ensureService() {
@@ -48,7 +49,6 @@ class PresetsController {
       presets,
       presetsService: this.presetsService,
       controller: this,
-      knownGroups: this._knownGroups,
     });
     const el = this.comp.render();
     this.comp._el = el;
@@ -195,7 +195,20 @@ class PresetsPage extends Component {
     return Component.h(
       "div",
       { className: "presets-header" },
-      Component.h("h1", {}, "Model Presets"),
+      Component.h(
+        "div",
+        { className: "header-top" },
+        Component.h("h1", {}, "Model Presets"),
+        Component.h(
+          "button",
+          {
+            className: "btn btn-secondary btn-sm refresh-models-btn",
+            "data-action": "refresh-models",
+            title: "Refresh available models list",
+          },
+          "↻ Refresh Models"
+        )
+      ),
       Component.h(
         "p",
         { className: "presets-subtitle" },
@@ -248,21 +261,23 @@ class PresetsPage extends Component {
         Component.h(
           "div",
           {
-            className: `preset-item ${this.state.selectedPreset?.name === preset.name ? "active" : ""}`,
+            className: `preset-item ${
+              this.state.selectedPreset?.name === preset.name ? "active" : ""
+            }`,
             "data-action": "select-preset",
             "data-preset-name": preset.name,
           },
           Component.h("span", { className: "preset-name" }, preset.name),
           preset.name !== "default"
             ? Component.h(
-                "span",
-                {
-                  className: "preset-delete",
-                  "data-action": "delete-preset",
-                  "data-preset-name": preset.name,
-                },
-                "×"
-              )
+              "span",
+              {
+                className: "preset-delete",
+                "data-action": "delete-preset",
+                "data-preset-name": preset.name,
+              },
+              "×"
+            )
             : null
         )
       ),
@@ -323,13 +338,13 @@ class PresetsPage extends Component {
       ),
       isExpanded
         ? Component.h(
-            "div",
-            { className: "section-content" },
-            this.renderParameterSearch(),
-            isEditing
-              ? this.renderEditableParams(editingData, "defaults", null)
-              : this.renderReadOnlyParams(defaults, "defaults", null)
-          )
+          "div",
+          { className: "section-content" },
+          this.renderParameterSearch(),
+          isEditing
+            ? this.renderEditableParams(editingData, "defaults", null)
+            : this.renderReadOnlyParams(defaults, "defaults", null)
+        )
         : null
     );
   }
@@ -348,14 +363,14 @@ class PresetsPage extends Component {
       }),
       this.state.parameterFilter
         ? Component.h(
-            "button",
-            {
-              className: "params-search-clear",
-              "data-action": "clear-search",
-              title: "Clear search",
-            },
-            "×"
-          )
+          "button",
+          {
+            className: "params-search-clear",
+            "data-action": "clear-search",
+            title: "Clear search",
+          },
+          "×"
+        )
         : null
     );
   }
@@ -369,20 +384,20 @@ class PresetsPage extends Component {
       Component.h("h3", { className: "section-label" }, "Groups"),
       groups.length === 0
         ? Component.h(
-            "div",
-            { className: "section-empty" },
-            Component.h("p", {}, "No groups defined"),
-            Component.h(
-              "button",
-              { className: "btn btn-secondary btn-sm", "data-action": "new-group" },
-              "+ Add Group"
-            )
+          "div",
+          { className: "section-empty" },
+          Component.h("p", {}, "No groups defined"),
+          Component.h(
+            "button",
+            { className: "btn btn-secondary btn-sm", "data-action": "new-group" },
+            "+ Add Group"
           )
+        )
         : Component.h(
-            "div",
-            { className: "groups-list" },
-            groups.map((group) => this.renderGroupSection(group))
-          ),
+          "div",
+          { className: "groups-list" },
+          groups.map((group) => this.renderGroupSection(group))
+        ),
       Component.h(
         "button",
         { className: "btn btn-secondary btn-sm add-group-btn", "data-action": "new-group" },
@@ -430,19 +445,36 @@ class PresetsPage extends Component {
       ),
       isExpanded
         ? Component.h(
+          "div",
+          { className: "section-content" },
+          // Models list section
+          Component.h(
             "div",
-            { className: "section-content" },
-            isEditing
-              ? this.renderEditableParams(editingData, "group", group.name)
-              : this.renderReadOnlyParams(editingData, "group", group.name),
+            { className: "group-models-section" },
+            Component.h("h4", { className: "subsection-title" }, "Applies to"),
             group.models && group.models.length > 0
               ? Component.h(
-                  "div",
-                  { className: "group-models" },
-                  Component.h("h4", { className: "subsection-title" }, "Models"),
-                  group.models.map((model) => this.renderModelSection(model, group.name))
+                "div",
+                { className: "models-list-compact" },
+                group.models.map((model) =>
+                  Component.h(
+                    "div",
+                    { className: "model-list-item" },
+                    Component.h("span", { className: "model-name" }, model.name),
+                    Component.h(
+                      "button",
+                      {
+                        className: "btn-remove-model",
+                        "data-action": "delete-model",
+                        "data-model-name": model.name,
+                        "data-group-name": group.name,
+                      },
+                      "×"
+                    )
+                  )
                 )
-              : null,
+              )
+              : Component.h("div", { className: "empty-list" }, "No models in this group yet"),
             Component.h(
               "button",
               {
@@ -450,9 +482,19 @@ class PresetsPage extends Component {
                 "data-action": "new-model",
                 "data-group-name": group.name,
               },
-              "+ Add Model to " + group.name
+              "+ Add Model"
             )
+          ),
+          // Group parameters section
+          Component.h(
+            "div",
+            { className: "group-params-section" },
+            Component.h("h4", { className: "subsection-title" }, "Group Parameters"),
+            isEditing
+              ? this.renderEditableParams(editingData, "group", group.name)
+              : this.renderReadOnlyParams(editingData, "group", group.name)
           )
+        )
         : null
     );
   }
@@ -460,7 +502,8 @@ class PresetsPage extends Component {
   renderModelSection(model, groupName = null) {
     const fullName = groupName ? `${groupName}/${model.name}` : model.name;
     const isExpanded = this.state.expandedModels[fullName] || false;
-    const isEditing = this.state.editingModel === fullName;
+    // Only standalone models (groupName = null) can be edited
+    const isEditing = groupName === null && this.state.editingModel === fullName;
     const editingData = isEditing && this.state.editingData ? this.state.editingData : model;
 
     return Component.h(
@@ -495,20 +538,18 @@ class PresetsPage extends Component {
       ),
       isExpanded
         ? Component.h(
-            "div",
-            { className: "section-content" },
-            isEditing
-              ? this.renderEditableParams(editingData, "model", fullName)
-              : this.renderReadOnlyParams(editingData, "model", fullName)
-          )
+          "div",
+          { className: "section-content" },
+          isEditing
+            ? this.renderEditableParams(editingData, "model", fullName)
+            : this.renderReadOnlyParams(editingData, "model", fullName)
+        )
         : null
     );
   }
 
   renderStandaloneSection() {
     const models = this.state.standaloneModels;
-
-    if (models.length === 0) return null;
 
     return Component.h(
       "div",
@@ -523,11 +564,13 @@ class PresetsPage extends Component {
         },
         "+ Add Standalone Model"
       ),
-      Component.h(
-        "div",
-        { className: "standalone-list" },
-        models.map((model) => this.renderModelSection(model, null))
-      )
+      models.length > 0
+        ? Component.h(
+          "div",
+          { className: "standalone-list" },
+          models.map((model) => this.renderModelSection(model, null))
+        )
+        : Component.h("div", { className: "empty-list" }, "No standalone models yet")
     );
   }
 
@@ -543,7 +586,7 @@ class PresetsPage extends Component {
       { className: "params-list" },
       filteredParams.map((param) => {
         // data uses iniKey (camelCase) from backend
-        let value = data[param.iniKey];
+        const value = data[param.iniKey];
         const hasValue = value !== undefined && value !== null;
         const displayValue = hasValue ? value : param.default;
         const paramId = `${sectionType}-${sectionName || "root"}-${param.key}`;
@@ -589,7 +632,7 @@ class PresetsPage extends Component {
       { className: "params-list" },
       PRESET_PARAMS.map((param) => {
         // data uses iniKey (camelCase) from backend
-        let value = data[param.iniKey];
+        const value = data[param.iniKey];
         const displayValue = value !== undefined && value !== null ? value : param.default;
 
         return Component.h(
@@ -630,6 +673,7 @@ class PresetsPage extends Component {
       "click [data-action=select-preset]": "handleSelectPreset",
       "click [data-action=new-preset]": "handleNewPreset",
       "click [data-action=delete-preset]": "handleDeletePreset",
+      "click [data-action=refresh-models]": "handleRefreshModels",
       "click [data-action=toggle-defaults]": "handleToggleDefaults",
       "click [data-action=toggle-group]": "handleToggleGroup",
       "click [data-action=toggle-model]": "handleToggleModel",
@@ -696,7 +740,15 @@ class PresetsPage extends Component {
 
     const section = el.dataset.section;
     const name = el.dataset.name;
-    const param = el.dataset.param;
+
+    // Prevent editing models in groups - they're read-only
+    if (section === "model" && name?.includes("/")) {
+      const msg =
+        "Models in groups inherit group parameters. " +
+        "Edit the group or move the model to standalone.";
+      showNotification(msg, "info");
+      return;
+    }
 
     let data;
     if (section === "defaults") {
@@ -782,6 +834,29 @@ class PresetsPage extends Component {
     });
   }
 
+  handleRefreshModels() {
+    if (!this.state.selectedPreset) {
+      showNotification("Select a preset first", "warning");
+      return;
+    }
+
+    this.setState({ loading: true });
+    this._getService()
+      .getAvailableModels()
+      .then((models) => {
+        this.setState({ availableModels: models, loading: false });
+        showNotification(
+          `Found ${models.length} available models`,
+          "success"
+        );
+      })
+      .catch((error) => {
+        console.error("[PRESETS] Refresh models error:", error);
+        showNotification(`Error: ${error.message}`, "error");
+        this.setState({ loading: false });
+      });
+  }
+
   getModelByFullName(fullName) {
     for (const group of this.state.groups) {
       const model = group.models?.find((m) => `${group.name}/${m.name}` === fullName);
@@ -811,62 +886,59 @@ class PresetsPage extends Component {
     if (!service) return;
 
     try {
-      const [models, defaults] = await Promise.all([
+      const [models, defaults, availableModels] = await Promise.all([
         service.getModelsFromPreset(preset.name),
         service.getDefaults(preset.name),
+        service.getAvailableModels(),
       ]);
+      
+      // Update available models
+      this.setState({ availableModels });
 
       const groups = {};
       const standalone = [];
-      const groupNamesSet = new Set();
 
-      // First pass: identify all group names from model paths like "group/model"
+      // Collect all group names:
+      // 1. Entries with "/" in the name: split and take the first part (group/model)
+      // 2. Entries explicitly marked as groups (having _is_group flag)
+      const groupNames = new Set();
+
       for (const modelName of Object.keys(models)) {
         if (modelName === "*") continue;
-        const parts = modelName.split("/");
-        if (parts.length === 2) {
-          // This is a model in a group, add group name
-          groupNamesSet.add(parts[0]);
+
+        if (modelName.includes("/")) {
+          // model/submodel format - this is a model in a group
+          groupNames.add(modelName.split("/")[0]);
+        } else if (models[modelName]._is_group) {
+          // Explicitly marked as a group
+          groupNames.add(modelName);
         }
       }
 
-      // Second pass: identify group entries (entries with just groupName, no slash)
-      // These are group-level configs or empty groups
-      for (const modelName of Object.keys(models)) {
-        if (modelName === "*") continue;
-        // If entry doesn't have "/" and doesn't look like a model file, it's likely a group
-        if (!modelName.includes("/")) {
-          // Check if it's a known group or if it has children with "/" prefix
-          const hasChildren = Object.keys(models).some((m) => m.startsWith(modelName + "/"));
-          if (hasChildren || this._knownGroups.has(modelName)) {
-            groupNamesSet.add(modelName);
-          }
-        }
-      }
-
-      // Third pass: organize into groups and standalone
+      // Now organize entries into groups and standalone
       for (const [modelName, modelConfig] of Object.entries(models)) {
         if (modelName === "*") continue;
 
-        const parts = modelName.split("/");
-        if (parts.length === 2) {
-          // Model in group format: group/model
-          const groupName = parts[0];
+        if (modelName.includes("/")) {
+          // This is a model in a group: group/model
+          const [groupName, modelOnlyName] = modelName.split("/");
           if (!groups[groupName]) {
             groups[groupName] = { name: groupName, models: [] };
           }
-          groups[groupName].models.push({ name: parts[1], ...modelConfig });
-        } else if (groupNamesSet.has(modelName)) {
-          // This is a group entry (with or without children)
+          groups[groupName].models.push({ name: modelOnlyName, ...modelConfig });
+        } else if (groupNames.has(modelName)) {
+          // This is a group entry
           if (!groups[modelName]) {
             groups[modelName] = { name: modelName, models: [] };
           }
-          // Merge config if present
-          if (Object.keys(modelConfig).length > 0) {
-            groups[modelName] = { ...groups[modelName], ...modelConfig };
+          // Merge config if present (exclude internal _is_group flag)
+          // eslint-disable-next-line no-unused-vars
+          const { _is_group, ...cleanConfig } = modelConfig;
+          if (Object.keys(cleanConfig).length > 0) {
+            groups[modelName] = { ...groups[modelName], ...cleanConfig };
           }
         } else {
-          // Standalone model
+          // Standalone model (no children, not a group)
           standalone.push({ name: modelName, ...modelConfig });
         }
       }
@@ -950,11 +1022,11 @@ class PresetsPage extends Component {
     if (!name || !name.trim()) return;
 
     this.setState({ loading: true });
+    // Mark this as a group with the _is_group flag
     this._getService()
-      .addModel(this.state.selectedPreset.name, name.trim(), {})
+      .addModel(this.state.selectedPreset.name, name.trim(), { _is_group: true })
       .then(() => {
         showNotification(`Group "${name}" created`, "success");
-        this._knownGroups.add(name.trim());
         return this.loadPresetData(this.state.selectedPreset);
       })
       .then(() => {
@@ -972,6 +1044,7 @@ class PresetsPage extends Component {
   }
 
   handleDeleteGroup(e) {
+    e.stopPropagation();
     const el = e.target.closest("[data-action=delete-group]");
     if (!el) return;
     const groupName = el.dataset.groupName;
@@ -984,7 +1057,6 @@ class PresetsPage extends Component {
       .removeModel(this.state.selectedPreset.name, groupName)
       .then(() => {
         showNotification(`Group "${groupName}" deleted`, "success");
-        this._knownGroups.delete(groupName);
         return this.loadPresetData(this.state.selectedPreset);
       })
       .catch((error) => {
@@ -1039,9 +1111,14 @@ class PresetsPage extends Component {
             margin-bottom: var(--md);
           ">
             <option value="">-- Select Model --</option>
-            ${models.map((m) => `<option value="${m.path}">${m.name} (${AppUtils.formatBytes(m.size)})</option>`).join("")}
+            ${models
+              .map(
+                (m) =>
+                  `<option value="${m.path}">${m.name} (${AppUtils.formatBytes(m.size)})</option>`
+              )
+              .join("")}
           </select>
-          <input type="text" id="model-name-input" placeholder="Model name (optional, uses filename if empty)" style="
+          <input type="text" id="model-name-input" placeholder="Model name (optional)" style="
             width: 100%;
             padding: var(--sm) var(--md);
             border: 1px solid var(--border-color);
@@ -1110,6 +1187,7 @@ class PresetsPage extends Component {
   }
 
   handleDeleteModel(e) {
+    e.stopPropagation();
     const el = e.target.closest("[data-action=delete-model]");
     if (!el) return;
     const groupName = el.dataset.groupName;
@@ -1132,18 +1210,6 @@ class PresetsPage extends Component {
       .finally(() => {
         this.setState({ loading: false });
       });
-  }
-
-  async loadAvailableModels() {
-    const service = this._getService();
-    if (!service) return;
-
-    try {
-      const models = await service.getAvailableModels();
-      this.setState({ availableModels: models });
-    } catch (error) {
-      console.error("[PRESETS] Failed to load models:", error.message);
-    }
   }
 
   handleSearchParams(e) {
@@ -1182,7 +1248,7 @@ class PresetsPage extends Component {
   }
 
   didMount() {
-    this.loadAvailableModels();
+    // Available models are loaded with preset data
   }
 }
 

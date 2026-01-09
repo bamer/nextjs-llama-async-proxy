@@ -84,15 +84,15 @@ class SettingsController {
 
   async handleRouterAction(action) {
     switch (action) {
-      case "start":
-        await this._start();
-        break;
-      case "stop":
-        await this._stop();
-        break;
-      case "restart":
-        await this._restart();
-        break;
+    case "start":
+      await this._start();
+      break;
+    case "stop":
+      await this._stop();
+      break;
+    case "restart":
+      await this._restart();
+      break;
     }
   }
 

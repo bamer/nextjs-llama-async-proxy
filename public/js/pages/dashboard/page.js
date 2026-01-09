@@ -101,7 +101,7 @@ class DashboardPage extends Component {
     // Update button
     const controls = routerCard.querySelector(".router-controls");
     if (controls) {
-      const btn = controls.querySelector('[data-action="start"], [data-action="stop"]');
+      const btn = controls.querySelector("[data-action=\"start\"], [data-action=\"stop\"]");
       if (btn) {
         if (isRunning) {
           // Switch to Stop button
@@ -118,7 +118,7 @@ class DashboardPage extends Component {
       }
 
       // Update restart button
-      const restartBtn = controls.querySelector('[data-action="restart"]');
+      const restartBtn = controls.querySelector("[data-action=\"restart\"]");
       if (restartBtn) {
         restartBtn.disabled = !isRunning || routerLoading;
       }
@@ -157,8 +157,8 @@ class DashboardPage extends Component {
           memoryCanvas.style.display = this.state.chartType === "memory" ? "block" : "none";
         }
 
-        const usageTab = chartsSection.querySelector('[data-chart="usage"]');
-        const memoryTab = chartsSection.querySelector('[data-chart="memory"]');
+        const usageTab = chartsSection.querySelector("[data-chart=\"usage\"]");
+        const memoryTab = chartsSection.querySelector("[data-chart=\"memory\"]");
         if (usageTab && memoryTab) {
           usageTab.classList.toggle("active", this.state.chartType === "usage");
           memoryTab.classList.toggle("active", this.state.chartType === "memory");
@@ -205,8 +205,8 @@ class DashboardPage extends Component {
     // Update DOM directly to avoid full re-render
     if (this._el) {
       // Update tab active states
-      const usageTab = this._el.querySelector('[data-chart="usage"]');
-      const memoryTab = this._el.querySelector('[data-chart="memory"]');
+      const usageTab = this._el.querySelector("[data-chart=\"usage\"]");
+      const memoryTab = this._el.querySelector("[data-chart=\"memory\"]");
       if (usageTab && memoryTab) {
         usageTab.classList.toggle("active", newType === "usage");
         memoryTab.classList.toggle("active", newType === "memory");

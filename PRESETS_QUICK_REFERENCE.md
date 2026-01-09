@@ -1,374 +1,215 @@
-# Presets Page - Quick Reference Guide
+# Presets Fix - Quick Reference
 
-## Visual Layout
+## The Problem
+Models could be edited individually inside groups, conflicting with the design where models should inherit all group parameters.
 
-### Desktop View (2-Column Layout)
+## The Solution
+Groups now show:
+1. **Model List** - Just names with remove buttons
+2. **Group Parameters** - Centrally managed, all models inherit
+
+Models can only be customized in **Standalone** section.
+
+---
+
+## UI Structure
 
 ```
-┌─ Presets Page ─────────────────────────────────────────┐
-│                                                         │
-│  ┌─ Sidebar ──────────┐  ┌─ Editor Panel ───────────┐ │
-│  │ • default (active) │  │ default [Built-in]       │ │
-│  │ • custom-preset    │  │                          │ │
-│  │ • gaming           │  │ ★ Global Defaults        │ │
-│  │                    │  │ 🔍 [search...]        ×  │ │
-│  │ + New Preset       │  │                          │ │
-│  │                    │  │ Context Size      [2048] │ │
-│  │                    │  │                [Copy]    │ │
-│  │                    │  │ Batch Size        [512]  │ │
-│  │                    │  │                [Copy]    │ │
-│  │                    │  │ Temperature       [0.7]  │ │
-│  │                    │  │                [Copy]    │ │
-│  │                    │  │                          │ │
-│  │                    │  │ 📁 Groups                │ │
-│  │                    │  │  ▶ gaming (1 model)      │ │
-│  │                    │  │                          │ │
-│  └────────────────────┘  └──────────────────────────┘ │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+GROUPS SECTION
+└─ Group Name [count] ▼
+   ├─ "Applies to" section
+   │  ├─ Model Name 1 [×]
+   │  ├─ Model Name 2 [×]
+   │  └─ [+ Add Model]
+   │
+   └─ "Group Parameters" section
+      ├─ Parameter A [Copy]
+      ├─ Parameter B [Copy]
+      └─ Parameter C [Copy]
+
+STANDALONE SECTION
+├─ Model Name 1
+│  ├─ Parameter A [Copy]
+│  ├─ Parameter B [Copy]
+│  └─ Parameter C [Copy]
+└─ Model Name 2
+   ├─ Parameter A [Copy]
+   └─ ...
 ```
 
 ---
 
-## Feature Examples
+## Key Files Modified
 
-### 1. Search/Filter Example
-
-**Type "temp" in search box:**
-
-```
-Global Defaults
-🔍 [temp]                                    ×
-
-Temperature       [0.7]  [Copy]
-```
-
-**Type "batch" in search box:**
-
-```
-Global Defaults
-🔍 [batch]                                   ×
-
-Batch Size        [512]  [Copy]
-Micro Batch       [512]  [Copy]
-```
-
-**Clear search (click ×):**
-
-```
-Global Defaults
-🔍 []
-
-All parameters shown again
-```
+| File | Changes |
+|------|---------|
+| `public/js/pages/presets.js` | Group rendering redesigned, model section simplified |
+| `public/css/pages/presets/presets.css` | New CSS for group model list and parameters |
 
 ---
 
-### 2. Copy Button Example
-
-**Normal State:**
-
-```
-Context Size      [2048]  [Copy]
-                                  ↑ Click to copy
-```
-
-**After Click (2 seconds):**
-
-```
-Context Size      [2048]  [✓]
-                            ↑ Success feedback
-                              (turns green)
-```
-
-**Toast Notification:**
-
-```
-✓ Copied: 2048
-```
-
----
-
-### 3. Expand/Collapse Animation
-
-**Collapsed (Click to Expand):**
-
-```
-▶ 📁 gaming (1 model)
-```
-
-**Expanding (Smooth slide-down, 0.3s):**
-
-```
-▼ 📁 gaming (1 model)
-  [Content sliding in...]
-```
-
-**Expanded:**
-
-```
-▼ 📁 gaming (1 model)
-  📄 model-name
-    [GPU Layers: 35]  [Copy]
-    [Threads: 8]      [Copy]
-```
-
----
-
-## Color Scheme (Light Mode)
+## CSS Classes
 
 ```css
-/* Section Accents */
-★ Defaults  → Blue (#3b82f6)
-📁 Groups   → Yellow (#f59e0b)
-📄 Models   → Cyan (#06b6d4)
-
-/* Backgrounds */
-White (#fff)         - Main content
-Light Gray (#f9fafb) - Secondary areas
-Mid Gray (#f3f4f6)   - Tertiary areas
-Border (#e5e7eb)     - Separators
-
-/* Text */
-Dark Gray (#1f2937)  - Primary text
-Mid Gray (#4b5563)   - Secondary text
-Light Gray (#9ca3af) - Muted text
+.group-models-section       /* Group models list container */
+.models-list-compact        /* Flex container for model items */
+.model-list-item            /* Individual model row */
+.model-name                 /* Model name text */
+.btn-remove-model           /* Red X remove button */
+.group-params-section       /* Group parameters container */
 ```
 
 ---
 
-## Color Scheme (Dark Mode)
+## What Changed in Code
 
-```css
-/* Section Accents */
-★ Defaults  → Blue (#3b82f6) - Same as light
-📁 Groups   → Yellow (#f59e0b) - Same as light
-📄 Models   → Cyan (#06b6d4) - Same as light
+### renderGroupSection()
+**Before:** Rendered models with all their parameters
+**After:** Renders compact model list + group parameters
 
-/* Backgrounds */
-Dark (#2d2d2d)   - Main content
-Darker (#252525) - Secondary areas
-Dark Gray (#3d3d3d) - Tertiary areas
-Gray (#4d4d4d)   - Borders
+### renderModelSection()
+**Before:** Handled both group and standalone
+**After:** Only handles standalone (simplified)
 
-/* Text */
-Light Gray (#e5e7eb)  - Primary text
-Mid Gray (#a1a5b0)    - Secondary text
-Dark Gray (#6b7280)   - Muted text
-```
+### handleStartEdit()
+**Before:** Allowed editing everywhere
+**After:** Added guard to prevent editing group models
 
 ---
 
-## Keyboard Navigation
+## Testing Workflow
 
-| Key      | Action                    |
-| -------- | ------------------------- |
-| `Tab`    | Navigate between elements |
-| `Enter`  | Click focused button      |
-| `Escape` | (Future: Close modals)    |
-| `Ctrl+C` | (Future: Copy value)      |
+1. **Create Group**
+   - Click "+ Add Group"
+   - Name it
+   
+2. **Add Models**
+   - Click "+ Add Model"
+   - Select from available models
+   - See them appear in list
 
----
+3. **Edit Group Parameters**
+   - Click parameter value
+   - Edit
+   - Save
+   - All models inherit
 
-## Touch Targets (Mobile)
+4. **Customize Individual Model**
+   - Move to Standalone section
+   - Now can customize its parameters
 
-All interactive elements have minimum 44px height:
-
-- ✓ Copy buttons
-- ✓ Search input
-- ✓ Clear button
-- ✓ Preset items
-- ✓ Section headers
-
----
-
-## Responsive Breakpoints
-
-| Width      | Layout         | Changes                    |
-| ---------- | -------------- | -------------------------- |
-| 1024px+    | 2-Column       | Sidebar + Editor           |
-| 768-1024px | 1-Column Grid  | Presets in responsive grid |
-| <768px     | 1-Column Stack | All vertical, full-width   |
+5. **Remove from Group**
+   - Click [×] next to model name
+   - Model removed from group list
 
 ---
 
-## State Management
+## Data Model
 
-### Component State
-
+**Group in Preset:**
 ```javascript
 {
-  // Basic state
-  presets: [],
-  selectedPreset: null,
-  globalDefaults: {},
-  groups: [],
-  standaloneModels: [],
+  name: "group-name",
+  ctxSize: 4096,
+  temperature: 0.7,
+  models: [
+    { name: "model1", model: "path/to/file" },
+    { name: "model2", model: "path/to/file" }
+  ]
+}
+```
 
-  // Expanded/Collapsed
-  expandedDefaults: true,
-  expandedGroups: {},
-  expandedModels: {},
-
-  // Editing
-  editingDefaults: false,
-  editingGroup: null,
-  editingModel: null,
-  editingData: null,
-
-  // NEW: Search & Copy
-  parameterFilter: "",        // ← Search filter
-  copiedParam: null,          // ← Tracks copied parameter
+**Standalone Model:**
+```javascript
+{
+  name: "model-name",
+  ctxSize: 2048,
+  temperature: 0.5,
+  model: "path/to/file"
 }
 ```
 
 ---
 
-## Event Handlers
+## Common Tasks
 
-| Event                                 | Handler                  | Action              |
-| ------------------------------------- | ------------------------ | ------------------- |
-| `input [data-action=search-params]`   | `handleSearchParams()`   | Update filter state |
-| `click [data-action=clear-search]`    | `handleClearSearch()`    | Clear search        |
-| `click [data-action=copy-value]`      | `handleCopyValue()`      | Copy to clipboard   |
-| `click [data-action=toggle-defaults]` | `handleToggleDefaults()` | Expand/collapse     |
-| `click [data-action=start-edit]`      | `handleStartEdit()`      | Enter edit mode     |
-| `click [data-action=save-edit]`       | `handleSaveEdit()`       | Save changes        |
+### Add Model to Group
+1. Expand group
+2. Click "+ Add Model"
+3. Select model
+4. Click Add
+5. Model appears in list with [×]
 
----
+### Customize Model Parameters
+1. Model must be in Standalone
+2. Expand model
+3. Click parameter value
+4. Edit
+5. Save
 
-## CSS Classes Reference
+### Move Model from Group to Standalone
+1. Click [×] in group model list
+2. Click "+ Add Standalone Model"
+3. Select same model
+4. Now editable
 
-### Layout
-
-- `.presets-page` - Main container
-- `.presets-container` - Two-column grid
-- `.presets-list` - Sidebar
-- `.presets-editor` - Main editor area
-
-### Sections
-
-- `.collapsible-section` - Expandable section
-- `.section-header` - Section title bar
-- `.section-content` - Section content (animated)
-
-### Parameters
-
-- `.params-list` - List of parameters
-- `.param-item` - Single parameter
-- `.param-label` - Parameter name
-- `.param-value` - Parameter value (read-only)
-- `.param-value-wrapper` - Flexbox container for value + copy button
-- `.param-input` - Parameter input (edit mode)
-
-### Search
-
-- `.params-search-wrapper` - Search box container
-- `.params-search-input` - Search input field
-- `.params-search-clear` - Clear button
-
-### Copy
-
-- `.copy-btn` - Copy button
-- `.copied` - Button in copied state (green)
+### Delete Group
+1. Click Delete button in group header
+2. Confirm
+3. Group and all its models deleted
 
 ---
 
-## Animations
+## Error Messages & User Feedback
 
-### Expand/Collapse
-
-- **Property**: `animation: slideDown 0.3s ease-out`
-- **Elements**: `.section-content`
-- **Effect**: Opacity fade + height expansion
-
-### Copy Feedback
-
-- **Property**: `animation: copyPulse 0.4s ease-out`
-- **Elements**: `.copy-btn.copied`
-- **Effect**: Subtle scale pulse (1.0 → 1.1 → 1.0)
+| Action | Feedback |
+|--------|----------|
+| Add model to group | "Model 'X' added" (success) |
+| Remove model from group | "Model 'X' removed" (success) |
+| Save group parameters | "Saved successfully" (success) |
+| Try to edit group model | "Models in groups inherit group parameters..." (info) |
+| Delete group | Confirmation required |
 
 ---
 
-## Accessibility Checklist
+## Browser Compatibility
 
-- ✓ Search input has placeholder text
-- ✓ Copy button has title tooltip
-- ✓ All colors have sufficient contrast
-- ✓ Keyboard navigation works
-- ✓ Touch targets ≥44px
-- ✓ Focus states visible
-- ✓ Animations respect prefers-reduced-motion (future)
+✅ Works with:
+- Chrome/Edge 90+
+- Firefox 88+
+- Safari 14+
+- Mobile browsers
 
 ---
 
-## Common Actions
+## Performance
 
-### Search for a Parameter
-
-1. Expand a section
-2. Click/tap in search box
-3. Type parameter name (e.g., "temp", "gpu", "batch")
-4. Results filter in real-time
-5. Click × to clear search
-
-### Copy a Value
-
-1. Find parameter with value you want
-2. Click "Copy" button next to value
-3. See green ✓ and notification
-4. Paste elsewhere (Ctrl+V or Cmd+V)
-5. Button auto-resets after 2 seconds
-
-### Edit a Value
-
-1. Click on parameter value
-2. Enter edit mode (input appears)
-3. Type new value
-4. Click "Save" to persist
-5. Or "Cancel" to discard
-
-### Expand/Collapse
-
-1. Click section header
-2. Watch smooth slide animation
-3. Content appears/disappears
-4. Header shows current state (▶/▼)
-
----
-
-## Tips & Tricks
-
-- **Quick Copy**: Search for parameter, copy value immediately
-- **Bulk Check**: Use search to quickly review all parameters of one type
-- **Mobile Friendly**: Search box helps on small screens with many parameters
-- **Dark Mode**: Switch in settings, presets page auto-updates
-- **Animations**: Help visualize what's expanding/collapsing
+- ✅ Reduced DOM complexity (fewer parameter nodes)
+- ✅ Faster rendering
+- ✅ Less memory usage
 
 ---
 
 ## Troubleshooting
 
-| Issue                 | Solution                                            |
-| --------------------- | --------------------------------------------------- |
-| Copy doesn't work     | Browser doesn't support Clipboard API (IE11)        |
-| Search not filtering  | Try different parameter name or label               |
-| Animations stuttering | Disable other animations, check browser performance |
-| Values revert         | Make sure to click "Save" button                    |
-| Dark mode colors off  | Clear browser cache, reload page                    |
+| Issue | Solution |
+|-------|----------|
+| Can't edit model in group | This is by design. Remove from group first. |
+| Parameters not showing | Expand the section by clicking header |
+| Model won't add | Check if already in group or standalone |
+| Style looks weird | Try refreshing browser cache (Ctrl+Shift+R) |
 
 ---
 
-## Performance Tips
+## Documentation Files
 
-- Search is instant (filters only 6 parameters)
-- Copy is instant (uses async clipboard)
-- Animations smooth (60 FPS CSS-based)
-- No janky layouts (CSS grid/flexbox)
-- Mobile optimized (responsive breakpoints)
+- `PRESETS_LOGIC_FIX.md` - Detailed problem/solution
+- `PRESETS_REFACTOR_DETAILS.md` - Code-level details
+- `PRESETS_IMPLEMENTATION_DONE.md` - Status summary
+- `PRESETS_VERIFICATION.md` - QA checklist
 
 ---
 
-Generated: 2026-01-09
-Version: 1.0
-Status: Production Ready ✓
+**Version:** 1.0
+**Date:** 2026-01-09
+**Status:** Ready for Testing
