@@ -27,25 +27,31 @@
   --radius: 0.5rem;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   --sidebar: 260px;
+  --color-primary-rgb: 59, 130, 246;
 
   /* Light theme - text and backgrounds */
   --text-primary: var(--gray-800);
   --text-secondary: var(--gray-600);
+  --text-muted: #9ca3af;
   --bg-primary: #fff;
   --bg-secondary: var(--gray-50);
   --bg-tertiary: var(--gray-100);
+  --bg-hover: var(--gray-100);
   --border-color: var(--gray-200);
   --header-bg: #fff;
   --sidebar-bg: #fff;
   --card-bg: #fff;
+  --transition-fast: 150ms ease;
 }
 
 html.dark-mode {
   --text-primary: #e5e7eb;
   --text-secondary: #a1a5b0;
+  --text-muted: #6b7280;
   --bg-primary: #2d2d2d;
   --bg-secondary: #252525;
   --bg-tertiary: #3d3d3d;
+  --bg-hover: #3d3d3d;
   --border-color: #4d4d4d;
   --header-bg: #303030;
   --sidebar-bg: #2d2d2d;
@@ -55,4 +61,5 @@ html.dark-mode {
   --chart-text: #a1a5b0;
   --chart-grid: rgba(255, 255, 255, 0.05);
   --chart-bg: transparent;
+  --transition-fast: 150ms ease;
 }

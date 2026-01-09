@@ -168,6 +168,10 @@ class PresetsPage extends Component {
       editingGroup: null,
       editingModel: null,
       editingData: null,
+      // Search/filter state
+      parameterFilter: "",
+      // Copy feedback
+      copiedParam: null,
     };
     this.controller = props.controller;
     this._isUnmounting = false;
@@ -321,9 +325,36 @@ class PresetsPage extends Component {
         ? Component.h(
             "div",
             { className: "section-content" },
+            this.renderParameterSearch(),
             isEditing
               ? this.renderEditableParams(editingData, "defaults", null)
               : this.renderReadOnlyParams(defaults, "defaults", null)
+          )
+        : null
+    );
+  }
+
+  renderParameterSearch() {
+    return Component.h(
+      "div",
+      { className: "params-search-wrapper" },
+      Component.h("span", { className: "params-search-icon" }, "🔍"),
+      Component.h("input", {
+        type: "text",
+        className: "params-search-input",
+        placeholder: "Filter parameters by name...",
+        value: this.state.parameterFilter,
+        "data-action": "search-params",
+      }),
+      this.state.parameterFilter
+        ? Component.h(
+            "button",
+            {
+              className: "params-search-clear",
+              "data-action": "clear-search",
+              title: "Clear search",
+            },
+            "×"
           )
         : null
     );
@@ -501,29 +532,52 @@ class PresetsPage extends Component {
   }
 
   renderReadOnlyParams(data, sectionType, sectionName = null) {
+    const filter = this.state.parameterFilter.toLowerCase();
+    const filteredParams = PRESET_PARAMS.filter(
+      (param) =>
+        param.label.toLowerCase().includes(filter) ||
+        param.key.toLowerCase().includes(filter)
+    );
+
     return Component.h(
       "div",
       { className: "params-list" },
-      PRESET_PARAMS.map((param) => {
+      filteredParams.map((param) => {
         // data uses iniKey (camelCase) from backend
         let value = data[param.iniKey];
         const hasValue = value !== undefined && value !== null;
         const displayValue = hasValue ? value : param.default;
+        const paramId = `${sectionType}-${sectionName || "root"}-${param.key}`;
 
         return Component.h(
           "div",
           { className: `param-item param-${param.group}`, "data-param-key": param.key },
           Component.h("label", { className: "param-label" }, param.label),
           Component.h(
-            "span",
-            {
-              className: `param-value ${!hasValue ? "param-inherited" : ""}`,
-              "data-action": "start-edit",
-              "data-section": sectionType,
-              "data-name": sectionName,
-              "data-param": param.key,
-            },
-            displayValue !== undefined ? String(displayValue) : "-"
+            "div",
+            { className: "param-value-wrapper" },
+            Component.h(
+              "span",
+              {
+                className: `param-value ${!hasValue ? "param-inherited" : ""}`,
+                "data-action": "start-edit",
+                "data-section": sectionType,
+                "data-name": sectionName,
+                "data-param": param.key,
+              },
+              displayValue !== undefined ? String(displayValue) : "-"
+            ),
+            Component.h(
+              "button",
+              {
+                className: `copy-btn ${this.state.copiedParam === paramId ? "copied" : ""}`,
+                "data-action": "copy-value",
+                "data-param-id": paramId,
+                "data-value": displayValue !== undefined ? String(displayValue) : "",
+                title: "Copy value",
+              },
+              this.state.copiedParam === paramId ? "✓" : "Copy"
+            )
           )
         );
       })
@@ -590,6 +644,9 @@ class PresetsPage extends Component {
       "click [data-action=save-edit]": "handleSaveEdit",
       "click [data-action=cancel-edit]": "handleCancelEdit",
       "change [data-action=new-model-select]": "handleModelSelectChange",
+      "input [data-action=search-params]": "handleSearchParams",
+      "click [data-action=clear-search]": "handleClearSearch",
+      "click [data-action=copy-value]": "handleCopyValue",
     };
   }
 
@@ -662,15 +719,29 @@ class PresetsPage extends Component {
   }
 
   handleSaveEdit() {
-    const { editingDefaults, editingGroup, editingModel, editingData, selectedPreset } = this.state;
-    if (!editingData || !selectedPreset) return;
+    const { editingDefaults, editingGroup, editingModel, selectedPreset } = this.state;
+    if (!selectedPreset) return;
 
+    // Read values from input elements instead of editingData
     const config = {};
-    for (const param of PRESET_PARAMS) {
-      // editingData uses iniKey (camelCase) as keys from backend
-      const value = editingData[param.iniKey];
-      if (value !== undefined && value !== null) {
-        config[param.iniKey] = value;
+    const inputs = this._el?.querySelectorAll(".param-input") || [];
+    
+    for (const input of inputs) {
+      const paramKey = input.dataset.param;
+      const param = PRESET_PARAMS.find((p) => p.key === paramKey);
+      if (!param) continue;
+
+      const value = input.value?.trim();
+      if (value !== undefined && value !== "" && value !== null) {
+        // Convert to appropriate type
+        if (param.type === "number") {
+          const numValue = parseFloat(value);
+          if (!isNaN(numValue)) {
+            config[param.iniKey] = numValue;
+          }
+        } else {
+          config[param.iniKey] = value;
+        }
       }
     }
 
@@ -1054,6 +1125,41 @@ class PresetsPage extends Component {
     } catch (error) {
       console.error("[PRESETS] Failed to load models:", error.message);
     }
+  }
+
+  handleSearchParams(e) {
+    const input = e.target.closest("[data-action=search-params]");
+    if (!input) return;
+    this.setState({ parameterFilter: input.value });
+  }
+
+  handleClearSearch() {
+    this.setState({ parameterFilter: "" });
+  }
+
+  handleCopyValue(e) {
+    const btn = e.target.closest("[data-action=copy-value]");
+    if (!btn) return;
+
+    const value = btn.dataset.value;
+    const paramId = btn.dataset.paramId;
+
+    navigator.clipboard
+      .writeText(value)
+      .then(() => {
+        this.setState({ copiedParam: paramId });
+        // Reset after 2 seconds
+        setTimeout(() => {
+          if (this.state.copiedParam === paramId) {
+            this.setState({ copiedParam: null });
+          }
+        }, 2000);
+        showNotification(`Copied: ${value}`, "success");
+      })
+      .catch((error) => {
+        console.error("[PRESETS] Copy failed:", error);
+        showNotification("Failed to copy value", "error");
+      });
   }
 
   didMount() {
