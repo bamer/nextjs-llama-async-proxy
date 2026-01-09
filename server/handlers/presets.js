@@ -122,15 +122,29 @@ function modelToIniSection(modelName, config) {
     model: config.model || "",
   };
 
-  // Map common parameters
+  // Map common parameters - handle both key formats (camelCase and kebab-case)
+  // Frontend sends kebab-case (ctx-size), llama.cpp uses ctx-size in INI
   if (config.ctxSize) section["ctx-size"] = String(config.ctxSize);
+  else if (config["ctx-size"]) section["ctx-size"] = String(config["ctx-size"]);
+
   if (config.temperature !== undefined) section["temp"] = String(config.temperature);
+  else if (config["temp"] !== undefined) section["temp"] = String(config["temp"]);
+
   if (config.nGpuLayers !== undefined) section["n-gpu-layers"] = String(config.nGpuLayers);
+  else if (config["n-gpu-layers"] !== undefined)
+    section["n-gpu-layers"] = String(config["n-gpu-layers"]);
+
   if (config.threads !== undefined) section["threads"] = String(config.threads);
+  else if (config["threads"] !== undefined) section["threads"] = String(config["threads"]);
+
   if (config.batchSize !== undefined) section["batch"] = String(config.batchSize);
+  else if (config["batch"] !== undefined) section["batch"] = String(config["batch"]);
+
   if (config.ubatchSize !== undefined) section["ubatch"] = String(config.ubatchSize);
+  else if (config["ubatch"] !== undefined) section["ubatch"] = String(config["ubatch"]);
+
   if (config.tensorSplit) section["tensor-split"] = config.tensorSplit;
-  if (config.splitMode) section["split-mode"] = config.splitMode;
+  if (config.splitMode) section["split-mode"] = String(config.splitMode);
   if (config.mainGpu !== undefined) section["main-gpu"] = String(config.mainGpu);
   if (config.mmp) section["mmp"] = config.mmp;
   if (config.seed !== undefined) section["seed"] = String(config.seed);
@@ -195,15 +209,19 @@ function listPresets() {
 function readPreset(filename) {
   try {
     const filepath = path.join(PRESETS_DIR, `${filename}.ini`);
+    const logFile = "/tmp/presets-debug.log";
+    fs.appendFileSync(logFile, `readPreset: filepath=${filepath}\n`);
 
     if (!fs.existsSync(filepath)) {
-      throw new Error(`Preset file not found: ${filename}`);
+      fs.appendFileSync(logFile, `File not found\n`);
+      throw new Error(`Preset file not found: ${filepath}`);
     }
 
     const content = fs.readFileSync(filepath, "utf-8");
+    fs.appendFileSync(logFile, `Content: ${content.substring(0, 200)}\n`);
     const parsed = parseIni(content);
 
-    console.log("[DEBUG] Preset read:", { filename, sections: Object.keys(parsed) });
+    fs.appendFileSync(logFile, `Parsed [*]: ${JSON.stringify(parsed["*"])}\n`);
 
     return {
       filename,
@@ -319,12 +337,6 @@ function getModelsFromPreset(filename) {
       models[section] = iniSectionToModel(params, defaultsSection);
     }
 
-    console.log("[DEBUG] Models loaded from preset:", {
-      filename,
-      count: Object.keys(models).length,
-      hasDefaults: Boolean(defaultsSection),
-    });
-
     return models;
   } catch (error) {
     throw new Error(`Failed to get models: ${error.message}`);
@@ -345,22 +357,33 @@ function getPresetsDefaults(filename) {
 
 /**
  * Add or update model in preset
+ * Merges new config with existing values to preserve unspecified fields
  */
 function updateModelInPreset(filename, modelName, config) {
   try {
+    const logFile = "/tmp/presets-debug.log";
+    fs.appendFileSync(
+      logFile,
+      `updateModelInPreset: filename=${filename}, modelName=${modelName}, config=${JSON.stringify(config)}\n`
+    );
     const preset = readPreset(filename);
-    const iniSection = modelToIniSection(modelName, config);
+    const existingSection = preset.parsed[modelName] || {};
+    fs.appendFileSync(logFile, `existingSection=${JSON.stringify(existingSection)}\n`);
+    const newIniSection = modelToIniSection(modelName, config);
+    fs.appendFileSync(logFile, `newIniSection=${JSON.stringify(newIniSection)}\n`);
 
-    preset.parsed[modelName] = iniSection;
+    // Merge existing section with new values (new values take precedence)
+    const mergedSection = { ...existingSection, ...newIniSection };
+    fs.appendFileSync(logFile, `mergedSection=${JSON.stringify(mergedSection)}\n`);
+
+    preset.parsed[modelName] = mergedSection;
     savePreset(filename, preset.parsed);
-
-    console.log("[DEBUG] Model updated in preset:", { filename, modelName });
     logger.info(`Model updated in preset: ${filename}/${modelName}`);
 
     return {
       filename,
       modelName,
-      config: iniSectionToModel(iniSection),
+      config: iniSectionToModel(mergedSection),
     };
   } catch (error) {
     throw new Error(`Failed to update model: ${error.message}`);
@@ -566,9 +589,13 @@ export function registerPresetsHandlers(socket, db) {
     try {
       const { filename, config } = data;
       const preset = readPreset(filename);
-      const iniSection = modelToIniSection("*", config);
+      const newIniSection = modelToIniSection("*", config);
+      const existingSection = preset.parsed["*"] || {};
 
-      preset.parsed["*"] = iniSection;
+      // Merge existing section with new values (new values take precedence)
+      const mergedSection = { ...existingSection, ...newIniSection };
+
+      preset.parsed["*"] = mergedSection;
       savePreset(filename, preset.parsed);
 
       console.log("[DEBUG] Preset defaults updated:", { filename });
@@ -578,7 +605,7 @@ export function registerPresetsHandlers(socket, db) {
         success: true,
         data: {
           filename,
-          defaults: iniSectionToModel(iniSection, {}),
+          defaults: iniSectionToModel(mergedSection, {}),
         },
       };
       if (typeof ack === "function") ack(response);

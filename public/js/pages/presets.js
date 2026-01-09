@@ -93,21 +93,57 @@ class PresetsController {
   }
 }
 
-// Parameter definitions
+// Parameter definitions - iniKey is the key sent to backend, key is what's displayed
 const PRESET_PARAMS = [
-  { key: "ctx-size", label: "Context Size", type: "number", default: 2048, group: "core" },
-  { key: "batch", label: "Batch Size", type: "number", default: 512, group: "core" },
-  { key: "ubatch", label: "Micro Batch", type: "number", default: 512, group: "core" },
+  {
+    key: "ctx-size",
+    iniKey: "ctxSize",
+    label: "Context Size",
+    type: "number",
+    default: 2048,
+    group: "core",
+  },
+  {
+    key: "batch",
+    iniKey: "batchSize",
+    label: "Batch Size",
+    type: "number",
+    default: 512,
+    group: "core",
+  },
+  {
+    key: "ubatch",
+    iniKey: "ubatchSize",
+    label: "Micro Batch",
+    type: "number",
+    default: 512,
+    group: "core",
+  },
   {
     key: "temp",
+    iniKey: "temperature",
     label: "Temperature",
     type: "number",
     step: "0.01",
     default: 0.7,
     group: "sampling",
   },
-  { key: "n-gpu-layers", label: "GPU Layers", type: "number", default: 0, group: "hardware" },
-  { key: "threads", label: "Threads", type: "number", default: 0, group: "hardware" },
+  {
+    key: "n-gpu-layers",
+    iniKey: "nGpuLayers",
+    label: "GPU Layers",
+    type: "number",
+    default: 0,
+    group: "hardware",
+  },
+  {
+    key: "threads",
+    iniKey: "threads",
+    label: "Threads",
+    type: "number",
+    default: 0,
+    group: "hardware",
+  },
 ];
 
 class PresetsPage extends Component {
@@ -469,7 +505,8 @@ class PresetsPage extends Component {
       "div",
       { className: "params-list" },
       PRESET_PARAMS.map((param) => {
-        let value = data[param.key];
+        // data uses iniKey (camelCase) from backend
+        let value = data[param.iniKey];
         const hasValue = value !== undefined && value !== null;
         const displayValue = hasValue ? value : param.default;
 
@@ -498,7 +535,8 @@ class PresetsPage extends Component {
       "div",
       { className: "params-list" },
       PRESET_PARAMS.map((param) => {
-        let value = data[param.key];
+        // data uses iniKey (camelCase) from backend
+        let value = data[param.iniKey];
         const displayValue = value !== undefined && value !== null ? value : param.default;
 
         return Component.h(
@@ -629,9 +667,10 @@ class PresetsPage extends Component {
 
     const config = {};
     for (const param of PRESET_PARAMS) {
-      const value = editingData[param.key];
+      // editingData uses iniKey (camelCase) as keys from backend
+      const value = editingData[param.iniKey];
       if (value !== undefined && value !== null) {
-        config[param.iniKey || param.key] = value;
+        config[param.iniKey] = value;
       }
     }
 
