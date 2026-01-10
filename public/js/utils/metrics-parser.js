@@ -92,7 +92,7 @@ class MetricsParser {
 
     // Remove outer quotes and split by comma
     const cleanStr = labelsStr.replace(/^"|"$/g, "");
-    const parts = cleanStr.split('","');
+    const parts = cleanStr.split("\",\"");
 
     for (const part of parts) {
       const [key, value] = part.split("=");

@@ -28,9 +28,11 @@ class DashboardPage extends Component {
   }
 
   onMount() {
+    console.log("[DEBUG] DashboardPage: onMount");
     // Subscribe to state changes
     this.unsubscribers.push(
       stateManager.subscribe("llamaStatus", (status) => {
+        console.log("[DEBUG] DashboardPage: llamaStatus changed:", status);
         this.status = status;
         if (this.routerLoading && status?.port) {
           this.routerLoading = false;
@@ -44,13 +46,44 @@ class DashboardPage extends Component {
 
     this.unsubscribers.push(
       stateManager.subscribe("routerStatus", (rs) => {
+        console.log("[DEBUG] DashboardPage: routerStatus changed:", rs);
         this.routerStatus = rs;
         this._updateRouterCardUI();
       })
     );
+
+    // Subscribe to llama-server metrics
+    this.unsubscribers.push(
+      stateManager.subscribe("llamaMetrics", this.handleMetricsChange.bind(this))
+    );
+
+    // Setup initial metrics
+    this._setupInitialMetrics();
+  }
+
+  _setupInitialMetrics() {
+    // Check if we have llama-server metrics available
+    const llamaMetrics = stateManager.get("llamaMetrics");
+    if (llamaMetrics && typeof llamaMetrics !== "undefined") {
+      console.log("[DEBUG] Dashboard: Using llama-server metrics:", llamaMetrics);
+      this._metrics = llamaMetrics;
+    }
+  }
+
+  handleMetricsChange(metrics) {
+    console.log("[DEBUG] Dashboard: Metrics changed:", metrics);
+    // This is for system metrics (CPU, memory, GPU) from monitoring
+    this.metrics = metrics || { cpu: { usage: 0 }, memory: { used: 0 }, gpu: null };
+    this.gpuMetrics = metrics?.gpu || { usage: 0, memoryUsed: 0, memoryTotal: 0 };
+    this.history = metrics?.history || [];
+
+    if (this.chartManager) {
+      this.chartManager.updateCharts(metrics, this.history);
+    }
   }
 
   destroy() {
+    console.log("[DEBUG] DashboardPage: destroy");
     this.unsubscribers.forEach((unsub) => unsub());
     this.unsubscribers = [];
   }
@@ -70,6 +103,9 @@ class DashboardPage extends Component {
     if (!routerCard) return;
 
     const isRunning = this.status?.port;
+    const loadedCount = (this.routerStatus?.models || []).filter(
+      (x) => x.state === "loaded"
+    ).length;
 
     // Update status badge
     const statusBadge = routerCard.querySelector(".status-badge");
@@ -89,10 +125,16 @@ class DashboardPage extends Component {
       routerInfo.style.display = isRunning ? "flex" : "none";
     }
 
+    // Update loaded count text if present
+    const modelsText = routerCard.querySelector(".router-info .models-info");
+    if (modelsText && isRunning) {
+      modelsText.textContent = `Models: ${loadedCount}/${this.models.length} loaded`;
+    }
+
     // Update button
     const controls = routerCard.querySelector(".router-controls");
     if (controls) {
-      const btn = controls.querySelector('[data-action="start"], [data-action="stop"]');
+      const btn = controls.querySelector("[data-action=\"start\"], [data-action=\"stop\"]");
       if (btn) {
         if (isRunning) {
           btn.setAttribute("data-action", "stop");
@@ -106,9 +148,18 @@ class DashboardPage extends Component {
         btn.disabled = this.routerLoading;
       }
 
-      const restartBtn = controls.querySelector('[data-action="restart"]');
+      const restartBtn = controls.querySelector("[data-action=\"restart\"]");
       if (restartBtn) {
         restartBtn.disabled = !isRunning || this.routerLoading;
+        restartBtn.textContent = this.routerLoading ? "🔄 Restarting..." : "🔄 Restart";
+      }
+
+      const launchPresetBtn = controls.querySelector("[data-action=\"launch-preset\"]");
+      if (launchPresetBtn) {
+        launchPresetBtn.disabled = this.routerLoading;
+        launchPresetBtn.textContent = this.routerLoading
+          ? "🚀 Starting..."
+          : "🚀 Launch Server with Preset";
       }
     }
   }
@@ -119,7 +170,7 @@ class DashboardPage extends Component {
     this.history = history;
 
     if (this.chartManager) {
-      this.chartManager.updateCharts(metrics, history);
+      this.chartManager.updateCharts(metrics, this.history);
     }
 
     // Update chart stats in DOM
@@ -159,8 +210,8 @@ class DashboardPage extends Component {
 
     // Update DOM
     if (this._el) {
-      const usageTab = this._el.querySelector('[data-chart="usage"]');
-      const memoryTab = this._el.querySelector('[data-chart="memory"]');
+      const usageTab = this._el.querySelector("[data-chart=\"usage\"]");
+      const memoryTab = this._el.querySelector("[data-chart=\"memory\"]");
       if (usageTab && memoryTab) {
         usageTab.classList.toggle("active", newType === "usage");
         memoryTab.classList.toggle("active", newType === "memory");
@@ -201,11 +252,16 @@ class DashboardPage extends Component {
   }
 
   render() {
+    console.log("[DEBUG] DashboardPage: render");
     const config = stateManager.get("config") || {};
     const settings = stateManager.get("settings") || {};
     const configPort = config.port || 8080;
     const maxModelsLoaded = settings.maxModelsLoaded || 4;
     const ctxSize = config.ctx_size || 4096;
+
+    const llamaServerMetrics =
+      stateManager.get("llamaMetrics") || stateManager.get("llamaServerMetrics");
+    console.log("[DEBUG] DashboardPage: llamaServerMetrics:", llamaServerMetrics);
 
     return Component.h("div", { className: "dashboard-page unified" }, [
       Component.h(window.StatsGrid, {
@@ -227,7 +283,7 @@ class DashboardPage extends Component {
           },
         }),
         Component.h(window.LlamaServerStatusPanel, {
-          metrics: stateManager.get("llamaServerMetrics"),
+          metrics: llamaServerMetrics,
         }),
         Component.h(window.QuickActions, {
           onRefresh: () => this._refresh(),

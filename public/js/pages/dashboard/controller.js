@@ -131,15 +131,15 @@ class DashboardController {
 
   async handleRouterAction(action) {
     switch (action) {
-      case "start":
-        await this._start();
-        break;
-      case "stop":
-        await this._stop();
-        break;
-      case "restart":
-        await this._restart();
-        break;
+    case "start":
+      await this._start();
+      break;
+    case "stop":
+      await this._stop();
+      break;
+    case "restart":
+      await this._restart();
+      break;
     }
   }
 
@@ -160,7 +160,7 @@ class DashboardController {
           showNotification("Router started successfully", "success");
         } catch (e) {
           console.error("[DASHBOARD] Error checking status:", e.message);
-          showNotification("Failed to start router: " + e.message, "error");
+          showNotification(`Failed to start router: ${  e.message}`, "error");
         } finally {
           // Clear loading state
           if (this.comp) {
@@ -219,7 +219,7 @@ class DashboardController {
           showNotification("Router restarted", "success");
         } catch (e) {
           console.error("[DASHBOARD] Error checking status:", e.message);
-          showNotification("Failed to restart router: " + e.message, "error");
+          showNotification(`Failed to restart router: ${  e.message}`, "error");
         } finally {
           // Clear loading state
           if (this.comp) {

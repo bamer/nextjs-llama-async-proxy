@@ -22,7 +22,7 @@ class ModelsPage extends Component {
   }
 
   didUpdate() {
-    const searchInput = this._el?.querySelector('[data-field="search"]');
+    const searchInput = this._el?.querySelector("[data-field=\"search\"]");
     if (searchInput && document.activeElement === searchInput) {
       // Focus already restored by browser
     } else if (searchInput && this.lastSearchValue === this.state.filters.search) {
@@ -136,15 +136,15 @@ class ModelsPage extends Component {
         Component.h("button", { className: "btn", "data-action": "cleanup" }, "Cleanup"),
         routerRunning
           ? Component.h(
-              "span",
-              { className: "router-indicator success" },
-              `Router Active (${port})`
-            )
+            "span",
+            { className: "router-indicator success" },
+            `Router Active (${port})`
+          )
           : Component.h(
-              "span",
-              { className: "router-indicator default" },
-              `Router Not Running (Port: ${port})`
-            )
+            "span",
+            { className: "router-indicator default" },
+            `Router Not Running (Port: ${port})`
+          )
       ),
       Component.h(ModelFilters, {
         search: this.state.filters.search,

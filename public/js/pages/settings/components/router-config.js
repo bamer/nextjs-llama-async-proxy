@@ -1,130 +1,134 @@
 /**
- * Router Configuration Component
- * Displays and manages router-specific settings
+ * Router Configuration Component - Event-Driven DOM Updates
  */
 
 class RouterConfig extends Component {
   constructor(props) {
     super(props);
 
-    this.state = {
-      maxModelsLoaded: props.maxModelsLoaded || 4,
-      parallelSlots: props.parallelSlots || 1,
-      ctx_size: props.ctx_size || 4096,
-      gpuLayers: props.gpuLayers || 0,
-    };
+    // Direct properties instead of state
+    this.maxModelsLoaded = props.maxModelsLoaded || 4;
+    this.parallelSlots = props.parallelSlots || 1;
+    this.ctx_size = props.ctx_size || 4096;
+    this.gpuLayers = props.gpuLayers || 0;
   }
 
-  willReceiveProps(newProps) {
-    // Update state from new props
-    const updates = {};
-    const newMaxModels = newProps.maxModelsLoaded || 4;
-    const newParallelSlots = newProps.parallelSlots || 1;
-    const newCtxSize = newProps.ctx_size || 4096;
-    const newGpuLayers = newProps.gpuLayers || 0;
+  bindEvents() {
+    // Max models loaded
+    this.on("change", "#maxModelsLoaded", (e) => {
+      const val = parseInt(e.target.value) || 4;
+      this.maxModelsLoaded = val;
+      this._updateUI();
+      this.props.onMaxModelsLoadedChange?.(val);
+    });
 
-    if (newMaxModels !== this.state.maxModelsLoaded) updates.maxModelsLoaded = newMaxModels;
-    if (newParallelSlots !== this.state.parallelSlots) updates.parallelSlots = newParallelSlots;
-    if (newCtxSize !== this.state.ctx_size) updates.ctx_size = newCtxSize;
-    if (newGpuLayers !== this.state.gpuLayers) updates.gpuLayers = newGpuLayers;
+    // Parallel slots
+    this.on("change", "#parallelSlots", (e) => {
+      const val = parseInt(e.target.value) || 1;
+      this.parallelSlots = val;
+      this._updateUI();
+      this.props.onParallelSlotsChange?.(val);
+    });
 
-    if (Object.keys(updates).length > 0) {
-      this.setState(updates);
+    // Context size
+    this.on("change", "#ctx_size", (e) => {
+      const val = parseInt(e.target.value) || 4096;
+      this.ctx_size = val;
+      this._updateUI();
+      this.props.onCtxSizeChange?.(val);
+    });
+
+    // GPU layers
+    this.on("change", "#gpuLayers", (e) => {
+      const val = parseInt(e.target.value) || 0;
+      this.gpuLayers = val;
+      this._updateUI();
+      this.props.onGpuLayersChange?.(val);
+    });
+  }
+
+  _updateUI() {
+    if (!this._el) return;
+
+    const maxModelsInput = this._el.querySelector("#maxModelsLoaded");
+    if (maxModelsInput && parseInt(maxModelsInput.value) !== this.maxModelsLoaded) {
+      maxModelsInput.value = this.maxModelsLoaded;
+    }
+
+    const parallelSlotsInput = this._el.querySelector("#parallelSlots");
+    if (parallelSlotsInput && parseInt(parallelSlotsInput.value) !== this.parallelSlots) {
+      parallelSlotsInput.value = this.parallelSlots;
+    }
+
+    const ctxSizeInput = this._el.querySelector("#ctx_size");
+    if (ctxSizeInput && parseInt(ctxSizeInput.value) !== this.ctx_size) {
+      ctxSizeInput.value = this.ctx_size;
+    }
+
+    const gpuLayersInput = this._el.querySelector("#gpuLayers");
+    if (gpuLayersInput && parseInt(gpuLayersInput.value) !== this.gpuLayers) {
+      gpuLayersInput.value = this.gpuLayers;
     }
   }
 
   render() {
-    return Component.h(
-      "div",
-      { className: "settings-section" },
+    return Component.h("div", { className: "settings-section" }, [
       Component.h("h2", {}, "Router Configuration"),
       Component.h("p", { className: "section-desc" }, "Configure llama.cpp router behavior"),
-      Component.h(
-        "div",
-        { className: "card" },
-        Component.h(
-          "div",
-          { className: "router-grid" },
+      Component.h("div", { className: "card" }, [
+        Component.h("div", { className: "router-grid" }, [
           // Max Models Loaded
-          Component.h(
-            "div",
-            { className: "form-group" },
+          Component.h("div", { className: "form-group" }, [
             Component.h("label", {}, "Max Models Loaded"),
             Component.h("input", {
               type: "number",
               min: "1",
               max: "16",
-              value: this.state.maxModelsLoaded,
+              value: this.maxModelsLoaded,
               id: "maxModelsLoaded",
-              onChange: (e) => {
-                const val = parseInt(e.target.value) || 4;
-                this.setState({ maxModelsLoaded: val });
-                this.props.onMaxModelsLoadedChange?.(val);
-              },
             }),
-            Component.h("small", {}, "Maximum number of models to keep in memory")
-          ),
+            Component.h("small", {}, "Maximum number of models to keep in memory"),
+          ]),
           // Parallel Slots
-          Component.h(
-            "div",
-            { className: "form-group" },
+          Component.h("div", { className: "form-group" }, [
             Component.h("label", {}, "Parallel Slots"),
             Component.h("input", {
               type: "number",
               min: "1",
               max: "16",
-              value: this.state.parallelSlots,
+              value: this.parallelSlots,
               id: "parallelSlots",
-              onChange: (e) => {
-                const val = parseInt(e.target.value) || 1;
-                this.setState({ parallelSlots: val });
-                this.props.onParallelSlotsChange?.(val);
-              },
             }),
-            Component.h("small", {}, "Number of parallel processing slots")
-          ),
+            Component.h("small", {}, "Number of parallel processing slots"),
+          ]),
           // Context Size
-          Component.h(
-            "div",
-            { className: "form-group" },
+          Component.h("div", { className: "form-group" }, [
             Component.h("label", {}, "Context Size"),
             Component.h("input", {
               type: "number",
               min: "512",
               max: "32768",
               step: "512",
-              value: this.state.ctx_size,
+              value: this.ctx_size,
               id: "ctx_size",
-              onChange: (e) => {
-                const val = parseInt(e.target.value) || 4096;
-                this.setState({ ctx_size: val });
-                this.props.onCtxSizeChange?.(val);
-              },
             }),
-            Component.h("small", {}, "Token context window size")
-          ),
+            Component.h("small", {}, "Token context window size"),
+          ]),
           // GPU Layers
-          Component.h(
-            "div",
-            { className: "form-group" },
+          Component.h("div", { className: "form-group" }, [
             Component.h("label", {}, "GPU Layers"),
             Component.h("input", {
               type: "number",
               min: "0",
               max: "200",
-              value: this.state.gpuLayers,
+              value: this.gpuLayers,
               id: "gpuLayers",
-              onChange: (e) => {
-                const val = parseInt(e.target.value) || 0;
-                this.setState({ gpuLayers: val });
-                this.props.onGpuLayersChange?.(val);
-              },
             }),
-            Component.h("small", {}, "Number of model layers to offload to GPU (0 = CPU only)")
-          )
-        )
-      )
-    );
+            Component.h("small", {}, "Number of model layers to offload to GPU (0 = CPU only)"),
+          ]),
+        ]),
+      ]),
+    ]);
   }
 }
 

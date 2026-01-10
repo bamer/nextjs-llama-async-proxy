@@ -1,236 +1,181 @@
 /**
- * Logging Configuration Component
- * Allows users to configure logging parameters
+ * Logging Configuration Component - Event-Driven DOM Updates
  */
 
 class LoggingConfig extends Component {
   constructor(props) {
     super(props);
 
-    this.state = {
-      maxFileSize: props.maxFileSize || 10485760,
-      maxFiles: props.maxFiles || 7,
-      logLevel: props.logLevel || "info",
-      enableFileLogging: props.enableFileLogging !== false,
-      enableDatabaseLogging: props.enableDatabaseLogging !== false,
-      enableConsoleLogging: props.enableConsoleLogging !== false,
-    };
+    // Direct properties instead of state
+    this.maxFileSize = props.maxFileSize || 10485760;
+    this.maxFiles = props.maxFiles || 7;
+    this.logLevel = props.logLevel || "info";
+    this.enableFileLogging = props.enableFileLogging !== false;
+    this.enableDatabaseLogging = props.enableDatabaseLogging !== false;
+    this.enableConsoleLogging = props.enableConsoleLogging !== false;
   }
 
-  shouldUpdate(newProps) {
-    // Skip re-render if none of our relevant props changed
-    return (
-      newProps.maxFileSize !== this.props.maxFileSize ||
-      newProps.maxFiles !== this.props.maxFiles ||
-      newProps.logLevel !== this.props.logLevel ||
-      newProps.enableFileLogging !== this.props.enableFileLogging ||
-      newProps.enableDatabaseLogging !== this.props.enableDatabaseLogging ||
-      newProps.enableConsoleLogging !== this.props.enableConsoleLogging
-    );
-  }
-
-  willReceiveProps(newProps) {
-    // Only sync state if props actually changed (avoid overwriting user input)
-    const newState = {};
-    let hasChanges = false;
-
-    if (newProps.maxFileSize !== undefined && newProps.maxFileSize !== this.state.maxFileSize) {
-      newState.maxFileSize = newProps.maxFileSize;
-      hasChanges = true;
-    }
-    if (newProps.maxFiles !== undefined && newProps.maxFiles !== this.state.maxFiles) {
-      newState.maxFiles = newProps.maxFiles;
-      hasChanges = true;
-    }
-    if (newProps.logLevel !== undefined && newProps.logLevel !== this.state.logLevel) {
-      newState.logLevel = newProps.logLevel;
-      hasChanges = true;
-    }
-    if (
-      newProps.enableFileLogging !== undefined &&
-      newProps.enableFileLogging !== this.state.enableFileLogging
-    ) {
-      newState.enableFileLogging = newProps.enableFileLogging;
-      hasChanges = true;
-    }
-    if (
-      newProps.enableDatabaseLogging !== undefined &&
-      newProps.enableDatabaseLogging !== this.state.enableDatabaseLogging
-    ) {
-      newState.enableDatabaseLogging = newProps.enableDatabaseLogging;
-      hasChanges = true;
-    }
-    if (
-      newProps.enableConsoleLogging !== undefined &&
-      newProps.enableConsoleLogging !== this.state.enableConsoleLogging
-    ) {
-      newState.enableConsoleLogging = newProps.enableConsoleLogging;
-      hasChanges = true;
-    }
-
-    if (hasChanges) {
-      this.setState(newState);
-    }
-  }
-
-  getEventMap() {
-    return {
-      "change [data-field=log-level]": "onLogLevelChange",
-      "change [data-field=max-file-size]": "onMaxFileSizeChange",
-      "change [data-field=max-files]": "onMaxFilesChange",
-      "change [data-field=enable-file-logging]": "onEnableFileLoggingChange",
-      "change [data-field=enable-database-logging]": "onEnableDatabaseLoggingChange",
-      "change [data-field=enable-console-logging]": "onEnableConsoleLoggingChange",
-    };
-  }
-
-  onLogLevelChange(e) {
-    const val = e.target.value || "info";
-    console.log("[DEBUG] LoggingConfig.onLogLevelChange:", {
-      value: e.target.value,
-      normalized: val,
+  bindEvents() {
+    // Log level
+    this.on("change", "[data-field=log-level]", (e) => {
+      const val = e.target.value || "info";
+      console.log("[DEBUG] LoggingConfig.onLogLevelChange:", { value: e.target.value, normalized: val });
+      this.logLevel = val;
+      this._updateUI();
+      this.props.onLogLevelChange?.(val);
     });
-    this.setState({ logLevel: val });
-    if (this.props.onLogLevelChange) {
-      console.log("[DEBUG] Calling parent callback with value:", val);
-      this.props.onLogLevelChange(val);
-    } else {
-      console.warn("[DEBUG] No onLogLevelChange callback provided!");
+
+    // Max file size
+    this.on("change", "[data-field=max-file-size]", (e) => {
+      const val = parseInt(e.target.value) || 10485760;
+      this.maxFileSize = val;
+      this._updateUI();
+      this.props.onMaxFileSizeChange?.(val);
+    });
+
+    // Max files
+    this.on("change", "[data-field=max-files]", (e) => {
+      const val = parseInt(e.target.value) || 7;
+      this.maxFiles = val;
+      this._updateUI();
+      this.props.onMaxFilesChange?.(val);
+    });
+
+    // Enable file logging
+    this.on("change", "[data-field=enable-file-logging]", (e) => {
+      this.enableFileLogging = e.target.checked;
+      this._updateUI();
+      this.props.onEnableFileLoggingChange?.(this.enableFileLogging);
+    });
+
+    // Enable database logging
+    this.on("change", "[data-field=enable-database-logging]", (e) => {
+      this.enableDatabaseLogging = e.target.checked;
+      this._updateUI();
+      this.props.onEnableDatabaseLoggingChange?.(this.enableDatabaseLogging);
+    });
+
+    // Enable console logging
+    this.on("change", "[data-field=enable-console-logging]", (e) => {
+      this.enableConsoleLogging = e.target.checked;
+      this._updateUI();
+      this.props.onEnableConsoleLoggingChange?.(this.enableConsoleLogging);
+    });
+  }
+
+  _updateUI() {
+    if (!this._el) return;
+
+    // Update log level select
+    const logLevelSelect = this._el.querySelector("[data-field=log-level]");
+    if (logLevelSelect && logLevelSelect.value !== this.logLevel) {
+      logLevelSelect.value = this.logLevel;
     }
-  }
 
-  onMaxFileSizeChange(e) {
-    const val = parseInt(e.target.value) || 10485760;
-    this.setState({ maxFileSize: val });
-    this.props.onMaxFileSizeChange?.(val);
-  }
+    // Update max file size input
+    const maxFileSizeInput = this._el.querySelector("[data-field=max-file-size]");
+    if (maxFileSizeInput && parseInt(maxFileSizeInput.value) !== this.maxFileSize) {
+      maxFileSizeInput.value = this.maxFileSize;
+    }
 
-  onMaxFilesChange(e) {
-    const val = parseInt(e.target.value) || 7;
-    this.setState({ maxFiles: val });
-    this.props.onMaxFilesChange?.(val);
-  }
+    // Update max files input
+    const maxFilesInput = this._el.querySelector("[data-field=max-files]");
+    if (maxFilesInput && parseInt(maxFilesInput.value) !== this.maxFiles) {
+      maxFilesInput.value = this.maxFiles;
+    }
 
-  onEnableFileLoggingChange(e) {
-    const val = e.target.checked;
-    this.setState({ enableFileLogging: val });
-    this.props.onEnableFileLoggingChange?.(val);
-  }
+    // Update checkboxes
+    const fileLoggingCheckbox = this._el.querySelector("[data-field=enable-file-logging]");
+    if (fileLoggingCheckbox && fileLoggingCheckbox.checked !== this.enableFileLogging) {
+      fileLoggingCheckbox.checked = this.enableFileLogging;
+    }
 
-  onEnableDatabaseLoggingChange(e) {
-    const val = e.target.checked;
-    this.setState({ enableDatabaseLogging: val });
-    this.props.onEnableDatabaseLoggingChange?.(val);
-  }
+    const dbLoggingCheckbox = this._el.querySelector("[data-field=enable-database-logging]");
+    if (dbLoggingCheckbox && dbLoggingCheckbox.checked !== this.enableDatabaseLogging) {
+      dbLoggingCheckbox.checked = this.enableDatabaseLogging;
+    }
 
-  onEnableConsoleLoggingChange(e) {
-    const val = e.target.checked;
-    this.setState({ enableConsoleLogging: val });
-    this.props.onEnableConsoleLoggingChange?.(val);
+    const consoleLoggingCheckbox = this._el.querySelector("[data-field=enable-console-logging]");
+    if (consoleLoggingCheckbox && consoleLoggingCheckbox.checked !== this.enableConsoleLogging) {
+      consoleLoggingCheckbox.checked = this.enableConsoleLogging;
+    }
   }
 
   render() {
-    const sizeInMB = (this.state.maxFileSize / 1024 / 1024).toFixed(1);
+    const sizeInMB = (this.maxFileSize / 1024 / 1024).toFixed(1);
 
-    return Component.h(
-      "div",
-      { className: "settings-section" },
+    return Component.h("div", { className: "settings-section" }, [
       Component.h("h2", {}, "Logging Configuration"),
       Component.h("p", { className: "section-desc" }, "Configure log collection and retention"),
-      Component.h(
-        "div",
-        { className: "card" },
-        Component.h(
-          "div",
-          { className: "logging-grid" },
-          Component.h(
-            "div",
-            { className: "form-group" },
+      Component.h("div", { className: "card" }, [
+        Component.h("div", { className: "logging-grid" }, [
+          Component.h("div", { className: "form-group" }, [
             Component.h("label", {}, "Log Level"),
-            Component.h(
-              "select",
-              {
-                "data-field": "log-level",
-                value: this.state.logLevel,
-              },
+            Component.h("select", { "data-field": "log-level", value: this.logLevel }, [
               Component.h("option", { value: "debug" }, "Debug"),
               Component.h("option", { value: "info" }, "Info"),
               Component.h("option", { value: "warn" }, "Warning"),
-              Component.h("option", { value: "error" }, "Error")
-            ),
-            Component.h("small", {}, "Most to least verbose")
-          ),
-          Component.h(
-            "div",
-            { className: "form-group" },
+              Component.h("option", { value: "error" }, "Error"),
+            ]),
+            Component.h("small", {}, "Most to least verbose"),
+          ]),
+          Component.h("div", { className: "form-group" }, [
             Component.h("label", {}, "Max File Size"),
             Component.h("input", {
               type: "number",
               "data-field": "max-file-size",
-              value: this.state.maxFileSize,
+              value: this.maxFileSize,
               min: "1048576",
               step: "1048576",
             }),
-            Component.h("small", {}, `${sizeInMB} MB`)
-          ),
-          Component.h(
-            "div",
-            { className: "form-group" },
+            Component.h("small", {}, `${sizeInMB} MB`),
+          ]),
+          Component.h("div", { className: "form-group" }, [
             Component.h("label", {}, "Max Log Files"),
             Component.h("input", {
               type: "number",
               "data-field": "max-files",
-              value: this.state.maxFiles,
+              value: this.maxFiles,
               min: "1",
               max: "30",
             }),
-            Component.h("small", {}, "Number of days to retain")
-          )
-        )
-      ),
-      Component.h(
-        "div",
-        { className: "card" },
+            Component.h("small", {}, "Number of days to retain"),
+          ]),
+        ]),
+      ]),
+      Component.h("div", { className: "card" }, [
         Component.h("h3", {}, "Logging Targets"),
-        Component.h(
-          "div",
-          { className: "checkbox-group" },
-          Component.h(
-            "label",
-            { className: "checkbox-label" },
+        Component.h("div", { className: "checkbox-group" }, [
+          Component.h("label", { className: "checkbox-label" }, [
             Component.h("input", {
               type: "checkbox",
               "data-field": "enable-file-logging",
-              checked: this.state.enableFileLogging,
+              checked: this.enableFileLogging,
             }),
             Component.h("span", {}, "File Logging"),
-            Component.h("small", {}, "Write to logs/app-YYYYMMDD.log")
-          ),
-          Component.h(
-            "label",
-            { className: "checkbox-label" },
+            Component.h("small", {}, "Write to logs/app-YYYYMMDD.log"),
+          ]),
+          Component.h("label", { className: "checkbox-label" }, [
             Component.h("input", {
               type: "checkbox",
               "data-field": "enable-database-logging",
-              checked: this.state.enableDatabaseLogging,
+              checked: this.enableDatabaseLogging,
             }),
             Component.h("span", {}, "Database Logging"),
-            Component.h("small", {}, "Store in SQLite for quick access")
-          ),
-          Component.h(
-            "label",
-            { className: "checkbox-label" },
+            Component.h("small", {}, "Store in SQLite for quick access"),
+          ]),
+          Component.h("label", { className: "checkbox-label" }, [
             Component.h("input", {
               type: "checkbox",
               "data-field": "enable-console-logging",
-              checked: this.state.enableConsoleLogging,
+              checked: this.enableConsoleLogging,
             }),
             Component.h("span", {}, "Console Logging"),
-            Component.h("small", {}, "Output to server stdout")
-          )
-        )
-      )
-    );
+            Component.h("small", {}, "Output to server stdout"),
+          ]),
+        ]),
+      ]),
+    ]);
   }
 }
 

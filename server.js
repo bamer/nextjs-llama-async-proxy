@@ -27,7 +27,7 @@ let lastCpuTimes = null;
 let metricsCallCount = 0;
 let metricsInterval = null;
 let activeClients = 1; // Start with 1 client for backwards compatibility with tests
-let llamaMetricsScraper = null;
+const llamaMetricsScraper = null;
 
 /**
  * Update metrics collection interval based on active clients

@@ -87,15 +87,15 @@ class ModelsPage extends Component {
         Component.h("button", { className: "btn", "data-action": "cleanup" }, "Cleanup"),
         routerRunning
           ? Component.h(
-              "span",
-              { className: "router-indicator success" },
-              `Router Active (${port})`
-            )
+            "span",
+            { className: "router-indicator success" },
+            `Router Active (${port})`
+          )
           : Component.h(
-              "span",
-              { className: "router-indicator default" },
-              `Router Not Running (Port: ${port})`
-            ),
+            "span",
+            { className: "router-indicator default" },
+            `Router Not Running (Port: ${port})`
+          ),
       ]),
       Component.h("div", { className: "filters" }, [
         Component.h("input", {

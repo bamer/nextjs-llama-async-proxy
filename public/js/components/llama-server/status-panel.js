@@ -23,7 +23,7 @@ class LlamaServerStatusPanel extends Component {
       stateManager.subscribe("llamaServerStatus", this.handleStatusChange.bind(this))
     );
     this._unsubscribers.push(
-      stateManager.subscribe("llamaMetrics", this.handleMetricsChange.bind(this))
+      stateManager.subscribe("llamaServerMetrics", this.handleMetricsChange.bind(this))
     );
 
     // Start metrics scraper if available
@@ -133,7 +133,7 @@ class LlamaServerStatusPanel extends Component {
         Component.h("h3", {}, "llama-server"),
         Component.h(
           "div",
-          { className: "status-badge status-" + status },
+          { className: `status-badge status-${  status}` },
           Component.h("span", { className: "status-icon" }, statusIcon),
           Component.h("span", {}, statusText)
         ),
@@ -203,8 +203,7 @@ class LlamaServerStatusPanel extends Component {
         {
           className: "llama-metrics",
           style: this._detailsExpanded ? "display: block;" : "display: none;",
-        }
-      },
+        },
         this._renderThroughputMetrics(throughputMetrics),
         this._renderServerConfigSection(serverMetrics),
         this._renderTokenMetrics(tokenMetrics),
@@ -251,19 +250,18 @@ class LlamaServerStatusPanel extends Component {
           className: "metrics-grid collapsible-content",
           id: "server-config-section",
           style: "display: grid;",
-        }
-      ),
-      this._renderMetric("Context Size (n_ctx)", metrics.nCtx, "tokens"),
-      this._renderMetric("Batch Size (n_batch)", metrics.nBatch, ""),
-      this._renderMetric("Upper Batch (n_ubatch)", metrics.nUbatch, ""),
-      this._renderMetric("Threads (n_threads)", metrics.nThreads, ""),
-      this._renderMetric("Parallel Slots (n_parallel)", metrics.nParallel, ""),
-      this._renderMetric("KV Cache Req (n_kv_req)", metrics.nKvReq, ""),
-      this._renderMetric("KV Cache Size (n_kv)", metrics.nKv, ""),
-      metrics.vramTotal > 0 &&
-        this._renderMetric("Total VRAM", `${(metrics.vramTotal / 1024 / 1024).toFixed(2)} GB`),
-      metrics.vramUsed > 0 &&
-        this._renderMetric("Used VRAM", `${(metrics.vramUsed / 1024 / 1024).toFixed(2)} GB`)
+        },
+        this._renderMetric("Context Size (n_ctx)", metrics.nCtx, "tokens"),
+        this._renderMetric("Batch Size (n_batch)", metrics.nBatch, ""),
+        this._renderMetric("Upper Batch (n_ubatch)", metrics.nUbatch, ""),
+        this._renderMetric("Threads (n_threads)", metrics.nThreads, ""),
+        this._renderMetric("Parallel Slots (n_parallel)", metrics.nParallel, ""),
+        this._renderMetric("KV Cache Req (n_kv_req)", metrics.nKvReq, ""),
+        this._renderMetric("KV Cache Size (n_kv)", metrics.nKv, ""),
+        metrics.vramTotal > 0 &&
+          this._renderMetric("Total VRAM", `${(metrics.vramTotal / 1024 / 1024).toFixed(2)} GB`),
+        metrics.vramUsed > 0 &&
+          this._renderMetric("Used VRAM", `${(metrics.vramUsed / 1024 / 1024).toFixed(2)} GB`)
       )
     );
   }
@@ -329,23 +327,23 @@ class LlamaServerStatusPanel extends Component {
 
   _getStatusIcon(status) {
     switch (status) {
-      case "running":
-        return "🟢";
-      case "stopped":
-        return "🔴";
-      default:
-        return "⚪";
+    case "running":
+      return "🟢";
+    case "stopped":
+      return "🔴";
+    default:
+      return "⚪";
     }
   }
 
   _getStatusText(status) {
     switch (status) {
-      case "running":
-        return "Running";
-      case "stopped":
-        return "Stopped";
-      default:
-        return "Unknown";
+    case "running":
+      return "Running";
+    case "stopped":
+      return "Stopped";
+    default:
+      return "Unknown";
     }
   }
 
@@ -358,7 +356,7 @@ class LlamaServerStatusPanel extends Component {
       })
       .catch((e) => {
         console.error("[LLAMA-SERVER] Failed to start:", e);
-        showNotification("Failed to start llama-server: " + e.message, "error");
+        showNotification(`Failed to start llama-server: ${  e.message}`, "error");
       });
   }
 
@@ -371,7 +369,7 @@ class LlamaServerStatusPanel extends Component {
       })
       .catch((e) => {
         console.error("[LLAMA-SERVER] Failed to stop:", e);
-        showNotification("Failed to stop llama-server: " + e.message, "error");
+        showNotification(`Failed to stop llama-server: ${  e.message}`, "error");
       });
   }
 

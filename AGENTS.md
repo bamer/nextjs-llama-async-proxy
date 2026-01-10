@@ -309,6 +309,7 @@ this.on("input", "[data-field=search]", (e) => {
   this.searchTerm = e.target.value;
   this._filterResults();
 });
+```
 
 ### Using Component.createElement (h)
 

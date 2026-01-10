@@ -1,98 +1,117 @@
+/**
+ * Server Paths Form Component - Event-Driven DOM Updates
+ */
+
 class ServerPathsForm extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      baseModelsPath: props.baseModelsPath || "",
-      serverPath: props.serverPath || "",
-      host: props.host || "localhost",
-      port: props.port || 8080,
-    };
+
+    // Direct properties instead of state
+    this.baseModelsPath = props.baseModelsPath || "";
+    this.serverPath = props.serverPath || "";
+    this.host = props.host || "localhost";
+    this.port = props.port || 8080;
   }
 
-  willReceiveProps(newProps) {
-    this.setState({
-      baseModelsPath: newProps.baseModelsPath || "",
-      serverPath: newProps.serverPath || "",
-      host: newProps.host || "localhost",
-      port: newProps.port || 8080,
+  bindEvents() {
+    // Base models path
+    this.on("change", "#baseModelsPath", (e) => {
+      this.baseModelsPath = e.target.value;
+      this._updateUI();
+      this.props.onBaseModelsPathChange?.(e.target.value);
+    });
+
+    // Server path
+    this.on("change", "#serverPath", (e) => {
+      this.serverPath = e.target.value;
+      this._updateUI();
+      this.props.onServerPathChange?.(e.target.value);
+    });
+
+    // Host
+    this.on("change", "#host", (e) => {
+      this.host = e.target.value;
+      this._updateUI();
+      this.props.onHostChange?.(e.target.value);
+    });
+
+    // Port
+    this.on("change", "#port", (e) => {
+      const val = parseInt(e.target.value) || 8080;
+      this.port = val;
+      this._updateUI();
+      this.props.onPortChange?.(val);
     });
   }
 
+  _updateUI() {
+    if (!this._el) return;
+
+    const baseModelsInput = this._el.querySelector("#baseModelsPath");
+    if (baseModelsInput && baseModelsInput.value !== this.baseModelsPath) {
+      baseModelsInput.value = this.baseModelsPath;
+    }
+
+    const serverPathInput = this._el.querySelector("#serverPath");
+    if (serverPathInput && serverPathInput.value !== this.serverPath) {
+      serverPathInput.value = this.serverPath;
+    }
+
+    const hostInput = this._el.querySelector("#host");
+    if (hostInput && hostInput.value !== this.host) {
+      hostInput.value = this.host;
+    }
+
+    const portInput = this._el.querySelector("#port");
+    if (portInput && parseInt(portInput.value) !== this.port) {
+      portInput.value = this.port;
+    }
+  }
+
   render() {
-    return Component.h(
-      "div",
-      { className: "settings-section" },
+    return Component.h("div", { className: "settings-section" }, [
       Component.h("h2", {}, "Server Paths"),
       Component.h("p", { className: "section-desc" }, "Configure paths and connection"),
-      Component.h(
-        "div",
-        { className: "card" },
-        Component.h(
-          "div",
-          { className: "paths-grid" },
-          Component.h(
-            "div",
-            { className: "form-group" },
+      Component.h("div", { className: "card" }, [
+        Component.h("div", { className: "paths-grid" }, [
+          Component.h("div", { className: "form-group" }, [
             Component.h("label", {}, "Models Path"),
             Component.h("input", {
               type: "text",
-              value: this.state.baseModelsPath,
+              value: this.baseModelsPath,
               placeholder: "/path/to/models",
               id: "baseModelsPath",
-              onChange: (e) => {
-                this.setState({ baseModelsPath: e.target.value });
-                this.props.onBaseModelsPathChange?.(e.target.value);
-              },
-            })
-          ),
-          Component.h(
-            "div",
-            { className: "form-group" },
+            }),
+          ]),
+          Component.h("div", { className: "form-group" }, [
             Component.h("label", {}, "Server Path"),
             Component.h("input", {
               type: "text",
-              value: this.state.serverPath,
+              value: this.serverPath,
               id: "serverPath",
-              onChange: (e) => {
-                this.setState({ serverPath: e.target.value });
-                this.props.onServerPathChange?.(e.target.value);
-              },
-            })
-          ),
-          Component.h(
-            "div",
-            { className: "form-group" },
+            }),
+          ]),
+          Component.h("div", { className: "form-group" }, [
             Component.h("label", {}, "Host"),
             Component.h("input", {
               type: "text",
-              value: this.state.host,
+              value: this.host,
               id: "host",
-              onChange: (e) => {
-                this.setState({ host: e.target.value });
-                this.props.onHostChange?.(e.target.value);
-              },
-            })
-          ),
-          Component.h(
-            "div",
-            { className: "form-group" },
+            }),
+          ]),
+          Component.h("div", { className: "form-group" }, [
             Component.h("label", {}, "Port"),
             Component.h("input", {
               type: "number",
-              value: this.state.port,
+              value: this.port,
               min: 1,
               max: 65535,
               id: "port",
-              onChange: (e) => {
-                const val = parseInt(e.target.value) || 8080;
-                this.setState({ port: val });
-                this.props.onPortChange?.(val);
-              },
-            })
-          )
-        )
-      )
-    );
+            }),
+          ]),
+        ]),
+      ]),
+    ]);
   }
 }
 
