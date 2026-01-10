@@ -218,6 +218,19 @@ function iniSectionToModel(section, defaultsSection = {}) {
     result._is_group = true;
   }
 
+  // Add any parameters from section that aren't in the hardcoded mappings
+  // This allows reading new/custom parameters that were added via UI
+  const mappedIniKeys = new Set(paramMappings.map((m) => m.ini));
+  const excludeKeys = new Set(["model", "load-on-startup", "jinja", "_is_group"]);
+
+  for (const [iniKey, value] of Object.entries(section)) {
+    if (!mappedIniKeys.has(iniKey) && !excludeKeys.has(iniKey)) {
+      // Convert ini-key format to camelCase for unmapped keys
+      const jsKey = iniKey.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+      result[jsKey] = value;
+    }
+  }
+
   return result;
 }
 

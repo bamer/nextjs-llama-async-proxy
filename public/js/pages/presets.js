@@ -1384,13 +1384,12 @@ class PresetsPage extends Component {
         value = newValue;
       }
 
-      // Update the parameter
-      await this._getService().addModel(this.state.selectedPreset.name, "*", {
-        [paramKey]: value,
-      });
-
-      // Update state
+      // Update state first with all parameters
       this.state.globalDefaults[paramKey] = value;
+
+      // Update the parameter with ALL current defaults
+      await this._getService().updateDefaults(this.state.selectedPreset.name, this.state.globalDefaults);
+
       showNotification("Parameter updated", "success");
     } catch (error) {
       console.error("[PRESETS] Parameter update error:", error);
@@ -1447,14 +1446,21 @@ class PresetsPage extends Component {
         value = newValue;
       }
 
-      await this._getService().updateModel(this.state.selectedPreset.name, modelName, {
-        [paramKey]: value,
-      });
-
+      // Update state first
       const modelIdx = this.state.standaloneModels.findIndex((m) => m.name === modelName);
-      if (modelIdx >= 0) {
-        this.state.standaloneModels[modelIdx][paramKey] = value;
-      }
+      if (modelIdx < 0) return;
+
+      this.state.standaloneModels[modelIdx][paramKey] = value;
+
+      // Update the model with ALL current parameters (exclude name/fullName)
+      const modelConfig = { ...this.state.standaloneModels[modelIdx] };
+      delete modelConfig.name;
+      delete modelConfig.fullName;
+      await this._getService().updateModel(
+        this.state.selectedPreset.name,
+        modelName,
+        modelConfig
+      );
 
       showNotification("Parameter updated", "success");
     } catch (error) {
