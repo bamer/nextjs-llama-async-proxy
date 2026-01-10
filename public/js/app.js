@@ -7,19 +7,78 @@
 
   console.log("[App] Initializing...");
 
-  // Initialize services
-  socketClient.connect();
-  stateManager.init(socketClient);
+  // Global error state
+  let hasFatalError = false;
+  let fatalError = null;
 
-  // Error handlers
+  // Error boundary - show error UI
+  function showErrorBoundary(error) {
+    console.error("[App] ERROR BOUNDARY:", error);
+    hasFatalError = true;
+    fatalError = error;
+
+    const appEl = document.getElementById("app");
+    if (appEl) {
+      appEl.innerHTML = `
+        <div class="error-boundary">
+          <div class="error-boundary-content">
+            <h1>⚠️ Application Error</h1>
+            <p>Something went wrong while initializing the application.</p>
+            <div class="error-details">
+              <strong>Error:</strong>
+              <pre>${error.message || error}</pre>
+            </div>
+            <button onclick="location.reload()" class="btn btn-primary">Reload Application</button>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  // Error handlers with detailed logging
   window.addEventListener("error", (e) => {
     console.error("[App] Error:", e.error);
-    showNotification("An error occurred", "error");
+    console.error("[App] Error stack:", e.error?.stack);
+    console.error("[App] Error source:", e.filename, "line:", e.lineno);
+
+    // Show user-friendly error
+    const msg = e.error?.message || "An unexpected error occurred";
+    showNotification(msg, "error");
+
+    // For critical errors, show error boundary
+    if (
+      e.error &&
+      (e.error.message.includes("Cannot read") || e.error.message.includes("is not a function"))
+    ) {
+      showErrorBoundary(e.error);
+    }
   });
+
   window.addEventListener("unhandledrejection", (e) => {
     console.error("[App] Rejection:", e.reason);
-    showNotification("An error occurred", "error");
+    console.error("[App] Rejection stack:", e.reason?.stack);
+
+    const msg = e.reason?.message || "An unexpected error occurred";
+    showNotification(msg, "error");
+
+    // For critical rejections, show error boundary
+    if (e.reason && e.reason.message) {
+      showErrorBoundary(e.reason);
+    }
   });
+
+  // Initialize services with error handling
+  try {
+    console.log("[App] Connecting socket...");
+    socketClient.connect();
+    console.log("[App] Initializing state manager...");
+    stateManager.init(socketClient);
+    console.log("[App] Services initialized successfully");
+  } catch (e) {
+    console.error("[App] Service initialization failed:", e);
+    showErrorBoundary(e);
+    return;
+  }
 
   // Router
   const router = new Router({ root: document.getElementById("app") });

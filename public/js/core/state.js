@@ -153,8 +153,33 @@ class StateManager {
 
   // ===== Direct Request Operations (delegate to StateSocket) =====
 
+  /**
+   * Request with connection guard
+   * @param {string} event - Event name
+   * @param {Object} data - Request data
+   * @returns {Promise} Response promise
+   */
   async request(event, data = {}) {
+    if (!this.isConnected()) {
+      console.warn("[STATE-MANAGER] Connection guard: Not connected, rejecting request:", event);
+      return Promise.reject(new Error("Not connected to server. Please check your connection."));
+    }
+    console.log("[DEBUG] StateManager request:", { event, data });
     return this.socket.request(event, data);
+  }
+
+  /**
+   * Execute operation with connection check
+   * @param {Function} fn - Async function to execute
+   * @param {string} context - Operation context for error messages
+   * @returns {Promise} Result promise
+   */
+  async withConnection(fn, context = "operation") {
+    if (!this.isConnected()) {
+      console.warn("[STATE-MANAGER] Connection guard: Not connected for", context);
+      return Promise.reject(new Error(`Cannot ${context}: Not connected to server`));
+    }
+    return fn();
   }
 
   // ===== Config Operations (delegate to StateAPI) =====

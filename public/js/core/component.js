@@ -12,6 +12,7 @@ class Component {
     this._delegatedHandlers = {};
     this._subscribedKeys = new Set(); // State keys this component subscribes to
     this._renderId = 0; // Track renders for debugging
+    this._pendingUpdates = new Map(); // Store pending updates to prevent race conditions
   }
 
   // Override in subclasses
@@ -294,7 +295,7 @@ class Component {
         };
 
         appendChildren(el, children);
-        
+
         // Call didMount on the main component created via Component.h
         if (comp.didMount) {
           comp.didMount();
