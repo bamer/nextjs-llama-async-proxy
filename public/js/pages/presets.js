@@ -923,9 +923,9 @@ class PresetsPage extends Component {
         <div class="section-header" id="header-models">
           <span class="section-icon">📄</span>
           <span class="section-title">Models</span>
-          <span class="section-toggle" id="toggle-models">▼</span>
+          <span class="section-toggle" id="toggle-models">▶</span>
         </div>
-        <div class="add-model-controls">
+        <div class="add-model-controls" style="display: none;">
           <select class="model-select" id="select-add-model">
             <option value="">-- Select a model --</option>
             ${(this.state.availableModels || [])
@@ -937,7 +937,7 @@ class PresetsPage extends Component {
           </select>
           <button class="btn btn-secondary" id="btn-add-standalone">+ Add Selected Model</button>
         </div>
-        <div class="standalone-list" id="standalone-list">
+        <div class="standalone-list" id="standalone-list" style="display: none;">
           ${this.state.standaloneModels.length === 0 ? "<p>No models added yet</p>" : this._renderStandaloneHtml()}
         </div>
       </div>
