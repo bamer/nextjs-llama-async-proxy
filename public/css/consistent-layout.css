@@ -1,0 +1,423 @@
+/**
+ * Consistent Layout System - Full-width, Responsive, Coherent Spacing
+ * This file standardizes margins, padding, and layout across the application
+ */
+
+/* ===== BASE LAYOUT FIXES ===== */
+/* Ensure full width usage and consistent spacing */
+
+:root {
+  /* Spacing system - consistent throughout */
+  --space-xxs: 0.25rem; /* 4px */
+  --space-xs: 0.5rem;   /* 8px */
+  --space-sm: 0.75rem;  /* 12px */
+  --space-md: 1rem;     /* 16px */
+  --space-lg: 1.5rem;   /* 24px */
+  --space-xl: 2rem;     /* 32px */
+  --space-xxl: 3rem;    /* 48px */
+
+  /* Container max-width for better readability on large screens */
+  --container-max-width: 1440px;
+
+  /* Responsive breakpoints */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+}
+
+/* ===== GLOBAL LAYOUT IMPROVEMENTS ===== */
+
+/* Ensure body and html take full height */
+html, body {
+  width: 100%;
+  min-height: 100%;
+}
+
+/* Full-width container system */
+.container {
+  width: 100%;
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding: 0 var(--space-md);
+  box-sizing: border-box;
+}
+
+.container-fluid {
+  width: 100%;
+  padding: 0 var(--space-md);
+  box-sizing: border-box;
+}
+
+/* ===== APP LAYOUT FIXES ===== */
+
+/* Fix app container to use full width */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background: var(--bg-secondary);
+  margin: 0;
+  padding: 0;
+}
+
+/* Main content - ensure full width usage */
+.main-content {
+  margin-left: var(--sidebar);
+  margin-top: 64px;
+  flex: 1;
+  min-height: calc(100vh - 64px);
+  transition: margin-left 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  width: calc(100% - var(--sidebar)); /* Ensure full width */
+  box-sizing: border-box;
+}
+
+/* Page content - full width with consistent padding */
+.page-content {
+  padding: var(--space-lg);
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%; /* Prevent horizontal overflow */
+}
+
+/* ===== CARD LAYOUT STANDARDIZATION ===== */
+
+/* Standard card with consistent spacing */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--space-lg);
+  border: 1px solid var(--border-color);
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
+  width: 100%; /* Cards take full width of container */
+  box-sizing: border-box;
+  margin-bottom: var(--space-md); /* Consistent vertical spacing */
+}
+
+/* Card header standardization */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.card-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+}
+
+.card-body {
+  padding: var(--space-sm) 0;
+}
+
+/* ===== GRID SYSTEM - CONSISTENT SPACING ===== */
+
+/* Flex grid with consistent gaps */
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -var(--space-sm); /* Negative margin for consistent gaps */
+  width: 100%;
+}
+
+.grid-item {
+  padding: var(--space-sm);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+  .grid-item {
+    width: 50%;
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-item {
+    width: 33.3333%;
+  }
+}
+
+/* Stats grid - consistent spacing */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-md);
+  width: 100%;
+  margin-bottom: var(--space-lg);
+}
+
+/* ===== FORM ELEMENTS STANDARDIZATION ===== */
+
+/* Consistent form spacing */
+.form-group {
+  margin-bottom: var(--space-md);
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--space-xxs);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.form-control {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  outline: none;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.form-control:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* ===== BUTTON STANDARDIZATION ===== */
+
+/* Consistent button spacing and sizing */
+.btn-group {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-md);
+}
+
+.btn {
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius);
+  border: none;
+  font-size: 0.875rem;
+  cursor: pointer;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+  height: 36px; /* Consistent button height */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px; /* Minimum width for better touch targets */
+}
+
+/* ===== TABLE STANDARDIZATION ===== */
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  margin-bottom: var(--space-lg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.table th,
+.table td {
+  padding: var(--space-sm) var(--space-md);
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.table th {
+  background: var(--bg-tertiary);
+  font-weight: 600;
+  color: var(--text-secondary);
+  position: sticky;
+  top: 0;
+}
+
+.table tr:hover {
+  background: var(--bg-hover);
+}
+
+/* ===== RESPONSIVE IMPROVEMENTS ===== */
+
+/* Mobile-first responsive design */
+@media (max-width: 768px) {
+  /* Sidebar adjustments */
+  .sidebar {
+    display: none;
+  }
+
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  /* Header adjustments */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  /* Full-width stats on mobile */
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Card adjustments */
+  .card {
+    padding: var(--space-md);
+  }
+
+  /* Button adjustments */
+  .btn {
+    width: 100%;
+    margin-bottom: var(--space-xs);
+  }
+
+  /* Form adjustments */
+  .form-control {
+    padding: var(--space-sm);
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-item {
+    width: 50%;
+  }
+}
+
+/* Desktop adjustments */
+@media (min-width: 1025px) {
+  /* Sidebar visible */
+  .sidebar {
+    display: flex;
+  }
+
+  .main-content {
+    margin-left: var(--sidebar);
+    width: calc(100% - var(--sidebar));
+  }
+
+  /* Optimal stats grid */
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ===== UTILITY CLASSES ===== */
+
+/* Spacing utilities */
+.mt-xs { margin-top: var(--space-xs); }
+.mt-sm { margin-top: var(--space-sm); }
+.mt-md { margin-top: var(--space-md); }
+.mt-lg { margin-top: var(--space-lg); }
+
+.mb-xs { margin-bottom: var(--space-xs); }
+.mb-sm { margin-bottom: var(--space-sm); }
+.mb-md { margin-bottom: var(--space-md); }
+.mb-lg { margin-bottom: var(--space-lg); }
+
+.pt-xs { padding-top: var(--space-xs); }
+.pt-sm { padding-top: var(--space-sm); }
+.pt-md { padding-top: var(--space-md); }
+.pt-lg { padding-top: var(--space-lg); }
+
+.pb-xs { padding-bottom: var(--space-xs); }
+.pb-sm { padding-bottom: var(--space-sm); }
+.pb-md { padding-bottom: var(--space-md); }
+.pb-lg { padding-bottom: var(--space-lg); }
+
+/* Full width utilities */
+.w-full { width: 100%; }
+.max-w-full { max-width: 100%; }
+
+/* Flex utilities */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.gap-xs { gap: var(--space-xs); }
+.gap-sm { gap: var(--space-sm); }
+.gap-md { gap: var(--space-md); }
+.gap-lg { gap: var(--space-lg); }
+
+/* Text utilities */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+/* Overflow utilities */
+.overflow-hidden { overflow: hidden; }
+.overflow-auto { overflow: auto; }
+.overflow-x-auto { overflow-x: auto; }
+
+/* ===== ANIMATION AND TRANSITION STANDARDIZATION ===== */
+
+.transition-all {
+  transition: all 0.2s ease;
+}
+
+.transition-colors {
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+/* ===== DARK MODE CONSISTENCY ===== */
+
+html.dark-mode {
+  /* Ensure dark mode consistency */
+  --bg-secondary: #252525;
+  --bg-tertiary: #3d3d3d;
+  --border-color: #4d4d4d;
+}
+
+/* ===== PRINT STYLES ===== */
+
+@media print {
+  .no-print {
+    display: none;
+  }
+
+  .page-break {
+    page-break-after: always;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+
+  .card, .sidebar {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+}
