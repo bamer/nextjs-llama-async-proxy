@@ -82,4 +82,22 @@ export function registerModelsCrudHandlers(socket, io, db) {
       err(socket, "models:delete:result", e.message, id);
     }
   });
+
+  /**
+   * Toggle favorite status
+   */
+  socket.on("models:toggle-favorite", (req) => {
+    const id = req?.requestId || Date.now();
+    try {
+      const m = db.toggleFavorite(req?.modelId, req?.favorite || false);
+      if (m) {
+        io.emit("models:updated", { model: m });
+        ok(socket, "models:toggle-favorite:result", { model: m }, id);
+      } else {
+        err(socket, "models:toggle-favorite:result", "Not found", id);
+      }
+    } catch (e) {
+      err(socket, "models:toggle-favorite:result", e.message, id);
+    }
+  });
 }

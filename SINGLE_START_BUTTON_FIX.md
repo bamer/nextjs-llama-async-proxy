@@ -3,6 +3,7 @@
 ## What Was Fixed
 
 Removed the redundant "Launch with Preset" button. Now there's **only ONE start button** that intelligently handles both scenarios:
+
 - **No preset selected** → "▶ Start Router" (normal start)
 - **Preset selected** → "▶ Start with Preset" (launch with preset)
 
@@ -11,6 +12,7 @@ Removed the redundant "Launch with Preset" button. Now there's **only ONE start 
 ### File: `public/js/components/router-card.js`
 
 #### 1. Smart handleStart() Method
+
 ```javascript
 async handleStart(event) {
   event.preventDefault();
@@ -28,11 +30,13 @@ async handleStart(event) {
 ```
 
 **Logic:**
+
 - Check if `this.state.selectedPreset` has a value
 - If YES: Call `handleLaunchPreset()` (uses socket event `llama:start-with-preset`)
 - If NO: Call normal start action
 
 #### 2. Dynamic Button Text
+
 ```javascript
 Component.h(
   "button",
@@ -40,17 +44,19 @@ Component.h(
   this.state.routerLoading
     ? "▶ Starting..."
     : this.state.selectedPreset
-    ? "▶ Start with Preset"
-    : "▶ Start Router"
-)
+      ? "▶ Start with Preset"
+      : "▶ Start Router"
+);
 ```
 
 **Button shows:**
+
 - "▶ Starting..." (during loading)
 - "▶ Start with Preset" (when preset selected)
 - "▶ Start Router" (when no preset selected)
 
 #### 3. Removed Duplicate Button
+
 - Deleted the separate "🚀 Launch with Preset" button
 - Removed `"click [data-action=launch-preset]"` from event map
 - Cleaned up `_updateUI()` (removed preset button update logic)
@@ -58,6 +64,7 @@ Component.h(
 ## Visual Result
 
 ### Before
+
 ```
 ┌──────────────────────────────────────────────────────┐
 │ 🦙 Llama Router                    [RUNNING]         │
@@ -69,6 +76,7 @@ Component.h(
 ```
 
 ### After
+
 ```
 ┌──────────────────────────────────────────────┐
 │ 🦙 Llama Router                    [RUNNING] │
@@ -80,6 +88,7 @@ Component.h(
 ```
 
 ### With Preset Selected
+
 ```
 ┌──────────────────────────────────────────────┐
 │ 🦙 Llama Router                    [STOPPED] │
@@ -93,6 +102,7 @@ Component.h(
 ## Behavior
 
 ### Scenario 1: No Preset Selected
+
 ```
 User sees: ▶ Start Router button
 User clicks: → Normal router start
@@ -100,6 +110,7 @@ User clicks: → Normal router start
 ```
 
 ### Scenario 2: Preset Selected
+
 ```
 User selects: "fast-inference" from dropdown
 Button changes to: ▶ Start with Preset
@@ -110,6 +121,7 @@ User clicks: → handleStart()
 ```
 
 ### Scenario 3: Change Preset Selection
+
 ```
 Dropdown was: "fast-inference"
 Button text: "▶ Start with Preset"
@@ -139,7 +151,7 @@ _updateUI()
 1. **Separate "Launch with Preset" button** - No longer needed
 2. **`"click [data-action=launch-preset]"` handler** - Integrated into start button
 3. **Launch preset button update logic** - Integrated into start button text logic
-4. **Redundant UI update code** - Consolidated into _updateUI()
+4. **Redundant UI update code** - Consolidated into \_updateUI()
 
 ## Testing Checklist
 
@@ -164,6 +176,7 @@ _updateUI()
 ## Summary
 
 The router card now has a **single intelligent Start button** that:
+
 - Shows appropriate text based on preset selection
 - Automatically launches with or without preset
 - No redundant buttons or confusing options

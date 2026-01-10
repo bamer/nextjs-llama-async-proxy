@@ -59,7 +59,7 @@ class SettingsController {
     this.comp._mounted = true;
     el._component = this.comp;
     this.comp.bindEvents();
-    
+
     // Call didMount on main component - child didMount calls are handled by Component.h
     this.comp.didMount && this.comp.didMount();
 

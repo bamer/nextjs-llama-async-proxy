@@ -136,7 +136,7 @@ class RouterCard extends Component {
     }
 
     // Update buttons
-    const startStopBtn = this._el.querySelector("[data-action=\"start\"], [data-action=\"stop\"]");
+    const startStopBtn = this._el.querySelector('[data-action="start"], [data-action="stop"]');
     if (startStopBtn) {
       if (isRunning) {
         startStopBtn.setAttribute("data-action", "stop");
@@ -151,14 +151,14 @@ class RouterCard extends Component {
     }
 
     // Update restart button
-    const restartBtn = this._el.querySelector("[data-action=\"restart\"]");
+    const restartBtn = this._el.querySelector('[data-action="restart"]');
     if (restartBtn) {
       restartBtn.disabled = !isRunning || routerLoading;
       restartBtn.textContent = routerLoading ? "🔄 Restarting..." : "🔄 Restart";
     }
 
     // Update launch preset button
-    const launchPresetBtn = this._el.querySelector("[data-action=\"launch-preset\"]");
+    const launchPresetBtn = this._el.querySelector('[data-action="launch-preset"]');
     if (launchPresetBtn) {
       launchPresetBtn.disabled = this.state.routerLoading;
       launchPresetBtn.textContent = this.state.routerLoading
@@ -209,15 +209,15 @@ class RouterCard extends Component {
           { className: "router-controls" },
           isRunning
             ? Component.h(
-              "button",
-              { className: "btn btn-danger", "data-action": "stop" },
-              "⏹ Stop Router"
-            )
+                "button",
+                { className: "btn btn-danger", "data-action": "stop" },
+                "⏹ Stop Router"
+              )
             : Component.h(
-              "button",
-              { className: "btn btn-primary", "data-action": "start" },
-              "▶ Start Router"
-            ),
+                "button",
+                { className: "btn btn-primary", "data-action": "start" },
+                "▶ Start Router"
+              ),
           Component.h(
             "button",
             { className: "btn btn-secondary", "data-action": "restart", disabled: !isRunning },

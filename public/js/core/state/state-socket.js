@@ -8,6 +8,8 @@ class StateSocket {
     this.core = stateCore;
     this.socket = null;
     this.pending = new Map();
+    this.maxHistory = 500; // Configurable max history size
+    this.maxLogs = 100; // Configurable max logs size
     this.connection = new StateConnectionHandlers(
       stateCore,
       () => this.core._notify("connectionStatus", "connected"),
@@ -87,8 +89,23 @@ class StateSocket {
    * @param {Object} m - Metric data
    */
   _addMetric(m) {
-    const h = [...(this.core.get("metricsHistory") || []), { ...m, ts: Date.now() }].slice(-200);
+    const currentHistory = this.core.get("metricsHistory") || [];
+    const newHistory = [...currentHistory, { ...m, ts: Date.now() }];
+
+    // Add warning when approaching limit
+    if (currentHistory.length >= this.maxHistory - 10) {
+      console.warn("[STATE-SOCKET] Metrics history approaching limit:", {
+        current: currentHistory.length,
+        max: this.maxHistory,
+      });
+    }
+
+    const h = newHistory.slice(-this.maxHistory);
     this.core.set("metricsHistory", h);
+    console.log("[DEBUG] StateSocket._addMetric:", {
+      newLength: h.length,
+      maxHistory: this.maxHistory,
+    });
   }
 
   /**
@@ -96,7 +113,7 @@ class StateSocket {
    * @param {Object} e - Log entry
    */
   _addLog(e) {
-    const l = [e, ...(this.core.get("logs") || [])].slice(0, 100);
+    const l = [e, ...(this.core.get("logs") || [])].slice(0, this.maxLogs);
     this.core.set("logs", l);
   }
 
@@ -137,12 +154,18 @@ class StateSocket {
     const isConfigOperation = event.startsWith("config:") || event.startsWith("settings:");
     const timeoutMs = isConfigOperation ? 5000 : 120000;
     const timeout = setTimeout(() => {
-      console.warn("[STATE-SOCKET] Request timeout:", event, "requestId:", reqId);
+      console.warn("[STATE-SOCKET] Request timeout:", {
+        event,
+        requestId: reqId,
+        timeoutMs,
+        timeoutSeconds: timeoutMs / 1000,
+      });
       this.pending.delete(reqId);
-      reject(new Error(`Timeout: ${event}`));
+      reject(new Error(`Request timeout after ${timeoutMs / 1000}s for event: ${event}`));
     }, timeoutMs);
     this.pending.set(reqId, { resolve, reject, event, timeout });
     this.socket.emit(event, { ...data, requestId: reqId });
+    console.log("[DEBUG] StateSocket._doRequest:", { event, requestId: reqId, timeoutMs });
   }
 
   /**

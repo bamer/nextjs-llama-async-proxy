@@ -9,12 +9,14 @@ A new feature that allows launching `llama-server` in router mode directly with 
 ### Problem Solved
 
 Previously:
+
 - You had to manually create llama-server command-line arguments
 - No connection between preset UI and actual server startup
 - Complex CLI options to manage
 - Difficult to switch between configurations
 
 Now:
+
 - Create a preset in the UI
 - Click "Launch Server" button
 - Server starts with exact configuration from preset
@@ -35,6 +37,7 @@ llama-server --models-preset /path/to/config.ini --models-max 4
 ```
 
 **Key Changes**:
+
 - Auto-detect if path is `.ini` file
 - Use `--models-preset` flag for INI files
 - Use `--models-dir` flag for directories
@@ -58,12 +61,14 @@ llama-server --models-preset /path/to/config.ini --models-max 4
    - Returns status on completion
 
 **Key Changes**:
+
 - Imported `startLlamaServerRouter` and `stopLlamaServerRouter` from llama-router
 - Added 2 new socket event handlers (lines 844-924)
 - Added detailed logging
 - Proper error handling with meaningful messages
 
-**Lines Modified**: 
+**Lines Modified**:
+
 - Import: +1 line
 - Event handlers: +80 lines
 - Total: 81 lines added
@@ -125,13 +130,13 @@ await stateManager.request("presets:stop-server");
 socket.on("presets:start-with-preset", async (data, ack) => {
   const { filename, options } = data;
   const presetPath = path.join(PRESETS_DIR, `${filename}.ini`);
-  
+
   // 2. Start llama-server with preset file
   const result = await startLlamaServerRouter(presetPath, db, {
     ...options,
-    usePreset: true  // Flag tells start.js to use --models-preset
+    usePreset: true, // Flag tells start.js to use --models-preset
   });
-  
+
   // 3. Return result to client
   if (result.success) {
     ack({ success: true, data: result });
@@ -147,9 +152,9 @@ socket.on("presets:start-with-preset", async (data, ack) => {
 // In Presets page
 async handleLaunchServer() {
   const preset = this.state.selectedPreset;
-  
+
   showNotification("Starting llama-server...", "info");
-  
+
   try {
     // Make request to backend
     const response = await stateManager.request("presets:start-with-preset", {
@@ -160,7 +165,7 @@ async handleLaunchServer() {
         ctxSize: 4096
       }
     });
-    
+
     if (response.success) {
       showNotification(
         `✓ Server running on port ${response.data.port}`,
@@ -226,27 +231,32 @@ temperature = 0.5
 ## Key Features
 
 ✅ **Automatic Mode Detection**
+
 - Detects `.ini` files automatically
 - Uses `--models-preset` when appropriate
 - Falls back to `--models-dir` for directories
 
 ✅ **Error Handling**
+
 - Validates preset file exists
 - Checks llama-server binary available
 - Provides meaningful error messages
 - Auto-finds available port if configured port in use
 
 ✅ **Backward Compatible**
+
 - Existing code using `--models-dir` still works
 - No breaking changes
 - Option flag is explicit if needed
 
 ✅ **Logging & Debugging**
+
 - Debug logging at each step
 - Detailed logger messages
 - Error stack traces in console
 
 ✅ **Integration Ready**
+
 - Works with existing Socket.IO infrastructure
 - Follows established event handler patterns
 - Uses existing stateManager abstraction
@@ -265,20 +275,22 @@ await stateManager.request("presets:add-model", {
   modelName: "test-model",
   config: {
     model: "/path/to/model.gguf",
-    ctxSize: 2048
-  }
+    ctxSize: 2048,
+  },
 });
 
 // 3. Save preset
 await stateManager.request("presets:save", {
   filename: "test",
-  config: { /* full config */ }
+  config: {
+    /* full config */
+  },
 });
 
 // 4. Start server
 const response = await stateManager.request("presets:start-with-preset", {
   filename: "test",
-  options: { maxModels: 2 }
+  options: { maxModels: 2 },
 });
 
 console.log("Server port:", response.data.port);
@@ -364,6 +376,7 @@ npm start         # restart server
 ## Benefits
 
 ### For Users
+
 - ✅ Visual configuration management
 - ✅ One-click server launch
 - ✅ No CLI knowledge needed
@@ -371,6 +384,7 @@ npm start         # restart server
 - ✅ Saved configurations
 
 ### For Developers
+
 - ✅ Clean separation of concerns
 - ✅ Extensible architecture
 - ✅ Proper error handling
@@ -378,6 +392,7 @@ npm start         # restart server
 - ✅ Well-documented API
 
 ### For DevOps
+
 - ✅ Version-controllable configs
 - ✅ Reproducible deployments
 - ✅ Easy switching between profiles
@@ -387,6 +402,7 @@ npm start         # restart server
 ## Summary
 
 This integration brings the preset management system full circle:
+
 1. **Create** presets via UI
 2. **Edit** model configurations
 3. **Save** to INI files

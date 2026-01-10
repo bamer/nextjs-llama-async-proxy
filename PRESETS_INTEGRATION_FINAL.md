@@ -5,12 +5,14 @@ Complete integration of preset-based llama-server launching in the Settings/Dash
 ## What Was Implemented
 
 ### Frontend Integration ✅
+
 - **Settings → Router Config component** now has a "Launch with Preset" section
 - Preset dropdown showing all available presets
 - "🚀 Launch Server with Preset" button
 - Presets are loaded automatically when component mounts
 
 ### Backend Integration ✅
+
 - New `llama:start-with-preset` Socket.IO handler in `llama.js`
 - Uses existing `startLlamaServerRouter()` with preset INI file
 - Broadcasts server status to all connected clients
@@ -21,24 +23,26 @@ Complete integration of preset-based llama-server launching in the Settings/Dash
 ### 1. `server/handlers/llama.js`
 
 **Added**:
+
 - `import path from "path"` for file path handling
 - New `llama:start-with-preset` event handler (lines 123-166)
 
 **How it works**:
+
 ```javascript
 socket.on("llama:start-with-preset", (req) => {
   // 1. Get preset name from request
   const presetName = req?.presetName;
-  
+
   // 2. Build preset file path: ./config/presetName.ini
   const presetPath = path.join(process.cwd(), "config", `${presetName}.ini`);
-  
+
   // 3. Start llama-server with preset
   startLlamaServerRouter(presetPath, db, {
     ...options,
-    usePreset: true  // Use --models-preset flag
-  })
-  
+    usePreset: true, // Use --models-preset flag
+  });
+
   // 4. Emit server:running status to dashboard
   io.emit("llama:status", { status: "running", port, preset });
 });
@@ -47,6 +51,7 @@ socket.on("llama:start-with-preset", (req) => {
 ### 2. `public/js/pages/settings/components/router-config.js`
 
 **Added**:
+
 - Server state: `presets`, `selectedPreset` (lines 14-15)
 - `didMount()` lifecycle method to load presets
 - `_loadPresets()` method to fetch preset list
@@ -54,6 +59,7 @@ socket.on("llama:start-with-preset", (req) => {
 - Preset launcher UI section with dropdown and button
 
 **UI Flow**:
+
 1. Component mounts → Load presets from `presets:list` event
 2. User selects preset from dropdown
 3. User clicks "🚀 Launch Server with Preset"
@@ -97,16 +103,17 @@ Frontend: displays server status and port
 ```javascript
 // From settings component
 stateManager.request("llama:start-with-preset", {
-  presetName: "production",        // Preset filename (required)
-  maxModels: 4,                    // Optional: defaults from user_settings
-  ctxSize: 4096,                   // Optional: defaults from config
-  threads: 4                       // Optional: defaults from user_settings
-})
+  presetName: "production", // Preset filename (required)
+  maxModels: 4, // Optional: defaults from user_settings
+  ctxSize: 4096, // Optional: defaults from config
+  threads: 4, // Optional: defaults from user_settings
+});
 ```
 
 ### Response
 
 **Success**:
+
 ```javascript
 {
   success: true,
@@ -118,6 +125,7 @@ stateManager.request("llama:start-with-preset", {
 ```
 
 **Error**:
+
 ```javascript
 {
   success: false,
@@ -128,6 +136,7 @@ stateManager.request("llama:start-with-preset", {
 ### Broadcast to Dashboard
 
 When server starts, all connected clients receive:
+
 ```javascript
 {
   status: "running",
@@ -224,18 +233,18 @@ await stateManager.request("llama:status");
 // Manually launch
 await stateManager.request("llama:start-with-preset", {
   presetName: "test",
-  maxModels: 2
+  maxModels: 2,
 });
 ```
 
 ## Error Handling
 
-| Scenario | Error Message | Solution |
-|----------|---------------|----------|
-| No preset selected | "Please select a preset" | Choose a preset from dropdown |
-| Preset file missing | "Preset file not found: test" | Create preset in Presets page |
-| Model path invalid | "Model file not found" | Check model paths in preset config |
-| Port in use | "Port already in use" | System auto-selects next port |
+| Scenario               | Error Message                   | Solution                             |
+| ---------------------- | ------------------------------- | ------------------------------------ |
+| No preset selected     | "Please select a preset"        | Choose a preset from dropdown        |
+| Preset file missing    | "Preset file not found: test"   | Create preset in Presets page        |
+| Model path invalid     | "Model file not found"          | Check model paths in preset config   |
+| Port in use            | "Port already in use"           | System auto-selects next port        |
 | llama-server not found | "llama-server binary not found" | Install llama.cpp or set in settings |
 
 ## File Locations
@@ -257,11 +266,11 @@ Project Root
 
 ## Summary of Changes
 
-| File | Changes | Lines | Type |
-|------|---------|-------|------|
-| `server/handlers/llama.js` | New preset handler | +44 | New Handler |
-| `public/js/pages/settings/components/router-config.js` | Preset launcher UI + methods | +50 | New Feature |
-| `server/handlers/llama-router/start.js` | Dual mode support | +30 | Enhancement |
+| File                                                   | Changes                      | Lines | Type        |
+| ------------------------------------------------------ | ---------------------------- | ----- | ----------- |
+| `server/handlers/llama.js`                             | New preset handler           | +44   | New Handler |
+| `public/js/pages/settings/components/router-config.js` | Preset launcher UI + methods | +50   | New Feature |
+| `server/handlers/llama-router/start.js`                | Dual mode support            | +30   | Enhancement |
 
 **Total New Code**: ~124 lines  
 **Total Files Modified**: 3  
@@ -290,7 +299,7 @@ Project Root
 ✅ **Frontend**: Integrated in Settings page  
 ✅ **UI**: Functional preset launcher  
 ✅ **Error Handling**: Comprehensive  
-✅ **Documentation**: Complete  
+✅ **Documentation**: Complete
 
 **Ready for Production**: YES
 
@@ -309,19 +318,25 @@ Project Root
 ### For Developers
 
 **Backend request**:
+
 ```javascript
-socket.emit("llama:start-with-preset", {
-  presetName: "my-preset",
-  maxModels: 4
-}, (response) => {
-  console.log(response);
-});
+socket.emit(
+  "llama:start-with-preset",
+  {
+    presetName: "my-preset",
+    maxModels: 4,
+  },
+  (response) => {
+    console.log(response);
+  }
+);
 ```
 
 **Frontend shortcut**:
+
 ```javascript
 await stateManager.request("llama:start-with-preset", {
-  presetName: "my-preset"
+  presetName: "my-preset",
 });
 ```
 

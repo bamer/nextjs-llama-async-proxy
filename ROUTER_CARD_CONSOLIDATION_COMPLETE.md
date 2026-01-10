@@ -7,6 +7,7 @@ Consolidated the preset launcher functionality into a **single unified Router Ca
 ## Changes
 
 ### 1. Unified Router Card Component
+
 **File**: `public/js/components/router-card.js`
 
 - **Single component** for all router controls
@@ -16,14 +17,18 @@ Consolidated the preset launcher functionality into a **single unified Router Ca
 - Full event handling for preset selection and launch
 
 ### 2. Deleted Duplicate Component
+
 **Removed**: `public/js/components/dashboard/router-card.js`
+
 - This was a temporary duplicate with the same functionality
 - No longer needed - using unified component instead
 
 ### 3. Updated index.html
+
 **File**: `public/index.html`
 
 Simplified script loading:
+
 ```html
 <!-- BEFORE -->
 <script src="/js/components/dashboard/router-card.js"></script>
@@ -48,6 +53,7 @@ Simplified script loading:
 ```
 
 **When preset selected:**
+
 ```
 ┌─────────────────────────────────────────────────────┐
 │ 🦙 Llama Router                  [RUNNING]          │
@@ -85,7 +91,7 @@ RouterCard (unified)
 ## Event Handlers
 
 - `handleStart()` - Start the router
-- `handleStop()` - Stop the router  
+- `handleStop()` - Stop the router
 - `handleRestart()` - Restart the router
 - `handlePresetChange()` - Track selected preset
 - `handleLaunchPreset()` - Launch with selected preset
@@ -94,19 +100,20 @@ RouterCard (unified)
 
 ```javascript
 state = {
-  status,              // Current router status
-  routerStatus,        // Router models status
-  presets,            // Available presets
-  selectedPreset,     // Selected preset for launch
-  routerLoading,      // Loading state during operations
-  maxModelsLoaded,    // Max models for preset launch
-  ctxSize,            // Context size for preset launch
-}
+  status, // Current router status
+  routerStatus, // Router models status
+  presets, // Available presets
+  selectedPreset, // Selected preset for launch
+  routerLoading, // Loading state during operations
+  maxModelsLoaded, // Max models for preset launch
+  ctxSize, // Context size for preset launch
+};
 ```
 
 ## Usage in Pages
 
 ### Dashboard
+
 ```javascript
 Component.h(window.RouterCard, {
   status: this.state.status,
@@ -117,10 +124,11 @@ Component.h(window.RouterCard, {
   maxModelsLoaded: this.state.maxModelsLoaded,
   ctxSize: this.state.ctxSize,
   onAction: (action) => this.props.controller?.handleRouterAction(action),
-})
+});
 ```
 
 ### Settings
+
 ```javascript
 Component.h(window.RouterCard, {
   status: this.state.llamaStatus,
@@ -133,7 +141,7 @@ Component.h(window.RouterCard, {
   onAction: (action) => {
     this.props.controller?.handleRouterAction(action);
   },
-})
+});
 ```
 
 ## Benefits
@@ -159,6 +167,7 @@ Component.h(window.RouterCard, {
 ## Before vs After
 
 ### BEFORE
+
 ```
 router-card.js (old) + dashboard/router-card.js (new)
 ├── Duplicate code
@@ -168,6 +177,7 @@ router-card.js (old) + dashboard/router-card.js (new)
 ```
 
 ### AFTER
+
 ```
 router-card.js (unified)
 ├── Single component
@@ -178,10 +188,10 @@ router-card.js (unified)
 
 ## File Changes Summary
 
-| File | Action | Reason |
-|------|--------|--------|
-| `router-card.js` | Modified | Consolidated unified component |
-| `dashboard/router-card.js` | Deleted | No longer needed |
-| `index.html` | Updated | Removed duplicate script |
+| File                       | Action   | Reason                         |
+| -------------------------- | -------- | ------------------------------ |
+| `router-card.js`           | Modified | Consolidated unified component |
+| `dashboard/router-card.js` | Deleted  | No longer needed               |
+| `index.html`               | Updated  | Removed duplicate script       |
 
 All set! The router card is now completely consolidated. 🎉

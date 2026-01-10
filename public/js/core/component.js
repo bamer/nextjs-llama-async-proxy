@@ -13,6 +13,8 @@ class Component {
     this._subscribedKeys = new Set(); // State keys this component subscribes to
     this._renderId = 0; // Track renders for debugging
     this._pendingUpdates = new Map(); // Store pending updates to prevent race conditions
+    this._abortController = null; // AbortController for async operations
+    this._debounceTimers = new Map(); // Track debounce timers for cleanup
   }
 
   // Override in subclasses
@@ -86,7 +88,7 @@ class Component {
     // Legacy: always update if no options provided
     if (options.immediate) {
       if (this._el) {
-        this._conditionalUpdate(changedKeys, oldState);
+        this._conditionalUpdate(changedKeys);
         this._pendingUpdates.clear();
       }
       return this;
@@ -123,7 +125,7 @@ class Component {
   }
 
   // Conditional update based on subscriptions
-  _conditionalUpdate(changedKeys, oldState) {
+  _conditionalUpdate(changedKeys) {
     if (!this._el) return;
 
     // Check if we should re-render
@@ -261,6 +263,13 @@ class Component {
     // Clear pending updates
     this._pendingUpdates.clear();
 
+    // Abort all pending async operations
+    this._abortPending();
+
+    // Clear all debounce timers
+    this._debounceTimers.forEach((timer) => clearTimeout(timer));
+    this._debounceTimers.clear();
+
     // Unsubscribe from all state events
     this._subscribedKeys.clear();
 
@@ -307,6 +316,74 @@ class Component {
       console.error("[Component] $qa error:", selector, e);
       return [];
     }
+  }
+
+  /**
+   * Create a new AbortController for this component
+   * @returns {AbortController} New AbortController instance
+   */
+  _createAbort() {
+    // Abort any existing controller first
+    this._abortPending();
+
+    // Use window.AbortController for vanilla JS compatibility
+    const AbortControllerClass = window.AbortController;
+    if (!AbortControllerClass) {
+      console.warn("[Component] AbortController not supported in this browser");
+      return null;
+    }
+
+    this._abortController = new AbortControllerClass();
+    console.log("[DEBUG] Component._createAbort:", {
+      component: this.constructor.name,
+      signal: this._abortController.signal,
+    });
+    return this._abortController;
+  }
+
+  /**
+   * Abort all pending async operations
+   */
+  _abortPending() {
+    if (this._abortController) {
+      console.log("[DEBUG] Component._abortPending:", {
+        component: this.constructor.name,
+      });
+      this._abortController.abort();
+      this._abortController = null;
+    }
+  }
+
+  /**
+   * Get the current abort signal
+   * @returns {AbortSignal|null} Current abort signal
+   */
+  _getAbortSignal() {
+    return this._abortController?.signal || null;
+  }
+
+  /**
+   * Create a debounced function that will be cleaned up on component destroy
+   * @param {Function} fn - Function to debounce
+   * @param {number} delay - Delay in milliseconds
+   * @param {string} key - Optional key to identify the debounced function
+   * @returns {Function} Debounced function
+   */
+  _debounceInput(fn, delay, key = "default") {
+    return (...args) => {
+      // Clear existing timer for this key
+      if (this._debounceTimers.has(key)) {
+        clearTimeout(this._debounceTimers.get(key));
+      }
+
+      // Create new timer
+      const timer = setTimeout(() => {
+        fn.apply(this, args);
+        this._debounceTimers.delete(key);
+      }, delay);
+
+      this._debounceTimers.set(key, timer);
+    };
   }
 
   // Element creator (h)

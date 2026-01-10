@@ -277,6 +277,9 @@ class DashboardPage extends Component {
           ctxSize: this.state.ctxSize,
           onAction: (action) => this.props.controller?.handleRouterAction(action),
         }),
+        Component.h(window.LlamaServerStatusPanel, {
+          metrics: stateManager.get("llamaServerMetrics"),
+        }),
         Component.h(window.QuickActions, {
           onRefresh: () => this._refresh(),
         })

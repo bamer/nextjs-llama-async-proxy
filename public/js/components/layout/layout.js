@@ -74,6 +74,7 @@ class Sidebar extends Component {
           { className: "theme-toggle-btn", "data-action": "toggle-theme" },
           "🌙 Dark"
         ),
+        Component.h("button", { className: "help-btn", "data-action": "keyboard-help" }, "⌨️"),
         Component.h(
           "div",
           { className: "connection-status", id: "connection-status" },
@@ -88,6 +89,7 @@ class Sidebar extends Component {
     return {
       "click [data-page]": "handleClick",
       "click [data-action=toggle-theme]": "handleThemeToggle",
+      "click [data-action=keyboard-help]": "handleKeyboardHelp",
     };
   }
 
@@ -122,6 +124,13 @@ class Sidebar extends Component {
     if (btn) {
       btn.textContent = isDark ? "☀️ Light" : "🌙 Dark";
     }
+  }
+
+  handleKeyboardHelp() {
+    console.log("[DEBUG] Opening keyboard shortcuts help");
+    const shortcuts = window.keyboardShortcuts?.getAllShortcuts() || [];
+    const modal = Component.h(KeyboardShortcutsHelp, { shortcuts }).render();
+    document.body.appendChild(modal);
   }
 
   didMount() {
@@ -238,14 +247,14 @@ class Header extends Component {
       if (txt) txt.textContent = s === "connected" ? "Connected" : "Disconnected";
     }
     const hs = this._el?.querySelector(".header-status");
-    if (hs) {
-      hs.innerHTML =
-        s === "connected"
-          ? '<span class="badge online">● Online</span>'
-          : '<span class="badge offline">● Offline</span>';
-    }
+      if (hs) {
+        hs.innerHTML =
+          s === "connected"
+            ? "<span class=\"badge online\">● Online</span>"
+            : "<span class=\"badge offline\">● Offline</span>";
+      }
   }
-}
+  }
 
 window.Layout = Layout;
 window.Sidebar = Sidebar;

@@ -1,0 +1,235 @@
+/* Keyboard Shortcuts Modal */
+.keyboard-shortcuts-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+}
+
+.keyboard-shortcuts-modal .modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.keyboard-shortcuts-modal .modal-content {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  max-width: 600px;
+  max-height: 80vh;
+  overflow: auto;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
+}
+
+.keyboard-shortcuts-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.keyboard-shortcuts-modal .modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+}
+
+.keyboard-shortcuts-modal .btn-close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.keyboard-shortcuts-modal .btn-close:hover {
+  color: var(--text-primary);
+}
+
+.keyboard-shortcuts-modal .modal-body {
+  padding: 20px;
+}
+
+.keyboard-shortcuts-modal .shortcuts-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.keyboard-shortcuts-modal .shortcuts-table th,
+.keyboard-shortcuts-modal .shortcuts-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.keyboard-shortcuts-modal .shortcuts-table th {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.keyboard-shortcuts-modal .shortcuts-table .shortcut-key {
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.keyboard-shortcuts-modal .shortcuts-table .shortcut-desc {
+  color: var(--text-primary);
+}
+
+/* Favorites Filter */
+.favorites-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 16px;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.favorites-filter input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+/* Favorite Button */
+.btn-favorite {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  padding: 4px 8px;
+  min-width: auto;
+}
+
+.btn-favorite:hover {
+  background: var(--bg-tertiary);
+  color: var(--warning);
+}
+
+.btn-favorite[data-favorite="true"] {
+  color: var(--warning);
+}
+
+/* Test Button */
+.btn-test {
+  background: var(--bg-tertiary);
+  border-color: var(--border-color);
+  margin-right: 8px;
+}
+
+.btn-test:hover {
+  background: var(--bg-secondary);
+  border-color: var(--info);
+}
+
+/* Config Export/Import */
+.config-export-import {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+}
+
+.config-export-import h2 {
+  margin: 0 0 12px 0;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.config-export-import .hint {
+  margin: 0 0 16px 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.config-export-import .export-import-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+/* Preset Templates */
+.preset-templates {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+}
+
+.preset-templates h2 {
+  margin: 0 0 12px 0;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.preset-templates .hint {
+  margin: 0 0 16px 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.preset-templates .template-select {
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 12px;
+}
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--bg-secondary);
+}
+
+html.dark-mode .theme-toggle-btn {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+html.dark-mode .theme-toggle-btn:hover {
+  background: var(--bg-tertiary);
+}
+
+/* Help Button */
+.help-btn {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  margin-bottom: 8px;
+}
+
+.help-btn:hover {
+  background: var(--bg-secondary);
+}

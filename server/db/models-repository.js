@@ -26,6 +26,7 @@ const ALLOWED_UPDATE_COLUMNS = [
   "head_count_kv",
   "ffn_dim",
   "file_type",
+  "favorite",
 ];
 
 export class ModelsRepository {
@@ -65,8 +66,8 @@ export class ModelsRepository {
     const query = `INSERT OR REPLACE INTO models (id, name, type, status,
       parameters, model_path, file_size, params, quantization, ctx_size,
       batch_size, threads, created_at, updated_at,
-      embedding_size, block_count, head_count, head_count_kv, ffn_dim, file_type)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      embedding_size, block_count, head_count, head_count_kv, ffn_dim, file_type, favorite)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     this.db
       .prepare(query)
@@ -90,14 +91,15 @@ export class ModelsRepository {
         model.head_count || 0,
         model.head_count_kv || 0,
         model.ffn_dim || 0,
-        model.file_type || 0
+        model.file_type || 0,
+        model.favorite || 0
       );
 
     return this.getById(id);
   }
 
   /**
-   * Update a model by ID
+   * Update a model by ID (wrapped in transaction)
    * @param {string} id - Model ID
    * @param {Object} updates - Fields to update
    * @returns {Object|null} Updated model or null
@@ -123,8 +125,15 @@ export class ModelsRepository {
     vals.push(Math.floor(Date.now() / 1000), id);
 
     const query = `UPDATE models SET ${set.join(", ")}, updated_at = ? WHERE id = ?`;
-    this.db.prepare(query).run(...vals);
-    return this.getById(id);
+
+    // Use transaction for consistency
+    const updateTxn = this.db.transaction(() => {
+      const result = this.db.prepare(query).run(...vals);
+      console.log("[DEBUG] ModelsRepository.update:", { id, changes: result.changes });
+      return this.getById(id);
+    });
+
+    return updateTxn();
   }
 
   /**
@@ -137,25 +146,53 @@ export class ModelsRepository {
   }
 
   /**
-   * Remove models with invalid files
+   * Remove models with invalid files (wrapped in transaction)
    * @returns {number} Number of models deleted
    */
   cleanupMissingFiles() {
     const models = this.getAll();
     let deleted = 0;
+    const toDelete = [];
 
     for (const m of models) {
       const { valid, reason } = validateModelEntry(m);
 
       if (!valid) {
         console.log("[DEBUG] Cleanup: Removing", m.name, "(", reason, ")");
-        this.delete(m.id);
-        deleted++;
+        toDelete.push(m.id);
       }
     }
 
+    // Use transaction for atomic deletion
+    const cleanupTxn = this.db.transaction(() => {
+      for (const id of toDelete) {
+        this.delete(id);
+        deleted++;
+      }
+    });
+
+    cleanupTxn();
     console.log("[DEBUG] Cleanup: Removed", deleted, "invalid models");
     return deleted;
+  }
+
+  /**
+   * Toggle favorite status for a model
+   * @param {string} id - Model ID
+   * @param {boolean} favorite - Favorite status
+   * @returns {Object|null} Updated model or null
+   */
+  toggleFavorite(id, favorite) {
+    console.log("[DEBUG] Toggle favorite:", id, favorite);
+    return this.update(id, { favorite: favorite ? 1 : 0 });
+  }
+
+  /**
+   * Get all favorite models
+   * @returns {Array} Array of favorite models
+   */
+  getFavorites() {
+    return this.db.prepare("SELECT * FROM models WHERE favorite = 1 ORDER BY name ASC").all();
   }
 }
 

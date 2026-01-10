@@ -6,6 +6,47 @@ class StateModels {
   constructor(stateCore, stateSocket) {
     this.core = stateCore;
     this.socket = stateSocket;
+    // Initialize cache
+    this._cache = new Map();
+    this._cacheTTL = 30000; // 30 seconds TTL
+    this._cacheKeys = ["getModels"];
+  }
+
+  /**
+   * Get cached value or fetch new data
+   * @private
+   */
+  async _cachedRequest(key, fetchFn, ...args) {
+    const cacheKey = `${key}:${JSON.stringify(args)}`;
+    const cached = this._cache.get(cacheKey);
+
+    if (cached && Date.now() - cached.timestamp < this._cacheTTL) {
+      console.log("[DEBUG] Cache hit for:", key, "Age:", Date.now() - cached.timestamp, "ms");
+      return cached.data;
+    }
+
+    console.log("[DEBUG] Cache miss for:", key, "Fetching fresh data...");
+    const data = await fetchFn(...args);
+    this._cache.set(cacheKey, {
+      data,
+      timestamp: Date.now(),
+    });
+    return data;
+  }
+
+  /**
+   * Invalidate cache entries matching key pattern
+   * @param {string} pattern - Key pattern to match (e.g., "getModels")
+   */
+  invalidateCache(pattern) {
+    const keysToDelete = [];
+    for (const key of this._cache.keys()) {
+      if (!pattern || key.startsWith(pattern)) {
+        keysToDelete.push(key);
+      }
+    }
+    keysToDelete.forEach((k) => this._cache.delete(k));
+    console.log("[DEBUG] Cache invalidated:", { pattern, count: keysToDelete.length });
   }
 
   /**
@@ -18,8 +59,10 @@ class StateModels {
     const list = this.core.get("models") || [];
     const idx = list.findIndex((m) => m.id === id);
     if (idx !== -1) {
-      list[idx] = { ...list[idx], status, ...model };
-      this.core._notify("models", list, list);
+      // Create a new array with the updated model (don't mutate directly)
+      const updatedList = [...list];
+      updatedList[idx] = { ...list[idx], status, ...model };
+      this.core.set("models", updatedList);
     }
   }
 
@@ -69,7 +112,7 @@ class StateModels {
    * @returns {Promise<Array>} List of models
    */
   async getModels() {
-    return this.socket.request("models:list");
+    return this._cachedRequest("getModels", () => this.socket.request("models:list"));
   }
 
   /**
@@ -167,6 +210,55 @@ class StateModels {
    */
   async cleanupModels() {
     return this.socket.request("models:cleanup");
+  }
+
+  /**
+   * Toggle favorite status
+   * @param {string} modelName - Model name
+   * @param {boolean} favorite - Favorite status
+   * @returns {Promise<Object>} Result
+   */
+  async toggleFavorite(modelName, favorite) {
+    return this.socket.request("models:toggle-favorite", {
+      modelId: modelName,
+      favorite,
+    });
+  }
+
+  /**
+   * Test a model with simple completion
+   * @param {string} modelName - Model name
+   * @returns {Promise<Object>} Test result
+   */
+  async testModel(modelName) {
+    const config = this.core.get("config") || {};
+    const settings = this.core.get("settings") || {};
+    const port = config.port || 8080;
+
+    // Call llama-server completion API directly
+    try {
+      const response = await fetch(`http://localhost:${port}/completion`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: modelName,
+          prompt: "Hello!",
+          n_predict: 10,
+          temperature: settings.temperature || 0.7,
+          top_p: settings.top_p || 0.9,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      return { success: true, output: result.content || "No output" };
+    } catch (error) {
+      console.error("[STATE-MODELS] Test model error:", error);
+      return { success: false, error: error.message };
+    }
   }
 }
 

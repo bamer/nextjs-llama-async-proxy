@@ -30,7 +30,29 @@ import { registerLogsHandlers } from "./logs.js";
 import { registerConfigHandlers } from "./config.js";
 import { registerLlamaHandlers } from "./llama.js";
 import { registerPresetsHandlers } from "./presets.js";
+import { registerProcessHandlers } from "./llama-router/process-handlers.js";
 import { logger } from "./logger.js";
+import { LlamaServerProcessManager } from "./llama-router/process-manager.js";
+
+// Create process manager instance
+let processManager = null;
+
+function getProcessManager(db) {
+  if (!processManager) {
+    const config = db.getConfig();
+    processManager = new LlamaServerProcessManager({
+      baseModelsPath: config.baseModelsPath,
+      port: config.llama_server_port || 8080,
+      host: config.llama_server_host || "0.0.0.0",
+      modelsMax: config.maxModelsLoaded || 4,
+      ctxSize: config.ctx_size || 4096,
+      batchSize: config.batch_size || 512,
+      threads: config.threads || 4,
+      ngl: config.gpuLayers || 0,
+    });
+  }
+  return processManager;
+}
 
 /**
  * Register all Socket.IO event handlers
@@ -51,5 +73,6 @@ export function registerHandlers(io, db, ggufParser) {
     registerConfigHandlers(socket, db);
     registerLlamaHandlers(socket, io, db);
     registerPresetsHandlers(socket, db);
+    registerProcessHandlers(socket, io, db, getProcessManager(db));
   });
 }

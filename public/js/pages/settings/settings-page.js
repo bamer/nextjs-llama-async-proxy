@@ -32,6 +32,10 @@ class SettingsPage extends Component {
       routerStatus: props.routerStatus || null,
       llamaStatus: props.llamaStatus || null,
       presets: props.presets || [],
+      llama_server_enabled: config.llama_server_enabled !== false,
+      llama_server_port: config.llama_server_port || 8080,
+      llama_server_host: config.llama_server_host || "0.0.0.0",
+      llama_server_metrics: config.llama_server_metrics !== false,
     };
   }
 
@@ -57,6 +61,10 @@ class SettingsPage extends Component {
         batch_size: this.state.batch_size,
         temperature: this.state.temperature,
         repeatPenalty: this.state.repeatPenalty,
+        llama_server_enabled: this.state.llama_server_enabled,
+        llama_server_port: this.state.llama_server_port,
+        llama_server_host: this.state.llama_server_host,
+        llama_server_metrics: this.state.llama_server_metrics,
       };
 
       const settings = {
@@ -103,6 +111,131 @@ class SettingsPage extends Component {
   handleSave(event) {
     event.preventDefault();
     this._save();
+  }
+
+  async _exportConfig() {
+    console.log("[DEBUG] Exporting configuration");
+
+    try {
+      const config = stateManager.get("config") || {};
+      const settings = stateManager.get("settings") || {};
+
+      const fullConfig = {
+        config,
+        settings,
+        exportDate: new Date().toISOString(),
+        version: "1.0",
+      };
+
+      const data = JSON.stringify(fullConfig, null, 2);
+      const blob = new Blob([data], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `llama-dashboard-config-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      console.log("[DEBUG] Configuration exported successfully");
+      showNotification("Configuration exported successfully", "success");
+    } catch (error) {
+      console.error("[DEBUG] Export error:", error);
+      showNotification(`Export failed: ${error.message}`, "error");
+    }
+  }
+
+  async _importConfig(importedConfig) {
+    console.log("[DEBUG] Importing configuration:", importedConfig);
+
+    // Validate configuration
+    if (!importedConfig.config || !importedConfig.settings) {
+      showNotification("Invalid configuration file", "error");
+      return;
+    }
+
+    try {
+      // Apply imported config
+      const { config, settings } = importedConfig;
+
+      // Update settings
+      if (config.serverPath !== undefined) {
+        this.setState({ serverPath: config.serverPath });
+      }
+      if (config.host !== undefined) {
+        this.setState({ host: config.host });
+      }
+      if (config.port !== undefined) {
+        this.setState({ port: config.port });
+      }
+      if (config.ctx_size !== undefined) {
+        this.setState({ ctx_size: config.ctx_size });
+      }
+      if (config.threads !== undefined) {
+        this.setState({ threads: config.threads });
+      }
+      if (config.batch_size !== undefined) {
+        this.setState({ batch_size: config.batch_size });
+      }
+      if (config.temperature !== undefined) {
+        this.setState({ temperature: config.temperature });
+      }
+      if (config.repeatPenalty !== undefined) {
+        this.setState({ repeatPenalty: config.repeatPenalty });
+      }
+      if (config.llama_server_enabled !== undefined) {
+        this.setState({ llama_server_enabled: config.llama_server_enabled });
+      }
+      if (config.llama_server_port !== undefined) {
+        this.setState({ llama_server_port: config.llama_server_port });
+      }
+      if (config.llama_server_host !== undefined) {
+        this.setState({ llama_server_host: config.llama_server_host });
+      }
+      if (config.llama_server_metrics !== undefined) {
+        this.setState({ llama_server_metrics: config.llama_server_metrics });
+      }
+
+      // Apply imported settings
+      if (settings.maxModelsLoaded !== undefined) {
+        this.setState({ maxModelsLoaded: settings.maxModelsLoaded });
+      }
+      if (settings.parallelSlots !== undefined) {
+        this.setState({ parallelSlots: settings.parallelSlots });
+      }
+      if (settings.gpuLayers !== undefined) {
+        this.setState({ gpuLayers: settings.gpuLayers });
+      }
+      if (settings.logLevel !== undefined) {
+        this.setState({ logLevel: settings.logLevel });
+      }
+      if (settings.maxFileSize !== undefined) {
+        this.setState({ maxFileSize: settings.maxFileSize });
+      }
+      if (settings.maxFiles !== undefined) {
+        this.setState({ maxFiles: settings.maxFiles });
+      }
+      if (settings.enableFileLogging !== undefined) {
+        this.setState({ enableFileLogging: settings.enableFileLogging });
+      }
+      if (settings.enableDatabaseLogging !== undefined) {
+        this.setState({ enableDatabaseLogging: settings.enableDatabaseLogging });
+      }
+      if (settings.enableConsoleLogging !== undefined) {
+        this.setState({ enableConsoleLogging: settings.enableConsoleLogging });
+      }
+
+      // Save to server
+      await this._save();
+
+      console.log("[DEBUG] Configuration imported successfully");
+      showNotification("Configuration imported successfully", "success");
+    } catch (error) {
+      console.error("[DEBUG] Import error:", error);
+      showNotification(`Import failed: ${error.message}`, "error");
+    }
   }
 
   render() {
@@ -157,6 +290,16 @@ class SettingsPage extends Component {
         onTemperatureChange: (val) => this.setState({ temperature: val }),
         onRepeatPenaltyChange: (val) => this.setState({ repeatPenalty: val }),
       }),
+      Component.h(window.LlamaServerConfig, {
+        enabled: this.state.llama_server_enabled,
+        port: this.state.llama_server_port,
+        host: this.state.llama_server_host,
+        metricsEnabled: this.state.llama_server_metrics,
+        onEnabledChange: (val) => this.setState({ llama_server_enabled: val }),
+        onPortChange: (val) => this.setState({ llama_server_port: val }),
+        onHostChange: (val) => this.setState({ llama_server_host: val }),
+        onMetricsEnabledChange: (val) => this.setState({ llama_server_metrics: val }),
+      }),
       Component.h(window.LoggingConfig, {
         logLevel: this.state.logLevel,
         maxFileSize: this.state.maxFileSize,
@@ -176,6 +319,10 @@ class SettingsPage extends Component {
         onEnableFileLoggingChange: (val) => this.setState({ enableFileLogging: val }),
         onEnableDatabaseLoggingChange: (val) => this.setState({ enableDatabaseLogging: val }),
         onEnableConsoleLoggingChange: (val) => this.setState({ enableConsoleLogging: val }),
+      }),
+      Component.h(window.ConfigExportImport, {
+        onExport: this._exportConfig.bind(this),
+        onImport: this._importConfig.bind(this),
       }),
       Component.h(window.SaveSection)
     );

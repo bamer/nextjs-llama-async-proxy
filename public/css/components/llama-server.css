@@ -1,0 +1,145 @@
+/**
+ * llama-server Status Panel Styles
+ */
+
+.llama-server-status-panel {
+  background: var(--surface-color);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.llama-server-status-panel .status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.llama-server-status-panel .status-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text-color);
+}
+
+.llama-server-status-panel .status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.llama-server-status-panel .status-badge.status-running {
+  background: rgba(52, 211, 153, 0.2);
+  color: #34d399;
+}
+
+.llama-server-status-panel .status-badge.status-stopped {
+  background: rgba(248, 113, 113, 0.2);
+  color: #f87171;
+}
+
+.llama-server-status-panel .status-badge.status-unknown {
+  background: rgba(156, 163, 175, 0.2);
+  color: #9ca3af;
+}
+
+.llama-server-status-panel .status-icon {
+  font-size: 16px;
+}
+
+.llama-server-status-panel .controls {
+  display: flex;
+  gap: 8px;
+}
+
+.llama-server-status-panel .controls .btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.llama-server-status-panel .controls .btn-start {
+  background: var(--primary-color);
+  color: white;
+}
+
+.llama-server-status-panel .controls .btn-start:hover {
+  background: var(--primary-color-hover);
+}
+
+.llama-server-status-panel .controls .btn-stop {
+  background: #f87171;
+  color: white;
+}
+
+.llama-server-status-panel .controls .btn-stop:hover {
+  background: #dc2626;
+}
+
+.llama-server-status-panel .status-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.llama-server-status-panel .detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--surface-color-secondary);
+  border-radius: 6px;
+}
+
+.llama-server-status-panel .detail-row .label {
+  color: var(--text-color-secondary);
+  font-size: 14px;
+}
+
+.llama-server-status-panel .detail-row .value {
+  color: var(--text-color);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.llama-server-status-panel .llama-metrics {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.llama-server-status-panel .llama-metrics h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: var(--text-color-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.llama-server-status-panel .metric-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--surface-color-secondary);
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.llama-server-status-panel .metric-label {
+  color: var(--text-color-secondary);
+  font-size: 13px;
+}
+
+.llama-server-status-panel .metric-value {
+  color: var(--text-color);
+  font-size: 13px;
+  font-weight: 600;
+}

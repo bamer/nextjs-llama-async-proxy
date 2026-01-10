@@ -1,12 +1,15 @@
 # Fix: Preset Launcher Visibility in Router Card
 
 ## Problem
+
 The preset selection dropdown was not visible in the Llama Router card on the Dashboard page, even though we added it to the RouterCard component.
 
 ## Root Cause
+
 The script loading order in `index.html` was incorrect. The old `router-card.js` was loaded AFTER `dashboard/router-card.js`, which overwrote the enhanced version with the old simplified version.
 
 ### Script Load Order (Before Fix):
+
 ```
 1. /js/components/dashboard/router-card.js  ← EnhancedRouterCard with presets
 2. /js/components/router-card.js           ← OLD SimpleRouterCard (no presets)
@@ -15,18 +18,21 @@ window.RouterCard = SimpleRouterCard       ✗ No preset launcher
 ```
 
 ### Script Load Order (After Fix):
+
 ```
 1. /js/components/dashboard/router-card.js  ← EnhancedRouterCard with presets
 2. /js/components/router-card.js           ← OLD SimpleRouterCard (no presets)
    (only used by Settings page)
-                                             
+
 window.RouterCard = EnhancedRouterCard     ✓ Has preset launcher
 ```
 
 ## Solution
+
 Updated `public/index.html` to load `dashboard/router-card.js` BEFORE `router-card.js`.
 
 ### Change Made:
+
 ```html
 <!-- BEFORE -->
 <script src="/js/components/router-card.js"></script>
@@ -57,6 +63,7 @@ public/js/components/
 ## What You Should See
 
 ### Dashboard - Router Card Section
+
 ```
 ┌─────────────────────────────────────┐
 │ 🦙 Llama Router        [RUNNING]    │
@@ -120,6 +127,7 @@ Dashboard page uses window.RouterCard
 ## Browser Cache Note
 
 If you still don't see the combobox:
+
 1. **Hard refresh**: Ctrl+F5 (Windows/Linux) or Cmd+Shift+R (Mac)
 2. **Clear cache**: Open DevTools → Settings → Clear site data
 3. **Check Console**: F12 → Console tab for any errors

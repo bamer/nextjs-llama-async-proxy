@@ -24,168 +24,203 @@ const PORT = 3000;
 // Metrics collection with delta-based CPU calculation
 let lastCpuTimes = null;
 let metricsCallCount = 0;
+let metricsInterval = null;
+let activeClients = 1; // Start with 1 client for backwards compatibility with tests
+
+/**
+ * Update metrics collection interval based on active clients
+ * 10s with clients, 60s when idle
+ */
+function updateMetricsInterval(io, db) {
+  const newInterval = activeClients > 0 ? 10000 : 60000;
+  console.log("[DEBUG] Updating metrics interval:", {
+    activeClients,
+    interval: `${newInterval / 1000}s`,
+  });
+
+  if (metricsInterval) {
+    clearInterval(metricsInterval);
+  }
+
+  metricsInterval = setInterval(() => collectMetrics(io, db), newInterval);
+}
 
 async function startMetrics(io, db) {
   lastCpuTimes = null;
+  updateMetricsInterval(io, db);
 
-  setInterval(async () => {
+  // Track active clients (only if io has on method, i.e., real Socket.IO instance)
+  if (typeof io.on === "function") {
+    io.on("connection", () => {
+      activeClients++;
+      console.log("[DEBUG] Client connected, active clients:", activeClients);
+      updateMetricsInterval(io, db);
+    });
+
+    io.on("disconnect", () => {
+      activeClients--;
+      console.log("[DEBUG] Client disconnected, active clients:", activeClients);
+      updateMetricsInterval(io, db);
+    });
+  }
+}
+
+async function collectMetrics(io, db) {
+  try {
+    const cpus = os.cpus();
+
+    // Calculate CPU usage using delta (more accurate than instantaneous)
+    let cpuUsage = 0;
+    if (lastCpuTimes) {
+      let userDelta = 0;
+      let sysDelta = 0;
+      let idleDelta = 0;
+
+      for (let i = 0; i < cpus.length; i++) {
+        userDelta += cpus[i].times.user - (lastCpuTimes[i]?.user || 0);
+        sysDelta += cpus[i].times.sys - (lastCpuTimes[i]?.sys || 0);
+        idleDelta += cpus[i].times.idle - (lastCpuTimes[i]?.idle || 0);
+      }
+
+      const totalDelta = userDelta + sysDelta + idleDelta;
+      if (totalDelta > 0) {
+        cpuUsage = ((userDelta + sysDelta) / totalDelta) * 100;
+      }
+    }
+
+    // Store current times for next iteration
+    lastCpuTimes = cpus.map((c) => ({
+      user: c.times.user,
+      sys: c.times.sys,
+      idle: c.times.idle,
+    }));
+
+    // Get system memory usage (as percentage)
+    // Use (total - available) to account for cached memory
+    let memoryUsedPercent = 0;
+    let swapUsedPercent = 0;
     try {
-      const mem = process.memoryUsage();
-      const cpus = os.cpus();
+      const memInfo = await si.mem();
+      if (memInfo) {
+        // Calculate real memory usage: total - available
+        const actualUsed = memInfo.total - memInfo.available;
+        memoryUsedPercent = Math.round((actualUsed / memInfo.total) * 1000) / 10;
 
-      // Calculate CPU usage using delta (more accurate than instantaneous)
-      let cpuUsage = 0;
-      if (lastCpuTimes) {
-        let userDelta = 0;
-        let sysDelta = 0;
-        let idleDelta = 0;
-
-        for (let i = 0; i < cpus.length; i++) {
-          userDelta += cpus[i].times.user - (lastCpuTimes[i]?.user || 0);
-          sysDelta += cpus[i].times.sys - (lastCpuTimes[i]?.sys || 0);
-          idleDelta += cpus[i].times.idle - (lastCpuTimes[i]?.idle || 0);
+        // Calculate swap usage
+        if (memInfo.swaptotal > 0) {
+          swapUsedPercent = Math.round((memInfo.swapused / memInfo.swaptotal) * 1000) / 10;
         }
 
-        const totalDelta = userDelta + sysDelta + idleDelta;
-        if (totalDelta > 0) {
-          cpuUsage = ((userDelta + sysDelta) / totalDelta) * 100;
-        }
+        console.log("[DEBUG] Memory metrics collected:", {
+          total: `${(memInfo.total / 1024 / 1024 / 1024).toFixed(2)} GB`,
+          used: `${(actualUsed / 1024 / 1024 / 1024).toFixed(2)} GB`,
+          available: `${(memInfo.available / 1024 / 1024 / 1024).toFixed(2)} GB`,
+          percent: memoryUsedPercent,
+          swapUsed: `${(memInfo.swapused / 1024 / 1024 / 1024).toFixed(2)} GB`,
+          swapTotal: `${(memInfo.swaptotal / 1024 / 1024 / 1024).toFixed(2)} GB`,
+          swapPercent: swapUsedPercent,
+        });
       }
+    } catch (e) {
+      console.log("[DEBUG] Memory data not available:", e.message);
+    }
 
-      // Store current times for next iteration
-      lastCpuTimes = cpus.map((c) => ({
-        user: c.times.user,
-        sys: c.times.sys,
-        idle: c.times.idle,
-      }));
-
-      // Get system memory usage (as percentage)
-      // Use (total - available) to account for cached memory
-      let memoryUsedPercent = 0;
-      let swapUsedPercent = 0;
-      try {
-        const memInfo = await si.mem();
-        if (memInfo) {
-          // Calculate real memory usage: total - available
-          const actualUsed = memInfo.total - memInfo.available;
-          memoryUsedPercent = Math.round((actualUsed / memInfo.total) * 1000) / 10;
-
-          // Calculate swap usage
-          if (memInfo.swaptotal > 0) {
-            swapUsedPercent = Math.round((memInfo.swapused / memInfo.swaptotal) * 1000) / 10;
-          }
-
-          console.log("[DEBUG] Memory metrics collected:", {
-            total: `${(memInfo.total / 1024 / 1024 / 1024).toFixed(2)} GB`,
-            used: `${(actualUsed / 1024 / 1024 / 1024).toFixed(2)} GB`,
-            available: `${(memInfo.available / 1024 / 1024 / 1024).toFixed(2)} GB`,
-            percent: memoryUsedPercent,
-            swapUsed: `${(memInfo.swapused / 1024 / 1024 / 1024).toFixed(2)} GB`,
-            swapTotal: `${(memInfo.swaptotal / 1024 / 1024 / 1024).toFixed(2)} GB`,
-            swapPercent: swapUsedPercent,
-          });
-        }
-      } catch (e) {
-        console.log("[DEBUG] Memory data not available:", e.message);
+    // Get disk usage for root drive
+    let diskUsedPercent = 0;
+    try {
+      const disks = await si.fsSize();
+      if (disks && disks.length > 0) {
+        // Get root filesystem (typically mounted at /)
+        const rootDisk = disks.find((d) => d.mount === "/") || disks[0];
+        diskUsedPercent = Math.round((rootDisk.used / rootDisk.size) * 1000) / 10;
+        console.log("[DEBUG] Disk metrics collected:", {
+          mount: rootDisk.mount,
+          used: rootDisk.used,
+          total: rootDisk.size,
+          percent: diskUsedPercent,
+        });
       }
+    } catch (e) {
+      console.log("[DEBUG] Disk data not available:", e.message);
+    }
 
-      // Get disk usage for root drive
-      let diskUsedPercent = 0;
-      try {
-        const disks = await si.fsSize();
-        if (disks && disks.length > 0) {
-          // Get root filesystem (typically mounted at /)
-          const rootDisk = disks.find((d) => d.mount === "/") || disks[0];
-          diskUsedPercent = Math.round((rootDisk.used / rootDisk.size) * 1000) / 10;
-          console.log("[DEBUG] Disk metrics collected:", {
-            mount: rootDisk.mount,
-            used: rootDisk.used,
-            total: rootDisk.size,
-            percent: diskUsedPercent,
-          });
-        }
-      } catch (e) {
-        console.log("[DEBUG] Disk data not available:", e.message);
+    // Get GPU data - support multiple GPUs
+    let gpuList = [];
+    let gpuUsage = 0;
+    let gpuMemoryUsed = 0;
+    let gpuMemoryTotal = 0;
+    try {
+      const gpu = await si.graphics();
+      if (gpu.controllers && gpu.controllers.length > 0) {
+        gpuList = gpu.controllers.map((controller) => ({
+          name: controller.model || "Unknown GPU",
+          usage: controller.utilizationGpu || 0,
+          memoryUsed: (controller.memoryUsed || 0) * 1024 * 1024, // Convert MB to bytes
+          memoryTotal: (controller.memoryTotal || 0) * 1024 * 1024, // Convert MB to bytes
+          vendor: controller.vendor || "Unknown",
+        }));
+
+        // Primary GPU for backward compatibility
+        const primaryGpu = gpuList[0];
+        gpuUsage = primaryGpu.usage;
+        gpuMemoryUsed = primaryGpu.memoryUsed;
+        gpuMemoryTotal = primaryGpu.memoryTotal;
+
+        // Update GPU list for metrics responses
+        updateGpuList(gpuList);
+
+        console.log("[DEBUG] GPU metrics collected:", {
+          count: gpuList.length,
+          primary: primaryGpu.name,
+          usage: gpuUsage,
+          memoryUsed: gpuMemoryUsed,
+          memoryTotal: gpuMemoryTotal,
+        });
       }
+    } catch (e) {
+      console.log("[DEBUG] GPU data not available:", e.message);
+    }
 
-      // Get GPU data - support multiple GPUs
-      let gpuList = [];
-      let gpuUsage = 0;
-      let gpuMemoryUsed = 0;
-      let gpuMemoryTotal = 0;
-      try {
-        const gpu = await si.graphics();
-        if (gpu.controllers && gpu.controllers.length > 0) {
-          gpuList = gpu.controllers.map((controller) => ({
-            name: controller.model || "Unknown GPU",
-            usage: controller.utilizationGpu || 0,
-            memoryUsed: (controller.memoryUsed || 0) * 1024 * 1024, // Convert MB to bytes
-            memoryTotal: (controller.memoryTotal || 0) * 1024 * 1024, // Convert MB to bytes
-            vendor: controller.vendor || "Unknown",
-          }));
+    // Save metrics
+    db.saveMetrics({
+      cpu_usage: Math.round(cpuUsage * 10) / 10,
+      memory_usage: memoryUsedPercent,
+      swap_usage: swapUsedPercent,
+      disk_usage: diskUsedPercent,
+      uptime: process.uptime(),
+      gpu_usage: Math.round(gpuUsage * 10) / 10,
+      gpu_memory_used: Math.round(gpuMemoryUsed),
+      gpu_memory_total: Math.round(gpuMemoryTotal),
+    });
 
-          // Primary GPU for backward compatibility
-          const primaryGpu = gpuList[0];
-          gpuUsage = primaryGpu.usage;
-          gpuMemoryUsed = primaryGpu.memoryUsed;
-          gpuMemoryTotal = primaryGpu.memoryTotal;
-
-          // Update GPU list for metrics responses
-          updateGpuList(gpuList);
-
-          console.log("[DEBUG] GPU metrics collected:", {
-            count: gpuList.length,
-            primary: primaryGpu.name,
+    // Emit to clients
+    io.emit("metrics:update", {
+      type: "broadcast",
+      data: {
+        metrics: {
+          cpu: { usage: cpuUsage },
+          memory: { used: memoryUsedPercent },
+          swap: { used: swapUsedPercent },
+          disk: { used: diskUsedPercent },
+          gpu: {
             usage: gpuUsage,
             memoryUsed: gpuMemoryUsed,
             memoryTotal: gpuMemoryTotal,
-          });
-        }
-      } catch (e) {
-        console.log("[DEBUG] GPU data not available:", e.message);
-      }
-
-      // Save metrics
-      db.saveMetrics({
-        cpu_usage: Math.round(cpuUsage * 10) / 10,
-        memory_usage: memoryUsedPercent,
-        swap_usage: swapUsedPercent,
-        disk_usage: diskUsedPercent,
-        uptime: process.uptime(),
-        gpu_usage: Math.round(gpuUsage * 10) / 10,
-        gpu_memory_used: Math.round(gpuMemoryUsed),
-        gpu_memory_total: Math.round(gpuMemoryTotal),
-      });
-
-      // Emit to clients
-      io.emit("metrics:update", {
-        type: "broadcast",
-        data: {
-          metrics: {
-            cpu: { usage: cpuUsage },
-            memory: { used: memoryUsedPercent },
-            swap: { used: swapUsedPercent },
-            disk: { used: diskUsedPercent },
-            gpu: {
-              usage: gpuUsage,
-              memoryUsed: gpuMemoryUsed,
-              memoryTotal: gpuMemoryTotal,
-              list: gpuList,
-            },
-            uptime: process.uptime(),
+            list: gpuList,
           },
+          uptime: process.uptime(),
         },
-      });
+      },
+    });
 
-      // Prune old metrics every 6 minutes
-      metricsCallCount++;
-      if (metricsCallCount % 36 === 0) {
-        db.pruneMetrics(10000);
-      }
-    } catch (e) {
-      console.error("[METRICS] Error:", e.message);
+    // Prune old metrics every 6 minutes (based on 10s interval)
+    metricsCallCount++;
+    if (metricsCallCount % 36 === 0) {
+      db.pruneMetrics(10000);
     }
-  }, 10000);
+  } catch (e) {
+    console.error("[METRICS] Error:", e.message);
+  }
 }
 
 // Graceful shutdown
@@ -243,9 +278,9 @@ async function main() {
   });
 
   server.listen(PORT, () => {
-    console.log(
-      `\n== Llama Async Proxy ==\n> http://localhost:${PORT}\n> Socket.IO: ws://localhost:${PORT}/llamaproxws\n`
-    );
+    console.log("\n== Llama Async Proxy ==");
+    console.log(`> http://localhost:${PORT}`);
+    console.log("> Socket.IO: ws://localhost:${PORT}/llamaproxws\n");
   });
 
   setupShutdown(server);

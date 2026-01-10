@@ -28,7 +28,7 @@ startLlamaServerRouter("/path/to/models", db, { maxModels: 4 });
 // Preset mode - new behavior
 startLlamaServerRouter("/path/to/config/my-preset.ini", db, {
   maxModels: 4,
-  usePreset: true  // Flag to use preset mode
+  usePreset: true, // Flag to use preset mode
 });
 ```
 
@@ -46,6 +46,7 @@ if (isPresetFile) {
 #### 2. New Socket.IO Handlers (`server/handlers/presets.js`)
 
 **`presets:start-with-preset`**
+
 ```javascript
 // Request
 {
@@ -76,6 +77,7 @@ if (isPresetFile) {
 ```
 
 **`presets:stop-server`**
+
 ```javascript
 // Request - no parameters needed
 {}
@@ -103,14 +105,16 @@ await stateManager.request("presets:add-model", {
     model: "/path/to/model.gguf",
     ctxSize: 2048,
     nGpuLayers: 33,
-    temperature: 0.7
-  }
+    temperature: 0.7,
+  },
 });
 
 // Save preset
 await stateManager.request("presets:save", {
   filename: "my-preset",
-  config: { /* full config object */ }
+  config: {
+    /* full config object */
+  },
 });
 ```
 
@@ -123,8 +127,8 @@ const response = await stateManager.request("presets:start-with-preset", {
   options: {
     maxModels: 4,
     threads: 4,
-    ctxSize: 4096
-  }
+    ctxSize: 4096,
+  },
 });
 
 if (response.success) {
@@ -330,6 +334,7 @@ ls -la ./config/
 ---
 
 **Status**: ✅ Integration complete and ready for use
-**Modified Files**: 
+**Modified Files**:
+
 - `server/handlers/llama-router/start.js`
 - `server/handlers/presets.js`

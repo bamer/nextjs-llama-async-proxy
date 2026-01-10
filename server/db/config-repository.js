@@ -14,6 +14,10 @@ const DEFAULT_CONFIG = {
   ctx_size: 2048,
   batch_size: 512,
   threads: 4,
+  llama_server_enabled: true,
+  llama_server_port: 8080,
+  llama_server_host: "0.0.0.0",
+  llama_server_metrics: true,
 };
 
 export class ConfigRepository {

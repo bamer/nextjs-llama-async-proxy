@@ -7,6 +7,22 @@ import fs from "fs";
 import path from "path";
 import { ok, err } from "../response.js";
 
+// Batch processing configuration
+const BATCH_SIZE = 5;
+
+/**
+ * Process array of items in batches with controlled concurrency
+ */
+async function processBatch(items, processor, batchSize = BATCH_SIZE) {
+  const results = [];
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    const batchResults = await Promise.allSettled(batch.map((item) => processor(item)));
+    results.push(...batchResults);
+  }
+  return results;
+}
+
 /**
  * Register models scan handlers
  */
@@ -68,8 +84,8 @@ export function registerModelsScanHandlers(socket, io, db, ggufParser) {
                 results.push(fullPath);
               }
             }
-          } catch {
-            // Continue
+          } catch (error) {
+            console.warn("[SCAN] Error reading directory:", { dir, error: error.message });
           }
           return results;
         };
@@ -77,11 +93,15 @@ export function registerModelsScanHandlers(socket, io, db, ggufParser) {
         const modelFiles = findModelFiles(modelsDir);
         const existingModels = db.getModels();
 
-        for (const fullPath of modelFiles) {
+        console.log("[DEBUG] Found", modelFiles.length, "model files to process");
+
+        // Process files in parallel batches
+        const processFile = async (fullPath) => {
           try {
             const fileName = path.basename(fullPath);
             const existing = existingModels.find((m) => m.model_path === fullPath);
             if (!existing) {
+              console.log("[DEBUG] Processing new model file:", { fileName, path: fullPath });
               const meta = await ggufParser(fullPath);
               db.saveModel({
                 name: fileName.replace(/\.[^/.]+$/, ""),
@@ -99,7 +119,7 @@ export function registerModelsScanHandlers(socket, io, db, ggufParser) {
                 ffn_dim: meta.ffnDim || 0,
                 file_type: meta.fileType || 0,
               });
-              scanned++;
+              return { type: "scanned" };
             } else {
               const meta = await ggufParser(fullPath);
               const needsBasicUpdate =
@@ -120,14 +140,38 @@ export function registerModelsScanHandlers(socket, io, db, ggufParser) {
                   ffn_dim: meta.ffnDim || existing.ffn_dim,
                   file_type: meta.fileType || existing.file_type,
                 });
-                updated++;
+                return { type: "updated" };
               }
-              existingCount++;
+              return { type: "existing" };
             }
-          } catch {
-            // Skip problematic files
+          } catch (error) {
+            console.error("[DEBUG] Skipping file due to error:", {
+              path: fullPath,
+              error: error.message,
+            });
+            return { type: "error", error: error.message };
           }
-        }
+        };
+
+        // Process files in parallel batches
+        const results = await processBatch(modelFiles, processFile, BATCH_SIZE);
+
+        // Count results
+        results.forEach((result) => {
+          if (result.status === "fulfilled") {
+            const value = result.value;
+            if (value.type === "scanned") scanned++;
+            else if (value.type === "updated") updated++;
+            else if (value.type === "existing") existingCount++;
+          }
+        });
+
+        console.log("[DEBUG] Scan completed:", {
+          scanned,
+          updated,
+          existingCount,
+          total: scanned + updated + existingCount,
+        });
       }
 
       const allModels = db.getModels();

@@ -700,6 +700,8 @@ class PresetsPage extends Component {
     this.controller = props.controller;
     this._domCache = new Map();
     this._eventsBounded = false;
+    // Create debounced filter handler
+    this.debouncedFilter = AppUtils.debounce(this._handleFilter.bind(this), 300);
   }
 
   _getService() {
@@ -1214,7 +1216,7 @@ class PresetsPage extends Component {
 
     // Filter input
     const filterInput = document.getElementById("param-filter");
-    filterInput && (filterInput.oninput = (e) => this._filterParams(e.target.value));
+    filterInput && (filterInput.oninput = (e) => this.debouncedFilter(e.target.value));
 
     // Model header toggles
     const modelHeaders = this._el?.querySelectorAll(".model-header") || [];
@@ -1261,6 +1263,11 @@ class PresetsPage extends Component {
       const label = item.querySelector(".param-label")?.textContent.toLowerCase() || "";
       item.style.display = label.includes(lower) ? "" : "none";
     });
+  }
+
+  _handleFilter(query) {
+    console.log("[DEBUG] PresetsPage _handleFilter:", query);
+    this._filterParams(query);
   }
 
   async _handleAddParam(data) {
@@ -1335,6 +1342,32 @@ class PresetsPage extends Component {
     }
   }
 
+  async _handleApplyTemplate(templateConfig) {
+    if (!this.state.selectedPreset || this.state.selectedPreset.name === "default") {
+      showNotification("Please select or create a custom preset first", "warning");
+      return;
+    }
+
+    try {
+      console.log("[PRESETS] Applying template:", templateConfig);
+
+      // Apply template to global defaults
+      for (const [key, value] of Object.entries(templateConfig)) {
+        await this._getService().updateDefaults(this.state.selectedPreset.name, {
+          ...this.state.globalDefaults,
+          [key]: value,
+        });
+        this.state.globalDefaults[key] = value;
+      }
+
+      showNotification("Template applied successfully", "success");
+      this._updateEditor();
+    } catch (error) {
+      console.error("[PRESETS] Apply template error:", error);
+      showNotification(`Failed to apply template: ${error.message}`, "error");
+    }
+  }
+
   render() {
     return Component.h(
       "div",
@@ -1344,6 +1377,9 @@ class PresetsPage extends Component {
         { className: "presets-page-header" },
         Component.h("h1", {}, "Model Presets")
       ),
+      Component.h(window.PresetTemplates, {
+        onApplyTemplate: this._handleApplyTemplate.bind(this),
+      }),
       Component.h(
         "div",
         { className: "presets-list" },
@@ -1367,7 +1403,10 @@ class PresetsPage extends Component {
         { className: "presets-container" },
         Component.h(
           "div",
-          { className: "server-status-panel", ref: (el) => this._domCache.set("server-status", el) },
+          {
+            className: "server-status-panel",
+            ref: (el) => this._domCache.set("server-status", el),
+          },
           Component.h("div", { className: "empty-state" }, "Select a preset to launch server")
         ),
         Component.h(

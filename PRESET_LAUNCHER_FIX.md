@@ -1,12 +1,15 @@
 # Fix: Preset Launcher Visibility in Dashboard Router Card
 
 ## Problem
+
 The preset selection dropdown was not visible in the Llama Router card on the Dashboard page. The conditional rendering check `this.state.presets && this.state.presets.length > 0` was failing because presets data was not being loaded.
 
 ## Root Cause
+
 The `DashboardController` was not loading presets data, so `stateManager.get("presets")` returned an empty array, preventing the preset launcher section from rendering.
 
 ## Solution
+
 Updated `DashboardController` to load presets similar to how `SettingsController` does it.
 
 ## Changes Made
@@ -14,13 +17,16 @@ Updated `DashboardController` to load presets similar to how `SettingsController
 ### File: `public/js/pages/dashboard/controller.js`
 
 #### 1. Updated `render()` method (lines 24-53)
+
 Added retrieval of presets and settings from state manager:
+
 ```javascript
 const presets = stateManager.get("presets") || [];
 const settings = stateManager.get("settings") || {};
 ```
 
 Then passed to DashboardPage component:
+
 ```javascript
 this.comp = new window.DashboardPage({
   models,
@@ -38,9 +44,11 @@ this.comp = new window.DashboardPage({
 ```
 
 #### 2. Enhanced `load()` method (lines 90-130)
+
 Added two new load operations:
 
 **Load Settings:**
+
 ```javascript
 try {
   const st = await stateManager.getSettings();
@@ -49,6 +57,7 @@ try {
 ```
 
 **Load Presets:**
+
 ```javascript
 try {
   const p = await stateManager.request("presets:list");
@@ -110,6 +119,7 @@ DashboardController.render()
 ## Consistency Note
 
 The DashboardController now follows the same pattern as SettingsController:
+
 1. Load settings in the `load()` method
 2. Load presets in the `load()` method
 3. Pass both to the page component in `render()`

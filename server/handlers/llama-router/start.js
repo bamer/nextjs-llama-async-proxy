@@ -84,16 +84,11 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
 
   // Build command - support both directory and preset file modes
   const optionsToUse = options || {};
-  const args = [
-    "--port",
-    String(llamaServerPort),
-    "--host",
-    "127.0.0.1",
-  ];
+  const args = ["--port", String(llamaServerPort), "--host", "127.0.0.1"];
 
   // Determine if modelsDir is an INI preset file or a directory
   const isPresetFile = modelsDir.endsWith(".ini") || options.usePreset;
-  
+
   if (isPresetFile) {
     // Use preset mode (INI config file)
     if (!fs.existsSync(modelsDir)) {
@@ -140,15 +135,46 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
       env: { ...process.env },
     });
 
+    // Cleanup function for process
+    const cleanupProcess = () => {
+      console.log("[LLAMA] Cleaning up process...");
+      if (llamaServerProcess) {
+        try {
+          if (!llamaServerProcess.killed) {
+            console.log("[LLAMA] Killing process...");
+            llamaServerProcess.kill("SIGTERM");
+            // Force kill after 5 seconds
+            setTimeout(() => {
+              if (llamaServerProcess && !llamaServerProcess.killed) {
+                console.log("[LLAMA] Force killing process...");
+                llamaServerProcess.kill("SIGKILL");
+              }
+            }, 5000);
+          }
+        } catch (e) {
+          console.error("[LLAMA] Error during process cleanup:", e);
+        }
+      }
+    };
+
     llamaServerProcess.on("error", (err) => {
       console.error("[LLAMA] Process ERROR:", err.message);
+      console.log("[LLAMA] Cleaning up after error");
+      cleanupProcess();
+      llamaServerProcess = null;
     });
 
-    llamaServerProcess.on("close", (code) => {
-      console.log("[LLAMA] Process CLOSED with code:", code);
-      if (llamaServerProcess) {
-        llamaServerProcess = null;
-      }
+    llamaServerProcess.on("close", (code, signal) => {
+      console.log("[LLAMA] Process CLOSED with code:", code, "signal:", signal);
+      console.log("[LLAMA] Cleaning up after close");
+      cleanupProcess();
+      llamaServerProcess = null;
+    });
+
+    // Handle process exit
+    process.on("exit", () => {
+      console.log("[LLAMA] Process exit detected, cleaning up");
+      cleanupProcess();
     });
 
     // Wait for server

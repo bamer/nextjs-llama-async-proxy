@@ -28,6 +28,7 @@ export function getSchemaDefinition() {
       file_type INTEGER DEFAULT 0,
       batch_size INTEGER DEFAULT 512,
       threads INTEGER DEFAULT 4,
+      favorite INTEGER DEFAULT 0,
       created_at INTEGER,
       updated_at INTEGER
     );
@@ -88,6 +89,7 @@ export function getModelsMigrations() {
     { name: "head_count_kv", type: "INTEGER DEFAULT 0" },
     { name: "ffn_dim", type: "INTEGER DEFAULT 0" },
     { name: "file_type", type: "INTEGER DEFAULT 0" },
+    { name: "favorite", type: "INTEGER DEFAULT 0" },
   ];
 }
 

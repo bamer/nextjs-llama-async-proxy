@@ -33,8 +33,6 @@ class RouterConfig extends Component {
     }
   }
 
-
-
   render() {
     return Component.h(
       "div",

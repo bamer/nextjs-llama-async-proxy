@@ -27,6 +27,62 @@ class StateCore {
   }
 
   /**
+   * Deep compare two objects (handles circular references)
+   * @param {*} a - First value
+   * @param {*} b - Second value
+   * @param {Set} visited - Set of visited object pairs
+   * @returns {boolean} True if equal
+   */
+  _deepEqual(a, b, visited = new Set()) {
+    // Strict equality
+    if (a === b) return true;
+
+    // Handle null/undefined
+    if (a === null || a === undefined || b === null || b === undefined) return false;
+
+    // Different types
+    if (typeof a !== typeof b) return false;
+
+    // Handle circular references
+    if (typeof a === "object" && typeof b === "object") {
+      const pairKey = `${Object.prototype.toString.call(a)}-${Object.prototype.toString.call(b)}`;
+      if (visited.has(pairKey)) {
+        return true; // Assume equal if we've seen this pair before
+      }
+      visited.add(pairKey);
+
+      // Arrays
+      if (Array.isArray(a) && Array.isArray(b)) {
+        if (a.length !== b.length) {
+          visited.delete(pairKey);
+          return false;
+        }
+        const result = a.every((item, index) => this._deepEqual(item, b[index], visited));
+        visited.delete(pairKey);
+        return result;
+      }
+
+      // Objects
+      const keysA = Object.keys(a);
+      const keysB = Object.keys(b);
+
+      if (keysA.length !== keysB.length) {
+        visited.delete(pairKey);
+        return false;
+      }
+
+      const result = keysA.every(
+        (key) =>
+          Object.prototype.hasOwnProperty.call(b, key) && this._deepEqual(a[key], b[key], visited)
+      );
+      visited.delete(pairKey);
+      return result;
+    }
+
+    return false;
+  }
+
+  /**
    * Set a value in state with notification
    * @param {string} key - State key
    * @param {*} value - New value
@@ -39,10 +95,9 @@ class StateCore {
       return this;
     }
 
+    // Use deep equality check for objects to avoid circular reference issues
     if (typeof old === "object" && typeof value === "object" && old !== null && value !== null) {
-      const oldKeys = Object.keys(old);
-      const newKeys = Object.keys(value);
-      if (oldKeys.length === newKeys.length && oldKeys.every((k) => old[k] === value[k])) {
+      if (this._deepEqual(old, value)) {
         return this;
       }
     }

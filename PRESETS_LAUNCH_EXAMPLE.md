@@ -327,7 +327,8 @@ Add to `public/css/pages/presets.css`:
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

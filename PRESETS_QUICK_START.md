@@ -7,6 +7,7 @@ Get llama-server running with a preset in 5 minutes.
 The backend is **already implemented**. No installation needed.
 
 **Modified Files**:
+
 - ✅ `server/handlers/llama-router/start.js` - Dual mode support
 - ✅ `server/handlers/presets.js` - Launch handlers
 
@@ -26,8 +27,8 @@ In browser console or via HTTP:
 
 ```javascript
 // Create preset
-await stateManager.request("presets:create", { 
-  filename: "test" 
+await stateManager.request("presets:create", {
+  filename: "test",
 });
 
 // Add a model
@@ -35,8 +36,8 @@ await stateManager.request("presets:add-model", {
   filename: "test",
   modelName: "my-model",
   config: {
-    model: "/path/to/your/model.gguf"
-  }
+    model: "/path/to/your/model.gguf",
+  },
 });
 
 // Save preset
@@ -44,8 +45,8 @@ await stateManager.request("presets:save", {
   filename: "test",
   config: {
     "*": { "ctx-size": 4096 },
-    "my-model": { "model": "/path/to/your/model.gguf" }
-  }
+    "my-model": { model: "/path/to/your/model.gguf" },
+  },
 });
 ```
 
@@ -53,17 +54,14 @@ await stateManager.request("presets:save", {
 
 ```javascript
 // Start llama-server with preset
-const response = await stateManager.request(
-  "presets:start-with-preset",
-  {
-    filename: "test",
-    options: {
-      maxModels: 4,
-      threads: 4,
-      ctxSize: 4096
-    }
-  }
-);
+const response = await stateManager.request("presets:start-with-preset", {
+  filename: "test",
+  options: {
+    maxModels: 4,
+    threads: 4,
+    ctxSize: 4096,
+  },
+});
 
 console.log(response);
 // Output:
@@ -110,14 +108,14 @@ await stateManager.request("presets:add-model", {
     model: "/models/phi-2.8b.gguf",
     ctxSize: 2048,
     nGpuLayers: 20,
-    temperature: 0.7
-  }
+    temperature: 0.7,
+  },
 });
 
 // Launch with minimal resources
 await stateManager.request("presets:start-with-preset", {
   filename: "dev",
-  options: { maxModels: 2, threads: 4 }
+  options: { maxModels: 2, threads: 4 },
 });
 ```
 
@@ -135,15 +133,15 @@ await stateManager.request("presets:add-model", {
     model: "/models/llama2-13b.gguf",
     ctxSize: 8192,
     nGpuLayers: 40,
-    temperature: 0.3,  // Lower for consistency
-    seed: 42          // Fixed seed for reproducibility
-  }
+    temperature: 0.3, // Lower for consistency
+    seed: 42, // Fixed seed for reproducibility
+  },
 });
 
 // Launch with production settings
 await stateManager.request("presets:start-with-preset", {
   filename: "prod",
-  options: { maxModels: 8, threads: 16, ctxSize: 8192 }
+  options: { maxModels: 8, threads: 16, ctxSize: 8192 },
 });
 ```
 
@@ -159,15 +157,15 @@ await stateManager.request("presets:update-defaults", {
   config: {
     "ctx-size": 4096,
     "n-gpu-layers": 30,
-    "threads": 8
-  }
+    threads: 8,
+  },
 });
 
 // Add multiple models
 const models = [
   { name: "llama2-7b", path: "/models/llama2-7b.gguf", temp: 0.7 },
   { name: "mistral-7b", path: "/models/mistral-7b.gguf", temp: 0.5 },
-  { name: "neural-chat", path: "/models/neural-chat.gguf", temp: 0.8 }
+  { name: "neural-chat", path: "/models/neural-chat.gguf", temp: 0.8 },
 ];
 
 for (const model of models) {
@@ -176,15 +174,15 @@ for (const model of models) {
     modelName: model.name,
     config: {
       model: model.path,
-      temperature: model.temp
-    }
+      temperature: model.temp,
+    },
   });
 }
 
 // Launch all models
 await stateManager.request("presets:start-with-preset", {
   filename: "multi",
-  options: { maxModels: 6 }
+  options: { maxModels: 6 },
 });
 ```
 
@@ -193,6 +191,7 @@ await stateManager.request("presets:start-with-preset", {
 ### Two Main Events
 
 **Start Server**
+
 ```javascript
 stateManager.request("presets:start-with-preset", {
   filename: string,        // Preset name
@@ -205,8 +204,9 @@ stateManager.request("presets:start-with-preset", {
 ```
 
 **Stop Server**
+
 ```javascript
-stateManager.request("presets:stop-server")
+stateManager.request("presets:stop-server");
 ```
 
 ## File Structure
@@ -233,6 +233,7 @@ temperature = 0.7
 ## Troubleshooting
 
 ### "Preset file not found"
+
 ```bash
 # Check preset exists
 ls -la ./config/your-preset.ini
@@ -243,6 +244,7 @@ curl -X POST http://localhost:3000 \
 ```
 
 ### "llama-server binary not found"
+
 ```bash
 # Install llama.cpp or add to PATH
 which llama-server
@@ -250,20 +252,24 @@ which llama-server
 ```
 
 ### "Port already in use"
+
 System automatically finds next available port. Check response:
+
 ```javascript
-const port = response.data.port;  // Use this port, not 8080
+const port = response.data.port; // Use this port, not 8080
 ```
 
 ### "Model file not found"
+
 Update preset with correct path:
+
 ```javascript
 await stateManager.request("presets:update-model", {
   filename: "test",
   modelName: "my-model",
   config: {
-    model: "/absolute/path/to/model.gguf"  // Must be absolute path
-  }
+    model: "/absolute/path/to/model.gguf", // Must be absolute path
+  },
 });
 ```
 
@@ -280,7 +286,7 @@ Add button to Presets page UI:
 async function launchServer() {
   const response = await stateManager.request("presets:start-with-preset", {
     filename: prompt("Preset name:"),
-    options: { maxModels: 4 }
+    options: { maxModels: 4 },
   });
   if (response.success) {
     alert(`Server on port ${response.data.port}`);

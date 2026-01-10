@@ -35,6 +35,7 @@ In the preset editor:
 ### Step 4: Configure Global Defaults (Optional)
 
 Click **"Defaults"** section to set global settings that apply to all models:
+
 - Context size
 - GPU layers
 - Thread count
@@ -65,17 +66,18 @@ Your preset is now saved in: `./config/my-server.ini`
 ### Success Message
 
 If all goes well:
+
 ```
 ✓ Server started on port 8080
 ```
 
 ### Error Messages
 
-| Message | Fix |
-|---------|-----|
-| "Please select a preset" | Select one from dropdown first |
-| "Preset file not found" | Create preset in Presets page |
-| "Model file not found" | Check model file path is correct and exists |
+| Message                  | Fix                                         |
+| ------------------------ | ------------------------------------------- |
+| "Please select a preset" | Select one from dropdown first              |
+| "Preset file not found"  | Create preset in Presets page               |
+| "Model file not found"   | Check model file path is correct and exists |
 
 ---
 
@@ -84,6 +86,7 @@ If all goes well:
 When you create a preset named "my-server", it creates: `./config/my-server.ini`
 
 Example content:
+
 ```ini
 LLAMA_CONFIG_VERSION = 1
 
@@ -102,6 +105,7 @@ temperature = 0.5
 ```
 
 **Sections**:
+
 - `[*]` = Global defaults for all models
 - `[model-name]` = Individual model configuration
 
@@ -112,6 +116,7 @@ temperature = 0.5
 ### Scenario: Launch a multi-model server
 
 **1. Create preset "production":**
+
 ```
 Name: production
 Models:
@@ -126,6 +131,7 @@ Defaults:
 Creates `./config/production.ini`
 
 **3. Launch from Settings:**
+
 ```
 Settings → Launch with Preset
 Select: production
@@ -133,6 +139,7 @@ Click: 🚀 Launch Server with Preset
 ```
 
 **4. Server starts:**
+
 ```
 Server Status: Running
 Port: 8080
@@ -141,6 +148,7 @@ URL: http://127.0.0.1:8080
 ```
 
 **5. Use models:**
+
 ```
 curl http://127.0.0.1:8080/models
 # Returns list of loaded models from preset
@@ -153,7 +161,7 @@ curl http://127.0.0.1:8080/models
 ### Multiple Presets for Different Use Cases
 
 - **development.ini** - Small models, low resources
-- **production.ini** - Large models, high resources  
+- **production.ini** - Large models, high resources
 - **testing.ini** - Specific test configuration
 
 Switch by selecting different preset in Settings.
@@ -216,7 +224,8 @@ Once server is running, check the dashboard:
 
 **Preset**: dev
 **Models**: Phi-2 (small, fast)
-**Settings**: 
+**Settings**:
+
 - ctx-size: 2048
 - gpu-layers: 20
 - threads: 4
@@ -228,6 +237,7 @@ Once server is running, check the dashboard:
 **Preset**: prod
 **Models**: Llama2-13B, Mistral-7B
 **Settings**:
+
 - ctx-size: 8192
 - gpu-layers: 40+
 - threads: 16
@@ -239,6 +249,7 @@ Once server is running, check the dashboard:
 **Preset**: api
 **Models**: Optimized for fast inference
 **Settings**:
+
 - ctx-size: 4096
 - gpu-layers: 33
 - threads: 8
@@ -252,6 +263,7 @@ Once server is running, check the dashboard:
 ### Server Won't Start
 
 **Check**:
+
 1. Is preset file created? (Should exist in `./config/`)
 2. Are model paths correct? (Check with `ls` command)
 3. Is llama-server installed? (Check PATH)
@@ -260,6 +272,7 @@ Once server is running, check the dashboard:
 ### Wrong Configuration
 
 **Check**:
+
 1. Edit preset in Presets page
 2. Verify all settings
 3. Click Save
@@ -270,6 +283,7 @@ Once server is running, check the dashboard:
 ### Server Crashes
 
 **Check logs**:
+
 1. Look at browser console (F12)
 2. Check server logs
 3. Verify model file is valid `.gguf` file
@@ -345,16 +359,19 @@ A: Yes, copy `.ini` file to `./config/` folder, it'll appear in dropdown
 ## Getting Help
 
 **Error in Presets page**:
+
 - Check browser console (F12)
 - Check model paths
 - Try creating new preset
 
 **Error in Settings launcher**:
+
 - Make sure preset is saved
 - Check preset file exists: `ls ./config/my-preset.ini`
 - Check llama-server is in PATH
 
 **Server won't respond**:
+
 - Check port in notification (e.g., 8080)
 - Try: `curl http://localhost:PORT/models`
 - Check logs for errors

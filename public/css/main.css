@@ -20,6 +20,7 @@
 @import "components/badges.css";
 @import "components/indicators.css";
 @import "components/gpu.css";
+@import "components/quick-wins.css";
 
 /* Dashboard */
 @import "pages/dashboard/stats.css";

@@ -6,6 +6,47 @@ class StateAPI {
   constructor(stateCore, stateSocket) {
     this.core = stateCore;
     this.socket = stateSocket;
+    // Initialize cache
+    this._cache = new Map();
+    this._cacheTTL = 30000; // 30 seconds TTL
+    this._cacheKeys = ["getModels", "getConfig", "getRouterStatus"];
+  }
+
+  /**
+   * Get cached value or fetch new data
+   * @private
+   */
+  async _cachedRequest(method, key, fetchFn, ...args) {
+    const cacheKey = `${key}:${JSON.stringify(args)}`;
+    const cached = this._cache.get(cacheKey);
+
+    if (cached && Date.now() - cached.timestamp < this._cacheTTL) {
+      console.log("[DEBUG] Cache hit for:", key, "Age:", Date.now() - cached.timestamp, "ms");
+      return cached.data;
+    }
+
+    console.log("[DEBUG] Cache miss for:", key, "Fetching fresh data...");
+    const data = await fetchFn(...args);
+    this._cache.set(cacheKey, {
+      data,
+      timestamp: Date.now(),
+    });
+    return data;
+  }
+
+  /**
+   * Invalidate cache entries matching key pattern
+   * @param {string} pattern - Key pattern to match (e.g., "getModels")
+   */
+  invalidateCache(pattern) {
+    const keysToDelete = [];
+    for (const key of this._cache.keys()) {
+      if (!pattern || key.startsWith(pattern)) {
+        keysToDelete.push(key);
+      }
+    }
+    keysToDelete.forEach((k) => this._cache.delete(k));
+    console.log("[DEBUG] Cache invalidated:", { pattern, count: keysToDelete.length });
   }
 
   // ===== Llama Router Operations =====
@@ -15,7 +56,9 @@ class StateAPI {
    * @returns {Promise<Object>} Router status
    */
   async getRouterStatus() {
-    return this.socket.request("llama:status");
+    return this._cachedRequest("getRouterStatus", "getRouterStatus", () =>
+      this.socket.request("llama:status")
+    );
   }
 
   /**
@@ -129,7 +172,7 @@ class StateAPI {
    * @returns {Promise<Object>} Config
    */
   async getConfig() {
-    return this.socket.request("config:get");
+    return this._cachedRequest("getConfig", "getConfig", () => this.socket.request("config:get"));
   }
 
   /**
