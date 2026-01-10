@@ -63,6 +63,7 @@ describe("ModelsRepository", () => {
         }
         return mockStmtRun;
       }),
+      transaction: jest.fn((fn) => fn), // Mock transaction method
     };
 
     // Create repository instance

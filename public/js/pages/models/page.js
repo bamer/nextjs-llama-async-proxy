@@ -54,24 +54,26 @@ class ModelsPage extends Component {
       Favorites only
     </label>
   </div>
-  <table class="models-table">
-    <thead>
-      <tr>
-        <th data-sort="name" class="${this.sortBy === "name" ? "sorted" : ""}">${this.sortBy === "name" && this.sortOrder === "asc" ? "↑" : this.sortBy === "name" && this.sortOrder === "desc" ? "↓" : ""} Name</th>
-        <th data-sort="status" class="${this.sortBy === "status" ? "sorted" : ""}">${this.sortBy === "status" && this.sortOrder === "asc" ? "↑" : this.sortBy === "status" && this.sortOrder === "desc" ? "↓" : ""} Status</th>
-        <th>Arch</th>
-        <th>Params</th>
-        <th>Quant</th>
-        <th>Ctx</th>
-        <th>Embed</th>
-        <th>Blocks</th>
-        <th>Heads</th>
-        <th>Size</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>${rows}</tbody>
-  </table>
+  <div class="models-table-wrapper">
+    <table class="models-table">
+      <thead>
+        <tr>
+          <th data-sort="name" class="${this.sortBy === "name" ? "sorted" : ""}">${this.sortBy === "name" && this.sortOrder === "asc" ? "↑" : this.sortBy === "name" && this.sortOrder === "desc" ? "↓" : ""} Name</th>
+          <th data-sort="status" class="${this.sortBy === "status" ? "sorted" : ""}">${this.sortBy === "status" && this.sortOrder === "asc" ? "↑" : this.sortBy === "status" && this.sortOrder === "desc" ? "↓" : ""} Status</th>
+          <th>Arch</th>
+          <th>Params</th>
+          <th>Quant</th>
+          <th>Ctx</th>
+          <th>Embed</th>
+          <th>Blocks</th>
+          <th>Heads</th>
+          <th>Size</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>
 </div>`;
   }
 

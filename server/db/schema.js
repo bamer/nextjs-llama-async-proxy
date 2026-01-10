@@ -42,6 +42,7 @@ export function getSchemaDefinition() {
       gpu_usage REAL DEFAULT 0,
       gpu_memory_used REAL DEFAULT 0,
       gpu_memory_total REAL DEFAULT 0,
+      swap_usage REAL DEFAULT 0,
       timestamp INTEGER DEFAULT (strftime('%s', 'now'))
     );
     CREATE TABLE IF NOT EXISTS logs (
@@ -102,7 +103,6 @@ export function getMetricsMigrations() {
     { name: "gpu_usage", type: "REAL DEFAULT 0" },
     { name: "gpu_memory_used", type: "REAL DEFAULT 0" },
     { name: "gpu_memory_total", type: "REAL DEFAULT 0" },
-    { name: "swap_usage", type: "REAL DEFAULT 0" },
   ];
 }
 

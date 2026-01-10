@@ -1,173 +1,158 @@
 /**
  * llama-server Status Panel Styles
+ * Consistent with app design using CSS variables
  */
 
 .llama-server-status-panel {
-  background: var(--surface-color);
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
 }
 
 .llama-server-status-panel .status-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  padding: var(--md) var(--lg);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
 }
 
 .llama-server-status-panel .status-header h3 {
   margin: 0;
-  font-size: 18px;
-  color: var(--text-color);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .llama-server-status-panel .status-badge {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 14px;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
   font-weight: 500;
-  text-transform: uppercase;
+  text-transform: capitalize;
 }
 
 .llama-server-status-panel .status-badge.status-running {
-  background: rgba(52, 211, 153, 0.2);
-  color: #34d399;
+  background: var(--bg-success-light);
+  color: var(--success);
 }
 
 .llama-server-status-panel .status-badge.status-stopped {
-  background: rgba(248, 113, 113, 0.2);
-  color: #f87171;
+  background: var(--bg-danger-light);
+  color: var(--danger);
 }
 
 .llama-server-status-panel .status-badge.status-unknown {
-  background: rgba(156, 163, 175, 0.2);
-  color: #9ca3af;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 .llama-server-status-panel .status-icon {
-  font-size: 16px;
+  font-size: 0.75rem;
 }
 
 .llama-server-status-panel .controls {
   display: flex;
-  gap: 8px;
+  gap: var(--sm);
+  padding: var(--md) var(--lg);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .llama-server-status-panel .controls .btn {
-  padding: 8px 16px;
+  padding: var(--sm) var(--md);
+  border-radius: var(--radius);
   border: none;
-  border-radius: 6px;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .llama-server-status-panel .controls .btn-start {
-  background: var(--primary-color);
-  color: white;
+  background: var(--success);
+  color: #fff;
 }
 
 .llama-server-status-panel .controls .btn-start:hover {
-  background: var(--primary-color-hover);
+  background: var(--success-dark);
 }
 
 .llama-server-status-panel .controls .btn-stop {
-  background: #f87171;
-  color: white;
+  background: var(--danger);
+  color: #fff;
 }
 
 .llama-server-status-panel .controls .btn-stop:hover {
   background: #dc2626;
 }
 
-.llama-server-status-panel .status-details {
+/* Summary Section */
+.llama-server-status-panel .status-summary {
+  padding: var(--md) var(--lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.llama-server-status-panel .summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--md);
+}
+
+.llama-server-status-panel .summary-item {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
 }
 
-.llama-server-status-panel .detail-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: var(--surface-color-secondary);
-  border-radius: 6px;
-}
-
-.llama-server-status-panel .detail-row .label {
-  color: var(--text-color-secondary);
-  font-size: 14px;
-}
-
-.llama-server-status-panel .detail-row .value {
-  color: var(--text-color);
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.llama-server-status-panel .llama-metrics {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-color);
-}
-
-.llama-server-status-panel .llama-metrics h4 {
-  margin: 0 0 12px 0;
-  font-size: 14px;
-  color: var(--text-color-secondary);
+.llama-server-status-panel .summary-item .label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.llama-server-status-panel .metric-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: var(--surface-color-secondary);
-  border-radius: 6px;
-  margin-bottom: 6px;
-}
-
-.llama-server-status-panel .metric-label {
-  color: var(--text-color-secondary);
-  font-size: 13px;
-}
-
-.llama-server-status-panel .metric-value {
-  color: var(--text-color);
-  font-size: 13px;
+.llama-server-status-panel .summary-item .value {
+  font-size: 0.95rem;
   font-weight: 600;
+  color: var(--text-primary);
 }
 
-/* Metrics Sections */
+/* Metrics Section */
+.llama-server-status-panel .llama-metrics {
+  padding: var(--md) var(--lg);
+}
+
 .llama-server-status-panel .metrics-section {
-  margin-bottom: 20px;
-  padding-bottom: 20px;
+  margin-bottom: var(--md);
+  padding-bottom: var(--md);
   border-bottom: 1px solid var(--border-color);
 }
 
 .llama-server-status-panel .metrics-section:last-child {
   border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
 .llama-server-status-panel .section-title {
-  font-size: 14px;
-  color: var(--text-color-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 12px;
-  font-weight: 500;
+  margin-bottom: var(--md);
 }
 
 .llama-server-status-panel .collapsible-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
   cursor: pointer;
   user-select: none;
 }
@@ -175,94 +160,106 @@
 .llama-server-status-panel .collapse-toggle {
   background: none;
   border: none;
-  padding: 0;
+  padding: 4px;
   cursor: pointer;
-  color: var(--text-color-secondary);
-  transition: transform 0.2s;
+  color: var(--text-secondary);
+  transition: color 0.2s ease;
 }
 
 .llama-server-status-panel .collapse-toggle:hover {
-  color: var(--text-color);
+  color: var(--text-primary);
 }
 
-.llama-server-status-panel .chevron {
+.llama-server-status-panel .collapse-toggle .chevron {
   display: inline-block;
   transition: transform 0.2s ease;
-  font-size: 12px;
+  font-size: 0.625rem;
 }
 
 .llama-server-status-panel .collapsible-content {
   display: none;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  margin-top: var(--md);
 }
 
-.llama-server-status-panel .collapsible-content[style*="display: grid;"] {
-  display: grid !important;
+.llama-server-status-panel .collapsible-content[style*="display: grid"],
+.llama-server-status-panel .collapsible-content.expanded {
+  display: grid;
 }
 
+/* Metrics Grid */
 .llama-server-status-panel .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--sm);
 }
 
-/* Summary Grid */
-.llama-server-status-panel .status-summary {
-  background: var(--surface-color-secondary);
-  padding: 16px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-}
-
-.llama-server-status-panel .summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-}
-
-.llama-server-status-panel .summary-item {
+.llama-server-status-panel .metric-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  padding: var(--sm);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
 }
 
-.llama-server-status-panel .summary-item .label {
-  font-size: 12px;
-  color: var(--text-color-secondary);
+.llama-server-status-panel .metric-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
 }
 
-.llama-server-status-panel .summary-item .value {
-  font-size: 14px;
+.llama-server-status-panel .metric-value {
+  font-size: 0.875rem;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--text-primary);
 }
 
 /* Collapse Button */
 .llama-server-status-panel .collapse-btn {
-  background: var(--surface-color-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 6px 12px;
+  border-radius: var(--radius);
+  padding: 4px 10px;
   cursor: pointer;
-  font-size: 14px;
-  color: var(--text-color);
-  transition: all 0.2s;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
 }
 
 .llama-server-status-panel .collapse-btn:hover {
-  background: var(--surface-color-tertiary);
+  background: var(--bg-hover);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .llama-server-status-panel .collapse-btn .chevron-icon {
   display: inline-block;
   transition: transform 0.2s ease;
-  font-size: 12px;
-  margin-left: 6px;
+  font-size: 0.625rem;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
+  .llama-server-status-panel .metrics-grid,
+  .llama-server-status-panel .collapsible-content {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .llama-server-status-panel .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .llama-server-status-panel .status-header,
+  .llama-server-status-panel .controls,
+  .llama-server-status-panel .status-summary,
+  .llama-server-status-panel .llama-metrics {
+    padding: var(--md);
+  }
+}
+
+@media (max-width: 480px) {
   .llama-server-status-panel .metrics-grid,
   .llama-server-status-panel .collapsible-content {
     grid-template-columns: 1fr;

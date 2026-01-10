@@ -1,0 +1,272 @@
+/**
+ * Models Page Styles
+ * Full-width layout for models page
+ */
+
+.models-page {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.models-page .toolbar {
+  display: flex;
+  gap: var(--md);
+  margin-bottom: var(--md);
+  padding: var(--md);
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  align-items: center;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.models-page .toolbar .btn {
+  flex-shrink: 0;
+}
+
+.models-page .filters {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto;
+  gap: var(--md);
+  margin-bottom: var(--md);
+  padding: var(--md);
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.models-page .filters input,
+.models-page .filters select {
+  padding: var(--sm) var(--md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.models-page .filters input::placeholder {
+  color: var(--text-secondary);
+}
+
+.models-page .filters input:focus,
+.models-page .filters select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.models-page .filters select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23666' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+
+.models-page .filters .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--sm);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.models-page .filters .checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.models-page .models-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+}
+
+.models-page .models-table {
+  width: 100%;
+  min-width: max-content;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.models-page .models-table thead {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.models-page .models-table th {
+  padding: var(--sm) var(--md);
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.models-page .models-table th[data-sort] {
+  cursor: pointer;
+  user-select: none;
+}
+
+.models-page .models-table th[data-sort]:hover {
+  color: var(--text-primary);
+}
+
+.models-page .models-table th.sorted {
+  color: var(--primary);
+}
+
+.models-page .models-table tbody tr {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.models-page .models-table tbody tr:hover {
+  background: var(--bg-tertiary);
+}
+
+.models-page .models-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.models-page .models-table td {
+  padding: var(--sm) var(--md);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.models-page .models-table td.name-cell {
+  font-weight: 500;
+  color: var(--primary);
+}
+
+.models-page .models-table td.size-cell {
+  text-align: right;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.models-page .models-table td.action-cell {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Router Indicator */
+.router-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--sm) var(--md);
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.router-indicator.success {
+  background: var(--bg-success-light);
+  color: var(--success);
+}
+
+.router-indicator.default {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.router-indicator::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.badge.success {
+  background: var(--bg-success-light);
+  color: var(--success);
+}
+
+.badge.warning {
+  background: var(--bg-warning-light);
+  color: var(--warning);
+}
+
+.badge.danger {
+  background: var(--bg-danger-light);
+  color: var(--danger);
+}
+
+.badge.default {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .models-page .filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .models-page .filters .checkbox-label {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .models-page .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .models-page .toolbar .btn {
+    width: 100%;
+  }
+
+  .models-page .router-indicator {
+    margin-left: 0;
+    justify-content: center;
+  }
+
+  .models-page .filters {
+    grid-template-columns: 1fr;
+    gap: var(--sm);
+  }
+
+  .models-page .models-table {
+    font-size: 0.8rem;
+  }
+
+  .models-page .models-table th,
+  .models-page .models-table td {
+    padding: var(--xs) var(--sm);
+  }
+}

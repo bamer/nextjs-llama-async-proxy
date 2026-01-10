@@ -55,6 +55,10 @@ describe("ConfigRepository", () => {
           ctx_size: 2048,
           batch_size: 512,
           threads: 4,
+          llama_server_enabled: true,
+          llama_server_port: 8080,
+          llama_server_host: "0.0.0.0",
+          llama_server_metrics: true,
         });
         expect(result.serverPath).toBe("/usr/local/bin/llama-server");
         expect(result.host).toBe("localhost");
@@ -136,6 +140,10 @@ describe("ConfigRepository", () => {
           ctx_size: 2048,
           batch_size: 512,
           threads: 4,
+          llama_server_enabled: true,
+          llama_server_port: 8080,
+          llama_server_host: "0.0.0.0",
+          llama_server_metrics: true,
         });
       });
     });
@@ -157,6 +165,10 @@ describe("ConfigRepository", () => {
           ctx_size: 2048,
           batch_size: 512,
           threads: 4,
+          llama_server_enabled: true,
+          llama_server_port: 8080,
+          llama_server_host: "0.0.0.0",
+          llama_server_metrics: true,
         });
       });
 

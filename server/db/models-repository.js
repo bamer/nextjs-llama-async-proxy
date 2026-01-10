@@ -67,7 +67,7 @@ export class ModelsRepository {
       parameters, model_path, file_size, params, quantization, ctx_size,
       batch_size, threads, created_at, updated_at,
       embedding_size, block_count, head_count, head_count_kv, ffn_dim, file_type, favorite)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     this.db
       .prepare(query)

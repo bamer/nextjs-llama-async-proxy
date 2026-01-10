@@ -1,5 +1,6 @@
 /**
  * Layout Components - Event-Driven DOM Updates
+ * Fixed: Header is now full width, separate from main content
  */
 
 class Layout extends Component {
@@ -7,6 +8,7 @@ class Layout extends Component {
     return `
       <div class="app-container" id="app-layout">
         <div id="sidebar-container"></div>
+        <div id="header-container"></div>
         <div id="main-content-container"></div>
       </div>
     `;
@@ -21,6 +23,14 @@ class Layout extends Component {
       this._sidebar = sidebar;
     }
 
+    // Mount Header (separate, full width)
+    const headerContainer = document.getElementById("header-container");
+    if (headerContainer) {
+      const header = new Header({});
+      header.mount(headerContainer);
+      this._header = header;
+    }
+
     // Mount MainContent
     const mainContainer = document.getElementById("main-content-container");
     if (mainContainer) {
@@ -32,6 +42,7 @@ class Layout extends Component {
 
   destroy() {
     this._sidebar?.destroy();
+    this._header?.destroy();
     this._mainContent?.destroy();
   }
 }
@@ -124,7 +135,6 @@ class MainContent extends Component {
   render() {
     return `
       <main class="main-content">
-        <div id="header-container"></div>
         <div id="page-content" class="page-content">
           <div class="loading-screen">
             <div class="spinner"></div>
@@ -133,20 +143,6 @@ class MainContent extends Component {
         </div>
       </main>
     `;
-  }
-
-  onMount() {
-    // Mount Header
-    const headerContainer = document.getElementById("header-container");
-    if (headerContainer) {
-      const header = new Header({});
-      header.mount(headerContainer);
-      this._header = header;
-    }
-  }
-
-  destroy() {
-    this._header?.destroy();
   }
 }
 
