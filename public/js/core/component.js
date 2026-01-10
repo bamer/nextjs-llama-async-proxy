@@ -69,12 +69,25 @@ class Component {
   setState(updates, options = {}) {
     const changedKeys = Object.keys(updates);
     const oldState = { ...this.state };
+
+    // Merge pending updates with new updates to prevent race conditions
+    for (const [key, value] of Object.entries(updates)) {
+      this._pendingUpdates.set(key, { value, oldState: this.state[key] });
+    }
+
     this.state = { ...this.state, ...updates };
+
+    console.log("[DEBUG] Component.setState:", {
+      component: this.constructor.name,
+      changedKeys,
+      updates,
+    });
 
     // Legacy: always update if no options provided
     if (options.immediate) {
       if (this._el) {
         this._conditionalUpdate(changedKeys, oldState);
+        this._pendingUpdates.clear();
       }
       return this;
     }
@@ -89,12 +102,19 @@ class Component {
       });
     }
 
-    // Debounced update for legacy components
+    // Debounced update for legacy components - merge all pending updates
     if (this._el) {
       if (!this._updateTimeout) {
         this._updateTimeout = setTimeout(() => {
           this._updateTimeout = null;
-          this._conditionalUpdate(changedKeys, oldState);
+          // Get all changed keys from pending updates
+          const allChangedKeys = Array.from(this._pendingUpdates.keys());
+          console.log("[DEBUG] Component applying debounced update:", {
+            component: this.constructor.name,
+            changedKeys: allChangedKeys,
+          });
+          this._conditionalUpdate(allChangedKeys, oldState);
+          this._pendingUpdates.clear();
         }, 16); // ~60fps
       }
     }
@@ -238,6 +258,9 @@ class Component {
       this._updateTimeout = null;
     }
 
+    // Clear pending updates
+    this._pendingUpdates.clear();
+
     // Unsubscribe from all state events
     this._subscribedKeys.clear();
 
@@ -248,6 +271,42 @@ class Component {
     this._mounted = false;
     this._events = {};
     this.didDestroy && this.didDestroy();
+  }
+
+  /**
+   * Safe querySelector - returns null instead of throwing
+   * @param {string} selector - CSS selector
+   * @returns {Element|null} Element or null
+   */
+  $q(selector) {
+    if (!this._el) {
+      console.warn("[Component] $q called on unmounted component:", selector);
+      return null;
+    }
+    try {
+      return this._el.querySelector(selector);
+    } catch (e) {
+      console.error("[Component] $q error:", selector, e);
+      return null;
+    }
+  }
+
+  /**
+   * Safe querySelectorAll - returns empty array instead of throwing
+   * @param {string} selector - CSS selector
+   * @returns {Array} Array of elements
+   */
+  $qa(selector) {
+    if (!this._el) {
+      console.warn("[Component] $qa called on unmounted component:", selector);
+      return [];
+    }
+    try {
+      return Array.from(this._el.querySelectorAll(selector));
+    } catch (e) {
+      console.error("[Component] $qa error:", selector, e);
+      return [];
+    }
   }
 
   // Element creator (h)

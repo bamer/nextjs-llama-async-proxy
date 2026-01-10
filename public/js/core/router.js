@@ -93,14 +93,19 @@ class Router {
   async _handle(path) {
     console.log("[ROUTER] _handle() called with path:", path);
 
-    // Cleanup previous controller
+    // Cleanup previous controller with error handling
     if (this.currentController) {
       console.log(
         "[ROUTER] Destroying previous controller:",
         this.currentController?.constructor?.name
       );
-      this.currentController.willUnmount && this.currentController.willUnmount();
-      this.currentController.destroy && this.currentController.destroy();
+      try {
+        this.currentController.willUnmount && this.currentController.willUnmount();
+        this.currentController.destroy && this.currentController.destroy();
+      } catch (e) {
+        console.error("[ROUTER] Error during controller cleanup:", e);
+        // Continue with navigation despite cleanup error
+      }
       this.currentController = null;
     }
 
