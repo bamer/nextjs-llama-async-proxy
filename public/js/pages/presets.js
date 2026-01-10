@@ -567,29 +567,19 @@ class PresetsController {
     const el = this.comp.render();
     this.comp._el = el;
     el._component = this.comp;
+    // Bind events immediately - elements will be in DOM after append
     this.comp.bindEvents();
-    this.comp.onMount();
-    // Call controller's onMount to load presets
-    this.onMount();
     return el;
   }
 
-  onMount() {
-    console.log("[PRESETS] Controller onMount called");
-    this.loadPresetsData();
-    // Subscribe to model changes from models page
-    if (window.stateManager) {
-      this.unsubscribers.push(
-        window.stateManager.subscribe("models", (models) => {
-          if (this.comp) {
-            this.comp.state.availableModels = models || [];
-            if (this.comp.state.selectedPreset) {
-              this.comp._updateEditor();
-            }
-          }
-        })
-      );
+  didMount() {
+    // Called by router after element is in DOM
+    // Now bind button events that need DOM access
+    const newBtn = document.getElementById("btn-new-preset");
+    if (newBtn) {
+      newBtn.onclick = () => this.comp._handleNewPreset();
     }
+    this.loadPresetsData();
   }
 
   async loadPresetsData() {
@@ -762,9 +752,12 @@ class PresetsPage extends Component {
   }
 
   _handlePresetLoaded(data) {
+    console.log("[PRESETS] _handlePresetLoaded called:", data);
     this.state.globalDefaults = data.defaults;
     this.state.standaloneModels = data.standaloneModels;
+    console.log("[PRESETS] About to call _updateEditor...");
     this._updateEditor();
+    console.log("[PRESETS] _updateEditor called");
   }
 
   _updatePresetsList() {
@@ -807,17 +800,38 @@ class PresetsPage extends Component {
   }
 
   _updateEditor() {
+    console.log("[PRESETS] _updateEditor called, looking for editor element...");
     const editor = this._domCache.get("editor");
-    if (!editor) return;
+    console.log("[PRESETS] Editor from cache:", !!editor);
+
+    if (!editor) {
+      console.log("[PRESETS] Editor not found in cache, trying direct DOM...");
+      const el = document.getElementById("presets-editor");
+      console.log("[PRESETS] Editor from direct DOM:", !!el);
+      if (el) {
+        this._domCache.set("editor", el);
+        // Show loading state
+        el.innerHTML = "<div style=\"padding: 20px; text-align: center;\">Loading editor...</div>";
+        // Defer render
+        requestAnimationFrame(() => this._renderEditor());
+      } else {
+        console.log("[PRESETS] Editor element not found at all!");
+      }
+      return;
+    }
 
     // Show loading state
     editor.innerHTML = "<div style=\"padding: 20px; text-align: center;\">Loading editor...</div>";
 
     // Defer update to avoid blocking UI
-    requestAnimationFrame(() => this._renderEditor());
+    requestAnimationFrame(() => {
+      console.log("[PRESETS] requestAnimationFrame callback executing...");
+      this._renderEditor();
+    });
   }
 
   _renderEditor() {
+    console.log("[PRESETS] _renderEditor called");
     const editor = this._domCache.get("editor");
     if (!editor) return;
 
@@ -1224,15 +1238,14 @@ class PresetsPage extends Component {
       return;
     }
 
-    const items = container.querySelectorAll(".preset-item");
-    console.log("[PRESETS] Found", items.length, "preset items to bind");
-
-    items.forEach((item) => {
-      item.onclick = () => {
+    // Use event delegation on container instead of binding to each item
+    container.onclick = (e) => {
+      const item = e.target.closest(".preset-item");
+      if (item && !e.target.classList.contains("preset-delete")) {
         console.log("[PRESETS] Preset item clicked:", item.dataset.presetName);
         this._emit("preset:select", item.dataset.presetName);
-      };
-    });
+      }
+    };
 
     container.querySelectorAll(".preset-delete").forEach((btn) => {
       btn.onclick = (e) => {
@@ -1240,6 +1253,8 @@ class PresetsPage extends Component {
         this._handleDeletePreset(btn.dataset.presetName);
       };
     });
+
+    console.log("[PRESETS] Event delegation set up on container");
   }
 
   _bindEditorEvents() {
@@ -1467,21 +1482,23 @@ class PresetsPage extends Component {
   }
 
   onMount() {
-    // Cache DOM elements after mounting
-    this._domCache.set("presets-items", document.getElementById("presets-items"));
-    this._domCache.set("server-status", document.getElementById("server-status"));
-    this._domCache.set("editor", document.getElementById("presets-editor"));
-  }
+    console.log("[PRESETS] onMount called - THIS RUNS AFTER ELEMENT IS IN DOM");
 
-  bindEvents() {
-    // Cache DOM elements after binding
+    // Cache DOM elements after mounting (element is now in DOM)
     this._domCache.set("presets-items", document.getElementById("presets-items"));
     this._domCache.set("server-status", document.getElementById("server-status"));
     this._domCache.set("editor", document.getElementById("presets-editor"));
 
-    // New preset button
+    // New preset button - NOW we can find it since element is in DOM!
     const newBtn = document.getElementById("btn-new-preset");
-    newBtn && (newBtn.onclick = () => this._handleNewPreset());
+    console.log("[PRESETS] New preset button found:", !!newBtn);
+    if (newBtn) {
+      // Remove any existing listeners to avoid duplicates
+      newBtn.removeEventListener("click", this._boundHandleNewPreset);
+      this._boundHandleNewPreset = this._handleNewPreset.bind(this);
+      newBtn.addEventListener("click", this._boundHandleNewPreset);
+      console.log("[PRESETS] Added click listener to new preset button");
+    }
 
     // Launch server button
     const launchBtn = document.getElementById("btn-launch-server");
@@ -1492,12 +1509,22 @@ class PresetsPage extends Component {
     stopBtn && (stopBtn.onclick = () => this._handleStopServer());
   }
 
+  bindEvents() {
+    // Events that can be bound before DOM append go here
+    // (currently empty - all event binding is done in onMount for reliability)
+    console.log("[PRESETS] bindEvents called");
+  }
+
   async _handleNewPreset() {
+    console.log("[PRESETS] _handleNewPreset called");
     const name = prompt("Preset name:");
+    console.log("[PRESETS] New preset name:", name);
     if (!name) return;
 
     try {
+      console.log("[PRESETS] Calling createPreset...");
       await this._getService().createPreset(name);
+      console.log("[PRESETS] Preset created successfully");
       showNotification(`Preset "${name}" created with empty configuration`, "success");
       this.state.presets = [...this.state.presets, { name }];
       this._updatePresetsList();

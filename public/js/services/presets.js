@@ -142,27 +142,15 @@ class PresetsService {
   getModelsFromPreset(filename) {
     return new Promise((resolve, reject) => {
       console.log("[DEBUG] PresetsService: getModelsFromPreset", { filename });
-      const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const eventName = "presets:get-models:result";
-
-      const handler = (response) => {
+      // Server uses ack callback pattern
+      this.socket.emit("presets:get-models", { filename }, (response) => {
         console.log("[DEBUG] PresetsService: getModelsFromPreset response:", response);
-        this.socket.off(eventName, handler);
         if (response.success) {
           resolve(response.data?.models || {});
         } else {
           reject(new Error(response.error?.message || "Unknown error"));
         }
-      };
-
-      this.socket.on(eventName, handler);
-
-      setTimeout(() => {
-        this.socket.off(eventName, handler);
-        reject(new Error("Request timeout"));
-      }, 10000);
-
-      this.socket.emit("presets:get-models", { filename, requestId });
+      });
     });
   }
 
@@ -233,27 +221,15 @@ class PresetsService {
   getDefaults(filename) {
     return new Promise((resolve, reject) => {
       console.log("[DEBUG] PresetsService: getDefaults", { filename });
-      const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const eventName = "presets:get-defaults:result";
-
-      const handler = (response) => {
+      // Server uses ack callback pattern
+      this.socket.emit("presets:get-defaults", { filename }, (response) => {
         console.log("[DEBUG] PresetsService: getDefaults response:", response);
-        this.socket.off(eventName, handler);
         if (response.success) {
           resolve(response.data?.defaults || {});
         } else {
           reject(new Error(response.error?.message || "Unknown error"));
         }
-      };
-
-      this.socket.on(eventName, handler);
-
-      setTimeout(() => {
-        this.socket.off(eventName, handler);
-        reject(new Error("Request timeout"));
-      }, 10000);
-
-      this.socket.emit("presets:get-defaults", { filename, requestId });
+      });
     });
   }
 
