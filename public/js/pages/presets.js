@@ -702,7 +702,7 @@ class PresetsPage extends Component {
       availableModels: props.availableModels || [],
       loading: true,
       expandedDefaults: true,
-      expandedModels: {},
+      expandedModels: false,  // Models section collapsed by default
       parameterFilter: "",
       serverRunning: false,
       serverPort: null,
@@ -920,7 +920,11 @@ class PresetsPage extends Component {
       </div>
 
       <div class="section standalone-section">
-        <h3>Models</h3>
+        <div class="section-header" id="header-models">
+          <span class="section-icon">📄</span>
+          <span class="section-title">Models</span>
+          <span class="section-toggle" id="toggle-models">▼</span>
+        </div>
         <div class="add-model-controls">
           <select class="model-select" id="select-add-model">
             <option value="">-- Select a model --</option>
@@ -1230,6 +1234,25 @@ class PresetsPage extends Component {
     this._updateEditor();
   }
 
+  _toggleModelsSection() {
+    const modelsSection = document.querySelector(".standalone-section");
+    if (!modelsSection) return;
+
+    const content = modelsSection.querySelector(".add-model-controls");
+    const list = modelsSection.querySelector(".standalone-list");
+    const toggle = modelsSection.querySelector("#toggle-models");
+
+    if (content.style.display === "none") {
+      content.style.display = "";
+      list.style.display = "";
+      toggle.textContent = "▼";
+    } else {
+      content.style.display = "none";
+      list.style.display = "none";
+      toggle.textContent = "▶";
+    }
+  }
+
   _bindPresetEvents() {
     console.log("[PRESETS] _bindPresetEvents called");
     const container = this._domCache.get("presets-items");
@@ -1261,6 +1284,10 @@ class PresetsPage extends Component {
     // Defaults toggle
     const defaultsHeader = document.getElementById("header-defaults");
     defaultsHeader && (defaultsHeader.onclick = () => this._emit("defaults:toggle"));
+
+    // Models toggle
+    const modelsHeader = document.getElementById("header-models");
+    modelsHeader && (modelsHeader.onclick = () => this._toggleModelsSection());
 
     // Add param dropdown for defaults
     const addParamSelect = document.getElementById("select-add-param");
