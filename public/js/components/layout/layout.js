@@ -124,7 +124,7 @@ class MainContent extends Component {
   render() {
     return `
       <main class="main-content">
-        ${HeaderHTML()}
+        <div id="header-container"></div>
         <div id="page-content" class="page-content">
           <div class="loading-screen">
             <div class="spinner"></div>
@@ -134,28 +134,20 @@ class MainContent extends Component {
       </main>
     `;
   }
-}
 
-function HeaderHTML() {
-  const p = window.location.pathname;
-  const titles = {
-    "/": "Dashboard",
-    "/models": "Models",
-    "/presets": "Presets",
-    "/logs": "Logs",
-    "/settings": "Settings",
-  };
-  const title = titles[p] || "Dashboard";
+  onMount() {
+    // Mount Header
+    const headerContainer = document.getElementById("header-container");
+    if (headerContainer) {
+      const header = new Header({});
+      header.mount(headerContainer);
+      this._header = header;
+    }
+  }
 
-  return `
-    <header class="page-header">
-      <button class="menu-btn" data-action="toggle">☰</button>
-      <h1 id="page-title">${title}</h1>
-      <div class="header-status">
-        <span class="badge offline">● Offline</span>
-      </div>
-    </header>
-  `;
+  destroy() {
+    this._header?.destroy();
+  }
 }
 
 class Header extends Component {
@@ -166,18 +158,40 @@ class Header extends Component {
   }
 
   render() {
-    return HeaderHTML();
+    const p = window.location.pathname;
+    const titles = {
+      "/": "Dashboard",
+      "/models": "Models",
+      "/presets": "Presets",
+      "/logs": "Logs",
+      "/settings": "Settings",
+    };
+    const title = titles[p] || "Dashboard";
+
+    return `
+      <header class="page-header">
+        <button class="menu-btn" data-action="toggle">☰</button>
+        <h1 id="page-title">${title}</h1>
+        <div class="header-status">
+          <span class="badge offline">● Offline</span>
+        </div>
+      </header>
+    `;
   }
 
   bindEvents() {
     this.on("click", "[data-action=toggle]", () => {
-      const sidebar = document.querySelector(".sidebar");
-      if (sidebar) {
-        sidebar.classList.toggle("collapsed");
-        const isCollapsed = sidebar.classList.contains("collapsed");
-        localStorage.setItem("sidebarCollapsed", isCollapsed);
-      }
+      this._toggleSidebar();
     });
+  }
+
+  _toggleSidebar() {
+    const sidebar = document.querySelector(".sidebar");
+    if (sidebar) {
+      sidebar.classList.toggle("collapsed");
+      const isCollapsed = sidebar.classList.contains("collapsed");
+      localStorage.setItem("sidebarCollapsed", isCollapsed);
+    }
   }
 
   onMount() {

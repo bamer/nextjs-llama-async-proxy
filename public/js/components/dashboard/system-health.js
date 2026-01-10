@@ -47,27 +47,27 @@ class SystemHealth extends Component {
 
     // Update check values
     const checkValues = [
-      `${(m.cpu?.usage || 0).toFixed(1)}%`,
-      `${(m.memory?.used || 0).toFixed(1)}%`,
-      `${(m.disk?.used || 0).toFixed(1)}%`,
-      `${(gpu?.usage || 0).toFixed(1)}%`,
+      { value: `${(m.cpu?.usage || 0).toFixed(1)}%`, ok: health.checks.cpuOk, limit: "80%" },
+      { value: `${(m.memory?.used || 0).toFixed(1)}%`, ok: health.checks.memoryOk, limit: "85%" },
+      { value: `${(m.disk?.used || 0).toFixed(1)}%`, ok: health.checks.diskOk, limit: "90%" },
+      { value: `${(gpu?.usage || 0).toFixed(1)}%`, ok: health.checks.gpuOk, limit: "85%" },
     ];
 
     const checkEls = this._el.querySelectorAll(".health-check");
     checkEls.forEach((checkEl, index) => {
       if (index < checkValues.length) {
+        const check = checkValues[index];
         const valueEl = checkEl.querySelector(".check-value");
-        if (valueEl) valueEl.textContent = checkValues[index];
+        if (valueEl) valueEl.textContent = check.value;
 
         // Update OK/warning status
-        const checkOk = health.checks?.[index === 0 ? "cpuOk" : index === 1 ? "memoryOk" : index === 2 ? "diskOk" : "gpuOk"];
-        checkEl.className = `health-check ${checkOk ? "ok" : "warning"}`;
+        checkEl.className = `health-check ${check.ok ? "ok" : "warning"}`;
 
         const indicatorEl = checkEl.querySelector(".check-indicator");
         if (indicatorEl) {
-          indicatorEl.innerHTML = checkOk
+          indicatorEl.innerHTML = check.ok
             ? '<span class="indicator-good">✓</span>'
-            : `<span class="indicator-warning">⚠ Limit: ${index === 0 ? "80%" : index === 1 ? "85%" : index === 2 ? "90%" : "85%"}</span>`;
+            : `<span class="indicator-warning">⚠ Limit: ${check.limit}</span>`;
         }
       }
     });
@@ -78,67 +78,61 @@ class SystemHealth extends Component {
     const gpu = this.gpuMetrics;
     const health = window.DashboardUtils._getHealthStatus(m);
 
-    const checks = [
-      {
-        name: "CPU Usage",
-        ok: health.checks.cpuOk,
-        value: `${(m.cpu?.usage || 0).toFixed(1)}%`,
-        limit: "80%",
-      },
-      {
-        name: "Memory Usage",
-        ok: health.checks.memoryOk,
-        value: `${(m.memory?.used || 0).toFixed(1)}%`,
-        limit: "85%",
-      },
-      {
-        name: "Disk Usage",
-        ok: health.checks.diskOk,
-        value: `${(m.disk?.used || 0).toFixed(1)}%`,
-        limit: "90%",
-      },
-      {
-        name: "GPU Usage",
-        ok: health.checks.gpuOk,
-        value: `${(gpu?.usage || 0).toFixed(1)}%`,
-        limit: "85%",
-      },
-    ];
-
-    return Component.h(
-      "div",
-      { className: "health-section" },
-      Component.h("h3", {}, "System Health"),
-      Component.h(
-        "div",
-        { className: `health-status ${health.status}` },
-        Component.h("div", { className: "health-icon" }, health.status === "good" ? "✓" : "⚠"),
-        Component.h("span", { className: "health-message" }, health.message)
-      ),
-      Component.h(
-        "div",
-        { className: "health-checks" },
-        checks.map((check) =>
-          Component.h(
-            "div",
-            { key: check.name, className: `health-check ${check.ok ? "ok" : "warning"}` },
-            Component.h(
-              "div",
-              { className: "check-info" },
-              Component.h("span", { className: "check-name" }, check.name),
-              Component.h("span", { className: "check-value" }, check.value)
-            ),
-            Component.h(
-              "div",
-              { className: "check-indicator" },
-              check.ok
-                ? Component.h("span", { className: "indicator-good" }, "✓")
-                : Component.h("span", { className: "indicator-warning" }, `⚠ Limit: ${check.limit}`)
-            )
-          )
-        )
-      )
-    );
+    return `
+      <div class="health-section">
+        <h3>System Health</h3>
+        <div class="health-status ${health.status}">
+          <div class="health-icon">${health.status === "good" ? "✓" : "⚠"}</div>
+          <span class="health-message">${health.message}</span>
+        </div>
+        <div class="health-checks">
+          <div class="health-check ${health.checks.cpuOk ? "ok" : "warning"}">
+            <div class="check-info">
+              <span class="check-name">CPU Usage</span>
+              <span class="check-value">${(m.cpu?.usage || 0).toFixed(1)}%</span>
+            </div>
+            <div class="check-indicator">
+              ${health.checks.cpuOk
+                ? '<span class="indicator-good">✓</span>'
+                : '<span class="indicator-warning">⚠ Limit: 80%</span>'}
+            </div>
+          </div>
+          <div class="health-check ${health.checks.memoryOk ? "ok" : "warning"}">
+            <div class="check-info">
+              <span class="check-name">Memory Usage</span>
+              <span class="check-value">${(m.memory?.used || 0).toFixed(1)}%</span>
+            </div>
+            <div class="check-indicator">
+              ${health.checks.memoryOk
+                ? '<span class="indicator-good">✓</span>'
+                : '<span class="indicator-warning">⚠ Limit: 85%</span>'}
+            </div>
+          </div>
+          <div class="health-check ${health.checks.diskOk ? "ok" : "warning"}">
+            <div class="check-info">
+              <span class="check-name">Disk Usage</span>
+              <span class="check-value">${(m.disk?.used || 0).toFixed(1)}%</span>
+            </div>
+            <div class="check-indicator">
+              ${health.checks.diskOk
+                ? '<span class="indicator-good">✓</span>'
+                : '<span class="indicator-warning">⚠ Limit: 90%</span>'}
+            </div>
+          </div>
+          <div class="health-check ${health.checks.gpuOk ? "ok" : "warning"}">
+            <div class="check-info">
+              <span class="check-name">GPU Usage</span>
+              <span class="check-value">${(gpu?.usage || 0).toFixed(1)}%</span>
+            </div>
+            <div class="check-indicator">
+              ${health.checks.gpuOk
+                ? '<span class="indicator-good">✓</span>'
+                : '<span class="indicator-warning">⚠ Limit: 85%</span>'}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
   }
 }
 

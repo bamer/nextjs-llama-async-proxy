@@ -1,5 +1,5 @@
 /**
- * GPU Details Component - Event-Driven DOM Updates
+ * GpuDetails Component - Event-Driven DOM Updates
  */
 
 class GpuDetails extends Component {
@@ -63,73 +63,49 @@ class GpuDetails extends Component {
 
   render() {
     if (!this.gpuList || this.gpuList.length === 0) {
-      return Component.h("div", { className: "gpu-details" }, [
-        Component.h("p", { className: "gpu-no-data" }, "No GPU detected"),
-      ]);
+      return `<div class="gpu-details"><p class="gpu-no-data">No GPU detected</p></div>`;
     }
 
-    return Component.h(
-      "div",
-      { className: `gpu-details ${this.expanded ? "expanded" : "collapsed"}` },
-      [
-        // Summary header
-        Component.h("div", { className: "gpu-header", "data-action": "toggle-gpu" }, [
-          Component.h("span", { className: "gpu-title" }, `GPU Devices (${this.gpuList.length})`),
-          Component.h(
-            "span",
-            { className: `gpu-toggle ${this.expanded ? "open" : "closed"}` },
-            this.expanded ? "▼" : "▶"
-          ),
-        ]),
-        // Detailed GPU list
-        this.expanded &&
-          Component.h("div", { className: "gpu-list" }, [
-            ...this.gpuList.map((gpu, idx) =>
-              Component.h(
-                "div",
-                {
-                  key: `gpu-${idx}`,
-                  className: `gpu-card ${gpu.usage > 75 || gpu.memoryUsed / gpu.memoryTotal > 0.75 ? "high-usage" : ""}`,
-                },
-                [
-                  // GPU name and vendor
-                  Component.h("div", { className: "gpu-info" }, [
-                    Component.h("strong", {}, gpu.name),
-                    Component.h("span", { className: "gpu-vendor" }, gpu.vendor),
-                  ]),
-                  // Usage bar
-                  Component.h("div", { className: "gpu-metric" }, [
-                    Component.h("span", {}, "Usage"),
-                    Component.h("div", { className: "metric-bar" }, [
-                      Component.h("div", {
-                        className: "metric-fill",
-                        style: `width: ${Math.min(gpu.usage, 100)}%`,
-                      }),
-                      Component.h("span", { className: "metric-text" }, `${gpu.usage.toFixed(1)}%`),
-                    ]),
-                  ]),
-                  // Memory bar
-                  gpu.memoryTotal > 0 &&
-                    Component.h("div", { className: "gpu-metric" }, [
-                      Component.h("span", {}, "Memory"),
-                      Component.h("div", { className: "metric-bar" }, [
-                        Component.h("div", {
-                          className: "metric-fill",
-                          style: `width: ${(gpu.memoryUsed / gpu.memoryTotal) * 100}%`,
-                        }),
-                        Component.h(
-                          "span",
-                          { className: "metric-text" },
-                          `${AppUtils?.formatBytes?.(gpu.memoryUsed)} / ${AppUtils?.formatBytes?.(gpu.memoryTotal)}`
-                        ),
-                      ]),
-                    ]),
-                ]
+    return `
+      <div class="gpu-details ${this.expanded ? "expanded" : "collapsed"}">
+        <div class="gpu-header" data-action="toggle-gpu">
+          <span class="gpu-title">GPU Devices (${this.gpuList.length})</span>
+          <span class="gpu-toggle ${this.expanded ? "open" : "closed"}">${this.expanded ? "▼" : "▶"}</span>
+        </div>
+        ${this.expanded ? `
+          <div class="gpu-list">
+            ${this.gpuList
+              .map(
+                (gpu, idx) => `
+              <div class="gpu-card ${gpu.usage > 75 || gpu.memoryUsed / gpu.memoryTotal > 0.75 ? "high-usage" : ""}">
+                <div class="gpu-info">
+                  <strong>${gpu.name}</strong>
+                  <span class="gpu-vendor">${gpu.vendor}</span>
+                </div>
+                <div class="gpu-metric">
+                  <span>Usage</span>
+                  <div class="metric-bar">
+                    <div class="metric-fill" style="width: ${Math.min(gpu.usage, 100)}%"></div>
+                    <span class="metric-text">${gpu.usage.toFixed(1)}%</span>
+                  </div>
+                </div>
+                ${gpu.memoryTotal > 0 ? `
+                <div class="gpu-metric">
+                  <span>Memory</span>
+                  <div class="metric-bar">
+                    <div class="metric-fill" style="width: ${(gpu.memoryUsed / gpu.memoryTotal) * 100}%"></div>
+                    <span class="metric-text">${AppUtils?.formatBytes?.(gpu.memoryUsed)} / ${AppUtils?.formatBytes?.(gpu.memoryTotal)}</span>
+                  </div>
+                </div>
+                ` : ""}
+              </div>
+            `
               )
-            ),
-          ]),
-      ]
-    );
+              .join("")}
+          </div>
+        ` : ""}
+      </div>
+    `;
   }
 }
 

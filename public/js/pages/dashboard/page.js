@@ -54,9 +54,9 @@ class DashboardPage extends Component {
       })
     );
 
-    // Subscribe to llama-server metrics
+    // Subscribe to metrics updates
     this.unsubscribers.push(
-      stateManager.subscribe("llamaMetrics", this.handleMetricsChange.bind(this))
+      stateManager.subscribe("metrics", this.handleMetricsChange.bind(this))
     );
 
     // Setup initial metrics
@@ -64,10 +64,10 @@ class DashboardPage extends Component {
   }
 
   _setupInitialMetrics() {
-    const llamaMetrics = stateManager.get("llamaMetrics");
-    if (llamaMetrics && typeof llamaMetrics !== "undefined") {
-      console.log("[DEBUG] Dashboard: Using llama-server metrics:", llamaMetrics);
-      this._metrics = llamaMetrics;
+    const metrics = stateManager.get("metrics");
+    if (metrics && typeof metrics !== "undefined") {
+      console.log("[DEBUG] Dashboard: Using metrics:", metrics);
+      this._metrics = metrics;
     }
   }
 
@@ -276,9 +276,8 @@ class DashboardPage extends Component {
     const maxModelsLoaded = settings.maxModelsLoaded || 4;
     const ctxSize = config.ctx_size || 4096;
 
-    const llamaServerMetrics =
-      stateManager.get("llamaMetrics") || stateManager.get("llamaServerMetrics");
-    console.log("[DEBUG] DashboardPage: llamaServerMetrics:", llamaServerMetrics);
+    const metrics = stateManager.get("metrics");
+    console.log("[DEBUG] DashboardPage: metrics:", metrics);
 
     return Component.h("div", { className: "dashboard-page unified" }, [
       Component.h(window.StatsGrid, {
@@ -300,7 +299,7 @@ class DashboardPage extends Component {
           },
         }),
         Component.h(window.LlamaServerStatusPanel, {
-          metrics: llamaServerMetrics,
+          metrics: stateManager.get("llamaServerMetrics"),
         }),
         Component.h(window.QuickActions, {
           onRefresh: () => this._refresh(),

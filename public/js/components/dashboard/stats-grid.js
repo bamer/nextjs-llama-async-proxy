@@ -85,99 +85,83 @@ class StatsGrid extends Component {
     const m = this.metrics;
     const gpu = this.gpuMetrics;
 
-    const stats = [
-      {
-        icon: "🖥️",
-        label: "CPU Usage",
-        value: `${(m.cpu?.usage || 0).toFixed(1)}%`,
-        percent: Math.min(m.cpu?.usage || 0, 100),
-        warning: m.cpu?.usage > 80,
-        showBar: true,
-      },
-      {
-        icon: "🧠",
-        label: "Memory Usage",
-        value: `${(m.memory?.used || 0).toFixed(1)}%`,
-        percent: Math.min(m.memory?.used || 0, 100),
-        warning: m.memory?.used > 85,
-        showBar: true,
-      },
-      {
-        icon: "💨",
-        label: "Swap Usage",
-        value: `${(m.swap?.used || 0).toFixed(1)}%`,
-        percent: Math.min(m.swap?.used || 0, 100),
-        warning: m.swap?.used > 50,
-        showBar: true,
-      },
-      {
-        icon: "🎮",
-        label: "GPU Usage",
-        value: `${(gpu?.usage || 0).toFixed(1)}%`,
-        percent: Math.min(gpu?.usage || 0, 100),
-        warning: gpu?.usage > 85,
-        isGpu: true,
-        showBar: true,
-      },
-      {
-        icon: "💾",
-        label: "GPU Memory",
-        value:
-          gpu?.memoryTotal > 0
-            ? `${window.AppUtils?.formatBytes?.(gpu?.memoryUsed || 0)} / ${window.AppUtils?.formatBytes?.(
-                gpu?.memoryTotal || 0
-              )}`
-            : `${(gpu?.usage || 0).toFixed(1)}%`,
-        percent:
-          gpu?.memoryTotal > 0
-            ? (gpu?.memoryUsed / gpu?.memoryTotal) * 100
-            : Math.min(gpu?.usage || 0, 100),
-        isGpu: true,
-        showBar: true,
-      },
-      {
-        icon: "💿",
-        label: "Disk Usage",
-        value: `${(m.disk?.used || 0).toFixed(1)}%`,
-        percent: Math.min(m.disk?.used || 0, 100),
-        warning: m.disk?.used > 90,
-        showBar: true,
-      },
-      {
-        icon: "⏱️",
-        label: "Uptime",
-        value: this._fmtUptime(m.uptime || 0),
-        percent: 0,
-        showBar: false,
-      },
-    ];
-
-    return Component.h(
-      "div",
-      { className: "stats-grid" },
-      stats.map((stat) =>
-        Component.h(
-          "div",
-          { key: stat.label, className: `stat-card ${stat.warning ? "warning" : ""}` },
-          Component.h("div", { className: "stat-icon" }, stat.icon),
-          Component.h(
-            "div",
-            { className: "stat-content" },
-            Component.h("span", { className: "stat-label" }, stat.label),
-            Component.h("span", { className: "stat-value" }, stat.value),
-            stat.showBar &&
-              Component.h(
-                "div",
-                { className: "stat-bar" },
-                Component.h("div", {
-                  className: `stat-bar-fill ${stat.isGpu ? "gpu" : ""}`,
-                  style: `width: ${stat.percent}%`,
-                })
-              )
-          )
-        )
-      )
-    );
+    return `
+      <div class="stats-grid">
+        <div class="stat-card ${m.cpu?.usage > 80 ? "warning" : ""}">
+          <div class="stat-icon">🖥️</div>
+          <div class="stat-content">
+            <span class="stat-label">CPU Usage</span>
+            <span class="stat-value">${(m.cpu?.usage || 0).toFixed(1)}%</span>
+            <div class="stat-bar">
+              <div class="stat-bar-fill" style="width: ${Math.min(m.cpu?.usage || 0, 100)}%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card ${m.memory?.used > 85 ? "warning" : ""}">
+          <div class="stat-icon">🧠</div>
+          <div class="stat-content">
+            <span class="stat-label">Memory Usage</span>
+            <span class="stat-value">${(m.memory?.used || 0).toFixed(1)}%</span>
+            <div class="stat-bar">
+              <div class="stat-bar-fill" style="width: ${Math.min(m.memory?.used || 0, 100)}%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card ${m.swap?.used > 50 ? "warning" : ""}">
+          <div class="stat-icon">💨</div>
+          <div class="stat-content">
+            <span class="stat-label">Swap Usage</span>
+            <span class="stat-value">${(m.swap?.used || 0).toFixed(1)}%</span>
+            <div class="stat-bar">
+              <div class="stat-bar-fill" style="width: ${Math.min(m.swap?.used || 0, 100)}%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card ${gpu?.usage > 85 ? "warning" : ""}">
+          <div class="stat-icon">🎮</div>
+          <div class="stat-content">
+            <span class="stat-label">GPU Usage</span>
+            <span class="stat-value">${(gpu?.usage || 0).toFixed(1)}%</span>
+            <div class="stat-bar">
+              <div class="stat-bar-fill gpu" style="width: ${Math.min(gpu?.usage || 0, 100)}%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💾</div>
+          <div class="stat-content">
+            <span class="stat-label">GPU Memory</span>
+            <span class="stat-value">${
+              gpu?.memoryTotal > 0
+                ? `${window.AppUtils?.formatBytes?.(gpu?.memoryUsed || 0)} / ${window.AppUtils?.formatBytes?.(gpu?.memoryTotal || 0)}`
+                : `${(gpu?.usage || 0).toFixed(1)}%`
+            }</span>
+            <div class="stat-bar">
+              <div class="stat-bar-fill gpu" style="width: ${
+                gpu?.memoryTotal > 0 ? (gpu?.memoryUsed / gpu?.memoryTotal) * 100 : Math.min(gpu?.usage || 0, 100)
+              }%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card ${m.disk?.used > 90 ? "warning" : ""}">
+          <div class="stat-icon">💿</div>
+          <div class="stat-content">
+            <span class="stat-label">Disk Usage</span>
+            <span class="stat-value">${(m.disk?.used || 0).toFixed(1)}%</span>
+            <div class="stat-bar">
+              <div class="stat-bar-fill" style="width: ${Math.min(m.disk?.used || 0, 100)}%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⏱️</div>
+          <div class="stat-content">
+            <span class="stat-label">Uptime</span>
+            <span class="stat-value">${this._fmtUptime(m.uptime || 0)}</span>
+          </div>
+        </div>
+      </div>
+    `;
   }
 }
 

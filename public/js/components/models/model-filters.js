@@ -46,34 +46,30 @@ class ModelFilters extends Component {
   }
 
   render() {
-    return Component.h(
-      "div",
-      { className: "filters" },
-      Component.h("input", {
-        type: "text",
-        placeholder: "Search models...",
-        "data-field": "search",
-        value: this.search,
-        autoComplete: "off",
-      }),
-      Component.h(
-        "select",
-        { "data-field": "status", value: this.status },
-        Component.h("option", { value: "all" }, "All"),
-        Component.h("option", { value: "loaded" }, "Loaded"),
-        Component.h("option", { value: "unloaded" }, "Unloaded")
-      ),
-      Component.h(
-        "label",
-        { className: "favorites-filter" },
-        Component.h("input", {
-          type: "checkbox",
-          "data-field": "favorites-only",
-          checked: this.favoritesOnly,
-        }),
-        "Show Favorites Only"
-      )
-    );
+    return `
+      <div class="filters">
+        <input
+          type="text"
+          placeholder="Search models..."
+          data-field="search"
+          value="${this.search}"
+          autocomplete="off"
+        />
+        <select data-field="status" value="${this.status}">
+          <option value="all">All</option>
+          <option value="loaded">Loaded</option>
+          <option value="unloaded">Unloaded</option>
+        </select>
+        <label class="favorites-filter">
+          <input
+            type="checkbox"
+            data-field="favorites-only"
+            ${this.favoritesOnly ? "checked" : ""}
+          />
+          Show Favorites Only
+        </label>
+      </div>
+    `;
   }
 }
 
