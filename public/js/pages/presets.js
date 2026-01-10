@@ -1304,16 +1304,18 @@ class PresetsPage extends Component {
     try {
       await this._getService().deletePreset(name);
       showNotification(`Preset "${name}" deleted`, "success");
-      const newPresets = this.state.presets.filter((p) => p.name !== name);
-      this.setState({ presets: newPresets });
+      this.state.presets = this.state.presets.filter((p) => p.name !== name);
+      this._updatePresetsList();
 
       if (this.state.selectedPreset?.name === name) {
-        this.state.selectedPreset = newPresets[0] || null;
+        this.state.selectedPreset = this.state.presets[0] || null;
         if (this.state.selectedPreset) {
           this._emit("preset:select", this.state.selectedPreset.name);
         } else {
-          this._domCache.get("editor").innerHTML =
-            "<div class=\"empty-state\">Select a preset to edit</div>";
+          const editor = this._domCache.get("editor");
+          if (editor) {
+            editor.innerHTML = "<div class=\"empty-state\">Select a preset to edit</div>";
+          }
         }
       }
     } catch (error) {
@@ -1439,8 +1441,8 @@ class PresetsPage extends Component {
     try {
       await this._getService().createPreset(name);
       showNotification(`Preset "${name}" created with empty configuration`, "success");
-      const newPresets = [...this.state.presets, { name }];
-      this.setState({ presets: newPresets });
+      this.state.presets = [...this.state.presets, { name }];
+      this._updatePresetsList();
       this._emit("preset:select", name);
     } catch (error) {
       console.error("[PRESETS] Create error:", error);

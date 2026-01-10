@@ -47,7 +47,12 @@ class SettingsPage extends Component {
     }
 
     try {
-      if (!stateManager.connected) {
+      // Check connection via socketClient
+      if (typeof socketClient !== "undefined" && !socketClient.isConnected) {
+        throw new Error("Not connected to server");
+      }
+      // Also check via stateManager's internal socket if available
+      if (stateManager.socket && !stateManager.socket.isConnected) {
         throw new Error("Not connected to server");
       }
 

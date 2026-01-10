@@ -233,7 +233,7 @@ class LlamaServerStatusPanel extends Component {
         Component.h("h3", {}, "llama-server"),
         Component.h("div", { className: `status-badge status-${this.status}` }, [
           Component.h("span", { className: "status-icon" }, statusIcon),
-          Component.h("span", {}, statusText),
+          Component.h("span", { className: "value" }, statusText),
         ]),
         Component.h("button", {
           className: "collapse-btn",

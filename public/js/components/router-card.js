@@ -21,17 +21,29 @@ class RouterCard extends Component {
   }
 
   bindEvents() {
+    console.log("[DEBUG] RouterCard.bindEvents called");
+
     // Start button
     this.on("click", "[data-action=start]", (e) => {
+      console.log("[DEBUG] RouterCard START button clicked, preset:", this.selectedPreset);
       e.preventDefault();
       e.stopPropagation();
       this.routerLoading = true;
       this._updateUI();
-      this.onAction("start");
+
+      // If preset selected, use start-with-preset action
+      if (this.selectedPreset) {
+        console.log("[DEBUG] RouterCard calling onAction('start-with-preset', preset)");
+        this.onAction("start-with-preset", this.selectedPreset);
+      } else {
+        console.log("[DEBUG] RouterCard calling onAction('start')");
+        this.onAction("start");
+      }
     });
 
     // Stop button
     this.on("click", "[data-action=stop]", (e) => {
+      console.log("[DEBUG] RouterCard STOP button clicked");
       e.preventDefault();
       e.stopPropagation();
       this.routerLoading = true;
@@ -41,6 +53,7 @@ class RouterCard extends Component {
 
     // Restart button
     this.on("click", "[data-action=restart]", (e) => {
+      console.log("[DEBUG] RouterCard RESTART button clicked");
       e.preventDefault();
       e.stopPropagation();
       this.routerLoading = true;

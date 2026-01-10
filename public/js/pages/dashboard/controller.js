@@ -130,10 +130,13 @@ class DashboardController {
     }
   }
 
-  handleRouterAction(action) {
+  handleRouterAction(action, data) {
     switch (action) {
     case "start":
       this._start();
+      break;
+    case "start-with-preset":
+      this._startWithPreset(data);
       break;
     case "stop":
       this._stop();
@@ -142,6 +145,62 @@ class DashboardController {
       this._restart();
       break;
     }
+  }
+
+  _startWithPreset(presetName) {
+    console.log("[DEBUG] _startWithPreset called with:", presetName);
+    if (this.comp) {
+      this.comp.setRouterLoading(true);
+    }
+
+    const settings = stateManager.get("settings") || {};
+    const config = stateManager.get("config") || {};
+    const maxModelsLoaded = settings.maxModelsLoaded || 4;
+    const ctxSize = config.ctx_size || 4096;
+
+    showNotification(`Starting llama-server with preset "${presetName}"...`, "info");
+
+    stateManager
+      .request("llama:start-with-preset", {
+        presetName: presetName,
+        maxModels: maxModelsLoaded,
+        ctxSize: ctxSize,
+        threads: 4,
+      })
+      .then((response) => {
+        console.log("[DEBUG] _startWithPreset response:", response);
+        if (response?.success || response?.port) {
+          const port = response?.port || response?.data?.port;
+          showNotification(`✓ Server started on port ${port}`, "success");
+          // Check status after starting
+          setTimeout(async () => {
+            try {
+              const s = await stateManager.getLlamaStatus();
+              stateManager.set("llamaServerStatus", s.status || null);
+              const rs = await stateManager.getRouterStatus();
+              stateManager.set("routerStatus", rs.routerStatus);
+            } catch (e) {
+              console.error("[DASHBOARD] Error checking status:", e.message);
+            } finally {
+              if (this.comp) {
+                this.comp.setRouterLoading(false);
+              }
+            }
+          }, 3000);
+        } else {
+          showNotification(`Error: ${response?.error?.message || "Unknown error"}`, "error");
+          if (this.comp) {
+            this.comp.setRouterLoading(false);
+          }
+        }
+      })
+      .catch((e) => {
+        console.error("[DASHBOARD] _startWithPreset error:", e);
+        showNotification(`Failed: ${e.message}`, "error");
+        if (this.comp) {
+          this.comp.setRouterLoading(false);
+        }
+      });
   }
 
   _start() {

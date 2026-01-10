@@ -21,6 +21,7 @@ class DashboardPage extends Component {
     };
     this.loading = false;
     this.routerLoading = false;
+    this.selectedPreset = null;
     this.controller = props.controller;
     this.chartManager = props.chartManager;
     this.unsubscribers = [];
@@ -31,11 +32,12 @@ class DashboardPage extends Component {
     console.log("[DEBUG] DashboardPage: onMount");
     // Subscribe to state changes
     this.unsubscribers.push(
-      stateManager.subscribe("llamaStatus", (status) => {
-        console.log("[DEBUG] DashboardPage: llamaStatus changed:", status);
+      stateManager.subscribe("llamaServerStatus", (status) => {
+        console.log("[DEBUG] DashboardPage: llamaServerStatus changed:", status);
         this.status = status;
         if (this.routerLoading && status?.port) {
           this.routerLoading = false;
+          this._updateRouterCardUI();
         }
         if (this.routerCardUpdater) {
           this.routerCardUpdater(status);
@@ -280,7 +282,7 @@ class DashboardPage extends Component {
           presets: this.presets,
           maxModelsLoaded,
           ctxSize,
-          onAction: (action) => this.controller?.handleRouterAction(action),
+          onAction: (action, data) => this.controller?.handleRouterAction(action, data),
           subscribeToUpdates: (cb) => {
             this.routerCardUpdater = cb;
           },
