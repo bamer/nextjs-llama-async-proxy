@@ -568,11 +568,14 @@ class PresetsController {
     this.comp._el = el;
     el._component = this.comp;
     this.comp.bindEvents();
-    this.comp.didMount();
+    this.comp.onMount();
+    // Call controller's onMount to load presets
+    this.onMount();
     return el;
   }
 
-  didMount() {
+  onMount() {
+    console.log("[PRESETS] Controller onMount called");
     this.loadPresetsData();
     // Subscribe to model changes from models page
     if (window.stateManager) {
@@ -590,13 +593,25 @@ class PresetsController {
   }
 
   async loadPresetsData() {
+    console.log("[PRESETS] loadPresetsData called");
+
     const service = this._ensureService();
+    console.log("[PRESETS] Service:", service ? "ready" : "not ready");
+    console.log("[PRESETS] Socket connected:", window.socketClient?.socket?.connected);
+
     if (!service) {
+      console.log("[PRESETS] Waiting for socket connection...");
+      let attempts = 0;
       const checkSocket = () => {
+        attempts++;
+        console.log(`[PRESETS] Socket check attempt ${attempts}:`, window.socketClient?.socket?.connected);
         if (window.socketClient?.socket?.connected) {
+          console.log("[PRESETS] Socket connected, loading presets...");
           this.loadPresetsData();
-        } else {
+        } else if (attempts < 50) {  // Try for 5 seconds max
           setTimeout(checkSocket, 100);
+        } else {
+          console.error("[PRESETS] Socket never connected, giving up");
         }
       };
       checkSocket();
@@ -604,8 +619,11 @@ class PresetsController {
     }
 
     try {
-      const presets = await service.listPresets();
-      console.log("[PRESETS] Loaded", presets.length, "presets");
+      console.log("[PRESETS] Calling listPresets...");
+      const result = await service.listPresets();
+      console.log("[PRESETS] listPresets returned:", result);
+      const presets = result?.presets || result || [];
+      console.log("[PRESETS] Loaded", presets.length, "presets:", presets);
       if (this.comp) {
         // Update state directly without re-rendering
         this.comp.state.presets = presets;
@@ -616,14 +634,17 @@ class PresetsController {
 
         // Auto-select first preset
         if (presets.length > 0 && !this.comp.state.selectedPreset) {
+          console.log("[PRESETS] Auto-selecting first preset:", presets[0].name);
           this.comp._emit("preset:select", presets[0].name);
+        } else {
+          console.log("[PRESETS] No presets found or already selected");
         }
       }
 
       // Load available models from state manager
       this.loadAvailableModels();
     } catch (error) {
-      console.error("[PRESETS] Load presets error:", error.message);
+      console.error("[PRESETS] Load presets error:", error.message, error.stack);
       showNotification("Failed to load presets", "error");
       if (this.comp) {
         this.comp.state.loading = false;
@@ -747,8 +768,28 @@ class PresetsPage extends Component {
   }
 
   _updatePresetsList() {
-    const container = this._domCache.get("presets-items");
-    if (!container) return;
+    console.log("[PRESETS] _updatePresetsList called");
+    console.log("[PRESETS] _domCache keys:", Array.from(this._domCache.keys()));
+
+    // Get container from cache or direct DOM
+    let container = this._domCache.get("presets-items");
+    console.log("[PRESETS] Container from cache:", !!container);
+
+    if (!container) {
+      console.log("[PRESETS] Container not found in cache, trying direct DOM access");
+      container = document.getElementById("presets-items");
+      if (container) {
+        console.log("[PRESETS] Found element directly, caching it now");
+        this._domCache.set("presets-items", container);
+      }
+    }
+
+    if (!container) {
+      console.log("[PRESETS] Element not found at all!");
+      return;
+    }
+
+    console.log("[PRESETS] Presets to render:", this.state.presets.length, this.state.presets);
 
     let html = "";
     for (const preset of this.state.presets) {
@@ -761,6 +802,7 @@ class PresetsPage extends Component {
       `;
     }
     container.innerHTML = html;
+    // Bind events AFTER HTML is in DOM (not before!)
     this._bindPresetEvents();
   }
 
@@ -1175,11 +1217,21 @@ class PresetsPage extends Component {
   }
 
   _bindPresetEvents() {
+    console.log("[PRESETS] _bindPresetEvents called");
     const container = this._domCache.get("presets-items");
-    if (!container) return;
+    if (!container) {
+      console.log("[PRESETS] _bindPresetEvents: container not found!");
+      return;
+    }
 
-    container.querySelectorAll(".preset-item").forEach((item) => {
-      item.onclick = () => this._emit("preset:select", item.dataset.presetName);
+    const items = container.querySelectorAll(".preset-item");
+    console.log("[PRESETS] Found", items.length, "preset items to bind");
+
+    items.forEach((item) => {
+      item.onclick = () => {
+        console.log("[PRESETS] Preset item clicked:", item.dataset.presetName);
+        this._emit("preset:select", item.dataset.presetName);
+      };
     });
 
     container.querySelectorAll(".preset-delete").forEach((btn) => {
@@ -1389,10 +1441,7 @@ class PresetsPage extends Component {
           "div",
           { className: "presets-header-row" },
           Component.h("span", { className: "presets-label" }, "Presets:"),
-          Component.h("div", {
-            className: "presets-items",
-            ref: (el) => this._domCache.set("presets-items", el),
-          }),
+          Component.h("div", { className: "presets-items", id: "presets-items" }),
           Component.h(
             "button",
             { className: "btn btn-secondary add-preset-btn", id: "btn-new-preset" },
@@ -1405,22 +1454,31 @@ class PresetsPage extends Component {
         { className: "presets-container" },
         Component.h(
           "div",
-          {
-            className: "server-status-panel",
-            ref: (el) => this._domCache.set("server-status", el),
-          },
+          { className: "server-status-panel", id: "server-status" },
           Component.h("div", { className: "empty-state" }, "Select a preset to launch server")
         ),
         Component.h(
           "div",
-          { className: "presets-editor", ref: (el) => this._domCache.set("editor", el) },
+          { className: "presets-editor", id: "presets-editor" },
           Component.h("div", { className: "empty-state" }, "Select a preset to edit")
         )
       )
     );
   }
 
+  onMount() {
+    // Cache DOM elements after mounting
+    this._domCache.set("presets-items", document.getElementById("presets-items"));
+    this._domCache.set("server-status", document.getElementById("server-status"));
+    this._domCache.set("editor", document.getElementById("presets-editor"));
+  }
+
   bindEvents() {
+    // Cache DOM elements after binding
+    this._domCache.set("presets-items", document.getElementById("presets-items"));
+    this._domCache.set("server-status", document.getElementById("server-status"));
+    this._domCache.set("editor", document.getElementById("presets-editor"));
+
     // New preset button
     const newBtn = document.getElementById("btn-new-preset");
     newBtn && (newBtn.onclick = () => this._handleNewPreset());

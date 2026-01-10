@@ -16,13 +16,29 @@ class PresetsService {
   listPresets() {
     return new Promise((resolve, reject) => {
       console.log("[DEBUG] PresetsService: listPresets");
-      this.socket.emit("presets:list", {}, (response) => {
+      // Use request/response pattern with requestId
+      const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Listen for the response event
+      const handler = (response) => {
+        console.log("[DEBUG] PresetsService: listPresets response:", response);
+        this.socket.off("presets:list:result", handler);
         if (response.success) {
-          resolve(response.data.presets);
+          resolve(response.data?.presets || []);
         } else {
-          reject(new Error(response.error.message));
+          reject(new Error(response.error?.message || "Unknown error"));
         }
-      });
+      };
+
+      this.socket.on("presets:list:result", handler);
+
+      // Timeout after 10 seconds
+      setTimeout(() => {
+        this.socket.off("presets:list:result", handler);
+        reject(new Error("Request timeout"));
+      }, 10000);
+
+      this.socket.emit("presets:list", { requestId });
     });
   }
 
@@ -126,13 +142,27 @@ class PresetsService {
   getModelsFromPreset(filename) {
     return new Promise((resolve, reject) => {
       console.log("[DEBUG] PresetsService: getModelsFromPreset", { filename });
-      this.socket.emit("presets:get-models", { filename }, (response) => {
+      const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const eventName = "presets:get-models:result";
+
+      const handler = (response) => {
+        console.log("[DEBUG] PresetsService: getModelsFromPreset response:", response);
+        this.socket.off(eventName, handler);
         if (response.success) {
-          resolve(response.data.models);
+          resolve(response.data?.models || {});
         } else {
-          reject(new Error(response.error.message));
+          reject(new Error(response.error?.message || "Unknown error"));
         }
-      });
+      };
+
+      this.socket.on(eventName, handler);
+
+      setTimeout(() => {
+        this.socket.off(eventName, handler);
+        reject(new Error("Request timeout"));
+      }, 10000);
+
+      this.socket.emit("presets:get-models", { filename, requestId });
     });
   }
 
@@ -203,13 +233,27 @@ class PresetsService {
   getDefaults(filename) {
     return new Promise((resolve, reject) => {
       console.log("[DEBUG] PresetsService: getDefaults", { filename });
-      this.socket.emit("presets:get-defaults", { filename }, (response) => {
+      const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const eventName = "presets:get-defaults:result";
+
+      const handler = (response) => {
+        console.log("[DEBUG] PresetsService: getDefaults response:", response);
+        this.socket.off(eventName, handler);
         if (response.success) {
-          resolve(response.data.defaults);
+          resolve(response.data?.defaults || {});
         } else {
-          reject(new Error(response.error.message));
+          reject(new Error(response.error?.message || "Unknown error"));
         }
-      });
+      };
+
+      this.socket.on(eventName, handler);
+
+      setTimeout(() => {
+        this.socket.off(eventName, handler);
+        reject(new Error("Request timeout"));
+      }, 10000);
+
+      this.socket.emit("presets:get-defaults", { filename, requestId });
     });
   }
 
