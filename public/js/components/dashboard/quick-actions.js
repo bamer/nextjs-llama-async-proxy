@@ -1,35 +1,19 @@
 /**
- * Quick Actions Component
+ * QuickActions Component - Event-Driven DOM Updates
  * Displays action buttons for quick navigation and operations
  */
 
 class QuickActions extends Component {
-  constructor(props) {
-    super(props);
+  bindEvents() {
+    // Refresh button
+    this.on("click", "[data-action=refresh]", (e) => {
+      e.preventDefault();
+      console.log("[DEBUG] QuickActions refresh clicked");
 
-    this.state = {};
-  }
-
-  /**
-   * Event map - maps DOM events to handlers
-   */
-  getEventMap() {
-    return {
-      "click [data-action=refresh]": "handleRefresh",
-    };
-  }
-
-  /**
-   * Handle refresh button click
-   * @param {Event} event - Click event
-   */
-  handleRefresh(event) {
-    event.preventDefault();
-    console.log("[DEBUG] QuickActions refresh clicked");
-
-    if (this.props.onRefresh) {
-      this.props.onRefresh();
-    }
+      if (this.props.onRefresh) {
+        this.props.onRefresh();
+      }
+    });
   }
 
   render() {

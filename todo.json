@@ -1,79 +1,79 @@
 [
   {
-    "taskId": "T-001",
-    "role": "coder",
-    "description": "Create RouterCard component",
-    "filesAffected": ["public/js/pages/settings/components/router-card.js"],
-    "status": "DONE"
+    taskId: "T-001",
+    role: "coder",
+    description: "Create RouterCard component",
+    filesAffected: ["public/js/pages/settings/components/router-card.js"],
+    status: "DONE",
   },
   {
-    "taskId": "T-002",
-    "role": "coder",
-    "description": "Create ServerPaths form component",
-    "filesAffected": ["public/js/pages/settings/components/server-paths.js"],
-    "status": "DONE"
+    taskId: "T-002",
+    role: "coder",
+    description: "Create ServerPaths form component",
+    filesAffected: ["public/js/pages/settings/components/server-paths.js"],
+    status: "DONE",
   },
   {
-    "taskId": "T-003",
-    "role": "coder",
-    "description": "Create ModelDefaults form component",
-    "filesAffected": ["public/js/pages/settings/components/model-defaults.js"],
-    "status": "DONE"
+    taskId: "T-003",
+    role: "coder",
+    description: "Create ModelDefaults form component",
+    filesAffected: ["public/js/pages/settings/components/model-defaults.js"],
+    status: "DONE",
   },
   {
-    "taskId": "T-004",
-    "role": "coder",
-    "description": "Create SaveSection component",
-    "filesAffected": ["public/js/pages/settings/components/save-section.js"],
-    "status": "DONE"
+    taskId: "T-004",
+    role: "coder",
+    description: "Create SaveSection component",
+    filesAffected: ["public/js/pages/settings/components/save-section.js"],
+    status: "DONE",
   },
   {
-    "taskId": "T-005",
-    "role": "coder",
-    "description": "Create SettingsPage component",
-    "filesAffected": ["public/js/pages/settings/settings-page.js"],
-    "status": "DONE"
+    taskId: "T-005",
+    role: "coder",
+    description: "Create SettingsPage component",
+    filesAffected: ["public/js/pages/settings/settings-page.js"],
+    status: "DONE",
   },
   {
-    "taskId": "T-006",
-    "role": "coder",
-    "description": "Create SettingsController",
-    "filesAffected": ["public/js/pages/settings/settings-controller.js"],
-    "status": "DONE"
+    taskId: "T-006",
+    role: "coder",
+    description: "Create SettingsController",
+    filesAffected: ["public/js/pages/settings/settings-controller.js"],
+    status: "DONE",
   },
   {
-    "taskId": "T-007",
-    "role": "coder",
-    "description": "Create index barrel export",
-    "filesAffected": ["public/js/pages/settings/index.js"],
-    "status": "DONE"
+    taskId: "T-007",
+    role: "coder",
+    description: "Create index barrel export",
+    filesAffected: ["public/js/pages/settings/index.js"],
+    status: "DONE",
   },
   {
-    "taskId": "T-008",
-    "role": "coder",
-    "description": "Update index.html with new script path",
-    "filesAffected": ["public/index.html"],
-    "status": "DONE"
+    taskId: "T-008",
+    role: "coder",
+    description: "Update index.html with new script path",
+    filesAffected: ["public/index.html"],
+    status: "DONE",
   },
   {
-    "taskId": "T-009",
-    "role": "janitor-agent-bamer",
-    "description": "Delete old settings.js file",
-    "filesAffected": ["public/js/pages/settings.js"],
-    "status": "DONE"
+    taskId: "T-009",
+    role: "janitor-agent-bamer",
+    description: "Delete old settings.js file",
+    filesAffected: ["public/js/pages/settings.js"],
+    status: "DONE",
   },
   {
-    "taskId": "T-010",
-    "role": "tester-agent",
-    "description": "Run tests to verify functionality",
-    "filesAffected": [],
-    "status": "DONE"
+    taskId: "T-010",
+    role: "tester-agent",
+    description: "Run tests to verify functionality",
+    filesAffected: [],
+    status: "DONE",
   },
   {
-    "taskId": "T-011",
-    "role": "reviewer-agent",
-    "description": "Review modularized code",
-    "filesAffected": ["public/js/pages/settings/"],
-    "status": "DONE"
-  }
-]
+    taskId: "T-011",
+    role: "reviewer-agent",
+    description: "Review modularized code",
+    filesAffected: ["public/js/pages/settings/"],
+    status: "DONE",
+  },
+];

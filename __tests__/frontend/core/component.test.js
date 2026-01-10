@@ -1,5 +1,5 @@
 /**
- * Component Base Class Tests
+ * Component Base Class Tests - Event-Driven DOM Updates
  * @jest-environment jsdom
  */
 
@@ -94,7 +94,7 @@ global.document = {
   removeEventListener: mockRemoveEventListener,
 };
 
-describe("Component", function () {
+describe("Component - Event-Driven DOM Updates", function () {
   beforeEach(function () {
     mockAddEventListener.mock.calls = [];
     mockRemoveEventListener.mock.calls = [];
@@ -104,9 +104,7 @@ describe("Component", function () {
     it("should initialize with empty props", function () {
       const c = new Component();
       expect(c.props).toEqual({});
-      expect(c.state).toEqual({});
       expect(c._el).toBeNull();
-      expect(c._mounted).toBe(false);
     });
     it("should initialize with provided props", function () {
       const c = new Component({ id: "test" });
@@ -127,7 +125,7 @@ describe("Component", function () {
     it("should mount with HTMLElement parent", function () {
       class T extends Component {
         render() {
-          return Component.h("div", {}, "X");
+          return "<div>X</div>";
         }
       }
       const p = {
@@ -141,22 +139,20 @@ describe("Component", function () {
       c.mount(p);
       expect(p.appendChild.mock.calls.length).toBeGreaterThanOrEqual(1);
       expect(c._el).not.toBeNull();
-      expect(c._mounted).toBe(true);
     });
-    it("should throw when parent is null", function () {
+    it("should return this when parent is null", function () {
       const c = new Component();
-      expect(function () {
-        c.mount(null);
-      }).toThrow("Parent not found");
+      const result = c.mount(null);
+      expect(result).toBe(c);
     });
-    it("should call willMount lifecycle method", function () {
+    it("should call onMount lifecycle method", function () {
       let called = false;
       class L extends Component {
-        willMount() {
+        onMount() {
           called = true;
         }
         render() {
-          return Component.h("div", {}, "X");
+          return "<div>X</div>";
         }
       }
       const p = {
@@ -172,73 +168,115 @@ describe("Component", function () {
     });
   });
 
-  describe("setState", function () {
-    it("should update state with values", function () {
+  describe("bindEvents", function () {
+    it("should be callable", function () {
       class T extends Component {
+        bindEvents() {}
         render() {
-          return Component.h("div", {}, "X");
+          return "<div>X</div>";
         }
       }
       const c = new T();
-      c.setState({ count: 1 });
-      expect(c.state.count).toBe(1);
-    });
-    it("should return this for chaining", function () {
-      class T extends Component {
-        render() {
-          return Component.h("div", {}, "X");
-        }
-      }
-      const c = new T();
-      expect(c.setState({ v: 1 })).toBe(c);
-    });
-  });
-
-  describe("update", function () {
-    it("should re-render component", function () {
-      class T extends Component {
-        render() {
-          return Component.h("div", { className: "u" }, "U");
-        }
-      }
-      const p = { appendChild: createMockFn(), children: [] };
-      const c = new T();
-      c.mount(p);
-      const old = c._el;
-      c.update();
-      expect(c._el).not.toBe(old);
-    });
-  });
-
-  describe("getEventMap", function () {
-    it("should return empty object by default", function () {
-      expect(new Component().getEventMap()).toEqual({});
+      expect(typeof c.bindEvents).toBe("function");
     });
   });
 
   describe("destroy", function () {
-    it("should set _el to null", function () {
+    it("should clear _component reference", function () {
       class T extends Component {
         render() {
-          return Component.h("div", {}, "X");
+          return "<div>X</div>";
         }
       }
       const c = new T();
-      c._el = createMockElement("div");
-      c._mounted = true;
+      const el = createMockElement("div");
+      el.remove = createMockFn();
+      c._el = el;
       c.destroy();
       expect(c._el).toBeNull();
     });
-    it("should set _mounted to false", function () {
+  });
+
+  describe("DOM helpers", function () {
+    it("$ should query element", function () {
       class T extends Component {
         render() {
-          return Component.h("div", {}, "X");
+          return "<div><span class=\"test\">X</span></div>";
         }
       }
       const c = new T();
-      c._mounted = true;
-      c.destroy();
-      expect(c._mounted).toBe(false);
+      c.mount({ appendChild: createMockFn(), children: [] });
+      expect(c.$(".test")).not.toBeNull();
+    });
+
+    it("setText should update text content", function () {
+      class T extends Component {
+        render() {
+          return "<div><span class=\"label\">X</span></div>";
+        }
+      }
+      const c = new T();
+      c.mount({ appendChild: createMockFn(), children: [] });
+      c.setText(".label", "New Text");
+      expect(c.$(".label").textContent).toBe("New Text");
+    });
+
+    it("setHTML should update innerHTML", function () {
+      class T extends Component {
+        render() {
+          return "<div><div class=\"content\">X</div></div>";
+        }
+      }
+      const c = new T();
+      c.mount({ appendChild: createMockFn(), children: [] });
+      c.setHTML(".content", "<span>Y</span>");
+      expect(c.$(".content").innerHTML).toBe("<span>Y</span>");
+    });
+
+    it("toggleClass should add/remove class", function () {
+      class T extends Component {
+        render() {
+          return "<div><span class=\"box\">X</span></div>";
+        }
+      }
+      const c = new T();
+      c.mount({ appendChild: createMockFn(), children: [] });
+      c.toggleClass(".box", "active", true);
+      expect(c.$(".box").classList.contains("active")).toBe(true);
+      c.toggleClass(".box", "active", false);
+      expect(c.$(".box").classList.contains("active")).toBe(false);
+    });
+
+    it("show/hide should toggle hidden class", function () {
+      class T extends Component {
+        render() {
+          return "<div><span class=\"item\">X</span></div>";
+        }
+      }
+      const c = new T();
+      c.mount({ appendChild: createMockFn(), children: [] });
+      c.hide(".item");
+      expect(c.$(".item").classList.contains("hidden")).toBe(true);
+      c.show(".item");
+      expect(c.$(".item").classList.contains("hidden")).toBe(false);
+    });
+  });
+
+  describe("on - event delegation", function () {
+    it("should add event listener", function () {
+      class T extends Component {
+        render() {
+          return "<div><button data-action=\"test\">X</button></div>";
+        }
+      }
+      const c = new T();
+      const appendFn = createMockFn();
+      c.mount({ appendChild: appendFn, children: [] });
+      const mountedEl = appendFn.mock.calls[0][0];
+      const addEventListenerFn = createMockFn();
+      mountedEl.addEventListener = addEventListenerFn;
+      c.on("click", "[data-action=test]", function () {});
+      expect(addEventListenerFn.mock.calls.length).toBe(1);
     });
   });
 

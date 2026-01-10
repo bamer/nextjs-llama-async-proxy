@@ -1,42 +1,28 @@
 /**
- * ParameterForm Component
+ * ParameterForm Component - Event-Driven DOM Updates
  * Main form component that organizes parameters by category with filtering and validation
  */
 
 class ParameterForm extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      config: props.config || {},
-      defaults: props.defaults || {},
-      inheritance: props.inheritance || {},
-      editableFields: props.editableFields || null,
-      expandedSections: {},
-      filter: "",
-      validationResults: {},
-      validationSummary: null,
-      showValidationSummary: false,
-    };
+
+    // Direct properties instead of state
+    this.config = props.config || {};
+    this.defaults = props.defaults || {};
+    this.inheritance = props.inheritance || {};
+    this.editableFields = props.editableFields || null;
+    this.expandedSections = this.getDefaultExpandedSections();
+    this.filter = "";
+    this.validationResults = {};
+    this.validationSummary = null;
+    this.showValidationSummary = false;
 
     // Track all parameters for validation
     this._allParameters = window.getAllParameters();
     this._changedFields = new Set();
     this._validationErrors = {};
     this._validationWarnings = {};
-  }
-
-  get initialState() {
-    return {
-      config: this.props.config || {},
-      defaults: this.props.defaults || {},
-      inheritance: this.props.inheritance || {},
-      editableFields: this.props.editableFields || null,
-      expandedSections: this.getDefaultExpandedSections(),
-      filter: "",
-      validationResults: {},
-      validationSummary: null,
-      showValidationSummary: false,
-    };
   }
 
   getDefaultExpandedSections() {
@@ -49,21 +35,80 @@ class ParameterForm extends Component {
     return sections;
   }
 
-  getEventMap() {
-    return {
-      "input [data-action=filter-params]": "handleFilterChange",
-      "click [data-action=toggle-section]": "handleSectionToggle",
-      "click [data-action=expand-all-sections]": "handleExpandAll",
-      "click [data-action=collapse-all-sections]": "handleCollapseAll",
-      "click [data-action=apply-changes]": "handleApply",
-      "click [data-action=reset-all]": "handleResetAll",
-      "click [data-action=show-validation]": "handleToggleValidation",
-    };
+  bindEvents() {
+    // Filter input
+    this.on("input", "[data-action=filter-params]", (e) => {
+      this.handleFilterChange(e);
+    });
+
+    // Section toggle
+    this.on("click", "[data-action=toggle-section]", (e) => {
+      this.handleSectionToggle(e);
+    });
+
+    // Expand all sections
+    this.on("click", "[data-action=expand-all-sections]", () => {
+      this.handleExpandAll();
+    });
+
+    // Collapse all sections
+    this.on("click", "[data-action=collapse-all-sections]", () => {
+      this.handleCollapseAll();
+    });
+
+    // Apply changes
+    this.on("click", "[data-action=apply-changes]", () => {
+      this.handleApply();
+    });
+
+    // Reset all
+    this.on("click", "[data-action=reset-all]", () => {
+      this.handleResetAll();
+    });
+
+    // Show validation
+    this.on("click", "[data-action=show-validation]", () => {
+      this.handleToggleValidation();
+    });
   }
 
   handleFilterChange(e) {
-    const filter = e.target.value.toLowerCase().trim();
-    this.setState({ filter });
+    this.filter = e.target.value.toLowerCase().trim();
+    this._updateFilterUI();
+  }
+
+  _updateFilterUI() {
+    // Update the count display
+    const filteredCategories = this.filterCategories(this.filter);
+    const totalParams = Object.keys(this._allParameters).length;
+    const filteredCount = Object.values(filteredCategories).reduce(
+      (sum, cat) => sum + Object.keys(cat.parameters).length,
+      0
+    );
+
+    const countEl = this.$(".param-count");
+    if (countEl) {
+      countEl.textContent = `${filteredCount} of ${totalParams} parameters`;
+    }
+
+    // Show/hide categories based on filter
+    const categoryWrappers = this.$$(".category-wrapper");
+    categoryWrappers.forEach((wrapper) => {
+      const categoryId = wrapper.dataset.sectionId;
+      const category = filteredCategories[categoryId];
+      if (category && Object.keys(category.parameters).length > 0) {
+        wrapper.style.display = "";
+      } else {
+        wrapper.style.display = "none";
+      }
+    });
+
+    // Show/hide no-results message
+    const noResults = this.$(".no-results");
+    const hasResults = Object.keys(filteredCategories).length > 0;
+    if (noResults) {
+      noResults.style.display = hasResults ? "none" : "";
+    }
   }
 
   handleSectionToggle(e) {
@@ -73,48 +118,65 @@ class ParameterForm extends Component {
     const sectionId = sectionEl.dataset.sectionId;
     if (!sectionId) return;
 
-    this.setState((prev) => ({
-      expandedSections: {
-        ...prev.expandedSections,
-        [sectionId]: !prev.expandedSections[sectionId],
-      },
-    }));
+    // Toggle the section
+    this.expandedSections[sectionId] = !this.expandedSections[sectionId];
+    this._updateSectionUI(sectionId);
+  }
+
+  _updateSectionUI(sectionId) {
+    const sectionEl = this.$(`.parameter-section[data-section-id="${sectionId}"]`);
+    if (!sectionEl) return;
+
+    const content = sectionEl.querySelector(".section-content");
+    const toggle = sectionEl.querySelector(".section-toggle");
+    const isExpanded = this.expandedSections[sectionId];
+
+    if (content) {
+      content.style.display = isExpanded ? "" : "none";
+    }
+    if (toggle) {
+      toggle.textContent = isExpanded ? "▼" : "▶";
+    }
   }
 
   handleExpandAll() {
     const categoryIds = window.getCategoryIds();
-    const allExpanded = {};
     categoryIds.forEach((catId) => {
-      allExpanded[catId] = true;
+      this.expandedSections[catId] = true;
     });
-    this.setState({ expandedSections: allExpanded });
+    this._updateAllSectionsUI();
   }
 
   handleCollapseAll() {
     const categoryIds = window.getCategoryIds();
-    const allCollapsed = {};
     categoryIds.forEach((catId) => {
-      allCollapsed[catId] = false;
+      this.expandedSections[catId] = false;
     });
-    this.setState({ expandedSections: allCollapsed });
+    this._updateAllSectionsUI();
+  }
+
+  _updateAllSectionsUI() {
+    const categoryIds = window.getCategoryIds();
+    categoryIds.forEach((catId) => {
+      this._updateSectionUI(catId);
+    });
   }
 
   handleApply() {
     // Final validation before apply
-    const validation = window.validateAll(this.state.config, this._allParameters);
+    const validation = window.validateAll(this.config, this._allParameters);
     if (!validation.valid) {
-      this.setState({
-        validationResults: validation.errors,
-        validationSummary: window.createValidationSummary(validation),
-        showValidationSummary: true,
-      });
+      this.validationResults = validation.errors;
+      this.validationSummary = window.createValidationSummary(validation);
+      this.showValidationSummary = true;
+      this._updateValidationUI();
       showNotification("Please fix validation errors before applying", "warning");
       return;
     }
 
     // Emit change event
     if (this.props.onChange) {
-      this.props.onChange(this.state.config, {
+      this.props.onChange(this.config, {
         changed: Array.from(this._changedFields),
         validation: {
           valid: true,
@@ -142,11 +204,12 @@ class ParameterForm extends Component {
     this._validationErrors = {};
     this._validationWarnings = {};
 
-    this.setState({
-      config: resetConfig,
-      validationResults: {},
-      validationSummary: null,
-    });
+    this.config = resetConfig;
+    this.validationResults = {};
+    this.validationSummary = null;
+
+    // Update all parameter inputs
+    this._updateAllInputs();
 
     if (this.props.onChange) {
       this.props.onChange(resetConfig, {
@@ -158,15 +221,103 @@ class ParameterForm extends Component {
     showNotification("All settings reset to defaults", "info");
   }
 
+  _updateAllInputs() {
+    // Update all ParameterInput components
+    const inputs = this.$$(".parameter-input");
+    inputs.forEach((inputEl) => {
+      const paramId = inputEl.dataset.paramId;
+      if (paramId && this.config[paramId] !== undefined) {
+        const input = inputEl.querySelector("input, select");
+        if (input) {
+          const param = this._allParameters[paramId];
+          if (param) {
+            const value = this.config[paramId];
+            if (param.type === "boolean") {
+              input.checked = value === true;
+            } else {
+              input.value = value === null || value === undefined ? "" : String(value);
+            }
+          }
+        }
+      }
+    });
+
+    // Update validation summary button
+    const validationBtn = this.$("[data-action=show-validation]");
+    if (validationBtn && this.validationSummary?.hasErrors) {
+      validationBtn.textContent = `Show Errors (${this.validationSummary.errorCount})`;
+      validationBtn.style.display = "";
+    } else if (validationBtn) {
+      validationBtn.style.display = "none";
+    }
+  }
+
   handleToggleValidation() {
-    this.setState({ showValidationSummary: !this.state.showValidationSummary });
+    this.showValidationSummary = !this.showValidationSummary;
+    this._updateValidationBanner();
+  }
+
+  _updateValidationUI() {
+    // Update validation banner
+    this._updateValidationBanner();
+
+    // Update validation button
+    const validationBtn = this.$("[data-action=show-validation]");
+    if (validationBtn) {
+      if (this.validationSummary?.hasErrors) {
+        validationBtn.textContent = `Show Errors (${this.validationSummary.errorCount})`;
+        validationBtn.style.display = "";
+      } else {
+        validationBtn.style.display = "none";
+      }
+    }
+  }
+
+  _updateValidationBanner() {
+    const banner = this.$(".validation-banner");
+    if (!banner) return;
+
+    if (!this.showValidationSummary || !this.validationSummary) {
+      banner.style.display = "none";
+      return;
+    }
+
+    banner.style.display = "";
+    const isValid = this.validationSummary.isValid;
+    banner.className = `validation-banner banner-${isValid ? "valid" : "error"}`;
+
+    const icon = banner.querySelector(".banner-icon");
+    const text = banner.querySelector(".banner-text");
+    const errors = banner.querySelector(".banner-errors");
+
+    if (icon) icon.textContent = isValid ? "✓" : "⚠";
+    if (text) {
+      if (isValid) {
+        text.innerHTML = "<strong>All parameters valid</strong>";
+      } else {
+        text.innerHTML = `<strong>${this.validationSummary.errorCount} error(s) found</strong>` +
+          (this.validationSummary.warningCount > 0 ? `, ${this.validationSummary.warningCount} warning(s)` : "");
+      }
+    }
+    if (errors) {
+      if (!isValid && this.validationSummary.errorFields.length > 0) {
+        errors.style.display = "";
+        errors.innerHTML = this.validationSummary.errorFields
+          .slice(0, 5)
+          .map((field) => `<li>${field}</li>`)
+          .join("") +
+          (this.validationSummary.errorFields.length > 5
+            ? `<li>...and ${this.validationSummary.errorFields.length - 5} more</li>`
+            : "");
+      } else {
+        errors.style.display = "none";
+      }
+    }
   }
 
   render() {
-    const { filter, expandedSections, validationSummary, showValidationSummary } = this.state;
-
     // Filter parameters based on search
-    const filteredCategories = this.filterCategories(filter);
+    const filteredCategories = this.filterCategories(this.filter);
 
     // Count total parameters
     const totalParams = Object.keys(this._allParameters).length;
@@ -178,8 +329,8 @@ class ParameterForm extends Component {
     return Component.h(
       "div",
       { className: "parameter-form" },
-      this.renderToolbar(filter, totalParams, filteredCount, showValidationSummary),
-      this.renderValidationBanner(validationSummary, showValidationSummary),
+      this.renderToolbar(this.filter, totalParams, filteredCount, this.showValidationSummary),
+      this.renderValidationBanner(this.validationSummary, this.showValidationSummary),
       this.renderCategories(filteredCategories)
     );
   }
@@ -239,16 +390,16 @@ class ParameterForm extends Component {
           },
           "Reset All"
         ),
-        this.state.validationSummary?.hasErrors
+        this.validationSummary?.hasErrors
           ? Component.h(
-            "button",
-            {
-              type: "button",
-              className: "btn btn-warning btn-sm",
-              "data-action": "show-validation",
-            },
-            `Show Errors (${this.state.validationSummary.errorCount})`
-          )
+              "button",
+              {
+                type: "button",
+                className: "btn btn-warning btn-sm",
+                "data-action": "show-validation",
+              },
+              `Show Errors (${this.validationSummary.errorCount})`
+            )
           : null,
         Component.h(
           "button",
@@ -283,24 +434,24 @@ class ParameterForm extends Component {
           isValid
             ? Component.h("strong", {}, "All parameters valid")
             : Component.h(
-              "div",
-              {},
-              Component.h("strong", {}, `${validationSummary.errorCount} error(s) found`),
-              validationSummary.warningCount > 0
-                ? Component.h("span", {}, `, ${validationSummary.warningCount} warning(s)`)
-                : null
-            ),
+                "div",
+                {},
+                Component.h("strong", {}, `${validationSummary.errorCount} error(s) found`),
+                validationSummary.warningCount > 0
+                  ? Component.h("span", {}, `, ${validationSummary.warningCount} warning(s)`)
+                  : null
+              ),
           !isValid && validationSummary.errorFields.length > 0
             ? Component.h(
-              "ul",
-              { className: "banner-errors" },
-              validationSummary.errorFields
-                .slice(0, 5)
-                .map((field) => Component.h("li", { key: field }, field)),
-              validationSummary.errorFields.length > 5
-                ? Component.h("li", {}, `...and ${validationSummary.errorFields.length - 5} more`)
-                : null
-            )
+                "ul",
+                { className: "banner-errors" },
+                validationSummary.errorFields
+                  .slice(0, 5)
+                  .map((field) => Component.h("li", { key: field }, field)),
+                validationSummary.errorFields.length > 5
+                  ? Component.h("li", {}, `...and ${validationSummary.errorFields.length - 5} more`)
+                  : null
+              )
             : null
         )
       )
@@ -314,7 +465,7 @@ class ParameterForm extends Component {
       return Component.h(
         "div",
         { className: "no-results" },
-        Component.h("p", {}, `No parameters matching "${this.state.filter}"`)
+        Component.h("p", {}, `No parameters matching "${this.filter}"`)
       );
     }
 
@@ -328,14 +479,13 @@ class ParameterForm extends Component {
   }
 
   renderCategory(categoryId, categoryInfo) {
-    const { config, defaults, inheritance, editableFields, expandedSections, filter } = this.state;
-    const expanded = expandedSections[categoryId];
+    const expanded = this.expandedSections[categoryId];
 
     // Get parameters for this category
     const parameters = categoryInfo.parameters;
 
     // Apply filter to parameters
-    const filteredParams = this.filterParameters(parameters, filter);
+    const filteredParams = this.filterParameters(parameters, this.filter);
 
     if (Object.keys(filteredParams).length === 0) {
       return null;
@@ -354,10 +504,10 @@ class ParameterForm extends Component {
         categoryId,
         categoryInfo,
         parameters: filteredParams,
-        config,
-        defaults,
-        inheritance,
-        editableFields,
+        config: this.config,
+        defaults: this.defaults,
+        inheritance: this.inheritance,
+        editableFields: this.editableFields,
         expanded,
         onChange: (field, value) => this.handleParamChange(field, value),
         onValidate: (field, validation) => this.handleParamValidation(field, validation),
@@ -423,12 +573,8 @@ class ParameterForm extends Component {
   handleParamChange(field, value) {
     this._changedFields.add(field);
 
-    this.setState((prev) => ({
-      config: {
-        ...prev.config,
-        [field]: value,
-      },
-    }));
+    // Update config directly
+    this.config[field] = value;
 
     if (this.props.onChange) {
       this.props.onChange(field, value);
@@ -448,12 +594,12 @@ class ParameterForm extends Component {
       delete this._validationWarnings[field];
     }
 
-    const validationSummary = window.createValidationSummary({
+    this.validationSummary = window.createValidationSummary({
       errors: this._validationErrors,
       warnings: this._validationWarnings,
     });
 
-    this.setState({ validationSummary });
+    this._updateValidationUI();
 
     if (this.props.onValidate) {
       this.props.onValidate(field, validation);
@@ -462,11 +608,11 @@ class ParameterForm extends Component {
 
   // Public API
   setConfig(config) {
-    this.setState({ config });
+    this.config = { ...config };
   }
 
   getConfig() {
-    return this.state.config;
+    return this.config;
   }
 
   getChangedFields() {
@@ -474,11 +620,10 @@ class ParameterForm extends Component {
   }
 
   validate() {
-    const result = window.validateAll(this.state.config, this._allParameters);
-    this.setState({
-      validationResults: result.errors,
-      validationSummary: result,
-    });
+    const result = window.validateAll(this.config, this._allParameters);
+    this.validationResults = result.errors;
+    this.validationSummary = result;
+    this._updateValidationUI();
     return result;
   }
 
@@ -486,11 +631,10 @@ class ParameterForm extends Component {
     this._changedFields.clear();
     this._validationErrors = {};
     this._validationWarnings = {};
-    this.setState({
-      config: this.props.config || {},
-      validationResults: {},
-      validationSummary: null,
-    });
+    this.config = this.props.config || {};
+    this.validationResults = {};
+    this.validationSummary = null;
+    this._updateAllInputs();
   }
 }
 

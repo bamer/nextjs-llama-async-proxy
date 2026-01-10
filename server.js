@@ -27,7 +27,20 @@ let lastCpuTimes = null;
 let metricsCallCount = 0;
 let metricsInterval = null;
 let activeClients = 1; // Start with 1 client for backwards compatibility with tests
-const llamaMetricsScraper = null;
+let llamaMetricsScraper = null;
+
+/**
+ * Initialize llama-server metrics scraper when server starts
+ * @param {number} port - The port llama-server is running on
+ */
+function initializeLlamaMetrics(port) {
+  console.log("[DEBUG] Initializing llama metrics scraper for port:", port);
+  llamaMetricsScraper = new LlamaServerMetricsScraper({
+    host: "localhost",
+    port: port,
+  });
+  console.log("[DEBUG] Llama metrics scraper initialized");
+}
 
 /**
  * Update metrics collection interval based on active clients
@@ -298,7 +311,7 @@ async function main() {
     transports: ["websocket"],
   });
 
-  registerHandlers(io, db, parseGgufMetadata);
+  registerHandlers(io, db, parseGgufMetadata, initializeLlamaMetrics);
   startMetrics(io, db);
 
   app.use(express.static(path.join(__dirname, "public")));

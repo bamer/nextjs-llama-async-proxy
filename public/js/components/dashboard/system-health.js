@@ -1,20 +1,32 @@
+/**
+ * SystemHealth Component - Event-Driven DOM Updates
+ * Displays system health status and checks
+ */
+
 class SystemHealth extends Component {
   constructor(props) {
     super(props);
 
-    const metrics = props.metrics || {
+    // Direct properties instead of state
+    this.metrics = props.metrics || {
       cpu: { usage: 0 },
       memory: { used: 0 },
       disk: { used: 0 },
     };
-    const gpuMetrics = props.gpuMetrics || { usage: 0 };
+    this.gpuMetrics = props.gpuMetrics || { usage: 0 };
+  }
 
-    this.state = { metrics, gpuMetrics };
+  /**
+   * Update metrics data
+   */
+  updateMetrics(metrics, gpuMetrics) {
+    this.metrics = metrics || this.metrics;
+    this.gpuMetrics = gpuMetrics || this.gpuMetrics;
   }
 
   render() {
-    const m = this.state.metrics;
-    const gpu = this.state.gpuMetrics;
+    const m = this.metrics;
+    const gpu = this.gpuMetrics;
     const health = window.DashboardUtils._getHealthStatus(m);
 
     const checks = [

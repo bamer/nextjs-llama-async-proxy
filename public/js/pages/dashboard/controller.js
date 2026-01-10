@@ -132,18 +132,18 @@ class DashboardController {
 
   handleRouterAction(action, data) {
     switch (action) {
-    case "start":
-      this._start();
-      break;
-    case "start-with-preset":
-      this._startWithPreset(data);
-      break;
-    case "stop":
-      this._stop();
-      break;
-    case "restart":
-      this._restart();
-      break;
+      case "start":
+        this._start();
+        break;
+      case "start-with-preset":
+        this._startWithPreset(data);
+        break;
+      case "stop":
+        this._stop();
+        break;
+      case "restart":
+        this._restart();
+        break;
     }
   }
 

@@ -396,15 +396,15 @@ describe("SocketClient", () => {
     window.io = null;
     window.__mockDocument = mockDocument;
     window.__mockLocation = mockLocation;
-    
+
     // Save original methods
     window.__originalCreateElement = document.createElement;
     window.__originalAppendChild = document.head.appendChild;
-    
+
     // Replace with our mocks
     document.createElement = mockDocument.createElement;
     document.head.appendChild = mockHead.appendChild;
-    
+
     mockDocument.createElement.mockClear();
     mockHead.appendChild.mockClear();
     createdScripts.length = 0;

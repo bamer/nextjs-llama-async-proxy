@@ -4,10 +4,35 @@
 
 class Layout extends Component {
   render() {
-    return Component.h("div", { className: "app-container" }, [
-      Component.h(Sidebar, {}),
-      Component.h(MainContent, {}),
-    ]);
+    return `
+      <div class="app-container" id="app-layout">
+        <div id="sidebar-container"></div>
+        <div id="main-content-container"></div>
+      </div>
+    `;
+  }
+
+  onMount() {
+    // Mount Sidebar
+    const sidebarContainer = document.getElementById("sidebar-container");
+    if (sidebarContainer) {
+      const sidebar = new Sidebar({});
+      sidebar.mount(sidebarContainer);
+      this._sidebar = sidebar;
+    }
+
+    // Mount MainContent
+    const mainContainer = document.getElementById("main-content-container");
+    if (mainContainer) {
+      const mainContent = new MainContent({});
+      mainContent.mount(mainContainer);
+      this._mainContent = mainContent;
+    }
+  }
+
+  destroy() {
+    this._sidebar?.destroy();
+    this._mainContent?.destroy();
   }
 }
 
@@ -19,49 +44,42 @@ class Sidebar extends Component {
   }
 
   render() {
-    const collapsedClass = this.collapsed ? "collapsed" : "";
-    return Component.h("aside", { className: `sidebar ${collapsedClass}` }, [
-      Component.h("div", { className: "sidebar-header" }, [
-        Component.h("span", { className: "logo-icon" }, "🦙"),
-        Component.h("span", { className: "logo-text" }, "Llama Proxy"),
-      ]),
-      Component.h("nav", { className: "sidebar-nav" }, [
-        Component.h("a", { href: "/", className: "nav-link", "data-page": "dashboard" }, [
-          Component.h("span", {}, "📊"),
-          Component.h("span", {}, "Dashboard"),
-        ]),
-        Component.h("a", { href: "/models", className: "nav-link", "data-page": "models" }, [
-          Component.h("span", {}, "📁"),
-          Component.h("span", {}, "Models"),
-        ]),
-        Component.h("a", { href: "/presets", className: "nav-link", "data-page": "presets" }, [
-          Component.h("span", {}, "⚡"),
-          Component.h("span", {}, "Presets"),
-        ]),
-        Component.h("a", { href: "/logs", className: "nav-link", "data-page": "logs" }, [
-          Component.h("span", {}, "📋"),
-          Component.h("span", {}, "Logs"),
-        ]),
-        Component.h("a", { href: "/settings", className: "nav-link", "data-page": "settings" }, [
-          Component.h("span", {}, "⚙️"),
-          Component.h("span", {}, "Settings"),
-        ]),
-      ]),
-      Component.h("div", { className: "sidebar-footer" }, [
-        Component.h("button", { className: "theme-toggle-btn", "data-action": "toggle-theme" }, [
-          this.darkMode ? "☀️ Light" : "🌙 Dark",
-        ]),
-        Component.h("button", { className: "help-btn", "data-action": "keyboard-help" }, "⌨️"),
-        Component.h("div", { className: "connection-status", id: "connection-status" }, [
-          Component.h("span", { className: "dot disconnected" }),
-          Component.h("span", { className: "text" }, "Disconnected"),
-        ]),
-      ]),
-    ]);
+    return `
+      <aside class="sidebar ${this.collapsed ? "collapsed" : ""}">
+        <div class="sidebar-header">
+          <span class="logo-icon">🦙</span>
+          <span class="logo-text">Llama Proxy</span>
+        </div>
+        <nav class="sidebar-nav">
+          <a href="/" class="nav-link" data-page="dashboard">
+            <span>📊</span><span>Dashboard</span>
+          </a>
+          <a href="/models" class="nav-link" data-page="models">
+            <span>📁</span><span>Models</span>
+          </a>
+          <a href="/presets" class="nav-link" data-page="presets">
+            <span>⚡</span><span>Presets</span>
+          </a>
+          <a href="/logs" class="nav-link" data-page="logs">
+            <span>📋</span><span>Logs</span>
+          </a>
+          <a href="/settings" class="nav-link" data-page="settings">
+            <span>⚙️</span><span>Settings</span>
+          </a>
+        </nav>
+        <div class="sidebar-footer">
+          <button class="theme-toggle-btn" data-action="toggle-theme">${this.darkMode ? "☀️ Light" : "🌙 Dark"}</button>
+          <button class="help-btn" data-action="keyboard-help">⌨️</button>
+          <div class="connection-status" id="connection-status">
+            <span class="dot disconnected"></span>
+            <span class="text">Disconnected</span>
+          </div>
+        </div>
+      </aside>
+    `;
   }
 
   bindEvents() {
-    // Navigation clicks
     this.on("click", "[data-page]", (e) => {
       const t = e.target.closest("[data-page]");
       if (t) {
@@ -71,7 +89,6 @@ class Sidebar extends Component {
       }
     });
 
-    // Theme toggle
     this.on("click", "[data-action=toggle-theme]", () => {
       this.darkMode = !this.darkMode;
       localStorage.setItem("darkMode", this.darkMode);
@@ -84,7 +101,6 @@ class Sidebar extends Component {
       if (btn) btn.textContent = this.darkMode ? "☀️ Light" : "🌙 Dark";
     });
 
-    // Keyboard help
     this.on("click", "[data-action=keyboard-help]", () => {
       console.log("[DEBUG] Opening keyboard shortcuts help");
       const shortcuts = window.keyboardShortcuts?.getAllShortcuts() || [];
@@ -98,7 +114,6 @@ class Sidebar extends Component {
   }
 
   onMount() {
-    // Restore theme state
     if (this.darkMode) {
       document.documentElement.classList.add("dark-mode");
     }
@@ -107,18 +122,40 @@ class Sidebar extends Component {
 
 class MainContent extends Component {
   render() {
-    return Component.h("main", { className: "main-content" }, [
-      Component.h(Header, {}),
-      Component.h(
-        "div",
-        { id: "page-content", className: "page-content" },
-        Component.h("div", { className: "loading-screen" }, [
-          Component.h("div", { className: "spinner" }),
-          Component.h("p", {}, "Connecting..."),
-        ])
-      ),
-    ]);
+    return `
+      <main class="main-content">
+        ${HeaderHTML()}
+        <div id="page-content" class="page-content">
+          <div class="loading-screen">
+            <div class="spinner"></div>
+            <p>Connecting...</p>
+          </div>
+        </div>
+      </main>
+    `;
   }
+}
+
+function HeaderHTML() {
+  const p = window.location.pathname;
+  const titles = {
+    "/": "Dashboard",
+    "/models": "Models",
+    "/presets": "Presets",
+    "/logs": "Logs",
+    "/settings": "Settings",
+  };
+  const title = titles[p] || "Dashboard";
+
+  return `
+    <header class="page-header">
+      <button class="menu-btn" data-action="toggle">☰</button>
+      <h1 id="page-title">${title}</h1>
+      <div class="header-status">
+        <span class="badge offline">● Offline</span>
+      </div>
+    </header>
+  `;
 }
 
 class Header extends Component {
@@ -129,31 +166,10 @@ class Header extends Component {
   }
 
   render() {
-    return Component.h("header", { className: "page-header" }, [
-      Component.h("button", { className: "menu-btn", "data-action": "toggle" }, "☰"),
-      Component.h("h1", { id: "page-title" }, this._getTitle()),
-      Component.h("div", { className: "header-status" }, [
-        this.online
-          ? Component.h("span", { className: "badge online" }, "● Online")
-          : Component.h("span", { className: "badge offline" }, "● Offline"),
-      ]),
-    ]);
-  }
-
-  _getTitle() {
-    const p = window.location.pathname;
-    const titles = {
-      "/": "Dashboard",
-      "/models": "Models",
-      "/presets": "Presets",
-      "/logs": "Logs",
-      "/settings": "Settings",
-    };
-    return titles[p] || "Dashboard";
+    return HeaderHTML();
   }
 
   bindEvents() {
-    // Toggle sidebar
     this.on("click", "[data-action=toggle]", () => {
       const sidebar = document.querySelector(".sidebar");
       if (sidebar) {
@@ -165,16 +181,24 @@ class Header extends Component {
   }
 
   onMount() {
-    // Subscribe to connection status
     stateManager.subscribe("connectionStatus", (s) => {
       this.online = s === "connected";
       this._updateUI(s);
     });
 
-    // Handle route changes
     this._routeHandler = () => {
       const t = this.$("#page-title");
-      if (t) t.textContent = this._getTitle();
+      if (t) {
+        const p = window.location.pathname;
+        const titles = {
+          "/": "Dashboard",
+          "/models": "Models",
+          "/presets": "Presets",
+          "/logs": "Logs",
+          "/settings": "Settings",
+        };
+        t.textContent = titles[p] || "Dashboard";
+      }
     };
     window.addEventListener("routechange", this._routeHandler);
     window.addEventListener("popstate", this._routeHandler);
@@ -199,8 +223,8 @@ class Header extends Component {
     if (hs) {
       hs.innerHTML =
         s === "connected"
-          ? "<span class=\"badge online\">● Online</span>"
-          : "<span class=\"badge offline\">● Offline</span>";
+          ? '<span class="badge online">● Online</span>'
+          : '<span class="badge offline">● Offline</span>';
     }
   }
 }

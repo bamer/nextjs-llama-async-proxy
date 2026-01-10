@@ -9,8 +9,8 @@ This document provides guidelines for agentic coding assistants working in this 
 - **Frontend**: Vanilla JavaScript (no frameworks)
 - **Database**: SQLite with better-sqlite3
 - **Real-time**: Socket.IO for live updates
-- **Architecture**: Component-based with custom router and state manager
-- **LLM Backend**: llama.cpp server in **router mode** (multi-model support)
+- **Architecture**: Simplify to pure Event-Driven DOM Updates
+- **LLM Backend**: llama.cpp server in **router mode** (multi-model support) with preset.ini
 
 ## Llama.cpp Router Mode
 
@@ -268,8 +268,8 @@ this.$btn.textContent = "Loading...";
 
 ```javascript
 // Query elements
-this.$(".my-element");           // Single element
-this.$$(".items");               // Array of elements
+this.$(".my-element"); // Single element
+this.$$(".items"); // Array of elements
 
 // Update content
 this.setText(".label", "New Text");
@@ -277,7 +277,7 @@ this.setHTML(".container", "<div>...</div>");
 
 // Update attributes
 this.setAttr(".btn", "disabled", true);
-this.setAttr(".btn", "disabled", null);  // Remove attribute
+this.setAttr(".btn", "disabled", null); // Remove attribute
 
 // Toggle classes
 this.toggleClass(".item", "active", true);

@@ -1,203 +1,214 @@
 [
   {
-    "taskId": "T-COVERAGE-001",
-    "role": "tester",
-    "description": "Write complete test coverage for server/handlers/llama.js (0% → 100%) - Test all 6 handlers: status, start, restart, stop, config, registration",
-    "filesAffected": ["server/handlers/llama.js", "__tests__/server/handlers/llama.test.js"],
-    "inputs": {
-      "targetCoverage": "100%",
-      "handlers": ["llama:status", "llama:start", "llama:restart", "llama:stop", "llama:config"],
-      "testScenarios": ["success", "error", "edge_case"]
+    taskId: "T-COVERAGE-001",
+    role: "tester",
+    description:
+      "Write complete test coverage for server/handlers/llama.js (0% → 100%) - Test all 6 handlers: status, start, restart, stop, config, registration",
+    filesAffected: ["server/handlers/llama.js", "__tests__/server/handlers/llama.test.js"],
+    inputs: {
+      targetCoverage: "100%",
+      handlers: ["llama:status", "llama:start", "llama:restart", "llama:stop", "llama:config"],
+      testScenarios: ["success", "error", "edge_case"],
     },
-    "successCriteria": [
+    successCriteria: [
       "pnpm test -- __tests__/server/handlers/llama.test.js",
       "100% branch coverage on server/handlers/llama.js",
-      "All handlers tested with success and error paths"
+      "All handlers tested with success and error paths",
     ],
-    "dependsOn": [],
-    "timeoutSeconds": 300
+    dependsOn: [],
+    timeoutSeconds: 300,
   },
   {
-    "taskId": "T-COVERAGE-002",
-    "role": "tester",
-    "description": "Write complete test coverage for server/handlers/llama-router/status.js (25% → 100%) - Test getLlamaStatus, loadModel, unloadModel with all error paths",
-    "filesAffected": [
+    taskId: "T-COVERAGE-002",
+    role: "tester",
+    description:
+      "Write complete test coverage for server/handlers/llama-router/status.js (25% → 100%) - Test getLlamaStatus, loadModel, unloadModel with all error paths",
+    filesAffected: [
       "server/handlers/llama-router/status.js",
-      "__tests__/server/handlers/llama-router/status.test.js"
+      "__tests__/server/handlers/llama-router/status.test.js",
     ],
-    "inputs": {
-      "targetCoverage": "100%",
-      "functions": ["getLlamaStatus", "loadModel", "unloadModel"],
-      "testScenarios": ["loaded", "loading", "unloaded", "error"]
+    inputs: {
+      targetCoverage: "100%",
+      functions: ["getLlamaStatus", "loadModel", "unloadModel"],
+      testScenarios: ["loaded", "loading", "unloaded", "error"],
     },
-    "successCriteria": [
+    successCriteria: [
       "pnpm test -- __tests__/server/handlers/llama-router/status.test.js",
-      "100% branch coverage on server/handlers/llama-router/status.js"
+      "100% branch coverage on server/handlers/llama-router/status.js",
     ],
-    "dependsOn": [],
-    "timeoutSeconds": 300
+    dependsOn: [],
+    timeoutSeconds: 300,
   },
   {
-    "taskId": "T-COVERAGE-003",
-    "role": "tester",
-    "description": "Write missing test coverage for server/handlers/llama-router/start.js (44.64% → 100%) - Test binary not found, port in use, timeout, spawn failure scenarios",
-    "filesAffected": [
+    taskId: "T-COVERAGE-003",
+    role: "tester",
+    description:
+      "Write missing test coverage for server/handlers/llama-router/start.js (44.64% → 100%) - Test binary not found, port in use, timeout, spawn failure scenarios",
+    filesAffected: [
       "server/handlers/llama-router/start.js",
-      "__tests__/server/handlers/llama-router/start.test.js"
+      "__tests__/server/handlers/llama-router/start.test.js",
     ],
-    "inputs": {
-      "targetCoverage": "100%",
-      "missingScenarios": ["binary_not_found", "port_in_use", "timeout", "spawn_failure"]
+    inputs: {
+      targetCoverage: "100%",
+      missingScenarios: ["binary_not_found", "port_in_use", "timeout", "spawn_failure"],
     },
-    "successCriteria": [
+    successCriteria: [
       "pnpm test -- __tests__/server/handlers/llama-router/start.test.js",
-      "100% branch coverage on server/handlers/llama-router/start.js"
+      "100% branch coverage on server/handlers/llama-router/start.js",
     ],
-    "dependsOn": [],
-    "timeoutSeconds": 300
+    dependsOn: [],
+    timeoutSeconds: 300,
   },
   {
-    "taskId": "T-COVERAGE-004",
-    "role": "tester",
-    "description": "Write complete test coverage for server.js main entry point (20% → 100%) - Test startMetrics, setupShutdown, main, CLI args",
-    "filesAffected": ["server.js", "__tests__/server/server.test.js"],
-    "inputs": {
-      "targetCoverage": "100%",
-      "functions": ["startMetrics", "setupShutdown", "main"],
-      "testScenarios": ["metrics_start", "shutdown_handlers", "cli_args", "error_handling"]
+    taskId: "T-COVERAGE-004",
+    role: "tester",
+    description:
+      "Write complete test coverage for server.js main entry point (20% → 100%) - Test startMetrics, setupShutdown, main, CLI args",
+    filesAffected: ["server.js", "__tests__/server/server.test.js"],
+    inputs: {
+      targetCoverage: "100%",
+      functions: ["startMetrics", "setupShutdown", "main"],
+      testScenarios: ["metrics_start", "shutdown_handlers", "cli_args", "error_handling"],
     },
-    "successCriteria": [
+    successCriteria: [
       "pnpm test -- __tests__/server/server.test.js",
-      "100% branch coverage on server.js"
+      "100% branch coverage on server.js",
     ],
-    "dependsOn": [],
-    "timeoutSeconds": 300
+    dependsOn: [],
+    timeoutSeconds: 300,
   },
   {
-    "taskId": "T-COVERAGE-005",
-    "role": "tester",
-    "description": "Complete test coverage for server/handlers/models/router-ops.js (68.42% → 100%) - Test loadModel and unloadModel edge cases",
-    "filesAffected": [
+    taskId: "T-COVERAGE-005",
+    role: "tester",
+    description:
+      "Complete test coverage for server/handlers/models/router-ops.js (68.42% → 100%) - Test loadModel and unloadModel edge cases",
+    filesAffected: [
       "server/handlers/models/router-ops.js",
-      "__tests__/server/handlers/models/router-ops.test.js"
+      "__tests__/server/handlers/models/router-ops.test.js",
     ],
-    "inputs": {
-      "targetCoverage": "100%",
-      "missingCoverage": ["edge_cases", "error_paths", "concurrent_operations"]
+    inputs: {
+      targetCoverage: "100%",
+      missingCoverage: ["edge_cases", "error_paths", "concurrent_operations"],
     },
-    "successCriteria": [
+    successCriteria: [
       "pnpm test -- __tests__/server/handlers/models/router-ops.test.js",
-      "100% branch coverage on server/handlers/models/router-ops.js"
+      "100% branch coverage on server/handlers/models/router-ops.js",
     ],
-    "dependsOn": [],
-    "timeoutSeconds": 300
+    dependsOn: [],
+    timeoutSeconds: 300,
   },
   {
-    "taskId": "T-COVERAGE-006",
-    "role": "tester",
-    "description": "Complete test coverage for server/handlers/llama-router/process.js (63.88% → 100%) - Test findAvailablePort, isPortInUse, findLlamaServer, stopLlamaServer",
-    "filesAffected": [
+    taskId: "T-COVERAGE-006",
+    role: "tester",
+    description:
+      "Complete test coverage for server/handlers/llama-router/process.js (63.88% → 100%) - Test findAvailablePort, isPortInUse, findLlamaServer, stopLlamaServer",
+    filesAffected: [
       "server/handlers/llama-router/process.js",
-      "__tests__/server/handlers/llama-router/process.test.js"
+      "__tests__/server/handlers/llama-router/process.test.js",
     ],
-    "inputs": {
-      "targetCoverage": "100%",
-      "functions": ["findAvailablePort", "isPortInUse", "findLlamaServer", "stopLlamaServer"]
+    inputs: {
+      targetCoverage: "100%",
+      functions: ["findAvailablePort", "isPortInUse", "findLlamaServer", "stopLlamaServer"],
     },
-    "successCriteria": [
+    successCriteria: [
       "pnpm test -- __tests__/server/handlers/llama-router/process.test.js",
-      "100% branch coverage on server/handlers/llama-router/process.js"
+      "100% branch coverage on server/handlers/llama-router/process.js",
     ],
-    "dependsOn": [],
-    "timeoutSeconds": 300
+    dependsOn: [],
+    timeoutSeconds: 300,
   },
   {
-    "taskId": "T-COVERAGE-007",
-    "role": "tester",
-    "description": "Write complete test coverage for server/db/index.js composition layer (0% → 100%) - Test all composed repository methods",
-    "filesAffected": ["server/db/index.js", "__tests__/server/db/index.test.js"],
-    "inputs": {
-      "targetCoverage": "100%",
-      "repositories": ["models", "metrics", "logs", "config", "metadata", "modelValidator"]
+    taskId: "T-COVERAGE-007",
+    role: "tester",
+    description:
+      "Write complete test coverage for server/db/index.js composition layer (0% → 100%) - Test all composed repository methods",
+    filesAffected: ["server/db/index.js", "__tests__/server/db/index.test.js"],
+    inputs: {
+      targetCoverage: "100%",
+      repositories: ["models", "metrics", "logs", "config", "metadata", "modelValidator"],
     },
-    "successCriteria": [
+    successCriteria: [
       "pnpm test -- __tests__/server/db/index.test.js",
-      "100% branch coverage on server/db/index.js"
+      "100% branch coverage on server/db/index.js",
     ],
-    "dependsOn": [],
-    "timeoutSeconds": 300
+    dependsOn: [],
+    timeoutSeconds: 300,
   },
   {
-    "taskId": "T-COVERAGE-008",
-    "role": "tester",
-    "description": "Write complete test coverage for server/db/schema.js (0% → 100%) - Test getSchemaDefinition, getIndexesDefinition, initSchema, createIndexes, runMigrations",
-    "filesAffected": ["server/db/schema.js", "__tests__/server/db/schema.test.js"],
-    "inputs": {
-      "targetCoverage": "100%",
-      "functions": [
+    taskId: "T-COVERAGE-008",
+    role: "tester",
+    description:
+      "Write complete test coverage for server/db/schema.js (0% → 100%) - Test getSchemaDefinition, getIndexesDefinition, initSchema, createIndexes, runMigrations",
+    filesAffected: ["server/db/schema.js", "__tests__/server/db/schema.test.js"],
+    inputs: {
+      targetCoverage: "100%",
+      functions: [
         "getSchemaDefinition",
         "getIndexesDefinition",
         "getModelsMigrations",
         "getMetricsMigrations",
         "initSchema",
         "createIndexes",
-        "runMigrations"
-      ]
+        "runMigrations",
+      ],
     },
-    "successCriteria": [
+    successCriteria: [
       "pnpm test -- __tests__/server/db/schema.test.js",
-      "100% branch coverage on server/db/schema.js"
+      "100% branch coverage on server/db/schema.js",
     ],
-    "dependsOn": [],
-    "timeoutSeconds": 300
+    dependsOn: [],
+    timeoutSeconds: 300,
   },
   {
-    "taskId": "T-COVERAGE-009",
-    "role": "tester",
-    "description": "Fix format.test.js environment issue - Add jsdom setup to resolve ReferenceError: window is not defined",
-    "filesAffected": ["__tests__/utils/format.test.js"],
-    "inputs": {
-      "issue": "ReferenceError: window is not defined",
-      "fix": "Add jsdom environment setup for frontend format utilities"
+    taskId: "T-COVERAGE-009",
+    role: "tester",
+    description:
+      "Fix format.test.js environment issue - Add jsdom setup to resolve ReferenceError: window is not defined",
+    filesAffected: ["__tests__/utils/format.test.js"],
+    inputs: {
+      issue: "ReferenceError: window is not defined",
+      fix: "Add jsdom environment setup for frontend format utilities",
     },
-    "successCriteria": [
+    successCriteria: [
       "pnpm test -- __tests__/utils/format.test.js",
       "All 93 tests passing",
-      "format.js utilities fully tested"
+      "format.js utilities fully tested",
     ],
-    "dependsOn": [],
-    "timeoutSeconds": 180
+    dependsOn: [],
+    timeoutSeconds: 180,
   },
   {
-    "taskId": "T-COVERAGE-010",
-    "role": "tester",
-    "description": "Write test coverage for public/js/services/socket.js (minimal → 100%) - Test socket connection, events, reconnection logic",
-    "filesAffected": ["public/js/services/socket.js", "__tests__/frontend/services/socket.test.js"],
-    "inputs": {
-      "targetCoverage": "100%",
-      "functions": ["connect", "disconnect", "emit", "on", "reconnect"]
+    taskId: "T-COVERAGE-010",
+    role: "tester",
+    description:
+      "Write test coverage for public/js/services/socket.js (minimal → 100%) - Test socket connection, events, reconnection logic",
+    filesAffected: ["public/js/services/socket.js", "__tests__/frontend/services/socket.test.js"],
+    inputs: {
+      targetCoverage: "100%",
+      functions: ["connect", "disconnect", "emit", "on", "reconnect"],
     },
-    "successCriteria": [
+    successCriteria: [
       "pnpm test -- __tests__/frontend/services/socket.test.js",
-      "100% branch coverage on socket.js"
+      "100% branch coverage on socket.js",
     ],
-    "dependsOn": [],
-    "timeoutSeconds": 300
+    dependsOn: [],
+    timeoutSeconds: 300,
   },
   {
-    "taskId": "T-COVERAGE-011",
-    "role": "tester",
-    "description": "Run full test suite and generate coverage report to verify 100% coverage achievement",
-    "filesAffected": [],
-    "inputs": {
-      "command": "pnpm test:coverage"
+    taskId: "T-COVERAGE-011",
+    role: "tester",
+    description:
+      "Run full test suite and generate coverage report to verify 100% coverage achievement",
+    filesAffected: [],
+    inputs: {
+      command: "pnpm test:coverage",
     },
-    "successCriteria": [
+    successCriteria: [
       "All tests passing (1300+ tests)",
       "Overall coverage >= 95%",
-      "Critical modules at 100%"
+      "Critical modules at 100%",
     ],
-    "dependsOn": [
+    dependsOn: [
       "T-COVERAGE-001",
       "T-COVERAGE-002",
       "T-COVERAGE-003",
@@ -207,15 +218,15 @@
       "T-COVERAGE-007",
       "T-COVERAGE-008",
       "T-COVERAGE-009",
-      "T-COVERAGE-010"
+      "T-COVERAGE-010",
     ],
-    "timeoutSeconds": 600
+    timeoutSeconds: 600,
   },
   {
-    "taskId": "T-COVERAGE-012",
-    "role": "reviewer",
-    "description": "Review all test changes for quality, best practices, and coverage adequacy",
-    "filesAffected": [
+    taskId: "T-COVERAGE-012",
+    role: "reviewer",
+    description: "Review all test changes for quality, best practices, and coverage adequacy",
+    filesAffected: [
       "__tests__/server/handlers/llama.test.js",
       "__tests__/server/handlers/llama-router/status.test.js",
       "__tests__/server/handlers/llama-router/start.test.js",
@@ -225,31 +236,32 @@
       "__tests__/server/db/index.test.js",
       "__tests__/server/db/schema.test.js",
       "__tests__/utils/format.test.js",
-      "__tests__/frontend/services/socket.test.js"
+      "__tests__/frontend/services/socket.test.js",
     ],
-    "inputs": {
-      "reviewCriteria": ["test_quality", "coverage_adequacy", "best_practices", "mock_quality"]
+    inputs: {
+      reviewCriteria: ["test_quality", "coverage_adequacy", "best_practices", "mock_quality"],
     },
-    "successCriteria": [
+    successCriteria: [
       "All test files pass review",
       "No anti-patterns detected",
       "Mocks are realistic",
-      "Tests are maintainable"
+      "Tests are maintainable",
     ],
-    "dependsOn": ["T-COVERAGE-011"],
-    "timeoutSeconds": 300
+    dependsOn: ["T-COVERAGE-011"],
+    timeoutSeconds: 300,
   },
   {
-    "taskId": "T-COVERAGE-013",
-    "role": "tester",
-    "description": "Fix any remaining test failures and achieve final 100% coverage on critical modules",
-    "filesAffected": ["__tests__/**/*.test.js"],
-    "inputs": {
-      "target": "fix_failures",
-      "threshold": "100% on critical modules"
+    taskId: "T-COVERAGE-013",
+    role: "tester",
+    description:
+      "Fix any remaining test failures and achieve final 100% coverage on critical modules",
+    filesAffected: ["__tests__/**/*.test.js"],
+    inputs: {
+      target: "fix_failures",
+      threshold: "100% on critical modules",
     },
-    "successCriteria": ["All tests passing", "Critical modules at 100% coverage", "No regressions"],
-    "dependsOn": ["T-COVERAGE-012"],
-    "timeoutSeconds": 600
-  }
-]
+    successCriteria: ["All tests passing", "Critical modules at 100% coverage", "No regressions"],
+    dependsOn: ["T-COVERAGE-012"],
+    timeoutSeconds: 600,
+  },
+];

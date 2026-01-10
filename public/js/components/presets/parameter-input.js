@@ -1,48 +1,69 @@
 /**
- * ParameterInput Component
+ * ParameterInput Component - Event-Driven DOM Updates
  * Renders individual parameter fields with validation, tooltips, and inheritance visualization
  */
 
 class ParameterInput extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      value: props.value,
-      defaultValue: props.defaultValue,
-      validation: null,
-      showTooltip: false,
-      focused: false,
-    };
+
+    // Direct properties instead of state
+    this.value = props.value;
+    this.defaultValue = props.defaultValue;
+    this.validation = null;
+    this.showTooltip = false;
+    this.focused = false;
+
     this._debounceTimer = null;
-  }
 
-  get initialState() {
-    return {
-      value: this.props.value,
-      defaultValue: this.props.defaultValue,
-      validation: null,
-      showTooltip: false,
-      focused: false,
-    };
-  }
-
-  willMount() {
     // Initial validation
-    if (this.props.value !== undefined) {
-      this.validateValue(this.props.value);
+    if (props.value !== undefined) {
+      this.validateValue(props.value);
     }
   }
 
-  getEventMap() {
-    return {
-      "input input, change input, blur input": "handleInputChange",
-      "focus input, focus select, focus textarea": "handleFocus",
-      "blur input, blur select, blur textarea": "handleBlur",
-      "click [data-action=reset]": "handleReset",
-      "click [data-action=toggle-tooltip]": "handleToggleTooltip",
-      "mouseenter [data-tooltip]": "handleTooltipEnter",
-      "mouseleave [data-tooltip]": "handleTooltipLeave",
-    };
+  onMount() {
+    // Setup tooltip event listeners using event delegation from parent
+    this._bindTooltipEvents();
+  }
+
+  bindEvents() {
+    // Input change events - using event delegation
+    this.on("input", "input, select, textarea", (e, target) => {
+      this.handleInputChange(e);
+    });
+
+    this.on("change", "input, select, textarea", (e, target) => {
+      this.handleInputChange(e);
+    });
+
+    // Focus/blur events
+    this.on("focus", "input, select, textarea", () => {
+      this.handleFocus();
+    });
+
+    this.on("blur", "input, select, textarea", () => {
+      this.handleBlur();
+    });
+
+    // Reset button
+    this.on("click", "[data-action=reset]", () => {
+      this.handleReset();
+    });
+
+    // Tooltip toggle
+    this.on("click", "[data-action=toggle-tooltip]", () => {
+      this.handleToggleTooltip();
+    });
+  }
+
+  _bindTooltipEvents() {
+    // Tooltip hover events
+    const tooltipEl = this.$("[data-tooltip]");
+    if (tooltipEl) {
+      tooltipEl.addEventListener("mouseenter", () => this.handleTooltipEnter());
+      tooltipEl.addEventListener("mouseleave", () => this.handleTooltipLeave());
+    }
   }
 
   handleInputChange(e) {
@@ -60,7 +81,7 @@ class ParameterInput extends Component {
       value = options.map((opt) => opt.value);
     }
 
-    this.setState({ value });
+    this.value = value;
 
     // Debounced validation
     clearTimeout(this._debounceTimer);
@@ -71,44 +92,121 @@ class ParameterInput extends Component {
   }
 
   handleFocus() {
-    this.setState({ focused: true });
+    this.focused = true;
+    this._updateFocusUI();
   }
 
   handleBlur() {
-    this.setState({ focused: false });
+    this.focused = false;
+    this._updateFocusUI();
     // Final validation on blur
-    if (this.state.value !== undefined) {
-      const validation = this.validateValue(this.state.value);
+    if (this.value !== undefined) {
+      const validation = this.validateValue(this.value);
       if (!validation.valid) {
         this.notifyValidation(validation);
       }
     }
   }
 
+  _updateFocusUI() {
+    const container = this.$(".parameter-input");
+    if (container) {
+      this.toggleClass(container, "focused", this.focused);
+    }
+  }
+
   handleReset() {
     const defaultValue = this.props.defaultValue;
-    this.setState({ value: defaultValue });
+    this.value = defaultValue;
     this.validateValue(defaultValue);
     this.notifyChange(defaultValue);
+    this._updateValueUI();
   }
 
   handleToggleTooltip() {
-    this.setState({ showTooltip: !this.state.showTooltip });
+    this.showTooltip = !this.showTooltip;
+    this._updateTooltipUI();
   }
 
   handleTooltipEnter() {
-    this.setState({ showTooltip: true });
+    this.showTooltip = true;
+    this._updateTooltipUI();
   }
 
   handleTooltipLeave() {
-    this.setState({ showTooltip: false });
+    this.showTooltip = false;
+    this._updateTooltipUI();
+  }
+
+  _updateTooltipUI() {
+    const tooltip = this.$(".param-tooltip");
+    if (tooltip) {
+      tooltip.style.display = this.showTooltip ? "block" : "none";
+    }
+
+    // Update container class
+    const container = this.$(".parameter-input");
+    if (container) {
+      this.toggleClass(container, "tooltip-visible", this.showTooltip);
+    }
+  }
+
+  _updateValueUI() {
+    // Update the input value display
+    const input = this.$("input, select");
+    if (input) {
+      if (this.props.param.type === "boolean") {
+        input.checked = this.value === true;
+      } else {
+        input.value = this.value === null || this.value === undefined ? "" : String(this.value);
+      }
+    }
+
+    // Update reset button visibility
+    const hasChanged = this.value !== this.defaultValue && this.value !== undefined;
+    const resetBtn = this.$("[data-action=reset]");
+    if (resetBtn) {
+      resetBtn.style.display = hasChanged ? "inline-block" : "none";
+    }
   }
 
   validateValue(value) {
     const validation = window.validateParameter(this.props.paramId, value);
-    this.setState({ validation });
+    this.validation = validation;
+    this._updateValidationUI();
     this.notifyValidation(validation);
     return validation;
+  }
+
+  _updateValidationUI() {
+    const container = this.$(".parameter-input");
+    if (!container) return;
+
+    // Remove existing validation classes
+    container.classList.remove("validation-error", "validation-warning", "validation-valid");
+
+    if (this.validation) {
+      if (this.validation.errors.length > 0) {
+        container.classList.add("validation-error");
+      } else if (this.validation.warnings.length > 0) {
+        container.classList.add("validation-warning");
+      } else if (this.value !== this.defaultValue && this.value !== undefined) {
+        container.classList.add("validation-valid");
+      }
+    }
+
+    // Update validation message
+    const messageEl = this.$(".validation-message");
+    if (messageEl) {
+      if (!this.validation || this.validation.valid) {
+        messageEl.style.display = "none";
+      } else {
+        messageEl.style.display = "block";
+        const messages = [...this.validation.errors, ...this.validation.warnings];
+        messageEl.textContent = messages.join("; ");
+        messageEl.className = `validation-message ${this.validation.errors.length > 0 ? "message-error" : "message-warning"}`;
+      }
+    }
   }
 
   notifyChange(value) {
@@ -125,28 +223,26 @@ class ParameterInput extends Component {
 
   render() {
     const { param, paramId, inheritance, editableFields } = this.props;
-    const { value, defaultValue, validation, showTooltip, focused } = this.state;
-
     const isEditable = !editableFields || editableFields.includes(paramId);
     const inheritanceType = inheritance?.[paramId] || "global";
-    const hasChanged = value !== defaultValue && value !== undefined;
+    const hasChanged = this.value !== this.defaultValue && this.value !== undefined;
 
-    const containerClass = this.getContainerClass(inheritanceType, validation, focused, hasChanged);
+    const containerClass = this.getContainerClass(inheritanceType, this.validation, this.focused, hasChanged);
 
     return Component.h(
       "div",
       { className: `parameter-input ${containerClass}` },
       this.renderLabel(param, paramId),
-      this.renderInput(param, paramId, value, isEditable),
+      this.renderInput(param, paramId, this.value, isEditable),
       this.renderInheritanceIndicator(inheritanceType, hasChanged),
       this.renderResetButton(hasChanged, isEditable),
-      this.renderTooltip(param, showTooltip),
-      this.renderValidationMessage(validation)
+      this.renderTooltip(param, this.showTooltip),
+      this.renderValidationMessage(this.validation)
     );
   }
 
   getContainerClass(inheritanceType, validation, focused, hasChanged) {
-    const classes = [];
+    const classes = ["parameter-input"];
 
     // Inheritance visualization
     if (inheritanceType === "model") {
@@ -172,6 +268,10 @@ class ParameterInput extends Component {
       classes.push("focused");
     }
 
+    if (this.showTooltip) {
+      classes.push("tooltip-visible");
+    }
+
     return classes.join(" ");
   }
 
@@ -184,15 +284,15 @@ class ParameterInput extends Component {
 
     const infoButton = param.description
       ? Component.h(
-        "button",
-        {
-          type: "button",
-          className: "param-info-btn",
-          "data-action": "toggle-tooltip",
-          title: "Show description",
-        },
-        "?"
-      )
+          "button",
+          {
+            type: "button",
+            className: "param-info-btn",
+            "data-action": "toggle-tooltip",
+            title: "Show description",
+          },
+          "?"
+        )
       : null;
 
     return Component.h(
@@ -234,16 +334,16 @@ class ParameterInput extends Component {
     }
 
     switch (param.type) {
-    case "select":
-      return this.renderSelect(param, paramId, value, isEditable);
-    case "multiselect":
-      return this.renderMultiSelect(param, paramId, value, isEditable);
-    case "boolean":
-      return this.renderBoolean(param, paramId, value, isEditable);
-    case "number":
-    case "text":
-    default:
-      return Component.h("input", inputProps);
+      case "select":
+        return this.renderSelect(param, paramId, value, isEditable);
+      case "multiselect":
+        return this.renderMultiSelect(param, paramId, value, isEditable);
+      case "boolean":
+        return this.renderBoolean(param, paramId, value, isEditable);
+      case "number":
+      case "text":
+      default:
+        return Component.h("input", inputProps);
     }
   }
 
@@ -378,16 +478,9 @@ class ParameterInput extends Component {
     );
   }
 
-  // Lifecycle methods
-  willReceiveProps(newProps) {
-    if (newProps.value !== this.state.value) {
-      this.setState({ value: newProps.value });
-      this.validateValue(newProps.value);
-    }
-  }
-
-  didDestroy() {
+  destroy() {
     clearTimeout(this._debounceTimer);
+    super.destroy();
   }
 }
 

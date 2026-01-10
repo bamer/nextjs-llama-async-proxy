@@ -27,10 +27,10 @@ describe("Component - Event delegation with real DOM", function () {
       handleAction(e, target) {
         actionCalled = true;
       }
-      getEventMap() {
-        return {
-          "click [data-action]": "handleAction",
-        };
+      bindEvents() {
+        this.on("click", "[data-action]", (e, target) => {
+          this.handleAction(e, target);
+        });
       }
       render() {
         return Component.h(
@@ -66,10 +66,10 @@ describe("Component - Event delegation with real DOM", function () {
       handleFieldChange(e, target) {
         changeCalled = true;
       }
-      getEventMap() {
-        return {
-          "change [data-field]": "handleFieldChange",
-        };
+      bindEvents() {
+        this.on("change", "[data-field]", (e, target) => {
+          this.handleFieldChange(e, target);
+        });
       }
       render() {
         return Component.h("input", { type: "text", "data-field": "name" });
@@ -103,10 +103,10 @@ describe("Component - Event delegation with real DOM", function () {
         preventDefaultCalled = true;
         submitCalled = true;
       }
-      getEventMap() {
-        return {
-          "submit form": "handleSubmit",
-        };
+      bindEvents() {
+        this.on("submit", "form", (e) => {
+          this.handleSubmit(e);
+        });
       }
       render() {
         return Component.h(
@@ -143,10 +143,10 @@ describe("Component - Event delegation with real DOM", function () {
       handleClick(e, target) {
         handlerCalled = true;
       }
-      getEventMap() {
-        return {
-          "click [data-action]": "handleClick",
-        };
+      bindEvents() {
+        this.on("click", "[data-action]", (e, target) => {
+          this.handleClick(e, target);
+        });
       }
       render() {
         return Component.h("div", { className: "inner", "data-test-component": "true" }, "Test");

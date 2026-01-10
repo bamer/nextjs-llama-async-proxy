@@ -3,6 +3,8 @@
  * Socket.IO handlers for log operations
  */
 
+import fs from "fs";
+import path from "path";
 import { ok, err } from "./response.js";
 import { fileLogger } from "./file-logger.js";
 
@@ -82,6 +84,65 @@ export function registerLogsHandlers(socket, db) {
       ok(socket, "logs:clear-files:result", { cleared }, id);
     } catch (e) {
       err(socket, "logs:clear-files:result", e.message, id);
+    }
+  });
+
+  /**
+   * Read llama-server log file
+   */
+  socket.on("logs:read-llama-server", (req) => {
+    const id = req?.requestId || Date.now();
+    try {
+      const llamaLogPath = path.join(process.cwd(), "logs", "llama-server.log");
+
+      if (!fs.existsSync(llamaLogPath)) {
+        ok(
+          socket,
+          "logs:read-llama-server:result",
+          {
+            logs: [],
+            fileName: "llama-server.log",
+            message: "Log file not found",
+          },
+          id
+        );
+        return;
+      }
+
+      const content = fs.readFileSync(llamaLogPath, { encoding: "utf8" });
+      const lines = content.trim().split("\n");
+
+      const logs = lines
+        .filter((line) => line.trim() && !line.startsWith("#"))
+        .map((line) => {
+          // Parse: [timestamp] [LEVEL] message
+          const match = line.match(/\[([^\]]+)\]\s\[([^\]]+)\]\s(.+)/);
+          if (match) {
+            return {
+              timestamp: new Date(match[1]).getTime(),
+              level: match[2].toLowerCase(),
+              message: match[3],
+            };
+          }
+          return {
+            timestamp: Date.now(),
+            level: "info",
+            message: line,
+          };
+        })
+        .reverse();
+
+      ok(
+        socket,
+        "logs:read-llama-server:result",
+        {
+          logs,
+          fileName: "llama-server.log",
+        },
+        id
+      );
+    } catch (e) {
+      err(socket, "logs:read-llama-server:result", e.message, id);
     }
   });
 }

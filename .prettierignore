@@ -1,14 +1,44 @@
+# Ignore everything
+*
+
+# But format these specific file types
+!*.js
+!*.jsx
+!*.ts
+!*.tsx
+
+# Exclude test files that have complex mocking
+**/__tests__/**
+**/*.test.js
+**/*.spec.js
+
+# Node modules and builds
 node_modules
 dist
 build
 coverage
+
+# Logs and binaries
 *.log
+*.sqlite
+*.db
+
+# Images and fonts
 *.png
 *.jpg
 *.jpeg
 *.gif
 *.svg
 *.ico
-*.pdf
-*.db
-*.sqlite
+*.woff
+*.woff2
+*.ttf
+
+# Config files that don't need formatting
+*.json
+*.yaml
+*.yml
+*.ini
+*.css
+*.html
+*.md

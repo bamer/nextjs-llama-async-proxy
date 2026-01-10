@@ -1,5 +1,5 @@
 /**
- * Models Page Controller - Handles models CRUD operations
+ * Models Page Controller - Event-Driven DOM Updates
  */
 
 class ModelsController {
@@ -46,8 +46,8 @@ class ModelsController {
 
     stateManager.set("models", updatedModels);
 
-    if (this.comp && this.comp.setState) {
-      this.comp.setState({ models: updatedModels, port: routerStatus?.port || 8080 });
+    if (this.comp && this.comp.updateModelList) {
+      this.comp.updateModelList(updatedModels);
     }
 
     console.log("[DEBUG] Updated models for router status:", {
@@ -63,8 +63,8 @@ class ModelsController {
     const updatedModels = models.map((m) => ({ ...m, status: "unloaded" }));
     stateManager.set("models", updatedModels);
 
-    if (this.comp && this.comp.setState) {
-      this.comp.setState({ models: updatedModels, port: 8080 });
+    if (this.comp && this.comp.updateModelList) {
+      this.comp.updateModelList(updatedModels);
     }
 
     console.log("[DEBUG] Marked all models as unloaded:", updatedModels.length);
@@ -92,12 +92,17 @@ class ModelsController {
     this.comp = new ModelsPage({ models: models, controller: this });
 
     console.log("[MODELS] Calling component.render()");
-    const el = this.comp.render();
+    const html = this.comp.render();
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = html;
+    const el = wrapper.firstElementChild;
+
     this.comp._el = el;
     el._component = this.comp;
 
     console.log("[MODELS] Binding events");
     this.comp.bindEvents();
+    this.comp.onMount?.();
 
     console.log("[MODELS] ModelsController.render() - END");
     return el;
@@ -156,10 +161,7 @@ class ModelsController {
         return rm ? { ...m, status: rm.state } : { ...m, status: "unloaded" };
       });
       stateManager.set("models", updated);
-      this.comp.setState({
-        models: updated,
-        port: rs.routerStatus?.port || config.port || 8080,
-      });
+      this.comp?.updateModelList(updated);
       console.log("[MODELS] Refreshed", updated.length, "models");
     } catch (e) {
       console.log("[MODELS] Router not running during refresh");
@@ -168,17 +170,14 @@ class ModelsController {
       stateManager.set("models", updated);
       const config = stateManager.get("config") || {};
       stateManager.set("routerStatus", null);
-      this.comp.setState({
-        models: updated,
-        port: config.port || 8080,
-      });
+      this.comp?.updateModelList(updated);
     }
   }
 
-  async handleLoadModel(modelName) {
-    console.log("[MODELS] handleLoadModel() called for:", modelName);
+  async handleLoad(name) {
+    console.log("[MODELS] handleLoad() called for:", name);
     try {
-      await stateManager.loadModel(modelName);
+      await stateManager.loadModel(name);
       console.log("[MODELS] Model loaded successfully");
       showNotification("Model loaded", "success");
       await this._refresh();
@@ -188,51 +187,16 @@ class ModelsController {
     }
   }
 
-  async handleUnloadModel(modelName) {
-    console.log("[MODELS] handleUnloadModel() called for:", modelName);
+  async handleUnload(name) {
+    console.log("[MODELS] handleUnload() called for:", name);
     try {
-      await stateManager.unloadModel(modelName);
+      await stateManager.unloadModel(name);
       console.log("[MODELS] Model unloaded successfully");
       showNotification("Model unloaded", "success");
       await this._refresh();
     } catch (e) {
       console.log("[MODELS] Unload model error:", e.message);
       showNotification(e.message, "error");
-    }
-  }
-
-  async handleToggleFavorite(modelName, isFavorite) {
-    console.log("[MODELS] handleToggleFavorite() called for:", modelName, isFavorite);
-    try {
-      await stateManager.toggleFavorite(modelName, isFavorite);
-      const models = stateManager.get("models") || [];
-      const updatedModels = models.map((m) =>
-        m.name === modelName ? { ...m, favorite: isFavorite ? 1 : 0 } : m
-      );
-      stateManager.set("models", updatedModels);
-      console.log("[MODELS] Favorite toggled successfully");
-      showNotification(isFavorite ? "Added to favorites" : "Removed from favorites", "success");
-    } catch (e) {
-      console.log("[MODELS] Toggle favorite error:", e.message);
-      showNotification(e.message, "error");
-    }
-  }
-
-  async handleTestModel(modelName) {
-    console.log("[MODELS] handleTestModel() called for:", modelName);
-    showNotification("Testing model...", "info");
-    try {
-      const result = await stateManager.testModel(modelName);
-      if (result.success) {
-        console.log("[MODELS] Model test successful:", result.output);
-        showNotification(`Test successful: ${result.output}`, "success");
-      } else {
-        console.log("[MODELS] Model test failed:", result.error);
-        showNotification(`Test failed: ${result.error}`, "error");
-      }
-    } catch (e) {
-      console.log("[MODELS] Test model error:", e.message);
-      showNotification(`Test failed: ${e.message}`, "error");
     }
   }
 
@@ -244,7 +208,7 @@ class ModelsController {
       console.log("[MODELS] Scan result:", d);
       showNotification(`Scanned: ${d.scanned || 0} new, ${d.updated || 0} updated`, "success");
       const d2 = await stateManager.getModels();
-      this.comp.setState({ models: d2.models || [] });
+      this.comp?.updateModelList(d2.models || []);
       console.log("[MODELS] Reloaded", d2.models?.length, "models");
     } catch (e) {
       console.log("[MODELS] Scan error:", e.message);

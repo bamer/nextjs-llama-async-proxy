@@ -1,17 +1,35 @@
 /**
- * Charts Section Component
+ * ChartsSection Component - Event-Driven DOM Updates
  * Displays performance history charts with CPU/GPU tabs and stats
- * Fully controlled component - chartType comes from parent DashboardPage
  */
 
 class ChartsSection extends Component {
   constructor(props) {
     super(props);
 
-    this.state = {
-      history: props.history || [],
-      chartStats: props.chartStats || { current: 0, avg: 0, max: 0 },
-    };
+    // Direct properties instead of state
+    this.history = props.history || [];
+    this.chartStats = props.chartStats || { current: 0, avg: 0, max: 0 };
+    this.chartManager = props.chartManager || null;
+  }
+
+  onMount() {
+    console.log("[CHARTS-SECTION] onMount called");
+    // Initialize charts after DOM is ready
+    requestAnimationFrame(() => {
+      console.log("[CHARTS-SECTION] requestAnimationFrame callback");
+      setTimeout(() => {
+        console.log("[CHARTS-SECTION] Calling _initCharts");
+        this._initCharts();
+      }, 100);
+    });
+  }
+
+  bindEvents() {
+    // Chart tab clicks
+    this.on("click", "[data-chart]", (e) => {
+      this.handleChartTab(e);
+    });
   }
 
   /**
@@ -19,21 +37,21 @@ class ChartsSection extends Component {
    */
   getChartType() {
     const dashboardPage = this._el?.closest(".dashboard-page");
-    return dashboardPage?._component?.state?.chartType || "usage";
+    return dashboardPage?._component?.chartType || "usage";
   }
 
   /**
-   * Called when parent updates props
+   * Update component with new props
    */
-  willReceiveProps(newProps) {
+  updateData(history, chartStats) {
     let needsUpdate = false;
 
-    if (newProps.history !== this.state.history) {
-      this.state.history = newProps.history;
+    if (history !== this.history) {
+      this.history = history;
       needsUpdate = true;
     }
-    if (newProps.chartStats !== this.state.chartStats) {
-      this.state.chartStats = newProps.chartStats;
+    if (chartStats !== this.chartStats) {
+      this.chartStats = chartStats;
       needsUpdate = true;
     }
 
@@ -49,7 +67,7 @@ class ChartsSection extends Component {
     // Update chart stats
     const statsEl = this._el?.querySelector(".chart-stats");
     if (statsEl) {
-      const stats = this.state.chartStats;
+      const stats = this.chartStats;
       const statValues = statsEl.querySelectorAll(".chart-stat-value");
       if (statValues.length >= 3) {
         statValues[0].textContent = `${stats.current.toFixed(1)}%`;
@@ -71,30 +89,13 @@ class ChartsSection extends Component {
     this._updateVisibility();
   }
 
-  didMount() {
-    console.log("[CHARTS-SECTION] didMount called");
-    // Initialize charts after DOM is ready
-    requestAnimationFrame(() => {
-      console.log("[CHARTS-SECTION] requestAnimationFrame callback");
-      setTimeout(() => {
-        console.log("[CHARTS-SECTION] Calling _initCharts");
-        this._initCharts();
-      }, 100);
-    });
-  }
-
   _initCharts() {
     console.log("[CHARTS-SECTION] _initCharts called");
-    // Use chartManager from props (passed by DashboardPage)
-    const chartManager = this.props.chartManager;
 
-    if (!chartManager) {
-      console.log("[CHARTS-SECTION] No chartManager in props");
+    if (!this.chartManager) {
+      console.log("[CHARTS-SECTION] No chartManager available");
       return;
     }
-
-    // Store for later use
-    this.state.chartManager = chartManager;
 
     // Get canvases
     const usageCanvas = this._el?.querySelector("#usageChart");
@@ -108,8 +109,8 @@ class ChartsSection extends Component {
     );
 
     // Wait for canvases to have actual dimensions before creating charts
-    this._ensureChartDimensions(usageCanvas, "usage", chartManager);
-    this._ensureChartDimensions(memoryCanvas, "memory", chartManager);
+    this._ensureChartDimensions(usageCanvas, "usage", this.chartManager);
+    this._ensureChartDimensions(memoryCanvas, "memory", this.chartManager);
   }
 
   /**
@@ -142,9 +143,9 @@ class ChartsSection extends Component {
 
         // Create the chart
         if (type === "usage") {
-          chartManager.createUsageChart(canvas, this.state.history);
+          chartManager.createUsageChart(canvas, this.history);
         } else {
-          chartManager.createMemoryChart(canvas, this.state.history);
+          chartManager.createMemoryChart(canvas, this.history);
         }
 
         // Update visibility
@@ -170,7 +171,6 @@ class ChartsSection extends Component {
    */
   _updateVisibility() {
     const chartType = this.getChartType();
-    const chartManager = this.props.chartManager || this.state.chartManager;
     const usageCanvas = this._el?.querySelector("#usageChart");
     const memoryCanvas = this._el?.querySelector("#memoryChart");
 
@@ -180,12 +180,6 @@ class ChartsSection extends Component {
     if (memoryCanvas) {
       memoryCanvas.style.display = chartType === "memory" ? "block" : "none";
     }
-  }
-
-  getEventMap() {
-    return {
-      "click [data-chart]": "handleChartTab",
-    };
   }
 
   handleChartTab(event) {
@@ -199,19 +193,16 @@ class ChartsSection extends Component {
       this.props.onChartTypeChange(newType);
     }
 
-    // Use chartManager from props
-    const chartManager = this.props.chartManager || this.state.chartManager;
-
-    if (chartManager) {
+    if (this.chartManager) {
       const canvas = this._el?.querySelector(newType === "usage" ? "#usageChart" : "#memoryChart");
 
       if (canvas) {
         // Use requestAnimationFrame to wait for visibility change to take effect
         requestAnimationFrame(() => {
           setTimeout(() => {
-            // Use _ensureChartDimensions for consistency with didMount
+            // Use _ensureChartDimensions for consistency with onMount
             // This handles the case where canvas isn't visible yet and needs to wait for dimensions
-            this._ensureChartDimensions(canvas, newType, chartManager);
+            this._ensureChartDimensions(canvas, newType, this.chartManager);
           }, 10);
         });
       }
@@ -219,10 +210,9 @@ class ChartsSection extends Component {
   }
 
   render() {
-    const history = this.state.history;
     const chartType = this.getChartType();
-    const hasData = history.length > 0;
-    const stats = this.state.chartStats;
+    const hasData = this.history.length > 0;
+    const stats = this.chartStats;
 
     return Component.h(
       "div",
@@ -257,30 +247,30 @@ class ChartsSection extends Component {
         { className: "chart-container" },
         hasData
           ? Component.h(
-            "div",
-            { className: "chart-wrapper" },
-            Component.h("canvas", {
-              id: "usageChart",
-              className: "chart-canvas",
-              style: `display: ${chartType === "usage" ? "block" : "none"}`,
-            }),
-            Component.h("canvas", {
-              id: "memoryChart",
-              className: "chart-canvas",
-              style: `display: ${chartType === "memory" ? "block" : "none"}`,
-            })
-          )
-          : Component.h(
-            "div",
-            { className: "chart-empty" },
-            Component.h("div", { className: "empty-icon" }, "📈"),
-            Component.h("p", {}, "Collecting performance data..."),
-            Component.h(
-              "p",
-              { className: "empty-hint" },
-              "Data will appear once metrics are collected"
+              "div",
+              { className: "chart-wrapper" },
+              Component.h("canvas", {
+                id: "usageChart",
+                className: "chart-canvas",
+                style: `display: ${chartType === "usage" ? "block" : "none"}`,
+              }),
+              Component.h("canvas", {
+                id: "memoryChart",
+                className: "chart-canvas",
+                style: `display: ${chartType === "memory" ? "block" : "none"}`,
+              })
             )
-          )
+          : Component.h(
+              "div",
+              { className: "chart-empty" },
+              Component.h("div", { className: "empty-icon" }, "📈"),
+              Component.h("p", {}, "Collecting performance data..."),
+              Component.h(
+                "p",
+                { className: "empty-hint" },
+                "Data will appear once metrics are collected"
+              )
+            )
       ),
       hasData &&
         Component.h(

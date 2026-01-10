@@ -1,6 +1,5 @@
 /**
  * Models Page - Event-Driven DOM Updates
- * No setState, no virtual DOM - just direct updates
  */
 
 class ModelsController {
@@ -25,9 +24,12 @@ class ModelsController {
 
     const models = stateManager.get("models") || [];
     this.comp = new ModelsPage({ models });
-    const el = this.comp.render();
 
-    // Bind events after render
+    const html = this.comp.render();
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = html;
+    const el = wrapper.firstElementChild;
+
     this.comp._el = el;
     el._component = this.comp;
     this.comp.bindEvents();
@@ -40,7 +42,6 @@ class ModelsController {
       const d = await stateManager.getModels();
       const models = d.models || [];
 
-      // Check router status
       let routerStatus = null;
       try {
         const rs = await stateManager.getRouterStatus();
@@ -77,90 +78,73 @@ class ModelsPage extends Component {
 
     const filtered = this._getFiltered();
 
-    return Component.h("div", { className: "models-page" }, [
-      Component.h("div", { className: "toolbar" }, [
-        Component.h(
-          "button",
-          { className: "btn btn-primary", "data-action": "scan" },
-          "Scan Filesystem"
-        ),
-        Component.h("button", { className: "btn", "data-action": "cleanup" }, "Cleanup"),
-        routerRunning
-          ? Component.h(
-            "span",
-            { className: "router-indicator success" },
-            `Router Active (${port})`
-          )
-          : Component.h(
-            "span",
-            { className: "router-indicator default" },
-            `Router Not Running (Port: ${port})`
-          ),
-      ]),
-      Component.h("div", { className: "filters" }, [
-        Component.h("input", {
-          type: "text",
-          placeholder: "Search models...",
-          "data-field": "search",
-          value: this.filters.search,
-          autoComplete: "off",
-        }),
-        Component.h("select", { "data-field": "status" }, [
-          Component.h("option", { value: "all" }, "All"),
-          Component.h("option", { value: "loaded" }, "Loaded"),
-          Component.h("option", { value: "unloaded" }, "Unloaded"),
-        ]),
-      ]),
-      Component.h("div", { className: "models-table-container" }, [this._renderTable(filtered)]),
-    ]);
+    return `
+      <div class="models-page">
+        <div class="toolbar">
+          <button class="btn btn-primary" data-action="scan">Scan Filesystem</button>
+          <button class="btn" data-action="cleanup">Cleanup</button>
+          <span class="router-indicator ${routerRunning ? "success" : "default"}">
+            Router ${routerRunning ? "Active" : "Not Running"} (${port})
+          </span>
+        </div>
+        <div class="filters">
+          <input type="text" placeholder="Search models..." data-field="search" value="${this.filters.search}" autocomplete="off">
+          <select data-field="status">
+            <option value="all" ${this.filters.status === "all" ? "selected" : ""}>All</option>
+            <option value="loaded" ${this.filters.status === "loaded" ? "selected" : ""}>Loaded</option>
+            <option value="unloaded" ${this.filters.status === "unloaded" ? "selected" : ""}>Unloaded</option>
+          </select>
+        </div>
+        <div class="models-table-container">${this._renderTable(filtered)}</div>
+      </div>
+    `;
   }
 
   _renderTable(models) {
     if (models.length === 0) {
-      return Component.h("div", { className: "empty-state" }, "No models found");
+      return '<div class="empty-state">No models found</div>';
     }
 
-    const rows = models.map((m) =>
-      Component.h("tr", { "data-name": m.name, className: `status-${m.status || "unknown"}` }, [
-        Component.h("td", { className: "name-cell" }, m.name),
-        Component.h("td", { className: "status-cell" }, this._statusBadge(m.status)),
-        Component.h("td", {}, m.type || "-"),
-        Component.h("td", {}, m.params || "-"),
-        Component.h("td", {}, m.quantization || "-"),
-        Component.h("td", {}, this._fmtCtx(m.ctx_size)),
-        Component.h("td", {}, m.embedding_size || "-"),
-        Component.h("td", {}, m.block_count || "-"),
-        Component.h("td", {}, m.head_count || "-"),
-        Component.h("td", { className: "size-cell" }, this._fileSize(m.file_size)),
-        Component.h("td", { className: "action-cell" }, this._actionButtons(m)),
-      ])
-    );
+    const rows = models
+      .map(
+        (m) => `
+        <tr data-name="${m.name}" class="status-${m.status || "unknown"}">
+          <td class="name-cell">${m.name}</td>
+          <td class="status-cell"><span class="badge badge-${m.status || "unknown"}">${m.status || "unknown"}</span></td>
+          <td>${m.type || "-"}</td>
+          <td>${m.params || "-"}</td>
+          <td>${m.quantization || "-"}</td>
+          <td>${this._fmtCtx(m.ctx_size)}</td>
+          <td>${m.embedding_size || "-"}</td>
+          <td>${m.block_count || "-"}</td>
+          <td>${m.head_count || "-"}</td>
+          <td class="size-cell">${this._fileSize(m.file_size)}</td>
+          <td class="action-cell">${this._actionButtons(m).join("")}</td>
+        </tr>
+      `
+      )
+      .join("");
 
-    return Component.h("table", { className: "models-table" }, [
-      Component.h(
-        "thead",
-        {},
-        Component.h("tr", {}, [
-          Component.h("th", {}, "Name"),
-          Component.h("th", {}, "Status"),
-          Component.h("th", {}, "Arch"),
-          Component.h("th", {}, "Params"),
-          Component.h("th", {}, "Quant"),
-          Component.h("th", {}, "Ctx"),
-          Component.h("th", {}, "Embed"),
-          Component.h("th", {}, "Blocks"),
-          Component.h("th", {}, "Heads"),
-          Component.h("th", {}, "Size"),
-          Component.h("th", {}, "Actions"),
-        ])
-      ),
-      Component.h("tbody", {}, rows),
-    ]);
-  }
-
-  _statusBadge(status) {
-    const className = `badge badge-${status || "unknown"}`;
-    return Component.h("span", { className }, status || "unknown");
+    return `
+      <table class="models-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Arch</th>
+            <th>Params</th>
+            <th>Quant</th>
+            <th>Ctx</th>
+            <th>Embed</th>
+            <th>Blocks</th>
+            <th>Heads</th>
+            <th>Size</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
   }
 
   _actionButtons(model) {
@@ -168,24 +152,18 @@ class ModelsPage extends Component {
       model.status !== "loaded" && model.status !== "loading" && model.status !== "running";
     const canUnload = model.status === "loaded" || model.status === "running";
 
-    return [
-      canLoad &&
-        Component.h(
-          "button",
-          { className: "btn btn-primary btn-sm", "data-action": "load", "data-name": model.name },
-          "Load"
-        ),
-      canUnload &&
-        Component.h(
-          "button",
-          {
-            className: "btn btn-secondary btn-sm",
-            "data-action": "unload",
-            "data-name": model.name,
-          },
-          "Unload"
-        ),
-    ].filter(Boolean);
+    const buttons = [];
+    if (canLoad) {
+      buttons.push(
+        `<button class="btn btn-primary btn-sm" data-action="load" data-name="${model.name}">Load</button>`
+      );
+    }
+    if (canUnload) {
+      buttons.push(
+        `<button class="btn btn-secondary btn-sm" data-action="unload" data-name="${model.name}">Unload</button>`
+      );
+    }
+    return buttons;
   }
 
   _fmtCtx(v) {
@@ -221,42 +199,27 @@ class ModelsPage extends Component {
   }
 
   bindEvents() {
-    // Search input
     this.on("input", "[data-field=search]", (e) => {
       this.filters.search = e.target.value;
       this._updateTable();
     });
 
-    // Status filter
     this.on("change", "[data-field=status]", (e) => {
       this.filters.status = e.target.value;
       this._updateTable();
     });
 
-    // Scan button
     this.on("click", "[data-action=scan]", () => this._scan());
-
-    // Cleanup button
     this.on("click", "[data-action=cleanup]", () => this._cleanup());
-
-    // Load/Unload buttons
-    this.on("click", "[data-action=load]", (e) => {
-      const name = e.target.dataset.name;
-      this._loadModel(name);
-    });
-
-    this.on("click", "[data-action=unload]", (e) => {
-      const name = e.target.dataset.name;
-      this._unloadModel(name);
-    });
+    this.on("click", "[data-action=load]", (e) => this._loadModel(e.target.dataset.name));
+    this.on("click", "[data-action=unload]", (e) => this._unloadModel(e.target.dataset.name));
   }
 
   _updateTable() {
     const filtered = this._getFiltered();
-    const tableContainer = this.$(".models-table-container");
-    if (tableContainer) {
-      tableContainer.innerHTML = "";
-      tableContainer.appendChild(this._renderTable(filtered));
+    const container = this.$(".models-table-container");
+    if (container) {
+      container.innerHTML = this._renderTable(filtered);
     }
   }
 

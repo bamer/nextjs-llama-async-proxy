@@ -40,7 +40,7 @@ class SettingsPage extends Component {
   }
 
   async _save() {
-    const btn = this.$("[data-action=\"save\"]");
+    const btn = this.$('[data-action="save"]');
     if (btn) {
       btn.textContent = "Saving...";
       btn.disabled = true;
@@ -101,6 +101,30 @@ class SettingsPage extends Component {
         btn.textContent = "Save All Settings";
         btn.disabled = false;
       }
+    }
+  }
+
+  async _updateStatusUI() {
+    // Update the RouterCard component's status display
+    const routerCard = this._el?.querySelector(".router-card");
+    if (!routerCard) return;
+
+    const rs = this.routerStatus || {};
+    const ls = this.llamaStatus || {};
+    const isRunning = rs.port || ls.port;
+    const displayPort = rs.port || ls.port || this.port;
+
+    // Update status badge
+    const statusBadge = routerCard.querySelector(".status-badge");
+    if (statusBadge) {
+      statusBadge.textContent = isRunning ? "RUNNING" : "STOPPED";
+      statusBadge.className = `status-badge ${isRunning ? "running" : "idle"}`;
+    }
+
+    // Update port display
+    const portDisplay = routerCard.querySelector(".router-port-display");
+    if (portDisplay) {
+      portDisplay.textContent = displayPort || "?";
     }
   }
 
@@ -166,10 +190,12 @@ class SettingsPage extends Component {
       if (config.batch_size !== undefined) this.batch_size = config.batch_size;
       if (config.temperature !== undefined) this.temperature = config.temperature;
       if (config.repeatPenalty !== undefined) this.repeatPenalty = config.repeatPenalty;
-      if (config.llama_server_enabled !== undefined) this.llama_server_enabled = config.llama_server_enabled;
+      if (config.llama_server_enabled !== undefined)
+        this.llama_server_enabled = config.llama_server_enabled;
       if (config.llama_server_port !== undefined) this.llama_server_port = config.llama_server_port;
       if (config.llama_server_host !== undefined) this.llama_server_host = config.llama_server_host;
-      if (config.llama_server_metrics !== undefined) this.llama_server_metrics = config.llama_server_metrics;
+      if (config.llama_server_metrics !== undefined)
+        this.llama_server_metrics = config.llama_server_metrics;
 
       // Apply imported settings
       if (settings.maxModelsLoaded !== undefined) this.maxModelsLoaded = settings.maxModelsLoaded;
@@ -178,9 +204,12 @@ class SettingsPage extends Component {
       if (settings.logLevel !== undefined) this.logLevel = settings.logLevel;
       if (settings.maxFileSize !== undefined) this.maxFileSize = settings.maxFileSize;
       if (settings.maxFiles !== undefined) this.maxFiles = settings.maxFiles;
-      if (settings.enableFileLogging !== undefined) this.enableFileLogging = settings.enableFileLogging;
-      if (settings.enableDatabaseLogging !== undefined) this.enableDatabaseLogging = settings.enableDatabaseLogging;
-      if (settings.enableConsoleLogging !== undefined) this.enableConsoleLogging = settings.enableConsoleLogging;
+      if (settings.enableFileLogging !== undefined)
+        this.enableFileLogging = settings.enableFileLogging;
+      if (settings.enableDatabaseLogging !== undefined)
+        this.enableDatabaseLogging = settings.enableDatabaseLogging;
+      if (settings.enableConsoleLogging !== undefined)
+        this.enableConsoleLogging = settings.enableConsoleLogging;
 
       // Save to server
       await this._save();
@@ -216,40 +245,72 @@ class SettingsPage extends Component {
         parallelSlots: this.parallelSlots,
         ctx_size: this.ctx_size,
         gpuLayers: this.gpuLayers,
-        onMaxModelsLoadedChange: (val) => { this.maxModelsLoaded = val; },
-        onParallelSlotsChange: (val) => { this.parallelSlots = val; },
-        onCtxSizeChange: (val) => { this.ctx_size = val; },
-        onGpuLayersChange: (val) => { this.gpuLayers = val; },
+        onMaxModelsLoadedChange: (val) => {
+          this.maxModelsLoaded = val;
+        },
+        onParallelSlotsChange: (val) => {
+          this.parallelSlots = val;
+        },
+        onCtxSizeChange: (val) => {
+          this.ctx_size = val;
+        },
+        onGpuLayersChange: (val) => {
+          this.gpuLayers = val;
+        },
       }),
       Component.h(window.ServerPathsForm, {
         baseModelsPath: this.baseModelsPath,
         serverPath: this.serverPath,
         host: this.host,
         port: this.port,
-        onBaseModelsPathChange: (val) => { this.baseModelsPath = val; },
-        onServerPathChange: (val) => { this.serverPath = val; },
-        onHostChange: (val) => { this.host = val; },
-        onPortChange: (val) => { this.port = val; },
+        onBaseModelsPathChange: (val) => {
+          this.baseModelsPath = val;
+        },
+        onServerPathChange: (val) => {
+          this.serverPath = val;
+        },
+        onHostChange: (val) => {
+          this.host = val;
+        },
+        onPortChange: (val) => {
+          this.port = val;
+        },
       }),
       Component.h(window.ModelDefaultsForm, {
         threads: this.threads,
         batch_size: this.batch_size,
         temperature: this.temperature,
         repeatPenalty: this.repeatPenalty,
-        onThreadsChange: (val) => { this.threads = val; },
-        onBatchSizeChange: (val) => { this.batch_size = val; },
-        onTemperatureChange: (val) => { this.temperature = val; },
-        onRepeatPenaltyChange: (val) => { this.repeatPenalty = val; },
+        onThreadsChange: (val) => {
+          this.threads = val;
+        },
+        onBatchSizeChange: (val) => {
+          this.batch_size = val;
+        },
+        onTemperatureChange: (val) => {
+          this.temperature = val;
+        },
+        onRepeatPenaltyChange: (val) => {
+          this.repeatPenalty = val;
+        },
       }),
       Component.h(window.LlamaServerConfig, {
         enabled: this.llama_server_enabled,
         port: this.llama_server_port,
         host: this.llama_server_host,
         metricsEnabled: this.llama_server_metrics,
-        onEnabledChange: (val) => { this.llama_server_enabled = val; },
-        onPortChange: (val) => { this.llama_server_port = val; },
-        onHostChange: (val) => { this.llama_server_host = val; },
-        onMetricsEnabledChange: (val) => { this.llama_server_metrics = val; },
+        onEnabledChange: (val) => {
+          this.llama_server_enabled = val;
+        },
+        onPortChange: (val) => {
+          this.llama_server_port = val;
+        },
+        onHostChange: (val) => {
+          this.llama_server_host = val;
+        },
+        onMetricsEnabledChange: (val) => {
+          this.llama_server_metrics = val;
+        },
       }),
       Component.h(window.LoggingConfig, {
         logLevel: this.logLevel,
@@ -262,11 +323,21 @@ class SettingsPage extends Component {
           console.log("[DEBUG] SettingsPage.onLogLevelChange:", { val, oldValue: this.logLevel });
           this.logLevel = val;
         },
-        onMaxFileSizeChange: (val) => { this.maxFileSize = val; },
-        onMaxFilesChange: (val) => { this.maxFiles = val; },
-        onEnableFileLoggingChange: (val) => { this.enableFileLogging = val; },
-        onEnableDatabaseLoggingChange: (val) => { this.enableDatabaseLogging = val; },
-        onEnableConsoleLoggingChange: (val) => { this.enableConsoleLogging = val; },
+        onMaxFileSizeChange: (val) => {
+          this.maxFileSize = val;
+        },
+        onMaxFilesChange: (val) => {
+          this.maxFiles = val;
+        },
+        onEnableFileLoggingChange: (val) => {
+          this.enableFileLogging = val;
+        },
+        onEnableDatabaseLoggingChange: (val) => {
+          this.enableDatabaseLogging = val;
+        },
+        onEnableConsoleLoggingChange: (val) => {
+          this.enableConsoleLogging = val;
+        },
       }),
       Component.h(window.ConfigExportImport, {
         onExport: this._exportConfig.bind(this),

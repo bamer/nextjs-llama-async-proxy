@@ -1,6 +1,6 @@
 /**
- * Reusable Table Component
- * Eliminates duplicate table rendering code
+ * Table Component - Event-Driven DOM Updates
+ * Reusable Table Component with sortable columns and action buttons
  */
 
 class Table extends Component {
@@ -8,10 +8,25 @@ class Table extends Component {
     super(props);
     console.log("[DEBUG] Table constructor:", props);
 
-    this.state = {
-      sortBy: props.sortBy || null,
-      sortOrder: props.sortOrder || "asc",
-    };
+    // Direct properties instead of state
+    this.sortBy = props.sortBy || null;
+    this.sortOrder = props.sortOrder || "asc";
+  }
+
+  bindEvents() {
+    // Sort column clicks
+    this.on("click", "[data-sort]", (e, target) => {
+      const th = target.closest("[data-sort]");
+      if (th) {
+        const field = th.dataset.sort;
+        this.handleSort(field);
+      }
+    });
+
+    // Action button clicks
+    this.on("click", "[data-action]", (e) => {
+      this.handleAction(e);
+    });
   }
 
   render() {
@@ -31,7 +46,7 @@ class Table extends Component {
     });
 
     // Sort data if sortBy is set
-    const sortedData = this.state.sortBy ? this._sortData(data) : data;
+    const sortedData = this.sortBy ? this._sortData(data) : data;
 
     // Render header
     const header = this._renderHeader(columns, sortable);
@@ -51,11 +66,9 @@ class Table extends Component {
    * Render table header with sortable columns
    */
   _renderHeader(columns, sortable) {
-    const { sortBy, sortOrder } = this.state;
-
     const cells = columns.map((col) => {
-      const isSorted = sortBy === col.key;
-      const sortIcon = isSorted ? (sortOrder === "asc" ? " ↑" : " ↓") : "";
+      const isSorted = this.sortBy === col.key;
+      const sortIcon = isSorted ? (this.sortOrder === "asc" ? " ↑" : " ↓") : "";
       const sortableClass = sortable && col.sortable !== false ? "sortable" : "";
       const icon = col.icon || "";
 
@@ -176,20 +189,18 @@ class Table extends Component {
    * Sort data based on current sort settings
    */
   _sortData(data) {
-    const { sortBy, sortOrder } = this.state;
-
-    if (!sortBy) {
+    if (!this.sortBy) {
       return data;
     }
 
     return [...data].sort((a, b) => {
-      let aVal = a[sortBy];
-      let bVal = b[sortBy];
+      let aVal = a[this.sortBy];
+      let bVal = b[this.sortBy];
 
       // Handle custom sort function
-      const column = this.props.columns.find((c) => c.key === sortBy);
+      const column = this.props.columns.find((c) => c.key === this.sortBy);
       if (column?.sortFn) {
-        return column.sortFn(a, b, sortOrder);
+        return column.sortFn(a, b, this.sortOrder);
       }
 
       // Handle different types
@@ -199,7 +210,7 @@ class Table extends Component {
       // String comparison
       if (typeof aVal === "string" && typeof bVal === "string") {
         const result = aVal.toLowerCase().localeCompare(bVal.toLowerCase());
-        return sortOrder === "asc" ? result : -result;
+        return this.sortOrder === "asc" ? result : -result;
       }
 
       // Number comparison
@@ -208,12 +219,12 @@ class Table extends Component {
 
       if (!isNaN(numA) && !isNaN(numB)) {
         const result = numA - numB;
-        return sortOrder === "asc" ? result : -result;
+        return this.sortOrder === "asc" ? result : -result;
       }
 
       // Default comparison
-      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+      if (aVal < bVal) return this.sortOrder === "asc" ? -1 : 1;
+      if (aVal > bVal) return this.sortOrder === "asc" ? 1 : -1;
       return 0;
     });
   }
@@ -222,23 +233,46 @@ class Table extends Component {
    * Handle sort header click
    */
   handleSort(field) {
-    let { sortOrder } = this.state;
-
-    if (this.state.sortBy === field) {
+    if (this.sortBy === field) {
       // Toggle sort order
-      sortOrder = sortOrder === "asc" ? "desc" : "asc";
+      this.sortOrder = this.sortOrder === "asc" ? "desc" : "asc";
     } else {
       // New field, default to asc
-      sortOrder = "asc";
+      this.sortBy = field;
+      this.sortOrder = "asc";
     }
 
-    this.setState({ sortBy: field, sortOrder });
-    console.log("[DEBUG] Table sort:", { field, sortOrder });
+    console.log("[DEBUG] Table sort:", { field, sortBy: this.sortBy, sortOrder: this.sortOrder });
+
+    // Update header UI
+    this._updateSortUI();
 
     // Notify parent if callback provided
     if (this.props.onSort) {
-      this.props.onSort(field, sortOrder);
+      this.props.onSort(this.sortBy, this.sortOrder);
     }
+  }
+
+  _updateSortUI() {
+    // Update all header cells
+    const headers = this.$$("thead th");
+    headers.forEach((th) => {
+      const sortField = th.dataset.sort;
+      if (sortField) {
+        const isSorted = this.sortBy === sortField;
+        const sortIcon = isSorted ? (this.sortOrder === "asc" ? " ↑" : " ↓") : "";
+
+        // Remove existing sort icons
+        let text = th.textContent.replace(/ ↑| ↓/g, "");
+
+        // Add icon if sorted
+        if (isSorted) {
+          text = text + sortIcon;
+        }
+
+        th.textContent = text;
+      }
+    });
   }
 
   /**
@@ -271,16 +305,13 @@ class Table extends Component {
     }
   }
 
-  getEventMap() {
-    return {
-      "click [data-sort]": (e) => {
-        const field = e.target.closest("[data-sort]").dataset.sort;
-        this.handleSort(field);
-      },
-      "click [data-action]": (e) => {
-        this.handleAction(e);
-      },
-    };
+  /**
+   * Public method to set sort
+   */
+  setSort(sortBy, sortOrder) {
+    this.sortBy = sortBy;
+    this.sortOrder = sortOrder;
+    this._updateSortUI();
   }
 }
 

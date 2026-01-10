@@ -82,7 +82,9 @@ class LlamaServerStatusPanel extends Component {
 
     this.status = status.status || "unknown";
     this.metrics = status.metrics;
-    this.uptime = status.uptime ? window.FormatUtils.formatUptime(status.uptime / 1000) : "00:00:00";
+    this.uptime = status.uptime
+      ? window.FormatUtils.formatUptime(status.uptime / 1000)
+      : "00:00:00";
     this.pid = status.pid || null;
 
     // Stop metrics scraper when not running
@@ -155,17 +157,23 @@ class LlamaServerStatusPanel extends Component {
 
   _getStatusIcon(status) {
     switch (status) {
-    case "running": return "🟢";
-    case "stopped": return "🔴";
-    default: return "⚪";
+      case "running":
+        return "🟢";
+      case "stopped":
+        return "🔴";
+      default:
+        return "⚪";
     }
   }
 
   _getStatusText(status) {
     switch (status) {
-    case "running": return "Running";
-    case "stopped": return "Stopped";
-    default: return "Unknown";
+      case "running":
+        return "Running";
+      case "stopped":
+        return "Stopped";
+      default:
+        return "Unknown";
     }
   }
 
@@ -235,24 +243,33 @@ class LlamaServerStatusPanel extends Component {
           Component.h("span", { className: "status-icon" }, statusIcon),
           Component.h("span", { className: "value" }, statusText),
         ]),
-        Component.h("button", {
-          className: "collapse-btn",
-          "aria-label": this._detailsExpanded ? "Hide details" : "Show details",
-          "aria-expanded": this._detailsExpanded,
-        }, [
-          Component.h("span", { className: "chevron-icon" }, "▶"),
-          "Metrics",
-        ]),
+        Component.h(
+          "button",
+          {
+            className: "collapse-btn",
+            "aria-label": this._detailsExpanded ? "Hide details" : "Show details",
+            "aria-expanded": this._detailsExpanded,
+          },
+          [Component.h("span", { className: "chevron-icon" }, "▶"), "Metrics"]
+        ),
       ]),
       Component.h("div", { className: "controls" }, [
-        Component.h("button", {
-          className: "btn btn-start",
-          style: this.status === "stopped" ? "" : "display: none;",
-        }, "Start"),
-        Component.h("button", {
-          className: "btn btn-stop",
-          style: this.status === "running" ? "" : "display: none;",
-        }, "Stop"),
+        Component.h(
+          "button",
+          {
+            className: "btn btn-start",
+            style: this.status === "stopped" ? "" : "display: none;",
+          },
+          "Start"
+        ),
+        Component.h(
+          "button",
+          {
+            className: "btn btn-stop",
+            style: this.status === "running" ? "" : "display: none;",
+          },
+          "Stop"
+        ),
       ]),
       Component.h("div", { className: "status-summary" }, [
         Component.h("div", { className: "summary-grid" }, [
@@ -260,25 +277,30 @@ class LlamaServerStatusPanel extends Component {
             Component.h("span", { className: "label" }, "Status:"),
             Component.h("span", { className: "value" }, statusText),
           ]),
-          this.pid && Component.h("div", { className: "summary-item" }, [
-            Component.h("span", { className: "label" }, "PID:"),
-            Component.h("span", { className: "value" }, String(this.pid)),
-          ]),
+          this.pid &&
+            Component.h("div", { className: "summary-item" }, [
+              Component.h("span", { className: "label" }, "PID:"),
+              Component.h("span", { className: "value" }, String(this.pid)),
+            ]),
           Component.h("div", { className: "summary-item" }, [
             Component.h("span", { className: "label" }, "Uptime:"),
             Component.h("span", { className: "value" }, this.uptime),
           ]),
         ]),
       ]),
-      Component.h("div", {
-        className: "llama-metrics",
-        style: this._detailsExpanded ? "display: block;" : "display: none;",
-      }, [
-        this._renderThroughputMetrics(throughputMetrics),
-        this._renderServerConfigSection(serverMetrics),
-        this._renderTokenMetrics(tokenMetrics),
-        this._renderTimeMetrics(timeMetrics),
-      ]),
+      Component.h(
+        "div",
+        {
+          className: "llama-metrics",
+          style: this._detailsExpanded ? "display: block;" : "display: none;",
+        },
+        [
+          this._renderThroughputMetrics(throughputMetrics),
+          this._renderServerConfigSection(serverMetrics),
+          this._renderTokenMetrics(tokenMetrics),
+          this._renderTimeMetrics(timeMetrics),
+        ]
+      ),
     ]);
   }
 
@@ -296,26 +318,36 @@ class LlamaServerStatusPanel extends Component {
     return Component.h("div", { className: "metrics-section" }, [
       Component.h("h4", { className: "section-title collapsible-header" }, [
         Component.h("span", {}, "Server Configuration"),
-        Component.h("button", {
-          className: "collapse-toggle",
-          "data-section": "server-config",
-        }, Component.h("span", { className: "chevron" }, "▶")),
+        Component.h(
+          "button",
+          {
+            className: "collapse-toggle",
+            "data-section": "server-config",
+          },
+          Component.h("span", { className: "chevron" }, "▶")
+        ),
       ]),
-      Component.h("div", {
-        className: "metrics-grid collapsible-content",
-        id: "server-config-section",
-        style: "display: grid;",
-      }, [
-        this._renderMetric("Context Size (n_ctx)", metrics.nCtx, "tokens"),
-        this._renderMetric("Batch Size (n_batch)", metrics.nBatch, ""),
-        this._renderMetric("Upper Batch (n_ubatch)", metrics.nUbatch, ""),
-        this._renderMetric("Threads (n_threads)", metrics.nThreads, ""),
-        this._renderMetric("Parallel Slots (n_parallel)", metrics.nParallel, ""),
-        this._renderMetric("KV Cache Req (n_kv_req)", metrics.nKvReq, ""),
-        this._renderMetric("KV Cache Size (n_kv)", metrics.nKv, ""),
-        metrics.vramTotal > 0 && this._renderMetric("Total VRAM", `${(metrics.vramTotal / 1024 / 1024).toFixed(2)} GB`),
-        metrics.vramUsed > 0 && this._renderMetric("Used VRAM", `${(metrics.vramUsed / 1024 / 1024).toFixed(2)} GB`),
-      ]),
+      Component.h(
+        "div",
+        {
+          className: "metrics-grid collapsible-content",
+          id: "server-config-section",
+          style: "display: grid;",
+        },
+        [
+          this._renderMetric("Context Size (n_ctx)", metrics.nCtx, "tokens"),
+          this._renderMetric("Batch Size (n_batch)", metrics.nBatch, ""),
+          this._renderMetric("Upper Batch (n_ubatch)", metrics.nUbatch, ""),
+          this._renderMetric("Threads (n_threads)", metrics.nThreads, ""),
+          this._renderMetric("Parallel Slots (n_parallel)", metrics.nParallel, ""),
+          this._renderMetric("KV Cache Req (n_kv_req)", metrics.nKvReq, ""),
+          this._renderMetric("KV Cache Size (n_kv)", metrics.nKv, ""),
+          metrics.vramTotal > 0 &&
+            this._renderMetric("Total VRAM", `${(metrics.vramTotal / 1024 / 1024).toFixed(2)} GB`),
+          metrics.vramUsed > 0 &&
+            this._renderMetric("Used VRAM", `${(metrics.vramUsed / 1024 / 1024).toFixed(2)} GB`),
+        ]
+      ),
     ]);
   }
 
@@ -335,7 +367,11 @@ class LlamaServerStatusPanel extends Component {
       Component.h("h4", { className: "section-title" }, "Time Metrics"),
       Component.h("div", { className: "metrics-grid" }, [
         this._renderMetric("Prompt Eval Time", metrics.promptEvalTimeMs, "ms"),
-        this._renderMetric("Tokens Evaluated/sec", metrics.tokensEvaluatedPerSecond.toFixed(2), "tokens/s"),
+        this._renderMetric(
+          "Tokens Evaluated/sec",
+          metrics.tokensEvaluatedPerSecond.toFixed(2),
+          "tokens/s"
+        ),
       ]),
     ]);
   }

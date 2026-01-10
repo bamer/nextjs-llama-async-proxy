@@ -70,11 +70,7 @@ class Router {
 
     console.log("[ROUTER] Creating layout");
     this.layout = new Layout({});
-    const layoutEl = this.layout.render();
-    this.rootEl.appendChild(layoutEl);
-    this.layout.bindEvents();
-    if (this.layout.didMount) this.layout.didMount();
-    this._callDidMount(layoutEl);
+    this.layout.mount(this.rootEl);
 
     this.contentEl = document.getElementById("page-content") || this.rootEl;
     console.log("[ROUTER] Content element:", this.contentEl?.tagName);
@@ -136,14 +132,16 @@ class Router {
       console.log("[ROUTER] Render returned Promise, awaiting...");
       const el = await result;
       if (el) {
-        console.log("[ROUTER] Appending async element:", el.className);
-        this.contentEl.appendChild(el);
-        this._callDidMount(el);
+        const domEl = this._htmlToElement(el);
+        console.log("[ROUTER] Appending async element:", domEl?.className);
+        this.contentEl.appendChild(domEl);
+        this._callDidMount(domEl);
       }
     } else if (result) {
-      console.log("[ROUTER] Appending element:", result.className);
-      this.contentEl.appendChild(result);
-      this._callDidMount(result);
+      const domEl = this._htmlToElement(result);
+      console.log("[ROUTER] Appending element:", domEl?.className);
+      this.contentEl.appendChild(domEl);
+      this._callDidMount(domEl);
     }
 
     if (this.currentController.didMount) {
@@ -224,6 +222,13 @@ class Router {
 
   _dispatchTitle(path) {
     window.dispatchEvent(new CustomEvent("routechange", { detail: { path } }));
+  }
+
+  _htmlToElement(html) {
+    if (typeof html !== "string") return html;
+    const template = document.createElement("template");
+    template.innerHTML = html.trim();
+    return template.content.firstElementChild || null;
   }
 }
 

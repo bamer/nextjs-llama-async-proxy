@@ -1,57 +1,81 @@
 /**
- * ParameterSection Component
+ * ParameterSection Component - Event-Driven DOM Updates
  * Renders a category accordion section with expandable/collapsible parameters
  */
 
 class ParameterSection extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      expanded: props.expanded !== undefined ? props.expanded : true,
-      parameterCount: 0,
-    };
+
+    // Direct properties instead of state
+    this.expanded = props.expanded !== undefined ? props.expanded : true;
   }
 
-  get initialState() {
-    return {
-      expanded: this.props.expanded !== undefined ? this.props.expanded : true,
-      parameterCount: Object.keys(this.props.parameters || {}).length,
-    };
-  }
+  bindEvents() {
+    // Toggle section
+    this.on("click", "[data-action=toggle-section]", () => {
+      this.handleToggle();
+    });
 
-  getEventMap() {
-    return {
-      "click [data-action=toggle-section]": "handleToggle",
-      "click [data-action=expand-all]": "handleExpandAll",
-      "click [data-action=collapse-all]": "handleCollapseAll",
-    };
+    // Expand all
+    this.on("click", "[data-action=expand-all]", () => {
+      this.handleExpandAll();
+    });
+
+    // Collapse all
+    this.on("click", "[data-action=collapse-all]", () => {
+      this.handleCollapseAll();
+    });
   }
 
   handleToggle() {
-    this.setState({ expanded: !this.state.expanded });
+    this.expanded = !this.expanded;
+    this._updateSectionUI();
   }
 
   handleExpandAll() {
-    this.setState({ expanded: true });
+    this.expanded = true;
+    this._updateSectionUI();
   }
 
   handleCollapseAll() {
-    this.setState({ expanded: false });
+    this.expanded = false;
+    this._updateSectionUI();
+  }
+
+  _updateSectionUI() {
+    const section = this.$(".parameter-section");
+    if (!section) return;
+
+    const content = section.querySelector(".section-body");
+    const toggle = section.querySelector(".section-toggle");
+
+    // Update section class
+    section.className = `parameter-section section-${this.expanded ? "expanded" : "collapsed"}`;
+
+    // Update toggle icon
+    if (toggle) {
+      toggle.textContent = this.expanded ? "▼" : "▶";
+    }
+
+    // Show/hide content
+    if (content) {
+      content.style.display = this.expanded ? "" : "none";
+    }
   }
 
   render() {
     const { categoryId, categoryInfo, parameters, config, defaults, inheritance, editableFields } =
       this.props;
-    const { expanded, parameterCount } = this.state;
 
     const filteredParameters = this.filterParameters(parameters, config);
     const displayCount = Object.keys(filteredParameters).length;
 
     return Component.h(
       "div",
-      { className: `parameter-section section-${expanded ? "expanded" : "collapsed"}` },
-      this.renderHeader(categoryId, categoryInfo, displayCount, expanded),
-      expanded
+      { className: `parameter-section section-${this.expanded ? "expanded" : "collapsed"}` },
+      this.renderHeader(categoryId, categoryInfo, displayCount, this.expanded),
+      this.expanded
         ? this.renderBody(filteredParameters, config, defaults, inheritance, editableFields)
         : null
     );
@@ -69,7 +93,7 @@ class ParameterSection extends Component {
       Component.h(
         "div",
         { className: "section-title-area" },
-        Component.h("span", { className: "section-icon" }, icon),
+        Component.h("span", { className: "section-icon section-toggle" }, icon),
         Component.h(
           "div",
           { className: "section-title-group" },
@@ -183,7 +207,8 @@ class ParameterSection extends Component {
 
   // Public method to expand/collapse
   setExpanded(expanded) {
-    this.setState({ expanded });
+    this.expanded = expanded;
+    this._updateSectionUI();
   }
 
   // Get summary of current values

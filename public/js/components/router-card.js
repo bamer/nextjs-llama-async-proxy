@@ -1,13 +1,10 @@
 /**
- * Unified Router Card Component - Event-Driven DOM Updates
- * Used in both Dashboard and Settings with real-time state reflection
+ * Router Card Component - Event-Driven DOM Updates
  */
 
 class RouterCard extends Component {
   constructor(props) {
     super(props);
-
-    // Direct properties instead of state
     this.status = props.status || null;
     this.routerStatus = props.routerStatus || null;
     this.models = props.models || [];
@@ -23,7 +20,6 @@ class RouterCard extends Component {
   bindEvents() {
     console.log("[DEBUG] RouterCard.bindEvents called");
 
-    // Start button
     this.on("click", "[data-action=start]", (e) => {
       console.log("[DEBUG] RouterCard START button clicked, preset:", this.selectedPreset);
       e.preventDefault();
@@ -31,7 +27,6 @@ class RouterCard extends Component {
       this.routerLoading = true;
       this._updateUI();
 
-      // If preset selected, use start-with-preset action
       if (this.selectedPreset) {
         console.log("[DEBUG] RouterCard calling onAction('start-with-preset', preset)");
         this.onAction("start-with-preset", this.selectedPreset);
@@ -41,7 +36,6 @@ class RouterCard extends Component {
       }
     });
 
-    // Stop button
     this.on("click", "[data-action=stop]", (e) => {
       console.log("[DEBUG] RouterCard STOP button clicked");
       e.preventDefault();
@@ -51,7 +45,6 @@ class RouterCard extends Component {
       this.onAction("stop");
     });
 
-    // Restart button
     this.on("click", "[data-action=restart]", (e) => {
       console.log("[DEBUG] RouterCard RESTART button clicked");
       e.preventDefault();
@@ -61,7 +54,6 @@ class RouterCard extends Component {
       this.onAction("restart");
     });
 
-    // Preset change
     this.on("change", "#preset-select", (e) => {
       this.selectedPreset = e.target.value;
       this._updateUI();
@@ -69,14 +61,28 @@ class RouterCard extends Component {
   }
 
   onMount() {
-    // Subscribe to status changes and update UI without full re-render
+    console.log("[DEBUG] RouterCard onMount called, status:", this.status);
+
     if (this.props.subscribeToUpdates) {
-      this.props.subscribeToUpdates((status) => {
+      const unsub = this.props.subscribeToUpdates((status) => {
+        console.log("[DEBUG] RouterCard received status update:", status);
         this.status = status;
         this.routerLoading = false;
+        console.log("[DEBUG] RouterCard calling _updateUI with isRunning:", !!status?.port);
         this._updateUI();
       });
+      this._unsubscribers = this._unsubscribers || [];
+      this._unsubscribers.push(unsub);
     }
+  }
+
+  destroy() {
+    console.log("[DEBUG] RouterCard destroy called");
+    if (this._unsubscribers) {
+      this._unsubscribers.forEach((unsub) => unsub && unsub());
+      this._unsubscribers = [];
+    }
+    super.destroy && super.destroy();
   }
 
   _updateUI() {
@@ -84,9 +90,10 @@ class RouterCard extends Component {
 
     const isRunning = this.status?.port;
     const routerLoading = this.routerLoading;
-    const loadedCount = (this.routerStatus?.models || []).filter((x) => x.state === "loaded").length;
+    const loadedCount = (this.routerStatus?.models || []).filter(
+      (x) => x.state === "loaded"
+    ).length;
 
-    // Update status badge
     const statusBadge = this._el.querySelector(".status-badge");
     if (statusBadge) {
       if (routerLoading) {
@@ -98,43 +105,34 @@ class RouterCard extends Component {
       }
     }
 
-    // Update router info
     const routerInfo = this._el.querySelector(".router-info");
     if (routerInfo) {
       routerInfo.style.display = isRunning ? "flex" : "none";
     }
 
-    // Update loaded count text if present
     const modelsText = this._el.querySelector(".router-info .models-info");
     if (modelsText && isRunning) {
       modelsText.textContent = `Models: ${loadedCount}/${this.models.length} loaded`;
     }
 
-    // Update buttons
-    const startStopBtn = this._el.querySelector("[data-action=\"start\"], [data-action=\"stop\"]");
+    const startStopBtn = this._el.querySelector('[data-action="start"], [data-action="stop"]');
     if (startStopBtn) {
       if (isRunning) {
         startStopBtn.setAttribute("data-action", "stop");
         startStopBtn.className = "btn btn-danger";
-        startStopBtn.textContent = routerLoading ? "⏹ Stopping..." : "⏹ Stop Router";
+        startStopBtn.textContent = routerLoading ? "STOPPING..." : "STOP ROUTER";
       } else {
         startStopBtn.setAttribute("data-action", "start");
         startStopBtn.className = "btn btn-primary";
-        const btnText = routerLoading
-          ? "▶ Starting..."
-          : this.selectedPreset
-            ? "▶ Start with Preset"
-            : "▶ Start Router";
-        startStopBtn.textContent = btnText;
+        startStopBtn.textContent = routerLoading ? "STARTING..." : "START ROUTER";
       }
       startStopBtn.disabled = routerLoading;
     }
 
-    // Update restart button
-    const restartBtn = this._el.querySelector("[data-action=\"restart\"]");
+    const restartBtn = this._el.querySelector('[data-action="restart"]');
     if (restartBtn) {
       restartBtn.disabled = !isRunning || routerLoading;
-      restartBtn.textContent = routerLoading ? "🔄 Restarting..." : "🔄 Restart";
+      restartBtn.textContent = routerLoading ? "RESTARTING..." : "RESTART";
     }
   }
 
@@ -144,44 +142,22 @@ class RouterCard extends Component {
     const routerModels = this.routerStatus?.models || [];
     const loadedCount = routerModels.filter((x) => x.state === "loaded").length;
 
-    return Component.h("div", { className: "router-section" }, [
-      Component.h("div", { className: `router-card ${isRunning ? "running" : "idle"}` }, [
-        Component.h("div", { className: "router-header" }, [
-          Component.h("div", { className: "router-title" }, [
-            Component.h("h3", {}, "🦙 Llama Router"),
-            Component.h("span", { className: `status-badge ${isRunning ? "running" : "idle"}` }, isRunning ? "RUNNING" : "STOPPED"),
-          ]),
-          isRunning && Component.h("div", { className: "router-info" }, [
-            Component.h("span", { className: "info-item" }, `Port: ${displayPort}`),
-            Component.h("span", { className: "info-item models-info" }, `Models: ${loadedCount}/${this.models.length} loaded`),
-          ]),
-        ]),
-        Component.h("div", { className: "router-controls" }, [
-          // Preset selection (if presets available)
-          this.presets && this.presets.length > 0 && Component.h("div", { className: "preset-selector" }, [
-            Component.h("select", {
-              id: "preset-select",
-              className: "preset-dropdown",
-              value: this.selectedPreset || "",
-            }, [
-              Component.h("option", { value: "" }, "📋 Select Preset..."),
-              ...this.presets.map((preset) =>
-                Component.h("option", { value: preset.name }, preset.name)
-              ),
-            ]),
-          ]),
-          // Action buttons
-          isRunning
-            ? Component.h("button", { className: "btn btn-danger", "data-action": "stop" }, "⏹ Stop Router")
-            : Component.h("button", { className: "btn btn-primary", "data-action": "start" }, this.routerLoading
-              ? "▶ Starting..."
-              : this.selectedPreset
-                ? "▶ Start with Preset"
-                : "▶ Start Router"),
-          Component.h("button", { className: "btn btn-secondary", "data-action": "restart", disabled: !isRunning }, "🔄 Restart"),
-        ]),
-      ]),
-    ]);
+    return `<div class="router-section">
+  <div class="router-card ${isRunning ? "running" : "idle"}">
+    <div class="router-header">
+      <div class="router-title">
+        <h3>Llama Router</h3>
+        <span class="status-badge ${isRunning ? "running" : "idle"}">${isRunning ? "RUNNING" : "STOPPED"}</span>
+      </div>
+      ${isRunning ? `<div class="router-info"><span class="info-item">Port: ${displayPort}</span><span class="info-item models-info">Models: ${loadedCount}/${this.models.length} loaded</span></div>` : ""}
+    </div>
+    <div class="router-controls">
+      ${this.presets && this.presets.length > 0 ? `<div class="preset-selector"><select id="preset-select" class="preset-dropdown"><option value="">Select Preset...</option>${this.presets.map((preset) => `<option value="${preset.name}">${preset.name}</option>`).join("")}</select></div>` : ""}
+      ${isRunning ? '<button class="btn btn-danger" data-action="stop">STOP ROUTER</button>' : '<button class="btn btn-primary" data-action="start">START ROUTER</button>'}
+      <button class="btn btn-secondary" data-action="restart" ${!isRunning ? "disabled" : ""}>RESTART</button>
+    </div>
+  </div>
+</div>`;
   }
 }
 

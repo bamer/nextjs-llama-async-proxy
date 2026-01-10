@@ -79,22 +79,48 @@ class ModelDefaultsForm extends Component {
         Component.h("div", { className: "defaults-grid" }, [
           Component.h("div", { className: "form-group" }, [
             Component.h("label", {}, "Threads"),
-            Component.h("input", { type: "number", value: this.threads, min: 1, max: 64, id: "threads" }),
+            Component.h("input", {
+              type: "number",
+              value: this.threads,
+              min: 1,
+              max: 64,
+              id: "threads",
+            }),
             Component.h("small", {}, "CPU threads"),
           ]),
           Component.h("div", { className: "form-group" }, [
             Component.h("label", {}, "Batch"),
-            Component.h("input", { type: "number", value: this.batch_size, min: 1, max: 8192, id: "batch_size" }),
+            Component.h("input", {
+              type: "number",
+              value: this.batch_size,
+              min: 1,
+              max: 8192,
+              id: "batch_size",
+            }),
             Component.h("small", {}, "Batch size"),
           ]),
           Component.h("div", { className: "form-group" }, [
             Component.h("label", {}, "Temperature"),
-            Component.h("input", { type: "number", value: this.temperature, min: 0, max: 2, step: 0.1, id: "temperature" }),
+            Component.h("input", {
+              type: "number",
+              value: this.temperature,
+              min: 0,
+              max: 2,
+              step: 0.1,
+              id: "temperature",
+            }),
             Component.h("small", {}, "Response randomness"),
           ]),
           Component.h("div", { className: "form-group" }, [
             Component.h("label", {}, "Repeat Penalty"),
-            Component.h("input", { type: "number", value: this.repeatPenalty, min: 0, max: 2, step: 0.1, id: "repeatPenalty" }),
+            Component.h("input", {
+              type: "number",
+              value: this.repeatPenalty,
+              min: 0,
+              max: 2,
+              step: 0.1,
+              id: "repeatPenalty",
+            }),
             Component.h("small", {}, "Penalize repetition"),
           ]),
         ]),

@@ -8,6 +8,7 @@ import {
   startLlamaServerRouter,
   stopLlamaServerRouter,
   getLlamaStatus,
+  setNotificationCallback,
 } from "./llama-router/index.js";
 import path from "path";
 
@@ -15,8 +16,39 @@ import path from "path";
  * Register llama router handlers
  */
 export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
+  // Set up notification callback to broadcast server events to all clients
+  setNotificationCallback((event, data) => {
+    console.log(`[LLAMA-HANDLERS] Broadcasting event: ${event}`, data);
+
+    // Broadcast to all clients
+    io.emit("llama:server-event", {
+      type: event,
+      data: {
+        ...data,
+        status: event === "started" ? "running" : event === "stopped" ? "idle" : "unknown",
+      },
+    });
+
+    // Also emit specific events for clients listening
+    if (event === "started") {
+      io.emit("llama:status", {
+        status: "running",
+        port: data.port,
+        url: data.url,
+        mode: data.mode || "router",
+      });
+    } else if (event === "stopped" || event === "closed") {
+      io.emit("llama:status", { status: "idle" });
+      io.emit("models:router-stopped", {});
+    } else if (event === "error") {
+      io.emit("llama:status", {
+        status: "error",
+        error: data.error,
+      });
+    }
+  });
   /**
-   * Get llama server status
+   * Get llama server status (llama:status)
    */
   socket.on("llama:status", (req) => {
     const id = req?.requestId || Date.now();
@@ -30,6 +62,28 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
         });
     } catch (e) {
       err(socket, "llama:status:result", e.message, id);
+    }
+  });
+
+  /**
+   * Get llama-server status (llama-server:status) - used by frontend on page reload
+   * This ensures the frontend can detect if the server is already running
+   */
+  socket.on("llama-server:status", (req) => {
+    const id = req?.requestId || Date.now();
+    try {
+      getLlamaStatus()
+        .then((status) => {
+          console.log("[DEBUG] llama-server:status returning:", status);
+          ok(socket, "llama-server:status:result", { status }, id);
+        })
+        .catch((e) => {
+          console.error("[DEBUG] llama-server:status error:", e);
+          err(socket, "llama-server:status:result", e.message, id);
+        });
+    } catch (e) {
+      console.error("[DEBUG] llama-server:status exception:", e);
+      err(socket, "llama-server:status:result", e.message, id);
     }
   });
 
@@ -147,6 +201,10 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
       })
         .then((result) => {
           if (result.success) {
+            // Initialize metrics scraper when server starts
+            if (initializeLlamaMetrics) {
+              initializeLlamaMetrics(result.port);
+            }
             io.emit("llama:status", {
               status: "running",
               port: result.port,

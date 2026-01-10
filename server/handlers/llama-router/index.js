@@ -3,7 +3,13 @@
  * Main router orchestration module - barrel file
  */
 
-export { startLlamaServerRouter, getRouterState, getServerUrl, getServerProcess } from "./start.js";
+export {
+  startLlamaServerRouter,
+  getRouterState,
+  getServerUrl,
+  getServerProcess,
+  setNotificationCallback,
+} from "./start.js";
 export { stopLlamaServerRouter } from "./stop.js";
 export { getLlamaStatus, loadModel, unloadModel } from "./status.js";
 export { llamaApiRequest } from "./api.js";

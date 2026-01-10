@@ -594,11 +594,15 @@ class PresetsController {
       let attempts = 0;
       const checkSocket = () => {
         attempts++;
-        console.log(`[PRESETS] Socket check attempt ${attempts}:`, window.socketClient?.socket?.connected);
+        console.log(
+          `[PRESETS] Socket check attempt ${attempts}:`,
+          window.socketClient?.socket?.connected
+        );
         if (window.socketClient?.socket?.connected) {
           console.log("[PRESETS] Socket connected, loading presets...");
           this.loadPresetsData();
-        } else if (attempts < 50) {  // Try for 5 seconds max
+        } else if (attempts < 50) {
+          // Try for 5 seconds max
           setTimeout(checkSocket, 100);
         } else {
           console.error("[PRESETS] Socket never connected, giving up");
@@ -702,7 +706,7 @@ class PresetsPage extends Component {
       availableModels: props.availableModels || [],
       loading: true,
       expandedDefaults: true,
-      expandedModels: false,  // Models section collapsed by default
+      expandedModels: false, // Models section collapsed by default
       parameterFilter: "",
       serverRunning: false,
       serverPort: null,
@@ -715,6 +719,246 @@ class PresetsPage extends Component {
     this.debouncedFilter = AppUtils.debounce(this._handleFilter.bind(this), 300);
   }
 
+  onMount() {
+    console.log("[PRESETS] onMount called - THIS RUNS AFTER ELEMENT IS IN DOM");
+
+    // Cache DOM elements after mounting (element is now in DOM)
+    this._domCache.set("presets-items", document.getElementById("presets-items"));
+    this._domCache.set("server-status", document.getElementById("server-status"));
+    this._domCache.set("editor", document.getElementById("presets-editor"));
+    this._domCache.set("router-card-container", document.getElementById("router-card-container"));
+
+    // New preset button - NOW we can find it since element is in DOM!
+    const newBtn = document.getElementById("btn-new-preset");
+    console.log("[PRESETS] New preset button found:", !!newBtn);
+    if (newBtn) {
+      // Remove any existing listeners to avoid duplicates
+      newBtn.removeEventListener("click", this._boundHandleNewPreset);
+      this._boundHandleNewPreset = this._handleNewPreset.bind(this);
+      newBtn.addEventListener("click", this._boundHandleNewPreset);
+      console.log("[PRESETS] Added click listener to new preset button");
+    }
+
+    // Launch server button
+    const launchBtn = document.getElementById("btn-launch-server");
+    launchBtn && (launchBtn.onclick = () => this._handleLaunchServer());
+
+    // Stop server button
+    const stopBtn = document.getElementById("btn-stop-server");
+    stopBtn && (stopBtn.onclick = () => this._handleStopServer());
+
+    // Subscribe to server status changes via state manager
+    this._subscribeToServerStatus();
+
+    // Also subscribe to llamaServerStatus state changes
+    if (window.stateManager?.subscribe) {
+      this.unsubscribers.push(
+        window.stateManager.subscribe("llamaServerStatus", (status) => {
+          console.log("[PRESETS] llamaServerStatus state changed:", status);
+          if (status) {
+            this.state.serverRunning = status.status === "running";
+            this.state.serverPort = status.port || null;
+            this.state.serverUrl = status.url || null;
+            this._updateRouterCardHTML();
+          }
+        })
+      );
+    }
+
+    // Bind router card events
+    this._bindRouterCardEvents();
+  }
+
+  /**
+   * Subscribe to llama:status broadcasts to update UI when server state changes
+   */
+  _subscribeToServerStatus() {
+    if (!window.socketClient?.socket) {
+      console.log("[PRESETS] Socket not available for status subscription");
+      return;
+    }
+
+    // Listen to llama:status broadcasts from server
+    window.socketClient.socket.on("llama:status", (data) => {
+      console.log("[PRESETS] Received llama:status event:", data);
+
+      if (data?.status) {
+        // Update server state
+        this.state.serverRunning = data.status === "running";
+        this.state.serverPort = data.port || null;
+        this.state.serverUrl = data.url || null;
+
+        // Update the server status panel
+        this._updateServerStatusPanel();
+
+        // Update the RouterCard if it exists
+        this._updateRouterCard();
+      }
+    });
+
+    // Also listen to llama-server:status broadcasts
+    window.socketClient.socket.on("llama-server:status", (data) => {
+      console.log("[PRESETS] Received llama-server:status event:", data);
+
+      if (data?.type === "broadcast" && data?.data) {
+        const status = data.data;
+        this.state.serverRunning = status.status === "running";
+        this.state.serverPort = status.port || null;
+        this.state.serverUrl = status.url || null;
+
+        this._updateServerStatusPanel();
+        this._updateRouterCard();
+      }
+    });
+
+    console.log("[PRESETS] Subscribed to server status events");
+  }
+
+  /**
+   * Update the RouterCard component when server status changes
+   * Uses pure DOM manipulation (event-driven, no re-render)
+   */
+  _updateRouterCard() {
+    const routerContainer = this._domCache.get("router-card-container");
+    if (!routerContainer) return;
+
+    // Find the router card element
+    const routerCardEl = routerContainer.querySelector(".router-card");
+    if (!routerCardEl) return;
+
+    const isRunning = this.state.serverRunning;
+    const displayPort = this.state.serverPort || this.state.configPort || 8080;
+
+    // Update status badge
+    const statusBadge = routerCardEl.querySelector(".status-badge");
+    if (statusBadge) {
+      statusBadge.textContent = isRunning ? "RUNNING" : "STOPPED";
+      statusBadge.className = `status-badge ${isRunning ? "running" : "idle"}`;
+    }
+
+    // Update router info visibility
+    const routerInfo = routerCardEl.querySelector(".router-info");
+    if (routerInfo) {
+      routerInfo.style.display = isRunning ? "flex" : "none";
+    }
+
+    // Update buttons
+    const controls = routerCardEl.querySelector(".router-controls");
+    if (controls) {
+      const hasPresets = this.state.presets && this.state.presets.length > 0;
+      const routerModels = this.state.routerStatus?.models || [];
+      const loadedCount = routerModels.filter((x) => x.state === "loaded").length;
+
+      controls.innerHTML = `
+        ${
+          hasPresets
+            ? `
+          <div class="preset-selector">
+            <select class="preset-dropdown" id="router-preset-select">
+              <option value="">📋 Select Preset...</option>
+              ${this.state.presets
+                .map(
+                  (preset) => `
+                <option value="${preset.name}" ${this.state.selectedPreset?.name === preset.name ? "selected" : ""}>${preset.name}</option>
+              `
+                )
+                .join("")}
+            </select>
+          </div>
+        `
+            : ""
+        }
+        ${
+          isRunning
+            ? `
+          <button class="btn btn-danger" data-action="router-stop">⏹ Stop Router</button>
+          <button class="btn btn-secondary" data-action="router-restart">🔄 Restart</button>
+        `
+            : `
+          <button class="btn btn-primary" data-action="router-start">${this.state.selectedPreset ? "▶ Start with Preset" : "▶ Start Router"}</button>
+        `
+        }
+      `;
+    }
+
+    // Re-bind events for new buttons
+    this._bindRouterCardEvents();
+
+    console.log("[PRESETS] RouterCard updated:", isRunning ? "RUNNING" : "STOPPED");
+  }
+
+  /**
+   * Update just the HTML of router card (full re-render of the card only)
+   */
+  _updateRouterCardHTML() {
+    const routerContainer = document.getElementById("router-card");
+    if (!routerContainer) return;
+
+    // Re-render the router card HTML
+    routerContainer.innerHTML = this._renderRouterCard();
+
+    // Bind events for the new elements
+    this._bindRouterCardEvents();
+
+    console.log(
+      "[PRESETS] RouterCard HTML updated:",
+      this.state.serverRunning ? "RUNNING" : "STOPPED"
+    );
+  }
+
+  /**
+   * Update the server status panel to reflect current server state
+   */
+  _updateServerStatusPanel() {
+    const statusPanel = this._domCache.get("server-status");
+    if (!statusPanel) return;
+
+    if (this.state.serverRunning) {
+      statusPanel.innerHTML = `
+        <div class="server-status running">
+          <div class="status-header">
+            <span class="status-indicator">●</span>
+            <span class="status-text">Server Running</span>
+          </div>
+          <div class="server-details">
+            <div class="detail-row">
+              <span class="detail-label">Port:</span>
+              <span class="detail-value">${this.state.serverPort || "?"}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">URL:</span>
+              <span class="detail-value">${this.state.serverUrl || "?"}</span>
+            </div>
+          </div>
+          <div class="server-actions">
+            <button class="btn btn-danger" id="btn-stop-server">⏹ Stop Server</button>
+            <button class="btn btn-secondary" id="btn-restart-server">🔄 Restart</button>
+          </div>
+        </div>
+      `;
+
+      // Re-bind stop button
+      const stopBtn = document.getElementById("btn-stop-server");
+      stopBtn && (stopBtn.onclick = () => this._handleStopServer());
+    } else {
+      statusPanel.innerHTML = `
+        <div class="server-status stopped">
+          <div class="status-header">
+            <span class="status-indicator stopped">●</span>
+            <span class="status-text">Server Stopped</span>
+          </div>
+          <div class="server-actions">
+            <button class="btn btn-primary" id="btn-launch-server">▶ Start Server</button>
+          </div>
+        </div>
+      `;
+
+      // Re-bind launch button
+      const launchBtn = document.getElementById("btn-launch-server");
+      launchBtn && (launchBtn.onclick = () => this._handleLaunchServer());
+    }
+  }
+
   _getService() {
     return this._presetsService || (this.controller ? this.controller.presetsService : null);
   }
@@ -724,21 +968,21 @@ class PresetsPage extends Component {
     if (!this._el) return;
 
     switch (event) {
-    case "preset:select":
-      this._handlePresetSelect(data);
-      break;
-    case "preset:loaded":
-      this._handlePresetLoaded(data);
-      break;
-    case "presets:update":
-      this._updatePresetsList(data);
-      break;
-    case "defaults:toggle":
-      this._toggleDefaultsSection();
-      break;
-    case "param:add":
-      this._handleAddParam(data);
-      break;
+      case "preset:select":
+        this._handlePresetSelect(data);
+        break;
+      case "preset:loaded":
+        this._handlePresetLoaded(data);
+        break;
+      case "presets:update":
+        this._updatePresetsList(data);
+        break;
+      case "defaults:toggle":
+        this._toggleDefaultsSection();
+        break;
+      case "param:add":
+        this._handleAddParam(data);
+        break;
     }
   }
 
@@ -811,7 +1055,7 @@ class PresetsPage extends Component {
       if (el) {
         this._domCache.set("editor", el);
         // Show loading state
-        el.innerHTML = "<div style=\"padding: 20px; text-align: center;\">Loading editor...</div>";
+        el.innerHTML = '<div style="padding: 20px; text-align: center;">Loading editor...</div>';
         // Defer render
         requestAnimationFrame(() => this._renderEditor());
       } else {
@@ -821,7 +1065,7 @@ class PresetsPage extends Component {
     }
 
     // Show loading state
-    editor.innerHTML = "<div style=\"padding: 20px; text-align: center;\">Loading editor...</div>";
+    editor.innerHTML = '<div style="padding: 20px; text-align: center;">Loading editor...</div>';
 
     // Defer update to avoid blocking UI
     requestAnimationFrame(() => {
@@ -861,38 +1105,38 @@ class PresetsPage extends Component {
           <span class="section-toggle">${this.state.expandedDefaults ? "▼" : "▶"}</span>
         </div>
         ${
-  this.state.expandedDefaults
-    ? `
+          this.state.expandedDefaults
+            ? `
           <div class="section-content" id="content-defaults">
             <div class="search-box">
               <span class="search-icon">🔍</span>
               <input type="text" class="search-input" placeholder="Filter parameters by name..." id="param-filter">
             </div>
             ${
-  Object.keys(this.state.globalDefaults || {}).length > 0
-    ? `
+              Object.keys(this.state.globalDefaults || {}).length > 0
+                ? `
              <div class="added-params-section">
                <strong>Added Parameters:</strong>
                <div class="added-params-list">
                  ${Object.entries(this.state.globalDefaults)
-    .map(([key, value]) => {
-      const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
-      // Format value for display: handle arrays/strings properly
-      let displayValue = value;
-      if (typeof value === "string") {
-        displayValue = value;
-      } else if (Array.isArray(value)) {
-        displayValue = value.join(",");
-      } else {
-        displayValue = String(value);
-      }
-      // Escape HTML special characters in the value
-      const escaped = displayValue
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-      return `
+                   .map(([key, value]) => {
+                     const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
+                     // Format value for display: handle arrays/strings properly
+                     let displayValue = value;
+                     if (typeof value === "string") {
+                       displayValue = value;
+                     } else if (Array.isArray(value)) {
+                       displayValue = value.join(",");
+                     } else {
+                       displayValue = String(value);
+                     }
+                     // Escape HTML special characters in the value
+                     const escaped = displayValue
+                       .replace(/&/g, "&amp;")
+                       .replace(/</g, "&lt;")
+                       .replace(/>/g, "&gt;")
+                       .replace(/"/g, "&quot;");
+                     return `
                         <div class="param-item-display" data-param-key="${key}">
                           <div class="param-name"><strong>${param?.label || key}</strong></div>
                           <div class="param-controls">
@@ -901,13 +1145,13 @@ class PresetsPage extends Component {
                           </div>
                         </div>
                       `;
-    })
-    .join("")}
+                   })
+                   .join("")}
                </div>
              </div>
             `
-    : "<p class=\"defaults-hint\">Default preset starts empty - all default values are in llama-router</p>"
-}
+                : '<p class="defaults-hint">Default preset starts empty - all default values are in llama-router</p>'
+            }
             <label class="add-param-label">Add Parameter to Defaults</label>
             <select class="param-add-select" id="select-add-param" data-section="defaults" data-name="*">
               <option value="">-- Select parameter to add --</option>
@@ -915,8 +1159,8 @@ class PresetsPage extends Component {
             </select>
           </div>
         `
-    : ""
-}
+            : ""
+        }
       </div>
 
       <div class="section standalone-section">
@@ -929,11 +1173,11 @@ class PresetsPage extends Component {
           <select class="model-select" id="select-add-model">
             <option value="">-- Select a model --</option>
             ${(this.state.availableModels || [])
-    .map(
-      (model) =>
-        `<option value="${this._escapeHtml(model.name)}">${this._escapeHtml(model.name)}</option>`
-    )
-    .join("")}
+              .map(
+                (model) =>
+                  `<option value="${this._escapeHtml(model.name)}">${this._escapeHtml(model.name)}</option>`
+              )
+              .join("")}
           </select>
           <button class="btn btn-secondary" id="btn-add-standalone">+ Add Selected Model</button>
         </div>
@@ -1178,25 +1422,25 @@ class PresetsPage extends Component {
           <button class="btn-model-delete" data-model-name="${model.name}" title="Delete model">×</button>
         </div>
         ${
-  isExpanded
-    ? `
+          isExpanded
+            ? `
         <div class="model-content">
           ${
-  modelParams.length > 0
-    ? `
+            modelParams.length > 0
+              ? `
           <div class="model-params-section">
             <strong>Parameters:</strong>
             <div class="model-params-list">
               ${modelParams
-    .map(([key, value]) => {
-      const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
-      const displayValue = Array.isArray(value) ? value.join(",") : String(value);
-      const escaped = displayValue
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-      return `
+                .map(([key, value]) => {
+                  const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
+                  const displayValue = Array.isArray(value) ? value.join(",") : String(value);
+                  const escaped = displayValue
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;");
+                  return `
                 <div class="param-item-display" data-param-key="${key}" data-model="${model.name}">
                   <div class="param-name"><strong>${param?.label || key}</strong></div>
                   <div class="param-controls">
@@ -1205,24 +1449,24 @@ class PresetsPage extends Component {
                   </div>
                 </div>
               `;
-    })
-    .join("")}
+                })
+                .join("")}
             </div>
           </div>
           `
-    : "<p>No parameters added</p>"
-}
+              : "<p>No parameters added</p>"
+          }
           <label class="add-param-label">Add Parameter</label>
           <select class="param-add-select" data-section="model" data-model="${model.name}">
             <option value="">-- Select parameter to add --</option>
             ${LLAMA_PARAMS.filter((p) => !Object.keys(model).includes(p.iniKey))
-    .map((p) => `<option value="${p.key}">${p.label} (${p.group})</option>`)
-    .join("")}
+              .map((p) => `<option value="${p.key}">${p.label} (${p.group})</option>`)
+              .join("")}
           </select>
         </div>
         `
-    : ""
-}
+            : ""
+        }
       </div>
     `;
       })
@@ -1408,7 +1652,7 @@ class PresetsPage extends Component {
         } else {
           const editor = this._domCache.get("editor");
           if (editor) {
-            editor.innerHTML = "<div class=\"empty-state\">Select a preset to edit</div>";
+            editor.innerHTML = '<div class="empty-state">Select a preset to edit</div>';
           }
         }
       }
@@ -1494,6 +1738,13 @@ class PresetsPage extends Component {
       Component.h(
         "div",
         { className: "presets-container" },
+        // Left panel: Router Card (event-driven, no React-style callbacks)
+        Component.h(
+          "div",
+          { className: "router-card-container", id: "router-card" },
+          this._renderRouterCard()
+        ),
+        // Right panel: Server status and editor
         Component.h(
           "div",
           { className: "server-status-panel", id: "server-status" },
@@ -1508,32 +1759,152 @@ class PresetsPage extends Component {
     );
   }
 
-  onMount() {
-    console.log("[PRESETS] onMount called - THIS RUNS AFTER ELEMENT IS IN DOM");
+  /**
+   * Handle router actions from RouterCard
+   */
+  _handleRouterAction(action, data) {
+    console.log("[PRESETS] RouterCard action:", action, data);
 
-    // Cache DOM elements after mounting (element is now in DOM)
-    this._domCache.set("presets-items", document.getElementById("presets-items"));
-    this._domCache.set("server-status", document.getElementById("server-status"));
-    this._domCache.set("editor", document.getElementById("presets-editor"));
+    switch (action) {
+      case "start":
+        this._handleLaunchServer();
+        break;
+      case "stop":
+        this._handleStopServer();
+        break;
+      case "restart":
+        this._handleStopServer().then(() => {
+          setTimeout(() => this._handleLaunchServer(), 2000);
+        });
+        break;
+      case "start-with-preset":
+        this._handleLaunchServerWithPreset(data);
+        break;
+    }
+  }
 
-    // New preset button - NOW we can find it since element is in DOM!
-    const newBtn = document.getElementById("btn-new-preset");
-    console.log("[PRESETS] New preset button found:", !!newBtn);
-    if (newBtn) {
-      // Remove any existing listeners to avoid duplicates
-      newBtn.removeEventListener("click", this._boundHandleNewPreset);
-      this._boundHandleNewPreset = this._handleNewPreset.bind(this);
-      newBtn.addEventListener("click", this._boundHandleNewPreset);
-      console.log("[PRESETS] Added click listener to new preset button");
+  /**
+   * Render the Router Card using pure event-driven pattern (no Component.h)
+   */
+  _renderRouterCard() {
+    const isRunning = this.state.serverRunning;
+    const displayPort = this.state.serverPort || this.state.configPort || 8080;
+    const routerModels = this.state.routerStatus?.models || [];
+    const loadedCount = routerModels.filter((x) => x.state === "loaded").length;
+    const hasPresets = this.state.presets && this.state.presets.length > 0;
+
+    return `
+      <div class="router-section">
+        <div class="router-card ${isRunning ? "running" : "idle"}">
+          <div class="router-header">
+            <div class="router-title">
+              <h3>🦙 Llama Router</h3>
+              <span class="status-badge ${isRunning ? "running" : "idle"}">${isRunning ? "RUNNING" : "STOPPED"}</span>
+            </div>
+            ${
+              isRunning
+                ? `
+              <div class="router-info">
+                <span class="info-item">Port: ${displayPort}</span>
+                <span class="info-item models-info">Models: ${loadedCount}/${this.state.availableModels.length} loaded</span>
+              </div>
+            `
+                : ""
+            }
+          </div>
+          <div class="router-controls">
+            ${
+              hasPresets
+                ? `
+              <div class="preset-selector">
+                <select class="preset-dropdown" id="router-preset-select">
+                  <option value="">📋 Select Preset...</option>
+                  ${this.state.presets
+                    .map(
+                      (preset) => `
+                    <option value="${preset.name}" ${this.state.selectedPreset?.name === preset.name ? "selected" : ""}>${preset.name}</option>
+                  `
+                    )
+                    .join("")}
+                </select>
+              </div>
+            `
+                : ""
+            }
+            ${
+              isRunning
+                ? `
+              <button class="btn btn-danger" data-action="router-stop">⏹ Stop Router</button>
+              <button class="btn btn-secondary" data-action="router-restart" ${!isRunning ? "disabled" : ""}>🔄 Restart</button>
+            `
+                : `
+              <button class="btn btn-primary" data-action="router-start">${this.state.selectedPreset ? "▶ Start with Preset" : "▶ Start Router"}</button>
+            `
+            }
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Bind router card events after it's rendered
+   */
+  _bindRouterCardEvents() {
+    const routerCard = document.getElementById("router-card");
+    if (!routerCard) return;
+
+    // Start button
+    const startBtn = routerCard.querySelector('[data-action="router-start"]');
+    startBtn && (startBtn.onclick = () => this._handleLaunchServer());
+
+    // Stop button
+    const stopBtn = routerCard.querySelector('[data-action="router-stop"]');
+    stopBtn && (stopBtn.onclick = () => this._handleStopServer());
+
+    // Restart button
+    const restartBtn = routerCard.querySelector('[data-action="router-restart"]');
+    restartBtn &&
+      (restartBtn.onclick = () => {
+        this._handleStopServer().then(() => {
+          setTimeout(() => this._handleLaunchServer(), 2000);
+        });
+      });
+
+    // Preset select
+    const presetSelect = routerCard.querySelector("#router-preset-select");
+    presetSelect &&
+      (presetSelect.onchange = (e) => {
+        if (e.target.value) {
+          this._emit("preset:select", e.target.value);
+        }
+      });
+  }
+
+  /**
+   * Launch server with currently selected preset
+   */
+  async _handleLaunchServerWithPreset(presetName) {
+    if (!presetName) {
+      showNotification("Please select a preset first", "warning");
+      return;
     }
 
-    // Launch server button
-    const launchBtn = document.getElementById("btn-launch-server");
-    launchBtn && (launchBtn.onclick = () => this._handleLaunchServer());
+    try {
+      console.log("[PRESETS] Launching server with preset:", presetName);
+      const result = await window.stateLlamaServer.socket.request("llama:start-with-preset", {
+        presetName,
+      });
 
-    // Stop server button
-    const stopBtn = document.getElementById("btn-stop-server");
-    stopBtn && (stopBtn.onclick = () => this._handleStopServer());
+      if (result?.success) {
+        showNotification(`Server started with preset "${presetName}"`, "success");
+      } else {
+        showNotification(`Failed to start server: ${result?.error || "Unknown error"}`, "error");
+      }
+    } catch (error) {
+      console.error("[PRESETS] Launch error:", error);
+      showNotification(`Failed to start server: ${error.message}`, "error");
+    }
   }
 
   bindEvents() {

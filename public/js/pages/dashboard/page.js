@@ -139,7 +139,7 @@ class DashboardPage extends Component {
     // Update button
     const controls = routerCard.querySelector(".router-controls");
     if (controls) {
-      const btn = controls.querySelector("[data-action=\"start\"], [data-action=\"stop\"]");
+      const btn = controls.querySelector('[data-action="start"], [data-action="stop"]');
       if (btn) {
         if (isRunning) {
           btn.setAttribute("data-action", "stop");
@@ -153,13 +153,13 @@ class DashboardPage extends Component {
         btn.disabled = this.routerLoading;
       }
 
-      const restartBtn = controls.querySelector("[data-action=\"restart\"]");
+      const restartBtn = controls.querySelector('[data-action="restart"]');
       if (restartBtn) {
         restartBtn.disabled = !isRunning || this.routerLoading;
         restartBtn.textContent = this.routerLoading ? "🔄 Restarting..." : "🔄 Restart";
       }
 
-      const launchPresetBtn = controls.querySelector("[data-action=\"launch-preset\"]");
+      const launchPresetBtn = controls.querySelector('[data-action="launch-preset"]');
       if (launchPresetBtn) {
         launchPresetBtn.disabled = this.routerLoading;
         launchPresetBtn.textContent = this.routerLoading
@@ -176,6 +176,18 @@ class DashboardPage extends Component {
 
     if (this.chartManager) {
       this.chartManager.updateCharts(metrics, this.history);
+    }
+
+    // Update StatsGrid component
+    const statsGrid = this._el?.querySelector(".stats-grid");
+    if (statsGrid && statsGrid._component) {
+      statsGrid._component.updateMetrics(this.metrics, this.gpuMetrics);
+    }
+
+    // Update SystemHealth component
+    const systemHealth = this._el?.querySelector(".health-section");
+    if (systemHealth && systemHealth._component) {
+      systemHealth._component.updateMetrics(this.metrics, this.gpuMetrics);
     }
 
     // Update chart stats in DOM
@@ -215,8 +227,8 @@ class DashboardPage extends Component {
 
     // Update DOM
     if (this._el) {
-      const usageTab = this._el.querySelector("[data-chart=\"usage\"]");
-      const memoryTab = this._el.querySelector("[data-chart=\"memory\"]");
+      const usageTab = this._el.querySelector('[data-chart="usage"]');
+      const memoryTab = this._el.querySelector('[data-chart="memory"]');
       if (usageTab && memoryTab) {
         usageTab.classList.toggle("active", newType === "usage");
         memoryTab.classList.toggle("active", newType === "memory");

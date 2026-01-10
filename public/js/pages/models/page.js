@@ -1,5 +1,5 @@
 /**
- * Models Page - Displays models in a table
+ * Models Page - Event-Driven DOM Updates
  */
 
 class ModelsPage extends Component {
@@ -8,31 +8,16 @@ class ModelsPage extends Component {
     console.log("[MODELS] ModelsPage constructor called");
     console.log("[MODELS] Props models count:", props.models?.length);
 
-    this.state = {
-      models: props.models || [],
-      filters: { status: "all", search: "", favoritesOnly: false },
-      sortBy: "name",
-      sortOrder: "asc",
-    };
+    // Direct properties instead of state
+    this.models = props.models || [];
+    this.filters = { status: "all", search: "", favoritesOnly: false };
+    this.sortBy = "name";
+    this.sortOrder = "asc";
     this.lastSearchValue = "";
     this.lastStatusValue = "all";
     this.controller = props.controller;
     this.debouncedSearch = AppUtils.debounce(this._handleSearch.bind(this), 300);
-    console.log("[MODELS] State initialized with", this.state.models.length, "models");
-  }
-
-  didUpdate() {
-    const searchInput = this._el?.querySelector("[data-field=\"search\"]");
-    if (searchInput && document.activeElement === searchInput) {
-      // Focus already restored by browser
-    } else if (searchInput && this.lastSearchValue === this.state.filters.search) {
-      searchInput.focus();
-      searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
-    }
-  }
-
-  shouldUpdate(newProps) {
-    return true;
+    console.log("[MODELS] Initialized with", this.models.length, "models");
   }
 
   render() {
@@ -45,199 +30,113 @@ class ModelsPage extends Component {
     const config = stateManager.get("config") || {};
     const port = routerStatus?.port || config.port || 8080;
 
-    const statusBadge = (status) => {
-      const cls =
-        status === "loaded" || status === "running"
-          ? "success"
-          : status === "loading"
-            ? "warning"
-            : status === "error"
-              ? "danger"
-              : "default";
-      return Component.h("span", { className: `badge ${cls}` }, status);
-    };
+    const rows = filtered
+      .map((m) => this._renderRow(m))
+      .join("");
 
-    const actionBtn = (m) => {
-      if (m.status === "loaded" || m.status === "running") {
-        return Component.h(
-          "button",
-          { className: "btn btn-sm", "data-action": "unload" },
-          "Unload"
-        );
-      }
-      if (m.status === "loading") {
-        return Component.h("button", { className: "btn btn-sm", disabled: true }, "Loading...");
-      }
-      return Component.h(
-        "button",
-        { className: "btn btn-sm btn-primary", "data-action": "load" },
-        "Load"
-      );
-    };
+    return `<div class="models-page">
+  <div class="toolbar">
+    <button class="btn btn-primary" data-action="scan">Scan Filesystem</button>
+    <button class="btn" data-action="cleanup">Cleanup</button>
+    <span class="router-indicator ${routerRunning ? "success" : "default"}">
+      Router ${routerRunning ? "Active" : "Not Running"} (${port})
+    </span>
+  </div>
+  <div class="filters">
+    <input type="text" placeholder="Search models..." data-field="search" value="${this.filters.search}" autocomplete="off">
+    <select data-field="status">
+      <option value="all" ${this.filters.status === "all" ? "selected" : ""}>All</option>
+      <option value="loaded" ${this.filters.status === "loaded" ? "selected" : ""}>Loaded</option>
+      <option value="unloaded" ${this.filters.status === "unloaded" ? "selected" : ""}>Unloaded</option>
+    </select>
+    <label class="checkbox-label">
+      <input type="checkbox" data-field="favorites" ${this.filters.favoritesOnly ? "checked" : ""}>
+      Favorites only
+    </label>
+  </div>
+  <table class="models-table">
+    <thead>
+      <tr>
+        <th data-sort="name" class="${this.sortBy === "name" ? "sorted" : ""}">${this.sortBy === "name" && this.sortOrder === "asc" ? "↑" : this.sortBy === "name" && this.sortOrder === "desc" ? "↓" : ""} Name</th>
+        <th data-sort="status" class="${this.sortBy === "status" ? "sorted" : ""}">${this.sortBy === "status" && this.sortOrder === "asc" ? "↑" : this.sortBy === "status" && this.sortOrder === "desc" ? "↓" : ""} Status</th>
+        <th>Arch</th>
+        <th>Params</th>
+        <th>Quant</th>
+        <th>Ctx</th>
+        <th>Embed</th>
+        <th>Blocks</th>
+        <th>Heads</th>
+        <th>Size</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+</div>`;
+  }
 
-    const iconMap = {
-      name: "📄",
-      status: "⭐",
-      type: "🏗️",
-      params: "#️⃣",
-      quantization: "📊",
-      ctx_size: "📈",
-      embedding_size: "📐",
-      block_count: "🧱",
-      head_count: "👁️",
-      file_size: "💾",
-      actions: "⚙️",
-    };
+  _renderRow(m) {
+    const statusClass =
+      m.status === "loaded" || m.status === "running"
+        ? "success"
+        : m.status === "loading"
+          ? "warning"
+          : m.status === "error"
+            ? "danger"
+            : "default";
 
-    const sortableHeader = (label, field) => {
-      const isSorted = this.state.sortBy === field;
-      const icon = iconMap[field] || "";
-      const indicator =
-        isSorted && this.state.sortOrder === "asc"
-          ? " ↑"
-          : isSorted && this.state.sortOrder === "desc"
-            ? " ↓"
-            : "";
-      return Component.h(
-        "th",
-        {
-          "data-sort": field,
-          className: isSorted ? "sorted" : "",
-          style: "cursor: pointer; user-select: none;",
-        },
-        icon ? `${icon} ${label}${indicator}` : `${label}${indicator}`
-      );
-    };
+    const actionBtn =
+      m.status === "loaded" || m.status === "running"
+        ? '<button class="btn btn-sm" data-action="unload" data-name="' + m.name + '">Unload</button>'
+        : m.status === "loading"
+          ? '<button class="btn btn-sm" disabled>Loading...</button>'
+          : '<button class="btn btn-sm btn-primary" data-action="load" data-name="' + m.name + '">Load</button>';
 
-    const rows = filtered.map((m) =>
-      Component.h(ModelTableRow, {
-        key: m.name,
-        model: m,
-        statusBadge,
-        actionBtn,
-        fmtCtx: this._fmtCtx,
-        fmtBytes: this._fmtBytes,
-        onFavoriteToggle: (isFavorite) => this.controller?.handleToggleFavorite(m.name, isFavorite),
-        onTest: () => this.controller?.handleTestModel(m.name),
-      })
-    );
-
-    const result = Component.h(
-      "div",
-      { className: "models-page" },
-      Component.h(
-        "div",
-        { className: "toolbar" },
-        Component.h(
-          "button",
-          { className: "btn btn-primary", "data-action": "scan" },
-          "Scan Filesystem"
-        ),
-        Component.h("button", { className: "btn", "data-action": "cleanup" }, "Cleanup"),
-        routerRunning
-          ? Component.h(
-            "span",
-            { className: "router-indicator success" },
-            `Router Active (${port})`
-          )
-          : Component.h(
-            "span",
-            { className: "router-indicator default" },
-            `Router Not Running (Port: ${port})`
-          )
-      ),
-      Component.h(ModelFilters, {
-        search: this.state.filters.search,
-        status: this.state.filters.status,
-        favoritesOnly: this.state.filters.favoritesOnly,
-        onSearchChange: (val) => {
-          this.lastSearchValue = val;
-          this.debouncedSearch(val);
-        },
-        onStatusChange: (val) => {
-          this.lastStatusValue = val;
-          this.setState({ filters: { ...this.state.filters, status: val } });
-        },
-        onFavoritesToggle: (val) => {
-          this.setState({ filters: { ...this.state.filters, favoritesOnly: val } });
-        },
-      }),
-      Component.h(
-        "table",
-        { className: "models-table" },
-        Component.h(
-          "thead",
-          {},
-          Component.h(
-            "tr",
-            {},
-            sortableHeader("Name", "name"),
-            sortableHeader("Status", "status"),
-            sortableHeader("Arch", "type"),
-            sortableHeader("Params", "params"),
-            sortableHeader("Quant", "quantization"),
-            sortableHeader("Ctx", "ctx_size"),
-            sortableHeader("Embed", "embedding_size"),
-            sortableHeader("Blocks", "block_count"),
-            sortableHeader("Heads", "head_count"),
-            sortableHeader("Size", "file_size"),
-            sortableHeader("Actions", "status")
-          )
-        ),
-        Component.h("tbody", { className: "models-tbody" }, rows)
-      )
-    );
-
-    console.log("[MODELS] ModelsPage.render() - END");
-    return result;
+    return `<tr data-name="${m.name}">
+  <td>${m.name}</td>
+  <td><span class="badge ${statusClass}">${m.status || "unknown"}</span></td>
+  <td>${m.type || "-"}</td>
+  <td>${m.params || "-"}</td>
+  <td>${m.quantization || "-"}</td>
+  <td>${this._fmtCtx(m.ctx_size)}</td>
+  <td>${m.embedding_size || "-"}</td>
+  <td>${m.block_count || "-"}</td>
+  <td>${m.head_count || "-"}</td>
+  <td>${this._fmtBytes(m.file_size)}</td>
+  <td>${actionBtn}</td>
+</tr>`;
   }
 
   _getFiltered() {
-    console.log("[MODELS] _getFiltered() called");
-    let ms = this.state.models || [];
-    console.log("[MODELS] Starting with", ms.length, "models");
+    let ms = this.models || [];
 
-    if (this.state.filters.status !== "all") {
-      console.log("[MODELS] Filtering by status:", this.state.filters.status);
-      ms = ms.filter((m) => m.status === this.state.filters.status);
+    if (this.filters.status !== "all") {
+      ms = ms.filter((m) => m.status === this.filters.status);
     }
 
-    if (this.state.filters.favoritesOnly) {
-      console.log("[MODELS] Filtering favorites only");
+    if (this.filters.favoritesOnly) {
       ms = ms.filter((m) => m.favorite === 1 || m.favorite === true);
     }
 
-    if (this.state.filters.search) {
-      console.log("[MODELS] Filtering by search:", this.state.filters.search);
-      ms = ms.filter((m) => m.name.toLowerCase().includes(this.state.filters.search.toLowerCase()));
+    if (this.filters.search) {
+      ms = ms.filter((m) => m.name.toLowerCase().includes(this.filters.search.toLowerCase()));
     }
 
-    // Apply sorting with favorites first
-    ms = this._sortModels(ms);
-
-    console.log("[MODELS] Returning", ms.length, "filtered models");
-    return ms;
-  }
-
-  _handleSearch(value) {
-    console.log("[DEBUG] ModelsPage _handleSearch:", value);
-    this.setState({ filters: { ...this.state.filters, search: value } });
+    return this._sortModels(ms);
   }
 
   _sortModels(models) {
-    const { sortBy, sortOrder } = this.state;
     const sorted = [...models].sort((a, b) => {
-      // Favorites always sort first regardless of other sort field
-      if (sortBy !== "favorite") {
+      if (this.sortBy !== "favorite") {
         const aFav = a.favorite === 1 || a.favorite === true ? 0 : 1;
         const bFav = b.favorite === 1 || b.favorite === true ? 0 : 1;
         if (aFav !== bFav) return aFav - bFav;
       }
 
-      let aVal = a[sortBy];
-      let bVal = b[sortBy];
+      let aVal = a[this.sortBy];
+      let bVal = b[this.sortBy];
 
-      if (sortBy === "file_size") {
+      if (this.sortBy === "file_size") {
         aVal = aVal || 0;
         bVal = bVal || 0;
       } else if (typeof aVal === "string") {
@@ -245,8 +144,8 @@ class ModelsPage extends Component {
         bVal = bVal.toLowerCase();
       }
 
-      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+      if (aVal < bVal) return this.sortOrder === "asc" ? -1 : 1;
+      if (aVal > bVal) return this.sortOrder === "asc" ? 1 : -1;
       return 0;
     });
 
@@ -254,8 +153,7 @@ class ModelsPage extends Component {
   }
 
   _fmtCtx(v) {
-    const result = !v || v === 0 ? "-" : v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v);
-    return result;
+    return !v || v === 0 ? "-" : v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v);
   }
 
   _fmtBytes(v) {
@@ -263,23 +161,76 @@ class ModelsPage extends Component {
     const k = 1024;
     const sizes = ["B", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(v) / Math.log(k));
-    const result = `${parseFloat((v / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
-    return result;
+    return `${parseFloat((v / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
   }
 
-  getEventMap() {
-    console.log("[MODELS] getEventMap() called");
-    return {
-      "click [data-sort]": (e) => {
-        const field = e.target.closest("[data-sort]").dataset.sort;
-        console.log("[MODELS] Sort header clicked:", field);
-        const newOrder =
-          this.state.sortBy === field && this.state.sortOrder === "asc" ? "desc" : "asc";
-        this.setState({ sortBy: field, sortOrder: newOrder });
-      },
-      "click [data-action=scan]": () => this.controller?.handleScan(),
-      "click [data-action=cleanup]": () => this.controller?.handleCleanup(),
-    };
+  _handleSearch(value) {
+    this.filters.search = value;
+    this._updateTable();
+  }
+
+  _updateTable() {
+    const filtered = this._getFiltered();
+    const tbody = this.$(".models-table tbody");
+    if (tbody) {
+      tbody.innerHTML = filtered.map((m) => this._renderRow(m)).join("");
+    }
+  }
+
+  bindEvents() {
+    console.log("[MODELS] bindEvents called");
+
+    this.on("click", "[data-sort]", (e) => {
+      const field = e.target.closest("[data-sort]").dataset.sort;
+      console.log("[MODELS] Sort header clicked:", field);
+      if (this.sortBy === field) {
+        this.sortOrder = this.sortOrder === "asc" ? "desc" : "asc";
+      } else {
+        this.sortBy = field;
+        this.sortOrder = "asc";
+      }
+      this._updateTable();
+    });
+
+    this.on("click", "[data-action=scan]", () => {
+      this.controller?.handleScan();
+    });
+
+    this.on("click", "[data-action=cleanup]", () => {
+      this.controller?.handleCleanup();
+    });
+
+    this.on("click", "[data-action=load]", (e) => {
+      const name = e.target.closest("[data-action=load]").dataset.name;
+      this.controller?.handleLoad(name);
+    });
+
+    this.on("click", "[data-action=unload]", (e) => {
+      const name = e.target.closest("[data-action=unload]").dataset.name;
+      this.controller?.handleUnload(name);
+    });
+
+    this.on("input", "[data-field=search]", (e) => {
+      this.lastSearchValue = e.target.value;
+      this.filters.search = e.target.value;
+      this.debouncedSearch(e.target.value);
+    });
+
+    this.on("change", "[data-field=status]", (e) => {
+      this.lastStatusValue = e.target.value;
+      this.filters.status = e.target.value;
+      this._updateTable();
+    });
+
+    this.on("change", "[data-field=favorites]", (e) => {
+      this.filters.favoritesOnly = e.target.checked;
+      this._updateTable();
+    });
+  }
+
+  updateModelList(models) {
+    this.models = models || [];
+    this._updateTable();
   }
 }
 

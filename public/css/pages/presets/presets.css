@@ -106,10 +106,32 @@
 
 .presets-container {
   display: flex;
-  flex-direction: column;
   gap: var(--lg);
   width: 100%;
   min-height: 600px;
+}
+
+.router-panel-left {
+  width: 320px;
+  flex-shrink: 0;
+}
+
+.server-status-panel {
+  flex: 1;
+}
+
+.presets-editor {
+  flex: 1;
+}
+
+@media (max-width: 1024px) {
+  .presets-container {
+    flex-direction: column;
+  }
+
+  .router-panel-left {
+    width: 100%;
+  }
 }
 
 .preset-item {

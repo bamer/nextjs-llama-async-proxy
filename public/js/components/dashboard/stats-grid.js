@@ -1,5 +1,5 @@
 /**
- * Stats Grid Component
+ * StatsGrid Component - Event-Driven DOM Updates
  * Displays system metrics with icons, values, and progress bars
  */
 
@@ -7,15 +7,15 @@ class StatsGrid extends Component {
   constructor(props) {
     super(props);
 
-    const metrics = props.metrics || {
+    // Direct properties instead of state
+    this.metrics = props.metrics || {
       cpu: { usage: 0 },
       memory: { used: 0 },
       disk: { used: 0 },
+      swap: { used: 0 },
       uptime: 0,
     };
-    const gpuMetrics = props.gpuMetrics || { usage: 0, memoryUsed: 0, memoryTotal: 0 };
-
-    this.state = { metrics, gpuMetrics };
+    this.gpuMetrics = props.gpuMetrics || { usage: 0, memoryUsed: 0, memoryTotal: 0 };
   }
 
   /**
@@ -33,9 +33,17 @@ class StatsGrid extends Component {
     return `${m}m`;
   }
 
+  /**
+   * Update metrics data
+   */
+  updateMetrics(metrics, gpuMetrics) {
+    this.metrics = metrics || this.metrics;
+    this.gpuMetrics = gpuMetrics || this.gpuMetrics;
+  }
+
   render() {
-    const m = this.state.metrics;
-    const gpu = this.state.gpuMetrics;
+    const m = this.metrics;
+    const gpu = this.gpuMetrics;
 
     const stats = [
       {
@@ -77,8 +85,8 @@ class StatsGrid extends Component {
         value:
           gpu?.memoryTotal > 0
             ? `${window.AppUtils?.formatBytes?.(gpu?.memoryUsed || 0)} / ${window.AppUtils?.formatBytes?.(
-              gpu?.memoryTotal || 0
-            )}`
+                gpu?.memoryTotal || 0
+              )}`
             : `${(gpu?.usage || 0).toFixed(1)}%`,
         percent:
           gpu?.memoryTotal > 0

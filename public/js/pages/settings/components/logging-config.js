@@ -19,7 +19,10 @@ class LoggingConfig extends Component {
     // Log level
     this.on("change", "[data-field=log-level]", (e) => {
       const val = e.target.value || "info";
-      console.log("[DEBUG] LoggingConfig.onLogLevelChange:", { value: e.target.value, normalized: val });
+      console.log("[DEBUG] LoggingConfig.onLogLevelChange:", {
+        value: e.target.value,
+        normalized: val,
+      });
       this.logLevel = val;
       this._updateUI();
       this.props.onLogLevelChange?.(val);
