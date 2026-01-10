@@ -10,20 +10,20 @@ class StateLlamaServer {
   }
 
   setupBroadcastHandlers() {
-     // Register broadcast handlers for llama-server events
-     if (this.socket.socket) {
-       this.socket.socket.on("llama-server:status", (data) => {
-         if (data?.type === "broadcast") {
-           const status = data.data;
-           console.log("[DEBUG] StateLlamaServer received status:", status);
-           this.core.set("llamaServerStatus", status);
+    // Register broadcast handlers for llama-server events
+    if (this.socket.socket) {
+      this.socket.socket.on("llama-server:status", (data) => {
+        if (data?.type === "broadcast") {
+          const status = data.data;
+          console.log("[DEBUG] StateLlamaServer received status:", status);
+          this.core.set("llamaServerStatus", status);
 
-           // Update UI state based on status
-           this.core.set("llamaServerMetrics", status?.metrics);
-         }
-       });
-     }
-   }
+          // Update UI state based on status
+          this.core.set("llamaServerMetrics", status?.metrics);
+        }
+      });
+    }
+  }
 
   /**
    * Start llama-server

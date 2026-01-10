@@ -89,6 +89,18 @@ class StateCore {
    * @returns {StateCore} this for chaining
    */
   set(key, value) {
+    // Validate if stateValidator is available
+    if (window.stateValidator) {
+      const validation = window.stateValidator.validate(key, value);
+      if (!validation.valid) {
+        console.error("[StateCore] State validation failed:", {
+          key,
+          errors: validation.errors,
+        });
+        throw new Error(`Invalid state for "${key}": ${validation.errors[0].message}`);
+      }
+    }
+
     const old = this.state[key];
 
     if (old === value) {

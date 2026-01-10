@@ -5,18 +5,14 @@
 (function () {
   "use strict";
 
-  console.log("[App] Initializing...");
-
   // Error boundary - show error UI
   function showErrorBoundary(error) {
-    console.error("[App] ERROR BOUNDARY:", error);
-
     const appEl = document.getElementById("app");
     if (appEl) {
       appEl.innerHTML = `
         <div class="error-boundary">
           <div class="error-boundary-content">
-            <h1>⚠️ Application Error</h1>
+            <h1>Application Error</h1>
             <p>Something went wrong while initializing the application.</p>
             <div class="error-details">
               <strong>Error:</strong>
@@ -29,17 +25,11 @@
     }
   }
 
-  // Error handlers with detailed logging
+  // Error handlers
   window.addEventListener("error", (e) => {
-    console.error("[App] Error:", e.error);
-    console.error("[App] Error stack:", e.error?.stack);
-    console.error("[App] Error source:", e.filename, "line:", e.lineno);
-
-    // Show user-friendly error
     const msg = e.error?.message || "An unexpected error occurred";
     showNotification(msg, "error");
 
-    // For critical errors, show error boundary
     if (
       e.error &&
       (e.error.message.includes("Cannot read") || e.error.message.includes("is not a function"))
@@ -49,13 +39,9 @@
   });
 
   window.addEventListener("unhandledrejection", (e) => {
-    console.error("[App] Rejection:", e.reason);
-    console.error("[App] Rejection stack:", e.reason?.stack);
-
     const msg = e.reason?.message || "An unexpected error occurred";
     showNotification(msg, "error");
 
-    // For critical rejections, show error boundary
     if (e.reason && e.reason.message) {
       showErrorBoundary(e.reason);
     }
@@ -63,10 +49,8 @@
 
   // Initialize keyboard shortcuts
   try {
-    console.log("[App] Initializing keyboard shortcuts...");
     window.keyboardShortcuts.init();
 
-    // Register global shortcuts
     window.keyboardShortcuts.register(
       "ctrl+l",
       () => {
@@ -97,7 +81,6 @@
     window.keyboardShortcuts.register(
       "escape",
       () => {
-        // Close any open modals or dropdowns
         document.querySelectorAll(".modal.active").forEach((modal) => {
           modal.classList.remove("active");
         });
@@ -154,8 +137,6 @@
       },
       "Navigate to Logs"
     );
-
-    console.log("[App] Keyboard shortcuts initialized");
   } catch (e) {
     console.error("[App] Keyboard shortcuts initialization failed:", e);
   }
@@ -163,15 +144,9 @@
   // Initialize services with error handling
   document.addEventListener("DOMContentLoaded", () => {
     try {
-      console.log("[App] Connecting socket...");
       socketClient.connect();
-      console.log("[App] Initializing state manager...");
       stateManager.init(socketClient);
-
-      console.log("[App] Initializing llama-server state...");
       window.stateLlamaServer = new window.StateLlamaServer(stateManager.core, stateManager.socket);
-
-      console.log("[App] Services initialized successfully");
     } catch (e) {
       console.error("[App] Service initialization failed:", e);
       showErrorBoundary(e);
@@ -200,8 +175,6 @@
 
   router.start();
   window.router = router;
-
-  console.log("[App] Ready");
 })();
 
 // Notifications
@@ -212,7 +185,6 @@ function showNotification(msg, type = "info") {
   n.className = `notification notification-${type}`;
   n.innerHTML = `<span>${msg}</span><button onclick="this.parentElement.remove()">×</button>`;
   c.appendChild(n);
-  // Remove after 10 seconds (increased for debugging)
   setTimeout(() => {
     if (n.parentElement) n.remove();
   }, 10000);

@@ -161,10 +161,8 @@ class StateManager {
    */
   async request(event, data = {}) {
     if (!this.isConnected()) {
-      console.warn("[STATE-MANAGER] Connection guard: Not connected, rejecting request:", event);
       return Promise.reject(new Error("Not connected to server. Please check your connection."));
     }
-    console.log("[DEBUG] StateManager request:", { event, data });
     return this.socket.request(event, data);
   }
 

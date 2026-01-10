@@ -29,7 +29,6 @@ class SocketClient {
 
     this.socket.on("connect", () => {
       this._connected = true;
-      console.log("[Socket] Connected:", this.socket.id);
       this.socket.emit("connection:ack");
       this._emit("connect", this.socket.id);
     });
@@ -39,9 +38,8 @@ class SocketClient {
       this._emit("disconnect", r);
     });
 
-    this.socket.on("connect_error", (e) => {
-      console.error("[Socket] Error:", e.message);
-      this._emit("connect_error", e);
+    this.socket.on("connect_error", () => {
+      this._emit("connect_error");
     });
 
     // Forward all events to handlers

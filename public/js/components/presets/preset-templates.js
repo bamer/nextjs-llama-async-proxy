@@ -69,13 +69,8 @@ class PresetTemplates extends Component {
         "select",
         { "data-field": "template", className: "template-select" },
         Component.h("option", { value: "" }, "-- Select Template --"),
-        ...this.templates.map(
-          (t) =>
-            Component.h(
-              "option",
-              { value: t.id },
-              `${t.name} - ${t.description}`
-            )
+        ...this.templates.map((t) =>
+          Component.h("option", { value: t.id }, `${t.name} - ${t.description}`)
         )
       ),
       Component.h(

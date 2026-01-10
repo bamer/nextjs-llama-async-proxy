@@ -72,6 +72,18 @@ class Component {
     const changedKeys = Object.keys(updates);
     const oldState = { ...this.state };
 
+    // Validate state if stateValidator is available
+    if (window.stateValidator && this.stateSchema) {
+      const validation = window.stateValidator.validateAll(updates);
+      if (!validation.allValid) {
+        console.error("[Component] State validation failed:", {
+          component: this.constructor.name,
+          errors: validation.results,
+        });
+        throw new Error(`Invalid state: ${JSON.stringify(validation.results)}`);
+      }
+    }
+
     // Merge pending updates with new updates to prevent race conditions
     for (const [key, value] of Object.entries(updates)) {
       this._pendingUpdates.set(key, { value, oldState: this.state[key] });
@@ -156,6 +168,22 @@ class Component {
 
     const rendered = this.render();
 
+    // Try selective update using DOMReconciler if available
+    if (window.DOMReconciler && rendered instanceof HTMLElement) {
+      const changed = window.DOMReconciler.updateComponent(this, rendered);
+      if (changed) {
+        console.log("[DEBUG] Component.update: Selective update performed", {
+          component: this.constructor.name,
+        });
+        // Call lifecycle methods
+        this.willReceiveProps && this.willReceiveProps(this.props);
+        this.didUpdate && this.didUpdate();
+        return;
+      }
+      // Fall through to full replacement if selective update didn't work
+    }
+
+    // Full replacement fallback
     if (typeof rendered === "string") {
       const div = document.createElement("div");
       div.innerHTML = rendered;
@@ -179,6 +207,15 @@ class Component {
   // Get/Set state
   get initialState() {
     return {};
+  }
+
+  /**
+   * State validation schema (optional)
+   * Define this in subclasses to enable state validation
+   * @returns {Object} Validation schema
+   */
+  get stateSchema() {
+    return null;
   }
 
   // Event handling
@@ -458,6 +495,9 @@ class Component {
         Object.entries(v).forEach(([dk, dv]) => {
           el.dataset[dk] = dv;
         });
+      } else if (k === "key") {
+        // Store key for reconciliation
+        el.dataset.key = String(v);
       } else if (k === "value") {
         // For select elements, store value and set after children are added
         if (tag === "select") {
@@ -481,6 +521,9 @@ class Component {
         el.setAttribute(k, v);
       }
     });
+
+    // Store props for reconciliation
+    el._props = { ...attrs };
 
     // Helper function to recursively flatten and append children
     const appendChildren = (parent, childList) => {

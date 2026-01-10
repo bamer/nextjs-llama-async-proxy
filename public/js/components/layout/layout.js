@@ -247,14 +247,14 @@ class Header extends Component {
       if (txt) txt.textContent = s === "connected" ? "Connected" : "Disconnected";
     }
     const hs = this._el?.querySelector(".header-status");
-      if (hs) {
-        hs.innerHTML =
-          s === "connected"
-            ? "<span class=\"badge online\">● Online</span>"
-            : "<span class=\"badge offline\">● Offline</span>";
-      }
+    if (hs) {
+      hs.innerHTML =
+        s === "connected"
+          ? '<span class="badge online">● Online</span>'
+          : '<span class="badge offline">● Offline</span>';
+    }
   }
-  }
+}
 
 window.Layout = Layout;
 window.Sidebar = Sidebar;

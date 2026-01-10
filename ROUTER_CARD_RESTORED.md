@@ -7,6 +7,7 @@ The preset combobox is back and fully functional with the smart start button.
 ## What You Now Have
 
 ### Router Card Layout
+
 ```
 ┌─────────────────────────────────────────────┐
 │ 🦙 Llama Router                [STOPPED]   │
@@ -16,6 +17,7 @@ The preset combobox is back and fully functional with the smart start button.
 ```
 
 ### When Preset Selected
+
 ```
 ┌─────────────────────────────────────────────┐
 │ 🦙 Llama Router                [STOPPED]   │
@@ -54,8 +56,8 @@ async handleStart(event) {
 this.state.routerLoading
   ? "▶ Starting..."
   : this.state.selectedPreset
-  ? "▶ Start with Preset"
-  : "▶ Start Router"
+    ? "▶ Start with Preset"
+    : "▶ Start Router";
 ```
 
 ### Combobox Rendering
@@ -74,7 +76,7 @@ this.state.presets &&
         Component.h("option", { value: preset.name }, preset.name)
       )
     )
-  )
+  );
 ```
 
 ## Event Map
@@ -91,6 +93,7 @@ this.state.presets &&
 ## User Experience Flow
 
 ### Scenario 1: No Preset Selected
+
 ```
 1. User sees: [📋 Select Preset...] [▶ Start Router]
 2. User clicks Start
@@ -98,6 +101,7 @@ this.state.presets &&
 ```
 
 ### Scenario 2: Preset Selected
+
 ```
 1. User selects: "fast-inference"
 2. Button changes to: [▶ Start with Preset]
@@ -106,6 +110,7 @@ this.state.presets &&
 ```
 
 ### Scenario 3: Change Preset
+
 ```
 1. Was selected: "fast-inference"
 2. User changes to: "quality-mode"
