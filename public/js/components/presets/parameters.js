@@ -473,6 +473,209 @@ const PARAMETER_CATEGORIES = {
       },
     },
   },
+  jinja: {
+    name: "Jinja & Templating",
+    description: "Jinja template engine and chat template settings",
+    parameters: {
+      "jinja": {
+        label: "Enable Jinja",
+        type: "boolean",
+        description: "Enable Jinja template engine for chat completions",
+        default: true,
+        cliFlag: "--jinja, --no-jinja",
+        validation: {
+          type: "boolean",
+        },
+      },
+      "chat-template": {
+        label: "Chat Template",
+        type: "select",
+        description: "Predefined chat template (overridden by template file)",
+        options: [
+          { value: "chatml", label: "ChatML" },
+          { value: "llama2", label: "Llama 2" },
+          { value: "llama3", label: "Llama 3" },
+          { value: "llama3-1", label: "Llama 3.1" },
+          { value: "llama3-2", label: "Llama 3.2" },
+          { value: "mistral", label: "Mistral" },
+          { value: "phi", label: "Phi" },
+          { value: "phi3", label: "Phi 3" },
+          { value: "phi4", label: "Phi 4" },
+          { value: "gemma", label: "Gemma" },
+          { value: "zephyr", label: "Zephyr" },
+          { value: "deepseek", label: "Deepseek" },
+          { value: "qwen", label: "Qwen" },
+          { value: "openchat", label: "OpenChat" },
+          { value: "neural-chat", label: "Neural Chat" },
+          { value: "stablelm", label: "StableLM" },
+          { value: "cohere", label: "Cohere" },
+          { value: "command", label: "Command" },
+        ],
+        cliFlag: "--chat-template",
+        validation: {
+          type: "string",
+        },
+      },
+      "chat-template-file": {
+        label: "Chat Template File",
+        type: "text",
+        description: "Path to custom Jinja chat template file",
+        placeholder: "/path/to/template.jinja",
+        cliFlag: "--chat-template-file",
+        validation: {
+          type: "string",
+        },
+      },
+      "reasoning-format": {
+        label: "Reasoning Format",
+        type: "select",
+        description: "Format for reasoning/thinking tokens in output",
+        options: [
+          { value: "default", label: "Default (no reasoning)" },
+          { value: "deepseek", label: "DeepSeek" },
+          { value: "none", label: "None (raw output)" },
+        ],
+        cliFlag: "--reasoning-format",
+        validation: {
+          type: "enum",
+          values: ["default", "deepseek", "none"],
+        },
+      },
+      "reasoning-budget": {
+        label: "Reasoning Budget",
+        type: "number",
+        description: "Max reasoning tokens (-1 = unlimited, 0 = disabled)",
+        default: -1,
+        min: -1,
+        step: 1,
+        cliFlag: "--reasoning-budget",
+        validation: {
+          type: "number",
+          min: -1,
+        },
+      },
+      "thinking-forced-open": {
+        label: "Thinking Forced Open",
+        type: "boolean",
+        description: "Force reasoning models to always output thinking",
+        default: false,
+        cliFlag: "--thinking-forced-open",
+        validation: {
+          type: "boolean",
+        },
+      },
+    },
+  },
+  contextManagement: {
+    name: "Context Management",
+    description: "Context window and memory management",
+    parameters: {
+      "slot-save-path": {
+        label: "Slot Save Path",
+        type: "text",
+        description: "Path for saving/restoring prompt cache",
+        placeholder: "/path/to/slots",
+        cliFlag: "--slot-save-path",
+        validation: {
+          type: "string",
+        },
+      },
+      "cache-type-k": {
+        label: "Cache Type (K)",
+        type: "select",
+        description: "KV cache type for K values",
+        options: [
+          { value: "f16", label: "Float16" },
+          { value: "q4", label: "Q4 (4-bit quantized)" },
+          { value: "q8", label: "Q8 (8-bit quantized)" },
+        ],
+        cliFlag: "--cache-type-k",
+        validation: {
+          type: "enum",
+          values: ["f16", "q4", "q8"],
+        },
+      },
+      "cache-type-v": {
+        label: "Cache Type (V)",
+        type: "select",
+        description: "KV cache type for V values",
+        options: [
+          { value: "f16", label: "Float16" },
+          { value: "q4", label: "Q4 (4-bit quantized)" },
+          { value: "q8", label: "Q8 (8-bit quantized)" },
+        ],
+        cliFlag: "--cache-type-v",
+        validation: {
+          type: "enum",
+          values: ["f16", "q4", "q8"],
+        },
+      },
+      "slots": {
+        label: "Parallel Slots",
+        type: "number",
+        description: "Number of parallel processing slots",
+        default: 1,
+        min: 1,
+        max: 128,
+        step: 1,
+        cliFlag: "-np, --parallel",
+        validation: {
+          type: "number",
+          min: 1,
+          max: 128,
+        },
+      },
+    },
+  },
+  modelLoading: {
+    name: "Model Loading",
+    description: "Router mode and model loading settings",
+    parameters: {
+      "models-dir": {
+        label: "Models Directory",
+        type: "text",
+        description: "Directory for auto-discovering models (router mode)",
+        placeholder: "/path/to/models",
+        cliFlag: "--models-dir",
+        validation: {
+          type: "string",
+        },
+      },
+      "models-max": {
+        label: "Max Models Loaded",
+        type: "number",
+        description: "Maximum concurrent models in router mode (0 = unlimited)",
+        default: 4,
+        min: 0,
+        step: 1,
+        cliFlag: "--models-max",
+        validation: {
+          type: "number",
+          min: 0,
+        },
+      },
+      "models-autoload": {
+        label: "Auto-load Models",
+        type: "boolean",
+        description: "Automatically load models on first request (router mode)",
+        default: true,
+        cliFlag: "--models-autoload, --no-models-autoload",
+        validation: {
+          type: "boolean",
+        },
+      },
+      "model-alias": {
+        label: "Model Alias",
+        type: "text",
+        description: "Alias name for the model",
+        placeholder: "my-model-alias",
+        cliFlag: "--model-alias",
+        validation: {
+          type: "string",
+        },
+      },
+    },
+  },
 };
 
 /**

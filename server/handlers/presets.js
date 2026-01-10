@@ -408,12 +408,19 @@ function updateModelInPreset(filename, modelName, config) {
     );
     const preset = readPreset(filename);
     const existingSection = preset.parsed[modelName] || {};
-    fs.appendFileSync(logFile, `existingSection=${JSON.stringify(existingSection)}\n`);
     const newIniSection = modelToIniSection(modelName, config);
     fs.appendFileSync(logFile, `newIniSection=${JSON.stringify(newIniSection)}\n`);
 
-    // Merge existing section with new values (new values take precedence)
+    // Merge existing with new values
     const mergedSection = { ...existingSection, ...newIniSection };
+
+    // Remove parameters that are null/undefined in the config (deleted)
+    for (const [key, value] of Object.entries(config)) {
+      if (value === null || value === undefined) {
+        const iniKey = key.replace(/([A-Z])/g, "-$1").toLowerCase();
+        delete mergedSection[iniKey];
+      }
+    }
     fs.appendFileSync(logFile, `mergedSection=${JSON.stringify(mergedSection)}\n`);
 
     preset.parsed[modelName] = mergedSection;
@@ -627,11 +634,22 @@ export function registerPresetsHandlers(socket, db) {
     try {
       const { filename, config } = data;
       const preset = readPreset(filename);
-      const newIniSection = modelToIniSection("*", config);
       const existingSection = preset.parsed["*"] || {};
 
-      // Merge existing section with new values (new values take precedence)
-      const mergedSection = { ...existingSection, ...newIniSection };
+      // Build new section by taking existing section and updating with new values
+      const mergedSection = { ...existingSection };
+      
+      // Apply updates from config
+      const newIniSection = modelToIniSection("*", config);
+      Object.assign(mergedSection, newIniSection);
+
+      // Remove parameters that are null/undefined in the config (deleted)
+      for (const [key, value] of Object.entries(config)) {
+        if (value === null || value === undefined) {
+          const iniKey = key.replace(/([A-Z])/g, "-$1").toLowerCase();
+          delete mergedSection[iniKey];
+        }
+      }
 
       preset.parsed["*"] = mergedSection;
       savePreset(filename, preset.parsed);

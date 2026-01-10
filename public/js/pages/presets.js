@@ -512,6 +512,132 @@ const LLAMA_PARAMS = [
     group: "sampling",
     description: "Add sequence breaker for DRY sampling (none = no breakers)",
   },
+  {
+    key: "jinja",
+    iniKey: "jinja",
+    label: "Enable Jinja",
+    type: "boolean",
+    default: true,
+    group: "jinja",
+    description: "Enable Jinja template engine for chat completions",
+  },
+  {
+    key: "chat-template",
+    iniKey: "chatTemplate",
+    label: "Chat Template",
+    type: "select",
+    default: "chatml",
+    options: [
+      "chatml",
+      "llama2",
+      "llama3",
+      "llama3-1",
+      "llama3-2",
+      "mistral",
+      "phi",
+      "phi3",
+      "phi4",
+      "gemma",
+      "zephyr",
+      "deepseek",
+      "qwen",
+      "openchat",
+      "neural-chat",
+      "stablelm",
+      "cohere",
+      "command",
+    ],
+    group: "jinja",
+    description: "Predefined chat template (overridden by template file)",
+  },
+  {
+    key: "chat-template-file",
+    iniKey: "chatTemplateFile",
+    label: "Chat Template File",
+    type: "text",
+    default: "",
+    group: "jinja",
+    description: "Path to custom Jinja chat template file",
+  },
+  {
+    key: "reasoning-budget",
+    iniKey: "reasoningBudget",
+    label: "Reasoning Budget",
+    type: "number",
+    default: -1,
+    min: -1,
+    max: 999999,
+    step: 1,
+    group: "jinja",
+    description: "Max reasoning tokens (-1 = unlimited, 0 = disabled)",
+  },
+  {
+    key: "thinking-forced-open",
+    iniKey: "thinkingForcedOpen",
+    label: "Thinking Forced Open",
+    type: "boolean",
+    default: false,
+    group: "jinja",
+    description: "Force reasoning models to always output thinking",
+  },
+  {
+    key: "models-dir",
+    iniKey: "modelsDir",
+    label: "Models Directory",
+    type: "text",
+    default: "",
+    group: "router",
+    description: "Directory for auto-discovering models (router mode)",
+  },
+  {
+    key: "models-max",
+    iniKey: "modelsMax",
+    label: "Max Models Loaded",
+    type: "number",
+    default: 4,
+    min: 0,
+    max: 999,
+    step: 1,
+    group: "router",
+    description: "Maximum concurrent models in router mode (0 = unlimited)",
+  },
+  {
+    key: "models-autoload",
+    iniKey: "modelsAutoload",
+    label: "Auto-load Models",
+    type: "boolean",
+    default: true,
+    group: "router",
+    description: "Automatically load models on first request (router mode)",
+  },
+  {
+    key: "model-alias",
+    iniKey: "modelAlias",
+    label: "Model Alias",
+    type: "text",
+    default: "",
+    group: "router",
+    description: "Friendly name for the model",
+  },
+  {
+    key: "slot-save-path",
+    iniKey: "slotSavePath",
+    label: "Slot Save Path",
+    type: "text",
+    default: "",
+    group: "context",
+    description: "Path for saving/restoring prompt cache",
+  },
+  {
+    key: "warmup",
+    iniKey: "warmup",
+    label: "Warmup",
+    type: "select",
+    default: "off",
+    options: ["off", "on"],
+    group: "performance",
+    description: "Perform warmup run on model startup",
+  },
 ];
 
 class PresetsController {
@@ -529,7 +655,7 @@ class PresetsController {
     return this.presetsService;
   }
 
-  init() {}
+  init() { }
 
   willUnmount() {
     this.unsubscribers.forEach((unsub) => unsub());
@@ -726,7 +852,16 @@ class PresetsPage extends Component {
     this._domCache.set("presets-items", document.getElementById("presets-items"));
     this._domCache.set("server-status", document.getElementById("server-status"));
     this._domCache.set("editor", document.getElementById("presets-editor"));
-    this._domCache.set("router-card-container", document.getElementById("router-card-container"));
+
+    // Set router card HTML
+    const routerContainer = document.getElementById("router-card");
+    if (routerContainer) {
+      routerContainer.innerHTML = this._renderRouterCard();
+    }
+    this._domCache.set(
+      "router-card-container",
+      document.getElementById("router-card-container")
+    );
 
     // New preset button - NOW we can find it since element is in DOM!
     const newBtn = document.getElementById("btn-new-preset");
@@ -770,8 +905,8 @@ class PresetsPage extends Component {
   }
 
   /**
-   * Subscribe to llama:status broadcasts to update UI when server state changes
-   */
+       * Subscribe to llama:status broadcasts to update UI when server state changes
+       */
   _subscribeToServerStatus() {
     if (!window.socketClient?.socket) {
       console.log("[PRESETS] Socket not available for status subscription");
@@ -815,9 +950,9 @@ class PresetsPage extends Component {
   }
 
   /**
-   * Update the RouterCard component when server status changes
-   * Uses pure DOM manipulation (event-driven, no re-render)
-   */
+       * Update the RouterCard component when server status changes
+       * Uses pure DOM manipulation (event-driven, no re-render)
+       */
   _updateRouterCard() {
     const routerContainer = this._domCache.get("router-card-container");
     if (!routerContainer) return;
@@ -850,34 +985,32 @@ class PresetsPage extends Component {
       const loadedCount = routerModels.filter((x) => x.state === "loaded").length;
 
       controls.innerHTML = `
-        ${
-          hasPresets
-            ? `
+        ${hasPresets
+    ? `
           <div class="preset-selector">
             <select class="preset-dropdown" id="router-preset-select">
               <option value="">📋 Select Preset...</option>
               ${this.state.presets
-                .map(
-                  (preset) => `
+    .map(
+      (preset) => `
                 <option value="${preset.name}" ${this.state.selectedPreset?.name === preset.name ? "selected" : ""}>${preset.name}</option>
               `
-                )
-                .join("")}
+    )
+    .join("")}
             </select>
           </div>
         `
-            : ""
-        }
-        ${
-          isRunning
-            ? `
+    : ""
+}
+        ${isRunning
+    ? `
           <button class="btn btn-danger" data-action="router-stop">⏹ Stop Router</button>
           <button class="btn btn-secondary" data-action="router-restart">🔄 Restart</button>
         `
-            : `
+    : `
           <button class="btn btn-primary" data-action="router-start">${this.state.selectedPreset ? "▶ Start with Preset" : "▶ Start Router"}</button>
         `
-        }
+}
       `;
     }
 
@@ -888,8 +1021,8 @@ class PresetsPage extends Component {
   }
 
   /**
-   * Update just the HTML of router card (full re-render of the card only)
-   */
+       * Update just the HTML of router card (full re-render of the card only)
+       */
   _updateRouterCardHTML() {
     const routerContainer = document.getElementById("router-card");
     if (!routerContainer) return;
@@ -907,8 +1040,8 @@ class PresetsPage extends Component {
   }
 
   /**
-   * Update the server status panel to reflect current server state
-   */
+       * Update the server status panel to reflect current server state
+       */
   _updateServerStatusPanel() {
     const statusPanel = this._domCache.get("server-status");
     if (!statusPanel) return;
@@ -968,21 +1101,21 @@ class PresetsPage extends Component {
     if (!this._el) return;
 
     switch (event) {
-      case "preset:select":
-        this._handlePresetSelect(data);
-        break;
-      case "preset:loaded":
-        this._handlePresetLoaded(data);
-        break;
-      case "presets:update":
-        this._updatePresetsList(data);
-        break;
-      case "defaults:toggle":
-        this._toggleDefaultsSection();
-        break;
-      case "param:add":
-        this._handleAddParam(data);
-        break;
+    case "preset:select":
+      this._handlePresetSelect(data);
+      break;
+    case "preset:loaded":
+      this._handlePresetLoaded(data);
+      break;
+    case "presets:update":
+      this._updatePresetsList(data);
+      break;
+    case "defaults:toggle":
+      this._toggleDefaultsSection();
+      break;
+    case "param:add":
+      this._handleAddParam(data);
+      break;
     }
   }
 
@@ -1055,7 +1188,7 @@ class PresetsPage extends Component {
       if (el) {
         this._domCache.set("editor", el);
         // Show loading state
-        el.innerHTML = '<div style="padding: 20px; text-align: center;">Loading editor...</div>';
+        el.innerHTML = "<div style=\"padding: 20px; text-align: center;\">Loading editor...</div>";
         // Defer render
         requestAnimationFrame(() => this._renderEditor());
       } else {
@@ -1065,7 +1198,7 @@ class PresetsPage extends Component {
     }
 
     // Show loading state
-    editor.innerHTML = '<div style="padding: 20px; text-align: center;">Loading editor...</div>';
+    editor.innerHTML = "<div style=\"padding: 20px; text-align: center;\">Loading editor...</div>";
 
     // Defer update to avoid blocking UI
     requestAnimationFrame(() => {
@@ -1104,39 +1237,37 @@ class PresetsPage extends Component {
           <span class="section-title">Global Defaults</span>
           <span class="section-toggle">${this.state.expandedDefaults ? "▼" : "▶"}</span>
         </div>
-        ${
-          this.state.expandedDefaults
-            ? `
+        ${this.state.expandedDefaults
+    ? `
           <div class="section-content" id="content-defaults">
             <div class="search-box">
               <span class="search-icon">🔍</span>
               <input type="text" class="search-input" placeholder="Filter parameters by name..." id="param-filter">
             </div>
-            ${
-              Object.keys(this.state.globalDefaults || {}).length > 0
-                ? `
+            ${Object.keys(this.state.globalDefaults || {}).length > 0
+    ? `
              <div class="added-params-section">
                <strong>Added Parameters:</strong>
                <div class="added-params-list">
                  ${Object.entries(this.state.globalDefaults)
-                   .map(([key, value]) => {
-                     const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
-                     // Format value for display: handle arrays/strings properly
-                     let displayValue = value;
-                     if (typeof value === "string") {
-                       displayValue = value;
-                     } else if (Array.isArray(value)) {
-                       displayValue = value.join(",");
-                     } else {
-                       displayValue = String(value);
-                     }
-                     // Escape HTML special characters in the value
-                     const escaped = displayValue
-                       .replace(/&/g, "&amp;")
-                       .replace(/</g, "&lt;")
-                       .replace(/>/g, "&gt;")
-                       .replace(/"/g, "&quot;");
-                     return `
+    .map(([key, value]) => {
+      const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
+      // Format value for display: handle arrays/strings properly
+      let displayValue = value;
+      if (typeof value === "string") {
+        displayValue = value;
+      } else if (Array.isArray(value)) {
+        displayValue = value.join(",");
+      } else {
+        displayValue = String(value);
+      }
+      // Escape HTML special characters in the value
+      const escaped = displayValue
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+      return `
                         <div class="param-item-display" data-param-key="${key}">
                           <div class="param-name"><strong>${param?.label || key}</strong></div>
                           <div class="param-controls">
@@ -1145,13 +1276,13 @@ class PresetsPage extends Component {
                           </div>
                         </div>
                       `;
-                   })
-                   .join("")}
+    })
+    .join("")}
                </div>
              </div>
             `
-                : '<p class="defaults-hint">Default preset starts empty - all default values are in llama-router</p>'
-            }
+    : "<p class=\"defaults-hint\">Default preset starts empty - all default values are in llama-router</p>"
+}
             <label class="add-param-label">Add Parameter to Defaults</label>
             <select class="param-add-select" id="select-add-param" data-section="defaults" data-name="*">
               <option value="">-- Select parameter to add --</option>
@@ -1159,8 +1290,8 @@ class PresetsPage extends Component {
             </select>
           </div>
         `
-            : ""
-        }
+    : ""
+}
       </div>
 
       <div class="section standalone-section">
@@ -1173,11 +1304,11 @@ class PresetsPage extends Component {
           <select class="model-select" id="select-add-model">
             <option value="">-- Select a model --</option>
             ${(this.state.availableModels || [])
-              .map(
-                (model) =>
-                  `<option value="${this._escapeHtml(model.name)}">${this._escapeHtml(model.name)}</option>`
-              )
-              .join("")}
+    .map(
+      (model) =>
+        `<option value="${this._escapeHtml(model.name)}">${this._escapeHtml(model.name)}</option>`
+    )
+    .join("")}
           </select>
           <button class="btn btn-secondary" id="btn-add-standalone">+ Add Selected Model</button>
         </div>
@@ -1274,15 +1405,15 @@ class PresetsPage extends Component {
     if (!param) return;
 
     try {
-      // Create new defaults without the parameter to delete
+      // Create new defaults with the parameter marked for deletion (null)
       const newDefaults = { ...this.state.globalDefaults };
-      delete newDefaults[paramKey];
+      newDefaults[paramKey] = null; // Mark for deletion
 
       // Update the defaults in the preset
       await this._getService().updateDefaults(this.state.selectedPreset.name, newDefaults);
 
-      // Update state
-      this.state.globalDefaults = newDefaults;
+      // Update state - actually remove it from the state
+      delete this.state.globalDefaults[paramKey];
       showNotification(`Parameter "${param.label}" deleted`, "success");
 
       // Re-render editor to update the UI
@@ -1346,7 +1477,7 @@ class PresetsPage extends Component {
       const newConfig = { ...model };
       delete newConfig.name;
       delete newConfig.fullName;
-      delete newConfig[paramKey];
+      newConfig[paramKey] = null; // Mark for deletion
 
       await this._getService().updateModel(this.state.selectedPreset.name, modelName, newConfig);
 
@@ -1421,26 +1552,24 @@ class PresetsPage extends Component {
           <span class="model-toggle">${isExpanded ? "▼" : "▶"}</span>
           <button class="btn-model-delete" data-model-name="${model.name}" title="Delete model">×</button>
         </div>
-        ${
-          isExpanded
-            ? `
+        ${isExpanded
+    ? `
         <div class="model-content">
-          ${
-            modelParams.length > 0
-              ? `
+          ${modelParams.length > 0
+    ? `
           <div class="model-params-section">
             <strong>Parameters:</strong>
             <div class="model-params-list">
               ${modelParams
-                .map(([key, value]) => {
-                  const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
-                  const displayValue = Array.isArray(value) ? value.join(",") : String(value);
-                  const escaped = displayValue
-                    .replace(/&/g, "&amp;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;")
-                    .replace(/"/g, "&quot;");
-                  return `
+    .map(([key, value]) => {
+      const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
+      const displayValue = Array.isArray(value) ? value.join(",") : String(value);
+      const escaped = displayValue
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+      return `
                 <div class="param-item-display" data-param-key="${key}" data-model="${model.name}">
                   <div class="param-name"><strong>${param?.label || key}</strong></div>
                   <div class="param-controls">
@@ -1449,24 +1578,24 @@ class PresetsPage extends Component {
                   </div>
                 </div>
               `;
-                })
-                .join("")}
+    })
+    .join("")}
             </div>
           </div>
           `
-              : "<p>No parameters added</p>"
-          }
+    : "<p>No parameters added</p>"
+}
           <label class="add-param-label">Add Parameter</label>
           <select class="param-add-select" data-section="model" data-model="${model.name}">
             <option value="">-- Select parameter to add --</option>
             ${LLAMA_PARAMS.filter((p) => !Object.keys(model).includes(p.iniKey))
-              .map((p) => `<option value="${p.key}">${p.label} (${p.group})</option>`)
-              .join("")}
+    .map((p) => `<option value="${p.key}">${p.label} (${p.group})</option>`)
+    .join("")}
           </select>
         </div>
         `
-            : ""
-        }
+    : ""
+}
       </div>
     `;
       })
@@ -1580,7 +1709,7 @@ class PresetsPage extends Component {
 
     // Add param dropdown for models
     const modelParamSelects =
-      this._el?.querySelectorAll(".param-add-select[data-section='model']") || [];
+            this._el?.querySelectorAll(".param-add-select[data-section='model']") || [];
     modelParamSelects.forEach((select) => {
       select.onchange = (e) => {
         if (e.target.value) {
@@ -1652,7 +1781,7 @@ class PresetsPage extends Component {
         } else {
           const editor = this._domCache.get("editor");
           if (editor) {
-            editor.innerHTML = '<div class="empty-state">Select a preset to edit</div>';
+            editor.innerHTML = "<div class=\"empty-state\">Select a preset to edit</div>";
           }
         }
       }
@@ -1741,15 +1870,9 @@ class PresetsPage extends Component {
         // Left panel: Router Card (event-driven, no React-style callbacks)
         Component.h(
           "div",
-          { className: "router-card-container", id: "router-card" },
-          this._renderRouterCard()
+          { className: "router-card-container", id: "router-card" }
         ),
-        // Right panel: Server status and editor
-        Component.h(
-          "div",
-          { className: "server-status-panel", id: "server-status" },
-          Component.h("div", { className: "empty-state" }, "Select a preset to launch server")
-        ),
+        // Right panel: Editor
         Component.h(
           "div",
           { className: "presets-editor", id: "presets-editor" },
@@ -1760,32 +1883,32 @@ class PresetsPage extends Component {
   }
 
   /**
-   * Handle router actions from RouterCard
-   */
+       * Handle router actions from RouterCard
+       */
   _handleRouterAction(action, data) {
     console.log("[PRESETS] RouterCard action:", action, data);
 
     switch (action) {
-      case "start":
-        this._handleLaunchServer();
-        break;
-      case "stop":
-        this._handleStopServer();
-        break;
-      case "restart":
-        this._handleStopServer().then(() => {
-          setTimeout(() => this._handleLaunchServer(), 2000);
-        });
-        break;
-      case "start-with-preset":
-        this._handleLaunchServerWithPreset(data);
-        break;
+    case "start":
+      this._handleLaunchServer();
+      break;
+    case "stop":
+      this._handleStopServer();
+      break;
+    case "restart":
+      this._handleStopServer().then(() => {
+        setTimeout(() => this._handleLaunchServer(), 2000);
+      });
+      break;
+    case "start-with-preset":
+      this._handleLaunchServerWithPreset(data);
+      break;
     }
   }
 
   /**
-   * Render the Router Card using pure event-driven pattern (no Component.h)
-   */
+       * Render the Router Card using pure event-driven pattern (no Component.h)
+       */
   _renderRouterCard() {
     const isRunning = this.state.serverRunning;
     const displayPort = this.state.serverPort || this.state.configPort || 8080;
@@ -1801,46 +1924,43 @@ class PresetsPage extends Component {
               <h3>🦙 Llama Router</h3>
               <span class="status-badge ${isRunning ? "running" : "idle"}">${isRunning ? "RUNNING" : "STOPPED"}</span>
             </div>
-            ${
-              isRunning
-                ? `
+            ${isRunning
+    ? `
               <div class="router-info">
                 <span class="info-item">Port: ${displayPort}</span>
                 <span class="info-item models-info">Models: ${loadedCount}/${this.state.availableModels.length} loaded</span>
               </div>
             `
-                : ""
-            }
+    : ""
+}
           </div>
           <div class="router-controls">
-            ${
-              hasPresets
-                ? `
+            ${hasPresets
+    ? `
               <div class="preset-selector">
                 <select class="preset-dropdown" id="router-preset-select">
                   <option value="">📋 Select Preset...</option>
                   ${this.state.presets
-                    .map(
-                      (preset) => `
+    .map(
+      (preset) => `
                     <option value="${preset.name}" ${this.state.selectedPreset?.name === preset.name ? "selected" : ""}>${preset.name}</option>
                   `
-                    )
-                    .join("")}
+    )
+    .join("")}
                 </select>
               </div>
             `
-                : ""
-            }
-            ${
-              isRunning
-                ? `
+    : ""
+}
+            ${isRunning
+    ? `
               <button class="btn btn-danger" data-action="router-stop">⏹ Stop Router</button>
               <button class="btn btn-secondary" data-action="router-restart" ${!isRunning ? "disabled" : ""}>🔄 Restart</button>
             `
-                : `
+    : `
               <button class="btn btn-primary" data-action="router-start">${this.state.selectedPreset ? "▶ Start with Preset" : "▶ Start Router"}</button>
             `
-            }
+}
           </div>
         </div>
       </div>
@@ -1848,42 +1968,42 @@ class PresetsPage extends Component {
   }
 
   /**
-   * Bind router card events after it's rendered
-   */
+       * Bind router card events after it's rendered
+       */
   _bindRouterCardEvents() {
     const routerCard = document.getElementById("router-card");
     if (!routerCard) return;
 
     // Start button
-    const startBtn = routerCard.querySelector('[data-action="router-start"]');
+    const startBtn = routerCard.querySelector("[data-action=\"router-start\"]");
     startBtn && (startBtn.onclick = () => this._handleLaunchServer());
 
     // Stop button
-    const stopBtn = routerCard.querySelector('[data-action="router-stop"]');
+    const stopBtn = routerCard.querySelector("[data-action=\"router-stop\"]");
     stopBtn && (stopBtn.onclick = () => this._handleStopServer());
 
     // Restart button
-    const restartBtn = routerCard.querySelector('[data-action="router-restart"]');
+    const restartBtn = routerCard.querySelector("[data-action=\"router-restart\"]");
     restartBtn &&
-      (restartBtn.onclick = () => {
-        this._handleStopServer().then(() => {
-          setTimeout(() => this._handleLaunchServer(), 2000);
-        });
-      });
+            (restartBtn.onclick = () => {
+              this._handleStopServer().then(() => {
+                setTimeout(() => this._handleLaunchServer(), 2000);
+              });
+            });
 
     // Preset select
     const presetSelect = routerCard.querySelector("#router-preset-select");
     presetSelect &&
-      (presetSelect.onchange = (e) => {
-        if (e.target.value) {
-          this._emit("preset:select", e.target.value);
-        }
-      });
+            (presetSelect.onchange = (e) => {
+              if (e.target.value) {
+                this._emit("preset:select", e.target.value);
+              }
+            });
   }
 
   /**
-   * Launch server with currently selected preset
-   */
+       * Launch server with currently selected preset
+       */
   async _handleLaunchServerWithPreset(presetName) {
     if (!presetName) {
       showNotification("Please select a preset first", "warning");

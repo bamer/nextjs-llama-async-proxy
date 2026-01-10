@@ -6,8 +6,8 @@
 .parameter-form {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md);
+  gap: var(--md);
+  padding: var(--md);
 }
 
 /* Toolbar */
@@ -16,10 +16,10 @@
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
+  gap: var(--sm);
+  padding: var(--sm) var(--md);
   background: var(--bg-secondary);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius);
   border: 1px solid var(--border-color);
 }
 
@@ -27,7 +27,7 @@
 .toolbar-right {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--sm);
 }
 
 /* Search input */
@@ -39,7 +39,7 @@
 
 .search-icon {
   position: absolute;
-  left: var(--spacing-sm);
+  left: var(--sm);
   color: var(--text-muted);
   font-size: 0.875rem;
 }
@@ -52,16 +52,16 @@
 .param-count {
   font-size: 0.75rem;
   color: var(--text-muted);
-  margin-left: var(--spacing-xs);
+  margin-left: var(--xs);
 }
 
 /* Validation banner */
 .validation-banner {
   display: flex;
   align-items: flex-start;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--radius-md);
+  gap: var(--sm);
+  padding: var(--sm) var(--md);
+  border-radius: var(--radius);
   border: 1px solid;
 }
 
@@ -87,8 +87,8 @@
 }
 
 .banner-errors {
-  margin-top: var(--spacing-xs);
-  padding-left: var(--spacing-md);
+  margin-top: var(--xs);
+  padding-left: var(--md);
   font-size: 0.75rem;
 }
 
@@ -96,13 +96,13 @@
 .sections-container {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--sm);
 }
 
 /* Category wrapper */
 .category-wrapper {
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius);
   background: var(--bg-primary);
   overflow: hidden;
 }
@@ -117,7 +117,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--sm) var(--md);
   background: var(--bg-secondary);
   cursor: pointer;
   user-select: none;
@@ -135,7 +135,7 @@
 .section-title-area {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--sm);
   flex: 1;
 }
 
@@ -169,30 +169,30 @@
   color: var(--text-secondary);
   margin: 0;
   flex: 1;
-  padding-left: var(--spacing-md);
+  padding-left: var(--md);
 }
 
 .section-actions {
   display: flex;
-  gap: var(--spacing-xs);
+  gap: var(--xs);
 }
 
 .section-expand-btn,
 .section-collapse-btn {
   font-size: 0.75rem;
-  padding: var(--spacing-xs) var(--spacing-sm);
+  padding: var(--xs) var(--sm);
 }
 
 /* Section body */
 .section-body {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-sm);
+  gap: var(--xs);
+  padding: var(--sm);
 }
 
 .section-empty {
-  padding: var(--spacing-lg);
+  padding: var(--lg);
   text-align: center;
   color: var(--text-muted);
 }
@@ -201,10 +201,10 @@
 .parameter-input {
   display: grid;
   grid-template-columns: auto 1fr auto auto;
-  gap: var(--spacing-sm);
+  gap: var(--sm);
   align-items: center;
-  padding: var(--spacing-sm);
-  border-radius: var(--radius-sm);
+  padding: var(--sm);
+  border-radius: var(--radius);
   border: 2px solid transparent;
   background: var(--bg-primary);
   transition:
@@ -249,7 +249,7 @@
 .param-label {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: var(--xs);
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-primary);
@@ -287,9 +287,9 @@
 
 /* Parameter field */
 .param-field {
-  padding: var(--spacing-xs) var(--spacing-sm);
+  padding: var(--xs) var(--sm);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   background: var(--bg-primary);
   color: var(--text-primary);
   font-size: 0.875rem;
@@ -326,7 +326,7 @@
 .param-boolean-wrapper {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: var(--xs);
 }
 
 .param-checkbox {
@@ -349,7 +349,7 @@
   justify-content: center;
   font-size: 0.75rem;
   font-weight: bold;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
 }
 
 .inheritance-model {
@@ -373,7 +373,7 @@
   height: 24px;
   border: none;
   background: var(--bg-secondary);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   cursor: pointer;
   font-size: 1rem;
   color: var(--text-secondary);
@@ -398,11 +398,11 @@
   z-index: 100;
   background: var(--bg-inverse);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-sm);
+  border-radius: var(--radius);
+  padding: var(--sm);
   max-width: 300px;
   box-shadow: var(--shadow-lg);
-  margin-top: var(--spacing-xs);
+  margin-top: var(--xs);
 }
 
 .tooltip-arrow {
@@ -423,20 +423,20 @@
 
 .tooltip-content strong {
   display: block;
-  margin-bottom: var(--spacing-xs);
+  margin-bottom: var(--xs);
   color: var(--text-inverse);
 }
 
 .tooltip-content p {
-  margin: 0 0 var(--spacing-xs) 0;
+  margin: 0 0 var(--xs) 0;
   opacity: 0.9;
 }
 
 .tooltip-cli {
   display: block;
-  padding: var(--spacing-xs);
+  padding: var(--xs);
   background: var(--bg-tertiary);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   font-size: 0.625rem;
   color: var(--color-info);
 }
@@ -445,9 +445,9 @@
 .validation-message {
   grid-column: 2 / -1;
   font-size: 0.75rem;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-sm);
-  margin-top: var(--spacing-xs);
+  padding: var(--xs) var(--sm);
+  border-radius: var(--radius);
+  margin-top: var(--xs);
 }
 
 .validation-message.message-error {
@@ -463,7 +463,7 @@
 /* No results */
 .no-results {
   text-align: center;
-  padding: var(--spacing-xl);
+  padding: var(--xl);
   color: var(--text-muted);
 }
 
@@ -482,7 +482,7 @@
 
   .parameter-input {
     grid-template-columns: 1fr;
-    gap: var(--spacing-xs);
+    gap: var(--xs);
   }
 
   .param-label {
@@ -491,8 +491,8 @@
 
   .param-tooltip {
     position: fixed;
-    left: var(--spacing-md);
-    right: var(--spacing-md);
+    left: var(--md);
+    right: var(--md);
     max-width: none;
   }
 

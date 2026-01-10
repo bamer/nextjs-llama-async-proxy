@@ -3,9 +3,11 @@
 }
 
 .page-content {
-  padding: var(--lg);
+  padding: 0;
   flex: 1;
   overflow-y: auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Cards */
