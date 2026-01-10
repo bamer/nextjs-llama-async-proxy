@@ -6,17 +6,32 @@ class LlamaServerStatusPanel extends Component {
   constructor(props) {
     super(props);
 
-    // Direct properties instead of state
-    this.status = "unknown";
-    this.metrics = null;
-    this.uptime = "00:00:00";
-    this.pid = null;
+    // Direct properties instead of state - use props if available
+    this.status = props.status?.status || "unknown";
+    this.metrics = props.metrics || null;
+    this.uptime = props.status?.uptime ? window.FormatUtils.formatUptime(props.status.uptime / 1000) : "00:00:00";
+    this.pid = props.status?.pid || null;
     this._detailsExpanded = false;
     this._unsubscribers = [];
   }
 
   onMount() {
     console.log("[DEBUG] LlamaServerStatusPanel onMount");
+
+    // Get initial state from stateManager if not provided via props
+    if (!this.status || this.status === "unknown") {
+      const initialStatus = stateManager.get("llamaServerStatus");
+      if (initialStatus) {
+        this.handleStatusChange(initialStatus);
+      }
+    }
+
+    if (!this.metrics) {
+      const initialMetrics = stateManager.get("llamaServerMetrics");
+      if (initialMetrics) {
+        this.handleMetricsChange(initialMetrics);
+      }
+    }
 
     // Subscribe to llama-server status
     this._unsubscribers.push(
@@ -81,7 +96,7 @@ class LlamaServerStatusPanel extends Component {
     const isRunning = status.status === "running";
 
     this.status = status.status || "unknown";
-    this.metrics = status.metrics;
+    this.metrics = status.metrics || this.metrics;
     this.uptime = status.uptime
       ? window.FormatUtils.formatUptime(status.uptime / 1000)
       : "00:00:00";
@@ -118,14 +133,23 @@ class LlamaServerStatusPanel extends Component {
     if (startBtn) startBtn.style.display = this.status === "stopped" ? "" : "none";
     if (stopBtn) stopBtn.style.display = this.status === "running" ? "" : "none";
 
-    // Update summary
-    const uptimeEl = this._el.querySelector(".summary-item:nth-child(2) .value");
-    if (uptimeEl) uptimeEl.textContent = this.uptime;
-
-    if (this.pid) {
-      const pidEl = this._el.querySelector(".summary-item:first-child .value");
-      if (pidEl) pidEl.textContent = this._getStatusText(this.status);
-    }
+    // Update summary - use label-based selectors for reliability
+    const summaryItems = this._el.querySelectorAll(".summary-item");
+    summaryItems.forEach((item) => {
+      const label = item.querySelector(".label");
+      if (label) {
+        if (label.textContent === "Status:") {
+          const valueEl = item.querySelector(".value");
+          if (valueEl) valueEl.textContent = this._getStatusText(this.status);
+        } else if (label.textContent === "Uptime:") {
+          const valueEl = item.querySelector(".value");
+          if (valueEl) valueEl.textContent = this.uptime;
+        } else if (label.textContent === "PID:") {
+          const valueEl = item.querySelector(".value");
+          if (valueEl && this.pid) valueEl.textContent = String(this.pid);
+        }
+      }
+    });
   }
 
   toggleDetails() {

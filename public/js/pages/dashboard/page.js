@@ -57,7 +57,6 @@ class DashboardPage extends Component {
     // Subscribe to metrics updates
     this.unsubscribers.push(
       stateManager.subscribe("metrics", (m) => {
-        console.log("[DEBUG] DashboardPage: subscribed to 'metrics', data:", JSON.stringify(m, null, 2));
         this.handleMetricsChange(m);
       })
     );
@@ -75,13 +74,9 @@ class DashboardPage extends Component {
   }
 
   handleMetricsChange(metrics) {
-    console.log("[DEBUG] Dashboard: Metrics changed:", metrics);
-    console.log("[DEBUG] Dashboard: gpu data:", metrics?.gpu);
     this.metrics = metrics || { cpu: { usage: 0 }, memory: { used: 0 }, gpu: null };
     this.gpuMetrics = metrics?.gpu || { usage: 0, memoryUsed: 0, memoryTotal: 0, list: [] };
     this.history = metrics?.history || [];
-
-    console.log("[DEBUG] Dashboard: this.gpuMetrics:", this.gpuMetrics);
 
     if (this.chartManager) {
       this.chartManager.updateCharts(metrics, this.history);
@@ -312,6 +307,7 @@ class DashboardPage extends Component {
           },
         }),
         Component.h(window.LlamaServerStatusPanel, {
+          status: this.status,
           metrics: stateManager.get("llamaServerMetrics"),
         }),
         Component.h(window.QuickActions, {

@@ -63,6 +63,22 @@ class RouterCard extends Component {
   onMount() {
     console.log("[DEBUG] RouterCard onMount called, status:", this.status);
 
+    // Get initial status from stateManager - use llamaServerStatus for consistency
+    const initialStatus = stateManager.get("llamaServerStatus");
+    if (initialStatus) {
+      console.log("[DEBUG] RouterCard: got initial llamaServerStatus:", initialStatus);
+      this.status = initialStatus;
+      this._updateUI();
+    }
+
+    // Also check routerStatus for backward compatibility
+    const initialRouterStatus = stateManager.get("routerStatus");
+    if (initialRouterStatus && !this.status) {
+      console.log("[DEBUG] RouterCard: got initial routerStatus:", initialRouterStatus);
+      this.status = initialRouterStatus;
+      this._updateUI();
+    }
+
     if (this.props.subscribeToUpdates) {
       const unsub = this.props.subscribeToUpdates((status) => {
         console.log("[DEBUG] RouterCard received status update:", status);
@@ -74,6 +90,28 @@ class RouterCard extends Component {
       this._unsubscribers = this._unsubscribers || [];
       this._unsubscribers.push(unsub);
     }
+
+    // Subscribe to llamaServerStatus changes for consistency
+    const unsubDirect = stateManager.subscribe("llamaServerStatus", (status) => {
+      console.log("[DEBUG] RouterCard: direct subscription to llamaServerStatus:", status);
+      this.status = status;
+      this.routerLoading = false;
+      this._updateUI();
+    });
+    this._unsubscribers = this._unsubscribers || [];
+    this._unsubscribers.push(unsubDirect);
+
+    // Also subscribe to routerStatus for backward compatibility
+    const unsubRouter = stateManager.subscribe("routerStatus", (status) => {
+      console.log("[DEBUG] RouterCard: direct subscription to routerStatus:", status);
+      // Only update if we don't have llamaServerStatus
+      if (!stateManager.get("llamaServerStatus")) {
+        this.status = status;
+        this.routerLoading = false;
+        this._updateUI();
+      }
+    });
+    this._unsubscribers.push(unsubRouter);
   }
 
   destroy() {

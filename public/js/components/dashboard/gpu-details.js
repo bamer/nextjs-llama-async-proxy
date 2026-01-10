@@ -13,12 +13,8 @@ class GpuDetails extends Component {
   onMount() {
     // Subscribe to metrics changes to update GPU list
     this.unsubscriber = stateManager.subscribe("metrics", (metrics) => {
-      console.log("[DEBUG] GpuDetails: subscribed to 'metrics'");
-      console.log("[DEBUG] GpuDetails: metrics received:", JSON.stringify(metrics, null, 2));
       const newList = metrics?.gpu?.list || [];
-      console.log("[DEBUG] GpuDetails: new gpuList:", JSON.stringify(newList, null, 2));
-      const oldList = this.gpuList || [];
-      if (JSON.stringify(newList) !== JSON.stringify(oldList)) {
+      if (JSON.stringify(newList) !== JSON.stringify(this.gpuList || [])) {
         this.gpuList = newList;
         this._updateGPUUI();
       }
@@ -30,9 +26,10 @@ class GpuDetails extends Component {
   }
 
   bindEvents() {
-    // Toggle GPU details
+    // Toggle GPU details - event delegation on this._el
     this.on("click", ".gpu-header", (e) => {
       e.preventDefault();
+      e.stopPropagation();
       this.expanded = !this.expanded;
       this._updateUI();
     });
@@ -65,24 +62,82 @@ class GpuDetails extends Component {
   }
 
   _updateGPUUI() {
-    // Update the "No GPU detected" message when GPU data arrives
     if (!this._el) return;
 
     const noDataEl = this._el.querySelector(".gpu-no-data");
     const headerEl = this._el.querySelector(".gpu-header");
-    const titleEl = this._el.querySelector(".gpu-title");
 
     if (this.gpuList && this.gpuList.length > 0) {
-      // GPUs detected - show header
+      // GPUs detected - replace "No GPU detected" with actual content
       if (noDataEl) {
         noDataEl.remove();
       }
-      if (headerEl) {
-        headerEl.style.display = "";
+
+      // Create header if it doesn't exist
+      if (!headerEl) {
+        const headerHtml = `
+          <div class="gpu-header" data-action="toggle-gpu">
+            <span class="gpu-title">GPU Devices (${this.gpuList.length})</span>
+            <span class="gpu-toggle ${this.expanded ? "open" : "closed"}">${this.expanded ? "▼" : "▶"}</span>
+          </div>
+        `;
+
+        // Insert header at the beginning
+        this._el.insertAdjacentHTML("afterbegin", headerHtml);
       }
+
+      // Update title
+      const titleEl = this._el.querySelector(".gpu-title");
       if (titleEl) {
         titleEl.textContent = `GPU Devices (${this.gpuList.length})`;
       }
+
+      // Update toggle icon
+      const toggle = this._el.querySelector(".gpu-toggle");
+      if (toggle) {
+        toggle.textContent = this.expanded ? "▼" : "▶";
+        toggle.className = `gpu-toggle ${this.expanded ? "open" : "closed"}`;
+      }
+
+      // Create or update GPU list
+      let gpuList = this._el.querySelector(".gpu-list");
+      if (!gpuList) {
+        gpuList = document.createElement("div");
+        gpuList.className = "gpu-list";
+        this._el.appendChild(gpuList);
+      }
+
+      gpuList.innerHTML = this.gpuList
+        .map(
+          (gpu) => `
+        <div class="gpu-card ${gpu.usage > 75 || (gpu.memoryTotal > 0 && gpu.memoryUsed / gpu.memoryTotal > 0.75) ? "high-usage" : ""}">
+          <div class="gpu-info">
+            <strong>${gpu.name}</strong>
+            <span class="gpu-vendor">${gpu.vendor}</span>
+          </div>
+          <div class="gpu-metric">
+            <span>Usage</span>
+            <div class="metric-bar">
+              <div class="metric-fill" style="width: ${Math.min(gpu.usage, 100)}%"></div>
+              <span class="metric-text">${gpu.usage.toFixed(1)}%</span>
+            </div>
+          </div>
+          ${gpu.memoryTotal > 0 ? `
+          <div class="gpu-metric">
+            <span>Memory</span>
+            <div class="metric-bar">
+              <div class="metric-fill" style="width: ${(gpu.memoryUsed / gpu.memoryTotal) * 100}%"></div>
+              <span class="metric-text">${window.AppUtils?.formatBytes?.(gpu.memoryUsed)} / ${window.AppUtils?.formatBytes?.(gpu.memoryTotal)}</span>
+            </div>
+          </div>
+          ` : ""}
+        </div>
+      `
+        )
+        .join("");
+
+      // Show/hide based on expanded state
+      gpuList.style.display = this.expanded ? "block" : "none";
     }
   }
 
@@ -101,8 +156,8 @@ class GpuDetails extends Component {
           <div class="gpu-list">
             ${this.gpuList
               .map(
-                (gpu, idx) => `
-              <div class="gpu-card ${gpu.usage > 75 || gpu.memoryUsed / gpu.memoryTotal > 0.75 ? "high-usage" : ""}">
+                (gpu) => `
+              <div class="gpu-card ${gpu.usage > 75 || (gpu.memoryTotal > 0 && gpu.memoryUsed / gpu.memoryTotal > 0.75) ? "high-usage" : ""}">
                 <div class="gpu-info">
                   <strong>${gpu.name}</strong>
                   <span class="gpu-vendor">${gpu.vendor}</span>
@@ -119,7 +174,7 @@ class GpuDetails extends Component {
                   <span>Memory</span>
                   <div class="metric-bar">
                     <div class="metric-fill" style="width: ${(gpu.memoryUsed / gpu.memoryTotal) * 100}%"></div>
-                    <span class="metric-text">${AppUtils?.formatBytes?.(gpu.memoryUsed)} / ${AppUtils?.formatBytes?.(gpu.memoryTotal)}</span>
+                    <span class="metric-text">${window.AppUtils?.formatBytes?.(gpu.memoryUsed)} / ${window.AppUtils?.formatBytes?.(gpu.memoryTotal)}</span>
                   </div>
                 </div>
                 ` : ""}
