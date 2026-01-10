@@ -58,6 +58,7 @@ class DashboardController {
       el._component = this.comp;
 
       this.comp.bindEvents();
+      this.comp.onMount();
 
       requestAnimationFrame(() => {
         setTimeout(() => {
@@ -129,113 +130,107 @@ class DashboardController {
     }
   }
 
-  async handleRouterAction(action) {
+  handleRouterAction(action) {
     switch (action) {
     case "start":
-      await this._start();
+      this._start();
       break;
     case "stop":
-      await this._stop();
+      this._stop();
       break;
     case "restart":
-      await this._restart();
+      this._restart();
       break;
     }
   }
 
-  async _start() {
+  _start() {
     if (this.comp) {
-      this.comp.state.routerLoading = true;
-      this.comp._updateRouterCardUI();
+      this.comp.setRouterLoading(true);
     }
-    try {
-      await stateManager.startLlama();
-      showNotification("Starting router...", "info");
-      setTimeout(async () => {
-        try {
-          const s = await stateManager.getLlamaStatus();
-          stateManager.set("llamaServerStatus", s.status || null);
-          const rs = await stateManager.getRouterStatus();
-          stateManager.set("routerStatus", rs.routerStatus);
-          showNotification("Router started successfully", "success");
-        } catch (e) {
-          console.error("[DASHBOARD] Error checking status:", e.message);
-          showNotification(`Failed to start router: ${  e.message}`, "error");
-        } finally {
-          // Clear loading state
-          if (this.comp) {
-            this.comp.state.routerLoading = false;
-            this.comp._updateRouterCardUI();
+    stateManager
+      .startLlama()
+      .then(() => {
+        showNotification("Starting router...", "info");
+        setTimeout(async () => {
+          try {
+            const s = await stateManager.getLlamaStatus();
+            stateManager.set("llamaServerStatus", s.status || null);
+            const rs = await stateManager.getRouterStatus();
+            stateManager.set("routerStatus", rs.routerStatus);
+            showNotification("Router started successfully", "success");
+          } catch (e) {
+            console.error("[DASHBOARD] Error checking status:", e.message);
+            showNotification(`Failed to start router: ${e.message}`, "error");
+          } finally {
+            if (this.comp) {
+              this.comp.setRouterLoading(false);
+            }
           }
+        }, 3000);
+      })
+      .catch((e) => {
+        showNotification(`Failed: ${e.message}`, "error");
+        if (this.comp) {
+          this.comp.setRouterLoading(false);
         }
-      }, 3000);
-    } catch (e) {
-      showNotification(`Failed: ${e.message}`, "error");
-      // On error, clear loading state manually
-      if (this.comp) {
-        this.comp.state.routerLoading = false;
-        this.comp._updateRouterCardUI();
-      }
-    }
+      });
   }
 
-  async _stop() {
+  _stop() {
     if (!confirm("Stop router?")) return;
     if (this.comp) {
-      this.comp.state.routerLoading = true;
-      this.comp._updateRouterCardUI();
+      this.comp.setRouterLoading(true);
     }
-    try {
-      await stateManager.stopLlama();
-      const status = { status: "idle", port: null };
-      stateManager.set("llamaServerStatus", status);
-      stateManager.set("routerStatus", null);
-      showNotification("Router stopped", "success");
-    } catch (e) {
-      showNotification(`Failed: ${e.message}`, "error");
-    } finally {
-      // Clear loading state
-      if (this.comp) {
-        this.comp.state.routerLoading = false;
-        this.comp._updateRouterCardUI();
-      }
-    }
+    stateManager
+      .stopLlama()
+      .then(() => {
+        const status = { status: "idle", port: null };
+        stateManager.set("llamaServerStatus", status);
+        stateManager.set("routerStatus", null);
+        showNotification("Router stopped", "success");
+      })
+      .catch((e) => {
+        showNotification(`Failed: ${e.message}`, "error");
+      })
+      .finally(() => {
+        if (this.comp) {
+          this.comp.setRouterLoading(false);
+        }
+      });
   }
 
-  async _restart() {
+  _restart() {
     if (this.comp) {
-      this.comp.state.routerLoading = true;
-      this.comp._updateRouterCardUI();
+      this.comp.setRouterLoading(true);
     }
-    try {
-      await stateManager.restartLlama();
-      showNotification("Restarting router...", "info");
-      setTimeout(async () => {
-        try {
-          const s = await stateManager.getLlamaStatus();
-          stateManager.set("llamaServerStatus", s.status || null);
-          const rs = await stateManager.getRouterStatus();
-          stateManager.set("routerStatus", rs.routerStatus);
-          showNotification("Router restarted", "success");
-        } catch (e) {
-          console.error("[DASHBOARD] Error checking status:", e.message);
-          showNotification(`Failed to restart router: ${  e.message}`, "error");
-        } finally {
-          // Clear loading state
-          if (this.comp) {
-            this.comp.state.routerLoading = false;
-            this.comp._updateRouterCardUI();
+    stateManager
+      .restartLlama()
+      .then(() => {
+        showNotification("Restarting router...", "info");
+        setTimeout(async () => {
+          try {
+            const s = await stateManager.getLlamaStatus();
+            stateManager.set("llamaServerStatus", s.status || null);
+            const rs = await stateManager.getRouterStatus();
+            stateManager.set("routerStatus", rs.routerStatus);
+            showNotification("Router restarted", "success");
+          } catch (e) {
+            console.error("[DASHBOARD] Error checking status:", e.message);
+            showNotification(`Failed to restart router: ${e.message}`, "error");
+          } finally {
+            if (this.comp) {
+              this.comp.setRouterLoading(false);
+            }
           }
+        }, 5000);
+      })
+      .catch((e) => {
+        showNotification(`Failed: ${e.message}`, "error");
+        if (this.comp) {
+          this.comp.setRouterLoading(false);
         }
-      }, 5000);
-    } catch (e) {
-      showNotification(`Failed: ${e.message}`, "error");
-      // Clear loading state immediately on error
-      if (this.comp) {
-        this.comp.state.routerLoading = false;
-        this.comp._updateRouterCardUI();
-      }
-    }
+      });
   }
 }
 

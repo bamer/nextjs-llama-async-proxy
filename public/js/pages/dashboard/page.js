@@ -62,7 +62,6 @@ class DashboardPage extends Component {
   }
 
   _setupInitialMetrics() {
-    // Check if we have llama-server metrics available
     const llamaMetrics = stateManager.get("llamaMetrics");
     if (llamaMetrics && typeof llamaMetrics !== "undefined") {
       console.log("[DEBUG] Dashboard: Using llama-server metrics:", llamaMetrics);
@@ -72,7 +71,6 @@ class DashboardPage extends Component {
 
   handleMetricsChange(metrics) {
     console.log("[DEBUG] Dashboard: Metrics changed:", metrics);
-    // This is for system metrics (CPU, memory, GPU) from monitoring
     this.metrics = metrics || { cpu: { usage: 0 }, memory: { used: 0 }, gpu: null };
     this.gpuMetrics = metrics?.gpu || { usage: 0, memoryUsed: 0, memoryTotal: 0 };
     this.history = metrics?.history || [];
@@ -94,6 +92,11 @@ class DashboardPage extends Component {
       e.preventDefault();
       this._refresh();
     });
+  }
+
+  setRouterLoading(loading) {
+    this.routerLoading = loading;
+    this._updateRouterCardUI();
   }
 
   _updateRouterCardUI() {
