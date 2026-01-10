@@ -13,11 +13,14 @@ class GpuDetails extends Component {
   onMount() {
     // Subscribe to metrics changes to update GPU list
     this.unsubscriber = stateManager.subscribe("metrics", (metrics) => {
+      console.log("[DEBUG] GpuDetails: subscribed to 'metrics'");
+      console.log("[DEBUG] GpuDetails: metrics received:", JSON.stringify(metrics, null, 2));
       const newList = metrics?.gpu?.list || [];
+      console.log("[DEBUG] GpuDetails: new gpuList:", JSON.stringify(newList, null, 2));
       const oldList = this.gpuList || [];
       if (JSON.stringify(newList) !== JSON.stringify(oldList)) {
         this.gpuList = newList;
-        this._updateUI();
+        this._updateGPUUI();
       }
     });
   }
@@ -58,6 +61,28 @@ class GpuDetails extends Component {
     const gpuList = this._el.querySelector(".gpu-list");
     if (gpuList) {
       gpuList.style.display = this.expanded ? "block" : "none";
+    }
+  }
+
+  _updateGPUUI() {
+    // Update the "No GPU detected" message when GPU data arrives
+    if (!this._el) return;
+
+    const noDataEl = this._el.querySelector(".gpu-no-data");
+    const headerEl = this._el.querySelector(".gpu-header");
+    const titleEl = this._el.querySelector(".gpu-title");
+
+    if (this.gpuList && this.gpuList.length > 0) {
+      // GPUs detected - show header
+      if (noDataEl) {
+        noDataEl.remove();
+      }
+      if (headerEl) {
+        headerEl.style.display = "";
+      }
+      if (titleEl) {
+        titleEl.textContent = `GPU Devices (${this.gpuList.length})`;
+      }
     }
   }
 

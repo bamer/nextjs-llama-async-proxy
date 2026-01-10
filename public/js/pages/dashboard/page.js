@@ -56,7 +56,10 @@ class DashboardPage extends Component {
 
     // Subscribe to metrics updates
     this.unsubscribers.push(
-      stateManager.subscribe("metrics", this.handleMetricsChange.bind(this))
+      stateManager.subscribe("metrics", (m) => {
+        console.log("[DEBUG] DashboardPage: subscribed to 'metrics', data:", JSON.stringify(m, null, 2));
+        this.handleMetricsChange(m);
+      })
     );
 
     // Setup initial metrics
@@ -73,9 +76,12 @@ class DashboardPage extends Component {
 
   handleMetricsChange(metrics) {
     console.log("[DEBUG] Dashboard: Metrics changed:", metrics);
+    console.log("[DEBUG] Dashboard: gpu data:", metrics?.gpu);
     this.metrics = metrics || { cpu: { usage: 0 }, memory: { used: 0 }, gpu: null };
-    this.gpuMetrics = metrics?.gpu || { usage: 0, memoryUsed: 0, memoryTotal: 0 };
+    this.gpuMetrics = metrics?.gpu || { usage: 0, memoryUsed: 0, memoryTotal: 0, list: [] };
     this.history = metrics?.history || [];
+
+    console.log("[DEBUG] Dashboard: this.gpuMetrics:", this.gpuMetrics);
 
     if (this.chartManager) {
       this.chartManager.updateCharts(metrics, this.history);
@@ -188,6 +194,13 @@ class DashboardPage extends Component {
     const systemHealth = this._el?.querySelector(".health-section");
     if (systemHealth && systemHealth._component) {
       systemHealth._component.updateMetrics(this.metrics, this.gpuMetrics);
+    }
+
+    // Update GpuDetails component
+    const gpuDetails = this._el?.querySelector(".gpu-details");
+    if (gpuDetails && gpuDetails._component) {
+      gpuDetails._component.gpuList = this.gpuMetrics?.list || [];
+      gpuDetails._component._updateGPUUI();
     }
 
     // Update chart stats in DOM

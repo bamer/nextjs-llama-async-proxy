@@ -61,6 +61,7 @@ class StateBroadcastHandlers {
     socket.on("metrics:update", (data) => {
       if (data?.type === "broadcast" && this._shouldProcess("metrics:update", data.timestamp)) {
         console.log("[DEBUG] Broadcast metrics:update:", { timestamp: data.timestamp });
+        console.log("[DEBUG] Broadcast metrics:update - full data:", JSON.stringify(data.data?.metrics, null, 2));
         this.core.set("metrics", data.data?.metrics);
         this.handlers.onMetric?.(data.data?.metrics);
       }
