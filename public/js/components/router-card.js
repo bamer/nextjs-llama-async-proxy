@@ -81,7 +81,7 @@ class RouterCard extends Component {
 
     if (this.props.subscribeToUpdates) {
       const unsub = this.props.subscribeToUpdates((status) => {
-        console.log("[DEBUG] RouterCard received status update:", status);
+        console.log("[DEBUG] RouterCard subscribeToUpdates callback received:", status);
         this.status = status;
         this.routerLoading = false;
         console.log("[DEBUG] RouterCard calling _updateUI with isRunning:", !!status?.port);
@@ -126,7 +126,8 @@ class RouterCard extends Component {
   _updateUI() {
     if (!this._el) return;
 
-    const isRunning = this.status?.port;
+    // Check both llamaServerStatus (status field) and routerStatus (port field)
+    const isRunning = this.status?.port || this.status?.status === "running";
     const routerLoading = this.routerLoading;
     const loadedCount = (this.routerStatus?.models || []).filter(
       (x) => x.state === "loaded"
@@ -175,7 +176,8 @@ class RouterCard extends Component {
   }
 
   render() {
-    const isRunning = this.status?.port;
+    // Check both llamaServerStatus (status field) and routerStatus (port field)
+    const isRunning = this.status?.port || this.status?.status === "running";
     const displayPort = this.status?.port || this.configPort || 8080;
     const routerModels = this.routerStatus?.models || [];
     const loadedCount = routerModels.filter((x) => x.state === "loaded").length;

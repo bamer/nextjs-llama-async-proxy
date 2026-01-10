@@ -114,6 +114,14 @@ class StateCore {
       }
     }
 
+    // Debug logging for status changes
+    if (key === "llamaServerStatus" || key === "routerStatus") {
+      console.log(`[StateCore] set("${key}"):`, {
+        old: old ? { status: old.status, port: old.port } : old,
+        new: value ? { status: value.status, port: value.port } : value,
+      });
+    }
+
     this.state[key] = value;
     this._notify(key, value, old);
     return this;

@@ -108,7 +108,8 @@ class DashboardPage extends Component {
     const routerCard = this._el.querySelector(".router-card");
     if (!routerCard) return;
 
-    const isRunning = this.status?.port;
+    // Check both llamaServerStatus (status field) and routerStatus (port field)
+    const isRunning = this.status?.port || this.status?.status === "running";
     const loadedCount = (this.routerStatus?.models || []).filter(
       (x) => x.state === "loaded"
     ).length;

@@ -51,10 +51,14 @@ class StateBroadcastHandlers {
     });
 
     socket.on("models:router-stopped", () => {
-      console.log("[DEBUG] Broadcast models:router-stopped");
+      console.log("[DEBUG] Broadcast models:router-stopped received!");
       const models = this.core.get("models") || [];
       const updatedModels = models.map((m) => ({ ...m, status: "unloaded" }));
       this.core.set("models", updatedModels);
+      const currentRouterStatus = this.core.get("routerStatus");
+      console.log("[DEBUG] Broadcast models:router-stopped - current routerStatus:", currentRouterStatus);
+      console.log("[DEBUG] Broadcast models:router-stopped - current llamaServerStatus:", this.core.get("llamaServerStatus"));
+      // Only set routerStatus to null, don't touch llamaServerStatus
       this.core.set("routerStatus", null);
     });
 
