@@ -327,7 +327,14 @@ const stateValidator = new StateValidator();
 // Register common schemas for the application
 stateValidator.registerSchemas({
   // Model status schema
-  modelStatus: ValidationHelpers.enum(["loaded", "loading", "unloaded", "error"]),
+  modelStatus: ValidationHelpers.enum([
+    "loaded",
+    "loading",
+    "unloaded",
+    "error",
+    "running",
+    "idle",
+  ]),
 
   // Models array schema
   models: ValidationHelpers.array(
@@ -335,7 +342,7 @@ stateValidator.registerSchemas({
       id: ValidationHelpers.string(),
       name: ValidationHelpers.string({ required: true }),
       status: ValidationHelpers.required(
-        ValidationHelpers.enum(["loaded", "loading", "unloaded", "error"])
+        ValidationHelpers.enum(["loaded", "loading", "unloaded", "error", "running", "idle"])
       ),
       type: ValidationHelpers.optional(ValidationHelpers.string()),
       params: ValidationHelpers.optional(ValidationHelpers.string()),

@@ -143,3 +143,132 @@
   font-size: 13px;
   font-weight: 600;
 }
+
+/* Metrics Sections */
+.llama-server-status-panel .metrics-section {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.llama-server-status-panel .metrics-section:last-child {
+  border-bottom: none;
+}
+
+.llama-server-status-panel .section-title {
+  font-size: 14px;
+  color: var(--text-color-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.llama-server-status-panel .collapsible-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.llama-server-status-panel .collapse-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-color-secondary);
+  transition: transform 0.2s;
+}
+
+.llama-server-status-panel .collapse-toggle:hover {
+  color: var(--text-color);
+}
+
+.llama-server-status-panel .chevron {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  font-size: 12px;
+}
+
+.llama-server-status-panel .collapsible-content {
+  display: none;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.llama-server-status-panel .collapsible-content[style*="display: grid;"] {
+  display: grid !important;
+}
+
+.llama-server-status-panel .metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+/* Summary Grid */
+.llama-server-status-panel .status-summary {
+  background: var(--surface-color-secondary);
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.llama-server-status-panel .summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.llama-server-status-panel .summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.llama-server-status-panel .summary-item .label {
+  font-size: 12px;
+  color: var(--text-color-secondary);
+}
+
+.llama-server-status-panel .summary-item .value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+/* Collapse Button */
+.llama-server-status-panel .collapse-btn {
+  background: var(--surface-color-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-color);
+  transition: all 0.2s;
+}
+
+.llama-server-status-panel .collapse-btn:hover {
+  background: var(--surface-color-tertiary);
+}
+
+.llama-server-status-panel .collapse-btn .chevron-icon {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  font-size: 12px;
+  margin-left: 6px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .llama-server-status-panel .metrics-grid,
+  .llama-server-status-panel .collapsible-content {
+    grid-template-columns: 1fr;
+  }
+
+  .llama-server-status-panel .summary-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -14,7 +14,7 @@ import path from "path";
 /**
  * Register llama router handlers
  */
-export function registerLlamaHandlers(socket, io, db) {
+export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
   /**
    * Get llama server status
    */
@@ -57,6 +57,10 @@ export function registerLlamaHandlers(socket, io, db) {
       })
         .then((result) => {
           if (result.success) {
+            // Initialize metrics scraper when server starts
+            if (initializeLlamaMetrics) {
+              initializeLlamaMetrics(result.port);
+            }
             io.emit("llama:status", {
               status: "running",
               port: result.port,
@@ -150,13 +154,13 @@ export function registerLlamaHandlers(socket, io, db) {
               mode: "router",
               preset: presetName,
             });
-            ok(socket, "llama:start:result", { success: true, ...result }, id);
+            ok(socket, "llama:start-with-preset:result", { success: true, ...result }, id);
           } else {
-            err(socket, "llama:start:result", result.error, id);
+            err(socket, "llama:start-with-preset:result", result.error, id);
           }
         })
         .catch((e) => {
-          err(socket, "llama:start:result", e.message, id);
+          err(socket, "llama:start-with-preset:result", e.message, id);
         });
     } catch (e) {
       err(socket, "llama:start:result", e.message, id);

@@ -119,7 +119,8 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
     "--threads",
     String(optionsToUse.threads || 4),
     "--ctx-size",
-    String(optionsToUse.ctxSize || 4096)
+    String(optionsToUse.ctxSize || 4096),
+    "--metrics"
   );
 
   if (optionsToUse.noAutoLoad) {

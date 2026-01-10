@@ -35,7 +35,7 @@ import { logger } from "./handlers/logger.js";
 /**
  * Register all Socket.IO event handlers
  */
-export function registerHandlers(io, db, ggufParser) {
+export function registerHandlers(io, db, ggufParser, initializeLlamaMetrics) {
   logger.setIo(io);
   logger.setDb(db);
 
@@ -49,7 +49,7 @@ export function registerHandlers(io, db, ggufParser) {
     registerMetricsHandlers(socket, db);
     registerLogsHandlers(socket, db);
     registerConfigHandlers(socket, db);
-    registerLlamaHandlers(socket, io, db);
+    registerLlamaHandlers(socket, io, db, initializeLlamaMetrics);
     registerPresetsHandlers(socket, db);
   });
 }

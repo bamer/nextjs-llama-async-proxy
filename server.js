@@ -16,6 +16,7 @@ import DB from "./server/db/index.js";
 import { registerHandlers } from "./server/handlers.js";
 import { updateGpuList } from "./server/handlers/metrics.js";
 import { parseGgufMetadata } from "./server/gguf/index.js";
+import { LlamaServerMetricsScraper } from "./server/handlers/llama-router/metrics-scraper.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,6 +27,7 @@ let lastCpuTimes = null;
 let metricsCallCount = 0;
 let metricsInterval = null;
 let activeClients = 1; // Start with 1 client for backwards compatibility with tests
+let llamaMetricsScraper = null;
 
 /**
  * Update metrics collection interval based on active clients
@@ -218,8 +220,47 @@ async function collectMetrics(io, db) {
     if (metricsCallCount % 36 === 0) {
       db.pruneMetrics(10000);
     }
+
+    // Also collect llama-server metrics
+    if (metricsCallCount % 2 === 0) {
+      // Every 20s (2 * 10s interval)
+      collectLlamaMetrics(io);
+    }
   } catch (e) {
     console.error("[METRICS] Error:", e.message);
+  }
+}
+
+/**
+ * Collect and broadcast llama-server metrics
+ */
+async function collectLlamaMetrics(io) {
+  if (!llamaMetricsScraper) {
+    return; // Not initialized yet
+  }
+
+  try {
+    const metrics = await llamaMetricsScraper.getMetrics();
+    if (metrics) {
+      console.log("[DEBUG] Llama server metrics collected:", metrics);
+      // Broadcast to clients
+      io.emit("llama-server:status", {
+        type: "broadcast",
+        data: {
+          status: "running",
+          metrics: {
+            activeModels: metrics.activeModels || 0,
+            tokensPerSecond: metrics.tokensPerSecond || 0,
+            queueSize: metrics.queueSize || 0,
+            totalRequests: metrics.totalRequests || 0,
+          },
+          uptime: metrics.uptime || 0,
+        },
+        timestamp: Date.now(),
+      });
+    }
+  } catch (e) {
+    console.error("[LLAMA-METRICS] Failed to collect metrics:", e.message);
   }
 }
 

@@ -50,6 +50,7 @@ class StateResponseHandlers {
       "settings:get:result",
       "settings:update:result",
       "llama:start:result",
+      "llama:start-with-preset:result",
       "llama:stop:result",
       "llama:restart:result",
       "llama:config:result",

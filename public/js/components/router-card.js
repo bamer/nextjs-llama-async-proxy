@@ -87,15 +87,16 @@ class RouterCard extends Component {
         threads: 4,
       });
 
-      if (response?.success) {
-        showNotification(`✓ Server started on port ${response.data.port}`, "success");
+      if (response?.success || response?.port) {
+        const port = response?.port || response?.data?.port;
+        showNotification(`✓ Server started on port ${port}`, "success");
         this.state.selectedPreset = null;
       } else {
         showNotification(`Error: ${response?.error?.message || "Unknown error"}`, "error");
       }
     } catch (error) {
       console.error("[ROUTER-CARD] Launch preset error:", error);
-      showNotification("Failed to start server", "error");
+      showNotification("Failed to start server: " + error.message, "error");
     } finally {
       this.state.routerLoading = false;
       this._updateUI();

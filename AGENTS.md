@@ -173,60 +173,142 @@ Load scripts in this order (as defined in index.html):
 - **Private class members**: underscore prefix (`_privateMethod`)
 - **File names**: match export names (e.g., `layout.js` exports `Layout`)
 
-### Component Class Pattern
+### Component Class Pattern (Event-Driven)
 
-All UI components should extend the `Component` base class:
+All UI components extend the `Component` base class with a simplified event-driven approach:
 
 ```javascript
 class MyComponent extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      /* ... */
-    };
+    // Direct property assignment - no setState()
+    this.data = props.data || [];
+    this.loading = false;
   }
 
   /**
-   * Lifecycle: Called before mounting
-   */
-  willMount() {
-    // Setup before render
-  }
-
-  /**
-   * Lifecycle: Render the component
-   * Must return HTML string or HTMLElement
+   * Render the component
+   * Must return HTML string or HTMLElement or Component.h()
    */
   render() {
-    return Component.h("div", { className: "my-component" }, Component.h("h1", {}, "Title"));
+    return Component.h("div", { className: "my-component" }, [
+      Component.h("h1", {}, "Title"),
+      this.loading
+        ? Component.h("div", { className: "loading" }, "Loading...")
+        : this._renderContent(),
+    ]);
   }
 
   /**
-   * Lifecycle: Called after mounting to DOM
+   * Bind event handlers - use this.on() for delegation
    */
-  didMount() {
-    // Setup subscriptions, event listeners
+  bindEvents() {
+    // Direct event binding with delegation
+    this.on("click", "[data-action]", (e, target) => {
+      const action = target.dataset.action;
+      this.handleAction(action);
+    });
+
+    this.on("change", "[data-field]", (e) => {
+      this.handleFieldChange(e.target.value);
+    });
   }
 
   /**
-   * Event map - maps DOM events to handlers
+   * Called after mounting to DOM
    */
-  getEventMap() {
-    return {
-      "click [data-action]": "handleAction",
-      "change [data-field]": "handleFieldChange",
-    };
+  onMount() {
+    // Setup subscriptions, start intervals, etc.
+    this.unsubscribers = [
+      stateManager.subscribe("data", (data) => {
+        this.data = data;
+        this._updateUI();
+      }),
+    ];
   }
 
-  handleAction(event) {
-    // Handle click on elements with data-action attribute
+  /**
+   * Cleanup - always unsubscribe and remove listeners
+   */
+  destroy() {
+    this.unsubscribers?.forEach((unsub) => unsub());
+    this.unsubscribers = [];
   }
 
-  handleFieldChange(event) {
-    // Handle input changes
+  handleAction(action) {
+    // Handle actions
+  }
+
+  _updateUI() {
+    // Direct DOM manipulation - no re-render
+    const content = this.$(".content");
+    if (content) {
+      content.innerHTML = this._renderContent();
+    }
   }
 }
 ```
+
+#### Event-Driven DOM Updates
+
+Instead of `setState()` and re-rendering, use direct DOM updates:
+
+```javascript
+// OLD (React-like):
+this.setState({ loading: true });
+this.setState({ data: newData });
+
+// NEW (Event-Driven):
+this.loading = true;
+this.$btn.disabled = true;
+this.$btn.textContent = "Loading...";
+```
+
+#### DOM Helper Methods
+
+```javascript
+// Query elements
+this.$(".my-element");           // Single element
+this.$$(".items");               // Array of elements
+
+// Update content
+this.setText(".label", "New Text");
+this.setHTML(".container", "<div>...</div>");
+
+// Update attributes
+this.setAttr(".btn", "disabled", true);
+this.setAttr(".btn", "disabled", null);  // Remove attribute
+
+// Toggle classes
+this.toggleClass(".item", "active", true);
+this.toggleClass(".item", "hidden", false);
+
+// Show/hide
+this.show(".element");
+this.hide(".element");
+
+// Full replacement
+this.replaceWith(newHtmlOrElement);
+```
+
+#### Event Binding
+
+```javascript
+// Simple click handler
+this.on("click", ".btn", () => {
+  console.log("Clicked!");
+});
+
+// With event delegation
+this.on("click", "[data-action]", (e, target) => {
+  console.log("Action:", target.dataset.action);
+});
+
+// Change handler
+this.on("input", "[data-field=search]", (e) => {
+  this.searchTerm = e.target.value;
+  this._filterResults();
+});
 
 ### Using Component.createElement (h)
 

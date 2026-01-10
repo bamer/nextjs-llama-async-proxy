@@ -102,7 +102,7 @@ class DashboardController {
       stateManager.set("metricsHistory", h.history || []);
 
       const s = await stateManager.getLlamaStatus();
-      stateManager.set("llamaStatus", s.status || null);
+      stateManager.set("llamaServerStatus", s.status || null);
 
       if (s.status?.status === "running") {
         try {
@@ -154,13 +154,15 @@ class DashboardController {
       setTimeout(async () => {
         try {
           const s = await stateManager.getLlamaStatus();
-          stateManager.set("llamaStatus", s.status || null);
+          stateManager.set("llamaServerStatus", s.status || null);
           const rs = await stateManager.getRouterStatus();
           stateManager.set("routerStatus", rs.routerStatus);
           showNotification("Router started successfully", "success");
         } catch (e) {
           console.error("[DASHBOARD] Error checking status:", e.message);
-          // On error, clear loading state manually
+          showNotification("Failed to start router: " + e.message, "error");
+        } finally {
+          // Clear loading state
           if (this.comp) {
             this.comp.state.routerLoading = false;
             this.comp._updateRouterCardUI();
@@ -186,12 +188,13 @@ class DashboardController {
     try {
       await stateManager.stopLlama();
       const status = { status: "idle", port: null };
-      stateManager.set("llamaStatus", status);
+      stateManager.set("llamaServerStatus", status);
       stateManager.set("routerStatus", null);
       showNotification("Router stopped", "success");
     } catch (e) {
       showNotification(`Failed: ${e.message}`, "error");
-      // On error, clear loading state manually
+    } finally {
+      // Clear loading state
       if (this.comp) {
         this.comp.state.routerLoading = false;
         this.comp._updateRouterCardUI();
@@ -210,13 +213,15 @@ class DashboardController {
       setTimeout(async () => {
         try {
           const s = await stateManager.getLlamaStatus();
-          stateManager.set("llamaStatus", s.status || null);
+          stateManager.set("llamaServerStatus", s.status || null);
           const rs = await stateManager.getRouterStatus();
           stateManager.set("routerStatus", rs.routerStatus);
           showNotification("Router restarted", "success");
         } catch (e) {
           console.error("[DASHBOARD] Error checking status:", e.message);
-          // On error, clear loading state manually
+          showNotification("Failed to restart router: " + e.message, "error");
+        } finally {
+          // Clear loading state
           if (this.comp) {
             this.comp.state.routerLoading = false;
             this.comp._updateRouterCardUI();
@@ -225,7 +230,7 @@ class DashboardController {
       }, 5000);
     } catch (e) {
       showNotification(`Failed: ${e.message}`, "error");
-      // On error, clear loading state manually
+      // Clear loading state immediately on error
       if (this.comp) {
         this.comp.state.routerLoading = false;
         this.comp._updateRouterCardUI();
