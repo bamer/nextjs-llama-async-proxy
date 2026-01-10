@@ -311,6 +311,15 @@ async function main() {
     transports: ["websocket"],
   });
 
+  // Create function to initialize llama metrics scraper
+  const initializeLlamaMetrics = (port) => {
+    console.log("[DEBUG] Initializing llama metrics scraper on port", port);
+    llamaMetricsScraper = new LlamaServerMetricsScraper({
+      host: "127.0.0.1",
+      port: port,
+    });
+  };
+
   registerHandlers(io, db, parseGgufMetadata, initializeLlamaMetrics);
   startMetrics(io, db);
 

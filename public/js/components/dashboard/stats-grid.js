@@ -34,11 +34,51 @@ class StatsGrid extends Component {
   }
 
   /**
-   * Update metrics data
+   * Update metrics data and DOM
    */
   updateMetrics(metrics, gpuMetrics) {
     this.metrics = metrics || this.metrics;
     this.gpuMetrics = gpuMetrics || this.gpuMetrics;
+    this._updateDOM();
+  }
+
+  /**
+   * Update the DOM with current metrics values
+   */
+  _updateDOM() {
+    if (!this._el) return;
+
+    const statCards = this._el.querySelectorAll(".stat-card");
+    const m = this.metrics;
+    const gpu = this.gpuMetrics;
+
+    // Define the values for each stat card by index
+    const statValues = [
+      { value: `${(m.cpu?.usage || 0).toFixed(1)}%`, percent: Math.min(m.cpu?.usage || 0, 100) },
+      { value: `${(m.memory?.used || 0).toFixed(1)}%`, percent: Math.min(m.memory?.used || 0, 100) },
+      { value: `${(m.swap?.used || 0).toFixed(1)}%`, percent: Math.min(m.swap?.used || 0, 100) },
+      { value: `${(gpu?.usage || 0).toFixed(1)}%`, percent: Math.min(gpu?.usage || 0, 100) },
+      {
+        value: gpu?.memoryTotal > 0
+          ? `${window.AppUtils?.formatBytes?.(gpu?.memoryUsed || 0)} / ${window.AppUtils?.formatBytes?.(gpu?.memoryTotal || 0)}`
+          : `${(gpu?.usage || 0).toFixed(1)}%`,
+        percent: gpu?.memoryTotal > 0
+          ? (gpu?.memoryUsed / gpu?.memoryTotal) * 100
+          : Math.min(gpu?.usage || 0, 100)
+      },
+      { value: `${(m.disk?.used || 0).toFixed(1)}%`, percent: Math.min(m.disk?.used || 0, 100) },
+      { value: this._fmtUptime(m.uptime || 0), percent: 0 },
+    ];
+
+    statCards.forEach((card, index) => {
+      if (index < statValues.length) {
+        const stat = statValues[index];
+        const valueEl = card.querySelector(".stat-value");
+        const barFill = card.querySelector(".stat-bar-fill");
+        if (valueEl) valueEl.textContent = stat.value;
+        if (barFill && stat.percent > 0) barFill.style.width = `${stat.percent}%`;
+      }
+    });
   }
 
   render() {
