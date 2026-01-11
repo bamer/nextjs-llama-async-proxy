@@ -6,6 +6,42 @@
 
 // Setup global window for module loading
 global.window = global.window || {};
+
+// Mock CacheService before importing StateAPI
+global.window.CacheService = {
+  caches: new Map(),
+  getCache(name, options = {}) {
+    if (!this.caches.has(name)) {
+      this.caches.set(name, {
+        _cache: new Map(),
+        _ttl: options.ttl || 30000,
+        _maxSize: options.maxSize || 100,
+        get(key) { return this._cache.get(key)?.value; },
+        set(key, value) {
+          this._cache.set(key, { value, timestamp: Date.now() });
+        },
+        delete(key) { return this._cache.delete(key); },
+        has(key) {
+          const item = this._cache.get(key);
+          if (!item) return false;
+          if (Date.now() - item.timestamp > this._ttl) {
+            this._cache.delete(key);
+            return false;
+          }
+          return true;
+        },
+        clear() { this._cache.clear(); },
+        getOrFetch(key, fetchFn) {
+          const cached = this.get(key);
+          if (cached !== null) return cached;
+          return fetchFn().then(v => { this.set(key, v); return v; });
+        }
+      });
+    }
+    return this.caches.get(name);
+  }
+};
+
 global.window.document = global.window.document || {
   querySelector: () => null,
   createElement: (tag) => ({ tagName: tag.toUpperCase() }),

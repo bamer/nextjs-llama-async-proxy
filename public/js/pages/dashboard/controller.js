@@ -23,8 +23,10 @@ class DashboardController {
 
   async render() {
     try {
-      // Lazy load chart scripts before rendering
-      await ChartLoader.load();
+      // Load chart plugins
+      if (window.ChartLoader) {
+        await ChartLoader.load();
+      }
 
       await this.load();
 

@@ -132,6 +132,23 @@
       "Show keyboard shortcuts help"
     );
 
+    // Command Palette (Ctrl+K)
+    window.keyboardShortcuts.register(
+      "ctrl+k",
+      () => {
+        // Close any existing modals first
+        document.querySelectorAll(".modal.active, .command-palette-overlay").forEach((m) => {
+          m.remove();
+        });
+        const palette = new CommandPalette({});
+        const el = palette.render();
+        document.body.appendChild(el);
+        palette.bindEvents();
+        if (palette.didMount) palette.didMount();
+      },
+      "Open command palette"
+    );
+
     window.keyboardShortcuts.register(
       "ctrl+l",
       () => {

@@ -113,6 +113,11 @@ class Router {
       return;
     }
 
+    // Load plugins for this route
+    if (window.PluginSystem) {
+      await PluginSystem.loadForRoute(path);
+    }
+
     console.log("[ROUTER] Creating controller for:", route.path);
     this.currentController = this._create(route.handler, path, route.params);
 
