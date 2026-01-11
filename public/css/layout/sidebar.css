@@ -164,9 +164,31 @@
 }
 
 .sidebar.collapsed .sidebar-footer {
-  padding: 8px;
+  padding: 8px 4px;
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.sidebar.collapsed .theme-toggle-btn,
+.sidebar.collapsed .help-btn {
+  padding: 8px;
+  font-size: 1.3rem;
+  width: 100%;
+}
+
+.sidebar.collapsed .connection-status {
+  padding: 6px;
   justify-content: center;
+}
+
+.sidebar.collapsed .connection-status .text {
+  display: none;
+}
+
+.sidebar.collapsed .connection-status .dot {
+  margin: 0;
 }
 
 /* Header - Full width, on top */
