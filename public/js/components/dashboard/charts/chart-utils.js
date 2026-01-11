@@ -1,8 +1,9 @@
 /**
- * Chart Utils Module - Shared utility functions for charts
+ * Chart Utils Module - Shared utility functions for chart utils
  */
 
-const ChartUtils = {
+if (typeof ChartUtils === "undefined") {
+  const ChartUtils = {
   /**
    * Reconstruct usage history from chart data
    * @param {Object} data - Chart data object
@@ -63,6 +64,7 @@ const ChartUtils = {
     gradient.addColorStop(1, `${color}0)`);
     return gradient;
   },
-};
+  };
 
-window.ChartUtils = ChartUtils;
+  window.ChartUtils = ChartUtils;
+}

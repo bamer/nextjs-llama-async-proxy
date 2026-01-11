@@ -6,10 +6,8 @@ class StateModels {
   constructor(stateCore, stateSocket) {
     this.core = stateCore;
     this.socket = stateSocket;
-    // Initialize cache
-    this._cache = new Map();
-    this._cacheTTL = 30000; // 30 seconds TTL
-    this._cacheKeys = ["getModels"];
+    // Use unified cache service
+    this._cache = CacheService.getCache("stateModels", { ttl: 30000, maxSize: 50 });
   }
 
   /**
@@ -17,21 +15,8 @@ class StateModels {
    * @private
    */
   async _cachedRequest(key, fetchFn, ...args) {
-    const cacheKey = `${key}:${JSON.stringify(args)}`;
-    const cached = this._cache.get(cacheKey);
-
-    if (cached && Date.now() - cached.timestamp < this._cacheTTL) {
-      console.log("[DEBUG] Cache hit for:", key, "Age:", Date.now() - cached.timestamp, "ms");
-      return cached.data;
-    }
-
-    console.log("[DEBUG] Cache miss for:", key, "Fetching fresh data...");
-    const data = await fetchFn(...args);
-    this._cache.set(cacheKey, {
-      data,
-      timestamp: Date.now(),
-    });
-    return data;
+    const cacheKey = CacheInstance.makeKey(key, ...args);
+    return this._cache.getOrFetch(cacheKey, () => fetchFn(...args));
   }
 
   /**
@@ -40,7 +25,7 @@ class StateModels {
    */
   invalidateCache(pattern) {
     const keysToDelete = [];
-    for (const key of this._cache.keys()) {
+    for (const key of this._cache._cache.keys()) {
       if (!pattern || key.startsWith(pattern)) {
         keysToDelete.push(key);
       }

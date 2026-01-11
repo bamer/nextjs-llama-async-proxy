@@ -94,6 +94,13 @@ class DashboardController {
   }
 
   async load() {
+    const loadError = (label, error) => {
+      console.debug(`[DASHBOARD] ${label} fetch failed:`, error.message);
+      ToastManager.error(`${label} load failed`, {
+        action: { label: "Retry", handler: () => this.load() }
+      });
+    };
+
     try {
       const c = await stateManager.getConfig();
       stateManager.set("config", c.config || {});
@@ -115,7 +122,7 @@ class DashboardController {
           const rs = await stateManager.getRouterStatus();
           stateManager.set("routerStatus", rs.routerStatus);
         } catch (e) {
-          console.debug("[DASHBOARD] Router status fetch failed:", e.message);
+          loadError("Router status", e);
         }
       }
 
@@ -124,7 +131,7 @@ class DashboardController {
         const st = await stateManager.getSettings();
         stateManager.set("settings", st.settings || {});
       } catch (e) {
-        console.debug("[DASHBOARD] Settings fetch failed:", e.message);
+        loadError("Settings", e);
       }
 
       // Load presets for preset launcher
@@ -132,11 +139,14 @@ class DashboardController {
         const p = await stateManager.request("presets:list");
         stateManager.set("presets", p?.presets || []);
       } catch (e) {
-        console.debug("[DASHBOARD] Presets fetch failed:", e.message);
+        loadError("Presets", e);
         stateManager.set("presets", []);
       }
     } catch (e) {
       console.error("[DASHBOARD] Load error:", e.message);
+      ToastManager.error("Dashboard load failed", {
+        action: { label: "Retry", handler: () => this.load() }
+      });
     }
   }
 

@@ -144,6 +144,9 @@ class ModelsController {
       console.log("[MODELS] ModelsController.load() - END");
     } catch (e) {
       console.log("[MODELS] Load error:", e.message);
+      ToastManager.error("Failed to load models", {
+        action: { label: "Retry", handler: () => this.load() }
+      });
     }
   }
 
