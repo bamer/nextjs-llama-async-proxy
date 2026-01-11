@@ -79,8 +79,8 @@ class Sidebar extends Component {
           </a>
         </nav>
         <div class="sidebar-footer">
-          <button class="theme-toggle-btn" data-action="toggle-theme">${this.darkMode ? "☀️ Light" : "🌙 Dark"}</button>
-          <button class="help-btn" data-action="keyboard-help">⌨️</button>
+          <button class="theme-toggle-btn" data-action="toggle-theme">${this.darkMode ? "☀️" : "🌙"}</button>
+          <button class="help-btn" data-action="keyboard-help" title="Keyboard Shortcuts">⌨️</button>
           <div class="connection-status" id="connection-status">
             <span class="dot disconnected"></span>
             <span class="text">Disconnected</span>
@@ -184,7 +184,16 @@ class Header extends Component {
   _toggleSidebar() {
     const sidebar = document.querySelector(".sidebar");
     if (sidebar) {
-      sidebar.classList.toggle("collapsed");
+      const isMobile = window.innerWidth <= 768;
+      if (isMobile) {
+        // On mobile, toggle 'open' class
+        sidebar.classList.toggle("open");
+        sidebar.classList.remove("collapsed");
+      } else {
+        // On desktop, toggle 'collapsed' class
+        sidebar.classList.toggle("collapsed");
+        sidebar.classList.remove("open");
+      }
       const isCollapsed = sidebar.classList.contains("collapsed");
       localStorage.setItem("sidebarCollapsed", isCollapsed);
     }

@@ -26,12 +26,12 @@ class ConfigExportImport extends Component {
         Component.h(
           "button",
           { className: "btn btn-secondary", "data-action": "export" },
-          "Export Configuration"
+          "Export"
         ),
         Component.h(
           "button",
           { className: "btn btn-secondary", "data-action": "import" },
-          "Import Configuration"
+          "Import"
         )
       ),
       Component.h("input", {

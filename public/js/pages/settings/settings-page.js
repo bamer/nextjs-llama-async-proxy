@@ -263,6 +263,8 @@ class SettingsPage extends Component {
         serverPath: this.serverPath,
         host: this.host,
         port: this.port,
+        enabled: this.llama_server_enabled,
+        metricsEnabled: this.llama_server_metrics,
         onBaseModelsPathChange: (val) => {
           this.baseModelsPath = val;
         },
@@ -274,6 +276,12 @@ class SettingsPage extends Component {
         },
         onPortChange: (val) => {
           this.port = val;
+        },
+        onEnabledChange: (val) => {
+          this.llama_server_enabled = val;
+        },
+        onMetricsEnabledChange: (val) => {
+          this.llama_server_metrics = val;
         },
       }),
       Component.h(window.ModelDefaultsForm, {
@@ -288,31 +296,13 @@ class SettingsPage extends Component {
           this.batch_size = val;
         },
         onTemperatureChange: (val) => {
-          this.temperature = val;
-        },
-        onRepeatPenaltyChange: (val) => {
-          this.repeatPenalty = val;
-        },
-      }),
-      Component.h(window.LlamaServerConfig, {
-        enabled: this.llama_server_enabled,
-        port: this.llama_server_port,
-        host: this.llama_server_host,
-        metricsEnabled: this.llama_server_metrics,
-        onEnabledChange: (val) => {
-          this.llama_server_enabled = val;
-        },
-        onPortChange: (val) => {
-          this.llama_server_port = val;
-        },
-        onHostChange: (val) => {
-          this.llama_server_host = val;
-        },
-        onMetricsEnabledChange: (val) => {
-          this.llama_server_metrics = val;
-        },
-      }),
-      Component.h(window.LoggingConfig, {
+           this.temperature = val;
+         },
+         onRepeatPenaltyChange: (val) => {
+           this.repeatPenalty = val;
+         },
+       }),
+       Component.h(window.LoggingConfig, {
         logLevel: this.logLevel,
         maxFileSize: this.maxFileSize,
         maxFiles: this.maxFiles,

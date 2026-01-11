@@ -14,7 +14,7 @@
   display: flex;
   gap: var(--md);
   margin-bottom: var(--md);
-  padding: var(--md);
+  padding: var(--sm) var(--md);
   background: var(--card-bg);
   border-radius: var(--radius);
   border: 1px solid var(--border-color);
@@ -25,6 +25,8 @@
 
 .models-page .toolbar .btn {
   flex-shrink: 0;
+  padding: var(--xs) var(--md);
+  font-size: 0.85rem;
 }
 
 .models-page .filters {
@@ -32,7 +34,7 @@
   grid-template-columns: 2fr 1fr auto;
   gap: var(--md);
   margin-bottom: var(--md);
-  padding: var(--md);
+  padding: var(--sm) var(--md);
   background: var(--card-bg);
   border-radius: var(--radius);
   border: 1px solid var(--border-color);
@@ -171,9 +173,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: var(--sm) var(--md);
+  padding: var(--xs) var(--sm);
   border-radius: var(--radius);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 500;
   margin-left: auto;
   white-space: nowrap;
@@ -196,6 +198,25 @@
   border-radius: 50%;
   background: currentColor;
   display: inline-block;
+}
+
+/* Scan Progress Indicator */
+.scan-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--xs) var(--sm);
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--primary);
+  background: var(--bg-primary-light);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 /* Badges */

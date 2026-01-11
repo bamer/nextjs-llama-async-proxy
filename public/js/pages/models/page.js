@@ -17,6 +17,9 @@ class ModelsPage extends Component {
     this.lastStatusValue = "all";
     this.controller = props.controller;
     this.debouncedSearch = AppUtils.debounce(this._handleSearch.bind(this), 300);
+    this.scanning = false;
+    this.scanProgress = "";
+    this.loadingModels = new Set(); // Track models being loaded/unloaded
     console.log("[MODELS] Initialized with", this.models.length, "models");
   }
 
@@ -25,19 +28,24 @@ class ModelsPage extends Component {
     const filtered = this._getFiltered();
     console.log("[MODELS] Filtered models:", filtered.length);
 
-    const routerStatus = stateManager.get("routerStatus");
-    const routerRunning = routerStatus?.status === "running";
     const config = stateManager.get("config") || {};
-    const port = routerStatus?.port || config.port || 8080;
+    const port = config.llama_server_port || 8080;
+    const routerStatus = stateManager.get("routerStatus") || {};
+    const routerRunning = routerStatus?.status === "running";
 
     const rows = filtered
       .map((m) => this._renderRow(m))
       .join("");
 
+    const scanBtnText = this.scanning ? "Scanning..." : "Scan";
+    const scanDisabled = this.scanning ? "disabled" : "";
+    const scanProgress = this.scanning && this.scanProgress ? `<span class="scan-progress">${this.scanProgress}</span>` : "";
+
     return `<div class="models-page">
   <div class="toolbar">
-    <button class="btn btn-primary" data-action="scan">Scan Filesystem</button>
-    <button class="btn" data-action="cleanup">Cleanup</button>
+    <button class="btn btn-sm" data-action="scan" ${scanDisabled}>${scanBtnText}</button>
+    <button class="btn btn-sm" data-action="cleanup">Cleanup</button>
+    ${scanProgress}
     <span class="router-indicator ${routerRunning ? "success" : "default"}">
       Router ${routerRunning ? "Active" : "Not Running"} (${port})
     </span>
@@ -78,6 +86,7 @@ class ModelsPage extends Component {
   }
 
   _renderRow(m) {
+    const isLoading = this.loadingModels.has(m.name);
     const statusClass =
       m.status === "loaded" || m.status === "running"
         ? "success"
@@ -87,12 +96,14 @@ class ModelsPage extends Component {
             ? "danger"
             : "default";
 
-    const actionBtn =
-      m.status === "loaded" || m.status === "running"
-        ? '<button class="btn btn-sm" data-action="unload" data-name="' + m.name + '">Unload</button>'
-        : m.status === "loading"
-          ? '<button class="btn btn-sm" disabled>Loading...</button>'
-          : '<button class="btn btn-sm btn-primary" data-action="load" data-name="' + m.name + '">Load</button>';
+    let actionBtn;
+    if (isLoading) {
+      actionBtn = `<button class="btn btn-sm" disabled>Loading...</button>`;
+    } else if (m.status === "loaded" || m.status === "running") {
+      actionBtn = `<button class="btn btn-sm" data-action="unload" data-name="${m.name}">Unload</button>`;
+    } else {
+      actionBtn = `<button class="btn btn-sm btn-primary" data-action="load" data-name="${m.name}">Load</button>`;
+    }
 
     return `<tr data-name="${m.name}">
   <td>${m.name}</td>
@@ -233,6 +244,76 @@ class ModelsPage extends Component {
   updateModelList(models) {
     this.models = models || [];
     this._updateTable();
+  }
+
+  setScanning(isScanning, progress = "") {
+    this.scanning = isScanning;
+    this.scanProgress = progress;
+    const scanBtn = this.$("[data-action=scan]");
+    if (scanBtn) {
+      scanBtn.textContent = isScanning ? "Scanning..." : "Scan";
+      scanBtn.disabled = isScanning;
+    }
+    const toolbar = this.$(".toolbar");
+    if (toolbar) {
+      // Update or add progress indicator
+      let progressEl = toolbar.querySelector(".scan-progress");
+      if (isScanning && progress) {
+        if (!progressEl) {
+          progressEl = document.createElement("span");
+          progressEl.className = "scan-progress";
+          toolbar.insertBefore(progressEl, toolbar.children[toolbar.children.length - 1]);
+        }
+        progressEl.textContent = progress;
+      } else if (progressEl) {
+        progressEl.remove();
+      }
+    }
+  }
+
+  setModelLoading(modelName, isLoading) {
+    if (isLoading) {
+      this.loadingModels.add(modelName);
+    } else {
+      this.loadingModels.delete(modelName);
+    }
+    this._updateTable();
+  }
+
+  updateRouterStatus(routerStatus) {
+    const routerRunning = routerStatus?.status === "running";
+    const port = routerStatus?.port || 8080;
+    const indicator = this.$(".router-indicator");
+    if (indicator) {
+      indicator.className = `router-indicator ${routerRunning ? "success" : "default"}`;
+      indicator.innerHTML = `Router ${routerRunning ? "Active" : "Not Running"} (${port})`;
+    }
+  }
+}
+
+  setScanning(isScanning, progress = "") {
+    this.scanning = isScanning;
+    this.scanProgress = progress;
+    const scanBtn = this.$("[data-action=scan]");
+    if (scanBtn) {
+      scanBtn.textContent = isScanning ? "Scanning..." : "Scan Filesystem";
+      scanBtn.disabled = isScanning;
+    }
+    const toolbar = this.$(".toolbar");
+    if (toolbar) {
+      // Update or add progress indicator
+      let progressEl = toolbar.querySelector(".scan-progress");
+      if (isScanning && progress) {
+        if (!progressEl) {
+          progressEl = document.createElement("span");
+          progressEl.className = "scan-progress";
+          toolbar.insertBefore(progressEl, toolbar.children[toolbar.children.length - 1]);
+        }
+        progressEl.textContent = progress;
+      } else if (progressEl) {
+        progressEl.remove();
+      }
+    }
   }
 }
 

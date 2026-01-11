@@ -6,8 +6,8 @@ class LoggingConfig extends Component {
   constructor(props) {
     super(props);
 
-    // Direct properties instead of state
-    this.maxFileSize = props.maxFileSize || 10485760;
+    // Direct properties instead of state - store in MB
+    this.maxFileSizeMB = Math.round((props.maxFileSize || 10485760) / 1024 / 1024);
     this.maxFiles = props.maxFiles || 7;
     this.logLevel = props.logLevel || "info";
     this.enableFileLogging = props.enableFileLogging !== false;
@@ -28,12 +28,13 @@ class LoggingConfig extends Component {
       this.props.onLogLevelChange?.(val);
     });
 
-    // Max file size
+    // Max file size (in MB)
     this.on("change", "[data-field=max-file-size]", (e) => {
-      const val = parseInt(e.target.value) || 10485760;
-      this.maxFileSize = val;
+      const val = parseInt(e.target.value) || 10;
+      this.maxFileSizeMB = val;
       this._updateUI();
-      this.props.onMaxFileSizeChange?.(val);
+      // Convert MB to bytes for the callback
+      this.props.onMaxFileSizeChange?.(val * 1024 * 1024);
     });
 
     // Max files
@@ -75,10 +76,10 @@ class LoggingConfig extends Component {
       logLevelSelect.value = this.logLevel;
     }
 
-    // Update max file size input
+    // Update max file size input (in MB)
     const maxFileSizeInput = this._el.querySelector("[data-field=max-file-size]");
-    if (maxFileSizeInput && parseInt(maxFileSizeInput.value) !== this.maxFileSize) {
-      maxFileSizeInput.value = this.maxFileSize;
+    if (maxFileSizeInput && parseInt(maxFileSizeInput.value) !== this.maxFileSizeMB) {
+      maxFileSizeInput.value = this.maxFileSizeMB;
     }
 
     // Update max files input
@@ -105,8 +106,6 @@ class LoggingConfig extends Component {
   }
 
   render() {
-    const sizeInMB = (this.maxFileSize / 1024 / 1024).toFixed(1);
-
     return Component.h("div", { className: "settings-section" }, [
       Component.h("h2", {}, "Logging Configuration"),
       Component.h("p", { className: "section-desc" }, "Configure log collection and retention"),
@@ -123,15 +122,16 @@ class LoggingConfig extends Component {
             Component.h("small", {}, "Most to least verbose"),
           ]),
           Component.h("div", { className: "form-group" }, [
-            Component.h("label", {}, "Max File Size"),
+            Component.h("label", {}, "Max File Size (MB)"),
             Component.h("input", {
               type: "number",
               "data-field": "max-file-size",
-              value: this.maxFileSize,
-              min: "1048576",
-              step: "1048576",
+              value: this.maxFileSizeMB,
+              min: "1",
+              max: "1000",
+              step: "1",
             }),
-            Component.h("small", {}, `${sizeInMB} MB`),
+            Component.h("small", {}, "Per log file"),
           ]),
           Component.h("div", { className: "form-group" }, [
             Component.h("label", {}, "Max Log Files"),

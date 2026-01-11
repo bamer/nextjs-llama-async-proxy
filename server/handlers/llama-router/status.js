@@ -42,9 +42,17 @@ export async function getLlamaStatus() {
  * Load a model (router mode)
  */
 export async function loadModel(modelName) {
-  const url = getServerUrl();
+  const state = getRouterState();
+  let url = getServerUrl();
+  const { isPortInUse } = await import("./process.js");
+  const portInUse = isPortInUse(state.port);
 
-  console.log("[LLAMA] Loading model:", modelName);
+  // If URL is null but port is in use, build URL from state
+  if (!url && portInUse) {
+    url = `http://${state.host || "localhost"}:${state.port}`;
+  }
+
+  console.log("[LLAMA] Loading model:", modelName, { url, portInUse });
 
   if (!url) {
     return { success: false, error: "llama-server not running" };
@@ -64,9 +72,17 @@ export async function loadModel(modelName) {
  * Unload a model (router mode)
  */
 export async function unloadModel(modelName) {
-  const url = getServerUrl();
+  const state = getRouterState();
+  let url = getServerUrl();
+  const { isPortInUse } = await import("./process.js");
+  const portInUse = isPortInUse(state.port);
 
-  console.log("[LLAMA] Unloading model:", modelName);
+  // If URL is null but port is in use, build URL from state
+  if (!url && portInUse) {
+    url = `http://${state.host || "localhost"}:${state.port}`;
+  }
+
+  console.log("[LLAMA] Unloading model:", modelName, { url, portInUse });
 
   if (!url) {
     return { success: false, error: "llama-server not running" };

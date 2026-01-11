@@ -372,12 +372,11 @@ stateValidator.registerSchemas({
     })
   ),
 
-  // Logs schema
+  // Logs schema - very lenient validation since logs are display-only
   logs: ValidationHelpers.array(
     ValidationHelpers.object({
-      id: ValidationHelpers.optional(ValidationHelpers.string()),
-      level: ValidationHelpers.enum(["info", "warn", "error", "debug"]),
-      message: ValidationHelpers.required(ValidationHelpers.string()),
+      level: ValidationHelpers.optional(ValidationHelpers.string()),
+      message: ValidationHelpers.string(),
       source: ValidationHelpers.optional(ValidationHelpers.string()),
       timestamp: ValidationHelpers.number(),
     })

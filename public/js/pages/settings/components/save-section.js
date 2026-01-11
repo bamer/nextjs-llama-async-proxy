@@ -24,8 +24,8 @@ class SaveSection extends Component {
             { className: "action-buttons" },
             Component.h(
               "button",
-              { className: "btn btn-primary btn-lg", "data-action": "save" },
-              "Save All Settings"
+              { className: "btn btn-primary", "data-action": "save" },
+              "Save Settings"
             )
           )
         )

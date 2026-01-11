@@ -11,6 +11,8 @@ class ServerPathsForm extends Component {
     this.serverPath = props.serverPath || "";
     this.host = props.host || "localhost";
     this.port = props.port || 8080;
+    this.enabled = props.enabled !== false;
+    this.metricsEnabled = props.metricsEnabled !== false;
   }
 
   bindEvents() {
@@ -41,6 +43,18 @@ class ServerPathsForm extends Component {
       this.port = val;
       this._updateUI();
       this.props.onPortChange?.(val);
+    });
+
+    // Enabled
+    this.on("change", "#enabled", (e) => {
+      this.enabled = e.target.checked;
+      this.props.onEnabledChange?.(e.target.checked);
+    });
+
+    // Metrics Enabled
+    this.on("change", "#metricsEnabled", (e) => {
+      this.metricsEnabled = e.target.checked;
+      this.props.onMetricsEnabledChange?.(e.target.checked);
     });
   }
 
@@ -73,6 +87,14 @@ class ServerPathsForm extends Component {
       Component.h("h2", {}, "Server Paths"),
       Component.h("p", { className: "section-desc" }, "Configure paths and connection"),
       Component.h("div", { className: "card" }, [
+        Component.h("div", { className: "form-group" }, [
+          Component.h("label", {}, "Enable llama-server"),
+          Component.h("input", {
+            type: "checkbox",
+            id: "enabled",
+            checked: this.enabled,
+          }),
+        ]),
         Component.h("div", { className: "paths-grid" }, [
           Component.h("div", { className: "form-group" }, [
             Component.h("label", {}, "Models Path"),
@@ -107,6 +129,14 @@ class ServerPathsForm extends Component {
               min: 1,
               max: 65535,
               id: "port",
+            }),
+          ]),
+          Component.h("div", { className: "form-group" }, [
+            Component.h("label", {}, "Enable Metrics"),
+            Component.h("input", {
+              type: "checkbox",
+              id: "metricsEnabled",
+              checked: this.metricsEnabled,
             }),
           ]),
         ]),
