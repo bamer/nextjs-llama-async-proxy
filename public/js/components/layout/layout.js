@@ -79,7 +79,7 @@ class Sidebar extends Component {
           </a>
         </nav>
         <div class="sidebar-footer">
-          <button class="theme-toggle-btn" data-action="toggle-theme">${this.darkMode ? "☀️" : "🌙"}</button>
+          <button class="theme-toggle-btn" data-action="toggle-theme" title="Toggle Theme">${this.darkMode ? "☀️ Light" : "🌙 Dark"}</button>
           <button class="help-btn" data-action="keyboard-help" title="Keyboard Shortcuts">⌨️</button>
           <div class="connection-status" id="connection-status">
             <span class="dot disconnected"></span>
