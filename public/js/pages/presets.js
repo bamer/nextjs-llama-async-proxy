@@ -203,7 +203,7 @@ class PresetsPage extends Component {
       availableModels: props.availableModels || [],
       loading: true,
       expandedDefaults: true,
-      expandedModels: false, // Models section collapsed by default
+      expandedModels: {}, // Model expansion state
       parameterFilter: "",
       serverRunning: false,
       serverPort: null,
@@ -929,9 +929,7 @@ class PresetsPage extends Component {
           <span class="model-toggle">${isExpanded ? "▼" : "▶"}</span>
           <button class="btn-model-delete" data-model-name="${model.name}" title="Delete model">×</button>
         </div>
-        ${isExpanded
-    ? `
-        <div class="model-content">
+        <div class="model-content" style="display: ${isExpanded ? "block" : "none"}">
           ${modelParams.length > 0
     ? `
           <div class="model-params-section">
@@ -970,9 +968,6 @@ class PresetsPage extends Component {
     .join("")}
           </select>
         </div>
-        `
-    : ""
-}
       </div>
     `;
       })
@@ -1037,7 +1032,28 @@ class PresetsPage extends Component {
 
     // Models toggle
     const modelsHeader = document.getElementById("header-models");
-    modelsHeader && (modelsHeader.onclick = () => this._toggleModelsSection());
+    if (modelsHeader) {
+      modelsHeader.onclick = (e) => {
+        // Don't toggle if clicking on model header, model content or the toggle button itself
+        if (
+          e.target.closest(".model-header") ||
+          e.target.closest(".model-content") ||
+          e.target.id === "toggle-models"
+        ) {
+          return;
+        }
+        this._toggleModelsSection();
+      };
+    }
+
+    // Toggle button for Models section - prevent event bubbling
+    const modelsToggle = document.getElementById("toggle-models");
+    if (modelsToggle) {
+      modelsToggle.onclick = (e) => {
+        e.stopPropagation();
+        this._toggleModelsSection();
+      };
+    }
 
     // Add param dropdown for defaults
     const addParamSelect = document.getElementById("select-add-param");
@@ -1062,16 +1078,46 @@ class PresetsPage extends Component {
     const filterInput = document.getElementById("param-filter");
     filterInput && (filterInput.oninput = (e) => this.debouncedFilter(e.target.value));
 
-    // Model header toggles
-    const modelHeaders = this._el?.querySelectorAll(".model-header") || [];
-    modelHeaders.forEach((header) => {
-      header.onclick = (e) => {
+    // Model header toggles - use event delegation on container
+    const modelsContainer = this._el?.querySelector("#standalone-list");
+    if (modelsContainer) {
+      // Remove old listener if it exists
+      if (this._modelHeaderClickHandler) {
+        modelsContainer.removeEventListener("click", this._modelHeaderClickHandler);
+      }
+      
+      // Add new delegated listener
+      this._modelHeaderClickHandler = (e) => {
+        const header = e.target.closest(".model-header");
+        if (!header) return;
+        
+        e.stopPropagation(); // Prevent closing parent Models section
         if (e.target.classList.contains("btn-model-delete")) return;
+        
         const modelName = header.dataset.modelName;
+        
+        // Update state directly
         this.state.expandedModels[modelName] = !this.state.expandedModels[modelName];
-        this._updateEditor();
+        
+        // Direct DOM update instead of full re-render
+        const isExpanded = this.state.expandedModels[modelName];
+        const modelSection = header.closest(".model-section");
+        const toggle = header.querySelector(".model-toggle");
+        const content = modelSection.querySelector(".model-content");
+        
+        // Update toggle icon
+        if (toggle) {
+          toggle.textContent = isExpanded ? "▼" : "▶";
+        }
+        
+        // Update content visibility
+        if (content) {
+          content.style.display = isExpanded ? "block" : "none";
+        }
       };
-    });
+      
+      modelsContainer.addEventListener("click", this._modelHeaderClickHandler);
+    }
 
     // Model delete buttons
     const modelDeleteBtns = this._el?.querySelectorAll(".btn-model-delete") || [];

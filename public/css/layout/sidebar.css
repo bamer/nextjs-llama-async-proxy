@@ -239,6 +239,9 @@
 /* Header - Full width, on top */
 #header-container {
   width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .page-header {
@@ -251,6 +254,8 @@
   padding: 0 var(--lg);
   gap: var(--md);
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
 }
 
 .menu-btn {
