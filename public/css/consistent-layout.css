@@ -195,30 +195,15 @@ html, body {
 
 /* ===== BUTTON STANDARDIZATION ===== */
 
-/* Consistent button spacing and sizing */
+/* Consistent button spacing and sizing - using refined-buttons.css */
+/* Base button styles are now in refined-buttons.css */
+
+/* Button group */
 .btn-group {
   display: flex;
-  gap: var(--space-sm);
+  gap: 4px;
   flex-wrap: wrap;
   margin-bottom: var(--space-md);
-}
-
-.btn {
-  padding: var(--space-xs) var(--space-md);
-  border-radius: var(--radius);
-  border: none;
-  font-size: 0.875rem;
-  cursor: pointer;
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
-  height: 36px; /* Consistent button height */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 80px; /* Minimum width for better touch targets */
 }
 
 /* ===== TABLE STANDARDIZATION ===== */

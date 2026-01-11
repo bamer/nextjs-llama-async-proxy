@@ -573,18 +573,8 @@
   white-space: nowrap;
 }
 
-/* Buttons */
-.btn {
-  padding: var(--md) var(--lg);
-  border-radius: var(--radius);
-  border: 1px solid var(--border-color);
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
+/* Buttons - using refined-buttons.css base styles */
+/* Additional button overrides below */
 
 .btn:hover {
   background: var(--border-color);
@@ -614,9 +604,9 @@
 }
 
 .btn-danger {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(239, 68, 68, 0.15);
   color: var(--danger);
-  border-color: var(--border-color);
+  border-color: rgba(239, 68, 68, 0.3);
 }
 
 .btn-danger:hover {
