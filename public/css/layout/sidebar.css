@@ -109,21 +109,23 @@
 }
 
 .connection-status .dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: var(--gray-400);
   animation: none;
   flex-shrink: 0;
+  box-shadow: 0 0 4px currentColor;
 }
 
 .connection-status .dot.connected {
   background: var(--success);
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 8px var(--success);
 }
 
 .connection-status .dot.disconnected {
   background: var(--danger);
+  box-shadow: 0 0 8px var(--danger);
 }
 
 /* Sidebar Collapsed State */
