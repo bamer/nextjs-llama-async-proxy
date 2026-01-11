@@ -21,6 +21,7 @@
 @import "components/indicators.css";
 @import "components/gpu.css";
 @import "components/quick-wins.css";
+@import "components/toast.css";
 
 /* Dashboard */
 @import "pages/dashboard/stats.css";

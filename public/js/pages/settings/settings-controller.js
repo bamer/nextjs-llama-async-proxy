@@ -95,8 +95,10 @@ class SettingsController {
       } catch (e) {
         stateManager.set("presets", []);
       }
-    } catch (e) {}
-  }
+      } catch (e) {
+        console.debug("[SETTINGS] Failed to load settings:", e.message);
+      }
+    }
 
   async handleRouterAction(action) {
     switch (action) {

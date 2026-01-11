@@ -79,7 +79,7 @@ class Sidebar extends Component {
           </a>
         </nav>
         <div class="sidebar-footer">
-          <button class="theme-toggle-btn" data-action="toggle-theme" title="Toggle Theme">${this.darkMode ? "☀️ Light" : "🌙 Dark"}</button>
+          <button class="theme-toggle-btn" data-action="toggle-theme" title="Toggle Theme">${this.darkMode ? "☀️" : "🌙"}</button>
           <button class="help-btn" data-action="keyboard-help" title="Keyboard Shortcuts">⌨️</button>
           <div class="connection-status" id="connection-status">
             <span class="dot disconnected"></span>
@@ -97,6 +97,13 @@ class Sidebar extends Component {
         e.preventDefault();
         const p = t.dataset.page;
         window.router.navigate(`/${p === "dashboard" ? "" : p}`);
+      }
+    });
+
+    // Prefetch chart scripts when hovering over dashboard link
+    this.on("mouseenter", "[data-page=dashboard]", () => {
+      if (window.ChartLoader && !window.ChartLoader.loaded) {
+        ChartLoader.prefetch();
       }
     });
 

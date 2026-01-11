@@ -23,6 +23,9 @@ class DashboardController {
 
   async render() {
     try {
+      // Lazy load chart scripts before rendering
+      await ChartLoader.load();
+
       await this.load();
 
       const models = stateManager.get("models") || [];
@@ -84,7 +87,9 @@ class DashboardController {
         if (this.comp) {
           this.comp.updateFromController(d.metrics || null, h.history || []);
         }
-      } catch (e) {}
+      } catch (e) {
+        console.debug("[DASHBOARD] Metrics update failed:", e.message);
+      }
     }, 3000);
   }
 
@@ -109,20 +114,25 @@ class DashboardController {
         try {
           const rs = await stateManager.getRouterStatus();
           stateManager.set("routerStatus", rs.routerStatus);
-        } catch (e) {}
+        } catch (e) {
+          console.debug("[DASHBOARD] Router status fetch failed:", e.message);
+        }
       }
 
       // Load settings
       try {
         const st = await stateManager.getSettings();
         stateManager.set("settings", st.settings || {});
-      } catch (e) {}
+      } catch (e) {
+        console.debug("[DASHBOARD] Settings fetch failed:", e.message);
+      }
 
       // Load presets for preset launcher
       try {
         const p = await stateManager.request("presets:list");
         stateManager.set("presets", p?.presets || []);
       } catch (e) {
+        console.debug("[DASHBOARD] Presets fetch failed:", e.message);
         stateManager.set("presets", []);
       }
     } catch (e) {

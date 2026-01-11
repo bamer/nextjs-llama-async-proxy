@@ -2,6 +2,8 @@
  * Main Application Entry Point - Simplified
  */
 
+/* global ToastManager, KeyboardShortcutsHelp, ChartLoader */
+
 (function () {
   "use strict";
 
@@ -177,17 +179,9 @@
   window.router = router;
 })();
 
-// Notifications
+// Notifications - Enhanced toast system
 function showNotification(msg, type = "info") {
-  const c = document.getElementById("notifications");
-  if (!c) return;
-  const n = document.createElement("div");
-  n.className = `notification notification-${type}`;
-  n.innerHTML = `<span>${msg}</span><button onclick="this.parentElement.remove()">×</button>`;
-  c.appendChild(n);
-  setTimeout(() => {
-    if (n.parentElement) n.remove();
-  }, 10000);
+  return ToastManager.show(msg, { type });
 }
 
 // Utils
