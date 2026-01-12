@@ -1,7 +1,8 @@
 ---
 description: "Runs the full test suite and validates coverage thresholds"
 mode: subagent
-temperature: 0.0
+model: opencode/minimax-free
+temperature: 0.2
 tools:
   read: true
   edit: false

@@ -27,8 +27,8 @@ importers:
         specifier: ^4.8.3
         version: 4.8.3
       systeminformation:
-        specifier: ^5.30.2
-        version: 5.30.2
+        specifier: ^5.30.3
+        version: 5.30.3
     devDependencies:
       '@babel/preset-env':
         specifier: ^7.28.5
@@ -2908,8 +2908,8 @@ packages:
     resolution: {integrity: sha512-MeQTA1r0litLUf0Rp/iisCaL8761lKAZHaimlbGK4j0HysC4PLfqygQj9srcs0m2RdtDYnF8UuYyKpbjHYp7Jw==, tarball: https://registry.npmjs.org/synckit/-/synckit-0.11.11.tgz}
     engines: {node: ^14.18.0 || >=16.0.0}
 
-  systeminformation@5.30.2:
-    resolution: {integrity: sha512-Rrt5oFTWluUVuPlbtn3o9ja+nvjdF3Um4DG0KxqfYvpzcx7Q9plZBTjJiJy9mAouua4+OI7IUGBaG9Zyt9NgxA==, tarball: https://registry.npmjs.org/systeminformation/-/systeminformation-5.30.2.tgz}
+  systeminformation@5.30.3:
+    resolution: {integrity: sha512-NgHJUpA+y7j4asLQa9jgBt+Eb2piyQIXQ+YjOyd2K0cHNwbNJ6I06F5afOqOiaCuV/wrEyGrb0olg4aFLlJD+A==, tarball: https://registry.npmjs.org/systeminformation/-/systeminformation-5.30.3.tgz}
     engines: {node: '>=8.0.0'}
     os: [darwin, linux, win32, freebsd, openbsd, netbsd, sunos, android]
     hasBin: true
@@ -6682,7 +6682,7 @@ snapshots:
     dependencies:
       '@pkgr/core': 0.2.9
 
-  systeminformation@5.30.2: {}
+  systeminformation@5.30.3: {}
 
   tar-fs@2.1.4:
     dependencies:

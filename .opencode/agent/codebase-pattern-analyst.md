@@ -1,6 +1,7 @@
 ---
 description: "Codebase pattern analysis agent for finding similar implementations"
 mode: subagent
+model: opencode/glm-free
 temperature: 0.1
 tools:
   read: true

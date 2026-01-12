@@ -128,7 +128,7 @@ describe("Server.js - Source Structure Tests", () => {
 
     it("should use setInterval for periodic collection", () => {
       // Positive test: verify setInterval usage
-      expect(serverSource.includes("setInterval(async () => {")).toBe(true);
+      expect(serverSource.includes("setInterval(() => collectMetrics(io, db),")).toBe(true);
     });
 
     it("should use 10000ms interval (10 seconds)", () => {

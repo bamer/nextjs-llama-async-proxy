@@ -1,6 +1,7 @@
 ---
 description: "Documentation authoring agent"
 mode: subagent
+model: opencode/minimax-free
 temperature: 0.2
 tools:
   read: true

@@ -1,6 +1,7 @@
 ---
 description: "Updates documentation files after a successful release"
 mode: subagent
+model: opencode/glm-free
 temperature: 0.1
 tools:
   read: true

@@ -1,7 +1,8 @@
 ---
 description: "Expert workflow orchestrator specializing in complex process design, state machine implementation, and business process automation. Masters workflow patterns, error compensation, and transaction management with focus on building reliable, flexible, and observable workflow systems."
 mode: subagent
-temperature: 0.1
+model: opencode/glm-free
+temperature: 0.3
 tools:
   read: true
   grep: true

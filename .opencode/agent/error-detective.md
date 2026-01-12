@@ -1,5 +1,6 @@
 ---
 name: error-detective
+model: opencode/grok-code
 description: Expert error detective specializing in complex error pattern analysis, correlation, and root cause discovery. Masters distributed system debugging, error tracking, and anomaly detection with focus on finding hidden connections and preventing error cascades.
 ---
 

@@ -1,7 +1,7 @@
 ---
-
 description: "Expert React 19.2 frontend engineer specializing in modern hooks, Server Components, Actions, TypeScript, and performance optimization"
 mode: subagent
+model: opencode/minimax-free
 temperature: 0.2
 tools:
   read: true
