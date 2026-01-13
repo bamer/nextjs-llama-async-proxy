@@ -136,12 +136,20 @@ class Router {
     if (result instanceof Promise) {
       console.log("[ROUTER] Render returned Promise, awaiting...");
       const el = await result;
-      if (el) {
+      if (el instanceof Component) {
+        console.log("[ROUTER] Mounting component");
+        el.mount(this.contentEl);
+        this._callDidMount(el._el);
+      } else if (el) {
         const domEl = this._htmlToElement(el);
         console.log("[ROUTER] Appending async element:", domEl?.className);
         this.contentEl.appendChild(domEl);
         this._callDidMount(domEl);
       }
+    } else if (result instanceof Component) {
+      console.log("[ROUTER] Mounting component");
+      result.mount(this.contentEl);
+      this._callDidMount(result._el);
     } else if (result) {
       const domEl = this._htmlToElement(result);
       console.log("[ROUTER] Appending element:", domEl?.className);
