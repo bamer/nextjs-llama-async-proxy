@@ -29,15 +29,28 @@ PresetsPage.prototype._updateRouterCard = function () {
     const routerModels = this.state.routerStatus?.models || [];
     const loadedCount = routerModels.filter((x) => x.state === "loaded").length;
 
-    controls.innerHTML = `
-      ${hasPresets ? `
-        <div class="preset-selector">
-          <select class="preset-dropdown" id="router-preset-select">
-            <option value="">📋 Select Preset...</option>
-            ${this.state.presets.map((preset) => `<option value="${preset.name}" ${this.state.selectedPreset?.name === preset.name ? "selected" : ""}>${preset.name}</option>`).join("")}
-          </select>
-        </div>
-      ` : ""}
+    // Helper to generate preset options (handles both strings and objects)
+  const getPresetOptions = () => {
+    return this.state.presets.map((preset) => {
+      const presetName = typeof preset === "string" ? preset : preset?.name;
+      const isSelected = this.state.selectedPreset && (
+        typeof this.state.selectedPreset === "string"
+          ? this.state.selectedPreset === presetName
+          : this.state.selectedPreset?.name === presetName
+      );
+      return `<option value="${presetName}" ${isSelected ? "selected" : ""}>${presetName}</option>`;
+    }).join("");
+  };
+
+  controls.innerHTML = `
+    ${hasPresets ? `
+      <div class="preset-selector">
+        <select class="preset-dropdown" id="router-preset-select">
+          <option value="">📋 Select Preset...</option>
+          ${getPresetOptions()}
+        </select>
+      </div>
+    ` : ""}
       ${isRunning ? `
         <button class="btn btn-danger" data-action="router-stop">⏹ Stop Router</button>
         <button class="btn btn-secondary" data-action="router-restart">🔄 Restart</button>
@@ -67,6 +80,19 @@ PresetsPage.prototype._renderRouterCard = function () {
   const loadedCount = routerModels.filter((x) => x.state === "loaded").length;
   const hasPresets = this.state.presets && this.state.presets.length > 0;
 
+  // Helper to generate preset options (handles both strings and objects)
+  const getPresetOptions = () => {
+    return this.state.presets.map((preset) => {
+      const presetName = typeof preset === "string" ? preset : preset?.name;
+      const isSelected = this.state.selectedPreset && (
+        typeof this.state.selectedPreset === "string"
+          ? this.state.selectedPreset === presetName
+          : this.state.selectedPreset?.name === presetName
+      );
+      return `<option value="${presetName}" ${isSelected ? "selected" : ""}>${presetName}</option>`;
+    }).join("");
+  };
+
   return `
     <div class="router-section">
       <div class="router-card ${isRunning ? "running" : "idle"}">
@@ -87,7 +113,7 @@ PresetsPage.prototype._renderRouterCard = function () {
             <div class="preset-selector">
               <select class="preset-dropdown" id="router-preset-select">
                 <option value="">📋 Select Preset...</option>
-                ${this.state.presets.map((preset) => `<option value="${preset.name}" ${this.state.selectedPreset?.name === preset.name ? "selected" : ""}>${preset.name}</option>`).join("")}
+                ${getPresetOptions()}
               </select>
             </div>
           ` : ""}

@@ -1,13 +1,26 @@
 /**
- * Toast Notification System
- * Provides consistent, accessible user feedback with action buttons
+ * Notification Service - Unified Toast System
+ * Consolidates showNotification, ToastManager, and showToast
+ * Follows AGENTS.md rules: single responsibility, no memory leaks
  */
 
-window.ToastManager = {
-  queue: [],
-  activeToasts: new Map(),
-  maxVisible: 3,
-  defaultDuration: 5000,
+class NotificationService {
+  constructor() {
+    this.queue = [];
+    this.activeToasts = new Map();
+    this.maxVisible = 3;
+    this.defaultDuration = 5000;
+    this._initialized = false;
+  }
+
+  /**
+   * Initialize the notification system
+   */
+  init() {
+    if (this._initialized) return;
+    this._getContainer();
+    this._initialized = true;
+  }
 
   /**
    * Show a toast notification
@@ -16,6 +29,7 @@ window.ToastManager = {
    * @returns {string} toast ID
    */
   show(message, options = {}) {
+    this.init();
     const id = AppUtils.generateId();
     const {
       type = "info",
@@ -45,35 +59,35 @@ window.ToastManager = {
     }
 
     return id;
-  },
+  }
 
   /**
    * Show success toast
    */
   success(message, options = {}) {
     return this.show(message, { ...options, type: "success" });
-  },
+  }
 
   /**
    * Show error toast
    */
   error(message, options = {}) {
     return this.show(message, { ...options, type: "error" });
-  },
+  }
 
   /**
    * Show warning toast
    */
   warning(message, options = {}) {
     return this.show(message, { ...options, type: "warning" });
-  },
+  }
 
   /**
    * Show info toast
    */
   info(message, options = {}) {
     return this.show(message, { ...options, type: "info" });
-  },
+  }
 
   /**
    * Show loading toast (non-dismissible)
@@ -84,7 +98,7 @@ window.ToastManager = {
       persistent: true,
       duration: 0
     });
-  },
+  }
 
   /**
    * Update an existing toast's message
@@ -97,7 +111,7 @@ window.ToastManager = {
         toastEl.className = `toast toast-${options.type}`;
       }
     }
-  },
+  }
 
   /**
    * Dismiss a specific toast
@@ -112,7 +126,7 @@ window.ToastManager = {
         this._processQueue();
       }, 300);
     }
-  },
+  }
 
   /**
    * Dismiss all toasts
@@ -126,14 +140,13 @@ window.ToastManager = {
       this.activeToasts.clear();
       this.queue = [];
     }, 300);
-  },
+  }
 
   /**
    * Process the toast queue
    */
   _processQueue() {
     const container = this._getContainer();
-    const visibleCount = this.activeToasts.size;
 
     // Remove any toasts that are no longer in DOM
     for (const [id, el] of this.activeToasts) {
@@ -143,17 +156,51 @@ window.ToastManager = {
     }
 
     // Show new toasts if under limit
+    const visibleCount = this.activeToasts.size;
     while (this.queue.length > 0 && visibleCount < this.maxVisible) {
       const toast = this.queue.shift();
       this._renderToast(toast);
     }
-  },
+  }
+
+  /**
+   * Get the toast container, creating it if needed
+   */
+  _getContainer() {
+    let container = document.getElementById("toast-container");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "toast-container";
+      document.body.appendChild(container);
+    }
+    return container;
+  }
+
+  /**
+   * Get icon SVG for toast type
+   */
+  _getIcon(type) {
+    const icons = {
+      success: `<svg viewBox="0 0 24 24" width="20" height="20">
+        <path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+      </svg>`,
+      error: `<svg viewBox="0 0 24 24" width="20" height="20">
+        <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+      </svg>`,
+      warning: `<svg viewBox="0 0 24 24" width="20" height="20">
+        <path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+      </svg>`,
+      info: `<svg viewBox="0 0 24 24" width="20" height="20">
+        <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+      </svg>`
+    };
+    return icons[type] || icons.info;
+  }
 
   /**
    * Render a single toast
    */
   _renderToast(toast) {
-    const container = this._getContainer();
     const { id, message, type, action, title } = toast;
 
     const toastEl = document.createElement("div");
@@ -164,14 +211,9 @@ window.ToastManager = {
 
     let html = "";
     if (type === "loading") {
-      html = `
-        <div class="toast-icon">
-          <span class="spinner-sm"></span>
-        </div>
-      `;
+      html = `<div class="toast-icon"><span class="spinner-sm"></span></div>`;
     } else {
-      const icon = this._getIcon(type);
-      html = `<div class="toast-icon">${icon}</div>`;
+      html = `<div class="toast-icon">${this._getIcon(type)}</div>`;
     }
 
     html += `
@@ -213,6 +255,7 @@ window.ToastManager = {
       }
     });
 
+    const container = this._getContainer();
     container.appendChild(toastEl);
     this.activeToasts.set(id, toastEl);
 
@@ -223,44 +266,25 @@ window.ToastManager = {
 
     // Log for debugging
     console.log(`[TOAST:${type}]`, message);
-  },
-
-  /**
-   * Get the toast container, creating it if needed
-   */
-  _getContainer() {
-    let container = document.getElementById("toast-container");
-    if (!container) {
-      container = document.createElement("div");
-      container.id = "toast-container";
-      document.body.appendChild(container);
-    }
-    return container;
-  },
-
-  /**
-   * Get icon SVG for toast type
-   */
-  _getIcon(type) {
-    const icons = {
-      success: `<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`,
-      error: `<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`,
-      warning: `<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>`,
-      info: `<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>`
-    };
-    return icons[type] || icons.info;
   }
+}
+
+// Create singleton instance
+const notificationService = new NotificationService();
+
+// Export as global for backwards compatibility
+window.NotificationService = notificationService;
+window.ToastManager = notificationService;
+
+// Convenience function matching app.js showNotification signature
+window.showNotification = (message, type = "info") => {
+  return notificationService.show(message, { type });
 };
 
-// Global convenience function
+// Convenience function matching toast.js showToast signature
 window.showToast = (message, typeOrOptions, options) => {
   if (typeof typeOrOptions === "string") {
-    return ToastManager.show(message, { type: typeOrOptions, ...options });
+    return notificationService.show(message, { type: typeOrOptions, ...options });
   }
-  return ToastManager.show(message, typeOrOptions);
+  return notificationService.show(message, typeOrOptions);
 };
-
-// Export for module systems
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = window.ToastManager;
-}

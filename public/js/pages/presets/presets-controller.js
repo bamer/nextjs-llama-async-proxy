@@ -89,7 +89,7 @@ class PresetsController {
         this.comp.state.loading = false;
         this.comp._updatePresetsList();
         if (presets.length > 0 && !this.comp.state.selectedPreset) {
-          this.comp._emit("preset:select", presets[0].name);
+          this.comp._emit("preset:select", presets[0]);  // presets[0] is already the name string
         }
       }
       this.loadAvailableModels();
@@ -122,10 +122,17 @@ class PresetsController {
     const service = this._ensureService();
     if (!service) return;
 
+    // Handle both string (preset name) and object (preset with name property)
+    const presetName = typeof preset === "string" ? preset : preset?.name;
+    if (!presetName) {
+      console.error("[PRESETS] Invalid preset:", preset);
+      return;
+    }
+
     try {
       const [modelsResult, defaultsResult] = await Promise.all([
-        service.getModelsFromPreset(preset.name),
-        service.getDefaults(preset.name),
+        service.getModelsFromPreset(presetName),
+        service.getDefaults(presetName),
       ]);
 
       const models = modelsResult || {};

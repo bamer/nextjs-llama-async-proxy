@@ -18,20 +18,20 @@ export function registerLogsHandlers(socket, db) {
   /**
    * Get logs from database
    */
-  socket.on("logs:get", (req) => {
+  socket.on("logs:get", (req, ack) => {
     const id = req?.requestId || Date.now();
     try {
       const logs = db.getLogs(req?.limit || 100);
-      ok(socket, "logs:get:result", { logs }, id);
+      ok(socket, "logs:get:result", { logs }, id, ack);
     } catch (e) {
-      err(socket, "logs:get:result", e.message, id);
+      err(socket, "logs:get:result", e.message, id, ack);
     }
   });
 
   /**
    * Get logs from file
    */
-  socket.on("logs:read-file", (req) => {
+  socket.on("logs:read-file", (req, ack) => {
     const id = req?.requestId || Date.now();
     try {
       const fileName = req?.fileName || null;
@@ -40,57 +40,58 @@ export function registerLogsHandlers(socket, db) {
         socket,
         "logs:read-file:result",
         { logs, fileName: fileName || fileLogger.getLogFileName() },
-        id
+        id,
+        ack
       );
     } catch (e) {
-      err(socket, "logs:read-file:result", e.message, id);
+      err(socket, "logs:read-file:result", e.message, id, ack);
     }
   });
 
   /**
    * List log files
    */
-  socket.on("logs:list-files", (req) => {
+  socket.on("logs:list-files", (req, ack) => {
     const id = req?.requestId || Date.now();
     try {
       const files = fileLogger.listLogFiles();
       const size = fileLogger.getLogsDirectorySize();
-      ok(socket, "logs:list-files:result", { files, size }, id);
+      ok(socket, "logs:list-files:result", { files, size }, id, ack);
     } catch (e) {
-      err(socket, "logs:list-files:result", e.message, id);
+      err(socket, "logs:list-files:result", e.message, id, ack);
     }
   });
 
   /**
    * Clear logs from database
    */
-  socket.on("logs:clear", (req) => {
+  socket.on("logs:clear", (req, ack) => {
     const id = req?.requestId || Date.now();
     try {
       const cleared = db.clearLogs();
-      ok(socket, "logs:clear:result", { cleared }, id);
+      ok(socket, "logs:clear:result", { cleared }, id, ack);
     } catch (e) {
-      err(socket, "logs:clear:result", e.message, id);
+      err(socket, "logs:clear:result", e.message, id, ack);
     }
   });
 
   /**
    * Clear log files
    */
-  socket.on("logs:clear-files", (req) => {
+  socket.on("logs:clear-files", (req, ack) => {
     const id = req?.requestId || Date.now();
     try {
       const cleared = fileLogger.clearLogFiles();
-      ok(socket, "logs:clear-files:result", { cleared }, id);
+      ok(socket, "logs:clear-files:result", { cleared }, id, ack);
     } catch (e) {
-      err(socket, "logs:clear-files:result", e.message, id);
+      err(socket, "logs:clear-files:result", e.message, id, ack);
     }
   });
 
   /**
    * Read llama-server log file
    */
-  socket.on("logs:read-llama-server", (req) => {
+  socket.on("logs:read-llama-server", (req, ack) => {
     const id = req?.requestId || Date.now();
     try {
       const llamaLogPath = path.join(process.cwd(), "logs", "llama-server.log");
@@ -104,7 +105,8 @@ export function registerLogsHandlers(socket, db) {
             fileName: "llama-server.log",
             message: "Log file not found",
           },
-          id
+          id,
+          ack
         );
         return;
       }
@@ -139,10 +141,11 @@ export function registerLogsHandlers(socket, db) {
           logs,
           fileName: "llama-server.log",
         },
-        id
+        id,
+        ack
       );
     } catch (e) {
-      err(socket, "logs:read-llama-server:result", e.message, id);
+      err(socket, "logs:read-llama-server:result", e.message, id, ack);
     }
   });
 }

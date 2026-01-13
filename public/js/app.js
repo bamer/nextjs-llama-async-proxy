@@ -2,7 +2,7 @@
  * Main Application Entry Point - Simplified
  */
 
-/* global ToastManager, KeyboardShortcutsHelp, ChartLoader */
+/* global KeyboardShortcutsHelp, ChartLoader */
 
 (function () {
   "use strict";
@@ -126,7 +126,8 @@
       "ctrl+h",
       () => {
         const shortcuts = window.keyboardShortcuts?.getAllShortcuts() || [];
-        const modal = Component.h(KeyboardShortcutsHelp, { shortcuts }).render();
+        // Component.h() already handles rendering when used with a Component class
+        const modal = Component.h(KeyboardShortcutsHelp, { shortcuts });
         document.body.appendChild(modal);
       },
       "Show keyboard shortcuts help"
@@ -195,11 +196,6 @@
   router.start();
   window.router = router;
 })();
-
-// Notifications - Enhanced toast system
-function showNotification(msg, type = "info") {
-  return ToastManager.show(msg, { type });
-}
 
 // Utils
 window.AppUtils = {

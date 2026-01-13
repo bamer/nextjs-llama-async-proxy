@@ -109,7 +109,8 @@ class PresetsPage extends Component {
   }
 
   _handlePresetSelect(presetName) {
-    const preset = this.state.presets.find((p) => p.name === presetName);
+    // Handle both strings and objects (preset name or {name: "preset"})
+    const preset = this.state.presets.find((p) => typeof p === "string" ? p === presetName : p?.name === presetName);
     if (!preset) return;
     this.state.selectedPreset = preset;
     this._updatePresetsList();
@@ -153,7 +154,7 @@ class PresetsPage extends Component {
     try {
       await this._getService().createPreset(name);
       showNotification(`Preset "${name}" created`, "success");
-      this.state.presets = [...this.state.presets, { name }];
+      this.state.presets = [...this.state.presets, name];  // Add string, not object
       this._updatePresetsList();
       this._emit("preset:select", name);
     } catch (error) {

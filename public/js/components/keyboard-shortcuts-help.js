@@ -73,17 +73,67 @@ class KeyboardShortcutsHelp extends Component {
       .join(" + ");
   }
 
-  getEventMap() {
-    return {
-      "click [data-action=close]": (e) => {
+  /**
+   * Bind event handlers for the modal
+   */
+  bindEvents() {
+    if (!this._el) return;
+
+    // Close button click
+    const closeBtn = this.$("[data-action=close]");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", (e) => {
         e.preventDefault();
-        this._el?.remove();
-      },
-      "click .modal-overlay": (e) => {
-        e.preventDefault();
-        this._el?.remove();
-      },
-    };
+        this._close();
+      });
+    }
+
+    // Modal overlay click
+    const overlay = this.$(".modal-overlay");
+    if (overlay) {
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) {
+          e.preventDefault();
+          this._close();
+        }
+      });
+    }
+
+    // Escape key to close
+    document.addEventListener("keydown", this._handleKeydown);
+  }
+
+  /**
+   * Handle keyboard events
+   */
+  _handleKeydown = (e) => {
+    if (e.key === "Escape" && this._el?.parentNode) {
+      e.preventDefault();
+      this._close();
+    }
+  };
+
+  /**
+   * Close the modal
+   */
+  _close() {
+    if (this._el) {
+      try {
+        this._el.remove();
+      } catch (e) {
+        console.warn("[KeyboardShortcutsHelp] Error removing element:", e);
+      }
+      this._el = null;
+    }
+  }
+
+  /**
+   * Cleanup when component is destroyed
+   */
+  destroy() {
+    // Remove keyboard listener
+    document.removeEventListener("keydown", this._handleKeydown);
+    super.destroy();
   }
 }
 

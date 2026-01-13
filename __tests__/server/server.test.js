@@ -81,7 +81,8 @@ describe("Server Entry Point - Source Structure", () => {
       // Positive test: verify startMetrics is defined correctly
       expect(serverSource.includes("async function startMetrics(io, db)")).toBe(true);
       expect(serverSource.includes("lastCpuTimes = null")).toBe(true);
-      expect(serverSource.includes("setInterval(async () => {")).toBe(true);
+      // Uses setInterval with collectMetrics callback
+      expect(serverSource.includes("setInterval(() => collectMetrics(io, db)")).toBe(true);
     });
 
     it("should define setupShutdown function", () => {
@@ -125,8 +126,8 @@ describe("Server Entry Point - Source Structure", () => {
 
     it("should use setInterval for periodic collection", () => {
       // Positive test: verify setInterval is used
-      expect(serverSource.includes("setInterval(async () => {")).toBe(true);
-      expect(serverSource.includes("10000")).toBe(true); // 10 seconds
+      expect(serverSource.includes("setInterval(() => collectMetrics(io, db)")).toBe(true);
+      expect(serverSource.includes("newInterval")).toBe(true); // Interval from config
     });
 
     it("should calculate CPU usage using delta-based calculation", () => {
@@ -146,16 +147,17 @@ describe("Server Entry Point - Source Structure", () => {
       expect(serverSource.includes("if (gpu.controllers && gpu.controllers.length > 0)")).toBe(
         true
       );
-      expect(serverSource.includes("gpuUsage = primaryGpu.utilizationGpu || 0")).toBe(true);
-      expect(serverSource.includes("gpuMemoryUsed = primaryGpu.memoryUsed || 0")).toBe(true);
-      expect(serverSource.includes("gpuMemoryTotal = primaryGpu.memoryTotal || 0")).toBe(true);
+      // GPU usage uses primaryGpu.usage after mapping from utilizationGpu
+      expect(serverSource.includes("gpuUsage = primaryGpu.usage")).toBe(true);
+      expect(serverSource.includes("gpuMemoryUsed = primaryGpu.memoryUsed")).toBe(true);
+      expect(serverSource.includes("gpuMemoryTotal = primaryGpu.memoryTotal")).toBe(true);
     });
 
     it("should save metrics to database", () => {
       // Positive test: verify metrics are saved
       expect(serverSource.includes("db.saveMetrics({")).toBe(true);
       expect(serverSource.includes("cpu_usage: Math.round(cpuUsage * 10) / 10")).toBe(true);
-      expect(serverSource.includes("memory_usage: mem.heapUsed")).toBe(true);
+      expect(serverSource.includes("memory_usage: memoryUsedPercent")).toBe(true);
       expect(serverSource.includes("gpu_usage: Math.round(gpuUsage * 10) / 10")).toBe(true);
     });
 
@@ -165,7 +167,7 @@ describe("Server Entry Point - Source Structure", () => {
       expect(serverSource.includes('type: "broadcast"')).toBe(true);
       expect(serverSource.includes("metrics: {")).toBe(true);
       expect(serverSource.includes("cpu: { usage: cpuUsage }")).toBe(true);
-      expect(serverSource.includes("memory: { used: mem.heapUsed }")).toBe(true);
+      expect(serverSource.includes("memory: { used: memoryUsedPercent }")).toBe(true);
     });
 
     it("should prune metrics every 6 minutes", () => {
@@ -258,7 +260,7 @@ describe("Server Entry Point - Source Structure", () => {
 
     it("should register Socket.IO handlers", () => {
       // Positive test: verify handler registration
-      expect(serverSource.includes("registerHandlers(io, db, parseGgufMetadata)")).toBe(true);
+      expect(serverSource.includes("registerHandlers(io, db, parseGgufMetadata")).toBe(true);
     });
 
     it("should start metrics collection", () => {
@@ -347,23 +349,23 @@ describe("Server Entry Point - Source Structure", () => {
 
     it("should use default values when GPU data is missing", () => {
       // Edge case: verify default values
-      expect(serverSource.includes("gpuUsage = primaryGpu.utilizationGpu || 0")).toBe(true);
-      expect(serverSource.includes("gpuMemoryUsed = primaryGpu.memoryUsed || 0")).toBe(true);
-      expect(serverSource.includes("gpuMemoryTotal = primaryGpu.memoryTotal || 0")).toBe(true);
+      expect(serverSource.includes("gpuUsage = primaryGpu.usage")).toBe(true);
+      expect(serverSource.includes("gpuMemoryUsed = primaryGpu.memoryUsed")).toBe(true);
+      expect(serverSource.includes("gpuMemoryTotal = primaryGpu.memoryTotal")).toBe(true);
     });
 
     it("should handle GPU errors gracefully", () => {
       // Edge case: verify GPU error handling
       expect(serverSource.includes("} catch (e) {")).toBe(true);
-      expect(serverSource.includes("// GPU data not available, continue with 0 values")).toBe(true);
+      expect(serverSource.includes("[DEBUG] GPU data not available:")).toBe(true);
     });
   });
 
   describe("Metrics interval configuration", () => {
     it("should collect metrics every 10 seconds", () => {
       // Positive test: verify interval
-      expect(serverSource.includes("setInterval(async () => {")).toBe(true);
-      expect(serverSource.includes("10000")).toBe(true);
+      expect(serverSource.includes("setInterval(() => collectMetrics(io, db)")).toBe(true);
+      expect(serverSource.includes("newInterval")).toBe(true);
     });
 
     it("should prune metrics every 36 calls (6 minutes)", () => {

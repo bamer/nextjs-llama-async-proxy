@@ -16,29 +16,15 @@ class PresetsService {
   listPresets() {
     return new Promise((resolve, reject) => {
       console.log("[DEBUG] PresetsService: listPresets");
-      // Use request/response pattern with requestId
-      const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-      // Listen for the response event
-      const handler = (response) => {
+      // Use callback pattern (ack) - backend responds via callback
+      this.socket.emit("presets:list", {}, (response) => {
         console.log("[DEBUG] PresetsService: listPresets response:", response);
-        this.socket.off("presets:list:result", handler);
-        if (response.success) {
+        if (response && response.success) {
           resolve(response.data?.presets || []);
         } else {
-          reject(new Error(response.error?.message || "Unknown error"));
+          reject(new Error(response?.error?.message || "Unknown error"));
         }
-      };
-
-      this.socket.on("presets:list:result", handler);
-
-      // Timeout after 10 seconds
-      setTimeout(() => {
-        this.socket.off("presets:list:result", handler);
-        reject(new Error("Request timeout"));
-      }, 10000);
-
-      this.socket.emit("presets:list", { requestId });
+      });
     });
   }
 

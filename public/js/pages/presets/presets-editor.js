@@ -12,10 +12,16 @@ PresetsPage.prototype._updatePresetsList = function () {
   if (!container) return;
 
   let html = this.state.presets.map((preset) => {
-    const isActive = this.state.selectedPreset?.name === preset.name;
-    return `<div class="preset-item ${isActive ? "active" : ""}" data-preset-name="${preset.name}">` +
-      `<span class="preset-name">${preset.name}</span>` +
-      (preset.name !== "default" ? `<span class="preset-delete" data-preset-name="${preset.name}">×</span>` : "") + `</div>`;
+    // Handle both strings ("default") and objects ({name: "default"})
+    const presetName = typeof preset === "string" ? preset : preset?.name;
+    const isActive = this.state.selectedPreset && (
+      typeof this.state.selectedPreset === "string"
+        ? this.state.selectedPreset === presetName
+        : this.state.selectedPreset?.name === presetName
+    );
+    return `<div class="preset-item ${isActive ? "active" : ""}" data-preset-name="${presetName}">` +
+      `<span class="preset-name">${presetName}</span>` +
+      (presetName !== "default" ? `<span class="preset-delete" data-preset-name="${presetName}">×</span>` : "") + `</div>`;
   }).join("");
 
   container.innerHTML = html;

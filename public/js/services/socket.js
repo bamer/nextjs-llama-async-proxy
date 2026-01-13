@@ -38,8 +38,8 @@ class SocketClient {
       this._emit("disconnect", r);
     });
 
-    this.socket.on("connect_error", () => {
-      this._emit("connect_error");
+    this.socket.on("connect_error", (err) => {
+      this._emit("connect_error", err);
     });
 
     // Forward all events to handlers
