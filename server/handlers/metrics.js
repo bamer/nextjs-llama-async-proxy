@@ -15,7 +15,7 @@ export function registerMetricsHandlers(socket, db) {
   /**
    * Get latest metrics
    */
-  socket.on("metrics:get", (req) => {
+  socket.on("metrics:get", (req, ack) => {
     const id = req?.requestId || Date.now();
     try {
       const m = db.getLatestMetrics() || {};
@@ -32,16 +32,16 @@ export function registerMetricsHandlers(socket, db) {
         },
         uptime: m.uptime || 0,
       };
-      ok(socket, "metrics:get:result", { metrics }, id);
+      ok(socket, "metrics:get:result", { metrics }, id, ack);
     } catch (e) {
-      err(socket, "metrics:get:result", e.message, id);
+      err(socket, "metrics:get:result", e.message, id, ack);
     }
   });
 
   /**
    * Get metrics history
    */
-  socket.on("metrics:history", (req) => {
+  socket.on("metrics:history", (req, ack) => {
     const id = req?.requestId || Date.now();
     try {
       const history = db.getMetricsHistory(req?.limit || 100).map((m) => ({
@@ -58,9 +58,9 @@ export function registerMetricsHandlers(socket, db) {
         uptime: m.uptime || 0,
         timestamp: m.timestamp,
       }));
-      ok(socket, "metrics:history:result", { history }, id);
+      ok(socket, "metrics:history:result", { history }, id, ack);
     } catch (e) {
-      err(socket, "metrics:history:result", e.message, id);
+      err(socket, "metrics:history:result", e.message, id, ack);
     }
   });
 }

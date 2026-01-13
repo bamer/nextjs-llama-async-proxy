@@ -79,6 +79,38 @@ class RouterCard extends Component {
       this._updateUI();
     }
 
+    // Subscribe to presets changes (presets may load after initial render)
+    const unsubPresets = stateManager.subscribe("presets", (presets) => {
+      console.log("[DEBUG] RouterCard: presets changed:", presets?.length || 0);
+      const hadPresets = this.presets && this.presets.length > 0;
+      this.presets = presets || [];
+
+      // Re-render to show/hide preset select if state changed
+      if (this._el) {
+        const presetSelector = this._el.querySelector(".preset-selector");
+
+        if (this.presets.length > 0 && !presetSelector) {
+          // Create the preset selector if it doesn't exist
+          const controls = this._el.querySelector(".router-controls");
+          if (controls) {
+            presetSelector = document.createElement("div");
+            presetSelector.className = "preset-selector";
+            presetSelector.innerHTML = `<select id="preset-select" class="preset-dropdown"><option value="">Select Preset...</option>${this.presets.map((p) => `<option value="${p.name}">${p.name}</option>`).join("")}</select>`;
+            controls.insertBefore(presetSelector, controls.firstChild);
+          }
+        } else if (this.presets.length > 0 && presetSelector) {
+          // Update existing select
+          const select = this._el.querySelector("#preset-select");
+          if (select) {
+            select.innerHTML = '<option value="">Select Preset...</option>' +
+              this.presets.map((p) => `<option value="${p.name}">${p.name}</option>`).join("");
+          }
+        }
+      }
+    });
+    this._unsubscribers = this._unsubscribers || [];
+    this._unsubscribers.push(unsubPresets);
+
     if (this.props.subscribeToUpdates) {
       const unsub = this.props.subscribeToUpdates((status) => {
         console.log("[DEBUG] RouterCard subscribeToUpdates callback received:", status);
@@ -87,7 +119,6 @@ class RouterCard extends Component {
         console.log("[DEBUG] RouterCard calling _updateUI with isRunning:", !!status?.port);
         this._updateUI();
       });
-      this._unsubscribers = this._unsubscribers || [];
       this._unsubscribers.push(unsub);
     }
 
@@ -98,7 +129,6 @@ class RouterCard extends Component {
       this.routerLoading = false;
       this._updateUI();
     });
-    this._unsubscribers = this._unsubscribers || [];
     this._unsubscribers.push(unsubDirect);
 
     // Also subscribe to routerStatus for backward compatibility

@@ -54,6 +54,23 @@ class DashboardPage extends Component {
       })
     );
 
+    // Subscribe to presets changes (presets load after initial render)
+    this.unsubscribers.push(
+      stateManager.subscribe("presets", (presets) => {
+        console.log("[DEBUG] DashboardPage: presets changed:", presets?.length || 0);
+        this.presets = presets || [];
+        // Update RouterCard if it exists
+        const routerCard = this._el?.querySelector(".router-card");
+        if (routerCard) {
+          const select = routerCard.querySelector("#preset-select");
+          if (select) {
+            select.innerHTML = '<option value="">Select Preset...</option>' +
+              this.presets.map((p) => `<option value="${p.name}">${p.name}</option>`).join("");
+          }
+        }
+      })
+    );
+
     // Subscribe to metrics updates
     this.unsubscribers.push(
       stateManager.subscribe("metrics", (m) => {

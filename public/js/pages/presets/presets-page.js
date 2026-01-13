@@ -109,8 +109,7 @@ class PresetsPage extends Component {
   }
 
   _handlePresetSelect(presetName) {
-    // Handle both strings and objects (preset name or {name: "preset"})
-    const preset = this.state.presets.find((p) => typeof p === "string" ? p === presetName : p?.name === presetName);
+    const preset = this.state.presets.find((p) => p.name === presetName);
     if (!preset) return;
     this.state.selectedPreset = preset;
     this._updatePresetsList();
@@ -120,6 +119,13 @@ class PresetsPage extends Component {
   _handlePresetLoaded(data) {
     this.state.globalDefaults = data.defaults;
     this.state.standaloneModels = data.standaloneModels;
+    // Auto-expand models section when models are present
+    if (data.standaloneModels && data.standaloneModels.length > 0) {
+      this.state.expandedModels = {};
+      data.standaloneModels.forEach((m) => {
+        this.state.expandedModels[m.name] = true;
+      });
+    }
     this._updateEditor();
   }
 
@@ -154,7 +160,8 @@ class PresetsPage extends Component {
     try {
       await this._getService().createPreset(name);
       showNotification(`Preset "${name}" created`, "success");
-      this.state.presets = [...this.state.presets, name];  // Add string, not object
+      // Add object format as documented
+      this.state.presets = [...this.state.presets, { name, path: `${name}.ini`, file: `config/${name}.ini` }];
       this._updatePresetsList();
       this._emit("preset:select", name);
     } catch (error) {

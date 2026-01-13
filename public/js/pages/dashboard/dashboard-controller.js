@@ -54,99 +54,112 @@ class DashboardController {
     this.willUnmount();
   }
 
-  async render() {
-    try {
-      if (window.ChartLoader) await ChartLoader.load();
-      await this.load();
+  render() {
+    // Return element IMMEDIATELY, don't wait for data
+    // Data will be loaded in background via onMount
 
-      const models = stateManager.get("models") || [];
-      const metrics = stateManager.get("metrics");
-      const status = stateManager.get("llamaStatus");
-      const routerStatus = stateManager.get("routerStatus");
-      const config = stateManager.get("config") || {};
-      const history = stateManager.get("metricsHistory") || [];
-      const presets = stateManager.get("presets") || [];
-      const settings = stateManager.get("settings") || {};
+    // Get available data (may be empty initially)
+    const models = stateManager.get("models") || [];
+    const config = stateManager.get("config") || {};
+    const settings = stateManager.get("settings") || {};
 
-      this.chartManager = new window.ChartManager({ state: { chartType: "usage", history } });
+    this.chartManager = new window.ChartManager({ state: { chartType: "usage", history: [] } });
 
-      this.comp = new window.DashboardPage({
-        models, metrics, status, routerStatus, config, history, presets,
-        maxModelsLoaded: settings.maxModelsLoaded || 4,
-        ctxSize: config.ctx_size || 4096,
-        chartManager: this.chartManager,
-        controller: this,
-      });
+    this.comp = new window.DashboardPage({
+      models,
+      metrics: null,
+      status: null,
+      routerStatus: null,
+      config,
+      history: [],
+      presets: [],
+      maxModelsLoaded: settings.maxModelsLoaded || 4,
+      ctxSize: config.ctx_size || 4096,
+      chartManager: this.chartManager,
+      controller: this,
+    });
 
-      const el = this.comp.render();
-      this.comp._el = el;
-      el._component = this.comp;
-      this.comp.bindEvents();
-      this.comp.onMount();
+    const el = this.comp.render();
+    this.comp._el = el;
+    el._component = this.comp;
 
-      requestAnimationFrame(() => setTimeout(() => this._startChartUpdates(), 50));
-      return el;
-    } catch (e) {
-      console.error("[DASHBOARD] RENDER ERROR:", e.message);
-      throw e;
-    }
+    // Start loading data in background (after element is created)
+    // Wait for socket connection before making requests
+    this._loadDataWhenConnected();
+
+    requestAnimationFrame(() => setTimeout(() => this._startChartUpdates(), 50));
+    return el;
   }
 
-  _startChartUpdates() {
-    this.chartUpdateInterval = setInterval(async () => {
-      try {
-        const d = await stateManager.getMetrics();
-        const h = await stateManager.getMetricsHistory({ limit: 60 });
-        stateManager.set("metrics", d.metrics || null);
-        stateManager.set("metricsHistory", h.history || []);
-        if (this.comp) this.comp.updateFromController(d.metrics || null, h.history || []);
-      } catch (e) {
-        console.debug("[DASHBOARD] Metrics update failed:", e.message);
+  /**
+   * Load data when socket is connected
+   */
+  _loadDataWhenConnected() {
+    // Check if already connected
+    if (stateManager.isConnected()) {
+      this._loadData();
+      return;
+    }
+
+    // Wait for connection, then load
+    const unsub = stateManager.subscribe("connectionStatus", (status) => {
+      if (status === "connected") {
+        unsub();
+        this._loadData();
       }
-    }, 3000);
+    });
+
+    // Safety timeout - load anyway after 5 seconds
+    setTimeout(() => {
+      unsub();
+      if (stateManager.isConnected()) {
+        this._loadData();
+      } else {
+        console.warn("[DASHBOARD] Socket not connected after 5s, skipping data load");
+      }
+    }, 5000);
   }
 
-  async load() {
-    const loadError = (label, error) => {
-      console.debug(`[DASHBOARD] ${label} fetch failed:`, error.message);
-      ToastManager.error(`${label} load failed`, { action: { label: "Retry", handler: () => this.load() } });
-    };
-
-    try {
-      const c = await stateManager.getConfig();
-      stateManager.set("config", c.config || {});
-      const d = await stateManager.getModels();
-      stateManager.set("models", d.models || []);
-      const m = await stateManager.getMetrics();
-      stateManager.set("metrics", m.metrics || null);
-      const h = await stateManager.getMetricsHistory({ limit: 60 });
-      stateManager.set("metricsHistory", h.history || []);
-      const s = await stateManager.getLlamaStatus();
-      stateManager.set("llamaServerStatus", s.status || null);
-
-      if (s.status?.status === "running") {
-        try {
-          const rs = await stateManager.getRouterStatus();
-          stateManager.set("routerStatus", rs.routerStatus);
-        } catch (e) { loadError("Router status", e); }
-      }
-
-      try {
-        const st = await stateManager.getSettings();
-        stateManager.set("settings", st.settings || {});
-      } catch (e) { loadError("Settings", e); }
-
-      try {
-        const p = await stateManager.request("presets:list");
-        stateManager.set("presets", p?.presets || []);
-      } catch (e) {
-        loadError("Presets", e);
-        stateManager.set("presets", []);
-      }
-    } catch (e) {
-      console.error("[DASHBOARD] Load error:", e.message);
-      ToastManager.error("Dashboard load failed", { action: { label: "Retry", handler: () => this.load() } });
+  /**
+   * Load all data in background - doesn't block initial render
+   */
+  _loadData() {
+    if (!stateManager.isConnected()) {
+      console.warn("[DASHBOARD] Cannot load data - socket not connected");
+      return;
     }
+
+    // Load critical data first
+    Promise.all([
+      stateManager.getConfig().catch(() => ({})),
+      stateManager.getModels().catch(() => []),
+    ]).then(([config, models]) => {
+      stateManager.set("config", config.config || {});
+      stateManager.set("models", models.models || []);
+
+      // Then load optional data
+      return Promise.all([
+        stateManager.getMetrics().catch(() => null),
+        stateManager.getMetricsHistory({ limit: 60 }).catch(() => []),
+        stateManager.getLlamaStatus().catch(() => null),
+        stateManager.getSettings().catch(() => ({})),
+        stateManager.request("presets:list").catch(() => ({})),
+      ]);
+    }).then(([metrics, history, status, settings, presets]) => {
+      // Update state
+      stateManager.set("metrics", metrics?.metrics || null);
+      stateManager.set("metricsHistory", history?.history || []);
+      stateManager.set("llamaServerStatus", status?.status || null);
+      stateManager.set("settings", settings?.settings || {});
+      stateManager.set("presets", presets?.presets || []);
+
+      // Update UI if component still mounted
+      if (this.comp) {
+        this.comp.updateFromController(metrics?.metrics || null, history?.history || []);
+      }
+    }).catch(e => {
+      console.warn("[DASHBOARD] Data load failed:", e.message);
+    });
   }
 
   handleRouterAction(action, data) {

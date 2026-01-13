@@ -16,31 +16,37 @@ class StateConnectionHandlers {
    * @param {Object} socket - Socket instance
    */
   setup(socket) {
-    this.connectionTimeout = setTimeout(() => {
-      if (!this.connected) {
-        console.log("[STATE-CONNECTION] Connection timeout - setting connected=true");
-        this.connected = true;
-        this.onConnected();
-      }
-    }, 3000);
-
     socket.on("connect", () => {
+      console.log("[STATE-CONNECTION] Socket connected");
+      this.connected = true;
       socket.emit("connection:ack");
+      this.onConnected();
     });
 
     socket.on("disconnect", () => {
+      console.log("[STATE-CONNECTION] Socket disconnected");
       this.connected = false;
       this.onDisconnected();
     });
 
     socket.on("connection:established", () => {
-      if (this.connectionTimeout) {
-        clearTimeout(this.connectionTimeout);
-        this.connectionTimeout = null;
-      }
+      console.log("[STATE-CONNECTION] Connection established event received");
       this.connected = true;
       this.onConnected();
     });
+
+    socket.on("connect_error", (err) => {
+      console.log("[STATE-CONNECTION] Connection error:", err.message);
+      this.connected = false;
+      this.onDisconnected();
+    });
+
+    // Initialize as not connected
+    this.connected = socket.connected || false;
+    if (this.connected) {
+      socket.emit("connection:ack");
+      this.onConnected();
+    }
   }
 
   /**

@@ -82,15 +82,15 @@ export function registerProcessHandlers(socket, io, db, processManager) {
   /**
    * Get llama-server status
    */
-  socket.on("llama-server:status", async (req) => {
+  socket.on("llama-server:status", async (req, ack) => {
     const id = req?.requestId || Date.now();
     console.log("[DEBUG] llama-server:status request:", { requestId: id });
     try {
       const status = processManager.getStatus();
-      ok(socket, "llama-server:status:result", status, id);
+      ok(socket, "llama-server:status:result", status, id, ack);
     } catch (e) {
       console.error("[DEBUG] llama-server:status error:", e);
-      err(socket, "llama-server:status:result", e.message, id);
+      err(socket, "llama-server:status:result", e.message, id, ack);
     }
   });
 }

@@ -29,15 +29,11 @@ PresetsPage.prototype._updateRouterCard = function () {
     const routerModels = this.state.routerStatus?.models || [];
     const loadedCount = routerModels.filter((x) => x.state === "loaded").length;
 
-    // Helper to generate preset options (handles both strings and objects)
+  // Helper to generate preset options
   const getPresetOptions = () => {
     return this.state.presets.map((preset) => {
-      const presetName = typeof preset === "string" ? preset : preset?.name;
-      const isSelected = this.state.selectedPreset && (
-        typeof this.state.selectedPreset === "string"
-          ? this.state.selectedPreset === presetName
-          : this.state.selectedPreset?.name === presetName
-      );
+      const presetName = preset?.name;
+      const isSelected = this.state.selectedPreset?.name === presetName;
       return `<option value="${presetName}" ${isSelected ? "selected" : ""}>${presetName}</option>`;
     }).join("");
   };
@@ -80,15 +76,11 @@ PresetsPage.prototype._renderRouterCard = function () {
   const loadedCount = routerModels.filter((x) => x.state === "loaded").length;
   const hasPresets = this.state.presets && this.state.presets.length > 0;
 
-  // Helper to generate preset options (handles both strings and objects)
+  // Helper to generate preset options
   const getPresetOptions = () => {
     return this.state.presets.map((preset) => {
-      const presetName = typeof preset === "string" ? preset : preset?.name;
-      const isSelected = this.state.selectedPreset && (
-        typeof this.state.selectedPreset === "string"
-          ? this.state.selectedPreset === presetName
-          : this.state.selectedPreset?.name === presetName
-      );
+      const presetName = preset?.name;
+      const isSelected = this.state.selectedPreset?.name === presetName;
       return `<option value="${presetName}" ${isSelected ? "selected" : ""}>${presetName}</option>`;
     }).join("");
   };

@@ -38,8 +38,10 @@ class SettingsController {
   }
 
   async render() {
-    await this.load();
+    // Load critical data first
+    await this._loadCriticalData();
 
+    // Get available data
     const config = stateManager.get("config") || {};
     const settings = stateManager.get("settings") || {};
     const llamaStatus = stateManager.get("llamaStatus") || null;
@@ -62,43 +64,47 @@ class SettingsController {
     el._component = this.comp;
     this.comp.bindEvents();
 
-    // Call didMount on main component - child didMount calls are handled by Component.h
     this.comp.didMount && this.comp.didMount();
 
     this.init();
 
+    // Load optional data in background
+    this._loadOptionalData();
+
     return el;
   }
 
-  async load() {
-    try {
-      const c = await stateManager.getConfig();
-      stateManager.set("config", c.config || {});
+  /**
+   * Load critical data - blocks initial render
+   */
+  async _loadCriticalData() {
+    const [c, s] = await Promise.all([
+      stateManager.getConfig(),
+      stateManager.getSettings(),
+    ]);
+    stateManager.set("config", c.config || {});
+    stateManager.set("settings", s.settings || {});
+  }
 
-      const s = await stateManager.getSettings();
-      stateManager.set("settings", s.settings || {});
+  /**
+   * Load optional data - doesn't block initial render
+   */
+  _loadOptionalData() {
+    Promise.all([
+      stateManager.getLlamaStatus().catch(() => null),
+      stateManager.request("presets:list").catch(() => []),
+    ]).then(([status, presets]) => {
+      stateManager.set("llamaStatus", status?.status || null);
+      stateManager.set("presets", presets?.presets || []);
 
-      const ls = await stateManager.getLlamaStatus();
-      stateManager.set("llamaStatus", ls.status || null);
-
-      try {
-        const rs = await stateManager.getRouterStatus();
-        stateManager.set("routerStatus", rs.routerStatus || null);
-      } catch (e) {
-        stateManager.set("routerStatus", null);
+      // Update UI if component still mounted
+      if (this.comp && this.comp._updateStatusUI) {
+        this.comp._updateStatusUI();
       }
-
-      // Load presets for RouterConfig component
-      try {
-        const p = await stateManager.request("presets:list");
-        stateManager.set("presets", p?.presets || []);
-      } catch (e) {
-        stateManager.set("presets", []);
-      }
-      } catch (e) {
-        console.debug("[SETTINGS] Failed to load settings:", e.message);
-      }
-    }
+    }).catch(e => {
+      console.warn("[SETTINGS] Optional data load failed:", e.message);
+    });
+  }
 
   async handleRouterAction(action) {
     switch (action) {

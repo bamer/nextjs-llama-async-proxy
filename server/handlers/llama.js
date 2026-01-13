@@ -49,41 +49,20 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
   });
   /**
    * Get llama server status (llama:status)
+   * Note: llama-server:status is handled in llama-router/process-handlers.js
    */
-  socket.on("llama:status", (req) => {
+  socket.on("llama:status", (req, ack) => {
     const id = req?.requestId || Date.now();
     try {
       getLlamaStatus()
         .then((status) => {
-          ok(socket, "llama:status:result", { status }, id);
+          ok(socket, "llama:status:result", { status }, id, ack);
         })
         .catch((e) => {
-          err(socket, "llama:status:result", e.message, id);
+          err(socket, "llama:status:result", e.message, id, ack);
         });
     } catch (e) {
-      err(socket, "llama:status:result", e.message, id);
-    }
-  });
-
-  /**
-   * Get llama-server status (llama-server:status) - used by frontend on page reload
-   * This ensures the frontend can detect if the server is already running
-   */
-  socket.on("llama-server:status", (req) => {
-    const id = req?.requestId || Date.now();
-    try {
-      getLlamaStatus()
-        .then((status) => {
-          console.log("[DEBUG] llama-server:status returning:", status);
-          ok(socket, "llama-server:status:result", { status }, id);
-        })
-        .catch((e) => {
-          console.error("[DEBUG] llama-server:status error:", e);
-          err(socket, "llama-server:status:result", e.message, id);
-        });
-    } catch (e) {
-      console.error("[DEBUG] llama-server:status exception:", e);
-      err(socket, "llama-server:status:result", e.message, id);
+      err(socket, "llama:status:result", e.message, id, ack);
     }
   });
 

@@ -12,42 +12,42 @@ export function registerModelsCrudHandlers(socket, io, db) {
   /**
    * List all models
    */
-  socket.on("models:list", (req) => {
+  socket.on("models:list", (req, ack) => {
     const id = req?.requestId || Date.now();
     try {
       const models = db.getModels();
-      ok(socket, "models:list:result", { models }, id);
+      ok(socket, "models:list:result", { models }, id, ack);
     } catch (e) {
-      err(socket, "models:list:result", e.message, id);
+      err(socket, "models:list:result", e.message, id, ack);
     }
   });
 
   /**
    * Get a single model
    */
-  socket.on("models:get", (req) => {
+  socket.on("models:get", (req, ack) => {
     const id = req?.requestId || Date.now();
     try {
       const m = db.getModel(req?.modelId);
       m
-        ? ok(socket, "models:get:result", { model: m }, id)
-        : err(socket, "models:get:result", "Not found", id);
+        ? ok(socket, "models:get:result", { model: m }, id, ack)
+        : err(socket, "models:get:result", "Not found", id, ack);
     } catch (e) {
-      err(socket, "models:get:result", e.message, id);
+      err(socket, "models:get:result", e.message, id, ack);
     }
   });
 
   /**
    * Create a new model
    */
-  socket.on("models:create", (req) => {
+  socket.on("models:create", (req, ack) => {
     const id = req?.requestId || Date.now();
     try {
       const m = db.saveModel(req?.model || {});
       io.emit("models:created", { model: m });
-      ok(socket, "models:create:result", { model: m }, id);
+      ok(socket, "models:create:result", { model: m }, id, ack);
     } catch (e) {
-      err(socket, "models:create:result", e.message, id);
+      err(socket, "models:create:result", e.message, id, ack);
     }
   });
 

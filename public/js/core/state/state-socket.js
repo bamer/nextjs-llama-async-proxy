@@ -135,7 +135,7 @@ class StateSocket {
         setTimeout(() => {
           clearInterval(checkConnection);
           reject(new Error("Connection timeout"));
-        }, 10000);
+        }, 5000);
         return;
       }
       this._doRequest(event, data, resolve, reject);
@@ -152,7 +152,7 @@ class StateSocket {
   _doRequest(event, data, resolve, reject) {
     const reqId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const isConfigOperation = event.startsWith("config:") || event.startsWith("settings:");
-    const timeoutMs = isConfigOperation ? 5000 : 120000;
+    const timeoutMs = isConfigOperation ? 10000 : 15000;
     const timeout = setTimeout(() => {
       console.warn("[STATE-SOCKET] Request timeout:", {
         event,

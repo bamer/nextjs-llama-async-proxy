@@ -25,21 +25,36 @@ class SocketClient {
   }
 
   _connect() {
+    console.log("[SocketClient] Connecting to:", window.location.origin);
+    console.log("[SocketClient] Options:", this.options);
+    
     this.socket = window.io(window.location.origin, this.options);
 
     this.socket.on("connect", () => {
+      console.log("[SocketClient] Connected! Socket ID:", this.socket.id);
       this._connected = true;
       this.socket.emit("connection:ack");
       this._emit("connect", this.socket.id);
     });
 
     this.socket.on("disconnect", (r) => {
+      console.log("[SocketClient] Disconnected:", r);
       this._connected = false;
       this._emit("disconnect", r);
     });
 
     this.socket.on("connect_error", (err) => {
+      console.error("[SocketClient] Connect error:", err.message);
       this._emit("connect_error", err);
+    });
+
+    this.socket.on("connect_timeout", (err) => {
+      console.error("[SocketClient] Connect timeout:", err);
+    });
+
+    // Log when websocket is used
+    this.socket.on("open", () => {
+      console.log("[SocketClient] WebSocket open");
     });
 
     // Forward all events to handlers

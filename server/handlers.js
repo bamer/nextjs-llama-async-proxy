@@ -29,7 +29,7 @@ import { registerMetricsHandlers } from "./handlers/metrics.js";
 import { registerLogsHandlers } from "./handlers/logs.js";
 import { registerConfigHandlers } from "./handlers/config.js";
 import { registerLlamaHandlers } from "./handlers/llama.js";
-import { registerPresetsHandlers } from "./handlers/presets.js";
+import { registerPresetsHandlers } from "./handlers/presets/handlers.js";
 import { logger } from "./handlers/logger.js";
 
 /**

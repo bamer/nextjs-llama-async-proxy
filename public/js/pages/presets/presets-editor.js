@@ -12,13 +12,8 @@ PresetsPage.prototype._updatePresetsList = function () {
   if (!container) return;
 
   let html = this.state.presets.map((preset) => {
-    // Handle both strings ("default") and objects ({name: "default"})
-    const presetName = typeof preset === "string" ? preset : preset?.name;
-    const isActive = this.state.selectedPreset && (
-      typeof this.state.selectedPreset === "string"
-        ? this.state.selectedPreset === presetName
-        : this.state.selectedPreset?.name === presetName
-    );
+    const presetName = preset?.name;
+    const isActive = this.state.selectedPreset?.name === presetName;
     return `<div class="preset-item ${isActive ? "active" : ""}" data-preset-name="${presetName}">` +
       `<span class="preset-name">${presetName}</span>` +
       (presetName !== "default" ? `<span class="preset-delete" data-preset-name="${presetName}">×</span>` : "") + `</div>`;
@@ -51,6 +46,9 @@ PresetsPage.prototype._renderEditor = function () {
   const addedParamKeys = Object.keys(defaults).map((k) => LLAMA_PARAMS.find((p) => p.iniKey === k)?.key).filter(Boolean);
   const paramOptions = LLAMA_PARAMS.filter((p) => !addedParamKeys.includes(p.key))
     .map((p) => `<option value="${p.key}">${p.label} (${p.group})</option>`).join("");
+
+  const hasModels = this.state.standaloneModels && this.state.standaloneModels.length > 0;
+  const modelsListHtml = hasModels ? this._renderStandaloneHtml() : "<p>No models added</p>";
 
   editor.innerHTML = `
     <div class="editor-header">
@@ -96,17 +94,17 @@ PresetsPage.prototype._renderEditor = function () {
     <div class="section standalone-section">
       <div class="section-header" id="header-models">
         <span class="section-icon">📄</span><span class="section-title">Models</span>
-        <span class="section-toggle" id="toggle-models">▶</span>
+        <span class="section-toggle" id="toggle-models">${hasModels ? "▼" : "▶"}</span>
       </div>
-      <div class="add-model-controls" style="display:none;">
+      <div class="add-model-controls" style="display:${hasModels ? "" : "none"};">
         <select class="model-select" id="select-add-model">
           <option value="">-- Select model --</option>
           ${(this.state.availableModels || []).map((m) => `<option value="${this._escapeHtml(m.name)}">${this._escapeHtml(m.name)}</option>`).join("")}
         </select>
         <button class="btn btn-secondary" id="btn-add-standalone">+ Add</button>
       </div>
-      <div class="standalone-list" id="standalone-list" style="display:none;">
-        ${this.state.standaloneModels.length === 0 ? "<p>No models added</p>" : this._renderStandaloneHtml()}
+      <div class="standalone-list" id="standalone-list" style="display:${hasModels ? "" : "none"};">
+        ${modelsListHtml}
       </div>
     </div>
   `;

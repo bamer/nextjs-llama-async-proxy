@@ -277,18 +277,14 @@ export function listPresets() {
  */
 export function getModelsFromPreset(filename) {
   const preset = readPreset(filename);
-  const models = [];
+  const models = {};
 
   for (const [section, params] of Object.entries(preset.parsed)) {
     if (section === "LLAMA_CONFIG_VERSION" || section === "*") continue;
 
-    if (params.model) {
-      models.push({
-        name: section,
-        model: params.model,
-        path: section,
-      });
-    }
+    // Include all model sections, even those without a model property
+    // This allows adding placeholder models that will be configured later
+    models[section] = iniSectionToModel(params, {});
   }
 
   return models;
