@@ -1,0 +1,267 @@
+/**
+ * Collaboration UI Styles
+ */
+
+/* Remote Cursors */
+.remote-cursor {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.remote-cursor-flag {
+  display: flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 3px 3px 0 3px;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.remote-cursor-label {
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Remote Selections */
+.remote-selection {
+  position: absolute;
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0.3;
+}
+
+/* Presence List */
+.presence-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.presence-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  transition: all 0.2s ease;
+}
+
+.presence-user:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.presence-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  color: white;
+}
+
+.presence-user-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.presence-user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #212529;
+}
+
+.presence-user-status {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.presence-user-status.online {
+  color: #28a745;
+}
+
+.presence-user-status.idle {
+  color: #fd7e14;
+}
+
+.presence-user-status.editing {
+  color: #0d6efd;
+}
+
+/* Connection Status */
+.collab-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #495057;
+}
+
+.collab-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.collab-status-dot.connected {
+  background: #28a745;
+  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.3);
+}
+
+.collab-status-dot.disconnected {
+  background: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.3);
+}
+
+.collab-status-dot.syncing {
+  background: #0dcaf0;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* User Color Indicators */
+.user-color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+/* Conflict Warning */
+.collab-conflict-warning {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.collab-conflict-warning-icon {
+  font-size: 20px;
+}
+
+.collab-conflict-warning-text {
+  font-size: 14px;
+  color: #856404;
+}
+
+/* Presence Badge */
+.presence-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #e9ecef;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #495057;
+}
+
+.presence-badge-count {
+  background: #0d6efd;
+  color: white;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Editor Wrapper with Cursors */
+.editor-with-cursors {
+  position: relative;
+}
+
+/* Remote Cursor Animations */
+.remote-cursor-flag {
+  animation: cursor-appear 0.2s ease-out;
+}
+
+@keyframes cursor-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.remote-selection {
+  animation: selection-appear 0.2s ease-out;
+}
+
+@keyframes selection-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.3;
+  }
+}
+
+/* Undo/Redo Controls */
+.collab-history-controls {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+
+.collab-history-btn {
+  padding: 6px 12px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.collab-history-btn:hover:not(:disabled) {
+  background: #e9ecef;
+}
+
+.collab-history-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

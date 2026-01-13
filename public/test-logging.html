@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Simple Logging Test</title>
+  </head>
+  <body>
+    <h1>Simple Logging Test</h1>
+    <button id="testLog">Test console.log</button>
+    <pre id="output"></pre>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const output = document.getElementById('output');
+      const socket = io();
+      let logs = [];
+
+      socket.on('connect', () => {
+        logToOutput('✅ Socket connected', 'success');
+      });
+
+      socket.on('logs:new', (data) => {
+        logToOutput('📝 Received log: ' + JSON.stringify(data), 'info');
+        logs.push(data);
+      });
+
+      socket.on('logs:add:result', (data) => {
+        logToOutput('✅ Server response: ' + JSON.stringify(data), 'success');
+      });
+
+      document.getElementById('testLog').addEventListener('click', () => {
+        const message = 'TEST LOG: ' + new Date().toISOString();
+        console.log(message);
+
+        socket.emit('logs:add', {
+          requestId: Date.now(),
+          data: {
+            level: 'info',
+            message: '[CLIENT] ' + message,
+            source: 'client'
+          }
+        });
+
+        logToOutput('📤 Sent log: ' + message, 'warn');
+      });
+
+      function logToOutput(msg, type = 'info') {
+        const time = new Date().toLocaleTimeString();
+        const line = `[${time}] [${type.toUpperCase()}] ${msg}`;
+        output.textContent = line + '\n' + output.textContent;
+        console.log(msg);
+      }
+
+      logToOutput('🚀 Simple logging test page loaded', 'info');
+      logToOutput('📋 Instructions:', 'info');
+      logToOutput('  1. Wait for socket connection', 'info');
+      logToOutput('  2. Click "Test console.log" button', 'info');
+      logToOutput('  3. Watch for logs:new events', 'info');
+    </script>
+  </body>
+</html>
