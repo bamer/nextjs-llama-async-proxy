@@ -18,26 +18,20 @@ class RouterCard extends Component {
   }
 
   bindEvents() {
-    console.log("[DEBUG] RouterCard.bindEvents called");
-
     this.on("click", "[data-action=start]", (e) => {
-      console.log("[DEBUG] RouterCard START button clicked, preset:", this.selectedPreset);
       e.preventDefault();
       e.stopPropagation();
       this.routerLoading = true;
       this._updateUI();
 
       if (this.selectedPreset) {
-        console.log("[DEBUG] RouterCard calling onAction('start-with-preset', preset)");
         this.onAction("start-with-preset", this.selectedPreset);
       } else {
-        console.log("[DEBUG] RouterCard calling onAction('start')");
         this.onAction("start");
       }
     });
 
     this.on("click", "[data-action=stop]", (e) => {
-      console.log("[DEBUG] RouterCard STOP button clicked");
       e.preventDefault();
       e.stopPropagation();
       this.routerLoading = true;
@@ -46,7 +40,6 @@ class RouterCard extends Component {
     });
 
     this.on("click", "[data-action=restart]", (e) => {
-      console.log("[DEBUG] RouterCard RESTART button clicked");
       e.preventDefault();
       e.stopPropagation();
       this.routerLoading = true;
@@ -61,12 +54,9 @@ class RouterCard extends Component {
   }
 
   onMount() {
-    console.log("[DEBUG] RouterCard onMount called, status:", this.status);
-
     // Get initial status from stateManager - use llamaServerStatus for consistency
     const initialStatus = stateManager.get("llamaServerStatus");
     if (initialStatus) {
-      console.log("[DEBUG] RouterCard: got initial llamaServerStatus:", initialStatus);
       this.status = initialStatus;
       this._updateUI();
     }
@@ -74,14 +64,12 @@ class RouterCard extends Component {
     // Also check routerStatus for backward compatibility
     const initialRouterStatus = stateManager.get("routerStatus");
     if (initialRouterStatus && !this.status) {
-      console.log("[DEBUG] RouterCard: got initial routerStatus:", initialRouterStatus);
       this.status = initialRouterStatus;
       this._updateUI();
     }
 
     // Subscribe to presets changes (presets may load after initial render)
     const unsubPresets = stateManager.subscribe("presets", (presets) => {
-      console.log("[DEBUG] RouterCard: presets changed:", presets?.length || 0);
       const hadPresets = this.presets && this.presets.length > 0;
       this.presets = presets || [];
 
@@ -113,10 +101,8 @@ class RouterCard extends Component {
 
     if (this.props.subscribeToUpdates) {
       const unsub = this.props.subscribeToUpdates((status) => {
-        console.log("[DEBUG] RouterCard subscribeToUpdates callback received:", status);
         this.status = status;
         this.routerLoading = false;
-        console.log("[DEBUG] RouterCard calling _updateUI with isRunning:", !!status?.port);
         this._updateUI();
       });
       this._unsubscribers.push(unsub);
@@ -124,7 +110,6 @@ class RouterCard extends Component {
 
     // Subscribe to llamaServerStatus changes for consistency
     const unsubDirect = stateManager.subscribe("llamaServerStatus", (status) => {
-      console.log("[DEBUG] RouterCard: direct subscription to llamaServerStatus:", status);
       this.status = status;
       this.routerLoading = false;
       this._updateUI();
@@ -133,7 +118,6 @@ class RouterCard extends Component {
 
     // Also subscribe to routerStatus for backward compatibility
     const unsubRouter = stateManager.subscribe("routerStatus", (status) => {
-      console.log("[DEBUG] RouterCard: direct subscription to routerStatus:", status);
       // Only update if we don't have llamaServerStatus
       if (!stateManager.get("llamaServerStatus")) {
         this.status = status;
@@ -145,7 +129,6 @@ class RouterCard extends Component {
   }
 
   destroy() {
-    console.log("[DEBUG] RouterCard destroy called");
     if (this._unsubscribers) {
       this._unsubscribers.forEach((unsub) => unsub && unsub());
       this._unsubscribers = [];

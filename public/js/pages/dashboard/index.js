@@ -4,7 +4,7 @@
  */
 
 // Load individual modules (attached to window by their modules)
-import "./controller.js";
+import "./dashboard-controller.js";
 import "./page.js";
 import "./not-found.js";
 

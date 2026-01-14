@@ -158,6 +158,7 @@ class Header extends Component {
     super(props);
     this.online = false;
     this._routeHandler = null;
+    this.unsubscribers = [];
   }
 
   render() {
@@ -207,10 +208,12 @@ class Header extends Component {
   }
 
   onMount() {
-    stateManager.subscribe("connectionStatus", (s) => {
-      this.online = s === "connected";
-      this._updateUI(s);
-    });
+    this.unsubscribers.push(
+      stateManager.subscribe("connectionStatus", (s) => {
+        this.online = s === "connected";
+        this._updateUI(s);
+      })
+    );
 
     this._routeHandler = () => {
       const t = this.$("#page-title");
@@ -231,6 +234,8 @@ class Header extends Component {
   }
 
   destroy() {
+    this.unsubscribers.forEach((unsub) => unsub && unsub());
+    this.unsubscribers = [];
     if (this._routeHandler) {
       window.removeEventListener("routechange", this._routeHandler);
       window.removeEventListener("popstate", this._routeHandler);

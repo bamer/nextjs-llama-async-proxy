@@ -13,22 +13,10 @@ class SocketClient {
   connect() {
     if (this.socket?.connected) return this;
 
-    if (!window.io) {
-      const s = document.createElement("script");
-      s.src = "/socket.io/socket.io.js";
-      s.onload = () => this._connect();
-      document.head.appendChild(s);
-    } else {
-      this._connect();
-    }
-    return this;
-  }
-
-  _connect() {
     console.log("[SocketClient] Connecting to:", window.location.origin);
     console.log("[SocketClient] Options:", this.options);
     
-    this.socket = window.io(window.location.origin, this.options);
+    this.socket = io(window.location.origin, this.options);
 
     this.socket.on("connect", () => {
       console.log("[SocketClient] Connected! Socket ID:", this.socket.id);
@@ -100,6 +88,38 @@ class SocketClient {
     };
     this.on(event, w);
     return this;
+  }
+
+  /**
+   * Make a request and wait for response
+   * Returns a Promise that resolves with the response
+   */
+  async request(event, data = {}) {
+    if (!this.socket?.connected) {
+      throw new Error("Socket not connected");
+    }
+
+    // Generate unique request ID
+    const requestId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const responseEvent = `${event}:response:${requestId}`;
+
+    return new Promise((resolve, reject) => {
+      // Set timeout
+      const timeout = setTimeout(() => {
+        this.off(responseEvent);
+        reject(new Error(`Request timeout: ${event}`));
+      }, 30000);
+
+      // Listen for response
+      this.once(responseEvent, (response) => {
+        clearTimeout(timeout);
+        this.off(responseEvent);
+        resolve(response);
+      });
+
+      // Send request
+      this.socket.emit(event, { ...data, requestId });
+    });
   }
 
   get isConnected() {

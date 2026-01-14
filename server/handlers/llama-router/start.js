@@ -22,6 +22,7 @@ let llamaServerPort = DEFAULT_LLAMA_PORT;
 let llamaServerUrl = null;
 let logWriteStream = null;
 let notificationCallback = null;
+let exitHandlerRegistered = false;
 
 // Logs directory
 const LOGS_DIR = path.join(process.cwd(), "logs");
@@ -90,6 +91,55 @@ function closeLogFile() {
     logWriteStream.end();
     logWriteStream = null;
   }
+}
+
+/**
+ * Cleanup function for llama-server process
+ * Made module-level to avoid closure issues and ensure proper cleanup
+ * Idempotent - safe to call multiple times
+ */
+function cleanupProcess() {
+  console.log("[LLAMA] Cleaning up process...");
+  writeLog("INFO", "Cleaning up llama-server process...");
+
+  if (llamaServerProcess) {
+    try {
+      if (!llamaServerProcess.killed) {
+        console.log("[LLAMA] Killing process...");
+        writeLog("INFO", "Sending SIGTERM to llama-server process");
+        llamaServerProcess.kill("SIGTERM");
+        // Force kill after 5 seconds
+        setTimeout(() => {
+          if (llamaServerProcess && !llamaServerProcess.killed) {
+            console.log("[LLAMA] Force killing process...");
+            writeLog("INFO", "Force killing llama-server process with SIGKILL");
+            llamaServerProcess.kill("SIGKILL");
+          }
+        }, 5000);
+      }
+    } catch (e) {
+      console.error("[LLAMA] Error during process cleanup:", e);
+      writeLog("ERROR", `Error during cleanup: ${e.message}`);
+    }
+  }
+
+  // Close log file
+  closeLogFile();
+
+  // Notify clients that server stopped
+  notifyServerEvent("stopped", {
+    port: llamaServerPort,
+    url: llamaServerUrl,
+    timestamp: Date.now(),
+  });
+}
+
+/**
+ * Handle process exit - register only once
+ */
+function handleProcessExit() {
+  console.log("[LLAMA] Process exit detected, cleaning up");
+  cleanupProcess();
 }
 
 /**
@@ -222,7 +272,7 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
     `Starting llama-server with command: ${llamaBin} ${args.map(quotePath).join(" ")}`
   );
 
-  // Spawn process
+    // Spawn process
   try {
     llamaServerProcess = spawn(llamaBin, args, {
       stdio: ["pipe", "pipe", "pipe"],
@@ -248,42 +298,11 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
       });
     }
 
-    // Cleanup function for process
-    const cleanupProcess = () => {
-      console.log("[LLAMA] Cleaning up process...");
-      writeLog("INFO", "Cleaning up llama-server process...");
-
-      if (llamaServerProcess) {
-        try {
-          if (!llamaServerProcess.killed) {
-            console.log("[LLAMA] Killing process...");
-            writeLog("INFO", "Sending SIGTERM to llama-server process");
-            llamaServerProcess.kill("SIGTERM");
-            // Force kill after 5 seconds
-            setTimeout(() => {
-              if (llamaServerProcess && !llamaServerProcess.killed) {
-                console.log("[LLAMA] Force killing process...");
-                writeLog("INFO", "Force killing llama-server process with SIGKILL");
-                llamaServerProcess.kill("SIGKILL");
-              }
-            }, 5000);
-          }
-        } catch (e) {
-          console.error("[LLAMA] Error during process cleanup:", e);
-          writeLog("ERROR", `Error during cleanup: ${e.message}`);
-        }
-      }
-
-      // Close log file
-      closeLogFile();
-
-      // Notify clients that server stopped
-      notifyServerEvent("stopped", {
-        port: llamaServerPort,
-        url: llamaServerUrl,
-        timestamp: Date.now(),
-      });
-    };
+    // Register exit handler only once
+    if (!exitHandlerRegistered) {
+      process.on("exit", handleProcessExit);
+      exitHandlerRegistered = true;
+    }
 
     llamaServerProcess.on("error", (err) => {
       console.error("[LLAMA] Process ERROR:", err.message);
@@ -314,12 +333,6 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
         port: llamaServerPort,
         timestamp: Date.now(),
       });
-    });
-
-    // Handle process exit
-    process.on("exit", () => {
-      console.log("[LLAMA] Process exit detected, cleaning up");
-      cleanupProcess();
     });
 
     // Wait for server

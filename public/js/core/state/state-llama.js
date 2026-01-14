@@ -66,7 +66,7 @@ class StateLlamaServer {
    */
   async start() {
     console.log("[DEBUG] StateLlamaServer.start called");
-    return await this.socket.request("llama-server:start");
+    return await this.socket.request("llama:start");
   }
 
   /**
@@ -74,7 +74,7 @@ class StateLlamaServer {
    */
   async stop() {
     console.log("[DEBUG] StateLlamaServer.stop called");
-    return await this.socket.request("llama-server:stop");
+    return await this.socket.request("llama:stop");
   }
 
   /**
@@ -82,7 +82,7 @@ class StateLlamaServer {
    */
   async getStatus() {
     console.log("[DEBUG] StateLlamaServer.getStatus called");
-    return await this.socket.request("llama-server:status");
+    return await this.socket.request("llama:status");
   }
 }
 

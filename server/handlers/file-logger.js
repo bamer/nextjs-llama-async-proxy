@@ -135,7 +135,7 @@ class FileLogger {
    */
   readLogFile(fileName = null) {
     try {
-      const filePath = fileName ? path.join(LOGS_DIR, fileName) : this.getLogFilePath();
+      const filePath = fileName ? path.join(this.logsDir, fileName) : this.getLogFilePath();
 
       if (!fs.existsSync(filePath)) {
         return [];

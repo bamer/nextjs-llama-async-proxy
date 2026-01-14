@@ -1,7 +1,13 @@
+import { cleanupMetrics } from "./metrics.js";
+
 // Graceful shutdown
 export function setupGracefulShutdown(server) {
   const shutdown = (sig) => {
     console.log(`\n${sig} received, shutting down...`);
+    
+    // Cleanup metrics collection
+    cleanupMetrics();
+    
     server.close(() => {
       console.log("Server closed");
       process.exit(0);

@@ -1,0 +1,64 @@
+{
+  "timestamp": "2026-01-14T12:59:36.626Z",
+  "pages": [
+    {
+      "name": "Dashboard",
+      "path": "/",
+      "screenshot": "screenshot-dashboard-1768395580406.png",
+      "appElement": true,
+      "contentElement": false,
+      "status": "⚠️ PARTIAL"
+    },
+    {
+      "name": "Models",
+      "path": "/models",
+      "screenshot": "screenshot-models-1768395584123.png",
+      "appElement": true,
+      "contentElement": true,
+      "status": "✅ PASS"
+    },
+    {
+      "name": "Presets",
+      "path": "/presets",
+      "screenshot": "screenshot-presets-1768395587968.png",
+      "appElement": true,
+      "contentElement": true,
+      "status": "✅ PASS"
+    },
+    {
+      "name": "Settings",
+      "path": "/settings",
+      "screenshot": "screenshot-settings-1768395591817.png",
+      "appElement": true,
+      "contentElement": true,
+      "status": "✅ PASS"
+    },
+    {
+      "name": "Logs",
+      "path": "/logs",
+      "screenshot": "screenshot-logs-1768395595604.png",
+      "appElement": true,
+      "contentElement": true,
+      "status": "✅ PASS"
+    },
+    {
+      "name": "Monitoring",
+      "path": "/monitoring",
+      "screenshot": "screenshot-monitoring-1768395599402.png",
+      "appElement": true,
+      "contentElement": true,
+      "status": "✅ PASS"
+    }
+  ],
+  "errors": [
+    {
+      "page": "http://localhost:3000/",
+      "error": "this._startChartUpdates is not a function"
+    },
+    {
+      "page": "http://localhost:3000/",
+      "error": "this._startChartUpdates is not a function"
+    }
+  ],
+  "totalScreenshots": 6
+}

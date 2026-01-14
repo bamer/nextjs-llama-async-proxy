@@ -71,6 +71,7 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
    */
   socket.on("llama:start", (req) => {
     const id = req?.requestId || Date.now();
+    console.log(`[LLAMA-HANDLERS] Received llama:start event. Request ID: ${id}`); // ADDED LOG
 
     try {
       const config = db.getConfig();
@@ -79,8 +80,10 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
       const modelsDir = config.baseModelsPath;
       if (!modelsDir) {
         err(socket, "llama:start:result", "No models directory configured", id);
+        console.error("[LLAMA-HANDLERS] No models directory configured."); // ADDED LOG
         return;
       }
+      console.log(`[LLAMA-HANDLERS] Calling startLlamaServerRouter with modelsDir: ${modelsDir}`); // ADDED LOG
 
       startLlamaServerRouter(modelsDir, db, {
         maxModels: settings.maxModelsLoaded || 4,
@@ -89,6 +92,7 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
         noAutoLoad: !settings.autoLoadModels,
       })
         .then((result) => {
+          console.log(`[LLAMA-HANDLERS] startLlamaServerRouter result:`, result); // ADDED LOG
           if (result.success) {
             // Initialize metrics scraper when server starts
             if (initializeLlamaMetrics) {
@@ -106,9 +110,11 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
           }
         })
         .catch((e) => {
+          console.error("[LLAMA-HANDLERS] Error in startLlamaServerRouter promise:", e.message); // ADDED LOG
           err(socket, "llama:start:result", e.message, id);
         });
     } catch (e) {
+      console.error("[LLAMA-HANDLERS] Error in llama:start handler:", e.message); // ADDED LOG
       err(socket, "llama:start:result", e.message, id);
     }
   });

@@ -30,6 +30,9 @@ class DashboardPage extends Component {
 
   onMount() {
     console.log("[DEBUG] DashboardPage: onMount");
+    // Load data when connected
+    this.controller?._loadDataWhenConnected();
+
     // Subscribe to state changes
     this.unsubscribers.push(
       stateManager.subscribe("llamaServerStatus", (status) => {

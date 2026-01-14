@@ -429,7 +429,7 @@ ctx-size = 2048
   describe("getLlamaParameters", () => {
     it("should return llama parameters organized by category", async () => {
       mockSocket.emit.mockImplementation((event, data, callback) => {
-        if (event === "presets:llama-parameters") {
+        if (event === "presets:get-llama-params") {
           callback({
             success: true,
             data: {
@@ -488,7 +488,7 @@ ctx-size = 2048
   describe("getInheritance", () => {
     it("should return merged config with inheritance info", async () => {
       mockSocket.emit.mockImplementation((event, data, callback) => {
-        if (event === "presets:inheritance") {
+        if (event === "presets:show-inheritance") {
           callback({
             success: true,
             data: {

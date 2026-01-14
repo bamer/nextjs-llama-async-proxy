@@ -43,7 +43,7 @@ class PresetsController {
       }
     }
 
-    this.comp = new PresetsPage({
+    this.comp = new window.PresetsPage({
       presetsService: this.presetsService,
       controller: this,
       availableModels,

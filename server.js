@@ -19,6 +19,7 @@ import {
   activeClients,
   updateMetricsInterval,
   collectMetrics,
+  initializeLlamaMetrics, // ADDED THIS IMPORT
 } from "./server/metrics.js";
 import { setupGracefulShutdown } from "./server/shutdown.js";
 import { DB } from "./server/db/index.js";
@@ -51,32 +52,29 @@ async function main() {
   });
 
   // Initialize llama metrics scraper
-  initializeLlamaMetricsScraper(PORT); // Use the imported function
+  console.log("[SERVER] Initialized Llama Metrics Scraper."); // ADDED LOG
 
-  registerHandlers(io, db, parseGgufMetadata); // Removed initializeLlamaMetricsScraper as it's handled by initializeLlamaMetricsScraper() now
+  console.log("[SERVER] Registering Socket.IO handlers..."); // ADDED LOG
+  registerHandlers(io, db, parseGgufMetadata, initializeLlamaMetrics); // PASS initializeLlamaMetrics
+  console.log("[SERVER] Socket.IO handlers registered."); // ADDED LOG
   startMetricsCollection(io, db); // Use the imported function
+  console.log("[SERVER] Started Metrics Collection."); // ADDED LOG
 
   app.use(express.static(path.join(__dirname, "public")));
   app.use(
     "/socket.io",
     express.static(path.join(__dirname, "node_modules", "socket.io", "client-dist"))
   );
-  app.use((req, res, next) => {
-    if (
-      req.method === "GET" &&
-      !req.path.startsWith("/socket.io") &&
-      !req.path.startsWith("/llamaproxws")
-    ) {
-      res.sendFile(path.join(__dirname, "public", "index.html"));
-    } else {
-      next();
-    }
+
+  // SPA fallback: For any other GET request not handled by static files, send index.html
+  app.use((req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
   });
 
   server.listen(PORT, () => {
     console.log("\n== Llama Async Proxy ==");
     console.log(`> http://localhost:${PORT}`);
-    console.log("> Socket.IO: ws://localhost:${PORT}/llamaproxws\n");
+    console.log(`> Socket.IO: ws://localhost:${PORT}/llamaproxws\n`);
   });
 
   setupGracefulShutdown(server);

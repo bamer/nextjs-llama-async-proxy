@@ -1,0 +1,133 @@
+{
+  "timestamp": "2026-01-14T14:39:29.253Z",
+  "pages": [
+    {
+      "name": "Dashboard",
+      "url": "http://localhost:3000/",
+      "status": "FAILED",
+      "screenshot": "./screenshots/golden-dashboard.png",
+      "errors": [
+        {
+          "type": "javascript",
+          "message": "Cannot set properties of null (setting '_component')"
+        },
+        {
+          "type": "javascript",
+          "message": "Cannot set properties of null (setting '_component')"
+        },
+        {
+          "type": "javascript",
+          "message": "Cannot set properties of null (setting '_component')"
+        }
+      ],
+      "warnings": [],
+      "elements": {
+        "buttons": 3,
+        "links": 0,
+        "inputs": 0,
+        "interactive": 3
+      }
+    },
+    {
+      "name": "Models",
+      "url": "http://localhost:3000/models",
+      "status": "ERROR",
+      "screenshot": "./screenshots/golden-models.png",
+      "errors": [
+        {
+          "type": "navigation",
+          "message": "page.$$: Target page, context or browser has been closed"
+        }
+      ],
+      "warnings": [],
+      "elements": {
+        "buttons": 30,
+        "links": 0,
+        "inputs": 0,
+        "interactive": 0
+      }
+    },
+    {
+      "name": "Presets",
+      "url": "http://localhost:3000/presets",
+      "status": "ERROR",
+      "screenshot": null,
+      "errors": [
+        {
+          "type": "navigation",
+          "message": "page.goto: Target page, context or browser has been closed"
+        }
+      ],
+      "warnings": [],
+      "elements": {
+        "buttons": 0,
+        "links": 0,
+        "inputs": 0,
+        "interactive": 0
+      }
+    },
+    {
+      "name": "Settings",
+      "url": "http://localhost:3000/settings",
+      "status": "ERROR",
+      "screenshot": null,
+      "errors": [
+        {
+          "type": "navigation",
+          "message": "page.goto: Target page, context or browser has been closed"
+        }
+      ],
+      "warnings": [],
+      "elements": {
+        "buttons": 0,
+        "links": 0,
+        "inputs": 0,
+        "interactive": 0
+      }
+    },
+    {
+      "name": "Logs",
+      "url": "http://localhost:3000/logs",
+      "status": "ERROR",
+      "screenshot": null,
+      "errors": [
+        {
+          "type": "navigation",
+          "message": "page.goto: Target page, context or browser has been closed"
+        }
+      ],
+      "warnings": [],
+      "elements": {
+        "buttons": 0,
+        "links": 0,
+        "inputs": 0,
+        "interactive": 0
+      }
+    },
+    {
+      "name": "Monitoring",
+      "url": "http://localhost:3000/monitoring",
+      "status": "ERROR",
+      "screenshot": null,
+      "errors": [
+        {
+          "type": "navigation",
+          "message": "page.goto: Target page, context or browser has been closed"
+        }
+      ],
+      "warnings": [],
+      "elements": {
+        "buttons": 0,
+        "links": 0,
+        "inputs": 0,
+        "interactive": 0
+      }
+    }
+  ],
+  "summary": {
+    "passed": 0,
+    "failed": 1,
+    "errors": 5
+  },
+  "networkErrors": []
+}

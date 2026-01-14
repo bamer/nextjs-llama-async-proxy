@@ -7,7 +7,7 @@ import os from "os";
 import path from "path";
 
 const DEFAULT_CONFIG = {
-  serverPath: "/usr/local/bin/llama-server",
+  serverPath: "/home/bamer/llama.cpp/build/bin/llama-server",
   host: "localhost",
   port: 8080,
   baseModelsPath: path.join(os.homedir(), "models"),
@@ -41,7 +41,8 @@ export class ConfigRepository {
     } catch (e) {
       console.error("Config load error:", e);
     }
-    return DEFAULT_CONFIG;
+    // Always return a new object, even if it's just the default
+    return { ...DEFAULT_CONFIG };
   }
 
   /**

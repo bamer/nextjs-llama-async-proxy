@@ -39,14 +39,19 @@ class DashboardController {
   }
 
   willUnmount() {
+    // Clean up chart interval
     if (this.chartUpdateInterval) {
       clearInterval(this.chartUpdateInterval);
       this.chartUpdateInterval = null;
     }
+    
+    // Clean up chart manager
     if (this.chartManager) {
       this.chartManager.destroy();
       this.chartManager = null;
     }
+    
+    // Clean up subscriptions
     this._cleanupSubscriptions();
   }
 
@@ -54,62 +59,26 @@ class DashboardController {
     this.willUnmount();
   }
 
-  render() {
-    console.log("[DashboardController] render() called - START");
-    // Return element IMMEDIATELY, don't wait for data
-    // Data will be loaded in background via onMount
-
-    // Get available data (may be empty initially)
-    const models = stateManager.get("models") || [];
-    const config = stateManager.get("config") || {};
-    const settings = stateManager.get("settings") || {};
-
-    this.chartManager = new window.ChartManager({ state: { chartType: "usage", history: [] } });
-
-    this.comp = new window.DashboardPage({
-      models,
-      metrics: null,
-      status: null,
-      routerStatus: null,
-      config,
-      history: [],
-      presets: [],
-      maxModelsLoaded: settings.maxModelsLoaded || 4,
-      ctxSize: config.ctx_size || 4096,
-      chartManager: this.chartManager,
-      controller: this,
-    });
-
-    console.log("[DashboardController] DashboardPage created:", this.comp?.constructor?.name, "hasRender:", typeof this.comp?.render);
-
-    if (!this.comp || typeof this.comp.render !== 'function') {
-      console.error("[DashboardController] ERROR: DashboardPage is invalid!", this.comp);
-      return document.createElement("div");
-    }
-
-    const el = this.comp.render();
-    console.log("[DashboardController] DashboardPage.render() returned:", { 
-      el, 
-      elType: typeof el, 
-      elConstructor: el?.constructor?.name,
-      isDashboardController: el?.constructor?.name === "DashboardController"
-    });
-    
-    if (!(el instanceof Node)) {
-      console.error("[DashboardController] FATAL: render() did not return a valid DOM node!", el);
-      // Return a fallback element to prevent crash
-      return document.createElement("div");
+  /**
+   * Load data when socket is connected
+   */
+  _startChartUpdates() {
+    if (this.chartUpdateInterval) {
+      clearInterval(this.chartUpdateInterval);
     }
     
-    this.comp._el = el;
-    el._component = this.comp;
-
-    // Start loading data in background (after element is created)
-    // Wait for socket connection before making requests
-    this._loadDataWhenConnected();
-
-    requestAnimationFrame(() => setTimeout(() => this._startChartUpdates(), 50));
-    return el;
+    this.chartUpdateInterval = setInterval(async () => {
+      try {
+        const d = await stateManager.getMetrics();
+        const h = await stateManager.getMetricsHistory({ limit: 60 });
+        
+        if (this.comp) {
+          this.comp.updateFromController(d.metrics || null, h.history || []);
+        }
+      } catch (e) {
+        console.debug("[Dashboard] Chart update failed:", e.message);
+      }
+    }, 3000);
   }
 
   /**
@@ -281,6 +250,48 @@ class DashboardController {
       showNotification(`Failed: ${e.message}`, "error");
       if (this.comp) this.comp.setRouterLoading(false);
     });
+  }
+
+  /**
+   * Render the dashboard page - called by router
+   * @returns {HTMLElement} The rendered page element
+   */
+  render() {
+    console.log("[DASHBOARD] Render - creating page component...");
+    
+    // Load initial data
+    // this._loadData(); // Removed direct call
+    
+    // Create page component
+    this.comp = new DashboardPage({ controller: this }); // Pass controller to page
+    
+    // Render component to HTML element (this.comp.render() now returns a DOM element)
+    const el = this.comp.render();
+    
+    // Ensure el is a valid Node before proceeding
+    if (!(el instanceof Node)) {
+      console.error("[DASHBOARD] DashboardPage.render() did not return a valid DOM element:", el);
+      // Fallback or throw error to trigger error boundary
+      return document.createElement("div"); // Return an empty div to prevent further errors
+    }
+
+    // Link component to DOM element
+    this.comp._el = el;
+    el._component = this.comp; // This line will now work as el is a valid Node
+    
+    // Bind events
+    this.comp.bindEvents();
+    
+    // Start chart updates if component supports it
+    if (this.comp.updateFromController && typeof this.comp.updateFromController === "function") {
+      this._startChartUpdates();
+    }
+    
+    // Call onMount for the component
+    this.comp.onMount?.();
+    
+    console.log("[DASHBOARD] Render complete");
+    return el;
   }
 }
 

@@ -1,3 +1,3 @@
-2026/01/14-12:24:32.323 1262e1 Reusing MANIFEST /home/bamer/nextjs-llama-async-proxy/remote-debug-profile/Default/Sync Data/LevelDB/MANIFEST-000001
-2026/01/14-12:24:32.324 1262e1 Recovering log #3
-2026/01/14-12:24:32.324 1262e1 Reusing old log /home/bamer/nextjs-llama-async-proxy/remote-debug-profile/Default/Sync Data/LevelDB/000003.log 
+2026/01/14-19:24:05.844 1951ce Reusing MANIFEST /home/bamer/nextjs-llama-async-proxy/remote-debug-profile/Default/Sync Data/LevelDB/MANIFEST-000001
+2026/01/14-19:24:05.845 1951ce Recovering log #3
+2026/01/14-19:24:05.846 1951ce Reusing old log /home/bamer/nextjs-llama-async-proxy/remote-debug-profile/Default/Sync Data/LevelDB/000003.log 
