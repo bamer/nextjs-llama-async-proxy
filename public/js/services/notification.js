@@ -11,6 +11,7 @@ class NotificationService {
     this.maxVisible = 3;
     this.defaultDuration = 5000;
     this._initialized = false;
+    this._timeouts = new Map(); // Store timeouts for cleanup
   }
 
   /**
@@ -55,7 +56,8 @@ class NotificationService {
 
     // Auto-dismiss unless persistent or has action
     if (duration > 0 && !persistent && !action) {
-      setTimeout(() => this.dismiss(id), duration);
+      const timeoutId = setTimeout(() => this.dismiss(id), duration);
+      this._timeouts.set(id, timeoutId); // Store timeout for cleanup
     }
 
     return id;
@@ -114,9 +116,15 @@ class NotificationService {
   }
 
   /**
-   * Dismiss a specific toast
-   */
+    * Dismiss a specific toast
+    */
   dismiss(id) {
+    // Clear the auto-dismiss timeout if it exists
+    if (this._timeouts.has(id)) {
+      clearTimeout(this._timeouts.get(id));
+      this._timeouts.delete(id);
+    }
+
     const toastEl = document.getElementById(`toast-${id}`);
     if (toastEl) {
       toastEl.classList.add("dismissing");
@@ -129,9 +137,13 @@ class NotificationService {
   }
 
   /**
-   * Dismiss all toasts
-   */
+    * Dismiss all toasts
+    */
   dismissAll() {
+    // Clear all auto-dismiss timeouts
+    this._timeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+    this._timeouts.clear();
+
     document.querySelectorAll(".toast").forEach((el) => {
       el.classList.add("dismissing");
     });

@@ -7,11 +7,22 @@ class DashboardController {
     this.router = options.router || window.router;
     this.comp = null;
     this.chartUpdateInterval = null;
-    this.chartManager = null;
+    this.chartManager = null; // Will be initialized when component mounts
     this._stateUnsubscribers = []; // Track state subscriptions for cleanup
   }
 
   init() {}
+
+  /**
+   * Initialize the ChartManager when first needed
+   */
+  _ensureChartManager() {
+    if (!this.chartManager && typeof ChartManager !== "undefined") {
+      console.log("[DASHBOARD] Creating ChartManager instance");
+      this.chartManager = new ChartManager({});
+    }
+    return this.chartManager;
+  }
 
   /**
    * Register a state subscription for cleanup
@@ -253,17 +264,20 @@ class DashboardController {
   }
 
   /**
-   * Render the dashboard page - called by router
-   * @returns {HTMLElement} The rendered page element
-   */
+    * Render the dashboard page - called by router
+    * @returns {HTMLElement} The rendered page element
+    */
   render() {
     console.log("[DASHBOARD] Render - creating page component...");
     
     // Load initial data
     // this._loadData(); // Removed direct call
     
-    // Create page component
-    this.comp = new DashboardPage({ controller: this }); // Pass controller to page
+    // Ensure chartManager is created
+    this._ensureChartManager();
+    
+    // Create page component with chartManager
+    this.comp = new DashboardPage({ controller: this, chartManager: this.chartManager }); // Pass controller and chartManager to page
     
     // Render component to HTML element (this.comp.render() now returns a DOM element)
     const el = this.comp.render();

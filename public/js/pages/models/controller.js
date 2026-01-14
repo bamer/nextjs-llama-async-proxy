@@ -84,11 +84,10 @@ class ModelsController {
 
   async render() {
     console.log("[MODELS] ModelsController.render() called - START");
-    await this.load();
-    console.log("[MODELS] load() completed");
 
+    // Render immediately with cached data, then load fresh data in background
     const models = stateManager.get("models") || [];
-    console.log("[MODELS] Found", models.length, "models");
+    console.log("[MODELS] Found", models.length, "models in cache");
 
     console.log("[MODELS] Creating ModelsPage component");
     this.comp = new ModelsPage({ models: models, controller: this });
@@ -106,12 +105,17 @@ class ModelsController {
     this.comp.bindEvents();
     this.comp.onMount?.();
 
+    // Load fresh data in background (non-blocking)
+    this.load().catch(e => {
+      console.log("[MODELS] Background load failed:", e.message);
+    });
+
     console.log("[MODELS] ModelsController.render() - END");
     return el;
   }
 
   async load() {
-    console.log("[MODELS] ModelsController.load() called");
+    console.log("[MODELS] ModelsController.load() called - START");
     try {
       console.log("[MODELS] Calling stateManager.getModels()");
       const d = await stateManager.getModels();
@@ -141,12 +145,15 @@ class ModelsController {
       stateManager.set("models", finalModels);
       stateManager.set("routerStatus", routerStatus);
 
+      // Update the UI if component is mounted
+      if (this.comp && this.comp.updateModelList) {
+        this.comp.updateModelList(finalModels);
+      }
+
       console.log("[MODELS] ModelsController.load() - END");
     } catch (e) {
       console.log("[MODELS] Load error:", e.message);
-      ToastManager.error("Failed to load models", {
-        action: { label: "Retry", handler: () => this.load() }
-      });
+      // Don't show toast on background load error, just log it
     }
   }
 

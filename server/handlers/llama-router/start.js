@@ -23,6 +23,8 @@ let llamaServerUrl = null;
 let logWriteStream = null;
 let notificationCallback = null;
 let exitHandlerRegistered = false;
+let stdoutListener = null; // Store stdout listener reference
+let stderrListener = null; // Store stderr listener reference
 
 // Logs directory
 const LOGS_DIR = path.join(process.cwd(), "logs");
@@ -101,6 +103,16 @@ function closeLogFile() {
 function cleanupProcess() {
   console.log("[LLAMA] Cleaning up process...");
   writeLog("INFO", "Cleaning up llama-server process...");
+
+  // Remove stdout/stderr listeners to prevent memory leaks
+  if (stdoutListener && llamaServerProcess && llamaServerProcess.stdout) {
+    llamaServerProcess.stdout.removeListener("data", stdoutListener);
+    stdoutListener = null;
+  }
+  if (stderrListener && llamaServerProcess && llamaServerProcess.stderr) {
+    llamaServerProcess.stderr.removeListener("data", stderrListener);
+    stderrListener = null;
+  }
 
   if (llamaServerProcess) {
     try {
@@ -281,21 +293,23 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
 
     // Pipe stdout/stderr to log file
     if (llamaServerProcess.stdout) {
-      llamaServerProcess.stdout.on("data", (data) => {
+      stdoutListener = (data) => {
         const message = data.toString().trim();
         if (message) {
           writeLog("INFO", message);
         }
-      });
+      };
+      llamaServerProcess.stdout.on("data", stdoutListener);
     }
 
     if (llamaServerProcess.stderr) {
-      llamaServerProcess.stderr.on("data", (data) => {
+      stderrListener = (data) => {
         const message = data.toString().trim();
         if (message) {
           writeLog("ERROR", message);
         }
-      });
+      };
+      llamaServerProcess.stderr.on("data", stderrListener);
     }
 
     // Register exit handler only once
