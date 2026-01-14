@@ -39,17 +39,21 @@ export function registerHandlers(io, db, ggufParser, initializeLlamaMetrics) {
   logger.setIo(io);
   logger.setDb(db);
 
-  io.on("connection", (socket) => {
+  // Register global handlers directly on 'io'
+  console.log("[HANDLERS] Registering global Llama handlers..."); // ADDED LOG
+  registerLlamaHandlers(io, db, initializeLlamaMetrics);
+  console.log("[HANDLERS] Global Llama handlers registered."); // ADDED LOG
+
+  io.on("connection", (socket) => { // This is the connection handler for individual sockets
     const cid = socket.id;
     logger.info(`Client connected: ${cid}`);
 
-    // Register all handler groups
+    // Register per-socket handlers
     registerConnectionHandlers(socket, logger);
     registerModelsHandlers(socket, io, db, ggufParser);
     registerMetricsHandlers(socket, db);
     registerLogsHandlers(socket, db);
     registerConfigHandlers(socket, db);
-    registerLlamaHandlers(socket, io, db, initializeLlamaMetrics);
     registerPresetsHandlers(socket, db);
   });
 }

@@ -15,11 +15,11 @@ import si from "systeminformation";
 // Corrected import paths based on previous debugging
 import {
   startMetricsCollection,
-  initializeLlamaMetricsScraper,
+  initializeLlamaMetricsScraper, // Corrected name
   activeClients,
   updateMetricsInterval,
   collectMetrics,
-  initializeLlamaMetrics, // ADDED THIS IMPORT
+  initializeLlamaMetricsScraper as initializeLlamaMetrics, // Alias it to initializeLlamaMetrics
 } from "./server/metrics.js";
 import { setupGracefulShutdown } from "./server/shutdown.js";
 import { DB } from "./server/db/index.js";
@@ -52,6 +52,7 @@ async function main() {
   });
 
   // Initialize llama metrics scraper
+  initializeLlamaMetricsScraper(PORT); // Use the imported function
   console.log("[SERVER] Initialized Llama Metrics Scraper."); // ADDED LOG
 
   console.log("[SERVER] Registering Socket.IO handlers..."); // ADDED LOG

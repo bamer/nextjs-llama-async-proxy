@@ -15,7 +15,7 @@ import path from "path";
 /**
  * Register llama router handlers
  */
-export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
+export function registerLlamaHandlers(io, db, initializeLlamaMetrics) {
   // Set up notification callback to broadcast server events to all clients
   setNotificationCallback((event, data) => {
     console.log(`[LLAMA-HANDLERS] Broadcasting event: ${event}`, data);
@@ -51,25 +51,25 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
    * Get llama server status (llama:status)
    * Note: llama-server:status is handled in llama-router/process-handlers.js
    */
-  socket.on("llama:status", (req, ack) => {
+  io.on("llama:status", (req, ack) => {
     const id = req?.requestId || Date.now();
     try {
       getLlamaStatus()
         .then((status) => {
-          ok(socket, "llama:status:result", { status }, id, ack);
+          ok(io, "llama:status:result", { status }, id, ack);
         })
         .catch((e) => {
-          err(socket, "llama:status:result", e.message, id, ack);
+          err(io, "llama:status:result", e.message, id, ack);
         });
     } catch (e) {
-      err(socket, "llama:status:result", e.message, id, ack);
+      err(io, "llama:status:result", e.message, id, ack);
     }
   });
 
   /**
    * Start llama server
    */
-  socket.on("llama:start", (req) => {
+  io.on("llama:start", (req) => {
     const id = req?.requestId || Date.now();
     console.log(`[LLAMA-HANDLERS] Received llama:start event. Request ID: ${id}`); // ADDED LOG
 
@@ -79,7 +79,7 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
 
       const modelsDir = config.baseModelsPath;
       if (!modelsDir) {
-        err(socket, "llama:start:result", "No models directory configured", id);
+        err(io, "llama:start:result", "No models directory configured", id); // Changed socket to io
         console.error("[LLAMA-HANDLERS] No models directory configured."); // ADDED LOG
         return;
       }
@@ -104,74 +104,74 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
               url: result.url,
               mode: "router",
             });
-            ok(socket, "llama:start:result", { success: true, ...result }, id);
+            ok(io, "llama:start:result", { success: true, ...result }, id); // Changed socket to io
           } else {
-            err(socket, "llama:start:result", result.error, id);
+            err(io, "llama:start:result", result.error, id); // Changed socket to io
           }
         })
         .catch((e) => {
           console.error("[LLAMA-HANDLERS] Error in startLlamaServerRouter promise:", e.message); // ADDED LOG
-          err(socket, "llama:start:result", e.message, id);
+          err(io, "llama:start:result", e.message, id); // Changed socket to io
         });
     } catch (e) {
       console.error("[LLAMA-HANDLERS] Error in llama:start handler:", e.message); // ADDED LOG
-      err(socket, "llama:start:result", e.message, id);
+      err(io, "llama:start:result", e.message, id); // Changed socket to io
     }
   });
 
   /**
    * Restart llama server
    */
-  socket.on("llama:restart", (req) => {
+  io.on("llama:restart", (req) => {
     const id = req?.requestId || Date.now();
 
     stopLlamaServerRouter();
 
     setTimeout(() => {
-      socket.emit("llama:start", { requestId: id });
+      io.emit("llama:start", { requestId: id });
     }, 2000);
   });
 
   /**
    * Stop llama server
    */
-  socket.on("llama:stop", (req) => {
+  io.on("llama:stop", (req) => {
     const id = req?.requestId || Date.now();
 
     try {
       const result = stopLlamaServerRouter();
       io.emit("llama:status", { status: "idle" });
       io.emit("models:router-stopped", {});
-      ok(socket, "llama:stop:result", result, id);
+      ok(io, "llama:stop:result", result, id);
     } catch (e) {
-      err(socket, "llama:stop:result", e.message, id);
+      err(io, "llama:stop:result", e.message, id);
     }
   });
 
   /**
    * Configure llama server
    */
-  socket.on("llama:config", (req) => {
+  io.on("llama:config", (req) => {
     const id = req?.requestId || Date.now();
     try {
       const settings = req?.settings || {};
       db.setMeta("router_settings", settings);
-      ok(socket, "llama:config:result", { settings }, id);
+      ok(io, "llama:config:result", { settings }, id);
     } catch (e) {
-      err(socket, "llama:config:result", e.message, id);
+      err(io, "llama:config:result", e.message, id);
     }
   });
 
   /**
    * Start llama server with preset
    */
-  socket.on("llama:start-with-preset", (req) => {
+  io.on("llama:start-with-preset", (req) => {
     const id = req?.requestId || Date.now();
 
     try {
       const presetName = req?.presetName;
       if (!presetName) {
-        err(socket, "llama:start:result", "Preset name required", id);
+        err(io, "llama:start:result", "Preset name required", id);
         return;
       }
 
@@ -197,16 +197,16 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
               mode: "router",
               preset: presetName,
             });
-            ok(socket, "llama:start-with-preset:result", { success: true, ...result }, id);
+            ok(io, "llama:start-with-preset:result", { success: true, ...result }, id);
           } else {
-            err(socket, "llama:start-with-preset:result", result.error, id);
+            err(io, "llama:start-with-preset:result", result.error, id);
           }
         })
         .catch((e) => {
-          err(socket, "llama:start-with-preset:result", e.message, id);
+          err(io, "llama:start-with-preset:result", e.message, id);
         });
     } catch (e) {
-      err(socket, "llama:start:result", e.message, id);
+      err(io, "llama:start:result", e.message, id);
     }
   });
 }
