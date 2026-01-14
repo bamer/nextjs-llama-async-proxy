@@ -29,12 +29,14 @@ class Component {
     const html = this.render();
     const el = this._htmlToElement(html);
 
-    if (el) {
+    if (el instanceof Node) {
       this._el = el;
       el._component = this;
       parent.appendChild(el);
       this.bindEvents();
       this.onMount?.();
+    } else {
+      console.error(`[${this.constructor.name}] Failed to create DOM element from render(), got:`, el);
     }
 
     return this;
@@ -185,7 +187,13 @@ class Component {
   }
 
   _htmlToElement(html) {
-    if (typeof html !== "string") return html;
+    if (typeof html !== "string") {
+      // If it's already a Node, return it
+      if (html instanceof Node) return html;
+      // If it's not a string and not a Node, return null
+      console.error("[Component] _htmlToElement received non-string, non-Node:", typeof html, html?.constructor?.name);
+      return null;
+    }
     const template = document.createElement("template");
     template.innerHTML = html.trim();
     return template.content.firstElementChild || null;
@@ -202,11 +210,13 @@ class Component {
       const html = instance.render();
       const el = instance._htmlToElement(html);
 
-      if (el) {
+      if (el instanceof Node) {
         el._component = instance;
         instance._el = el;
         instance.bindEvents();
         instance.onMount?.();
+      } else {
+        console.error(`[Component.h] Failed to create DOM element from component render, got:`, el);
       }
       return el;
     }
@@ -244,16 +254,31 @@ class Component {
 
       if (typeof c === "string" || typeof c === "number") {
         el.appendChild(document.createTextNode(String(c)));
-      } else if (c instanceof HTMLElement) {
+      } else if (c instanceof Node) {
         el.appendChild(c);
+      } else if (c instanceof Component) {
+        // If it's a Component instance, render it first
+        const childEl = c.render();
+        if (childEl instanceof Node) {
+          el.appendChild(childEl);
+        } else {
+          console.error(`[${this.constructor.name}] Failed to render child component:`, c.constructor.name, "Got:", childEl);
+        }
       } else if (Array.isArray(c)) {
         c.forEach((item) => {
-          if (item instanceof HTMLElement) {
+          if (item instanceof Node) {
             el.appendChild(item);
           } else if (typeof item === "string") {
             el.appendChild(document.createTextNode(item));
+          } else if (item instanceof Component) {
+            const childEl = item.render();
+            if (childEl instanceof Node) {
+              el.appendChild(childEl);
+            }
           }
         });
+      } else {
+        console.error(`[${this.constructor.name}] Invalid child type:`, typeof c, c);
       }
     });
 

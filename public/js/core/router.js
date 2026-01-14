@@ -150,11 +150,20 @@ class Router {
       console.log("[ROUTER] Mounting component");
       result.mount(this.contentEl);
       this._callDidMount(result._el);
+    } else if (result instanceof DashboardController) {
+      console.error("[ROUTER] FATAL: Controller.render() returned controller instance instead of DOM element. This is a bug in the controller.");
+      // Don't try to append it, create a fallback
+      const fallback = document.createElement("div");
+      fallback.textContent = "Error: Controller render failed";
+      this.contentEl.appendChild(fallback);
     } else if (result) {
       const domEl = this._htmlToElement(result);
-      console.log("[ROUTER] Appending element:", domEl?.className);
-      this.contentEl.appendChild(domEl);
-      this._callDidMount(domEl);
+      if (domEl instanceof Node) {
+        this.contentEl.appendChild(domEl);
+        this._callDidMount(domEl);
+      } else {
+        console.error("[ROUTER] Failed to create DOM element from:", result, "Got:", domEl);
+      }
     }
 
     if (this.currentController.didMount) {
@@ -238,10 +247,20 @@ class Router {
   }
 
   _htmlToElement(html) {
-    if (typeof html !== "string") return html;
-    const template = document.createElement("template");
-    template.innerHTML = html.trim();
-    return template.content.firstElementChild || null;
+    if (typeof html !== "string") {
+      // If it's already a Node, return it
+      if (html instanceof Node) return html;
+      // If it's not a string and not a Node, return null
+      console.error("[ROUTER] _htmlToElement received non-string, non-Node:", typeof html, html?.constructor?.name);
+      return null;
+    }
+    const temp = document.createElement("div");
+    temp.innerHTML = html.trim();
+    const el = temp.firstElementChild || null;
+    if (!el) {
+      console.error("[ROUTER] _htmlToElement failed to parse HTML:", html);
+    }
+    return el;
   }
 }
 

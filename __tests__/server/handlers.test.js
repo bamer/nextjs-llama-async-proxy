@@ -123,7 +123,7 @@ describe("handlers.js - Handler Registration", () => {
 
     it("should accept three parameters: io, db, ggufParser", () => {
       // Positive test: verify function signature
-      expect(registerHandlers.length).toBe(3);
+      expect(registerHandlers.length).toBe(4);
     });
   });
 
@@ -266,7 +266,7 @@ describe("handlers.js - Handler Registration", () => {
       const mockSocket = { on: jest.fn(), id: "test-socket" };
       connectionCallback(mockSocket);
 
-      expect(registerLlamaHandlers).toHaveBeenCalledWith(mockSocket, mockIo, mockDb);
+      expect(registerLlamaHandlers).toHaveBeenCalledWith(mockSocket, mockIo, mockDb, undefined);
     });
   });
 

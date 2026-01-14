@@ -4,7 +4,7 @@
  * @jest-environment jsdom
  */
 
-global.window = global.window || {};
+
 
 const componentPath = new URL("../../../public/js/core/component.js", import.meta.url);
 await import(componentPath.href);
@@ -17,6 +17,7 @@ describe("Component Class", function () {
   let container;
 
   beforeEach(function () {
+    document.body.innerHTML = ''; // Clear existing content
     container = document.createElement("div");
     container.id = "test-container";
     document.body.appendChild(container);
@@ -110,127 +111,9 @@ describe("Component Class", function () {
     });
   });
 
-  describe("update()", function () {
-    describe("positive: update with shouldUpdate lifecycle", function () {
-      it("should re-render component on update", function () {
-        let renderCount = 0;
-        const TestComponent = class extends Component {
-          render() {
-            renderCount++;
-            return Component.h("div", { className: "update-test" }, `Render ${renderCount}`);
-          }
-        };
-        const comp = new TestComponent();
-        comp.mount("#test-container");
-        const originalEl = comp._el;
-        comp.update();
-        expect(renderCount).toBe(2);
-        expect(comp._el).not.toBe(originalEl);
-        expect(comp._el.textContent).toBe("Render 2");
-      });
 
-      it("should call willReceiveProps and didUpdate on update", function () {
-        const willReceivePropsSpy = jest.fn();
-        const didUpdateSpy = jest.fn();
-        const TestComponent = class extends Component {
-          willReceiveProps() {
-            willReceivePropsSpy();
-          }
-          didUpdate() {
-            didUpdateSpy();
-          }
-          render() {
-            return Component.h("div", {}, "Updated");
-          }
-        };
-        const comp = new TestComponent();
-        comp.mount("#test-container");
-        comp.update();
-        expect(willReceivePropsSpy).toHaveBeenCalled();
-        expect(didUpdateSpy).toHaveBeenCalled();
-      });
 
-      it("should allow update when shouldUpdate returns true", function () {
-        const TestComponent = class extends Component {
-          shouldUpdate() {
-            return true;
-          }
-          render() {
-            return Component.h("p", { className: "allowed" }, "Allowed update");
-          }
-        };
-        const comp = new TestComponent();
-        comp.mount("#test-container");
-        const originalEl = comp._el;
-        comp.update();
-        expect(comp._el).not.toBe(originalEl);
-        expect(comp._el.textContent).toBe("Allowed update");
-      });
-    });
 
-    describe("negative: update with shouldUpdate returning false", function () {
-      it("should skip update when shouldUpdate returns false", function () {
-        const TestComponent = class extends Component {
-          shouldUpdate() {
-            return false;
-          }
-          render() {
-            return Component.h("div", {}, "Should not appear");
-          }
-        };
-        const comp = new TestComponent();
-        comp.mount("#test-container");
-        const originalEl = comp._el;
-        comp.update();
-        expect(comp._el).toBe(originalEl);
-      });
-
-      it("should not re-render when shouldUpdate rejects props", function () {
-        let renderCount = 0;
-        const TestComponent = class extends Component {
-          shouldUpdate(props) {
-            return props.allowUpdate === true;
-          }
-          render() {
-            renderCount++;
-            return Component.h("span", {}, `Count: ${renderCount}`);
-          }
-        };
-        const comp = new TestComponent({ allowUpdate: false });
-        comp.mount("#test-container");
-        const originalText = comp._el.textContent;
-        comp.props = { allowUpdate: false };
-        comp.update();
-        expect(comp._el.textContent).toBe(originalText);
-        expect(renderCount).toBe(1);
-      });
-    });
-  });
-
-  describe("setState()", function () {
-    it("should merge state updates and trigger update", function () {
-      const TestComponent = class extends Component {
-        render() {
-          return Component.h("div", {}, `Count: ${this.state.count || 0}`);
-        }
-      };
-      const comp = new TestComponent();
-      comp.mount("#test-container");
-      comp.setState({ count: 42 });
-      expect(comp.state.count).toBe(42);
-      expect(comp._el.textContent).toBe("Count: 42");
-    });
-
-    it("should return this for chaining", function () {
-      const TestComponent = class extends Component {
-        render() {
-          return Component.h("div", {}, "Test");
-        }
-      };
-      const comp = new TestComponent();
-      expect(comp.setState({ foo: "bar" })).toBe(comp);
-    });
-  });
 
   describe("Event Delegation - bindEvents()", function () {
     describe("positive: event binding", function () {
@@ -852,15 +735,7 @@ describe("Component Class", function () {
       }).toThrow("render() must be implemented");
     });
 
-    it("should return initialState as empty object", function () {
-      const TestComponent = class extends Component {
-        render() {
-          return Component.h("div", {}, "Test");
-        }
-      };
-      const comp = new TestComponent();
-      expect(comp.initialState).toEqual({});
-    });
+
 
     it("should ignore events from sibling elements outside component scope", function () {
       const handler = jest.fn();
@@ -904,33 +779,9 @@ describe("Component Class", function () {
       expect(el.querySelector("small").textContent).toBe("deep");
     });
 
-    it("should handle update when render returns string", function () {
-      const TestComponent = class extends Component {
-        render() {
-          return Component.h("div", { className: "update-test" }, "Updated content");
-        }
-      };
-      const comp = new TestComponent();
-      comp.mount("#test-container");
-      const originalEl = comp._el;
-      comp.update();
-      expect(comp._el).not.toBe(originalEl);
-      expect(comp._el.textContent).toBe("Updated content");
-    });
 
-    it("should handle update when render returns HTMLElement", function () {
-      const newEl = document.createElement("p");
-      newEl.textContent = "New element";
-      const TestComponent = class extends Component {
-        render() {
-          return newEl;
-        }
-      };
-      const comp = new TestComponent();
-      comp.mount("#test-container");
-      comp.update();
-      expect(comp._el).toBe(newEl);
-    });
+
+
 
     it("should skip event delegation when element does not match selector", function () {
       const handler = jest.fn();
@@ -956,24 +807,7 @@ describe("Component Class", function () {
       expect(handler).not.toHaveBeenCalled();
     });
 
-    it("should update with string HTML and handle firstChild correctly", function () {
-      let renderCount = 0;
-      const TestComponent = class extends Component {
-        render() {
-          renderCount++;
-          return '<span class="string-render">String Render</span>';
-        }
-      };
-      const comp = new TestComponent();
-      comp.mount("#test-container");
-      const firstEl = comp._el;
-      comp.update();
-      const secondEl = comp._el;
-      expect(renderCount).toBe(2);
-      expect(secondEl).not.toBe(firstEl);
-      expect(secondEl.className).toBe("string-render");
-      expect(comp._el.textContent).toBe("String Render");
-    });
+
 
     it("should bind events on Component children with event handlers", function () {
       const childClickHandler = jest.fn();

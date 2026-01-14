@@ -117,10 +117,12 @@ describe("Metrics Handlers", () => {
         memory: { used: 2048 },
         disk: { used: 75.2 },
         gpu: {
+          list: [],
           usage: 60.0,
           memoryUsed: 4096,
           memoryTotal: 8192,
         },
+        swap: { used: 0 },
         uptime: 3600,
       });
     });
@@ -141,10 +143,12 @@ describe("Metrics Handlers", () => {
         memory: { used: 0 },
         disk: { used: 0 },
         gpu: {
+          list: [],
           usage: 0,
           memoryUsed: 0,
           memoryTotal: 0,
         },
+        swap: { used: 0 },
         uptime: 0,
       });
     });
@@ -169,10 +173,12 @@ describe("Metrics Handlers", () => {
         memory: { used: 1024 },
         disk: { used: 0 },
         gpu: {
+          list: [],
           usage: 0,
           memoryUsed: 0,
           memoryTotal: 0,
         },
+        swap: { used: 0 },
         uptime: 0,
       });
     });
@@ -283,10 +289,12 @@ describe("Metrics Handlers", () => {
         memory: { used: 2048 },
         disk: { used: 75.2 },
         gpu: {
+          list: [],
           usage: 60.0,
           memoryUsed: 4096,
           memoryTotal: 8192,
         },
+        swap: { used: 0 },
         uptime: 3600,
         timestamp: 1704112345000,
       });
@@ -347,10 +355,12 @@ describe("Metrics Handlers", () => {
         memory: { used: 0 },
         disk: { used: 0 },
         gpu: {
+          list: [],
           usage: 0,
           memoryUsed: 0,
           memoryTotal: 0,
         },
+        swap: { used: 0 },
         uptime: 0,
         timestamp: undefined,
       });
@@ -359,10 +369,12 @@ describe("Metrics Handlers", () => {
         memory: { used: 1024 },
         disk: { used: 0 },
         gpu: {
+          list: [],
           usage: 0,
           memoryUsed: 0,
           memoryTotal: 0,
         },
+        swap: { used: 0 },
         uptime: 0,
         timestamp: undefined,
       });
@@ -486,7 +498,9 @@ describe("Metrics Handlers", () => {
       expect(history[0].cpu).toEqual({ usage: 10.5 });
       expect(history[0].memory).toEqual({ used: 512 });
       expect(history[0].disk).toEqual({ used: 50.0 });
+      expect(history[0].swap).toEqual({ used: 0 });
       expect(history[0].gpu).toEqual({
+        list: [],
         usage: 25.0,
         memoryUsed: 1024,
         memoryTotal: 4096,

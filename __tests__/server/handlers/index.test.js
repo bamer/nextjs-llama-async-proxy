@@ -7,7 +7,7 @@ import { jest, describe, it, expect, beforeEach, afterEach } from "@jest/globals
 
 // Mock the handler modules before importing the index
 jest.unstable_mockModule(
-  "../../../server/handlers/connection.js",
+  "/home/bamer/nextjs-llama-async-proxy/server/handlers/connection.js",
   () => ({
     registerConnectionHandlers: jest.fn(),
   }),
@@ -15,7 +15,7 @@ jest.unstable_mockModule(
 );
 
 jest.unstable_mockModule(
-  "../../../server/handlers/models/index.js",
+  "/home/bamer/nextjs-llama-async-proxy/server/handlers/models/index.js",
   () => ({
     registerModelsHandlers: jest.fn(),
   }),
@@ -23,7 +23,7 @@ jest.unstable_mockModule(
 );
 
 jest.unstable_mockModule(
-  "../../../server/handlers/metrics.js",
+  "/home/bamer/nextjs-llama-async-proxy/server/handlers/metrics.js",
   () => ({
     registerMetricsHandlers: jest.fn(),
   }),
@@ -31,7 +31,7 @@ jest.unstable_mockModule(
 );
 
 jest.unstable_mockModule(
-  "../../../server/handlers/logs.js",
+  "/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js",
   () => ({
     registerLogsHandlers: jest.fn(),
   }),
@@ -39,7 +39,7 @@ jest.unstable_mockModule(
 );
 
 jest.unstable_mockModule(
-  "../../../server/handlers/config.js",
+  "/home/bamer/nextjs-llama-async-proxy/server/handlers/config.js",
   () => ({
     registerConfigHandlers: jest.fn(),
   }),
@@ -47,7 +47,7 @@ jest.unstable_mockModule(
 );
 
 jest.unstable_mockModule(
-  "../../../server/handlers/llama.js",
+  "/home/bamer/nextjs-llama-async-proxy/server/handlers/llama.js",
   () => ({
     registerLlamaHandlers: jest.fn(),
   }),
@@ -55,7 +55,7 @@ jest.unstable_mockModule(
 );
 
 jest.unstable_mockModule(
-  "../../../server/handlers/logger.js",
+  "/home/bamer/nextjs-llama-async-proxy/server/handlers/logger.js",
   () => {
     const mockLogger = {
       setIo: jest.fn(),
@@ -75,7 +75,7 @@ jest.unstable_mockModule(
 );
 
 jest.unstable_mockModule(
-  "../../../server/handlers/file-logger.js",
+  "/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js",
   () => ({
     fileLogger: {
       setIo: jest.fn(),
@@ -103,13 +103,13 @@ describe("server/handlers/index.js", () => {
 
   beforeEach(async () => {
     // Import the mocked modules
-    const connectionModule = await import("../../../server/handlers/connection.js");
-    const modelsModule = await import("../../../server/handlers/models/index.js");
-    const metricsModule = await import("../../../server/handlers/metrics.js");
-    const logsModule = await import("../../../server/handlers/logs.js");
-    const configModule = await import("../../../server/handlers/config.js");
-    const llamaModule = await import("../../../server/handlers/llama.js");
-    const loggerModule = await import("../../../server/handlers/logger.js");
+    const connectionModule = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/connection.js");
+    const modelsModule = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/models/index.js");
+    const metricsModule = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/metrics.js");
+    const logsModule = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logs.js");
+    const configModule = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/config.js");
+    const llamaModule = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/llama.js");
+    const loggerModule = await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/logger.js");
     const indexModule = await import("../../../server/handlers/index.js");
 
     registerConnectionHandlers = connectionModule.registerConnectionHandlers;

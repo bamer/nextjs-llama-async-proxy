@@ -60,10 +60,8 @@ describe("ModelsRepository Branch Coverage", () => {
         }
         return mockStmtRun;
       }),
+      transaction: jest.fn((fn) => fn), // ADDED THIS LINE
     };
-
-    repository = new ModelsRepository(mockDb);
-  });
 
   describe("save() - default value branches for numeric fields", () => {
     /**

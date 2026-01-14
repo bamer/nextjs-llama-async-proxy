@@ -29,6 +29,7 @@ describe("MetricsRepository", () => {
         gpu_usage REAL DEFAULT 0,
         gpu_memory_used REAL DEFAULT 0,
         gpu_memory_total REAL DEFAULT 0,
+        swap_usage REAL DEFAULT 0,
         timestamp INTEGER DEFAULT (strftime('%s', 'now'))
       )
     `);

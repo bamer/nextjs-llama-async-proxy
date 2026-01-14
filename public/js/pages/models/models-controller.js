@@ -47,7 +47,7 @@ class ModelsController {
     await this.load();
     const models = stateManager.get("models") || [];
     this.comp = new ModelsPage({ models });
-    return this.comp;
+    return this.comp.render();
   }
 
   async load() {

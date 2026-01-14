@@ -196,7 +196,7 @@ describe("Schema Module", () => {
     it("should have 6 total model migrations", () => {
       // Positive test: verify correct number of migrations
       const migrations = getModelsMigrations();
-      expect(migrations.length).toBe(6);
+      expect(migrations.length).toBe(7);
     });
 
     it("should define correct column types for each migration", () => {
@@ -752,7 +752,7 @@ describe("Schema Module", () => {
       // Positive test: verify pure function works with read-only access
       const migrations = getModelsMigrations();
       expect(Array.isArray(migrations)).toBe(true);
-      expect(migrations.length).toBe(6);
+      expect(migrations.length).toBe(7);
     });
 
     it("should handle database with read-only access in getMetricsMigrations", () => {

@@ -11,19 +11,19 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const LOGS_DIR = path.join(path.dirname(__dirname), "..", "logs");
-
 class FileLogger {
-  constructor() {
+  constructor(logsDir = null) {
     this.io = null;
     this.db = null;
     this.logLevels = { error: 0, warn: 1, info: 2, debug: 3 };
     this.logLevel = process.env.LOG_LEVEL || "info";
 
+    this.logsDir = logsDir || path.join(path.dirname(__dirname), "..", "logs");
+
     // Create logs directory if it doesn't exist
-    if (!fs.existsSync(LOGS_DIR)) {
-      fs.mkdirSync(LOGS_DIR, { recursive: true });
-      console.log(`[Logger] Created logs directory: ${LOGS_DIR}`);
+    if (!fs.existsSync(this.logsDir)) {
+      fs.mkdirSync(this.logsDir, { recursive: true });
+      console.log(`[Logger] Created logs directory: ${this.logsDir}`);
     }
   }
 
@@ -49,7 +49,7 @@ class FileLogger {
    * Get current log file path
    */
   getLogFilePath() {
-    return path.join(LOGS_DIR, this.getLogFileName());
+    return path.join(this.logsDir, this.getLogFileName());
   }
 
   /**
@@ -172,12 +172,12 @@ class FileLogger {
    */
   listLogFiles() {
     try {
-      if (!fs.existsSync(LOGS_DIR)) {
+      if (!fs.existsSync(this.logsDir)) {
         return [];
       }
 
       return fs
-        .readdirSync(LOGS_DIR)
+        .readdirSync(this.logsDir)
         .filter((f) => f.endsWith(".log"))
         .sort()
         .reverse();
@@ -196,7 +196,7 @@ class FileLogger {
       let cleared = 0;
 
       files.forEach((file) => {
-        const filePath = path.join(LOGS_DIR, file);
+        const filePath = path.join(this.logsDir, file);
         fs.unlinkSync(filePath);
         cleared++;
       });
@@ -218,7 +218,7 @@ class FileLogger {
       const files = this.listLogFiles();
 
       files.forEach((file) => {
-        const filePath = path.join(LOGS_DIR, file);
+        const filePath = path.join(this.logsDir, file);
         const stats = fs.statSync(filePath);
         totalSize += stats.size;
       });
@@ -231,7 +231,7 @@ class FileLogger {
   }
 }
 
-const fileLogger = new FileLogger();
+const fileLogger = new FileLogger(null);
 
 export { fileLogger };
 export default FileLogger;

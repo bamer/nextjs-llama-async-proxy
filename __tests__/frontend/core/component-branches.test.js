@@ -4,7 +4,7 @@
  * @jest-environment jsdom
  */
 
-global.window = global.window || {};
+
 
 const componentPath = new URL("../../../public/js/core/component.js", import.meta.url);
 await import(componentPath.href);
@@ -17,6 +17,7 @@ describe("Component Branch Coverage", function () {
   let container;
 
   beforeEach(function () {
+    document.body.innerHTML = ''; // Clear existing content
     container = document.createElement("div");
     container.id = "test-container-branch";
     document.body.appendChild(container);

@@ -1,3 +1,4 @@
+/** @jest-environment jsdom */
 /**
  * Presets Service Integration Tests
  * Tests for frontend presets service functionality
@@ -28,8 +29,8 @@ describe("PresetsService", () => {
 
   beforeAll(async () => {
     // Import the module
-    const module = await import("../../public/js/services/presets.js");
-    PresetsService = module.PresetsService;
+    await import("../../public/js/services/presets.js"); // Import for side effects (populating window)
+    PresetsService = window.PresetsService; // Access from global window
   });
 
   beforeEach(() => {

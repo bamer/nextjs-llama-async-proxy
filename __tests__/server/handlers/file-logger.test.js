@@ -11,6 +11,7 @@ import { jest } from "@jest/globals";
 import { fileURLToPath } from "url";
 import path from "path";
 import fs from "fs";
+import { FileLogger } from "../../../server/handlers/file-logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,9 +47,7 @@ describe("FileLogger Class", () => {
      * Test: Call with default date and verify format
      */
     test("should return correct filename format for today", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const fileName = fileLogger.getLogFileName();
       expect(fileName).toMatch(/^app-\d{8}\.log$/);
@@ -59,9 +58,7 @@ describe("FileLogger Class", () => {
      * Test: Call with specific date and verify filename matches
      */
     test("should return correct filename for specific date", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const testDate = new Date("2024-06-15T12:00:00Z");
       const fileName = fileLogger.getLogFileName(testDate);
@@ -73,9 +70,7 @@ describe("FileLogger Class", () => {
      * Test: Call with date in different year
      */
     test("should handle different years correctly", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const testDate = new Date("2025-01-01T00:00:00Z");
       const fileName = fileLogger.getLogFileName(testDate);
@@ -87,9 +82,7 @@ describe("FileLogger Class", () => {
      * Test: Call with date in January (month 0)
      */
     test("should pad single-digit months with leading zero", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const testDate = new Date("2024-01-05T10:00:00Z");
       const fileName = fileLogger.getLogFileName(testDate);
@@ -101,9 +94,7 @@ describe("FileLogger Class", () => {
      * Test: Call with date on 3rd day of month
      */
     test("should pad single-digit days with leading zero", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const testDate = new Date("2024-06-03T15:30:00Z");
       const fileName = fileLogger.getLogFileName(testDate);
@@ -115,9 +106,7 @@ describe("FileLogger Class", () => {
      * Test: Call with date near end of year
      */
     test("should handle dates near end of year correctly", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       // Test December 31st - use local time to avoid timezone issues
       const testDate = new Date(2024, 11, 31, 12, 0, 0); // Month is 0-indexed
@@ -130,9 +119,7 @@ describe("FileLogger Class", () => {
      * Test: Call without parameter and verify format matches today's date
      */
     test("should use current date when no parameter provided", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const today = new Date();
       const fileName = fileLogger.getLogFileName();
@@ -147,9 +134,7 @@ describe("FileLogger Class", () => {
      * Test: Call getLogFilePath and verify it returns a path with logs directory
      */
     test("should return path to log file in logs directory", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const filePath = fileLogger.getLogFilePath();
       expect(filePath).toContain("logs");
@@ -161,9 +146,7 @@ describe("FileLogger Class", () => {
      * Test: Verify returned path ends with today's filename
      */
     test("should include filename from getLogFileName", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const today = new Date();
       const fileName = fileLogger.getLogFileName();
@@ -177,9 +160,7 @@ describe("FileLogger Class", () => {
      * Test: Verify path matches today's date
      */
     test("should return today's log file path", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const filePath = fileLogger.getLogFilePath();
       const today = new Date();
@@ -195,9 +176,7 @@ describe("FileLogger Class", () => {
      * Test: Call writeToFile and verify file is created with content
      */
     test("should write log entry to file", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       fileLogger.writeToFile("info", "Test message", "test-source");
 
@@ -215,9 +194,7 @@ describe("FileLogger Class", () => {
      * Test: Call writeToFile twice and verify both entries exist
      */
     test("should append to existing log file", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       fileLogger.writeToFile("info", "First message", "source1");
       fileLogger.writeToFile("error", "Second message", "source2");
@@ -234,9 +211,7 @@ describe("FileLogger Class", () => {
      * Test: Call with different levels and verify format
      */
     test("should write entries with correct level formatting", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       fileLogger.writeToFile("debug", "Debug message", "source");
       fileLogger.writeToFile("warn", "Warning message", "source");
@@ -255,9 +230,7 @@ describe("FileLogger Class", () => {
      * Test: Call writeToFile and verify timestamp format
      */
     test("should include ISO timestamp in log entry", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       fileLogger.writeToFile("info", "Test", "source");
 
@@ -274,9 +247,7 @@ describe("FileLogger Class", () => {
      * Test: Set log level to 'info' and call debug - should not log
      */
     test("should not log debug messages when logLevel is info", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const originalLevel = fileLogger.logLevel;
       fileLogger.logLevel = "info";
@@ -294,9 +265,7 @@ describe("FileLogger Class", () => {
      * Test: Set log level to 'debug' and call debug - should log
      */
     test("should log debug messages when logLevel is debug", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const originalLevel = fileLogger.logLevel;
       fileLogger.logLevel = "debug";
@@ -314,9 +283,7 @@ describe("FileLogger Class", () => {
      * Test: Set io and verify emit format
      */
     test("should broadcast message with correct format via Socket.IO", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const mockIo = { emit: jest.fn() };
       fileLogger.setIo(mockIo);
@@ -342,9 +309,7 @@ describe("FileLogger Class", () => {
      * Test: Call readLogFile with non-existent filename
      */
     test("should return empty array for non-existent file", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const result = fileLogger.readLogFile("nonexistent.log");
       expect(result).toEqual([]);
@@ -355,9 +320,7 @@ describe("FileLogger Class", () => {
      * Test: Write entries and verify structure
      */
     test("should parse log entries with correct structure", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       // Write a test log file using writeToFile
       fileLogger.writeToFile("info", "Info message", "mysource");
@@ -377,9 +340,7 @@ describe("FileLogger Class", () => {
      * Test: Write entries and verify order
      */
     test("should return entries in reverse chronological order", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       fileLogger.writeToFile("info", "First", "source");
       fileLogger.writeToFile("info", "Second", "source");
@@ -396,9 +357,7 @@ describe("FileLogger Class", () => {
      * Test: Create empty file and read it
      */
     test("should handle empty log file", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const logsDir = path.dirname(fileLogger.getLogFilePath());
       const filePath = path.join(logsDir, "empty.log");
@@ -416,9 +375,7 @@ describe("FileLogger Class", () => {
      * Test: Write mixed valid and invalid lines
      */
     test("should filter out malformed log lines", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const logsDir = path.dirname(fileLogger.getLogFilePath());
       const filePath = path.join(logsDir, "malformed.log");
@@ -444,9 +401,7 @@ Another invalid line
      * Test: Write entry and verify level is lowercase
      */
     test("should convert level to lowercase", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       fileLogger.writeToFile("info", "Test", "source");
 
@@ -462,9 +417,7 @@ Another invalid line
      * Test: Create multiple file types and verify filtering
      */
     test("should return only .log files", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const logsDir = path.dirname(fileLogger.getLogFilePath());
       fs.writeFileSync(path.join(logsDir, "app-20240615.log"), "test");
@@ -483,9 +436,7 @@ Another invalid line
      * Test: Create files with different dates and verify order
      */
     test("should sort files in reverse chronological order", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const logsDir = path.dirname(fileLogger.getLogFilePath());
       fs.writeFileSync(path.join(logsDir, "app-20240615.log"), "test");
@@ -507,9 +458,7 @@ Another invalid line
      * Test: Call listLogFiles with test directory files
      */
     test("should return files from logs directory", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       // Create test files
       const logsDir = path.dirname(fileLogger.getLogFilePath());
@@ -529,9 +478,7 @@ Another invalid line
      * Test: Create files and clear them
      */
     test("should delete log files and return count", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const logsDir = path.dirname(fileLogger.getLogFilePath());
       fs.writeFileSync(path.join(logsDir, "app-20240615.log"), "test");
@@ -547,9 +494,7 @@ Another invalid line
      * Test: Call clearLogFiles with no .log files
      */
     test("should return count of cleared files", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const logsDir = path.dirname(fileLogger.getLogFilePath());
       fs.writeFileSync(path.join(logsDir, "app-20240615.log"), "test");
@@ -565,9 +510,7 @@ Another invalid line
      * Test: Call with log files present
      */
     test("should return total size of log files", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const logsDir = path.dirname(fileLogger.getLogFilePath());
       fs.writeFileSync(path.join(logsDir, "app-20240615.log"), "A".repeat(100));
@@ -583,9 +526,7 @@ Another invalid line
      * Test: Create mixed files and verify only logs counted
      */
     test("should count only .log files", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const logsDir = path.dirname(fileLogger.getLogFilePath());
       fs.writeFileSync(path.join(logsDir, "app-20240615.log"), "AAA");
@@ -605,9 +546,7 @@ Another invalid line
      * Test: Attempt to write to an invalid path
      */
     test("should handle file write errors gracefully", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       // Spy on console.error to verify error is logged
       const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
@@ -633,9 +572,7 @@ Another invalid line
      * Test: Test with invalid encoding option
      */
     test("should handle appendFileSync errors", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
@@ -652,9 +589,7 @@ Another invalid line
      * Test: Set db mock and verify addLog is called
      */
     test("should save log to database when db is set", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const mockDb = { addLog: jest.fn() };
       fileLogger.setDb(mockDb);
@@ -668,9 +603,7 @@ Another invalid line
      * Test: Set db that throws on addLog
      */
     test("should handle db save errors gracefully", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const mockDb = {
         addLog: jest.fn().mockImplementation(() => {
@@ -695,9 +628,7 @@ Another invalid line
      * Test: Call log without setting db
      */
     test("should not save to db when db is not set", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       // Ensure db is null
       fileLogger.db = null;
@@ -715,9 +646,7 @@ Another invalid line
      * Test: Set io and verify emit format
      */
     test("should broadcast message with correct format via Socket.IO", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const mockIo = { emit: jest.fn() };
       fileLogger.setIo(mockIo);
@@ -741,9 +670,7 @@ Another invalid line
      * Test: Call log without setting io
      */
     test("should not broadcast when io is not set", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       fileLogger.io = null;
       const consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
@@ -759,9 +686,7 @@ Another invalid line
      * Test: Pass non-string message and verify it gets converted
      */
     test("should convert message to string", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
       const originalLog = fileLogger.log.bind(fileLogger);
@@ -791,9 +716,7 @@ Another invalid line
      * Test: Call debug at different log levels
      */
     test("should not log debug when logLevel is info", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const originalLevel = fileLogger.logLevel;
       fileLogger.logLevel = "info";
@@ -815,9 +738,7 @@ Another invalid line
      * Test: Call debug when logLevel is debug
      */
     test("should log debug when logLevel is debug", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const originalLevel = fileLogger.logLevel;
       fileLogger.logLevel = "debug";
@@ -836,9 +757,7 @@ Another invalid line
      * Test: Call debug at warn level
      */
     test("should not log debug when logLevel is warn", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const originalLevel = fileLogger.logLevel;
       fileLogger.logLevel = "warn";
@@ -859,9 +778,7 @@ Another invalid line
      * Test: Attempt to read from an invalid file path
      */
     test("should handle read errors gracefully", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       // Should return empty array for non-existent file
       const result = fileLogger.readLogFile("completely-nonexistent-and-impossible.log");
@@ -873,9 +790,7 @@ Another invalid line
      * Test: Create file with only whitespace content
      */
     test("should handle file with only whitespace", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const logsDir = path.dirname(fileLogger.getLogFilePath());
       const filePath = path.join(logsDir, "whitespace.log");
@@ -892,9 +807,7 @@ Another invalid line
      * Test: Create file with only newline characters
      */
     test("should handle file with only newlines", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const logsDir = path.dirname(fileLogger.getLogFilePath());
       const filePath = path.join(logsDir, "newlines.log");
@@ -913,9 +826,7 @@ Another invalid line
      * Test: Call listLogFiles with non-existent directory
      */
     test("should return empty array when logs directory doesn't exist", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       // The listLogFiles method checks if LOGS_DIR exists first
       // If it doesn't exist, it returns empty array
@@ -928,9 +839,7 @@ Another invalid line
      * Test: Create various file types and verify filtering
      */
     test("should only return .log files", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const logsDir = path.dirname(fileLogger.getLogFilePath());
       fs.writeFileSync(path.join(logsDir, "test.log"), "test");
@@ -953,9 +862,7 @@ Another invalid line
      * Test: Call clearLogFiles with mocked file operations
      */
     test("should handle delete errors gracefully", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       // Create some test files
       const logsDir = path.dirname(fileLogger.getLogFilePath());
@@ -976,9 +883,7 @@ Another invalid line
      * Test: Call clearLogFiles with empty directory
      */
     test("should return 0 when no log files exist", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       // Create empty logs dir with no log files
       const logsDir = path.dirname(fileLogger.getLogFilePath());
@@ -998,9 +903,7 @@ Another invalid line
      * Test: Call getLogsDirectorySize with various scenarios
      */
     test("should handle directory size calculation gracefully", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       // Should not throw
       const size = fileLogger.getLogsDirectorySize();
@@ -1013,9 +916,7 @@ Another invalid line
      * Test: Call with no log files
      */
     test("should return 0 for empty logs directory", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const logsDir = path.dirname(fileLogger.getLogFilePath());
       // Clear all .log files
@@ -1031,9 +932,7 @@ Another invalid line
      * Test: Create files and verify size calculation
      */
     test("should calculate correct total size", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const logsDir = path.dirname(fileLogger.getLogFilePath());
       fs.writeFileSync(path.join(logsDir, "app-20240615.log"), "ABC"); // 3 bytes
@@ -1050,9 +949,7 @@ Another invalid line
      * Test: Set io and verify it can be retrieved
      */
     test("should set io instance", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const mockIo = { emit: jest.fn() };
       fileLogger.setIo(mockIo);
@@ -1064,9 +961,7 @@ Another invalid line
      * Test: Set db and verify it can be retrieved
      */
     test("should set db instance", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const mockDb = { addLog: jest.fn() };
       fileLogger.setDb(mockDb);
@@ -1080,9 +975,7 @@ Another invalid line
      * Test: Call info and verify log is called correctly
      */
     test("should call log with info level", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
 
@@ -1099,9 +992,7 @@ Another invalid line
      * Test: Call error and verify log is called correctly
      */
     test("should call log with error level", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
 
@@ -1118,9 +1009,7 @@ Another invalid line
      * Test: Call warn and verify log is called correctly
      */
     test("should call log with warn level", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
 
@@ -1137,9 +1026,7 @@ Another invalid line
      * Test: Call without source parameter
      */
     test("should use default source when not provided", async () => {
-      const module =
-        await import("/home/bamer/nextjs-llama-async-proxy/server/handlers/file-logger.js");
-      const fileLogger = module.fileLogger;
+      const fileLogger = new FileLogger(testLogsDir);
 
       const consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
 

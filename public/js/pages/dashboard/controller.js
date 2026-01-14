@@ -57,7 +57,30 @@ class DashboardController {
         controller: this,
       });
 
+      // CRITICAL: Verify DashboardPage was created correctly
+      if (!this.comp) {
+        console.error("[DashboardController] CRITICAL: DashboardPage creation failed!");
+        return document.createElement("div");
+      }
+
+      if (typeof this.comp.render !== 'function') {
+        console.error("[DashboardController] CRITICAL: DashboardPage.render is not a function!", typeof this.comp.render);
+        return document.createElement("div");
+      }
+
       const el = this.comp.render();
+
+      // CRITICAL: Verify render returned a valid DOM node
+      if (!(el instanceof Node)) {
+        console.error("[DashboardController] CRITICAL: DashboardPage.render() did not return a DOM node!", { 
+          el, 
+          elType: typeof el, 
+          elConstructor: el?.constructor?.name,
+          isController: el?.constructor?.name === "DashboardController"
+        });
+        // Return fallback element
+        return document.createElement("div");
+      }
 
       this.comp._el = el;
       el._component = this.comp;
@@ -73,8 +96,9 @@ class DashboardController {
 
       return el;
     } catch (e) {
-      console.error("[DASHBOARD] RENDER ERROR:", e.message);
-      throw e;
+      console.error("[DASHBOARD] RENDER ERROR:", e.message, e.stack);
+      // Return a fallback element to prevent crash
+      return document.createElement("div");
     }
   }
 

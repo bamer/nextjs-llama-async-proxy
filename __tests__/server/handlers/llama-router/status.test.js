@@ -226,6 +226,8 @@ describe("Llama Router Status Functions", () => {
     it("should return error when llama-server is not running", async () => {
       // Arrange
       mockGetServerUrl.mockReturnValue(null);
+      mockIsPortInUse.mockReturnValue(false);
+      mockGetRouterState.mockReturnValue({ port: null, isRunning: false });
 
       // Act
       const result = await loadModel("test-model.gguf");
@@ -286,6 +288,8 @@ describe("Llama Router Status Functions", () => {
     it("should return error when llama-server is not running", async () => {
       // Arrange
       mockGetServerUrl.mockReturnValue(null);
+      mockIsPortInUse.mockReturnValue(false);
+      mockGetRouterState.mockReturnValue({ port: null, isRunning: false });
 
       // Act
       const result = await unloadModel("test-model.gguf");

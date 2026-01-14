@@ -9,6 +9,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, jest } from "@jest/globals";
+import "/home/bamer/nextjs-llama-async-proxy/public/js/core/component.js"; // ADDED: Ensure Component is loaded
 
 // Test environment setup
 let Router;
@@ -18,7 +19,7 @@ let events;
 function createMockController(returnElement) {
   return {
     render: function () {
-      return returnElement;
+      return returnElement; // Pass through the element provided
     },
     willUnmount: null,
     destroy: null,
@@ -27,33 +28,38 @@ function createMockController(returnElement) {
 }
 
 // Dynamic import of the actual router.js module
-beforeAll(async () => {
-  const module = await import("/home/bamer/nextjs-llama-async-proxy/public/js/core/router.js");
-  Router = window.Router;
-});
+// Dynamic import of the actual router.js module
+// Router will be assigned in beforeEach
 
 describe("Router Coverage Tests", () => {
   let router;
   let events;
 
-  beforeEach(() => {
+  beforeEach(async () => { // Make beforeEach async
+    // jest.resetModules(); // Reset modules first - REMOVED
+    await import("/home/bamer/nextjs-llama-async-proxy/public/js/core/router.js");
+    Router = window.Router; // Assign Router here
+
+    document.body.innerHTML = ''; // Clear existing content
     // Create mock root element
     const mockRootEl = document.createElement("div");
     mockRootEl.id = "app";
     mockRootEl.innerHTML = "";
-    document.body.appendChild(mockRootEl);
+    // Do not attach to document.body to avoid jsdom Node issues
 
     // Create mock content element
     const mockContentEl = document.createElement("div");
     mockContentEl.id = "page-content";
-    document.body.appendChild(mockContentEl);
+    document.body.appendChild(mockContentEl); // Attach for jsdom compatibility
 
     // Create mock Layout
     const mockLayout = {
       render: function () {
-        const el = document.createElement("div");
-        el.className = "layout";
-        return el;
+        return "<div class='layout'></div>"; // Return HTML string
+      },
+      mount: function(parent) {
+        // Mock: do nothing to avoid jsdom Node issues
+        // The router's _htmlToElement will now handle the DOM creation.
       },
       bindEvents: function () {},
       didMount: function () {}, // Add didMount to cover that branch
@@ -72,7 +78,7 @@ describe("Router Coverage Tests", () => {
     };
 
     // Create fresh router instance
-    router = new Router({ root: document.getElementById("app") });
+    router = new Router({ root: mockRootEl });
   });
 
   afterEach(() => {
@@ -178,7 +184,7 @@ describe("Router Coverage Tests", () => {
     it("should accept object handler with render method", () => {
       const handlerObj = {
         render: function () {
-          return createMockController(document.createElement("div"));
+          return "<div></div>";
         },
       };
       router.register("/test", handlerObj);
@@ -191,7 +197,7 @@ describe("Router Coverage Tests", () => {
     it("should accept controller class with options", () => {
       const controllerClass = function () {};
       controllerClass.prototype.render = function () {
-        return document.createElement("div");
+        return "<div></div>";
       };
       const handlerObj = { controller: controllerClass, options: { test: true } };
       router.register("/test", handlerObj);
@@ -268,6 +274,7 @@ describe("Router Coverage Tests", () => {
           return createMockController(document.createElement("div"));
         },
       });
+      router.start(); // ADDED: Initialize router before navigate calls
     });
 
     // POSITIVE TEST: Navigate calls pushState for different path
@@ -437,6 +444,7 @@ describe("Router Coverage Tests", () => {
           return createMockController(document.createElement("div"));
         },
       });
+      router.start(); // ADDED: Initialize router before _handle calls
     });
 
     // POSITIVE TEST: Calls handler for matched route
@@ -446,7 +454,7 @@ describe("Router Coverage Tests", () => {
       const trackingHandler = {
         render: function () {
           callCount++;
-          return createMockController(document.createElement("div"));
+          return "<div></div>";
         },
       };
       router.routes.clear();
@@ -468,7 +476,7 @@ describe("Router Coverage Tests", () => {
           destroyCalled = true;
         },
         render: function () {
-          return document.createElement("div");
+          return "<div></div>";
         },
       };
       router.currentController = mockController;
@@ -484,7 +492,7 @@ describe("Router Coverage Tests", () => {
       const trackingHandler = {
         render: function () {
           callCount++;
-          return createMockController(document.createElement("div"));
+          return "<div></div>";
         },
       };
       router.routes.clear();
@@ -501,16 +509,16 @@ describe("Router Coverage Tests", () => {
         hookCalled = true;
       };
       router.afterEach(hook);
-      const handlerWithRender = {
-        render: function () {
-          return createMockController(document.createElement("div"));
-        },
-      };
-      router.routes.clear();
-      router.register("/test", handlerWithRender);
-      router.contentEl = document.getElementById("page-content");
-      await router._handle("/test");
-      expect(hookCalled).toBe(true);
+  const handlerWithRender = {
+    render: function () {
+      return "<div></div>";
+    },
+  };
+  router.routes.clear();
+  router.register("/test", handlerWithRender);
+  router.contentEl = document.getElementById("page-content");
+  await router._handle("/test");
+  expect(hookCalled).toBe(true);
     });
 
     // POSITIVE TEST: Handles async render
@@ -518,7 +526,7 @@ describe("Router Coverage Tests", () => {
     it("should handle async render", async () => {
       const asyncHandler = {
         render: function () {
-          return Promise.resolve(createMockController(document.createElement("div")));
+          return Promise.resolve("<div></div>");
         },
       };
       router.routes.clear();
@@ -533,7 +541,7 @@ describe("Router Coverage Tests", () => {
       let didMountCalled = false;
       const controllerWithDidMount = function () {};
       controllerWithDidMount.prototype.render = function () {
-        return document.createElement("div");
+        return "<div></div>";
       };
       controllerWithDidMount.prototype.didMount = function () {
         didMountCalled = true;
@@ -551,7 +559,7 @@ describe("Router Coverage Tests", () => {
       const noWillUnmountController = {
         destroy: function () {},
         render: function () {
-          return document.createElement("div");
+          return "<div></div>";
         },
       };
       router.currentController = noWillUnmountController;
@@ -572,7 +580,7 @@ describe("Router Coverage Tests", () => {
       const noDestroyController = {
         willUnmount: function () {},
         render: function () {
-          return document.createElement("div");
+          return "<div></div>";
         },
       };
       router.currentController = noDestroyController;
@@ -616,7 +624,7 @@ describe("Router Coverage Tests", () => {
     it("should create controller from controller class", () => {
       const MockController = function () {};
       MockController.prototype.render = function () {
-        return createMockController(document.createElement("div"));
+        return null;
       };
       const handlerObj = { controller: MockController, options: {} };
       const ctrl = router._create(handlerObj, "/test", {});
@@ -653,7 +661,7 @@ describe("Router Coverage Tests", () => {
         this.options = options;
       };
       MockController.prototype.render = function () {
-        return document.createElement("div");
+        return null; // Return null to avoid jsdom Node issues
       };
       const handlerObj = { controller: MockController, options: { custom: "value" } };
       const ctrl = router._create(handlerObj, "/test", {});
@@ -930,7 +938,7 @@ describe("Router Coverage Tests", () => {
           // Return a controller with async render method
           return {
             render: function () {
-              return Promise.resolve(document.createElement("div"));
+              return Promise.resolve("<div></div>");
             },
           };
         },
@@ -942,16 +950,14 @@ describe("Router Coverage Tests", () => {
       expect(router.currentController).not.toBeNull();
     });
 
+
+
     // POSITIVE TEST: Handles sync render returning falsy
     // Verifies the else if branch is covered
     it("should handle sync render returning falsy", async () => {
       const falsyHandler = {
         render: function () {
-          return {
-            render: function () {
-              return null; // Return null to hit the else if branch
-            },
-          };
+          return null; // Return null directly
         },
       };
       router.routes.clear();
@@ -961,6 +967,34 @@ describe("Router Coverage Tests", () => {
       // Should not throw
       expect(router.currentController).not.toBeNull();
     });
+
+    // NEGATIVE TEST: _handle does not proceed if contentEl is null
+    // Verifies graceful handling when router is not started
+    it("should not proceed if contentEl is null", async () => {
+      // Create a new router instance that hasn't called start()
+      const newRouter = new Router({ root: document.getElementById("app") });
+      newRouter.register("/unstarted", {
+        render: function () {
+          return createMockController(document.createElement("div"));
+        },
+      });
+
+      // Mock console.log to capture messages
+      const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+      // Call _handle without calling start()
+      await newRouter._handle("/unstarted");
+
+      expect(consoleSpy).toHaveBeenCalledWith("[ROUTER] No content element found");
+      expect(newRouter.currentController).toBeNull();
+      // Verify contentEl is not modified (it would be null if start() wasn't called)
+      expect(newRouter.contentEl).toBeNull();
+      expect(document.getElementById("page-content")?.innerHTML).toBe("");
+
+      consoleSpy.mockRestore(); // Clean up the spy
+    });
+
+
 
     // POSITIVE TEST: start() uses rootEl when page-content doesn't exist
     // Verifies the || branch in start() is covered
@@ -1046,12 +1080,12 @@ describe("Router Coverage Tests", () => {
       let destroyCount = 0;
       const firstHandler = {
         render: function () {
-          return createMockController(document.createElement("div"));
+          return "<div></div>";
         },
       };
       const secondHandler = {
         render: function () {
-          return createMockController(document.createElement("div"));
+          return "<div></div>";
         },
       };
       router.register("/first", firstHandler);
@@ -1065,7 +1099,7 @@ describe("Router Coverage Tests", () => {
           destroyCount++;
         },
         render: function () {
-          return document.createElement("div");
+          return "<div></div>";
         },
       };
       router.currentController = prevController;

@@ -55,6 +55,7 @@ class DashboardController {
   }
 
   render() {
+    console.log("[DashboardController] render() called - START");
     // Return element IMMEDIATELY, don't wait for data
     // Data will be loaded in background via onMount
 
@@ -79,7 +80,27 @@ class DashboardController {
       controller: this,
     });
 
+    console.log("[DashboardController] DashboardPage created:", this.comp?.constructor?.name, "hasRender:", typeof this.comp?.render);
+
+    if (!this.comp || typeof this.comp.render !== 'function') {
+      console.error("[DashboardController] ERROR: DashboardPage is invalid!", this.comp);
+      return document.createElement("div");
+    }
+
     const el = this.comp.render();
+    console.log("[DashboardController] DashboardPage.render() returned:", { 
+      el, 
+      elType: typeof el, 
+      elConstructor: el?.constructor?.name,
+      isDashboardController: el?.constructor?.name === "DashboardController"
+    });
+    
+    if (!(el instanceof Node)) {
+      console.error("[DashboardController] FATAL: render() did not return a valid DOM node!", el);
+      // Return a fallback element to prevent crash
+      return document.createElement("div");
+    }
+    
     this.comp._el = el;
     el._component = this.comp;
 

@@ -10,11 +10,13 @@ function createElement(tag, attrs = {}, ...children) {
     const html = instance.render();
     const el = instance._htmlToElement(html);
 
-    if (el) {
+    if (el instanceof Node) {
       el._component = instance;
       instance._el = el;
       instance.bindEvents();
       instance.onMount?.();
+    } else {
+      console.error("[createElement] Failed to create DOM element from component render, got:", el);
     }
     return el;
   }
@@ -49,16 +51,31 @@ function createElement(tag, attrs = {}, ...children) {
 
     if (typeof c === "string" || typeof c === "number") {
       el.appendChild(document.createTextNode(String(c)));
-    } else if (c instanceof HTMLElement) {
+    } else if (c instanceof Node) {
       el.appendChild(c);
+    } else if (c instanceof Component) {
+      // If it's a Component instance, render it first
+      const childEl = c.render();
+      if (childEl instanceof Node) {
+        el.appendChild(childEl);
+      } else {
+        console.error("[createElement] Failed to render child component:", c.constructor.name, "Got:", childEl);
+      }
     } else if (Array.isArray(c)) {
       c.forEach((item) => {
-        if (item instanceof HTMLElement) {
+        if (item instanceof Node) {
           el.appendChild(item);
         } else if (typeof item === "string") {
           el.appendChild(document.createTextNode(item));
+        } else if (item instanceof Component) {
+          const childEl = item.render();
+          if (childEl instanceof Node) {
+            el.appendChild(childEl);
+          }
         }
       });
+    } else {
+      console.error("[createElement] Invalid child type:", typeof c, c);
     }
   });
 
