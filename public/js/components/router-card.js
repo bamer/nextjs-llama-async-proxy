@@ -221,7 +221,12 @@ class RouterCard extends Component {
       ${isRunning ? `<div class="router-info"><span class="info-item">Port: ${displayPort}</span><span class="info-item models-info">Models: ${loadedCount}/${this.models.length} loaded</span></div>` : ""}
     </div>
     <div class="router-controls">
-      ${this.presets && this.presets.length > 0 ? `<div class="preset-selector"><select id="preset-select" class="preset-dropdown"><option value="">Select Preset...</option>${this.presets.map((preset) => `<option value="${preset.name}">${preset.name}</option>`).join("")}</select></div>` : ""}
+      <div class="preset-selector">
+        <select id="preset-select" class="preset-dropdown">
+          <option value="">Select Preset...</option>
+          ${this.presets.map((preset) => `<option value="${preset.name}">${preset.name}</option>`).join("")}
+        </select>
+      </div>
       ${isRunning ? "<button class=\"btn btn-danger\" data-action=\"stop\">STOP ROUTER</button>" : "<button class=\"btn btn-primary\" data-action=\"start\">START ROUTER</button>"}
       <button class="btn btn-secondary" data-action="restart" ${!isRunning ? "disabled" : ""}>RESTART</button>
     </div>

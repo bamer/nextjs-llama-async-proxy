@@ -398,13 +398,15 @@ class DashboardPage extends Component {
             this.routerCardUpdater = cb;
           },
         }),
-        Component.h(window.LlamaServerStatusPanel, {
-          status: this.status,
-          metrics: stateManager.get("llamaServerMetrics"),
-        }),
-        Component.h(window.QuickActions, {
-          onRefresh: () => this._refresh(),
-        }),
+        Component.h("div", { className: "dashboard-right-column" }, [
+          Component.h(window.LlamaServerStatusPanel, {
+            status: this.status,
+            metrics: stateManager.get("llamaServerMetrics"),
+          }),
+          Component.h(window.QuickActions, {
+            onRefresh: () => this._refresh(),
+          }),
+        ]),
       ]),
       Component.h("div", { className: "content-row" }, [
         Component.h(window.ChartsSection, {
