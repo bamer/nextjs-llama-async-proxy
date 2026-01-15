@@ -12,9 +12,9 @@ if (typeof UsageChart === "undefined") {
     }
 
     /**
-     * Create CPU/GPU usage chart
-     * @param {HTMLCanvasElement} canvas - Canvas element
-     * @param {Array} history - Historical metrics data
+     * Create CPU/GPU usage chart.
+     * @param {HTMLCanvasElement} canvas - Canvas element.
+     * @param {Array} history - Historical metrics data.
      */
     create(canvas, history = []) {
       console.log("[USAGE-CHART] Creating usage chart, history length:", history.length);
@@ -104,8 +104,8 @@ if (typeof UsageChart === "undefined") {
     }
 
     /**
-     * Update chart with new data
-     * @param {Array} history - Historical metrics data
+     * Update chart with new data.
+     * @param {Array} history - Historical metrics data.
      */
     update(history) {
       if (!this.chart) return;
@@ -121,15 +121,15 @@ if (typeof UsageChart === "undefined") {
     }
 
     /**
-     * Get chart data for theme recreation
-     * @returns {Object} Chart data
+     * Get chart data for theme recreation.
+     * @returns {Object} Chart data object.
      */
     getData() {
       return this.chart?.data;
     }
 
     /**
-     * Destroy chart instance
+     * Destroy chart instance and release resources.
      */
     destroy() {
       if (this.chart) {
@@ -143,8 +143,8 @@ if (typeof UsageChart === "undefined") {
     }
 
     /**
-     * Check if chart exists
-     * @returns {boolean} Chart exists
+     * Check if chart exists and is initialized.
+     * @returns {boolean} True if chart exists.
      */
     exists() {
       return this.chart !== null;

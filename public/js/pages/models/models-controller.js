@@ -50,6 +50,11 @@ class ModelsController {
     return this.comp.render();
   }
 
+  /**
+   * Load models from stateManager and update router status.
+   * Sets models status to "unloaded" if router is not running.
+   * @returns {Promise<void>} Promise that resolves when models are loaded
+   */
   async load() {
     try {
       const d = await stateManager.getModels();

@@ -11,7 +11,10 @@ class StateValidator {
   }
 
   /**
-   * Register a validation schema
+   * Register a validation schema for a key
+   * @param {string} key - State key to associate schema with
+   * @param {Object} schema - Validation schema object
+   * @returns {StateValidator} this for chaining
    */
   registerSchema(key, schema) {
     this.schemas.set(key, schema);
@@ -20,7 +23,9 @@ class StateValidator {
   }
 
   /**
-   * Register multiple schemas
+   * Register multiple schemas at once
+   * @param {Object} schemas - Object mapping keys to schemas
+   * @returns {StateValidator} this for chaining
    */
   registerSchemas(schemas) {
     Object.entries(schemas).forEach(([key, schema]) => {
@@ -31,6 +36,10 @@ class StateValidator {
 
   /**
    * Validate a value against a schema
+   * @param {string} key - State key (for schema lookup and error reporting)
+   * @param {*} value - Value to validate
+   * @param {Object} [schema=null] - Optional inline schema to use
+   * @returns {Object} Validation result { valid: boolean, errors: Array }
    */
   validate(key, value, schema = null) {
     this.errors = [];
@@ -60,7 +69,9 @@ class StateValidator {
   }
 
   /**
-   * Validate multiple values
+   * Validate multiple values at once
+   * @param {Object} values - Object mapping keys to values to validate
+   * @returns {Object} Result { allValid: boolean, results: Object }
    */
   validateAll(values) {
     const results = {};
@@ -79,7 +90,9 @@ class StateValidator {
   }
 
   /**
-   * Set strict mode
+   * Enable or disable strict validation mode
+   * @param {boolean} strict - True to throw on validation errors
+   * @returns {StateValidator} this for chaining
    */
   setStrictMode(strict) {
     this.strict = strict;
@@ -87,21 +100,25 @@ class StateValidator {
   }
 
   /**
-   * Get all validation errors
+   * Get all accumulated validation errors
+   * @returns {Array} Array of error objects { path, message }
    */
   getErrors() {
     return [...this.errors];
   }
 
   /**
-   * Clear all errors
+   * Clear all accumulated validation errors
    */
   clearErrors() {
     this.errors = [];
   }
 
   /**
-   * Internal validation method
+   * Internal method to validate a value against a schema
+   * @param {*} value - Value to validate
+   * @param {Object} schema - Validation schema
+   * @param {string} [path=""] - Current path for error reporting
    */
   _validateValue(value, schema, path = "") {
     // Check required
@@ -203,7 +220,10 @@ class StateValidator {
   }
 
   /**
-   * Check if value matches type
+   * Check if a value matches an expected type
+   * @param {*} value - Value to check
+   * @param {string} type - Expected type name
+   * @returns {boolean} True if value matches type
    */
   _checkType(value, type) {
     switch (type) {
@@ -225,7 +245,10 @@ class StateValidator {
   }
 
   /**
-   * Validate object properties
+   * Validate object properties against schema
+   * @param {Object} obj - Object to validate
+   * @param {Object} schema - Object schema with properties
+   * @param {string} path - Current path for error reporting
    */
   _validateObject(obj, schema, path) {
     const { properties, required = [] } = schema;
@@ -246,7 +269,10 @@ class StateValidator {
   }
 
   /**
-   * Validate array items
+   * Validate array items against schema
+   * @param {Array} arr - Array to validate
+   * @param {Object} schema - Array schema with items definition
+   * @param {string} path - Current path for error reporting
    */
   _validateArray(arr, schema, path) {
     arr.forEach((item, index) => {
@@ -258,63 +284,93 @@ class StateValidator {
 // Common validation helpers
 const ValidationHelpers = {
   /**
-   * Create a string validator
+   * Create a string validator schema
+   * @param {Object} [options={}] - Validation options
+   * @param {number} [options.minLength] - Minimum string length
+   * @param {number} [options.maxLength] - Maximum string length
+   * @param {RegExp} [options.pattern] - Regex pattern to match
+   * @returns {Object} String validator schema
    */
   string(options = {}) {
     return { type: "string", ...options };
   },
 
   /**
-   * Create a number validator
+   * Create a number validator schema
+   * @param {Object} [options={}] - Validation options
+   * @param {number} [options.min] - Minimum value (inclusive)
+   * @param {number} [options.max] - Maximum value (inclusive)
+   * @returns {Object} Number validator schema
    */
   number(options = {}) {
     return { type: "number", ...options };
   },
 
   /**
-   * Create a boolean validator
+   * Create a boolean validator schema
+   * @param {Object} [options={}] - Validation options
+   * @returns {Object} Boolean validator schema
    */
   boolean(options = {}) {
     return { type: "boolean", ...options };
   },
 
   /**
-   * Create an array validator
+   * Create an array validator schema
+   * @param {Object} itemSchema - Schema for array items
+   * @param {Object} [options={}] - Validation options
+   * @param {number} [options.minLength] - Minimum array length
+   * @param {number} [options.maxLength] - Maximum array length
+   * @returns {Object} Array validator schema
    */
   array(itemSchema, options = {}) {
     return { type: "array", items: itemSchema, ...options };
   },
 
   /**
-   * Create an object validator
+   * Create an object validator schema
+   * @param {Object} properties - Object property schemas
+   * @param {Object} [options={}] - Validation options
+   * @param {Array<string>} [options.required] - Required property names
+   * @returns {Object} Object validator schema
    */
   object(properties, options = {}) {
     return { type: "object", properties, ...options };
   },
 
   /**
-   * Create an enum validator
+   * Create an enum validator schema (value must be one of specified values)
+   * @param {Array} values - Allowed values
+   * @param {Object} [options={}] - Validation options
+   * @returns {Object} Enum validator schema
    */
   enum(values, options = {}) {
     return { enum: values, ...options };
   },
 
   /**
-   * Create a custom validator
+   * Create a custom validator schema
+   * @param {Function} validatorFn - Custom validation function
+   * @param {Object} [options={}] - Validation options
+   * @returns {Object} Custom validator schema
    */
   custom(validatorFn, options = {}) {
     return { validator: validatorFn, ...options };
   },
 
   /**
-   * Create a required field
+   * Mark a field as required
+   * @param {Object} schema - Schema to make required
+   * @returns {Object} Required schema
    */
   required(schema) {
     return { ...schema, required: true };
   },
 
   /**
-   * Create an optional field
+   * Mark a field as optional
+   * @param {Object} schema - Schema to make optional
+   * @returns {Object} Optional schema
    */
   optional(schema) {
     return { ...schema, required: false };

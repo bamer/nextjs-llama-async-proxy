@@ -1,9 +1,11 @@
 /**
- * llama-server process control handlers
+ * Register llama-server process control handlers for Socket.IO.
+ * Sets up event handlers for start, stop, and status operations.
+ * @param {Object} socket - Socket.IO socket instance.
+ * @param {Object} io - Socket.IO server instance.
+ * @param {Object} db - Database instance for logging.
+ * @param {LlamaServerProcessManager} processManager - Process manager instance.
  */
-
-import { ok, err } from "../response.js";
-
 export function registerProcessHandlers(socket, io, db, processManager) {
   /**
    * Start llama-server

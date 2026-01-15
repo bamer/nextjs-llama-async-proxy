@@ -69,6 +69,10 @@ class PresetsPage extends Component {
     this._bindRouterCardEvents();
   }
 
+  /**
+   * Subscribe to server status events from socket connection.
+   * @returns {void}
+   */
   _subscribeToServerStatus() {
     if (!window.socketClient?.socket) return;
 
@@ -94,10 +98,20 @@ class PresetsPage extends Component {
     });
   }
 
+  /**
+   * Get the presets service instance from controller or props.
+   * @returns {Object|null} PresetsService instance or null
+   */
   _getService() {
     return this._presetsService || (this.controller ? this.controller.presetsService : null);
   }
 
+  /**
+   * Emit an internal event and handle it with the appropriate handler.
+   * @param {string} event - Event name to emit
+   * @param {*} data - Event data to pass to handler
+   * @returns {void}
+   */
   _emit(event, data) {
     if (!this._el) return;
     switch (event) {
@@ -108,6 +122,11 @@ class PresetsPage extends Component {
     }
   }
 
+  /**
+   * Handle preset selection event from the UI.
+   * @param {string} presetName - Preset name to select
+   * @returns {void}
+   */
   _handlePresetSelect(presetName) {
     const preset = this.state.presets.find((p) => p.name === presetName);
     if (!preset) return;
@@ -116,6 +135,11 @@ class PresetsPage extends Component {
     this.controller?.loadPresetData(preset);
   }
 
+  /**
+   * Handle preset loaded event with default parameters and models.
+   * @param {Object} data - Data object containing defaults and standaloneModels
+   * @returns {void}
+   */
   _handlePresetLoaded(data) {
     this.state.globalDefaults = data.defaults;
     this.state.standaloneModels = data.standaloneModels;
@@ -133,6 +157,11 @@ class PresetsPage extends Component {
     this._filterParams(query);
   }
 
+  /**
+   * Handle adding a new parameter to defaults or a specific model.
+   * @param {Object} data - Data object with paramKey, section, and name properties
+   * @returns {Promise<void>} Promise that resolves when add is complete
+   */
   async _handleAddParam(data) {
     const { paramKey, section, name } = data;
     const param = LLAMA_PARAMS.find((p) => p.key === paramKey);
@@ -154,6 +183,10 @@ class PresetsPage extends Component {
     }
   }
 
+  /**
+   * Handle creating a new preset with user-provided name.
+   * @returns {Promise<void>} Promise that resolves when preset is created
+   */
   async _handleNewPreset() {
     const name = prompt("Preset name:");
     if (!name) return;
@@ -169,11 +202,20 @@ class PresetsPage extends Component {
     }
   }
 
+  /**
+   * Toggle the visibility of the defaults section in the editor.
+   * @returns {void}
+   */
   _toggleDefaultsSection() {
     this.state.expandedDefaults = !this.state.expandedDefaults;
     this._updateEditor();
   }
 
+  /**
+   * Filter parameter items in the editor based on search query.
+   * @param {string} query - Search query to filter parameters
+   * @returns {void}
+   */
   _filterParams(query) {
     const items = this._el?.querySelectorAll(".param-item") || [];
     const lower = query.toLowerCase();
@@ -201,6 +243,11 @@ class PresetsPage extends Component {
     ]);
   }
 
+  /**
+   * Apply a template configuration to the current preset's defaults.
+   * @param {Object} templateConfig - Template configuration object with parameter key-value pairs
+   * @returns {Promise<void>} Promise that resolves when template is applied
+   */
   async _handleApplyTemplate(templateConfig) {
     if (!this.state.selectedPreset || this.state.selectedPreset.name === "default") {
       showNotification("Select or create a custom preset first", "warning");

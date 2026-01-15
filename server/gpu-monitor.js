@@ -8,24 +8,25 @@ import si from "systeminformation";
 let gpuList = [];
 
 /**
- * Get current GPU list
- * @returns {Array} List of GPU objects
+ * Get current GPU list populated from last metrics collection.
+ * @returns {Array<Object>} List of GPU objects with name, usage, memory info
  */
 export function getGpuList() {
   return gpuList;
 }
 
 /**
- * Update GPU list from metrics collection
- * @param {Array} newGpuList - New list of GPU objects
+ * Update GPU list from metrics collection.
+ * @param {Array<Object>} newGpuList - New list of GPU objects
  */
 export function updateGpuList(newGpuList) {
   gpuList = newGpuList;
 }
 
 /**
- * Collect GPU metrics
- * @returns {Object} GPU metrics data
+ * Collect GPU metrics from system information.
+ * Queries available GPU controllers and calculates usage/memory.
+ * @returns {Object} GPU metrics data with usage, memory values, and list
  */
 export async function collectGpuMetrics() {
   let gpuListResult = [];

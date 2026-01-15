@@ -4,11 +4,20 @@
  */
 
 class KeyboardShortcutsHelp extends Component {
+  /**
+   * Creates a new KeyboardShortcutsHelp instance.
+   * @param {Object} props - Component properties.
+   * @param {Array} props.shortcuts - Array of shortcut objects with key and description.
+   */
   constructor(props) {
     super(props);
     this.shortcuts = props.shortcuts || [];
   }
 
+  /**
+   * Renders the keyboard shortcuts help modal with a table of shortcuts.
+   * @returns {HTMLElement} The modal container element.
+   */
   render() {
     return Component.h(
       "div",
@@ -60,6 +69,11 @@ class KeyboardShortcutsHelp extends Component {
     );
   }
 
+  /**
+   * Formats a shortcut key string for display (e.g., "ctrl+l" -> "Ctrl + L").
+   * @param {string} key - The raw key combination string.
+   * @returns {string} The formatted shortcut string with proper capitalization.
+   */
   _formatShortcut(key) {
     // Format key for display (e.g., "ctrl+l" -> "Ctrl + L")
     return key
@@ -74,7 +88,8 @@ class KeyboardShortcutsHelp extends Component {
   }
 
   /**
-   * Bind event handlers for the modal
+   * Binds event handlers for the modal including close button, overlay click, and escape key.
+   * @returns {void}
    */
   bindEvents() {
     if (!this._el) return;
@@ -104,7 +119,9 @@ class KeyboardShortcutsHelp extends Component {
   }
 
   /**
-   * Handle keyboard events
+   * Handles keyboard events, primarily Escape to close the modal.
+   * @param {KeyboardEvent} e - The keyboard event.
+   * @returns {void}
    */
   _handleKeydown = (e) => {
     if (e.key === "Escape" && this._el?.parentNode) {
@@ -114,7 +131,8 @@ class KeyboardShortcutsHelp extends Component {
   };
 
   /**
-   * Close the modal
+   * Closes the modal by removing it from the DOM.
+   * @returns {void}
    */
   _close() {
     if (this._el) {
@@ -128,7 +146,8 @@ class KeyboardShortcutsHelp extends Component {
   }
 
   /**
-   * Cleanup when component is destroyed
+   * Cleans up the component by removing keyboard listeners and calling parent destroy.
+   * @returns {void}
    */
   destroy() {
     // Remove keyboard listener

@@ -8,7 +8,8 @@ import { LlamaServerMetricsScraper } from "./handlers/llama-router/metrics-scrap
 let llamaMetricsScraper = null;
 
 /**
- * Initialize llama-server metrics scraper
+ * Initialize llama-server metrics scraper.
+ * Creates a new LlamaServerMetricsScraper instance for the specified port.
  * @param {number} port - The port llama-server is running on
  */
 export function initializeLlamaMetricsScraper(port) {
@@ -21,8 +22,9 @@ export function initializeLlamaMetricsScraper(port) {
 }
 
 /**
- * Collect and broadcast llama-server metrics
- * @param {Object} io - Socket.IO instance
+ * Collect and broadcast llama-server metrics to connected clients.
+ * @param {Object} io - Socket.IO server instance
+ * @returns {Promise<void>}
  */
 export async function collectLlamaMetrics(io) {
   if (!llamaMetricsScraper) {

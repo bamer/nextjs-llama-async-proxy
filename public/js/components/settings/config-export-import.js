@@ -10,6 +10,10 @@ class ConfigExportImport extends Component {
     this.onImport = props.onImport || null;
   }
 
+  /**
+   * Renders the export/import component UI.
+   * @returns {HTMLElement} The export/import element.
+   */
   render() {
     return Component.h(
       "div",
@@ -43,6 +47,10 @@ class ConfigExportImport extends Component {
     );
   }
 
+  /**
+   * Returns the event map for binding events to handlers.
+   * @returns {Object} Event map with selector to handler mappings.
+   */
   getEventMap() {
     return {
       "click [data-action=export]": this.handleExport,
@@ -51,6 +59,9 @@ class ConfigExportImport extends Component {
     };
   }
 
+  /**
+   * Handles the export button click. Triggers the onExport callback.
+   */
   handleExport() {
     console.log("[DEBUG] Export configuration triggered");
     if (this.onExport) {
@@ -58,6 +69,9 @@ class ConfigExportImport extends Component {
     }
   }
 
+  /**
+   * Handles the import button click. Opens file picker dialog.
+   */
   handleImportTrigger() {
     console.log("[DEBUG] Import configuration triggered");
     const fileInput = this._el?.querySelector("[data-field=import-file]");
@@ -66,6 +80,10 @@ class ConfigExportImport extends Component {
     }
   }
 
+  /**
+   * Handles the import file selection and parsing.
+   * @param {Event} e - The change event from file input.
+   */
   handleImportFile(e) {
     const file = e.target.files[0];
     if (!file) return;

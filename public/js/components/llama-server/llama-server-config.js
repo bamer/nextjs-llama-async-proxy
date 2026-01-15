@@ -7,6 +7,10 @@ class LlamaServerConfig extends Component {
     super(props);
   }
 
+  /**
+   * Renders the llama-server configuration form.
+   * @returns {HTMLElement} The configuration section element.
+   */
   render() {
     const {
       enabled,

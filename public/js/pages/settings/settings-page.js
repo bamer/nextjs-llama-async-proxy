@@ -40,6 +40,11 @@ class SettingsPage extends Component {
     this.controller = props.controller;
   }
 
+  /**
+   * Save current configuration and settings to the server.
+   * Validates connection and updates stateManager with new values.
+   * @returns {Promise<void>} Promise that resolves when save is complete
+   */
   async _save() {
     const btn = this.$("[data-action=\"save\"]");
     if (btn) {
@@ -105,6 +110,10 @@ class SettingsPage extends Component {
     }
   }
 
+  /**
+   * Update the status UI display based on current router and llama server status.
+   * @returns {void}
+   */
   async _updateStatusUI() {
     // Update the RouterCard component's status display
     const routerCard = this._el?.querySelector(".router-card");
@@ -137,6 +146,10 @@ class SettingsPage extends Component {
     });
   }
 
+  /**
+   * Export current configuration to a JSON file for backup.
+   * @returns {Promise<void>} Promise that resolves when export is complete
+   */
   async _exportConfig() {
     console.log("[DEBUG] Exporting configuration");
 
@@ -171,6 +184,11 @@ class SettingsPage extends Component {
     }
   }
 
+  /**
+   * Import configuration from a JSON file and apply settings.
+   * @param {Object} importedConfig - Configuration object with config and settings properties
+   * @returns {Promise<void>} Promise that resolves when import is complete
+   */
   async _importConfig(importedConfig) {
     console.log("[DEBUG] Importing configuration:", importedConfig);
 

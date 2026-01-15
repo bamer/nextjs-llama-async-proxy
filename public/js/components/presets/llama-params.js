@@ -2,6 +2,8 @@
  * Llama Parameters Definition
  * Contains all parameter definitions for llama.cpp
  * Loaded lazily when presets page is accessed
+ * @property {Array} LLAMA_PARAMS - Array of parameter definitions for llama.cpp
+ * @property {Object} PARAM_GROUPS - Group metadata for UI display
  */
 
 const LLAMA_PARAMS = [

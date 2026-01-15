@@ -22,10 +22,11 @@ import {
 } from "./llama-router/index.js";
 
 /**
- * Registers all Socket.IO event handlers.
- * @param {SocketIO.Server} io - The Socket.IO server instance.
- * @param {BetterSqlite3.Database} db - The database instance.
- * @param {GgufParser} ggufParser - The GGUF parser instance.
+ * Register all Socket.IO event handlers for the application.
+ * Sets up logger, file logger, and per-connection handlers.
+ * @param {Object} io - Socket.IO server instance.
+ * @param {Object} db - Database instance.
+ * @param {Object} ggufParser - GGUF parser instance.
  */
 const registerHandlers = (io, db, ggufParser) => {
   if (!io) {

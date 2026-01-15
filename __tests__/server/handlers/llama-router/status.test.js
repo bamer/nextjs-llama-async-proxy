@@ -91,6 +91,7 @@ describe("Llama Router Status Functions", () => {
         processRunning: true,
         mode: "router",
         models: [{ name: "model1.gguf", status: "loaded" }],
+        modelsError: null,
       });
     });
 

@@ -22,11 +22,19 @@ class ParameterInput extends Component {
     }
   }
 
+  /**
+   * Lifecycle hook called after component is mounted to DOM.
+   * Sets up tooltip event listeners.
+   */
   onMount() {
     // Setup tooltip event listeners using event delegation from parent
     this._bindTooltipEvents();
   }
 
+  /**
+   * Bind event handlers for input, focus, blur, reset, and tooltip interactions.
+   * Uses event delegation for performance.
+   */
   bindEvents() {
     // Input change events - using event delegation
     this.on("input", "input, select, textarea", (e, target) => {
@@ -57,6 +65,10 @@ class ParameterInput extends Component {
     });
   }
 
+  /**
+   * Bind tooltip mouseenter/mouseleave events.
+   * @private
+   */
   _bindTooltipEvents() {
     // Tooltip hover events
     const tooltipEl = this.$("[data-tooltip]");
@@ -66,6 +78,11 @@ class ParameterInput extends Component {
     }
   }
 
+  /**
+   * Handle input/change events from the field element.
+   * Parses value based on parameter type and triggers validation.
+   * @param {Event} e - The input event object.
+   */
   handleInputChange(e) {
     const input = e.target;
     let value = input.value;
@@ -91,11 +108,17 @@ class ParameterInput extends Component {
     }, 300);
   }
 
+  /**
+   * Handle focus event - updates UI state.
+   */
   handleFocus() {
     this.focused = true;
     this._updateFocusUI();
   }
 
+  /**
+   * Handle blur event - performs final validation.
+   */
   handleBlur() {
     this.focused = false;
     this._updateFocusUI();
@@ -108,6 +131,10 @@ class ParameterInput extends Component {
     }
   }
 
+  /**
+   * Update focus UI state on the container element.
+   * @private
+   */
   _updateFocusUI() {
     const container = this.$(".parameter-input");
     if (container) {
@@ -115,6 +142,9 @@ class ParameterInput extends Component {
     }
   }
 
+  /**
+   * Handle reset button click - restores default value.
+   */
   handleReset() {
     const defaultValue = this.props.defaultValue;
     this.value = defaultValue;
@@ -123,21 +153,34 @@ class ParameterInput extends Component {
     this._updateValueUI();
   }
 
+  /**
+   * Handle tooltip toggle button click.
+   */
   handleToggleTooltip() {
     this.showTooltip = !this.showTooltip;
     this._updateTooltipUI();
   }
 
+  /**
+   * Handle mouseenter on tooltip trigger.
+   */
   handleTooltipEnter() {
     this.showTooltip = true;
     this._updateTooltipUI();
   }
 
+  /**
+   * Handle mouseleave from tooltip trigger.
+   */
   handleTooltipLeave() {
     this.showTooltip = false;
     this._updateTooltipUI();
   }
 
+  /**
+   * Update tooltip visibility in the DOM.
+   * @private
+   */
   _updateTooltipUI() {
     const tooltip = this.$(".param-tooltip");
     if (tooltip) {
@@ -151,6 +194,10 @@ class ParameterInput extends Component {
     }
   }
 
+  /**
+   * Update the input value display in the DOM.
+   * @private
+   */
   _updateValueUI() {
     // Update the input value display
     const input = this.$("input, select");
@@ -170,6 +217,11 @@ class ParameterInput extends Component {
     }
   }
 
+  /**
+   * Validate the current value and update UI.
+   * @param {*} value - The value to validate.
+   * @returns {Object} Validation result with valid, errors, and warnings.
+   */
   validateValue(value) {
     const validation = window.validateParameter(this.props.paramId, value);
     this.validation = validation;
@@ -178,6 +230,10 @@ class ParameterInput extends Component {
     return validation;
   }
 
+  /**
+   * Update validation UI state based on current validation result.
+   * @private
+   */
   _updateValidationUI() {
     const container = this.$(".parameter-input");
     if (!container) return;
@@ -209,18 +265,30 @@ class ParameterInput extends Component {
     }
   }
 
+  /**
+   * Notify parent component of value change.
+   * @param {*} value - The new value.
+   */
   notifyChange(value) {
     if (this.props.onChange) {
       this.props.onChange(this.props.paramId, value);
     }
   }
 
+  /**
+   * Notify parent component of validation result.
+   * @param {Object} validation - The validation result object.
+   */
   notifyValidation(validation) {
     if (this.props.onValidate) {
       this.props.onValidate(this.props.paramId, validation);
     }
   }
 
+  /**
+   * Render the parameter input component.
+   * @returns {HTMLElement} The rendered component element.
+   */
   render() {
     const { param, paramId, inheritance, editableFields } = this.props;
     const isEditable = !editableFields || editableFields.includes(paramId);
@@ -241,6 +309,14 @@ class ParameterInput extends Component {
     );
   }
 
+  /**
+   * Generate CSS classes for the container based on state.
+   * @param {string} inheritanceType - Type of inheritance (model, group, global).
+   * @param {Object} validation - Current validation state.
+   * @param {boolean} focused - Whether the input is focused.
+   * @param {boolean} hasChanged - Whether the value differs from default.
+   * @returns {string} The CSS class string.
+   */
   getContainerClass(inheritanceType, validation, focused, hasChanged) {
     const classes = ["parameter-input"];
 
@@ -275,6 +351,12 @@ class ParameterInput extends Component {
     return classes.join(" ");
   }
 
+  /**
+   * Render the label element with required mark and info button.
+   * @param {Object} param - Parameter configuration object.
+   * @param {string} paramId - The parameter identifier.
+   * @returns {HTMLElement} The label element.
+   */
   renderLabel(param, paramId) {
     const labelContent = Component.h("span", { className: "param-label-text" }, param.label);
 
@@ -304,6 +386,14 @@ class ParameterInput extends Component {
     );
   }
 
+  /**
+   * Render the input field based on parameter type.
+   * @param {Object} param - Parameter configuration object.
+   * @param {string} paramId - The parameter identifier.
+   * @param {*} value - Current value.
+   * @param {boolean} isEditable - Whether the field is editable.
+   * @returns {HTMLElement} The input element.
+   */
   renderInput(param, paramId, value, isEditable) {
     const inputProps = {
       id: `param-${paramId}`,
@@ -347,6 +437,14 @@ class ParameterInput extends Component {
     }
   }
 
+  /**
+   * Render a select dropdown for enum parameters.
+   * @param {Object} param - Parameter configuration object.
+   * @param {string} paramId - The parameter identifier.
+   * @param {*} value - Current value.
+   * @param {boolean} isEditable - Whether the field is editable.
+   * @returns {HTMLElement} The select element.
+   */
   renderSelect(param, paramId, value, isEditable) {
     const options = param.options || [];
     return Component.h(
@@ -362,6 +460,14 @@ class ParameterInput extends Component {
     );
   }
 
+  /**
+   * Render a multi-select dropdown for array parameters.
+   * @param {Object} param - Parameter configuration object.
+   * @param {string} paramId - The parameter identifier.
+   * @param {Array} value - Current value array.
+   * @param {boolean} isEditable - Whether the field is editable.
+   * @returns {HTMLElement} The select element.
+   */
   renderMultiSelect(param, paramId, value, isEditable) {
     const options = param.options || [];
     const selectedValues = Array.isArray(value) ? value : [];
@@ -390,6 +496,14 @@ class ParameterInput extends Component {
     );
   }
 
+  /**
+   * Render a checkbox for boolean parameters.
+   * @param {Object} param - Parameter configuration object.
+   * @param {string} paramId - The parameter identifier.
+   * @param {boolean} value - Current value.
+   * @param {boolean} isEditable - Whether the field is editable.
+   * @returns {HTMLElement} The checkbox wrapper element.
+   */
   renderBoolean(param, paramId, value, isEditable) {
     return Component.h(
       "div",
@@ -410,6 +524,12 @@ class ParameterInput extends Component {
     );
   }
 
+  /**
+   * Render the inheritance indicator icon showing parameter source.
+   * @param {string} inheritanceType - Type of inheritance (model, group, global).
+   * @param {boolean} hasChanged - Whether the value differs from default.
+   * @returns {HTMLElement} The indicator element.
+   */
   renderInheritanceIndicator(inheritanceType, hasChanged) {
     const titles = {
       model: "Model-specific setting",
@@ -433,6 +553,12 @@ class ParameterInput extends Component {
     );
   }
 
+  /**
+   * Render the reset button to restore default value.
+   * @param {boolean} hasChanged - Whether the value differs from default.
+   * @param {boolean} isEditable - Whether the field is editable.
+   * @returns {HTMLElement|null} The reset button or null if not needed.
+   */
   renderResetButton(hasChanged, isEditable) {
     if (!hasChanged || !isEditable) return null;
 
@@ -448,6 +574,12 @@ class ParameterInput extends Component {
     );
   }
 
+  /**
+   * Render the tooltip with parameter description and CLI flag.
+   * @param {Object} param - Parameter configuration object.
+   * @param {boolean} showTooltip - Whether to show the tooltip.
+   * @returns {HTMLElement|null} The tooltip element or null.
+   */
   renderTooltip(param, showTooltip) {
     if (!param.description || !showTooltip) return null;
 
@@ -465,6 +597,11 @@ class ParameterInput extends Component {
     );
   }
 
+  /**
+   * Render the validation message with errors and warnings.
+   * @param {Object} validation - Validation result object.
+   * @returns {HTMLElement|null} The message element or null.
+   */
   renderValidationMessage(validation) {
     if (!validation || validation.valid) return null;
 
@@ -478,6 +615,10 @@ class ParameterInput extends Component {
     );
   }
 
+  /**
+   * Cleanup resources when component is destroyed.
+   * Clears the debounce timer.
+   */
   destroy() {
     clearTimeout(this._debounceTimer);
     super.destroy();

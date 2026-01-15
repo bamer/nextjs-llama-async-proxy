@@ -5,7 +5,10 @@
 
 class DOMReconciler {
   /**
-   * Compare two objects and return changed keys
+   * Compare two objects and return changed keys.
+   * @param {object} oldProps - Previous props
+   * @param {object} newProps - New props
+   * @returns {string[]} Array of changed property keys
    */
   static getChangedProps(oldProps, newProps) {
     const changed = [];
@@ -21,7 +24,11 @@ class DOMReconciler {
   }
 
   /**
-   * Update element attributes efficiently
+   * Update element attributes efficiently.
+   * @param {Node} el - DOM element to update
+   * @param {object} oldProps - Previous props
+   * @param {object} newProps - New props
+   * @returns {boolean} True if changes were made
    */
   static updateAttributes(el, oldProps, newProps) {
     const changes = this.getChangedProps(oldProps, newProps);
@@ -101,14 +108,20 @@ class DOMReconciler {
   }
 
   /**
-   * Get element key for reconciliation
+   * Get element key for reconciliation from data-key attribute.
+   * @param {Node} el - DOM element
+   * @returns {string|null} Key value or null
    */
   static getKey(el) {
     return el.dataset?.key || null;
   }
 
   /**
-   * Reconcile children using keyed diffing
+   * Reconcile children using keyed diffing algorithm.
+   * @param {Node} parent - Parent DOM element
+   * @param {Node[]} oldChildren - Previous child nodes
+   * @param {Node[]} newChildren - New child nodes
+   * @returns {boolean} True if DOM was modified
    */
   static reconcileChildren(parent, oldChildren, newChildren) {
     // Convert both to arrays
@@ -216,7 +229,10 @@ class DOMReconciler {
   }
 
   /**
-   * Perform selective update of a component
+   * Perform selective update of a mounted component.
+   * @param {Component} component - Component instance
+   * @param {Node} newRendered - Newly rendered DOM element
+   * @returns {boolean} True if component was updated
    */
   static updateComponent(component, newRendered) {
     if (!component._el) {

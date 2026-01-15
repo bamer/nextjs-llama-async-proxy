@@ -1,17 +1,18 @@
 /**
- * State Requests Module - Request management (merged with socket for efficiency)
- * This module provides request functionality using the socket module
+ * State Requests Module - Request management with automatic reconnection
+ * Provides utility functions for making socket requests with timeout handling
  */
 
 const StateRequests = {
   /**
-   * Make an async request with timeout
-   * @param {Object} socket - Socket instance
-   * @param {boolean} connected - Connection status
-   * @param {string} event - Event name
-   * @param {Object} data - Request data
-   * @param {Map} pending - Pending requests map
-   * @returns {Promise} Response promise
+   * Make an async request with automatic reconnection handling
+   * @param {Object} socket - Socket.IO socket instance
+   * @param {boolean} connected - Current connection status
+   * @param {string} event - Event name to request
+   * @param {Object} [data={}] - Data payload to send
+   * @param {Map} pending - Map of pending requests for cleanup
+   * @returns {Promise<Object>} Response data from server
+   * @throws {Error} If connection timeout (10 seconds) or server error
    */
   request(socket, connected, event, data = {}, pending) {
     return new Promise((resolve, reject) => {
@@ -33,13 +34,13 @@ const StateRequests = {
   },
 
   /**
-   * Execute the actual request
-   * @param {Object} socket - Socket instance
-   * @param {string} event - Event name
-   * @param {Object} data - Request data
-   * @param {Function} resolve - Resolve callback
-   * @param {Function} reject - Reject callback
-   * @param {Map} pending - Pending requests map
+   * Execute the actual socket request with timeout handling
+   * @param {Object} socket - Socket.IO socket instance
+   * @param {string} event - Event name to emit
+   * @param {Object} data - Data payload to send
+   * @param {Function} resolve - Promise resolve callback
+   * @param {Function} reject - Promise reject callback
+   * @param {Map} pending - Map of pending requests for timeout cleanup
    */
   _doRequest(socket, event, data, resolve, reject, pending) {
     const reqId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

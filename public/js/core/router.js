@@ -20,6 +20,12 @@ class Router {
     });
   }
 
+  /**
+   * Register a route with the router.
+   * @param {string} path - Route pattern (e.g., "/models/:id")
+   * @param {function|object} handler - Render function or controller object
+   * @returns {Router} Returns this for chaining
+   */
   register(path, handler) {
     console.log("[ROUTER] Registering route:", path);
     const pattern = this._toRegex(path);
@@ -36,6 +42,12 @@ class Router {
     return this;
   }
 
+  /**
+   * Navigate to a new path with optional query data.
+   * @param {string} path - URL path to navigate to
+   * @param {object} data - Query parameters to include
+   * @returns {Router} Returns this for chaining
+   */
   navigate(path, data = {}) {
     console.log("[ROUTER] navigate() called:", path, data);
     const url = new URL(path, window.location.origin);
@@ -50,10 +62,18 @@ class Router {
     return this;
   }
 
+  /**
+   * Get the current pathname from the browser.
+   * @returns {string} Current pathname
+   */
   getPath() {
     return window.location.pathname;
   }
 
+  /**
+   * Get the current query parameters as an object.
+   * @returns {object} Query parameters key-value pairs
+   */
   getQuery() {
     return Object.fromEntries(new URLSearchParams(window.location.search));
   }

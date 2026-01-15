@@ -1,8 +1,8 @@
 /**
  * GGUF File Type Constants
  * Maps file_type integer values to quantization labels
+ * @constant {Object<string, string>} fileTypeMap
  */
-
 export const fileTypeMap = {
   0: "F32",
   1: "F16",

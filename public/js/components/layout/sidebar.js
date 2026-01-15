@@ -1,10 +1,18 @@
 class Sidebar extends Component {
+  /**
+   * Initializes the Sidebar component with collapse and dark mode states.
+   * @param {Object} props - Component properties.
+   */
   constructor(props) {
     super(props);
     this.collapsed = localStorage.getItem("sidebarCollapsed") === "true";
     this.darkMode = localStorage.getItem("darkMode") === "true";
   }
 
+  /**
+   * Renders the sidebar navigation menu with navigation links and footer controls.
+   * @returns {string} HTML string representing the sidebar.
+   */
   render() {
     return `
       <aside class="sidebar ${this.collapsed ? "collapsed" : ""}">
@@ -41,6 +49,9 @@ class Sidebar extends Component {
     `;
   }
 
+  /**
+   * Binds event listeners for navigation, theme toggle, and help actions.
+   */
   bindEvents() {
     this.on("click", "[data-page]", (e) => {
       const t = e.target.closest("[data-page]");
@@ -82,6 +93,9 @@ class Sidebar extends Component {
     });
   }
 
+  /**
+   * Called after mounting to apply dark mode if enabled.
+   */
   onMount() {
     if (this.darkMode) {
       document.documentElement.classList.add("dark-mode");

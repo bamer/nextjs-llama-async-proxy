@@ -15,6 +15,9 @@ class LlamaServerStatusPanel extends Component {
     this._unsubscribers = [];
   }
 
+  /**
+   * Called after component is mounted to DOM. Sets up subscriptions and metrics scraper.
+   */
   onMount() {
     console.log("[DEBUG] LlamaServerStatusPanel onMount");
 
@@ -47,6 +50,9 @@ class LlamaServerStatusPanel extends Component {
     }
   }
 
+  /**
+   * Cleans up subscriptions and stops metrics scraper.
+   */
   destroy() {
     console.log("[DEBUG] LlamaServerStatusPanel destroy");
     this._stopMetricsScraper();
@@ -54,6 +60,9 @@ class LlamaServerStatusPanel extends Component {
     this._unsubscribers = [];
   }
 
+  /**
+   * Binds event listeners for collapse button, start, and stop actions.
+   */
   bindEvents() {
     // Collapse button
     this.on("click", ".collapse-btn", () => this.toggleDetails());
@@ -68,6 +77,9 @@ class LlamaServerStatusPanel extends Component {
     this.on("click", ".collapse-toggle", (e) => this._toggleSection(e));
   }
 
+  /**
+   * Sets up the metrics scraper for collecting server metrics.
+   */
   _setupMetricsScraper() {
     const serverUrl = window.stateLlamaServer?.getServerUrl?.();
     if (!serverUrl) {
@@ -84,6 +96,9 @@ class LlamaServerStatusPanel extends Component {
     });
   }
 
+  /**
+   * Stops the metrics scraper if active.
+   */
   _stopMetricsScraper() {
     if (this._metricsScraper) {
       this._metricsScraper.stop();
@@ -91,6 +106,10 @@ class LlamaServerStatusPanel extends Component {
     }
   }
 
+  /**
+   * Handles status changes from state manager.
+   * @param {Object} status - The status object with status, metrics, uptime, and pid.
+   */
   handleStatusChange(status) {
     console.log("[DEBUG] LlamaServerStatusPanel status change:", status);
     const isRunning = status.status === "running";
@@ -110,12 +129,19 @@ class LlamaServerStatusPanel extends Component {
     this._updateUI();
   }
 
+  /**
+   * Handles metrics updates from state manager.
+   * @param {Object} metrics - The metrics object containing performance data.
+   */
   handleMetricsChange(metrics) {
     console.log("[DEBUG] LlamaServerStatusPanel metrics change:", metrics);
     this.metrics = metrics;
     this._updateUI();
   }
 
+  /**
+   * Updates the UI elements based on current status and metrics.
+   */
   _updateUI() {
     if (!this._el) return;
 
@@ -152,6 +178,9 @@ class LlamaServerStatusPanel extends Component {
     });
   }
 
+  /**
+   * Toggles the visibility of the metrics details section.
+   */
   toggleDetails() {
     this._detailsExpanded = !this._detailsExpanded;
     const details = this._el.querySelector(".llama-metrics");
@@ -164,6 +193,10 @@ class LlamaServerStatusPanel extends Component {
     }
   }
 
+  /**
+   * Toggles the expansion state of a collapsible section.
+   * @param {Event} event - The click event.
+   */
   _toggleSection(event) {
     const section = event.target.closest("[data-section]");
     const sectionId = section?.dataset?.section;
@@ -179,6 +212,11 @@ class LlamaServerStatusPanel extends Component {
     }
   }
 
+  /**
+   * Returns the icon for the given status.
+   * @param {string} status - The status string (running, stopped, unknown).
+   * @returns {string} The emoji icon for the status.
+   */
   _getStatusIcon(status) {
     switch (status) {
     case "running":
@@ -190,6 +228,11 @@ class LlamaServerStatusPanel extends Component {
     }
   }
 
+  /**
+   * Returns the display text for the given status.
+   * @param {string} status - The status string (running, stopped, unknown).
+   * @returns {string} The human-readable status text.
+   */
   _getStatusText(status) {
     switch (status) {
     case "running":
@@ -201,6 +244,9 @@ class LlamaServerStatusPanel extends Component {
     }
   }
 
+  /**
+   * Starts the llama-server by calling the state manager.
+   */
   startServer() {
     console.log("[DEBUG] Starting llama-server from UI");
     window.stateLlamaServer
@@ -214,6 +260,9 @@ class LlamaServerStatusPanel extends Component {
       });
   }
 
+  /**
+   * Stops the llama-server by calling the state manager.
+   */
   stopServer() {
     console.log("[DEBUG] Stopping llama-server from UI");
     window.stateLlamaServer
@@ -227,6 +276,10 @@ class LlamaServerStatusPanel extends Component {
       });
   }
 
+  /**
+   * Renders the status panel with all metrics sections.
+   * @returns {HTMLElement} The status panel element.
+   */
   render() {
     const statusIcon = this._getStatusIcon(this.status);
     const statusText = this._getStatusText(this.status);
@@ -328,6 +381,11 @@ class LlamaServerStatusPanel extends Component {
     ]);
   }
 
+  /**
+   * Renders the throughput metrics section.
+   * @param {Object} metrics - The throughput metrics object.
+   * @returns {HTMLElement} The metrics section element.
+   */
   _renderThroughputMetrics(metrics) {
     return Component.h("div", { className: "metrics-section" }, [
       Component.h("h4", { className: "section-title" }, "Throughput Metrics"),
@@ -338,6 +396,11 @@ class LlamaServerStatusPanel extends Component {
     ]);
   }
 
+  /**
+   * Renders the server configuration section.
+   * @param {Object} metrics - The server configuration metrics object.
+   * @returns {HTMLElement} The server config section element.
+   */
   _renderServerConfigSection(metrics) {
     return Component.h("div", { className: "metrics-section" }, [
       Component.h("h4", { className: "section-title collapsible-header" }, [
@@ -375,6 +438,11 @@ class LlamaServerStatusPanel extends Component {
     ]);
   }
 
+  /**
+   * Renders the token metrics section.
+   * @param {Object} metrics - The token metrics object.
+   * @returns {HTMLElement} The token metrics section element.
+   */
   _renderTokenMetrics(metrics) {
     return Component.h("div", { className: "metrics-section" }, [
       Component.h("h4", { className: "section-title" }, "Token Metrics"),
@@ -386,6 +454,11 @@ class LlamaServerStatusPanel extends Component {
     ]);
   }
 
+  /**
+   * Renders the time metrics section.
+   * @param {Object} metrics - The time metrics object.
+   * @returns {HTMLElement} The time metrics section element.
+   */
   _renderTimeMetrics(metrics) {
     return Component.h("div", { className: "metrics-section" }, [
       Component.h("h4", { className: "section-title" }, "Time Metrics"),
@@ -400,6 +473,13 @@ class LlamaServerStatusPanel extends Component {
     ]);
   }
 
+  /**
+   * Renders a single metric item.
+   * @param {string} label - The metric label.
+   * @param {*} value - The metric value.
+   * @param {string} [unit=""] - The unit to display with the value.
+   * @returns {HTMLElement} The metric item element.
+   */
   _renderMetric(label, value, unit = "") {
     const displayValue = unit ? `${value} ${unit}` : String(value);
     return Component.h("div", { className: "metric-item" }, [

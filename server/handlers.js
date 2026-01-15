@@ -33,7 +33,12 @@ import { registerPresetsHandlers } from "./handlers/presets/handlers.js";
 import { logger } from "./handlers/logger.js";
 
 /**
- * Register all Socket.IO event handlers
+ * Register all Socket.IO event handlers for the application.
+ * Sets up global handlers and per-socket handlers for client connections.
+ * @param {Object} io - Socket.IO server instance.
+ * @param {Object} db - Database instance for data operations.
+ * @param {Object} ggufParser - GGUF file parser instance.
+ * @param {Function} initializeLlamaMetrics - Function to initialize metrics collection.
  */
 export function registerHandlers(io, db, ggufParser, initializeLlamaMetrics) {
   logger.setIo(io);

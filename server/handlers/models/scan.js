@@ -11,7 +11,11 @@ import { ok, err } from "../response.js";
 const BATCH_SIZE = 5;
 
 /**
- * Process array of items in batches with controlled concurrency
+ * Process array of items in batches with controlled concurrency.
+ * @param {Array} items - Array of items to process.
+ * @param {function} processor - Async function to process each item.
+ * @param {number} batchSize - Number of items to process concurrently (default: 5).
+ * @returns {Promise<Array>} Promise resolving to array of results.
  */
 async function processBatch(items, processor, batchSize = BATCH_SIZE) {
   const results = [];
@@ -24,11 +28,16 @@ async function processBatch(items, processor, batchSize = BATCH_SIZE) {
 }
 
 /**
- * Register models scan handlers
+ * Register models scan handlers on the socket.
+ * @param {object} socket - Socket.IO socket instance.
+ * @param {object} io - Socket.IO server instance.
+ * @param {object} db - Database instance.
+ * @param {function} ggufParser - GGUF metadata parser function.
  */
 export function registerModelsScanHandlers(socket, io, db, ggufParser) {
   /**
-   * Scan models directory
+   * Scan models directory for new model files.
+   * @param {object} req - Request object containing optional requestId.
    */
   socket.on("models:scan", async (req) => {
     const id = req?.requestId || Date.now();
@@ -45,6 +54,12 @@ export function registerModelsScanHandlers(socket, io, db, ggufParser) {
         const exts = [".gguf", ".bin", ".safetensors", ".pt", ".pth"];
         const excludePatterns = [/mmproj/i, /-proj$/i, /\.factory$/i, /^_/i];
 
+        /**
+         * Check if a file is a valid model file by extension and GGUF magic number.
+         * @param {string} fileName - Name of the file to check.
+         * @param {string} fullPath - Full path to the file.
+         * @returns {boolean} True if valid model file, false otherwise.
+         */
         const isValidModelFile = (fileName, fullPath) => {
           if (excludePatterns.some((p) => p.test(fileName))) {
             return false;
@@ -68,6 +83,11 @@ export function registerModelsScanHandlers(socket, io, db, ggufParser) {
           return true;
         };
 
+        /**
+         * Recursively find all model files in a directory.
+         * @param {string} dir - Directory path to search.
+         * @returns {Array<string>} Array of full paths to model files.
+         */
         const findModelFiles = (dir) => {
           const results = [];
           try {
@@ -95,7 +115,11 @@ export function registerModelsScanHandlers(socket, io, db, ggufParser) {
 
         console.log("[DEBUG] Found", modelFiles.length, "model files to process");
 
-        // Process files in parallel batches
+        /**
+         * Process a single model file - parse metadata and save to database.
+         * @param {string} fullPath - Full path to the model file.
+         * @returns {Promise<object>} Promise resolving to result object with type.
+         */
         const processFile = async (fullPath) => {
           try {
             const fileName = path.basename(fullPath);
@@ -183,7 +207,8 @@ export function registerModelsScanHandlers(socket, io, db, ggufParser) {
   });
 
   /**
-   * Cleanup invalid models
+   * Cleanup invalid models that no longer exist on disk.
+   * @param {object} req - Request object containing optional requestId.
    */
   socket.on("models:cleanup", (req) => {
     const id = req?.requestId || Date.now();

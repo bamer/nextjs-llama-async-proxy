@@ -17,6 +17,9 @@ class ModelFilters extends Component {
     this.onFavoritesToggle = props.onFavoritesToggle;
   }
 
+  /**
+   * Binds event listeners for search, status filter, and favorites toggle.
+   */
   bindEvents() {
     // Search input
     this.on("input", "[data-field=search]", (e) => {
@@ -38,6 +41,9 @@ class ModelFilters extends Component {
     });
   }
 
+  /**
+   * Updates the search input UI value.
+   */
   _updateSearchUI() {
     const input = this.$("[data-field=search]");
     if (input) {
@@ -45,6 +51,10 @@ class ModelFilters extends Component {
     }
   }
 
+  /**
+   * Renders the filter controls.
+   * @returns {string} HTML string for filter controls.
+   */
   render() {
     return `
       <div class="filters">

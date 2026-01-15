@@ -3,6 +3,11 @@
  */
 
 class GpuDetails extends Component {
+  /**
+   * Creates a GpuDetails component instance.
+   * @param {Object} props - Component properties.
+   * @param {Array} props.gpuList - Array of GPU device objects with name, vendor, usage, and memory details.
+   */
   constructor(props) {
     super(props);
     this.gpuList = props.gpuList || [];
@@ -10,6 +15,9 @@ class GpuDetails extends Component {
     this.unsubscriber = null;
   }
 
+  /**
+   * Called after component is mounted to DOM. Subscribes to metrics state changes.
+   */
   onMount() {
     // Subscribe to metrics changes to update GPU list
     this.unsubscriber = stateManager.subscribe("metrics", (metrics) => {
@@ -21,10 +29,16 @@ class GpuDetails extends Component {
     });
   }
 
+  /**
+   * Cleans up subscriptions when component is destroyed.
+   */
   destroy() {
     this.unsubscriber?.();
   }
 
+  /**
+   * Binds event handlers for user interactions.
+   */
   bindEvents() {
     // Toggle GPU details - event delegation on this._el
     this.on("click", ".gpu-header", (e) => {
@@ -35,6 +49,9 @@ class GpuDetails extends Component {
     });
   }
 
+  /**
+   * Updates the UI based on the expanded/collapsed state of the GPU details section.
+   */
   _updateUI() {
     if (!this._el) return;
 
@@ -61,6 +78,9 @@ class GpuDetails extends Component {
     }
   }
 
+  /**
+   * Updates the GPU list UI when GPU data changes.
+   */
   _updateGPUUI() {
     if (!this._el) return;
 
@@ -141,6 +161,10 @@ class GpuDetails extends Component {
     }
   }
 
+  /**
+   * Renders the GPU details component showing GPU devices or "No GPU detected" message.
+   * @returns {string} HTML string containing the GPU details section.
+   */
   render() {
     if (!this.gpuList || this.gpuList.length === 0) {
       return "<div class=\"gpu-details\"><p class=\"gpu-no-data\">No GPU detected</p></div>";

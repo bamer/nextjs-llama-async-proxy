@@ -4,6 +4,9 @@
  */
 
 class QuickActions extends Component {
+  /**
+   * Binds event handlers for quick action buttons.
+   */
   bindEvents() {
     // Refresh button
     this.on("click", "[data-action=refresh]", (e) => {
@@ -16,6 +19,10 @@ class QuickActions extends Component {
     });
   }
 
+  /**
+   * Renders the quick actions component with navigation and refresh buttons.
+   * @returns {Object} Component.h() result containing the rendered action buttons.
+   */
   render() {
     return Component.h(
       "div",

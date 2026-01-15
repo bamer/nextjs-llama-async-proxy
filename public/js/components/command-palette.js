@@ -4,6 +4,10 @@
  */
 
 class CommandPalette extends Component {
+  /**
+   * Creates a new CommandPalette instance.
+   * @param {Object} [props={}] - Component properties.
+   */
   constructor(props) {
     super(props);
     this.commands = this._buildCommands();
@@ -200,6 +204,11 @@ class CommandPalette extends Component {
   /**
    * Filter commands by query
    */
+  /**
+   * Filters commands based on search query and updates the display.
+   * @param {string} query - The search query to filter commands by.
+   * @returns {void}
+   */
   _filter(query) {
     this.query = query.toLowerCase();
     this.filteredCommands = this.commands.filter((cmd) => {
@@ -216,6 +225,11 @@ class CommandPalette extends Component {
   /**
    * Navigate selection
    */
+  /**
+   * Moves the selection up or down in the command list.
+   * @param {number} direction - The movement direction: 1 for down, -1 for up.
+   * @returns {void}
+   */
   _moveSelection(direction) {
     this.selectedIndex = Math.max(0, Math.min(this.filteredCommands.length - 1, this.selectedIndex + direction));
     this._updateUI();
@@ -223,6 +237,10 @@ class CommandPalette extends Component {
 
   /**
    * Execute selected command
+   */
+  /**
+   * Executes the currently selected command and closes the palette.
+   * @returns {void}
    */
   _execute() {
     if (this.filteredCommands[this.selectedIndex]) {
@@ -250,6 +268,10 @@ class CommandPalette extends Component {
     }
   }
 
+  /**
+   * Renders the command palette overlay with search input and grouped command list.
+   * @returns {HTMLElement} The command palette container element.
+   */
   render() {
     return Component.h("div", { className: "command-palette-overlay", onClick: (e) => { if (e.target === e.currentTarget) this._close(); } }, [
       Component.h("div", { className: "command-palette" }, [
@@ -328,10 +350,18 @@ class CommandPalette extends Component {
     }
   }
 
+  /**
+   * Binds event handlers for the command palette.
+   * @returns {void}
+   */
   bindEvents() {
     // Close on escape handled in keydown
   }
 
+  /**
+   * Called after component is mounted to DOM, focuses the search input.
+   * @returns {void}
+   */
   didMount() {
     // Focus input on mount
     const input = this.$(".command-input");

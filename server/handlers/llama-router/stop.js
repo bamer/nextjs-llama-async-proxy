@@ -8,7 +8,9 @@ import { killLlamaServer, killLlamaOnPort } from "./process.js";
 import { getServerProcess, getServerUrl } from "./start.js";
 
 /**
- * Stop llama-server
+ * Stop llama-server router process.
+ * Kills the running llama-server process and any processes on the default port range.
+ * @returns {Object} Result object with success status.
  */
 export function stopLlamaServerRouter() {
   const process = getServerProcess();

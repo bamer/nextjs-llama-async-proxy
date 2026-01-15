@@ -27,11 +27,12 @@ class StateCore {
   }
 
   /**
-   * Deep compare two objects (handles circular references)
-   * @param {*} a - First value
-   * @param {*} b - Second value
-   * @param {Set} visited - Set of visited object pairs
-   * @returns {boolean} True if equal
+   * Deep compare two values (handles circular references)
+   * @param {*} a - First value to compare
+   * @param {*} b - Second value to compare
+   * @param {Set} [visited=new Set()] - Set of visited object pairs for cycle detection
+   * @returns {boolean} True if values are deeply equal
+   * @throws {Error} If circular reference detected
    */
   _deepEqual(a, b, visited = new Set()) {
     // Strict equality
@@ -128,10 +129,10 @@ class StateCore {
   }
 
   /**
-   * Subscribe to state changes
-   * @param {string} key - State key to listen to (or "*" for all)
-   * @param {Function} callback - Callback function
-   * @returns {Function} Unsubscribe function
+   * Subscribe to state changes for a key
+   * @param {string} key - State key to listen to (use "*" for all changes)
+   * @param {Function} callback - Function called on state change (value, old, state)
+   * @returns {Function} Unsubscribe function to remove the listener
    */
   subscribe(key, callback) {
     if (!this.listeners.has(key)) {
@@ -145,9 +146,9 @@ class StateCore {
 
   /**
    * Notify all subscribers of a state change
-   * @param {string} key - State key
+   * @param {string} key - State key that changed
    * @param {*} value - New value
-   * @param {*} old - Old value
+   * @param {*} old - Previous value
    */
   _notify(key, value, old) {
     this.listeners.get(key)?.forEach((cb) => {

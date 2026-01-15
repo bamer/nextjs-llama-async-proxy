@@ -17,6 +17,9 @@ class RouterCard extends Component {
     this.ctxSize = props.ctxSize || 4096;
   }
 
+  /**
+   * Binds event listeners for start, stop, restart, and preset selection actions.
+   */
   bindEvents() {
     this.on("click", "[data-action=start]", (e) => {
       e.preventDefault();
@@ -53,6 +56,9 @@ class RouterCard extends Component {
     });
   }
 
+  /**
+   * Called after component is mounted to DOM. Sets up status subscriptions.
+   */
   onMount() {
     // Get initial status from stateManager - use llamaServerStatus for consistency
     const initialStatus = stateManager.get("llamaServerStatus");
@@ -128,6 +134,9 @@ class RouterCard extends Component {
     this._unsubscribers.push(unsubRouter);
   }
 
+  /**
+   * Cleans up all subscriptions.
+   */
   destroy() {
     if (this._unsubscribers) {
       this._unsubscribers.forEach((unsub) => unsub && unsub());
@@ -136,6 +145,9 @@ class RouterCard extends Component {
     super.destroy && super.destroy();
   }
 
+  /**
+   * Updates the UI elements based on current router status.
+   */
   _updateUI() {
     if (!this._el) return;
 
@@ -188,6 +200,10 @@ class RouterCard extends Component {
     }
   }
 
+  /**
+   * Renders the router card with status and controls.
+   * @returns {string} HTML string for the router card.
+   */
   render() {
     // Check both llamaServerStatus (status field) and routerStatus (port field)
     const isRunning = this.status?.port || this.status?.status === "running";

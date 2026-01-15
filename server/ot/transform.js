@@ -52,8 +52,11 @@ export function transform(opA, opB, content) {
 }
 
 /**
- * Transform two insert operations
- * Uses tie-breaking by userId (lexicographic order)
+ * Transform two insert operations against each other
+ * Uses lexicographic userId ordering for tie-breaking
+ * @param {Object} opA - First insert operation
+ * @param {Object} opB - Second insert operation
+ * @returns {Array} Tuple of [transformedA, transformedB]
  */
 function transformInsertInsert(opA, opB) {
   if (opA.position < opB.position) {
@@ -74,7 +77,12 @@ function transformInsertInsert(opA, opB) {
 }
 
 /**
- * Transform insert vs delete operation
+ * Transform insert operation against delete operation
+ * Adjusts insert position based on delete range
+ * @param {Object} insertOp - Insert operation to transform
+ * @param {Object} deleteOp - Delete operation to transform against
+ * @param {string} content - Document content before operations
+ * @returns {Array} Tuple of [transformedInsert, transformedDelete]
  */
 function transformInsertDelete(insertOp, deleteOp, content) {
   const insPos = insertOp.position;
@@ -104,7 +112,11 @@ function transformInsertDelete(insertOp, deleteOp, content) {
 }
 
 /**
- * Transform two delete operations
+ * Transform two delete operations against each other
+ * Handles overlapping delete ranges
+ * @param {Object} opA - First delete operation
+ * @param {Object} opB - Second delete operation
+ * @returns {Array} Tuple of [transformedA, transformedB]
  */
 function transformDeleteDelete(opA, opB) {
   const aStart = opA.position;

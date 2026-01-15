@@ -10,7 +10,10 @@ import { spawn, execSync } from "child_process";
 import { DEFAULT_LLAMA_PORT, MAX_PORT } from "../constants.js";
 
 /**
- * Find available port for llama-server
+ * Find available port for llama-server.
+ * Checks ports in the default range and returns the first available one.
+ * @param {Function} isPortInUse - Function to check if a port is in use.
+ * @returns {Promise<number>} First available port number, or MAX_PORT+1 if none found.
  */
 export async function findAvailablePort(isPortInUse) {
   for (let port = DEFAULT_LLAMA_PORT; port <= MAX_PORT; port++) {
@@ -26,7 +29,10 @@ export async function findAvailablePort(isPortInUse) {
 }
 
 /**
- * Kill existing llama-server process
+ * Kill existing llama-server process.
+ * Sends SIGTERM to the process for graceful shutdown.
+ * @param {ChildProcess|null} llamaServerProcess - The process object to kill.
+ * @returns {boolean} True if process was killed, false if process was null.
  */
 export function killLlamaServer(llamaServerProcess) {
   if (llamaServerProcess) {
@@ -38,7 +44,10 @@ export function killLlamaServer(llamaServerProcess) {
 }
 
 /**
- * Check if a port is in use
+ * Check if a port is in use.
+ * Uses lsof command to check if any process is listening on the port.
+ * @param {number} port - Port number to check.
+ * @returns {boolean} True if port is in use, false otherwise.
  */
 export function isPortInUse(port) {
   try {
@@ -50,7 +59,10 @@ export function isPortInUse(port) {
 }
 
 /**
- * Find and kill llama-server on a specific port
+ * Find and kill llama-server on a specific port.
+ * Uses lsof to find the PID and kills the process with SIGKILL.
+ * @param {number} port - Port number to check and kill process on.
+ * @returns {boolean} True if process was found and killed, false otherwise.
  */
 export function killLlamaOnPort(port) {
   try {
@@ -67,7 +79,9 @@ export function killLlamaOnPort(port) {
 }
 
 /**
- * Find llama-server binary
+ * Find llama-server binary.
+ * Searches common installation paths and PATH for llama-server executable.
+ * @returns {string|null} Path to llama-server binary, or null if not found.
  */
 export function findLlamaServer() {
   const possiblePaths = [
@@ -100,7 +114,15 @@ export function findLlamaServer() {
 }
 
 /**
- * Stop llama-server
+ * Stop llama-server process.
+ * Kills the process by process reference and by port scanning.
+ * @param {ChildProcess|null} llamaServerProcess - The process object to kill.
+ * @param {number} llamaServerPort - Port number the server was running on.
+ * @param {string} llamaServerUrl - URL of the server.
+ * @param {Function} isPortInUse - Function to check if a port is in use.
+ * @param {Function} killLlamaServerFn - Function to kill a process.
+ * @param {Function} killLlamaOnPortFn - Function to kill process on a port.
+ * @returns {Object} Result object with success status.
  */
 export function stopLlamaServer(
   llamaServerProcess,

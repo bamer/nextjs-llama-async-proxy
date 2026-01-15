@@ -6,7 +6,9 @@
 import { ok } from "./response.js";
 
 /**
- * Register connection handlers
+ * Register all Socket.IO event handlers for connection lifecycle.
+ * @param {Object} socket - Socket.IO socket instance.
+ * @param {Object} logger - Logger instance for connection events.
  */
 export function registerConnectionHandlers(socket, logger) {
   /**

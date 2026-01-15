@@ -7,7 +7,9 @@ import { llamaApiRequest } from "./api.js";
 import { getServerProcess, getServerUrl, getRouterState } from "./start.js";
 
 /**
- * Get llama-server status (router mode)
+ * Get llama-server status (router mode).
+ * Checks if the server is running and retrieves model information.
+ * @returns {Promise<Object>} Status object with running state, port, url, and model list.
  */
 export async function getLlamaStatus() {
   const state = getRouterState();
@@ -50,7 +52,10 @@ export async function getLlamaStatus() {
 }
 
 /**
- * Load a model (router mode)
+ * Load a model (router mode).
+ * Sends a request to llama-server to load a specific model.
+ * @param {string} modelName - Name of the model to load.
+ * @returns {Promise<Object>} Result object with success status and load result or error.
  */
 export async function loadModel(modelName) {
   const state = getRouterState();
@@ -80,7 +85,10 @@ export async function loadModel(modelName) {
 }
 
 /**
- * Unload a model (router mode)
+ * Unload a model (router mode).
+ * Sends a request to llama-server to unload a specific model.
+ * @param {string} modelName - Name of the model to unload.
+ * @returns {Promise<Object>} Result object with success status and unload result or error.
  */
 export async function unloadModel(modelName) {
   const state = getRouterState();

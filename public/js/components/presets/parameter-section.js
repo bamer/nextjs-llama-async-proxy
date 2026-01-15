@@ -11,6 +11,9 @@ class ParameterSection extends Component {
     this.expanded = props.expanded !== undefined ? props.expanded : true;
   }
 
+  /**
+   * Bind event handlers for section toggle, expand all, and collapse all.
+   */
   bindEvents() {
     // Toggle section
     this.on("click", "[data-action=toggle-section]", () => {
@@ -28,21 +31,34 @@ class ParameterSection extends Component {
     });
   }
 
+  /**
+   * Handle section toggle click - expands or collapses the section.
+   */
   handleToggle() {
     this.expanded = !this.expanded;
     this._updateSectionUI();
   }
 
+  /**
+   * Handle expand all action - expands the section.
+   */
   handleExpandAll() {
     this.expanded = true;
     this._updateSectionUI();
   }
 
+  /**
+   * Handle collapse all action - collapses the section.
+   */
   handleCollapseAll() {
     this.expanded = false;
     this._updateSectionUI();
   }
 
+  /**
+   * Update section UI based on expanded state.
+   * @private
+   */
   _updateSectionUI() {
     const section = this.$(".parameter-section");
     if (!section) return;
@@ -64,6 +80,10 @@ class ParameterSection extends Component {
     }
   }
 
+  /**
+   * Render the parameter section component.
+   * @returns {HTMLElement} The section element.
+   */
   render() {
     const { categoryId, categoryInfo, parameters, config, defaults, inheritance, editableFields } =
       this.props;
@@ -81,6 +101,14 @@ class ParameterSection extends Component {
     );
   }
 
+  /**
+   * Render the section header with toggle, title, and actions.
+   * @param {string} categoryId - The category identifier.
+   * @param {Object} categoryInfo - The category information object.
+   * @param {number} count - Number of parameters in the category.
+   * @param {boolean} expanded - Whether the section is expanded.
+   * @returns {HTMLElement} The header element.
+   */
   renderHeader(categoryId, categoryInfo, count, expanded) {
     const icon = expanded ? "▼" : "▶";
 
@@ -110,6 +138,11 @@ class ParameterSection extends Component {
     );
   }
 
+  /**
+   * Render header action buttons (Expand All / Collapse All).
+   * @param {number} count - Number of parameters in the section.
+   * @returns {HTMLElement|null} The actions element or null.
+   */
   renderHeaderActions(count) {
     if (count === 0) return null;
 
@@ -139,6 +172,15 @@ class ParameterSection extends Component {
     );
   }
 
+  /**
+   * Render the section body with parameter inputs.
+   * @param {Object} parameters - Map of parameter ID to parameter config.
+   * @param {Object} config - Current configuration values.
+   * @param {Object} defaults - Default values.
+   * @param {Object} inheritance - Inheritance information.
+   * @param {Array} editableFields - List of editable field IDs.
+   * @returns {HTMLElement} The body element.
+   */
   renderBody(parameters, config, defaults, inheritance, editableFields) {
     const paramIds = Object.keys(parameters);
 
@@ -176,6 +218,12 @@ class ParameterSection extends Component {
     );
   }
 
+  /**
+   * Filter parameters based on config - only show parameters with values or defaults.
+   * @param {Object} parameters - Map of parameter ID to parameter config.
+   * @param {Object} config - Current configuration values.
+   * @returns {Object} Filtered parameters.
+   */
   filterParameters(parameters, config) {
     if (!config) return parameters;
 
@@ -193,12 +241,22 @@ class ParameterSection extends Component {
     return filtered;
   }
 
+  /**
+   * Handle parameter value change from child component.
+   * @param {string} field - The parameter field ID.
+   * @param {*} value - The new value.
+   */
   handleParamChange(field, value) {
     if (this.props.onChange) {
       this.props.onChange(field, value);
     }
   }
 
+  /**
+   * Handle parameter validation result from child component.
+   * @param {string} field - The parameter field ID.
+   * @param {Object} validation - The validation result object.
+   */
   handleParamValidation(field, validation) {
     if (this.props.onValidate) {
       this.props.onValidate(field, validation);
@@ -206,12 +264,20 @@ class ParameterSection extends Component {
   }
 
   // Public method to expand/collapse
+  /**
+   * Set the expanded state of the section.
+   * @param {boolean} expanded - Whether the section should be expanded.
+   */
   setExpanded(expanded) {
     this.expanded = expanded;
     this._updateSectionUI();
   }
 
   // Get summary of current values
+  /**
+   * Get a summary of the current parameter values in this section.
+   * @returns {Object} Summary with total, changed, and errors counts.
+   */
   getSummary() {
     const { config, parameters } = this.props;
     const summary = {

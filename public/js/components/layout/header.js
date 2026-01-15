@@ -1,4 +1,8 @@
 class Header extends Component {
+  /**
+   * Initializes the Header component with connection status and route handler.
+   * @param {Object} props - Component properties.
+   */
   constructor(props) {
     super(props);
     this.online = false;
@@ -6,6 +10,10 @@ class Header extends Component {
     this.unsubscribers = [];
   }
 
+  /**
+   * Renders the header with page title, menu toggle, and connection status.
+   * @returns {string} HTML string representing the header.
+   */
   render() {
     const p = window.location.pathname;
     const titles = {
@@ -28,12 +36,18 @@ class Header extends Component {
     `;
   }
 
+  /**
+   * Binds event listeners for header actions like menu toggle.
+   */
   bindEvents() {
     this.on("click", "[data-action=toggle]", () => {
       this._toggleSidebar();
     });
   }
 
+  /**
+   * Toggles the sidebar visibility for desktop and mobile views.
+   */
   _toggleSidebar() {
     const sidebar = document.querySelector(".sidebar");
     if (sidebar) {
@@ -52,6 +66,9 @@ class Header extends Component {
     }
   }
 
+  /**
+   * Called after mounting to subscribe to connection status and route changes.
+   */
   onMount() {
     this.unsubscribers.push(
       stateManager.subscribe("connectionStatus", (s) => {
@@ -78,6 +95,9 @@ class Header extends Component {
     window.addEventListener("popstate", this._routeHandler);
   }
 
+  /**
+   * Cleans up subscriptions and event listeners to prevent memory leaks.
+   */
   destroy() {
     this.unsubscribers.forEach((unsub) => unsub && unsub());
     this.unsubscribers = [];
@@ -87,6 +107,10 @@ class Header extends Component {
     }
   }
 
+  /**
+   * Updates the UI elements based on the connection status.
+   * @param {string} s - Connection status ("connected" or "disconnected").
+   */
   _updateUI(s) {
     const st = document.getElementById("connection-status");
     if (st) {

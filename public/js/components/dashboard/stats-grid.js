@@ -4,6 +4,12 @@
  */
 
 class StatsGrid extends Component {
+  /**
+   * Creates a StatsGrid component instance.
+   * @param {Object} props - Component properties.
+   * @param {Object} props.metrics - System metrics object containing CPU, memory, disk, swap, and uptime.
+   * @param {Object} props.gpuMetrics - GPU metrics object containing usage and memory information.
+   */
   constructor(props) {
     super(props);
 
@@ -81,6 +87,10 @@ class StatsGrid extends Component {
     });
   }
 
+  /**
+   * Renders the stats grid component with all metric cards.
+   * @returns {string} HTML string containing the stats grid with CPU, memory, swap, GPU, disk, and uptime cards.
+   */
   render() {
     const m = this.metrics;
     const gpu = this.gpuMetrics;

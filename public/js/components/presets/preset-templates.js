@@ -55,6 +55,10 @@ class PresetTemplates extends Component {
     this.onApplyTemplate = props.onApplyTemplate || null;
   }
 
+  /**
+   * Render the preset templates component.
+   * @returns {HTMLElement} The templates container element.
+   */
   render() {
     return Component.h(
       "div",
@@ -81,12 +85,20 @@ class PresetTemplates extends Component {
     );
   }
 
+  /**
+   * Get the event map for component event binding.
+   * @returns {Object} Map of events to handler methods.
+   */
   getEventMap() {
     return {
       "click [data-action=apply-template]": this.handleApplyTemplate,
     };
   }
 
+  /**
+   * Handle apply template button click.
+   * Finds selected template and emits onApplyTemplate callback.
+   */
   handleApplyTemplate() {
     const select = this._el?.querySelector("[data-field=template]");
     const templateId = select?.value;

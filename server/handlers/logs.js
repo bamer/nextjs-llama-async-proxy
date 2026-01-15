@@ -9,7 +9,9 @@ import { ok, err } from "./response.js";
 import { fileLogger } from "./file-logger.js";
 
 /**
- * Register logs handlers
+ * Register all Socket.IO event handlers for log operations.
+ * @param {Object} socket - Socket.IO socket instance.
+ * @param {Object} db - Database instance.
  */
 export function registerLogsHandlers(socket, db) {
   // Initialize file logger with database

@@ -9,7 +9,9 @@ import { ok, err } from "./response.js";
 let latestGpuList = [];
 
 /**
- * Register metrics handlers
+ * Register all Socket.IO event handlers for metrics operations.
+ * @param {Object} socket - Socket.IO socket instance.
+ * @param {Object} db - Database instance.
  */
 export function registerMetricsHandlers(socket, db) {
   /**

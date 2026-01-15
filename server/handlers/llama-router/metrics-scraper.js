@@ -1,11 +1,15 @@
 /**
- * llama-server Metrics Scraper
- * Scrapes llama-server API endpoints for metrics
+ * llama-server Metrics Scraper.
+ * Scrapes llama-server API endpoints for metrics and performance data.
+ * @class
  */
-
-import http from "http";
-
 export class LlamaServerMetricsScraper {
+  /**
+   * Create a new LlamaServerMetricsScraper.
+   * @param {Object} config - Configuration for the scraper.
+   * @param {string} [config.host="localhost"] - Server hostname.
+   * @param {number} [config.port=8080] - Server port number.
+   */
   constructor(config) {
     this.baseUrl = `http://${config.host || "localhost"}:${config.port || 8080}`;
     this.cache = new Map();
@@ -51,7 +55,10 @@ export class LlamaServerMetricsScraper {
   }
 
   /**
-   * Fetch specific endpoint
+   * Fetch specific endpoint from llama-server.
+   * @param {string} endpoint - API endpoint path to fetch.
+   * @returns {Promise<Object>} Parsed response data.
+   * @throws {Error} If request fails or returns non-200 status.
    */
   async _fetchEndpoint(endpoint) {
     return new Promise((resolve, reject) => {
@@ -93,7 +100,10 @@ export class LlamaServerMetricsScraper {
   }
 
   /**
-   * Parse metrics from text response
+   * Parse metrics from text response.
+   * Extracts tokens per second, active models, and queue size from text.
+   * @param {string} text - Raw text response to parse.
+   * @returns {Object} Parsed metrics object with uptime, activeModels, etc.
    */
   _parseTextMetrics(text) {
     const metrics = {

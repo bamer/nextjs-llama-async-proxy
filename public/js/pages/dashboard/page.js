@@ -98,6 +98,10 @@ class DashboardPage extends Component {
     this._setupInitialMetrics();
   }
 
+  /**
+   * Setup initial metrics from stateManager on component mount.
+   * @returns {void}
+   */
   _setupInitialMetrics() {
     const metrics = stateManager.get("metrics");
     if (metrics && typeof metrics !== "undefined") {
@@ -106,6 +110,11 @@ class DashboardPage extends Component {
     }
   }
 
+  /**
+   * Handle metrics change from state subscription.
+   * @param {Object} metrics - Metrics object with cpu, memory, and gpu properties
+   * @returns {void}
+   */
   handleMetricsChange(metrics) {
     this.metrics = metrics || { cpu: { usage: 0 }, memory: { used: 0 }, gpu: null };
     this.gpuMetrics = metrics?.gpu || { usage: 0, memoryUsed: 0, memoryTotal: 0, list: [] };
@@ -132,11 +141,21 @@ class DashboardPage extends Component {
     });
   }
 
+  /**
+   * Set router loading state and update UI accordingly.
+   * @param {boolean} loading - Whether router is in loading state
+   * @returns {void}
+   */
   setRouterLoading(loading) {
     this.routerLoading = loading;
     this._updateRouterCardUI();
   }
 
+  /**
+   * Update the router card UI based on current status and router status.
+   * Updates status badge, button states, and info visibility.
+   * @returns {void}
+   */
   _updateRouterCardUI() {
     if (!this._el) return;
 
@@ -206,6 +225,12 @@ class DashboardPage extends Component {
     }
   }
 
+  /**
+   * Update component state from controller with new metrics and history data.
+   * @param {Object} metrics - Metrics object with cpu, memory, and gpu data
+   * @param {Array} history - Array of historical metrics data for charts
+   * @returns {void}
+   */
   updateFromController(metrics, history) {
     this.metrics = metrics || this.metrics;
     this.gpuMetrics = metrics?.gpu || this.gpuMetrics;
@@ -268,7 +293,8 @@ class DashboardPage extends Component {
   }
 
   /**
-   * Update ChartsSection with new history
+   * Update ChartsSection component with new history data.
+   * @returns {void}
    */
   _updateChartsSection() {
     const chartsSection = this._el?.querySelector(".charts-section");
@@ -281,6 +307,11 @@ class DashboardPage extends Component {
     }
   }
 
+  /**
+   * Handle chart type change (usage vs memory) from the UI.
+   * @param {string} newType - New chart type ("usage" or "memory")
+   * @returns {void}
+   */
   handleChartTypeChange(newType) {
     if (newType === this.chartType) return;
 
@@ -322,6 +353,10 @@ class DashboardPage extends Component {
     }
   }
 
+  /**
+   * Refresh dashboard data by reloading from controller.
+   * @returns {Promise<void>} Promise that resolves when refresh is complete
+   */
   async _refresh() {
     this.loading = true;
     try {

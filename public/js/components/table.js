@@ -13,6 +13,10 @@ class Table extends Component {
     this.sortOrder = props.sortOrder || "asc";
   }
 
+  /**
+   * Binds event handlers for sortable column clicks and action buttons.
+   * @returns {void}
+   */
   bindEvents() {
     // Sort column clicks
     this.on("click", "[data-sort]", (e, target) => {
@@ -29,6 +33,10 @@ class Table extends Component {
     });
   }
 
+  /**
+   * Renders the complete table with header, body, and optional empty state.
+   * @returns {HTMLElement} The rendered table element.
+   */
   render() {
     const {
       columns,
@@ -231,6 +239,11 @@ class Table extends Component {
 
   /**
    * Handle sort header click
+   */
+  /**
+   * Handles sort column click and toggles sort order.
+   * @param {string} field - The column key to sort by.
+   * @returns {void}
    */
   handleSort(field) {
     if (this.sortBy === field) {

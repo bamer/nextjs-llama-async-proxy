@@ -8,7 +8,11 @@ import { registerModelsRouterHandlers } from "./router-ops.js";
 import { registerModelsScanHandlers } from "./scan.js";
 
 /**
- * Register all models handlers
+ * Register all models handlers for Socket.IO connection.
+ * @param {object} socket - Socket.IO socket instance.
+ * @param {object} io - Socket.IO server instance.
+ * @param {object} db - Database instance.
+ * @param {function} ggufParser - GGUF metadata parser function.
  */
 export function registerModelsHandlers(socket, io, db, ggufParser) {
   registerModelsCrudHandlers(socket, io, db);

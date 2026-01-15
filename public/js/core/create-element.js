@@ -3,6 +3,13 @@
  * Utility for creating DOM elements with attributes and children
  */
 
+/**
+ * Create a DOM element with attributes and children.
+ * @param {string|function} tag - HTML tag name or Component class
+ * @param {object} attrs - Attributes and properties
+ * @param {...(string|Node|Component)} children - Child elements
+ * @returns {Node} Created DOM element
+ */
 function createElement(tag, attrs = {}, ...children) {
   if (typeof tag === "function" && tag.prototype instanceof Component) {
     const instance = new tag(attrs);

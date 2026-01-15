@@ -4,6 +4,12 @@
  */
 
 class SystemHealth extends Component {
+  /**
+   * Creates a SystemHealth component instance.
+   * @param {Object} props - Component properties.
+   * @param {Object} props.metrics - System metrics object containing CPU, memory, and disk usage.
+   * @param {Object} props.gpuMetrics - GPU metrics object containing usage information.
+   */
   constructor(props) {
     super(props);
 
@@ -73,6 +79,10 @@ class SystemHealth extends Component {
     });
   }
 
+  /**
+   * Renders the system health component with status and individual health checks.
+   * @returns {string} HTML string containing the health status, message, and check items.
+   */
   render() {
     const m = this.metrics;
     const gpu = this.gpuMetrics;

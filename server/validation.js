@@ -4,7 +4,8 @@
  */
 
 /**
- * Validation error class
+ * Validation error class for request validation failures.
+ * @extends Error
  */
 export class ValidationError extends Error {
   constructor(message, field) {
@@ -15,10 +16,10 @@ export class ValidationError extends Error {
 }
 
 /**
- * Validate required fields in request object
- * @param {Object} req - Request object
- * @param {Array<string>} requiredFields - Required field names
- * @throws {ValidationError} If validation fails
+ * Validate that required fields are present in the request object.
+ * @param {Object} req - Request object to validate.
+ * @param {Array<string>} requiredFields - Array of required field names.
+ * @throws {ValidationError} If validation fails.
  */
 export function validateRequired(req, requiredFields) {
   const errors = [];
@@ -40,10 +41,10 @@ export function validateRequired(req, requiredFields) {
 }
 
 /**
- * Validate field types
- * @param {Object} req - Request object
- * @param {Object} typeSchema - Schema mapping fields to types
- * @throws {ValidationError} If validation fails
+ * Validate that fields match expected types.
+ * @param {Object} req - Request object to validate.
+ * @param {Object} typeSchema - Schema mapping fields to expected types.
+ * @throws {ValidationError} If validation fails.
  */
 export function validateTypes(req, typeSchema) {
   const errors = [];
@@ -65,10 +66,10 @@ export function validateTypes(req, typeSchema) {
 }
 
 /**
- * Validate field values match a pattern
- * @param {Object} req - Request object
- * @param {Object} patternSchema - Schema mapping fields to regex patterns
- * @throws {ValidationError} If validation fails
+ * Validate that fields match regex patterns.
+ * @param {Object} req - Request object to validate.
+ * @param {Object} patternSchema - Schema mapping fields to regex patterns.
+ * @throws {ValidationError} If validation fails.
  */
 export function validatePatterns(req, patternSchema) {
   const errors = [];
@@ -88,10 +89,10 @@ export function validatePatterns(req, patternSchema) {
 }
 
 /**
- * Validate field values within a range
- * @param {Object} req - Request object
- * @param {Object} rangeSchema - Schema mapping fields to min/max values
- * @throws {ValidationError} If validation fails
+ * Validate that numeric fields are within specified ranges.
+ * @param {Object} req - Request object to validate.
+ * @param {Object} rangeSchema - Schema mapping fields to min/max values.
+ * @throws {ValidationError} If validation fails.
  */
 export function validateRanges(req, rangeSchema) {
   const errors = [];
@@ -116,10 +117,10 @@ export function validateRanges(req, rangeSchema) {
 }
 
 /**
- * Validate enum values
- * @param {Object} req - Request object
- * @param {Object} enumSchema - Schema mapping fields to allowed value arrays
- * @throws {ValidationError} If validation fails
+ * Validate that fields contain allowed enum values.
+ * @param {Object} req - Request object to validate.
+ * @param {Object} enumSchema - Schema mapping fields to allowed value arrays.
+ * @throws {ValidationError} If validation fails.
  */
 export function validateEnums(req, enumSchema) {
   const errors = [];
@@ -141,10 +142,10 @@ export function validateEnums(req, enumSchema) {
 }
 
 /**
- * Validate request against a complete schema
- * @param {Object} req - Request object
- * @param {Object} schema - Schema object with optional/required fields and validators
- * @throws {ValidationError} If validation fails
+ * Validate a request against a complete schema with multiple validators.
+ * @param {Object} req - Request object to validate.
+ * @param {Object} schema - Schema object with optional/required fields and validators.
+ * @throws {ValidationError} If validation fails.
  */
 export function validateRequest(req, schema) {
   if (!req || typeof req !== "object") {
@@ -180,10 +181,10 @@ export function validateRequest(req, schema) {
 }
 
 /**
- * Safe validation wrapper that returns error instead of throwing
- * @param {Object} req - Request object
- * @param {Object} schema - Validation schema
- * @returns {Object} Validation result with success/error
+ * Safe validation wrapper that returns error instead of throwing.
+ * @param {Object} req - Request object to validate.
+ * @param {Object} schema - Validation schema.
+ * @returns {Object} Validation result with success status and error message.
  */
 export function safeValidate(req, schema) {
   try {

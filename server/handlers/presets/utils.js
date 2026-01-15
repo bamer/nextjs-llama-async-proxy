@@ -15,7 +15,9 @@ if (!fs.existsSync(PRESETS_DIR)) {
 }
 
 /**
- * Parse INI file content
+ * Parse INI file content into a structured object.
+ * @param {string} content - INI file content to parse.
+ * @returns {Object} Parsed INI structure with sections.
  */
 export function parseIni(content) {
   const result = {};
@@ -44,7 +46,9 @@ export function parseIni(content) {
 }
 
 /**
- * Generate INI file content - Sparse format (only user-set values)
+ * Generate INI file content from a configuration object (sparse format).
+ * @param {Object} config - Configuration object to generate INI from.
+ * @returns {string} INI formatted string.
  */
 export function generateIni(config) {
   let content = "LLAMA_CONFIG_VERSION = 1\n\n";
@@ -67,7 +71,8 @@ export function generateIni(config) {
 }
 
 /**
- * Get default parameters (all available llama.cpp router parameters)
+ * Get default parameters (all available llama.cpp router parameters).
+ * @returns {Object} Default parameter configuration.
  */
 export function getDefaultParameters() {
   return {
@@ -135,7 +140,8 @@ export function getDefaultParameters() {
 }
 
 /**
- * Get default configuration structure
+ * Get default configuration structure.
+ * @returns {Object} Default configuration object.
  */
 export function getDefaultConfig() {
   return {
@@ -144,7 +150,10 @@ export function getDefaultConfig() {
 }
 
 /**
- * Convert INI section to model object
+ * Convert INI section to a model configuration object.
+ * @param {Object} section - INI section key-value pairs.
+ * @param {Object} defaults - Default values for the section.
+ * @returns {Object} Model configuration object with parsed values.
  */
 export function iniSectionToModel(section, defaults = {}) {
   const result = {};
@@ -169,7 +178,10 @@ export function iniSectionToModel(section, defaults = {}) {
 }
 
 /**
- * Convert model object to INI section
+ * Convert a model configuration object to an INI section.
+ * @param {string} section - Section name for the INI.
+ * @param {Object} config - Model configuration object.
+ * @returns {Object} INI section key-value pairs.
  */
 export function modelToIniSection(section, config) {
   const result = {};
@@ -201,7 +213,9 @@ function parseValue(value) {
 }
 
 /**
- * Read and parse preset file
+ * Read and parse a preset file from the config directory.
+ * @param {string} filename - Name of the preset (without extension).
+ * @returns {Object} Preset object with filename, content, and parsed data.
  */
 export function readPreset(filename) {
   const filepath = path.join(PRESETS_DIR, `${filename}.ini`);
@@ -222,7 +236,10 @@ export function readPreset(filename) {
 }
 
 /**
- * Save preset file
+ * Save a preset configuration to a file.
+ * @param {string} filename - Name of the preset (without extension).
+ * @param {Object} config - Configuration object to save.
+ * @returns {Object} Save result with filename, path, size, and lastModified.
  */
 export function savePreset(filename, config) {
   const filepath = path.join(PRESETS_DIR, `${filename}.ini`);
@@ -241,7 +258,9 @@ export function savePreset(filename, config) {
 }
 
 /**
- * Delete preset file
+ * Delete a preset file from the config directory.
+ * @param {string} filename - Name of the preset (without extension).
+ * @returns {Object} Delete result with filename and deleted status.
  */
 export function deletePreset(filename) {
   const filepath = path.join(PRESETS_DIR, `${filename}.ini`);
@@ -258,7 +277,8 @@ export function deletePreset(filename) {
 }
 
 /**
- * List all preset files
+ * List all preset files in the config directory.
+ * @returns {Array<string>} Array of preset names (without extensions).
  */
 export function listPresets() {
   if (!fs.existsSync(PRESETS_DIR)) {
@@ -273,7 +293,9 @@ export function listPresets() {
 }
 
 /**
- * Extract models from preset
+ * Extract all models from a preset file.
+ * @param {string} filename - Name of the preset (without extension).
+ * @returns {Object} Object mapping model names to their configurations.
  */
 export function getModelsFromPreset(filename) {
   const preset = readPreset(filename);
@@ -291,7 +313,9 @@ export function getModelsFromPreset(filename) {
 }
 
 /**
- * Validate INI content
+ * Validate INI content for correctness.
+ * @param {string} content - INI content to validate.
+ * @returns {Object} Validation result with valid status, errors, and line count.
  */
 export function validateIni(content) {
   const errors = [];
@@ -324,7 +348,11 @@ export function validateIni(content) {
 }
 
 /**
- * Update model in preset
+ * Update or add a model in a preset file.
+ * @param {string} filename - Name of the preset (without extension).
+ * @param {string} modelName - Name of the model section.
+ * @param {Object} config - Model configuration to set.
+ * @returns {Object} Update result with filename, modelName, and updated status.
  */
 export function updateModelInPreset(filename, modelName, config) {
   const filepath = path.join(PRESETS_DIR, `${filename}.ini`);
@@ -345,7 +373,10 @@ export function updateModelInPreset(filename, modelName, config) {
 }
 
 /**
- * Remove model from preset
+ * Remove a model from a preset file.
+ * @param {string} filename - Name of the preset (without extension).
+ * @param {string} modelName - Name of the model section to remove.
+ * @returns {Object} Remove result with filename, modelName, and removed status.
  */
 export function removeModelFromPreset(filename, modelName) {
   const filepath = path.join(PRESETS_DIR, `${filename}.ini`);
@@ -371,7 +402,9 @@ export function removeModelFromPreset(filename, modelName) {
 }
 
 /**
- * Get presets defaults
+ * Get the defaults section from a preset file.
+ * @param {string} filename - Name of the preset (without extension).
+ * @returns {Object} Default configuration from the preset.
  */
 export function getPresetsDefaults(filename) {
   const filepath = path.join(PRESETS_DIR, `${filename}.ini`);

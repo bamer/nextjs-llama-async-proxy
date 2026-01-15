@@ -47,7 +47,11 @@ export function updateMetricsInterval(io, db) {
 }
 
 /**
- * Start metrics collection
+ * Start metrics collection with dynamic interval based on active clients.
+ * Initializes CPU tracking and sets up client connection listeners.
+ * @param {Object} io - Socket.IO server instance
+ * @param {Object} db - Database instance
+ * @returns {Promise<void>}
  */
 export async function startMetricsCollection(io, db) {
   initCpuTimes();
@@ -69,7 +73,11 @@ export async function startMetricsCollection(io, db) {
 }
 
 /**
- * Main metrics collection function
+ * Main metrics collection function that gathers and broadcasts all system metrics.
+ * Collects CPU, memory, disk, GPU metrics and saves to database.
+ * @param {Object} io - Socket.IO server instance
+ * @param {Object} db - Database instance
+ * @returns {Promise<void>}
  */
 export async function collectMetrics(io, db) {
   try {

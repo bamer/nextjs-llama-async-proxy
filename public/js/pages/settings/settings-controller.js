@@ -75,7 +75,8 @@ class SettingsController {
   }
 
   /**
-   * Load critical data - blocks initial render
+   * Load critical data that blocks initial render (config and settings).
+   * @returns {Promise<void>} Promise that resolves when critical data is loaded
    */
   async _loadCriticalData() {
     const [c, s] = await Promise.all([
@@ -106,6 +107,11 @@ class SettingsController {
     });
   }
 
+  /**
+   * Handle router actions from the UI (start, stop, restart).
+   * @param {string} action - The action to perform
+   * @returns {Promise<void>} Promise that resolves when action is complete
+   */
   async handleRouterAction(action) {
     switch (action) {
     case "start":
@@ -120,6 +126,10 @@ class SettingsController {
     }
   }
 
+  /**
+   * Start the llama router server.
+   * @returns {Promise<void>} Promise that resolves when server is started
+   */
   async _start() {
     try {
       await stateManager.startLlama();
@@ -140,6 +150,10 @@ class SettingsController {
     }
   }
 
+  /**
+   * Stop the llama router server after user confirmation.
+   * @returns {Promise<void>} Promise that resolves when server is stopped
+   */
   async _stop() {
     if (!confirm("Stop router?")) return;
     try {
@@ -167,6 +181,10 @@ class SettingsController {
     }
   }
 
+  /**
+   * Restart the llama router server.
+   * @returns {Promise<void>} Promise that resolves when server is restarted
+   */
   async _restart() {
     try {
       await stateManager.restartLlama();

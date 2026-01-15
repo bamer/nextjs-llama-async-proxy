@@ -3,6 +3,14 @@
  * Displays status indicators with variants and optional pulse animation
  */
 class StatusBadge {
+  /**
+   * Creates a new StatusBadge instance.
+   * @param {Object} [options={}] - Badge configuration options.
+   * @param {string} [options.variant="idle"] - Badge variant: running, idle, loading, error, warning.
+   * @param {string} [options.text=""] - Optional text to display in the badge.
+   * @param {boolean} [options.showIcon=false] - Whether to show the variant icon.
+   * @param {boolean} [options.pulse=false] - Whether to show pulse animation (for loading state).
+   */
   constructor(options = {}) {
     this.variant = options.variant || "idle";
     this.text = options.text || "";
@@ -17,6 +25,10 @@ class StatusBadge {
     };
   }
 
+  /**
+   * Renders and returns the badge DOM element.
+   * @returns {HTMLElement} The badge span element with variant styling and ARIA attributes.
+   */
   render() {
     const badge = document.createElement("span");
     const classes = ["badge", `badge--${this.variant}`];
@@ -66,18 +78,37 @@ class StatusBadge {
     return div.innerHTML;
   }
 
+  /**
+   * Updates the badge variant/style.
+   * @param {string} variant - The new variant: running, idle, loading, error, warning.
+   * @returns {void}
+   */
   setVariant(variant) {
     this.variant = variant;
   }
 
+  /**
+   * Updates the badge text content.
+   * @param {string} text - The new text to display.
+   * @returns {void}
+   */
   setText(text) {
     this.text = text;
   }
 
+  /**
+   * Toggles the pulse animation state.
+   * @param {boolean} pulse - Whether to enable the pulse animation.
+   * @returns {void}
+   */
   setPulse(pulse) {
     this.pulse = pulse;
   }
 
+  /**
+   * Cleans up the badge instance and resets all properties.
+   * @returns {void}
+   */
   destroy() {
     this.variant = "idle";
     this.text = "";

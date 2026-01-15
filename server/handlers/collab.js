@@ -13,6 +13,11 @@ import { presenceManager } from "./presence.js";
 const COLLAB_RATE_LIMIT = 100;
 const OPERATION_BATCH_SIZE = 1000;
 
+/**
+ * Register all Socket.IO event handlers for real-time collaboration.
+ * @param {Object} socket - Socket.IO socket instance.
+ * @param {Object} io - Socket.IO server instance for broadcasting.
+ */
 function registerCollabHandlers(socket, io) {
   const clientId = socket.id;
   let currentDocId = null;

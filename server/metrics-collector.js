@@ -11,15 +11,17 @@ let metricsCallCount = 0;
 const MAX_METRICS_CALL_COUNT = 1000000;
 
 /**
- * Initialize CPU times for delta-based calculation
+ * Initialize CPU times for delta-based calculation.
+ * Resets internal tracking to start fresh measurements.
  */
 export function initCpuTimes() {
   lastCpuTimes = null;
 }
 
 /**
- * Collect CPU metrics with delta-based calculation
- * @returns {Object} CPU usage percentage
+ * Collect CPU metrics with delta-based calculation.
+ * Calculates CPU usage by comparing current and previous CPU times.
+ * @returns {number} CPU usage percentage (0-100)
  */
 export function collectCpuMetrics() {
   const cpus = os.cpus();
@@ -53,8 +55,8 @@ export function collectCpuMetrics() {
 }
 
 /**
- * Collect memory and swap metrics
- * @returns {Object} Memory usage data
+ * Collect memory and swap metrics from system information.
+ * @returns {Object} Memory usage data with memoryUsedPercent and swapUsedPercent
  */
 export async function collectMemoryMetrics() {
   try {
@@ -77,7 +79,7 @@ export async function collectMemoryMetrics() {
 }
 
 /**
- * Collect disk usage metrics
+ * Collect disk usage metrics for the root filesystem.
  * @returns {Object} Disk usage percentage
  */
 export async function collectDiskMetrics() {
@@ -96,7 +98,8 @@ export async function collectDiskMetrics() {
 }
 
 /**
- * Get current metrics call count and increment
+ * Get current metrics call count and increment.
+ * Used for periodic task scheduling (e.g., prune old metrics).
  * @returns {number} Current count after increment
  */
 export function getMetricsCallCount() {
@@ -108,7 +111,7 @@ export function getMetricsCallCount() {
 }
 
 /**
- * Reset metrics call count
+ * Reset metrics call count to zero.
  */
 export function resetMetricsCallCount() {
   metricsCallCount = 0;

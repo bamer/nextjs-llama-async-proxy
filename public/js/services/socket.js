@@ -35,6 +35,16 @@ class SocketClient {
     });
   }
 
+  /**
+   * Establish connection to Socket.IO server
+   * Dynamically loads Socket.IO client script if needed
+   * @returns {SocketClient} The instance for chaining
+   */
+  /**
+   * Establish connection to Socket.IO server
+   * Dynamically loads Socket.IO client script if needed
+   * @returns {SocketClient} The instance for chaining
+   */
   connect() {
     if (this.socket?.connected) return this;
 
@@ -101,6 +111,10 @@ class SocketClient {
     return this;
   }
 
+  /**
+   * Disconnect from Socket.IO server
+   * @returns {SocketClient} The instance for chaining
+   */
   disconnect() {
     if (this.socket) {
       this.socket.disconnect();
@@ -109,6 +123,12 @@ class SocketClient {
     return this;
   }
 
+  /**
+   * Emit an event to the server
+   * @param {string} event - Event name to emit
+   * @param {Object} data - Data to send with the event
+   * @returns {SocketClient} The instance for chaining
+   */
   emit(event, data = {}) {
     if (this.socket?.connected) {
       this.socket.emit(event, data);
@@ -116,6 +136,12 @@ class SocketClient {
     return this;
   }
 
+  /**
+   * Register an event handler
+   * @param {string} event - Event name to listen for
+   * @param {Function} handler - Callback function to execute when event is received
+   * @returns {SocketClient} The instance for chaining
+   */
   on(event, handler) {
     if (!this.handlers.has(event)) this.handlers.set(event, new Set());
     this.handlers.get(event).add(handler);

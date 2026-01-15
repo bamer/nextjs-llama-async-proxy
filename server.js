@@ -39,7 +39,10 @@ const PORT = 3000;
 // Export for testing
 export { startMetricsCollection, setupGracefulShutdown, main };
 
-// Main entry point
+/**
+ * Main server entry point that initializes all components.
+ * @returns {Promise<void>} Resolves when server is fully initialized
+ */
 async function main() {
   const dataDir = path.join(process.cwd(), "data");
   if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });

@@ -47,6 +47,10 @@ class ModelDefaultsForm extends Component {
     });
   }
 
+  /**
+   * Update the UI elements to match current component state.
+   * @returns {void}
+   */
   _updateUI() {
     if (!this._el) return;
 

@@ -40,6 +40,11 @@ class ModelsPage extends Component {
     ]);
   }
 
+  /**
+   * Render the table component for displaying models.
+   * @param {Array} models - Array of model objects to display
+   * @returns {HTMLElement} Table component element
+   */
   _renderTableComponent(models) {
     if (models.length === 0) {
       return Component.h("div", { className: "empty-state" }, "No models found");
@@ -96,11 +101,21 @@ class ModelsPage extends Component {
     return buttons;
   }
 
+  /**
+   * Format context size value for display (e.g., 4096 -> "4k").
+   * @param {number} v - Context size value
+   * @returns {string} Formatted context size string
+   */
   _fmtCtx(v) {
     if (!v || v === 0) return "-";
     return v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v);
   }
 
+  /**
+   * Format bytes value to human readable size (e.g., 1024 -> "1.0 KB").
+   * @param {number} bytes - Size in bytes
+   * @returns {string} Formatted size string with unit
+   */
   _fileSize(bytes) {
     if (!bytes) return "-";
     const units = ["B", "KB", "MB", "GB", "TB"];
@@ -113,6 +128,10 @@ class ModelsPage extends Component {
     return `${size.toFixed(1)} ${units[unitIndex]}`;
   }
 
+  /**
+   * Get filtered and sorted list of models based on current filter settings.
+   * @returns {Array} Filtered and sorted array of model objects
+   */
   _getFiltered() {
     let ms = this.models || [];
     if (this.filters.status !== "all") ms = ms.filter((m) => m.status === this.filters.status);
@@ -138,6 +157,10 @@ class ModelsPage extends Component {
     this.on("click", "[data-action=unload]", (e) => this._unloadModel(e.target.dataset.name));
   }
 
+  /**
+   * Update the table UI with current filtered models.
+   * @returns {void}
+   */
   _updateTable() {
     const filtered = this._getFiltered();
     const container = this.$(".models-table-container");
@@ -149,6 +172,10 @@ class ModelsPage extends Component {
     }
   }
 
+  /**
+   * Refresh models data by fetching latest router status and model states.
+   * @returns {Promise<void>} Promise that resolves when refresh is complete
+   */
   async _refresh() {
     try {
       const rs = await stateManager.getRouterStatus();
@@ -170,6 +197,11 @@ class ModelsPage extends Component {
     }
   }
 
+  /**
+   * Load a model by name via stateManager.
+   * @param {string} name - Name of the model to load
+   * @returns {Promise<void>} Promise that resolves when model is loaded
+   */
   async _loadModel(name) {
     try {
       await stateManager.loadModel(name);
@@ -180,6 +212,11 @@ class ModelsPage extends Component {
     }
   }
 
+  /**
+   * Unload a model by name via stateManager.
+   * @param {string} name - Name of the model to unload
+   * @returns {Promise<void>} Promise that resolves when model is unloaded
+   */
   async _unloadModel(name) {
     try {
       await stateManager.unloadModel(name);
@@ -190,6 +227,10 @@ class ModelsPage extends Component {
     }
   }
 
+  /**
+   * Scan filesystem for models and update model list.
+   * @returns {Promise<void>} Promise that resolves when scan is complete
+   */
   async _scan() {
     showNotification("Scanning...", "info");
     try {
@@ -204,6 +245,10 @@ class ModelsPage extends Component {
     }
   }
 
+  /**
+   * Cleanup invalid or duplicate models from the database.
+   * @returns {Promise<void>} Promise that resolves when cleanup is complete
+   */
   async _cleanup() {
     showNotification("Cleaning...", "info");
     try {

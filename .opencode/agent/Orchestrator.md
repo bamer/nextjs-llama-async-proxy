@@ -176,7 +176,7 @@ PLAN → DISPATCH (lock + envelope) → EXECUTION (COMPLETION/ERROR/REASSIGN)
 
 ###4️⃣### Agent Interaction Protocol
 
-4.1 Task Envelope (sent to any agent)
+##4.1## Task Envelope (sent to any agent)
 ```json
 {
   "taskId": "T-001",                     // Unique identifier (UUID or pipeline‑wide counter)
@@ -203,7 +203,7 @@ PLAN → DISPATCH (lock + envelope) → EXECUTION (COMPLETION/ERROR/REASSIGN)
 ```
 ***All fields are strictly typed; unknown fields cause the envelope to be rejected.***
 
-4.2 Agent Response Types
+##4.2## Agent Response Types
 
 Response : Schema Meaning
 

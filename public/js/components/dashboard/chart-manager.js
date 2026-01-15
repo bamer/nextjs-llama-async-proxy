@@ -68,16 +68,16 @@ if (typeof ChartManager === "undefined") {
     }
 
     /**
-     * Set the current chart type (usage or memory)
-     * @param {string} type - The chart type to set
+     * Set the current chart type (usage or memory).
+     * @param {string} type - The chart type to set.
      */
     setChartType(type) {
       this.state.chartType = type;
     }
 
     /**
-     * Get the current chart type
-     * @returns {string} The current chart type
+     * Get the current chart type.
+     * @returns {string} The current chart type.
      */
     getChartType() {
       return this.state.chartType;
@@ -100,28 +100,28 @@ if (typeof ChartManager === "undefined") {
     }
 
     /**
-     * Create usage chart (CPU + GPU)
-     * @param {HTMLCanvasElement} canvas - The canvas element
-     * @param {Array} history - Historical metrics data
+     * Create usage chart (CPU + GPU).
+     * @param {HTMLCanvasElement} canvas - The canvas element.
+     * @param {Array} history - Historical metrics data.
      */
     createUsageChart(canvas, history = []) {
       this.usageChart.create(canvas, history);
     }
 
     /**
-     * Create memory chart (System + GPU memory)
-     * @param {HTMLCanvasElement} canvas - The canvas element
-     * @param {Array} history - Historical metrics data
+     * Create memory chart (System + GPU memory).
+     * @param {HTMLCanvasElement} canvas - The canvas element.
+     * @param {Array} history - Historical metrics data.
      */
     createMemoryChart(canvas, history = []) {
       this.memoryChart.create(canvas, history);
     }
 
     /**
-      * Update charts with new metrics data
-      * @param {Object} metrics - Current metrics data
-      * @param {Array} history - Historical metrics data
-      */
+     * Update charts with new metrics data.
+     * @param {Object} metrics - Current metrics data.
+     * @param {Array} history - Historical metrics data.
+     */
     updateCharts(metrics, history) {
       if (!history) return;
 
@@ -148,7 +148,7 @@ if (typeof ChartManager === "undefined") {
     }
 
     /**
-     * Destroy all chart instances
+     * Destroy all chart instances and clean up observers.
      */
     destroy() {
       if (this.themeObserver) {

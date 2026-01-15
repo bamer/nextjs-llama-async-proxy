@@ -679,7 +679,8 @@ const PARAMETER_CATEGORIES = {
 };
 
 /**
- * Flatten all parameters into a single object
+ * Flatten all parameters into a single object indexed by parameter ID.
+ * @returns {Object} Map of parameter ID to parameter config with category info.
  */
 function getAllParameters() {
   const all = {};
@@ -696,7 +697,9 @@ function getAllParameters() {
 }
 
 /**
- * Get parameters for specific categories
+ * Get parameters filtered to specific categories.
+ * @param {Array} categoryIds - Array of category IDs to include.
+ * @returns {Object} Map of parameter ID to parameter config.
  */
 function getParametersForCategories(categoryIds) {
   const all = getAllParameters();
@@ -712,21 +715,26 @@ function getParametersForCategories(categoryIds) {
 }
 
 /**
- * Get category info by ID
+ * Get category information by ID.
+ * @param {string} categoryId - The category identifier.
+ * @returns {Object|null} The category info object or null if not found.
  */
 function getCategoryInfo(categoryId) {
   return PARAMETER_CATEGORIES[categoryId] || null;
 }
 
 /**
- * Get all category IDs
+ * Get all category IDs.
+ * @returns {Array} Array of category identifiers.
  */
 function getCategoryIds() {
   return Object.keys(PARAMETER_CATEGORIES);
 }
 
 /**
- * Get default value for a parameter
+ * Get the default value for a specific parameter.
+ * @param {string} paramId - The parameter identifier.
+ * @returns {*} The default value or null if not found.
  */
 function getDefaultValue(paramId) {
   const all = getAllParameters();
@@ -736,7 +744,9 @@ function getDefaultValue(paramId) {
 }
 
 /**
- * Build CLI args from config object
+ * Build CLI arguments array from configuration object.
+ * @param {Object} config - Configuration object with parameter values.
+ * @returns {Array} Array of CLI argument strings.
  */
 function buildCliArgs(config) {
   const all = getAllParameters();

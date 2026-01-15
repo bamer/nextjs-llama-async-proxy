@@ -1,9 +1,7 @@
 /**
- * File Logger
- * Logs to files in logs/ directory with daily rotation
- * Integrates with Socket.IO and database
+ * File Logger class that logs to files in logs/ directory with daily rotation.
+ * Integrates with Socket.IO for real-time broadcasting and database for persistence.
  */
-
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -12,6 +10,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 class FileLogger {
+  /**
+   * Create a new FileLogger instance.
+   * @param {string|null} logsDir - Custom logs directory path.
+   */
   constructor(logsDir = null) {
     this.io = null;
     this.db = null;
@@ -27,16 +29,26 @@ class FileLogger {
     }
   }
 
+  /**
+   * Set the Socket.IO instance for broadcasting logs.
+   * @param {Object} io - Socket.IO server instance.
+   */
   setIo(io) {
     this.io = io;
   }
 
+  /**
+   * Set the database instance for log persistence.
+   * @param {Object} db - Database instance.
+   */
   setDb(db) {
     this.db = db;
   }
 
   /**
-   * Get today's log filename
+   * Get today's log filename.
+   * @param {Date} date - Date to generate filename for.
+   * @returns {string} Log filename in format app-YYYYMMDD.log.
    */
   getLogFileName(date = new Date()) {
     const year = date.getFullYear();
@@ -46,14 +58,18 @@ class FileLogger {
   }
 
   /**
-   * Get current log file path
+   * Get the full path to the current log file.
+   * @returns {string} Absolute path to log file.
    */
   getLogFilePath() {
     return path.join(this.logsDir, this.getLogFileName());
   }
 
   /**
-   * Write to log file
+   * Write a log entry to the log file.
+   * @param {string} level - Log level.
+   * @param {string} msg - Message to write.
+   * @param {string} source - Source identifier.
    */
   writeToFile(level, msg, source) {
     try {
@@ -69,8 +85,11 @@ class FileLogger {
   }
 
   /**
-   * Log a message at the specified level
-   * Respects current log level threshold
+   * Log a message at the specified level.
+   * Respects current log level threshold for filtering.
+   * @param {string} level - Log level (error, warn, info, debug).
+   * @param {string} msg - Message to log.
+   * @param {string} source - Source identifier for the log.
    */
   log(level, msg, source = "server") {
     // Check if this log level should be logged
@@ -112,18 +131,38 @@ class FileLogger {
     console.log(`[${ts}] [${level.toUpperCase()}] [${source}] ${msg}`);
   }
 
+  /**
+   * Log an info message.
+   * @param {string} msg - Message to log.
+   * @param {string} source - Source identifier for the log.
+   */
   info(msg, source = "server") {
     this.log("info", msg, source);
   }
 
+  /**
+   * Log an error message.
+   * @param {string} msg - Message to log.
+   * @param {string} source - Source identifier for the log.
+   */
   error(msg, source = "server") {
     this.log("error", msg, source);
   }
 
+  /**
+   * Log a warning message.
+   * @param {string} msg - Message to log.
+   * @param {string} source - Source identifier for the log.
+   */
   warn(msg, source = "server") {
     this.log("warn", msg, source);
   }
 
+  /**
+   * Log a debug message.
+   * @param {string} msg - Message to log.
+   * @param {string} source - Source identifier for the log.
+   */
   debug(msg, source = "server") {
     if (this.logLevels[this.logLevel] >= this.logLevels.debug) {
       this.log("debug", msg, source);
@@ -131,7 +170,9 @@ class FileLogger {
   }
 
   /**
-   * Read logs from file
+   * Read logs from a file.
+   * @param {string|null} fileName - Name of the log file to read.
+   * @returns {Array<Object>} Array of parsed log entries.
    */
   readLogFile(fileName = null) {
     try {
@@ -168,7 +209,8 @@ class FileLogger {
   }
 
   /**
-   * List all log files
+   * List all log files in the logs directory.
+   * @returns {Array<string>} Array of log filenames sorted by name.
    */
   listLogFiles() {
     try {
@@ -188,7 +230,8 @@ class FileLogger {
   }
 
   /**
-   * Clear all log files
+   * Clear all log files from the logs directory.
+   * @returns {number} Number of files deleted.
    */
   clearLogFiles() {
     try {
@@ -210,7 +253,8 @@ class FileLogger {
   }
 
   /**
-   * Get size of logs directory
+   * Get the total size of all log files in the directory.
+   * @returns {number} Total size in bytes.
    */
   getLogsDirectorySize() {
     try {

@@ -7,11 +7,13 @@
 import fs from "fs";
 
 /**
- * Auto-start llama-server if enabled in config
+ * Auto-start llama-server if enabled in config.
+ * Checks configuration and starts the llama-server router when conditions are met.
  * @param {Object} options - Startup options
  * @param {Object} options.db - Database instance
  * @param {Function} options.startLlamaServerRouter - Router starter function
  * @param {Function} options.initializeLlamaMetrics - Metrics scraper initializer
+ * @returns {Promise<Object|null>} Result object with port on success, null on failure/skip
  */
 export async function autoStartLlamaServer({ db, startLlamaServerRouter, initializeLlamaMetrics }) {
   const config = db.getConfig();

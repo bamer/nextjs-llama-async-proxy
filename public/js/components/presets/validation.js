@@ -148,7 +148,11 @@ const ValidationRules = {
 };
 
 /**
- * Validate a single value against parameter rules
+ * Validate a single value against parameter rules.
+ * @param {string} paramId - The parameter identifier.
+ * @param {*} value - The value to validate.
+ * @param {Object} paramConfig - The parameter configuration object.
+ * @returns {Object} Validation result with valid, errors, and warnings.
  */
 function validateValue(paramId, value, paramConfig) {
   const errors = [];
@@ -227,7 +231,10 @@ function validateValue(paramId, value, paramConfig) {
 }
 
 /**
- * Validate multiple values
+ * Validate multiple values against their parameter definitions.
+ * @param {Object} config - Configuration object with parameter values.
+ * @param {Object} parameters - Map of parameter ID to parameter config.
+ * @returns {Object} Validation result with valid, errors, and warnings.
  */
 function validateAll(config, parameters) {
   const allParams = window.getAllParameters();
@@ -255,7 +262,10 @@ function validateAll(config, parameters) {
 }
 
 /**
- * Validate a single parameter by ID
+ * Validate a single parameter by ID using the global parameter registry.
+ * @param {string} paramId - The parameter identifier.
+ * @param {*} value - The value to validate.
+ * @returns {Object} Validation result with valid, errors, and warnings.
  */
 function validateParameter(paramId, value) {
   const allParams = window.getAllParameters();
@@ -273,7 +283,10 @@ function validateParameter(paramId, value) {
 }
 
 /**
- * Check if a value has changed from default
+ * Check if a value has changed from its default.
+ * @param {*} value - The current value.
+ * @param {*} defaultValue - The default value to compare against.
+ * @returns {boolean} True if the value has changed.
  */
 function hasChanged(value, defaultValue) {
   if (Array.isArray(value) && Array.isArray(defaultValue)) {
@@ -284,7 +297,11 @@ function hasChanged(value, defaultValue) {
 }
 
 /**
- * Debounce validation for real-time feedback
+ * Debounce validation for real-time feedback.
+ * @param {string} paramId - The parameter identifier.
+ * @param {*} value - The value to validate.
+ * @param {number} delay - Delay in milliseconds before validation runs.
+ * @returns {Promise<Object>} Promise that resolves with validation result.
  */
 function debouncedValidate(paramId, value, delay = 300) {
   return new Promise((resolve) => {
@@ -296,7 +313,9 @@ function debouncedValidate(paramId, value, delay = 300) {
 }
 
 /**
- * Get validation status for display
+ * Get validation status for display purposes.
+ * @param {Object} validation - The validation result object.
+ * @returns {string} Status string: "idle", "error", "warning", or "valid".
  */
 function getValidationStatus(validation) {
   if (!validation) return "idle";
@@ -306,7 +325,9 @@ function getValidationStatus(validation) {
 }
 
 /**
- * Format validation message for display
+ * Format validation message for display in UI.
+ * @param {Object} validation - The validation result object.
+ * @returns {string} Formatted message string or empty string if valid.
  */
 function formatValidationMessage(validation) {
   if (!validation || validation.valid) return "";
@@ -315,7 +336,9 @@ function formatValidationMessage(validation) {
 }
 
 /**
- * Create validation summary
+ * Create a validation summary from validation results.
+ * @param {Object} validationResult - The validation result with errors and warnings.
+ * @returns {Object} Summary with counts and field lists for errors and warnings.
  */
 function createValidationSummary(validationResult) {
   const summary = {

@@ -3,6 +3,9 @@
  */
 /* global performance */
 class PerformanceMonitor {
+  /**
+   * Create a new PerformanceMonitor instance.
+   */
   constructor() {
     this.metrics = {
       frameTimes: [],
@@ -19,7 +22,7 @@ class PerformanceMonitor {
   }
 
   /**
-   * Start performance monitoring
+   * Start performance monitoring.
    */
   start() {
     if (this.isMonitoring) return;
@@ -44,7 +47,7 @@ class PerformanceMonitor {
   }
 
   /**
-   * Stop performance monitoring
+   * Stop performance monitoring.
    */
   stop() {
     this.isMonitoring = false;
@@ -52,7 +55,8 @@ class PerformanceMonitor {
   }
 
   /**
-   * Monitor frame rate
+   * Monitor frame rate internally using requestAnimationFrame.
+   * @private
    */
   _monitorFrames() {
     if (!this.isMonitoring) return;
@@ -75,9 +79,9 @@ class PerformanceMonitor {
   }
 
   /**
-   * Track render time
+   * Track render time for a component.
    * @param {string} componentName - Component name
-   * @param {number} time - Render time in ms
+   * @param {number} time - Render time in milliseconds
    */
   trackRender(componentName, time) {
     if (!this.isMonitoring) return;
@@ -86,9 +90,9 @@ class PerformanceMonitor {
   }
 
   /**
-   * Track event handling time
+   * Track event handling time.
    * @param {string} eventName - Event name
-   * @param {number} time - Event handling time in ms
+   * @param {number} time - Event handling time in milliseconds
    */
   trackEvent(eventName, time) {
     if (!this.isMonitoring) return;
@@ -99,9 +103,9 @@ class PerformanceMonitor {
   }
 
   /**
-   * Track state update time
-   * @param {string} stateKey - State key
-   * @param {number} time - State update time in ms
+   * Track state update time.
+   * @param {string} stateKey - State key that was updated
+   * @param {number} time - State update time in milliseconds
    */
   trackStateUpdate(stateKey, time) {
     if (!this.isMonitoring) return;
@@ -112,7 +116,7 @@ class PerformanceMonitor {
   }
 
   /**
-   * Track memory usage
+   * Track current memory usage from browser API.
    */
   trackMemory() {
     if (!this.isMonitoring || !window.performance || !window.performance.memory) return;
@@ -126,7 +130,10 @@ class PerformanceMonitor {
   }
 
   /**
-   * Add metric to the appropriate array
+   * Add a metric value to the appropriate array (max 100 values).
+   * @param {string} type - Metric type (e.g., 'frameTimes', 'renderTimes')
+   * @param {*} value - Metric value to add
+   * @private
    */
   _addMetric(type, value) {
     this.metrics[type].push(value);
@@ -136,7 +143,8 @@ class PerformanceMonitor {
   }
 
   /**
-   * Get current performance metrics
+   * Get current performance metrics summary.
+   * @returns {object} Performance metrics object
    */
   getMetrics() {
     return {
@@ -150,7 +158,10 @@ class PerformanceMonitor {
   }
 
   /**
-   * Calculate average for a metric type
+   * Calculate average value for a metric type.
+   * @param {string} type - Metric type
+   * @returns {number} Average value
+   * @private
    */
   _calculateAverage(type) {
     if (this.metrics[type].length === 0) return 0;
@@ -159,7 +170,9 @@ class PerformanceMonitor {
   }
 
   /**
-   * Get current memory usage
+   * Get current memory usage from performance API.
+   * @returns {object|null} Memory object or null if unavailable
+   * @private
    */
   _getCurrentMemory() {
     if (!window.performance || !window.performance.memory) return null;
@@ -173,7 +186,7 @@ class PerformanceMonitor {
   }
 
   /**
-   * Log performance summary
+   * Log a formatted performance summary to console.
    */
   logSummary() {
     const metrics = this.getMetrics();

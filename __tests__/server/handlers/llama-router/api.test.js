@@ -249,10 +249,10 @@ describe("Llama Router API - llamaApiRequest", () => {
     });
 
     /**
-     * Objective: Verify timeout configuration is set to 30 seconds
-     * This test validates the timeout parameter is properly configured
+     * Objective: Verify timeout configuration is set to 5 seconds
+     * This test validates the timeout parameter is properly configured in request options
      */
-    test("should set 30 second timeout for requests", async () => {
+    test("should set 5 second timeout for requests", async () => {
       // Arrange
       const endpoint = "/models";
       const method = "GET";
@@ -267,8 +267,13 @@ describe("Llama Router API - llamaApiRequest", () => {
       // Act
       await llamaApiRequest(endpoint, method, null, llamaServerUrl);
 
-      // Assert
-      expect(mockRequestInstance.setTimeout).toHaveBeenCalledWith(30000, expect.any(Function));
+      // Assert - verify request was made with correct timeout
+      expect(mockRequest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          timeout: 5000,
+        }),
+        expect.any(Function)
+      );
     });
 
     /**
@@ -380,33 +385,28 @@ describe("Llama Router API - llamaApiRequest", () => {
 
     /**
      * Objective: Verify that request timeout is handled properly
-     * This test validates the 30-second timeout functionality
+     * This test validates the 5-second timeout functionality
      */
-    test("should handle request timeout after 30 seconds", async () => {
+    test("should handle request timeout after 5 seconds", async () => {
       // Arrange
       const endpoint = "/models";
       const method = "GET";
       const llamaServerUrl = "http://localhost:8080";
-      let timeoutCallback = null;
+      let timeoutHandler = null;
 
-      // Create a mock that triggers timeout
+      // Create a mock that triggers timeout event
       mockRequest.mockReset();
       mockRequest.mockImplementation(() => {
         const timeoutReq = {
           on: jest.fn((event, handler) => {
-            if (event === "error") {
-              // Don't call error handler for timeout
+            if (event === "timeout") {
+              timeoutHandler = handler;
             }
             return timeoutReq;
           }),
           write: jest.fn(),
           end: jest.fn(),
           destroy: jest.fn(),
-          setTimeout: jest.fn((timeout, callback) => {
-            if (timeout === 30000) {
-              timeoutCallback = callback;
-            }
-          }),
         };
         return timeoutReq;
       });
@@ -425,11 +425,11 @@ describe("Llama Router API - llamaApiRequest", () => {
       const promise = llamaApiRequest(endpoint, method, null, llamaServerUrl);
 
       // Trigger timeout
-      expect(timeoutCallback).not.toBeNull();
-      timeoutCallback();
+      expect(timeoutHandler).not.toBeNull();
+      timeoutHandler();
 
       // Assert
-      await expect(promise).rejects.toThrow("Request timeout");
+      await expect(promise).rejects.toThrow("Request timeout (5s)");
     });
 
     /**

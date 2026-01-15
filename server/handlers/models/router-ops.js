@@ -7,11 +7,14 @@ import { ok, err } from "../response.js";
 import { loadModel, unloadModel } from "../llama-router/index.js";
 
 /**
- * Register models router operations handlers
+ * Register models router operations handlers on the socket.
+ * @param {object} socket - Socket.IO socket instance.
+ * @param {object} io - Socket.IO server instance.
  */
 export function registerModelsRouterHandlers(socket, io) {
   /**
-   * Load a model
+   * Load a model via the llama.cpp router.
+   * @param {object} req - Request object containing modelName/modelId and optional requestId.
    */
   socket.on("models:load", (req) => {
     const id = req?.requestId || Date.now();
@@ -33,7 +36,8 @@ export function registerModelsRouterHandlers(socket, io) {
   });
 
   /**
-   * Unload a model
+   * Unload a model via the llama.cpp router.
+   * @param {object} req - Request object containing modelName/modelId and optional requestId.
    */
   socket.on("models:unload", (req) => {
     const id = req?.requestId || Date.now();

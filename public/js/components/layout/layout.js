@@ -4,6 +4,10 @@
  */
 
 class Layout extends Component {
+  /**
+   * Renders the main application layout with sidebar, header, and main content containers.
+   * @returns {string} HTML string representing the layout structure.
+   */
   render() {
     return `
       <div class="app-container" id="app-layout">
@@ -14,6 +18,10 @@ class Layout extends Component {
     `;
   }
 
+  /**
+   * Called after the component is mounted to the DOM.
+   * Initializes and mounts the Sidebar, Header, and MainContent components.
+   */
   onMount() {
     // Mount Sidebar
     const sidebarContainer = document.getElementById("sidebar-container");
@@ -40,6 +48,9 @@ class Layout extends Component {
     }
   }
 
+  /**
+   * Destroys all mounted child components to prevent memory leaks.
+   */
   destroy() {
     this._sidebar?.destroy();
     this._header?.destroy();

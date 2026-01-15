@@ -27,7 +27,7 @@ class StateSocket {
   }
 
   /**
-   * Initialize socket connection
+   * Initialize the socket connection and set up all handlers
    * @param {Object} socket - Socket.IO socket instance
    */
   init(socket) {
@@ -38,16 +38,16 @@ class StateSocket {
   }
 
   /**
-   * Check if connected
-   * @returns {boolean} Connection status
+   * Check if socket is currently connected
+   * @returns {boolean} True if connected to server
    */
   isConnected() {
     return this.connection.isConnected();
   }
 
   /**
-   * Add a model to state
-   * @param {Object} m - Model to add
+   * Add a new model to the models list in state
+   * @param {Object} m - Model object to add
    */
   _addModel(m) {
     const currentModels = this.core.get("models") || [];
@@ -55,8 +55,8 @@ class StateSocket {
   }
 
   /**
-   * Update model data
-   * @param {Object} m - Model with updates
+   * Update an existing model in the models list
+   * @param {Object} m - Model object with updated data (must include id)
    */
   _updateModelData(m) {
     const list = (this.core.get("models") || []).map((x) => (x.id === m.id ? m : x));
@@ -64,8 +64,8 @@ class StateSocket {
   }
 
   /**
-   * Remove a model from state
-   * @param {string} id - Model ID to remove
+   * Remove a model from the models list by ID
+   * @param {string} id - ID of the model to remove
    */
   _removeModel(id) {
     const list = (this.core.get("models") || []).filter((m) => m.id !== id);
@@ -73,7 +73,9 @@ class StateSocket {
   }
 
   /**
-   * Refresh models from server
+   * Refresh models list from server and update state
+   * @returns {Promise<void>}
+   * @throws {Error} If the request to server fails
    */
   async _refreshModels() {
     try {
@@ -85,8 +87,8 @@ class StateSocket {
   }
 
   /**
-   * Add metric to history
-   * @param {Object} m - Metric data
+   * Add a metric data point to the metrics history in state
+   * @param {Object} m - Metric data object to add
    */
   _addMetric(m) {
     const currentHistory = this.core.get("metricsHistory") || [];
@@ -109,8 +111,8 @@ class StateSocket {
   }
 
   /**
-   * Add log entry
-   * @param {Object} e - Log entry
+   * Add a log entry to the logs array in state
+   * @param {Object} e - Log entry object { level, message, source, timestamp }
    */
   _addLog(e) {
     const l = [e, ...(this.core.get("logs") || [])].slice(0, this.maxLogs);
@@ -118,10 +120,11 @@ class StateSocket {
   }
 
   /**
-   * Make an async request
-   * @param {string} event - Event name
-   * @param {Object} data - Request data
-   * @returns {Promise} Response promise
+   * Make an async request to the server with automatic reconnection handling
+   * @param {string} event - Event name to request
+   * @param {Object} [data={}] - Data payload to send
+   * @returns {Promise<Object>} Response data from server
+   * @throws {Error} If connection timeout or server error
    */
   request(event, data = {}) {
     return new Promise((resolve, reject) => {
@@ -143,11 +146,11 @@ class StateSocket {
   }
 
   /**
-   * Execute the actual request
+   * Execute the actual socket request with timeout handling
    * @param {string} event - Event name
-   * @param {Object} data - Request data
-   * @param {Function} resolve - Resolve callback
-   * @param {Function} reject - Reject callback
+   * @param {Object} data - Request data payload
+   * @param {Function} resolve - Promise resolve callback
+   * @param {Function} reject - Promise reject callback
    */
   _doRequest(event, data, resolve, reject) {
     const reqId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -176,7 +179,7 @@ class StateSocket {
   }
 
   /**
-   * Cleanup resources
+   * Clean up resources and disconnect handlers
    */
   destroy() {
     this.connection.destroy();

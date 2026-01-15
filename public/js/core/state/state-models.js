@@ -11,8 +11,12 @@ class StateModels {
   }
 
   /**
-   * Get cached value or fetch new data
+   * Get cached value or fetch new data using the cache service
    * @private
+   * @param {string} key - Cache key base
+   * @param {Function} fetchFn - Async function to fetch data if cache miss
+   * @param {...*} args - Additional arguments for cache key
+   * @returns {Promise<*>} Cached or fetched data
    */
   async _cachedRequest(key, fetchFn, ...args) {
     const cacheKey = CacheInstance.makeKey(key, ...args);
@@ -20,7 +24,7 @@ class StateModels {
   }
 
   /**
-   * Invalidate cache entries matching key pattern
+   * Invalidate cache entries matching a key pattern
    * @param {string} pattern - Key pattern to match (e.g., "getModels")
    */
   invalidateCache(pattern) {
@@ -35,10 +39,10 @@ class StateModels {
   }
 
   /**
-   * Update model with status
-   * @param {string} id - Model ID
-   * @param {string} status - New status
-   * @param {Object} model - Additional model data
+   * Update model with new status and optional additional data
+   * @param {string} id - Model ID to update
+   * @param {string} status - New status string
+   * @param {Object} [model] - Additional model data to merge
    */
   _updateModel(id, status, model) {
     const list = this.core.get("models") || [];
@@ -52,8 +56,8 @@ class StateModels {
   }
 
   /**
-   * Add a new model
-   * @param {Object} m - Model to add
+   * Add a new model to the models list
+   * @param {Object} m - Model object to add
    */
   _addModel(m) {
     const currentModels = this.core.get("models") || [];
@@ -61,8 +65,8 @@ class StateModels {
   }
 
   /**
-   * Update model data
-   * @param {Object} m - Model with updates
+   * Update an existing model in the list with new data
+   * @param {Object} m - Model object with updates (must include id)
    */
   _updateModelData(m) {
     const list = (this.core.get("models") || []).map((x) => (x.id === m.id ? m : x));
@@ -70,8 +74,8 @@ class StateModels {
   }
 
   /**
-   * Remove a model
-   * @param {string} id - Model ID to remove
+   * Remove a model from the list by ID
+   * @param {string} id - ID of model to remove
    */
   _removeModel(id) {
     const list = (this.core.get("models") || []).filter((m) => m.id !== id);
@@ -79,7 +83,9 @@ class StateModels {
   }
 
   /**
-   * Refresh models from server
+   * Refresh models list from server and update state
+   * @returns {Promise<Object>} Server response with models data
+   * @throws {Error} If the request fails
    */
   async refreshModels() {
     try {

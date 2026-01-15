@@ -82,6 +82,15 @@ class ToastNotification {
     return div.innerHTML;
   }
 
+  /**
+   * Displays a toast notification with the specified message and type.
+   * @param {string} message - The main message to display.
+   * @param {string} [type="info"] - The notification type: success, error, warning, or info.
+   * @param {Object} [options={}] - Additional options for the toast.
+   * @param {string} [options.description] - Optional description text.
+   * @param {number|false} [options.timeout] - Auto-dismiss timeout in ms or false to disable.
+   * @returns {string} The unique toast ID for programmatic dismissal.
+   */
   show(message, type = "info", options = {}) {
     const toast = this._createToastElement(message, type, options);
     this.container.appendChild(toast);
@@ -117,22 +126,51 @@ class ToastNotification {
     return toastId;
   }
 
+  /**
+   * Displays a success toast notification with a checkmark icon.
+   * @param {string} message - The success message to display.
+   * @param {Object} [options={}] - Additional options for the toast.
+   * @returns {string} The unique toast ID for programmatic dismissal.
+   */
   success(message, options = {}) {
     return this.show(message, "success", options);
   }
 
+  /**
+   * Displays an error toast notification with an X icon.
+   * @param {string} message - The error message to display.
+   * @param {Object} [options={}] - Additional options for the toast.
+   * @returns {string} The unique toast ID for programmatic dismissal.
+   */
   error(message, options = {}) {
     return this.show(message, "error", options);
   }
 
+  /**
+   * Displays a warning toast notification with an exclamation icon.
+   * @param {string} message - The warning message to display.
+   * @param {Object} [options={}] - Additional options for the toast.
+   * @returns {string} The unique toast ID for programmatic dismissal.
+   */
   warning(message, options = {}) {
     return this.show(message, "warning", options);
   }
 
+  /**
+   * Displays an info toast notification with an i icon.
+   * @param {string} message - The info message to display.
+   * @param {Object} [options={}] - Additional options for the toast.
+   * @returns {string} The unique toast ID for programmatic dismissal.
+   */
   info(message, options = {}) {
     return this.show(message, "info", options);
   }
 
+  /**
+   * Dismisses a specific toast notification by ID.
+   * @param {string} toastId - The unique ID of the toast to dismiss.
+   * @returns {void}
+   */
   dismiss(toastId) {
     const data = this.toasts.get(toastId);
     if (!data) return;

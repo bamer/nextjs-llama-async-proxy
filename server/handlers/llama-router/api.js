@@ -6,7 +6,14 @@
 import http from "http";
 
 /**
- * Make HTTP request to llama-server API
+ * Make HTTP request to llama-server API.
+ * Sends an HTTP request to the llama-server and returns the parsed response.
+ * @param {string} endpoint - API endpoint path (e.g., "/models", "/models/load").
+ * @param {string} [method="GET"] - HTTP method (GET, POST, DELETE, etc.).
+ * @param {Object|null} [body=null] - Request body for POST/PUT requests.
+ * @param {string} llamaServerUrl - Base URL of the llama-server.
+ * @returns {Promise<Object|string>} Parsed JSON response or raw string response.
+ * @throws {Error} If llama-server is not running or request fails.
  */
 export async function llamaApiRequest(endpoint, method = "GET", body = null, llamaServerUrl) {
   if (!llamaServerUrl) {

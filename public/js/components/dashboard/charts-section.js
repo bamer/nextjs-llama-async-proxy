@@ -13,6 +13,9 @@ class ChartsSection extends Component {
     this.chartManager = props.chartManager || null;
   }
 
+  /**
+   * Called after component is mounted to DOM. Initializes chart subscriptions and charts.
+   */
   onMount() {
     console.log("[CHARTS-SECTION] onMount called");
     // Subscribe to metrics history updates
@@ -32,6 +35,9 @@ class ChartsSection extends Component {
     });
   }
 
+  /**
+   * Clean up subscriptions and event listeners.
+   */
   destroy() {
     if (this._historyUnsub) {
       this._historyUnsub();
@@ -39,6 +45,9 @@ class ChartsSection extends Component {
     super.destroy();
   }
 
+  /**
+   * Bind event listeners for chart tab interactions.
+   */
   bindEvents() {
     // Chart tab clicks
     this.on("click", "[data-chart]", (e) => {
@@ -235,6 +244,10 @@ class ChartsSection extends Component {
     }
   }
 
+  /**
+   * Handle chart tab click events to switch between usage and memory charts.
+   * @param {Event} event - The click event.
+   */
   handleChartTab(event) {
     const tab = event.target.closest("[data-chart]");
     if (!tab) return;
@@ -262,6 +275,10 @@ class ChartsSection extends Component {
     }
   }
 
+  /**
+   * Render the charts section component.
+   * @returns {HTMLElement} The rendered component element.
+   */
   render() {
     const chartType = this.getChartType();
     const hasData = this.history.length > 0;

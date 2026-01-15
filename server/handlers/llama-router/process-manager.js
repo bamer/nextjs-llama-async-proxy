@@ -1,11 +1,21 @@
 /**
- * Process Manager for llama-server
- * Handles spawning, monitoring, and cleanup of llama-server child process
+ * Process Manager for llama-server.
+ * Handles spawning, monitoring, and cleanup of llama-server child process.
+ * @class
  */
-
-import { spawn } from "child_process";
-
 export class LlamaServerProcessManager {
+  /**
+   * Create a new LlamaServerProcessManager.
+   * @param {Object} config - Configuration object for the process manager.
+   * @param {string} [config.baseModelsPath] - Base path for models directory.
+   * @param {number} [config.port=8080] - Port number for the server.
+   * @param {string} [config.host="0.0.0.0"] - Host address to bind to.
+   * @param {number} [config.modelsMax=4] - Maximum number of models to load.
+   * @param {number} [config.ctxSize] - Context size for inference.
+   * @param {number} [config.batchSize] - Batch size for inference.
+   * @param {number} [config.threads] - Number of threads to use.
+   * @param {number} [config.ngl] - Number of GPU layers to offload.
+   */
   constructor(config) {
     this.config = config;
     this.process = null;
@@ -74,7 +84,8 @@ export class LlamaServerProcessManager {
   }
 
   /**
-   * Stop llama-server process
+   * Stop llama-server process.
+   * Attempts graceful shutdown with SIGTERM, then force kills with SIGKILL if needed.
    */
   async stop() {
     if (!this.isRunning) {
@@ -101,7 +112,8 @@ export class LlamaServerProcessManager {
   }
 
   /**
-   * Check if process is running
+   * Check if process is running and get status information.
+   * @returns {Object} Status object with isRunning, pid, uptime, and metrics.
    */
   getStatus() {
     return {
@@ -149,7 +161,9 @@ export class LlamaServerProcessManager {
   }
 
   /**
-   * Parse output for metrics and logs
+   * Parse output for metrics and logs.
+   * @param {string} line - Output line from the process.
+   * @param {string} source - Source stream ("stdout" or "stderr").
    */
   _parseOutput(line, source) {
     // Store for log pages
@@ -173,7 +187,9 @@ export class LlamaServerProcessManager {
   }
 
   /**
-   * Attempt to parse metrics from output lines
+   * Attempt to parse metrics from output lines.
+   * This is implementation-dependent based on actual llama-server output format.
+   * @param {string} line - Output line to parse for metrics.
    */
   _tryParseMetrics(line) {
     // This is implementation-dependent based on actual llama-server output format
@@ -181,7 +197,8 @@ export class LlamaServerProcessManager {
   }
 
   /**
-   * Cleanup resources
+   * Cleanup resources when process stops.
+   * Destroys stdout and stderr streams to free resources.
    */
   _cleanup() {
     if (this.process) {

@@ -32,6 +32,10 @@ class ModalDialog {
     this._bindEvents();
   }
 
+  /**
+   * Binds event handlers for close button, overlay click, and keyboard navigation.
+   * @returns {void}
+   */
   _bindEvents() {
     const overlay = this._modalElement;
     if (overlay.querySelector(".modal__close")) {
@@ -89,6 +93,11 @@ class ModalDialog {
     }
   }
 
+  /**
+   * Opens the modal dialog and displays it on screen.
+   * Adds modal element to DOM, traps focus, and prevents body scroll.
+   * @returns {void}
+   */
   open() {
     if (this._isOpen) return;
     this._previousActiveElement = document.activeElement;
@@ -103,6 +112,11 @@ class ModalDialog {
     });
   }
 
+  /**
+   * Closes the modal dialog and removes it from DOM.
+   * Restores body scroll and returns focus to previous element.
+   * @returns {void}
+   */
   close() {
     if (!this._isOpen) return;
     this._modalElement.classList.remove("modal-overlay--visible");
@@ -135,6 +149,10 @@ class ModalDialog {
     }
   }
 
+  /**
+   * Returns the modal DOM element for rendering.
+   * @returns {HTMLElement} The modal container element.
+   */
   render() {
     return this._modalElement;
   }

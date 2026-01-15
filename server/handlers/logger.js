@@ -1,47 +1,88 @@
 /**
- * Logger
- * Socket.IO-aware logger that integrates with file logging
+ * Socket.IO-aware Logger class that integrates with file logging.
+ * Provides methods for logging at different levels and broadcasting to clients.
  */
-
 import { fileLogger } from "./file-logger.js";
 
 class Logger {
+  /**
+   * Create a new Logger instance.
+   */
   constructor() {
     this.io = null;
   }
 
+  /**
+   * Set the Socket.IO instance for broadcasting logs.
+   * @param {Object} io - Socket.IO server instance.
+   */
   setIo(io) {
     this.io = io;
     fileLogger.setIo(io);
   }
 
+  /**
+   * Set the database instance for log persistence.
+   * @param {Object} db - Database instance.
+   */
   setDb(db) {
     fileLogger.setDb(db);
   }
 
+  /**
+   * Log a message at the specified level.
+   * @param {string} level - Log level (error, warn, info, debug).
+   * @param {string} msg - Message to log.
+   * @param {string} source - Source identifier for the log.
+   */
   log(level, msg, source = "server") {
     fileLogger.log(level, msg, source);
   }
 
+  /**
+ * Log an info message.
+ * @param {string} msg - Message to log.
+ * @param {string} source - Source identifier for the log.
+ */
   info(msg, source = "server") {
-    fileLogger.info(msg, source);
+    this.log("info", msg, source);
   }
 
+  /**
+   * Log an error message.
+   * @param {string} msg - Message to log.
+   * @param {string} source - Source identifier for the log.
+   */
   error(msg, source = "server") {
-    fileLogger.error(msg, source);
+    this.log("error", msg, source);
   }
 
+  /**
+   * Log a warning message.
+   * @param {string} msg - Message to log.
+   * @param {string} source - Source identifier for the log.
+   */
   warn(msg, source = "server") {
-    fileLogger.warn(msg, source);
+    this.log("warn", msg, source);
   }
 
+  /**
+   * Log a debug message.
+   * @param {string} msg - Message to log.
+   * @param {string} source - Source identifier for the log.
+   */
   debug(msg, source = "server") {
-    fileLogger.debug(msg, source);
+    this.log("debug", msg, source);
   }
 }
 
 const logger = new Logger();
 
+/**
+ * Register Socket.IO handlers for client log submissions.
+ * @param {Object} socket - Socket.IO socket instance.
+ * @param {Object} loggerInstance - Logger instance to use.
+ */
 function registerLoggerHandlers(socket, loggerInstance) {
   socket.on("logs:add", (req) => {
     const { requestId: providedRequestId, data } = req || {};

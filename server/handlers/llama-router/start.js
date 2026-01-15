@@ -33,15 +33,18 @@ if (!fs.existsSync(LOGS_DIR)) {
 }
 
 /**
- * Set callback for server events (start, stop, error)
- * Called by handlers/llama.js when registering handlers
+ * Set callback for server events (start, stop, error).
+ * Called by handlers/llama.js when registering handlers.
+ * @param {Function} cb - Callback function to be called on server events.
  */
 export function setNotificationCallback(cb) {
   notificationCallback = cb;
 }
 
 /**
- * Notify clients about server events
+ * Notify clients about server events.
+ * @param {string} event - Event type (started, stopped, error, closed).
+ * @param {Object} data - Event data to send to clients.
  */
 function notifyServerEvent(event, data) {
   console.log(`[LLAMA-NOTIFY] ${event}:`, data);
@@ -51,7 +54,9 @@ function notifyServerEvent(event, data) {
 }
 
 /**
- * Initialize log file for llama-server output
+ * Initialize log file for llama-server output.
+ * Creates a log file in the logs directory for capturing server output.
+ * @returns {string} Path to the created log file.
  */
 function initLogFile() {
   const logFile = path.join(LOGS_DIR, "llama-server.log");
@@ -66,7 +71,9 @@ function initLogFile() {
 }
 
 /**
- * Write to log file
+ * Write a log entry to the log file and console.
+ * @param {string} level - Log level (INFO, ERROR, WARN, DEBUG).
+ * @param {string} message - Log message to write.
  */
 function writeLog(level, message) {
   const timestamp = new Date().toISOString();
@@ -85,7 +92,8 @@ function writeLog(level, message) {
 }
 
 /**
- * Close log file
+ * Close the log file gracefully.
+ * Writes a closing timestamp and ends the write stream.
  */
 function closeLogFile() {
   if (logWriteStream) {
@@ -96,9 +104,10 @@ function closeLogFile() {
 }
 
 /**
- * Cleanup function for llama-server process
- * Made module-level to avoid closure issues and ensure proper cleanup
- * Idempotent - safe to call multiple times
+ * Cleanup function for llama-server process.
+ * Made module-level to avoid closure issues and ensure proper cleanup.
+ * Idempotent - safe to call multiple times.
+ * Removes listeners, kills process, closes log file, and notifies clients.
  */
 function cleanupProcess() {
   console.log("[LLAMA] Cleaning up process...");
@@ -147,7 +156,8 @@ function cleanupProcess() {
 }
 
 /**
- * Handle process exit - register only once
+ * Handle process exit event.
+ * Triggers cleanup when process exits.
  */
 function handleProcessExit() {
   console.log("[LLAMA] Process exit detected, cleaning up");
@@ -181,8 +191,19 @@ export function getServerProcess() {
 }
 
 /**
- * Start llama-server in router mode
- * Can use either --models-dir (auto-discovery) or --models-preset (INI config file)
+ * Start llama-server in router mode.
+ * Can use either --models-dir (auto-discovery) or --models-preset (INI config file).
+ * Spawns the llama-server process and waits for it to be ready.
+ * @param {string} modelsDir - Path to models directory or preset INI file.
+ * @param {Object} db - Database object for config access.
+ * @param {Object} [options] - Startup options.
+ * @param {number} [options.maxModels=4] - Maximum number of models to load simultaneously.
+ * @param {number} [options.threads=4] - Number of threads for processing.
+ * @param {number} [options.ctxSize=4096] - Context size for model inference.
+ * @param {boolean} [options.noAutoLoad=false] - Disable automatic model loading.
+ * @param {boolean} [options.usePreset=false] - Force preset file mode.
+ * @returns {Promise<Object>} Result object with success status, port, url, and mode.
+ * @throws {Error} If llama-server binary is not found.
  */
 export async function startLlamaServerRouter(modelsDir, db, options = {}) {
   console.log("[LLAMA] === STARTING LLAMA-SERVER IN ROUTER MODE ===");

@@ -1,6 +1,10 @@
 import { cleanupMetrics } from "./metrics.js";
 
-// Graceful shutdown
+/**
+ * Setup graceful shutdown handlers for SIGTERM and SIGINT signals.
+ * Cleans up metrics collection and closes server gracefully.
+ * @param {Object} server - HTTP server instance
+ */
 export function setupGracefulShutdown(server) {
   const shutdown = (sig) => {
     console.log(`\n${sig} received, shutting down...`);

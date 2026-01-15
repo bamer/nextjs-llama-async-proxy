@@ -22,8 +22,9 @@ export {
 } from "./process.js";
 
 /**
- * Validation function to exercise all exports for coverage testing
- * This function calls each exported function to ensure code coverage
+ * Validate all exports from llama-router module for coverage testing.
+ * This function calls each exported function to ensure code coverage.
+ * @returns {Promise<Object>} Results object containing test results for each module.
  */
 export async function validateLlamaRouterExports() {
   // Import all functions to exercise them

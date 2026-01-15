@@ -25,7 +25,9 @@ import {
 const PRESETS_DIR = "config";
 
 /**
- * Register all presets handlers
+ * Register all Socket.IO event handlers for preset operations.
+ * @param {Object} socket - Socket.IO socket instance.
+ * @param {Object} db - Database instance.
  */
 export function registerPresetsHandlers(socket, db) {
   /**

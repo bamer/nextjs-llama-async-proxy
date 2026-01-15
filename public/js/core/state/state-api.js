@@ -11,8 +11,13 @@ class StateAPI {
   }
 
   /**
-   * Get cached value or fetch new data
+   * Get cached value or fetch new data using the cache service
    * @private
+   * @param {string} method - Method name for cache key
+   * @param {string} key - Cache key base
+   * @param {Function} fetchFn - Async function to fetch data if cache miss
+   * @param {...*} args - Additional arguments for cache key
+   * @returns {Promise<*>} Cached or fetched data
    */
   async _cachedRequest(method, key, fetchFn, ...args) {
     const cacheKey = CacheInstance.makeKey(key, ...args);
@@ -20,8 +25,8 @@ class StateAPI {
   }
 
   /**
-   * Invalidate cache entries matching key pattern
-   * @param {string} pattern - Key pattern to match (e.g., "getModels")
+   * Invalidate cache entries matching a key pattern
+   * @param {string} pattern - Key pattern to match (e.g., "getModels" matches all getModels variants)
    */
   invalidateCache(pattern) {
     const keysToDelete = [];

@@ -103,6 +103,10 @@ class LogsPage extends Component {
     });
   }
 
+  /**
+   * Get filtered logs based on current filter settings.
+   * @returns {Array} Filtered array of log entries
+   */
   _getFiltered() {
     let ls = [...(this.logs || [])];
 
@@ -118,6 +122,11 @@ class LogsPage extends Component {
     return ls;
   }
 
+  /**
+   * Format a timestamp to display time with milliseconds.
+   * @param {number} ts - Timestamp in seconds or milliseconds
+   * @returns {string} Formatted time string (HH:MM:SS.mmm)
+   */
   _time(ts) {
     if (!ts) return "--:--:--";
     const ms = ts < 1e11 ? ts * 1000 : ts;

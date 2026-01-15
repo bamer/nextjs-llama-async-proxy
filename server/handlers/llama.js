@@ -13,7 +13,11 @@ import {
 import path from "path";
 
 /**
- * Register llama router handlers
+ * Register all Socket.IO event handlers for llama router control.
+ * Handles server lifecycle, status queries, and configuration.
+ * @param {Object} io - Socket.IO server instance.
+ * @param {Object} db - Database instance.
+ * @param {Function} initializeLlamaMetrics - Function to initialize metrics collection.
  */
 export function registerLlamaHandlers(io, db, initializeLlamaMetrics) {
   // Set up notification callback to broadcast server events to all clients

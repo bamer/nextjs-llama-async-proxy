@@ -7,7 +7,11 @@
 // (Component class is already defined in component-base.js)
 
 /**
- * Create element using Component.h() syntax
+ * Create a virtual DOM element (JSX-like syntax).
+ * @param {string|function} tag - HTML tag name or Component class
+ * @param {object} attrs - Attributes and properties
+ * @param {...(string|Node|Component)} children - Child elements
+ * @returns {Node} Created DOM element
  */
 Component.h = function (tag, attrs = {}, ...children) {
   // Handle Component classes

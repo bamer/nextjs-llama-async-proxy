@@ -7,7 +7,9 @@ import { ok, err } from "./response.js";
 import { fileLogger } from "./file-logger.js";
 
 /**
- * Register config handlers
+ * Register all Socket.IO event handlers for configuration and settings.
+ * @param {Object} socket - Socket.IO socket instance.
+ * @param {Object} db - Database instance.
  */
 export function registerConfigHandlers(socket, db) {
   /**

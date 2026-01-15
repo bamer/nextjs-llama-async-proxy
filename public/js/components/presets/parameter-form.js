@@ -25,6 +25,10 @@ class ParameterForm extends Component {
     this._validationWarnings = {};
   }
 
+  /**
+   * Get the default expanded sections state.
+   * @returns {Object} Map of category ID to expanded boolean.
+   */
   getDefaultExpandedSections() {
     // Default: expand first section only
     const sections = {};
@@ -35,6 +39,9 @@ class ParameterForm extends Component {
     return sections;
   }
 
+  /**
+   * Bind event handlers for filtering, section toggling, apply, and reset actions.
+   */
   bindEvents() {
     // Filter input
     this.on("input", "[data-action=filter-params]", (e) => {
@@ -72,11 +79,19 @@ class ParameterForm extends Component {
     });
   }
 
+  /**
+   * Handle filter input change event.
+   * @param {Event} e - The input event object.
+   */
   handleFilterChange(e) {
     this.filter = e.target.value.toLowerCase().trim();
     this._updateFilterUI();
   }
 
+  /**
+   * Update the filter UI - show/hide categories and update count.
+   * @private
+   */
   _updateFilterUI() {
     // Update the count display
     const filteredCategories = this.filterCategories(this.filter);
@@ -111,6 +126,10 @@ class ParameterForm extends Component {
     }
   }
 
+  /**
+   * Handle section toggle button click.
+   * @param {Event} e - The click event object.
+   */
   handleSectionToggle(e) {
     const sectionEl = e.target.closest(".parameter-section");
     if (!sectionEl) return;
@@ -123,6 +142,11 @@ class ParameterForm extends Component {
     this._updateSectionUI(sectionId);
   }
 
+  /**
+   * Update the section UI for a specific section.
+   * @param {string} sectionId - The section/category ID.
+   * @private
+   */
   _updateSectionUI(sectionId) {
     const sectionEl = this.$(`.parameter-section[data-section-id="${sectionId}"]`);
     if (!sectionEl) return;
@@ -139,6 +163,9 @@ class ParameterForm extends Component {
     }
   }
 
+  /**
+   * Handle expand all sections action.
+   */
   handleExpandAll() {
     const categoryIds = window.getCategoryIds();
     categoryIds.forEach((catId) => {
@@ -147,6 +174,9 @@ class ParameterForm extends Component {
     this._updateAllSectionsUI();
   }
 
+  /**
+   * Handle collapse all sections action.
+   */
   handleCollapseAll() {
     const categoryIds = window.getCategoryIds();
     categoryIds.forEach((catId) => {
@@ -155,6 +185,10 @@ class ParameterForm extends Component {
     this._updateAllSectionsUI();
   }
 
+  /**
+   * Update all section UIs after expand/collapse all action.
+   * @private
+   */
   _updateAllSectionsUI() {
     const categoryIds = window.getCategoryIds();
     categoryIds.forEach((catId) => {
@@ -162,6 +196,10 @@ class ParameterForm extends Component {
     });
   }
 
+  /**
+   * Handle apply changes button click.
+   * Validates all parameters and emits change event if valid.
+   */
   handleApply() {
     // Final validation before apply
     const validation = window.validateAll(this.config, this._allParameters);
@@ -189,6 +227,9 @@ class ParameterForm extends Component {
     showNotification("Settings applied successfully", "success");
   }
 
+  /**
+   * Handle reset all parameters to defaults.
+   */
   handleResetAll() {
     if (!confirm("Reset all parameters to defaults?")) return;
 
@@ -221,6 +262,10 @@ class ParameterForm extends Component {
     showNotification("All settings reset to defaults", "info");
   }
 
+  /**
+   * Update all parameter input elements in the DOM.
+   * @private
+   */
   _updateAllInputs() {
     // Update all ParameterInput components
     const inputs = this.$$(".parameter-input");
@@ -252,11 +297,18 @@ class ParameterForm extends Component {
     }
   }
 
+  /**
+   * Handle toggle validation summary visibility.
+   */
   handleToggleValidation() {
     this.showValidationSummary = !this.showValidationSummary;
     this._updateValidationBanner();
   }
 
+  /**
+   * Update validation UI - banner and button.
+   * @private
+   */
   _updateValidationUI() {
     // Update validation banner
     this._updateValidationBanner();
@@ -273,6 +325,10 @@ class ParameterForm extends Component {
     }
   }
 
+  /**
+   * Update the validation banner in the DOM.
+   * @private
+   */
   _updateValidationBanner() {
     const banner = this.$(".validation-banner");
     if (!banner) return;
@@ -315,6 +371,10 @@ class ParameterForm extends Component {
     }
   }
 
+  /**
+   * Render the complete parameter form.
+   * @returns {HTMLElement} The form container element.
+   */
   render() {
     // Filter parameters based on search
     const filteredCategories = this.filterCategories(this.filter);
@@ -335,6 +395,14 @@ class ParameterForm extends Component {
     );
   }
 
+  /**
+   * Render the toolbar with filter, expand/collapse, reset, and apply buttons.
+   * @param {string} filter - Current filter text.
+   * @param {number} totalParams - Total number of parameters.
+   * @param {number} filteredCount - Number of filtered parameters.
+   * @param {boolean} showValidationSummary - Whether to show validation summary.
+   * @returns {HTMLElement} The toolbar element.
+   */
   renderToolbar(filter, totalParams, filteredCount, showValidationSummary) {
     return Component.h(
       "div",
@@ -414,6 +482,12 @@ class ParameterForm extends Component {
     );
   }
 
+  /**
+   * Render the validation banner showing validation summary.
+   * @param {Object} validationSummary - The validation summary object.
+   * @param {boolean} expanded - Whether the banner is expanded.
+   * @returns {HTMLElement|null} The banner element or null.
+   */
   renderValidationBanner(validationSummary, expanded) {
     if (!expanded || !validationSummary) return null;
 
@@ -458,6 +532,11 @@ class ParameterForm extends Component {
     );
   }
 
+  /**
+   * Render all categories with their parameters.
+   * @param {Object} filteredCategories - Map of category ID to category info.
+   * @returns {HTMLElement} The categories container element.
+   */
   renderCategories(filteredCategories) {
     const categoryIds = Object.keys(filteredCategories);
 
@@ -478,6 +557,12 @@ class ParameterForm extends Component {
     );
   }
 
+  /**
+   * Render a single category section.
+   * @param {string} categoryId - The category identifier.
+   * @param {Object} categoryInfo - The category information object.
+   * @returns {HTMLElement} The category wrapper element.
+   */
   renderCategory(categoryId, categoryInfo) {
     const expanded = this.expandedSections[categoryId];
 
@@ -515,6 +600,11 @@ class ParameterForm extends Component {
     );
   }
 
+  /**
+   * Filter categories based on search text.
+   * @param {string} filter - The filter text to search for.
+   * @returns {Object} Map of matching categories.
+   */
   filterCategories(filter) {
     if (!filter) {
       return window.ParameterCategories;
@@ -550,6 +640,12 @@ class ParameterForm extends Component {
     return filtered;
   }
 
+  /**
+   * Filter parameters within a category based on search text.
+   * @param {Object} parameters - Map of parameter ID to parameter config.
+   * @param {string} filter - The filter text to search for.
+   * @returns {Object} Map of matching parameters.
+   */
   filterParameters(parameters, filter) {
     if (!filter) return parameters;
 
@@ -570,6 +666,11 @@ class ParameterForm extends Component {
     return filtered;
   }
 
+  /**
+   * Handle parameter value change from child component.
+   * @param {string} field - The parameter field ID.
+   * @param {*} value - The new value.
+   */
   handleParamChange(field, value) {
     this._changedFields.add(field);
 
@@ -581,6 +682,11 @@ class ParameterForm extends Component {
     }
   }
 
+  /**
+   * Handle parameter validation result from child component.
+   * @param {string} field - The parameter field ID.
+   * @param {Object} validation - The validation result object.
+   */
   handleParamValidation(field, validation) {
     if (validation.errors.length > 0) {
       this._validationErrors[field] = validation.errors;
@@ -607,18 +713,34 @@ class ParameterForm extends Component {
   }
 
   // Public API
+  /**
+   * Set the current configuration.
+   * @param {Object} config - The configuration object.
+   */
   setConfig(config) {
     this.config = { ...config };
   }
 
+  /**
+   * Get the current configuration.
+   * @returns {Object} The current configuration object.
+   */
   getConfig() {
     return this.config;
   }
 
+  /**
+   * Get list of fields that have been changed.
+   * @returns {Array} Array of changed field IDs.
+   */
   getChangedFields() {
     return Array.from(this._changedFields);
   }
 
+  /**
+   * Validate all parameters in the current configuration.
+   * @returns {Object} Validation result with valid, errors, and warnings.
+   */
   validate() {
     const result = window.validateAll(this.config, this._allParameters);
     this.validationResults = result.errors;
@@ -627,6 +749,9 @@ class ParameterForm extends Component {
     return result;
   }
 
+  /**
+   * Reset all parameters to their default values.
+   */
   reset() {
     this._changedFields.clear();
     this._validationErrors = {};

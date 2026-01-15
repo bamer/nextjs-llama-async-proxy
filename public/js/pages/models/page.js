@@ -85,6 +85,11 @@ class ModelsPage extends Component {
 </div>`;
   }
 
+  /**
+   * Render a single model row for the table.
+   * @param {Object} m - Model object with properties
+   * @returns {string} HTML string for the table row
+   */
   _renderRow(m) {
     const isLoading = this.loadingModels.has(m.name);
     const statusClass =
@@ -120,6 +125,10 @@ class ModelsPage extends Component {
 </tr>`;
   }
 
+  /**
+   * Get filtered and sorted list of models based on current filter settings.
+   * @returns {Array} Filtered and sorted array of model objects
+   */
   _getFiltered() {
     let ms = this.models || [];
 
@@ -138,6 +147,11 @@ class ModelsPage extends Component {
     return this._sortModels(ms);
   }
 
+  /**
+   * Sort models array by current sortBy field and sortOrder.
+   * @param {Array} models - Array of model objects to sort
+   * @returns {Array} Sorted array of model objects
+   */
   _sortModels(models) {
     const sorted = [...models].sort((a, b) => {
       if (this.sortBy !== "favorite") {
@@ -165,10 +179,20 @@ class ModelsPage extends Component {
     return sorted;
   }
 
+  /**
+   * Format context size value for display (e.g., 4096 -> "4k").
+   * @param {number} v - Context size value
+   * @returns {string} Formatted context size string
+   */
   _fmtCtx(v) {
     return !v || v === 0 ? "-" : v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v);
   }
 
+  /**
+   * Format bytes value to human readable size (e.g., 1024 -> "1.0 KB").
+   * @param {number} v - Size in bytes
+   * @returns {string} Formatted size string with unit
+   */
   _fmtBytes(v) {
     if (!v) return "-";
     const k = 1024;
@@ -177,11 +201,20 @@ class ModelsPage extends Component {
     return `${parseFloat((v / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
   }
 
+  /**
+   * Handle search input change with debouncing.
+   * @param {string} value - Search query value
+   * @returns {void}
+   */
   _handleSearch(value) {
     this.filters.search = value;
     this._updateTable();
   }
 
+  /**
+   * Update the table UI with current filtered models.
+   * @returns {void}
+   */
   _updateTable() {
     const filtered = this._getFiltered();
     const tbody = this.$(".models-table tbody");
@@ -241,11 +274,22 @@ class ModelsPage extends Component {
     });
   }
 
+  /**
+   * Update the model list and refresh the table UI.
+   * @param {Array} models - Array of model objects
+   * @returns {void}
+   */
   updateModelList(models) {
     this.models = models || [];
     this._updateTable();
   }
 
+  /**
+   * Update scanning state and UI progress indicator.
+   * @param {boolean} isScanning - Whether scanning is in progress
+   * @param {string} progress - Progress message to display
+   * @returns {void}
+   */
   setScanning(isScanning, progress = "") {
     this.scanning = isScanning;
     this.scanProgress = progress;
@@ -271,4 +315,10 @@ class ModelsPage extends Component {
     }
   }
 
+  /**
+   * Update loading state for a specific model.
+   * @param {string} modelName - Name of the model
+   * @param {boolean} isLoading - Whether the model is being loaded
+   * @returns {void}
+   */
   setModelLoading(modelName, isLoading) {

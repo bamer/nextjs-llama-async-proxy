@@ -71,8 +71,10 @@ class DashboardController {
   }
 
   /**
-    * Load data when socket is connected
-    */
+   * Start periodic chart updates by subscribing to metricsHistory state changes.
+   * Updates the component with metrics and history data at regular intervals.
+   * @returns {void}
+   */
   _startChartUpdates() {
     if (this.chartUpdateInterval) {
       clearInterval(this.chartUpdateInterval);
@@ -141,8 +143,10 @@ class DashboardController {
   }
 
   /**
-    * Load all data in background - doesn't block initial render
-    */
+   * Load all data in background - doesn't block initial render.
+   * Fetches config, models, metrics, settings, and presets from stateManager.
+   * @returns {Promise<void>} Promise that resolves when data is loaded
+   */
   _loadData() {
     if (!stateManager.isConnected()) {
       console.warn("[DASHBOARD] Cannot load data - socket not connected");
@@ -197,6 +201,12 @@ class DashboardController {
       });
   }
 
+  /**
+   * Handle router actions from the UI (start, stop, restart, start-with-preset).
+   * @param {string} action - The action to perform
+   * @param {Object} data - Additional data for the action (e.g., preset name)
+   * @returns {void}
+   */
   handleRouterAction(action, data) {
     switch (action) {
     case "start": this._start(); break;
@@ -206,6 +216,11 @@ class DashboardController {
     }
   }
 
+  /**
+   * Start router with a specific preset configuration.
+   * @param {string} presetName - Name of the preset to use
+   * @returns {Promise<void>} Promise that resolves when router is started
+   */
   _startWithPreset(presetName) {
     if (this.comp) this.comp.setRouterLoading(true);
     const settings = stateManager.get("settings") || {};
@@ -241,6 +256,10 @@ class DashboardController {
     });
   }
 
+  /**
+   * Start the llama router server.
+   * @returns {Promise<void>} Promise that resolves when server is started
+   */
   _start() {
     if (this.comp) this.comp.setRouterLoading(true);
     stateManager.startLlama().then(() => {
@@ -262,6 +281,10 @@ class DashboardController {
     });
   }
 
+  /**
+   * Stop the llama router server after user confirmation.
+   * @returns {Promise<void>} Promise that resolves when server is stopped
+   */
   _stop() {
     if (!confirm("Stop router?")) return;
     if (this.comp) this.comp.setRouterLoading(true);
@@ -276,6 +299,10 @@ class DashboardController {
     });
   }
 
+  /**
+   * Restart the llama router server.
+   * @returns {Promise<void>} Promise that resolves when server is restarted
+   */
   _restart() {
     if (this.comp) this.comp.setRouterLoading(true);
     stateManager.restartLlama().then(() => {

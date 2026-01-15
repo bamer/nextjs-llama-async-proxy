@@ -10,6 +10,10 @@ class PresetsController {
     this.unsubscribers = [];
   }
 
+  /**
+   * Ensure presets service is initialized with socket connection.
+   * @returns {Object|null} PresetsService instance or null if not available
+   */
   _ensureService() {
     if (!this.presetsService && window.socketClient?.socket) {
       this.presetsService = new PresetsService(window.socketClient.socket);
@@ -63,6 +67,11 @@ class PresetsController {
     this.loadPresetsData();
   }
 
+  /**
+   * Load presets data from the presets service and update state.
+   * Handles connection retry if socket is not yet available.
+   * @returns {Promise<void>} Promise that resolves when presets are loaded
+   */
   async loadPresetsData() {
     console.log("[PRESETS] loadPresetsData called");
     const service = this._ensureService();
@@ -104,6 +113,10 @@ class PresetsController {
     }
   }
 
+  /**
+   * Load available models from stateManager and update component state.
+   * @returns {Promise<void>} Promise that resolves when models are loaded
+   */
   async loadAvailableModels() {
     try {
       const models = stateManager.get("models") || [];
@@ -118,6 +131,11 @@ class PresetsController {
     }
   }
 
+  /**
+   * Load data for a specific preset (models and defaults).
+   * @param {string|Object} presetName - Name of preset or preset object with name property
+   * @returns {Promise<void>} Promise that resolves when preset data is loaded
+   */
   async loadPresetData(presetName) {
     const service = this._ensureService();
     if (!service) return;

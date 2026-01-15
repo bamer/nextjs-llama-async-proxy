@@ -16,6 +16,10 @@ class ModelTableRow extends Component {
     this.fmtBytes = props.fmtBytes;
   }
 
+  /**
+   * Renders a single model table row.
+   * @returns {HTMLElement} The table row element.
+   */
   render() {
     const m = this.model;
     console.log("[MODELS] Rendering row for:", m.name);

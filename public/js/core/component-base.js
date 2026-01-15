@@ -4,6 +4,10 @@
  */
 
 class Component {
+  /**
+   * Create a new Component instance.
+   * @param {object} props - Properties passed to the component
+   */
   constructor(props = {}) {
     this.props = props;
     this._el = null;
@@ -11,10 +15,20 @@ class Component {
     console.log(`[${this.constructor.name}] Created`);
   }
 
+  /**
+   * Render the component's HTML. Must be implemented by subclasses.
+   * @returns {string|Node|Component} HTML string, DOM node, or component
+   * @throws {Error} When not implemented by subclass
+   */
   render() {
     throw new Error("render() must be implemented");
   }
 
+  /**
+   * Mount the component to a DOM element.
+   * @param {string|Node} selectorOrParent - CSS selector or parent DOM node
+   * @returns {Component} Returns this for chaining
+   */
   mount(selectorOrParent) {
     const parent =
       typeof selectorOrParent === "string"
@@ -42,12 +56,22 @@ class Component {
     return this;
   }
 
+  /**
+   * Determine if the component should update. Override for optimization.
+   * @returns {boolean} True if component should update (default: true)
+   */
   shouldUpdate() {
     return true;
   }
 
+  /**
+   * Bind event handlers to DOM elements. Override in subclasses.
+   */
   bindEvents() {}
 
+  /**
+   * Called after component is mounted to DOM. Override in subclasses.
+   */
   onMount() {}
 
   /**

@@ -1,8 +1,14 @@
 /**
- * llama-server state management
+ * Llama Server State Module - Manages llama-server state and broadcasts
+ * Handles status updates and metrics from the llama-server process
  */
 
 class StateLlamaServer {
+  /**
+   * Create a new llama-server state manager
+   * @param {Object} stateCore - StateCore instance for state management
+   * @param {Object} stateSocket - StateSocket instance for socket communication
+   */
   constructor(stateCore, stateSocket) {
     this.core = stateCore;
     this.socket = stateSocket;
@@ -10,6 +16,9 @@ class StateLlamaServer {
     this.queryStatusOnReady();
   }
 
+  /**
+   * Set up broadcast handlers for llama-server events
+   */
   setupBroadcastHandlers() {
     // Register broadcast handlers for llama-server events
     if (this.socket.socket) {
@@ -36,6 +45,7 @@ class StateLlamaServer {
 
   /**
    * Query server status once socket is connected and ready
+   * Sets up a connection listener to fetch status on connect
    */
   queryStatusOnReady() {
     // Listen for connect event
@@ -62,7 +72,8 @@ class StateLlamaServer {
   }
 
   /**
-   * Start llama-server
+   * Start the llama-server process
+   * @returns {Promise<Object>} Server start response
    */
   async start() {
     console.log("[DEBUG] StateLlamaServer.start called");
@@ -70,7 +81,8 @@ class StateLlamaServer {
   }
 
   /**
-   * Stop llama-server
+   * Stop the llama-server process
+   * @returns {Promise<Object>} Server stop response
    */
   async stop() {
     console.log("[DEBUG] StateLlamaServer.stop called");
@@ -78,7 +90,8 @@ class StateLlamaServer {
   }
 
   /**
-   * Get status
+   * Get the current llama-server status
+   * @returns {Promise<Object>} Server status object
    */
   async getStatus() {
     console.log("[DEBUG] StateLlamaServer.getStatus called");
