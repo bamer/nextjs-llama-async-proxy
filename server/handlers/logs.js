@@ -91,8 +91,8 @@ export function registerLogsHandlers(socket, db) {
   });
 
   /**
-   * Read llama-server log file
-   */
+    * Read llama-server log file
+    */
   socket.on("logs:read-llama-server", (req, ack) => {
     const id = req?.requestId || Date.now();
     try {
@@ -149,5 +149,20 @@ export function registerLogsHandlers(socket, db) {
     } catch (e) {
       err(socket, "logs:read-llama-server:result", e.message, id, ack);
     }
+  });
+
+  /**
+   * Receive log entry from client and log it on server
+   */
+  socket.on("logs:entry", (req) => {
+    const entry = req?.entry;
+    if (!entry) return;
+
+    const level = entry.level || "info";
+    const message = entry.message || String(entry);
+    const source = entry.source || "client";
+
+    // Log to server's file logger (which handles file, DB, broadcast)
+    fileLogger.log(level, message, source);
   });
 }

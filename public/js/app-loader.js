@@ -74,6 +74,29 @@
         stateManager.init(socketClient);
         window.stateLlamaServer = new window.StateLlamaServer(stateManager.core, stateManager.socket);
         console.log("[App] State manager initialized");
+
+        // Capture console logs and send to server (after stateManager is initialized)
+        // Store original methods first
+        const origLog = console.log;
+        const origWarn = console.warn;
+        const origError = console.error;
+
+        // Send to server helper (silent - no logging)
+        function sendToServer(level, args) {
+          if (socketClient?.isConnected) {
+            const msg = args.map(a => typeof a === "object" ? JSON.stringify(a) : String(a)).join(" ");
+            if (msg.length < 5000) {
+              socketClient.emit("logs:entry", {
+                entry: { level, message: msg, source: "client", timestamp: Date.now() }
+              });
+            }
+          }
+        }
+
+        // Override with original + sendToServer
+        console.log = (...a) => { origLog.apply(console, a); sendToServer("debug", a); };
+        console.warn = (...a) => { origWarn.apply(console, a); sendToServer("warn", a); };
+        console.error = (...a) => { origError.apply(console, a); sendToServer("error", a); };
       }
 
       console.log("[App] Services initialized successfully");
