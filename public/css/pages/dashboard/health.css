@@ -265,6 +265,42 @@ html.dark-mode .status-badge.loading {
   margin-top: var(--sm);
 }
 
+/* Chart empty overlay - shows over canvas when no data */
+.chart-empty-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  padding: var(--xl);
+  color: var(--text-secondary);
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  z-index: 10;
+}
+
+.chart-empty-overlay .empty-icon {
+  font-size: 3rem;
+  margin-bottom: var(--md);
+  opacity: 0.6;
+}
+
+.chart-empty-overlay p {
+  margin: var(--xs) 0;
+  text-align: center;
+}
+
+.chart-empty-overlay .empty-hint {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: var(--sm);
+}
+
 .chart-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

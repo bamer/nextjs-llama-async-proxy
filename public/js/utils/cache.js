@@ -243,7 +243,7 @@ class CacheInstance {
       hits: this._hits,
       misses: this._misses,
       hitRate: this._hits + this._misses > 0
-        ? ((this._hits / (this._hits + this._misses)) * 100).toFixed(1) + "%"
+        ? `${((this._hits / (this._hits + this._misses)) * 100).toFixed(1)  }%`
         : "N/A",
     };
   }

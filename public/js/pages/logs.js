@@ -133,7 +133,7 @@ class LogsPage extends Component {
     const visibleLogs = filtered.slice(0, 200);
 
     if (filtered.length === 0) {
-      container.innerHTML = '<p class="empty">No logs found</p>';
+      container.innerHTML = "<p class=\"empty\">No logs found</p>";
       return;
     }
 
@@ -171,15 +171,15 @@ class LogsPage extends Component {
         </div>
         <div class="logs-container">
           ${
-            filtered.length === 0
-              ? '<p class="empty">No logs found</p>'
-              : visibleLogs
-                  .map(
-                    (l) =>
-                      `<div class="log-entry level-${l.level || "info"}"><span class="log-time">${this._time(l.timestamp)}</span><span class="log-level">${(l.level || "info").toUpperCase()}</span><span class="log-msg">${String(l.message)}</span></div>`
-                  )
-                  .join("")
-          }
+  filtered.length === 0
+    ? "<p class=\"empty\">No logs found</p>"
+    : visibleLogs
+      .map(
+        (l) =>
+          `<div class="log-entry level-${l.level || "info"}"><span class="log-time">${this._time(l.timestamp)}</span><span class="log-level">${(l.level || "info").toUpperCase()}</span><span class="log-msg">${String(l.message)}</span></div>`
+      )
+      .join("")
+}
         </div>
       </div>
     `;

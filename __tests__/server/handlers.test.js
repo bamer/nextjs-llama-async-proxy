@@ -257,16 +257,13 @@ describe("handlers.js - Handler Registration", () => {
       expect(registerConfigHandlers).toHaveBeenCalledWith(mockSocket, mockDb);
     });
 
-    it("should register llama handlers with correct parameters", () => {
-      // Positive test: verify llama handlers registration
-      registerHandlers(mockIo, mockDb, mockGgufParser);
+    it("should register llama handlers with correct parameters (globally)", () => {
+      // Positive test: verify llama handlers registration is global (not per-socket)
+      // initializeLlamaMetrics parameter is not mocked, so it will be undefined by default for testing
+      registerHandlers(mockIo, mockDb, mockGgufParser, undefined); // Pass all args to registerHandlers
 
-      const connectionCallback = mockIo.on.mock.calls.find((call) => call[0] === "connection")[1];
-
-      const mockSocket = { on: jest.fn(), id: "test-socket" };
-      connectionCallback(mockSocket);
-
-      expect(registerLlamaHandlers).toHaveBeenCalledWith(mockSocket, mockIo, mockDb, undefined);
+      expect(registerLlamaHandlers).toHaveBeenCalledWith(mockIo, mockDb, undefined);
+      expect(registerLlamaHandlers).toHaveBeenCalledTimes(1); // It's a global registration
     });
   });
 
@@ -327,13 +324,14 @@ describe("handlers.js - Handler Registration", () => {
       const socket3 = { on: jest.fn(), id: "socket-3" };
       connectionCallback(socket3);
 
-      // Each handler should be called 3 times (once per connection)
-      expect(registerConnectionHandlers).toHaveBeenCalledTimes(3);
-      expect(registerModelsHandlers).toHaveBeenCalledTimes(3);
-      expect(registerMetricsHandlers).toHaveBeenCalledTimes(3);
-      expect(registerLogsHandlers).toHaveBeenCalledTimes(3);
-      expect(registerConfigHandlers).toHaveBeenCalledTimes(3);
-      expect(registerLlamaHandlers).toHaveBeenCalledTimes(3);
+    // Connection, Models, Metrics, Logs, Config, Presets handlers should be called 3 times (once per connection)
+    expect(registerConnectionHandlers).toHaveBeenCalledTimes(3);
+    expect(registerModelsHandlers).toHaveBeenCalledTimes(3);
+    expect(registerMetricsHandlers).toHaveBeenCalledTimes(3);
+    expect(registerLogsHandlers).toHaveBeenCalledTimes(3);
+    expect(registerConfigHandlers).toHaveBeenCalledTimes(3);
+    // registerLlamaHandlers is called only once globally, not per-socket
+    expect(registerLlamaHandlers).toHaveBeenCalledTimes(1);
     });
 
     it("should log each connection separately", () => {

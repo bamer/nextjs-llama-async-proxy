@@ -1,57 +1,39 @@
-/**
- * Sidebar Component
- * Event-driven navigation sidebar with collapse functionality
- */
-
 class Sidebar extends Component {
   constructor(props) {
     super(props);
     this.collapsed = localStorage.getItem("sidebarCollapsed") === "true";
     this.darkMode = localStorage.getItem("darkMode") === "true";
-    this.currentPage = this.getCurrentPage();
-  }
-
-  getCurrentPage() {
-    const path = window.location.pathname;
-    if (path === "/" || path === "/dashboard") return "dashboard";
-    return path.substring(1); // Remove leading slash
   }
 
   render() {
     return `
-      <aside class="sidebar ${this.collapsed ? "collapsed" : ""}" role="navigation" aria-label="Main navigation">
+      <aside class="sidebar ${this.collapsed ? "collapsed" : ""}">
         <div class="sidebar-header">
-          <span class="logo-icon" aria-hidden="true">🦙</span>
+          <span class="logo-icon">🦙</span>
           <span class="logo-text">Llama Proxy</span>
         </div>
-        <nav class="sidebar-nav" aria-label="Main navigation">
-          <button type="button" class="nav-link ${this.currentPage === "dashboard" ? "active" : ""}" data-page="dashboard" aria-label="Dashboard">
-            <span aria-hidden="true">📊</span><span>Dashboard</span>
-          </button>
-          <button type="button" class="nav-link ${this.currentPage === "models" ? "active" : ""}" data-page="models" aria-label="Models">
-            <span aria-hidden="true">📁</span><span>Models</span>
-          </button>
-          <button type="button" class="nav-link ${this.currentPage === "presets" ? "active" : ""}" data-page="presets" aria-label="Presets">
-            <span aria-hidden="true">⚡</span><span>Presets</span>
-          </button>
-          <button type="button" class="nav-link ${this.currentPage === "logs" ? "active" : ""}" data-page="logs" aria-label="Logs">
-            <span aria-hidden="true">📋</span><span>Logs</span>
-          </button>
-          <button type="button" class="nav-link ${this.currentPage === "settings" ? "active" : ""}" data-page="settings" aria-label="Settings">
-            <span aria-hidden="true">⚙️</span><span>Settings</span>
-          </button>
+        <nav class="sidebar-nav">
+          <a href="/" class="nav-link" data-page="dashboard">
+            <span>📊</span><span>Dashboard</span>
+          </a>
+          <a href="/models" class="nav-link" data-page="models">
+            <span>📁</span><span>Models</span>
+          </a>
+          <a href="/presets" class="nav-link" data-page="presets">
+            <span>⚡</span><span>Presets</span>
+          </a>
+          <a href="/logs" class="nav-link" data-page="logs">
+            <span>📋</span><span>Logs</span>
+          </a>
+          <a href="/settings" class="nav-link" data-page="settings">
+            <span>⚙️</span><span>Settings</span>
+          </a>
         </nav>
         <div class="sidebar-footer">
-          <button type="button" class="theme-toggle-btn" data-action="toggle-theme" aria-label="Toggle dark mode">
-            <span aria-hidden="true">${this.darkMode ? "☀️" : "🌙"}</span>
-            <span class="sr-only">${this.darkMode ? "Switch to light mode" : "Switch to dark mode"}</span>
-          </button>
-          <button type="button" class="help-btn" data-action="keyboard-help" aria-label="View keyboard shortcuts">
-            <span aria-hidden="true">⌨️</span>
-            <span class="sr-only">Keyboard Shortcuts</span>
-          </button>
-          <div class="connection-status" id="connection-status" role="status" aria-live="polite">
-            <span class="dot disconnected" aria-hidden="true"></span>
+          <button class="theme-toggle-btn" data-action="toggle-theme" title="Toggle Theme">${this.darkMode ? "☀️" : "🌙"}</button>
+          <button class="help-btn" data-action="keyboard-help" title="Keyboard Shortcuts">⌨️</button>
+          <div class="connection-status" id="connection-status">
+            <span class="dot disconnected"></span>
             <span class="text">Disconnected</span>
           </div>
         </div>
@@ -69,6 +51,7 @@ class Sidebar extends Component {
       }
     });
 
+    // Prefetch chart scripts when hovering over dashboard link
     this.on("mouseenter", "[data-page=dashboard]", () => {
       if (window.ChartLoader && !window.ChartLoader.loaded) {
         ChartLoader.prefetch();
@@ -84,15 +67,11 @@ class Sidebar extends Component {
         document.documentElement.classList.remove("dark-mode");
       }
       const btn = this.$("[data-action=toggle-theme]");
-      if (btn) {
-        const icon = btn.querySelector("span[aria-hidden='true']");
-        const label = btn.querySelector(".sr-only");
-        if (icon) icon.textContent = this.darkMode ? "☀️" : "🌙";
-        if (label) label.textContent = this.darkMode ? "Switch to light mode" : "Switch to dark mode";
-      }
+      if (btn) btn.textContent = this.darkMode ? "☀️ Light" : "🌙 Dark";
     });
 
     this.on("click", "[data-action=keyboard-help]", () => {
+      console.log("[DEBUG] Opening keyboard shortcuts help");
       const shortcuts = window.keyboardShortcuts?.getAllShortcuts() || [];
       if (window.KeyboardShortcutsHelp) {
         const modal = new window.KeyboardShortcutsHelp({ shortcuts });
@@ -107,36 +86,6 @@ class Sidebar extends Component {
     if (this.darkMode) {
       document.documentElement.classList.add("dark-mode");
     }
-
-    // Listen for navigation changes to update active state
-    if (window.router) {
-      this.unsubscribeRouter = window.router.subscribe(() => {
-        const newPage = this.getCurrentPage();
-        if (newPage !== this.currentPage) {
-          this.currentPage = newPage;
-          this.updateActiveState();
-        }
-      });
-    }
-  }
-
-  updateActiveState() {
-    // Remove active class from all nav links
-    this.$$(".nav-link").forEach(btn => btn.classList.remove("active"));
-
-    // Add active class to current page button
-    const activeBtn = this.$(`.nav-link[data-page="${this.currentPage}"]`);
-    if (activeBtn) {
-      activeBtn.classList.add("active");
-    }
-  }
-
-  destroy() {
-    if (this.unsubscribeRouter) {
-      this.unsubscribeRouter();
-    }
-    super.destroy();
   }
 }
-
 window.Sidebar = Sidebar;

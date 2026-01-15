@@ -1,8 +1,3 @@
-/**
- * Header Component
- * Page header with navigation toggle and connection status
- */
-
 class Header extends Component {
   constructor(props) {
     super(props);
@@ -23,13 +18,11 @@ class Header extends Component {
     const title = titles[p] || "Dashboard";
 
     return `
-      <header class="page-header" role="banner">
-        <button type="button" class="menu-btn" data-action="toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar-container">
-          <span aria-hidden="true">☰</span>
-        </button>
+      <header class="page-header">
+        <button class="menu-btn" data-action="toggle">☰</button>
         <h1 id="page-title">${title}</h1>
-        <div class="header-status" role="status" aria-live="polite">
-          <span class="badge offline" aria-label="Connection status">● Offline</span>
+        <div class="header-status">
+          <span class="badge offline">● Offline</span>
         </div>
       </header>
     `;
@@ -43,20 +36,19 @@ class Header extends Component {
 
   _toggleSidebar() {
     const sidebar = document.querySelector(".sidebar");
-    const menuBtn = this.$(".menu-btn");
     if (sidebar) {
       const isMobile = window.innerWidth <= 768;
       if (isMobile) {
+        // On mobile, toggle 'open' class
         sidebar.classList.toggle("open");
         sidebar.classList.remove("collapsed");
-        const isOpen = sidebar.classList.contains("open");
-        if (menuBtn) menuBtn.setAttribute("aria-expanded", isOpen);
       } else {
+        // On desktop, toggle 'collapsed' class
         sidebar.classList.toggle("collapsed");
         sidebar.classList.remove("open");
-        const isCollapsed = sidebar.classList.contains("collapsed");
-        localStorage.setItem("sidebarCollapsed", isCollapsed);
       }
+      const isCollapsed = sidebar.classList.contains("collapsed");
+      localStorage.setItem("sidebarCollapsed", isCollapsed);
     }
   }
 
@@ -87,7 +79,7 @@ class Header extends Component {
   }
 
   destroy() {
-    this.unsubscribers.forEach((unsub) => unsub());
+    this.unsubscribers.forEach((unsub) => unsub && unsub());
     this.unsubscribers = [];
     if (this._routeHandler) {
       window.removeEventListener("routechange", this._routeHandler);
@@ -105,11 +97,11 @@ class Header extends Component {
     }
     const hs = this.$(".header-status");
     if (hs) {
-      hs.innerHTML = s === "connected"
-        ? '<span class="badge online" aria-label="Connection status">● Online</span>'
-        : '<span class="badge offline" aria-label="Connection status">● Offline</span>';
+      hs.innerHTML =
+        s === "connected"
+          ? "<span class=\"badge online\">● Online</span>"
+          : "<span class=\"badge offline\">● Offline</span>";
     }
   }
 }
-
 window.Header = Header;

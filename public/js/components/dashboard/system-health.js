@@ -66,7 +66,7 @@ class SystemHealth extends Component {
         const indicatorEl = checkEl.querySelector(".check-indicator");
         if (indicatorEl) {
           indicatorEl.innerHTML = check.ok
-            ? '<span class="indicator-good">✓</span>'
+            ? "<span class=\"indicator-good\">✓</span>"
             : `<span class="indicator-warning">⚠ Limit: ${check.limit}</span>`;
         }
       }
@@ -93,8 +93,8 @@ class SystemHealth extends Component {
             </div>
             <div class="check-indicator">
               ${health.checks.cpuOk
-                ? '<span class="indicator-good">✓</span>'
-                : '<span class="indicator-warning">⚠ Limit: 80%</span>'}
+    ? "<span class=\"indicator-good\">✓</span>"
+    : "<span class=\"indicator-warning\">⚠ Limit: 80%</span>"}
             </div>
           </div>
           <div class="health-check ${health.checks.memoryOk ? "ok" : "warning"}">
@@ -104,8 +104,8 @@ class SystemHealth extends Component {
             </div>
             <div class="check-indicator">
               ${health.checks.memoryOk
-                ? '<span class="indicator-good">✓</span>'
-                : '<span class="indicator-warning">⚠ Limit: 85%</span>'}
+    ? "<span class=\"indicator-good\">✓</span>"
+    : "<span class=\"indicator-warning\">⚠ Limit: 85%</span>"}
             </div>
           </div>
           <div class="health-check ${health.checks.diskOk ? "ok" : "warning"}">
@@ -115,8 +115,8 @@ class SystemHealth extends Component {
             </div>
             <div class="check-indicator">
               ${health.checks.diskOk
-                ? '<span class="indicator-good">✓</span>'
-                : '<span class="indicator-warning">⚠ Limit: 90%</span>'}
+    ? "<span class=\"indicator-good\">✓</span>"
+    : "<span class=\"indicator-warning\">⚠ Limit: 90%</span>"}
             </div>
           </div>
           <div class="health-check ${health.checks.gpuOk ? "ok" : "warning"}">
@@ -126,8 +126,8 @@ class SystemHealth extends Component {
             </div>
             <div class="check-indicator">
               ${health.checks.gpuOk
-                ? '<span class="indicator-good">✓</span>'
-                : '<span class="indicator-warning">⚠ Limit: 85%</span>'}
+    ? "<span class=\"indicator-good\">✓</span>"
+    : "<span class=\"indicator-warning\">⚠ Limit: 85%</span>"}
             </div>
           </div>
         </div>

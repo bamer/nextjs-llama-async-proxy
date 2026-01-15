@@ -23,13 +23,14 @@ Component.h = function (tag, attrs = {}, ...children) {
       instance.bindEvents();
       instance.onMount?.();
     } else {
-      console.error(`[Component.h] Failed to create DOM element from component render, got:`, el);
+      console.error("[Component.h] Failed to create DOM element from component render, got:", el);
     }
     return el;
   }
 
   // Handle regular HTML elements
   const el = document.createElement(tag);
+  let valueAttr = null; // Store value for select/textarea
 
   // Set attributes
   Object.entries(attrs || {}).forEach(([k, v]) => {
@@ -46,6 +47,8 @@ Component.h = function (tag, attrs = {}, ...children) {
     } else if (k.startsWith("on") && typeof v === "function") {
       const eventName = k.slice(2).toLowerCase();
       el.addEventListener(eventName, v);
+    } else if (k === "value" && (tag === "select" || tag === "textarea")) {
+      valueAttr = v; // Defer setting value for select/textarea
     } else if (typeof v === "boolean") {
       if (v) {
         el.setAttribute(k, "");
@@ -55,38 +58,35 @@ Component.h = function (tag, attrs = {}, ...children) {
     }
   });
 
-  // Handle children
-  children.forEach((c) => {
-    if (c === null || c === undefined || c === false) return;
+  // Filter out null, undefined, false children
+  const validChildren = children.flat().filter(c => c !== null && c !== undefined && c !== false);
 
+  // Handle children
+  validChildren.forEach((c) => {
     if (typeof c === "string" || typeof c === "number") {
       el.appendChild(document.createTextNode(String(c)));
     } else if (c instanceof Node) {
       el.appendChild(c);
     } else if (c instanceof Component) {
+      // A component child is assumed to return an HTML string or Node from render()
       const childEl = c.render();
-      if (childEl instanceof Node) {
-        el.appendChild(childEl);
+      // Use _htmlToElement for consistency when processing render output
+      const mountedChild = c._htmlToElement(childEl);
+      if (mountedChild instanceof Node) {
+        el.appendChild(mountedChild);
       } else {
-        console.error(`[${this.constructor.name}] Failed to render child component:`, c.constructor.name, "Got:", childEl);
+        console.error("[Component.h] Failed to render child component:", c.constructor.name, "Got:", mountedChild);
       }
-    } else if (Array.isArray(c)) {
-      c.forEach((item) => {
-        if (item instanceof Node) {
-          el.appendChild(item);
-        } else if (typeof item === "string") {
-          el.appendChild(document.createTextNode(item));
-        } else if (item instanceof Component) {
-          const childEl = item.render();
-          if (childEl instanceof Node) {
-            el.appendChild(childEl);
-          }
-        }
-      });
     } else {
+      // Log error for invalid child types that were not filtered
       console.error(`[${this.constructor.name}] Invalid child type:`, typeof c, c);
     }
   });
+
+  // Set value for select/textarea after options are appended
+  if (valueAttr !== null && (tag === "select" || tag === "textarea")) {
+    el.value = valueAttr;
+  }
 
   return el;
 };

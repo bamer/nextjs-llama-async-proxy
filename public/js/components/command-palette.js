@@ -128,38 +128,38 @@ class CommandPalette extends Component {
     const presetsPage = document.querySelector(".presets-page");
 
     switch (action) {
-      case "scan":
-        const scanBtn = document.querySelector("[data-action=scan]");
-        if (scanBtn) scanBtn.click();
-        else ToastManager.info("Use Models page to scan", 2000);
-        break;
-      case "reload":
-        stateManager.getModels().then(() => {
-          ToastManager.success("Models reloaded", 2000);
-        }).catch((e) => {
-          ToastManager.error(`Failed: ${e.message}`, 3000);
-        });
-        break;
-      case "load":
-        const loadBtn = document.querySelector("[data-action=load]");
-        if (loadBtn) loadBtn.click();
-        else ToastManager.info("Use Models page to load", 2000);
-        break;
-      case "unloadAll":
-        stateManager.request("models:unloadAll").then(() => {
-          ToastManager.success("All models unloaded", 2000);
-        }).catch((e) => {
-          ToastManager.error(`Failed: ${e.message}`, 3000);
-        });
-        break;
-      case "scanPresets":
-      case "reloadPresets":
-        stateManager.getPresets().then(() => {
-          ToastManager.success("Presets reloaded", 2000);
-        }).catch((e) => {
-          ToastManager.error(`Failed: ${e.message}`, 3000);
-        });
-        break;
+    case "scan":
+      const scanBtn = document.querySelector("[data-action=scan]");
+      if (scanBtn) scanBtn.click();
+      else ToastManager.info("Use Models page to scan", 2000);
+      break;
+    case "reload":
+      stateManager.getModels().then(() => {
+        ToastManager.success("Models reloaded", 2000);
+      }).catch((e) => {
+        ToastManager.error(`Failed: ${e.message}`, 3000);
+      });
+      break;
+    case "load":
+      const loadBtn = document.querySelector("[data-action=load]");
+      if (loadBtn) loadBtn.click();
+      else ToastManager.info("Use Models page to load", 2000);
+      break;
+    case "unloadAll":
+      stateManager.request("models:unloadAll").then(() => {
+        ToastManager.success("All models unloaded", 2000);
+      }).catch((e) => {
+        ToastManager.error(`Failed: ${e.message}`, 3000);
+      });
+      break;
+    case "scanPresets":
+    case "reloadPresets":
+      stateManager.getPresets().then(() => {
+        ToastManager.success("Presets reloaded", 2000);
+      }).catch((e) => {
+        ToastManager.error(`Failed: ${e.message}`, 3000);
+      });
+      break;
     }
     this._close();
   }
@@ -309,22 +309,22 @@ class CommandPalette extends Component {
 
   _handleKeyDown(e) {
     switch (e.key) {
-      case "ArrowDown":
-        e.preventDefault();
-        this._moveSelection(1);
-        break;
-      case "ArrowUp":
-        e.preventDefault();
-        this._moveSelection(-1);
-        break;
-      case "Enter":
-        e.preventDefault();
-        this._execute();
-        break;
-      case "Escape":
-        e.preventDefault();
-        this._close();
-        break;
+    case "ArrowDown":
+      e.preventDefault();
+      this._moveSelection(1);
+      break;
+    case "ArrowUp":
+      e.preventDefault();
+      this._moveSelection(-1);
+      break;
+    case "Enter":
+      e.preventDefault();
+      this._execute();
+      break;
+    case "Escape":
+      e.preventDefault();
+      this._close();
+      break;
     }
   }
 

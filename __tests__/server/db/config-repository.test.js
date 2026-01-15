@@ -48,7 +48,7 @@ describe("ConfigRepository", () => {
 
         // Assert: Should return default config with all expected values
         expect(result).toEqual({
-          serverPath: "/usr/local/bin/llama-server",
+          serverPath: "/home/bamer/llama.cpp/build/bin/llama-server",
           host: "localhost",
           port: 8080,
           baseModelsPath: expect.any(String),
@@ -60,7 +60,7 @@ describe("ConfigRepository", () => {
           llama_server_host: "0.0.0.0",
           llama_server_metrics: true,
         });
-        expect(result.serverPath).toBe("/usr/local/bin/llama-server");
+        expect(result.serverPath).toBe("/home/bamer/llama.cpp/build/bin/llama-server");
         expect(result.host).toBe("localhost");
         expect(result.port).toBe(8080);
         expect(result.ctx_size).toBe(2048);
@@ -77,7 +77,7 @@ describe("ConfigRepository", () => {
         const result = repository.get();
 
         // Assert: Should merge saved values with defaults
-        expect(result.serverPath).toBe("/usr/local/bin/llama-server");
+        expect(result.serverPath).toBe("/home/bamer/llama.cpp/build/bin/llama-server");
         expect(result.host).toBe("0.0.0.0");
         expect(result.port).toBe(3000);
         expect(result.ctx_size).toBe(2048);
@@ -99,7 +99,7 @@ describe("ConfigRepository", () => {
         // Assert: Should include custom settings
         expect(result.customSetting).toBe("value");
         expect(result.anotherSetting).toBe(123);
-        expect(result.serverPath).toBe("/usr/local/bin/llama-server");
+        expect(result.serverPath).toBe("/home/bamer/llama.cpp/build/bin/llama-server");
       });
 
       it("should override multiple defaults with saved config", () => {
@@ -133,7 +133,7 @@ describe("ConfigRepository", () => {
 
         // Assert: Should return all defaults
         expect(result).toEqual({
-          serverPath: "/usr/local/bin/llama-server",
+          serverPath: "/home/bamer/llama.cpp/build/bin/llama-server",
           host: "localhost",
           port: 8080,
           baseModelsPath: expect.any(String),
@@ -158,7 +158,7 @@ describe("ConfigRepository", () => {
 
         // Assert: Should return default config (not crash)
         expect(result).toEqual({
-          serverPath: "/usr/local/bin/llama-server",
+          serverPath: "/home/bamer/llama.cpp/build/bin/llama-server",
           host: "localhost",
           port: 8080,
           baseModelsPath: expect.any(String),
@@ -180,7 +180,7 @@ describe("ConfigRepository", () => {
         const result = repository.get();
 
         // Assert: Should return default config (not crash)
-        expect(result.serverPath).toBe("/usr/local/bin/llama-server");
+        expect(result.serverPath).toBe("/home/bamer/llama.cpp/build/bin/llama-server");
         expect(result.host).toBe("localhost");
         expect(result.port).toBe(8080);
         expect(result.ctx_size).toBe(2048);
@@ -198,7 +198,7 @@ describe("ConfigRepository", () => {
         const result = repository.get();
 
         // Assert: Should return default config (not crash)
-        expect(result.serverPath).toBe("/usr/local/bin/llama-server");
+        expect(result.serverPath).toBe("/home/bamer/llama.cpp/build/bin/llama-server");
         expect(result.ctx_size).toBe(2048);
         expect(result.threads).toBe(4);
       });
@@ -211,7 +211,7 @@ describe("ConfigRepository", () => {
         const result = repository.get();
 
         // Assert: Should return default config
-        expect(result.serverPath).toBe("/usr/local/bin/llama-server");
+        expect(result.serverPath).toBe("/home/bamer/llama.cpp/build/bin/llama-server");
         expect(result.port).toBe(8080);
       });
 
@@ -223,7 +223,7 @@ describe("ConfigRepository", () => {
         const result = repository.get();
 
         // Assert: Should return default config
-        expect(result.serverPath).toBe("/usr/local/bin/llama-server");
+        expect(result.serverPath).toBe("/home/bamer/llama.cpp/build/bin/llama-server");
         expect(result.batch_size).toBe(512);
       });
     });
@@ -390,7 +390,7 @@ describe("ConfigRepository", () => {
 
       // Assert: Should have the new port
       expect(loadedConfig.port).toBe(newPort);
-      expect(loadedConfig.serverPath).toBe("/usr/local/bin/llama-server"); // Default preserved
+      expect(loadedConfig.serverPath).toBe("/home/bamer/llama.cpp/build/bin/llama-server"); // Default preserved
     });
 
     it("should preserve other defaults when saving partial config", () => {
@@ -413,7 +413,7 @@ describe("ConfigRepository", () => {
 
       // Assert: Merged result has new port but other defaults
       expect(result.port).toBe(5000);
-      expect(result.serverPath).toBe("/usr/local/bin/llama-server");
+      expect(result.serverPath).toBe("/home/bamer/llama.cpp/build/bin/llama-server");
       expect(result.host).toBe("localhost");
       expect(result.ctx_size).toBe(2048);
     });
@@ -423,7 +423,7 @@ describe("ConfigRepository", () => {
     it("should have correct serverPath default", () => {
       mockGet.mockReturnValue(undefined);
       const result = repository.get();
-      expect(result.serverPath).toBe("/usr/local/bin/llama-server");
+      expect(result.serverPath).toBe("/home/bamer/llama.cpp/build/bin/llama-server");
     });
 
     it("should have correct host default", () => {

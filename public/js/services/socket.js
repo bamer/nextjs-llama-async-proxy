@@ -8,14 +8,63 @@ class SocketClient {
     this.options = { path: "/llamaproxws", transports: ["websocket"], ...options };
     this.handlers = new Map();
     this._connected = false;
+    this._ioLoading = false; // Flag to indicate if io script is currently loading
+  }
+
+  // Private method to dynamically load the Socket.IO client script
+  _loadIoScript() {
+    return new Promise((resolve, reject) => {
+      if (typeof io !== "undefined") {
+        this._ioLoading = false;
+        return resolve();
+      }
+
+      const script = document.createElement("script");
+      script.src = "/socket.io/socket.io.js";
+      script.onload = () => {
+        console.log("[SocketClient] Socket.IO script loaded dynamically.");
+        this._ioLoading = false;
+        resolve();
+      };
+      script.onerror = (e) => {
+        console.error("[SocketClient] Failed to load Socket.IO script dynamically:", e);
+        this._ioLoading = false;
+        reject(new Error("Failed to load Socket.IO script"));
+      };
+      document.head.appendChild(script);
+    });
   }
 
   connect() {
     if (this.socket?.connected) return this;
 
+    // If io is not available and not already loading, trigger dynamic load
+    if (typeof io === "undefined" && !this._ioLoading) {
+      this._ioLoading = true;
+      console.log("[SocketClient] io not found, dynamically loading script...");
+      this._loadIoScript()
+        .then(() => {
+          // Once loaded, re-attempt connection
+          this.connect();
+        })
+        .catch((e) => {
+          console.error("[SocketClient] Failed to connect due to script load error:", e);
+          this._emit("connect_error", e);
+        });
+      return this; // Return this to allow chaining for the initial call, subsequent connection will happen via promise
+    }
+
+    // If io is still loading, wait for it
+    if (this._ioLoading) {
+      // This state should ideally not be reached if the above logic is correct
+      // But as a safeguard, we return early. The promise from _loadIoScript will re-call connect.
+      return this;
+    }
+
+    // Proceed with connection if io is available
     console.log("[SocketClient] Connecting to:", window.location.origin);
     console.log("[SocketClient] Options:", this.options);
-    
+
     this.socket = io(window.location.origin, this.options);
 
     this.socket.on("connect", () => {
@@ -49,6 +98,7 @@ class SocketClient {
     this.socket.onAny((e, d) => {
       this._emit(e, d);
     });
+    return this;
   }
 
   disconnect() {

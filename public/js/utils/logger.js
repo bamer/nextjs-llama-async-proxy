@@ -6,7 +6,7 @@
 
 // Check if client logging should be enabled via URL parameter
 const urlParams = new URLSearchParams(window.location.search);
-const ENABLE_LOGGING = urlParams.get('enable-logging') === 'true';
+const ENABLE_LOGGING = urlParams.get("enable-logging") === "true";
 
 class ClientLogger {
   constructor() {
@@ -34,35 +34,35 @@ class ClientLogger {
     if (ENABLE_LOGGING) {
       this.isActive = true;
       this._wrapConsole();
-      this.originalConsole.log('[ClientLogger] Client logging ENABLED (via ?enable-logging=true)');
+      this.originalConsole.log("[ClientLogger] Client logging ENABLED (via ?enable-logging=true)");
     } else {
-      this.originalConsole.log('[ClientLogger] Client logging disabled (use ?enable-logging=true to enable)');
+      this.originalConsole.log("[ClientLogger] Client logging disabled (use ?enable-logging=true to enable)");
     }
   }
 
   _wrapConsole() {
     console.log = (...args) => {
-      this._log('info', args);
+      this._log("info", args);
       this.originalConsole.log(...args);
     };
 
     console.info = (...args) => {
-      this._log('info', args);
+      this._log("info", args);
       this.originalConsole.info(...args);
     };
 
     console.warn = (...args) => {
-      this._log('warn', args);
+      this._log("warn", args);
       this.originalConsole.warn(...args);
     };
 
     console.error = (...args) => {
-      this._log('error', args);
+      this._log("error", args);
       this.originalConsole.error(...args);
     };
 
     console.debug = (...args) => {
-      this._log('debug', args);
+      this._log("debug", args);
       this.originalConsole.debug(...args);
     };
   }
@@ -74,15 +74,15 @@ class ClientLogger {
     try {
       // Format message
       const message = args.map(arg => {
-        if (typeof arg === 'object') {
+        if (typeof arg === "object") {
           return JSON.stringify(arg, null, 2);
         }
         return String(arg);
-      }).join(' ');
+      }).join(" ");
 
       // Check socket connection
       const isSocketConnected = this.socket && (
-        (typeof this.socket.isConnected === 'function' ? this.socket.isConnected() : this.socket.isConnected)
+        (typeof this.socket.isConnected === "function" ? this.socket.isConnected() : this.socket.isConnected)
       );
 
       if (isSocketConnected) {
@@ -91,11 +91,11 @@ class ClientLogger {
           data: {
             level,
             message: `[CLIENT] ${message}`,
-            source: 'client',
+            source: "client",
           },
         };
 
-        this.socket.emit('logs:add', eventData);
+        this.socket.emit("logs:add", eventData);
       }
     } catch (e) {
       // Silent fail - don't use console here to avoid recursion
@@ -103,24 +103,24 @@ class ClientLogger {
   }
 
   // Manual logging methods (only work when enabled)
-  log(message, level = 'info') {
+  log(message, level = "info") {
     this._log(level, [message]);
   }
 
   info(message) {
-    this._log('info', [message]);
+    this._log("info", [message]);
   }
 
   warn(message) {
-    this._log('warn', [message]);
+    this._log("warn", [message]);
   }
 
   error(message) {
-    this._log('error', [message]);
+    this._log("error", [message]);
   }
 
   debug(message) {
-    this._log('debug', [message]);
+    this._log("debug", [message]);
   }
 
   // Enable/disable methods
@@ -128,7 +128,7 @@ class ClientLogger {
     if (!this.isActive) {
       this.isActive = true;
       this._wrapConsole();
-      this.originalConsole.log('[ClientLogger] Client logging enabled');
+      this.originalConsole.log("[ClientLogger] Client logging enabled");
     }
   }
 
@@ -141,7 +141,7 @@ class ClientLogger {
       console.warn = this.originalConsole.warn;
       console.error = this.originalConsole.error;
       console.debug = this.originalConsole.debug;
-      this.originalConsole.log('[ClientLogger] Client logging disabled');
+      this.originalConsole.log("[ClientLogger] Client logging disabled");
     }
   }
 }

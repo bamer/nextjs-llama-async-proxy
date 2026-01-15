@@ -25,7 +25,7 @@ class DebugDashboard {
     this.visible = true;
     this.createDashboard();
     this.startAutoRefresh();
-    console.log('🔍 Debug Dashboard shown');
+    console.log("🔍 Debug Dashboard shown");
   }
 
   hide() {
@@ -39,13 +39,13 @@ class DebugDashboard {
       this.container = null;
     }
 
-    console.log('🔍 Debug Dashboard hidden');
+    console.log("🔍 Debug Dashboard hidden");
   }
 
   createDashboard() {
     // Create container
-    this.container = document.createElement('div');
-    this.container.id = 'debug-dashboard';
+    this.container = document.createElement("div");
+    this.container.id = "debug-dashboard";
     this.container.innerHTML = `
       <div class="debug-dashboard-overlay">
         <div class="debug-dashboard-panel">
@@ -85,7 +85,7 @@ class DebugDashboard {
     `;
 
     // Add styles
-    const style = document.createElement('style');
+    const style = document.createElement("style");
     style.textContent = `
       .debug-dashboard-overlay {
         position: fixed;
@@ -206,10 +206,10 @@ class DebugDashboard {
     document.head.appendChild(style);
 
     // Add event listeners
-    this.container.querySelector('#debug-refresh').addEventListener('click', () => this.update());
-    this.container.querySelector('#debug-clear').addEventListener('click', () => this.clear());
-    this.container.querySelector('#debug-run-tests').addEventListener('click', () => this.runTests());
-    this.container.querySelector('#debug-close').addEventListener('click', () => this.hide());
+    this.container.querySelector("#debug-refresh").addEventListener("click", () => this.update());
+    this.container.querySelector("#debug-clear").addEventListener("click", () => this.clear());
+    this.container.querySelector("#debug-run-tests").addEventListener("click", () => this.runTests());
+    this.container.querySelector("#debug-close").addEventListener("click", () => this.hide());
 
     document.body.appendChild(this.container);
 
@@ -242,105 +242,105 @@ class DebugDashboard {
       this.updateLoggingStats();
       this.updateRecentEvents();
     } catch (error) {
-      console.error('Debug dashboard update failed:', error);
+      console.error("Debug dashboard update failed:", error);
     }
   }
 
   updateSystemStatus() {
-    const statusEl = this.container.querySelector('#system-status');
+    const statusEl = this.container.querySelector("#system-status");
     if (!statusEl) return;
 
     const status = {
-      'Debug System': window.DEBUG_SYSTEM ? '✅ Active' : '❌ Inactive',
-      'Client Logger': window.clientLogger ? '✅ Active' : '❌ Inactive',
-      'Socket Client': window.socketClient ? '✅ Active' : '❌ Inactive',
-      'State Manager': window.stateManager ? '✅ Active' : '❌ Inactive',
-      'Socket Connected': window.socketClient?.isConnected ? '✅ Connected' : '❌ Disconnected',
-      'Page Ready': document.readyState === 'complete' ? '✅ Complete' : '⏳ Loading'
+      "Debug System": window.DEBUG_SYSTEM ? "✅ Active" : "❌ Inactive",
+      "Client Logger": window.clientLogger ? "✅ Active" : "❌ Inactive",
+      "Socket Client": window.socketClient ? "✅ Active" : "❌ Inactive",
+      "State Manager": window.stateManager ? "✅ Active" : "❌ Inactive",
+      "Socket Connected": window.socketClient?.isConnected ? "✅ Connected" : "❌ Disconnected",
+      "Page Ready": document.readyState === "complete" ? "✅ Complete" : "⏳ Loading"
     };
 
     statusEl.innerHTML = Object.entries(status)
       .map(([key, value]) => `<div class="debug-metric"><span>${key}:</span><span class="debug-metric-value">${value}</span></div>`)
-      .join('');
+      .join("");
   }
 
   updatePerformanceMetrics() {
-    const metricsEl = this.container.querySelector('#performance-metrics');
+    const metricsEl = this.container.querySelector("#performance-metrics");
     if (!metricsEl || !window.DEBUG_SYSTEM?.timing) return;
 
     const report = window.DEBUG_SYSTEM.timing.getReport();
     const metrics = {
-      'Total Marks': report.summary.totalMarks,
-      'Total Measures': report.summary.totalMeasures,
-      'Avg Duration': report.summary.avgDuration ? `${report.summary.avgDuration.toFixed(2)}ms` : 'N/A'
+      "Total Marks": report.summary.totalMarks,
+      "Total Measures": report.summary.totalMeasures,
+      "Avg Duration": report.summary.avgDuration ? `${report.summary.avgDuration.toFixed(2)}ms` : "N/A"
     };
 
     metricsEl.innerHTML = Object.entries(metrics)
       .map(([key, value]) => `<div class="debug-metric"><span>${key}:</span><span class="debug-metric-value">${value}</span></div>`)
-      .join('');
+      .join("");
   }
 
   updateSocketStats() {
-    const statsEl = this.container.querySelector('#socket-stats');
+    const statsEl = this.container.querySelector("#socket-stats");
     if (!statsEl || !window.DEBUG_SYSTEM?.socket) return;
 
     const stats = window.DEBUG_SYSTEM.socket.getStats();
     const displayStats = {
-      'Connected': stats.connected ? '✅ Yes' : '❌ No',
-      'Messages Sent': stats.sent,
-      'Messages Received': stats.received,
-      'Errors': stats.errors,
-      'Reconnects': stats.reconnects,
-      'Uptime': stats.uptime ? `${Math.floor(stats.uptime / 1000)}s` : 'N/A',
-      'Events/sec': stats.eventsPerSecond,
-      'Error Rate': stats.errorRate
+      "Connected": stats.connected ? "✅ Yes" : "❌ No",
+      "Messages Sent": stats.sent,
+      "Messages Received": stats.received,
+      "Errors": stats.errors,
+      "Reconnects": stats.reconnects,
+      "Uptime": stats.uptime ? `${Math.floor(stats.uptime / 1000)}s` : "N/A",
+      "Events/sec": stats.eventsPerSecond,
+      "Error Rate": stats.errorRate
     };
 
     statsEl.innerHTML = Object.entries(displayStats)
       .map(([key, value]) => {
-        const cssClass = key === 'Connected' ? (stats.connected ? 'success' : 'error') : '';
+        const cssClass = key === "Connected" ? (stats.connected ? "success" : "error") : "";
         return `<div class="debug-metric"><span>${key}:</span><span class="debug-metric-value ${cssClass}">${value}</span></div>`;
       })
-      .join('');
+      .join("");
   }
 
   updateLoggingStats() {
-    const statsEl = this.container.querySelector('#logging-stats');
+    const statsEl = this.container.querySelector("#logging-stats");
     if (!statsEl || !window.DEBUG_SYSTEM?.logging) return;
 
     const stats = window.DEBUG_SYSTEM.logging.getStats();
     const displayStats = {
-      'Logs Captured': stats.captured,
-      'Logs Displayed': stats.displayed,
-      'Logs Lost': stats.lost,
-      'Avg Latency': stats.avgLatency ? `${stats.avgLatency.toFixed(2)}ms` : 'N/A',
-      'Efficiency': stats.efficiency
+      "Logs Captured": stats.captured,
+      "Logs Displayed": stats.displayed,
+      "Logs Lost": stats.lost,
+      "Avg Latency": stats.avgLatency ? `${stats.avgLatency.toFixed(2)}ms` : "N/A",
+      "Efficiency": stats.efficiency
     };
 
     statsEl.innerHTML = Object.entries(displayStats)
       .map(([key, value]) => `<div class="debug-metric"><span>${key}:</span><span class="debug-metric-value">${value}</span></div>`)
-      .join('');
+      .join("");
   }
 
   updateRecentEvents() {
-    const eventsEl = this.container.querySelector('#recent-events');
+    const eventsEl = this.container.querySelector("#recent-events");
     if (!eventsEl || !window.DEBUG_SYSTEM?.tracer) return;
 
     const events = window.DEBUG_SYSTEM.tracer.getEvents().slice(-10);
     eventsEl.innerHTML = events.length > 0
       ? events.map(event => {
-          const time = new Date(event.timestamp).toLocaleTimeString();
-          const cssClass = event.event.includes('error') || event.event.includes('fail') ? 'error' :
-                          event.event.includes('success') || event.event.includes('connect') ? 'success' : '';
-          return `<div class="debug-event ${cssClass}">[${time}] ${event.event}</div>`;
-        }).join('')
-      : '<div class="debug-event">No recent events</div>';
+        const time = new Date(event.timestamp).toLocaleTimeString();
+        const cssClass = event.event.includes("error") || event.event.includes("fail") ? "error" :
+          event.event.includes("success") || event.event.includes("connect") ? "success" : "";
+        return `<div class="debug-event ${cssClass}">[${time}] ${event.event}</div>`;
+      }).join("")
+      : "<div class=\"debug-event\">No recent events</div>";
   }
 
   clear() {
     if (window.DEBUG_SYSTEM) {
       window.DEBUG_SYSTEM.clear();
-      console.log('🧹 Debug data cleared');
+      console.log("🧹 Debug data cleared");
     }
     this.update();
   }
@@ -351,7 +351,7 @@ class DebugDashboard {
       await tests.runAllTests();
       setTimeout(() => this.update(), 1000); // Update after tests complete
     } else {
-      console.error('Integration tests not available');
+      console.error("Integration tests not available");
     }
   }
 }
@@ -360,11 +360,11 @@ class DebugDashboard {
 window.debugDashboard = new DebugDashboard();
 
 // Add keyboard shortcut to toggle debug dashboard (Ctrl+Shift+D)
-document.addEventListener('keydown', (e) => {
-  if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.shiftKey && e.key === "D") {
     e.preventDefault();
     window.debugDashboard.toggle();
   }
 });
 
-console.log('🔍 Debug Dashboard loaded. Press Ctrl+Shift+D to toggle.');
+console.log("🔍 Debug Dashboard loaded. Press Ctrl+Shift+D to toggle.");

@@ -1,7 +1,7 @@
 /**
- * ChartsSection Component - Event-Driven DOM Updates
- * Displays performance history charts with CPU/GPU tabs and stats
- */
+  * ChartsSection Component - Event-Driven DOM Updates
+  * Displays performance history charts with CPU/GPU tabs and stats
+  */
 
 class ChartsSection extends Component {
   constructor(props) {
@@ -15,6 +15,13 @@ class ChartsSection extends Component {
 
   onMount() {
     console.log("[CHARTS-SECTION] onMount called");
+    // Subscribe to metrics history updates
+    this._historyUnsub = stateManager.subscribe("metricsHistory", (history) => {
+      if (Array.isArray(history) && history.length > 0) {
+        this.history = history;
+        this.updateDOM();
+      }
+    });
     // Initialize charts after DOM is ready
     requestAnimationFrame(() => {
       console.log("[CHARTS-SECTION] requestAnimationFrame callback");
@@ -23,6 +30,13 @@ class ChartsSection extends Component {
         this._initCharts();
       }, 100);
     });
+  }
+
+  destroy() {
+    if (this._historyUnsub) {
+      this._historyUnsub();
+    }
+    super.destroy();
   }
 
   bindEvents() {
@@ -61,8 +75,8 @@ class ChartsSection extends Component {
   }
 
   /**
-   * Only update the DOM parts that changed, without full re-render
-   */
+    * Only update the DOM parts that changed, without full re-render
+    */
   updateDOM() {
     // Update chart stats
     const statsEl = this._el?.querySelector(".chart-stats");
@@ -83,6 +97,12 @@ class ChartsSection extends Component {
       const chartType = this.getChartType();
       cpuTab.classList.toggle("active", chartType === "cpu");
       gpuTab.classList.toggle("active", chartType === "gpu");
+    }
+
+    // Hide overlay when data is available
+    const overlay = this._el?.querySelector(".chart-empty-overlay");
+    if (overlay && this.history.length > 0) {
+      overlay.style.display = "none";
     }
 
     // Update canvas visibility
@@ -114,8 +134,8 @@ class ChartsSection extends Component {
   }
 
   /**
-   * Wait for canvas to have actual dimensions before creating chart
-   */
+    * Wait for canvas to have actual dimensions before creating chart
+    */
   _ensureChartDimensions(canvas, type, chartManager) {
     console.log(
       "[CHARTS-SECTION] _ensureChartDimensions called for type:",
@@ -125,8 +145,18 @@ class ChartsSection extends Component {
     );
     if (!canvas) return;
 
+    // Get container dimensions for fallback
+    const container = canvas.parentElement;
+    const getFallbackDimensions = () => {
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        return { width: rect.width, height: 250 }; // Use container width, fixed height
+      }
+      return { width: 600, height: 250 }; // Default fallback
+    };
+
     let retries = 0;
-    const maxRetries = 20; // Max 1 second of retries (20 * 50ms)
+    const maxRetries = 30; // Max 1.5 seconds of retries (30 * 50ms)
 
     const checkDimensions = () => {
       const rect = canvas.getBoundingClientRect();
@@ -155,10 +185,33 @@ class ChartsSection extends Component {
         retries++;
         setTimeout(checkDimensions, 50);
       } else {
-        // Give up after max retries
+        // Give up after max retries - use fallback dimensions
         console.warn(
-          `[CHARTS-SECTION] Canvas ${type} failed to get dimensions after ${maxRetries} retries`
+          `[CHARTS-SECTION] Canvas ${type} failed to get dimensions after ${maxRetries} retries, using fallback`
         );
+        const fallback = getFallbackDimensions();
+        const dpr = window.devicePixelRatio || 1;
+
+        canvas.width = Math.round(fallback.width * dpr);
+        canvas.height = Math.round(fallback.height * dpr);
+
+        // Style dimensions (CSS pixels)
+        canvas.style.width = `${fallback.width}px`;
+        canvas.style.height = `${fallback.height}px`;
+
+        // Get context with device pixel ratio
+        const ctx = canvas.getContext("2d");
+        ctx.scale(dpr, dpr);
+
+        // Create the chart with fallback dimensions
+        if (type === "usage") {
+          chartManager.createUsageChart(canvas, this.history);
+        } else {
+          chartManager.createMemoryChart(canvas, this.history);
+        }
+
+        // Update visibility
+        this._updateVisibility();
       }
     };
 
@@ -245,32 +298,30 @@ class ChartsSection extends Component {
       Component.h(
         "div",
         { className: "chart-container" },
-        hasData
-          ? Component.h(
+        // Always create canvases, show placeholder overlay when no data
+        Component.h(
+          "div",
+          { className: "chart-wrapper" },
+          Component.h("canvas", {
+            id: "usageChart",
+            className: "chart-canvas",
+            style: `display: ${chartType === "usage" ? "block" : "none"}`,
+          }),
+          Component.h("canvas", {
+            id: "memoryChart",
+            className: "chart-canvas",
+            style: `display: ${chartType === "memory" ? "block" : "none"}`,
+          }),
+          // Placeholder overlay when no data
+          !hasData &&
+            Component.h(
               "div",
-              { className: "chart-wrapper" },
-              Component.h("canvas", {
-                id: "usageChart",
-                className: "chart-canvas",
-                style: `display: ${chartType === "usage" ? "block" : "none"}`,
-              }),
-              Component.h("canvas", {
-                id: "memoryChart",
-                className: "chart-canvas",
-                style: `display: ${chartType === "memory" ? "block" : "none"}`,
-              })
-            )
-          : Component.h(
-              "div",
-              { className: "chart-empty" },
+              { className: "chart-empty-overlay" },
               Component.h("div", { className: "empty-icon" }, "📈"),
               Component.h("p", {}, "Collecting performance data..."),
-              Component.h(
-                "p",
-                { className: "empty-hint" },
-                "Data will appear once metrics are collected"
-              )
+              Component.h("p", { className: "empty-hint" }, "Data will appear once metrics are collected")
             )
+        )
       ),
       hasData &&
         Component.h(

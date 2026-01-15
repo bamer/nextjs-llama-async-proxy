@@ -23,6 +23,8 @@ export async function llamaApiRequest(endpoint, method = "GET", body = null, lla
       headers: {
         "Content-Type": "application/json",
       },
+      // Add timeout to prevent hanging connections
+      timeout: 5000, // 5 second timeout for API calls
     };
 
     const req = http.request(options, (res) => {
@@ -37,10 +39,14 @@ export async function llamaApiRequest(endpoint, method = "GET", body = null, lla
       });
     });
 
-    req.on("error", reject);
-    req.setTimeout(30000, () => {
+    req.on("error", (e) => {
+      // Don't log connection errors as warnings - they're expected when server is down
+      reject(new Error(`Connection failed: ${e.message}`));
+    });
+
+    req.on("timeout", () => {
       req.destroy();
-      reject(new Error("Request timeout"));
+      reject(new Error("Request timeout (5s)"));
     });
 
     if (body) {

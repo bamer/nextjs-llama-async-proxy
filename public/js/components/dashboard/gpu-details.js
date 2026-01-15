@@ -143,7 +143,7 @@ class GpuDetails extends Component {
 
   render() {
     if (!this.gpuList || this.gpuList.length === 0) {
-      return `<div class="gpu-details"><p class="gpu-no-data">No GPU detected</p></div>`;
+      return "<div class=\"gpu-details\"><p class=\"gpu-no-data\">No GPU detected</p></div>";
     }
 
     return `
@@ -155,8 +155,8 @@ class GpuDetails extends Component {
         ${this.expanded ? `
           <div class="gpu-list">
             ${this.gpuList
-              .map(
-                (gpu) => `
+    .map(
+      (gpu) => `
               <div class="gpu-card ${gpu.usage > 75 || (gpu.memoryTotal > 0 && gpu.memoryUsed / gpu.memoryTotal > 0.75) ? "high-usage" : ""}">
                 <div class="gpu-info">
                   <strong>${gpu.name}</strong>
@@ -180,8 +180,8 @@ class GpuDetails extends Component {
                 ` : ""}
               </div>
             `
-              )
-              .join("")}
+    )
+    .join("")}
           </div>
         ` : ""}
       </div>

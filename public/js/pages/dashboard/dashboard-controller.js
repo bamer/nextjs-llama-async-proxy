@@ -55,13 +55,13 @@ class DashboardController {
       clearInterval(this.chartUpdateInterval);
       this.chartUpdateInterval = null;
     }
-    
+
     // Clean up chart manager
     if (this.chartManager) {
       this.chartManager.destroy();
       this.chartManager = null;
     }
-    
+
     // Clean up subscriptions
     this._cleanupSubscriptions();
   }
@@ -71,25 +71,44 @@ class DashboardController {
   }
 
   /**
-   * Load data when socket is connected
-   */
+    * Load data when socket is connected
+    */
   _startChartUpdates() {
     if (this.chartUpdateInterval) {
       clearInterval(this.chartUpdateInterval);
     }
-    
+
+    // Subscribe to metrics updates from broadcast
+    this._subscribe("metricsHistory", (history) => {
+      if (this.comp && Array.isArray(history) && history.length > 0) {
+        const metrics = stateManager.get("metrics");
+        this.comp.updateFromController(metrics, history);
+      }
+    });
+
+    // Periodic full refresh as fallback (every 30s instead of 3s for better performance)
     this.chartUpdateInterval = setInterval(async () => {
       try {
-        const d = await stateManager.getMetrics();
+        // Use cached data from broadcast when available
+        const cachedHistory = stateManager.get("metricsHistory") || [];
+        if (cachedHistory.length > 0) {
+          const metrics = stateManager.get("metrics");
+          if (this.comp) {
+            this.comp.updateFromController(metrics, cachedHistory);
+          }
+          return;
+        }
+
+        // Fallback to API call only if no cached data
         const h = await stateManager.getMetricsHistory({ limit: 60 });
-        
         if (this.comp) {
-          this.comp.updateFromController(d.metrics || null, h.history || []);
+          const metrics = stateManager.get("metrics");
+          this.comp.updateFromController(metrics, h.history || []);
         }
       } catch (e) {
         console.debug("[Dashboard] Chart update failed:", e.message);
       }
-    }, 3000);
+    }, 30000); // 30s instead of 3s for better performance
   }
 
   /**
@@ -122,8 +141,8 @@ class DashboardController {
   }
 
   /**
-   * Load all data in background - doesn't block initial render
-   */
+    * Load all data in background - doesn't block initial render
+    */
   _loadData() {
     if (!stateManager.isConnected()) {
       console.warn("[DASHBOARD] Cannot load data - socket not connected");
@@ -134,41 +153,56 @@ class DashboardController {
     Promise.all([
       stateManager.getConfig().catch(() => ({})),
       stateManager.getModels().catch(() => []),
-    ]).then(([config, models]) => {
-      stateManager.set("config", config.config || {});
-      stateManager.set("models", models.models || []);
+    ])
+      .then(([configResponse, modelsResponse]) => {
+        // Store config and models
+        const config = configResponse?.config || {};
+        const models = modelsResponse?.models || [];
+        stateManager.set("config", config);
+        stateManager.set("models", models);
 
-      // Then load optional data
-      return Promise.all([
-        stateManager.getMetrics().catch(() => null),
-        stateManager.getMetricsHistory({ limit: 60 }).catch(() => []),
-        stateManager.getLlamaStatus().catch(() => null),
-        stateManager.getSettings().catch(() => ({})),
-        stateManager.request("presets:list").catch(() => ({})),
-      ]);
-    }).then(([metrics, history, status, settings, presets]) => {
-      // Update state
-      stateManager.set("metrics", metrics?.metrics || null);
-      stateManager.set("metricsHistory", history?.history || []);
-      stateManager.set("llamaServerStatus", status?.status || null);
-      stateManager.set("settings", settings?.settings || {});
-      stateManager.set("presets", presets?.presets || []);
+        // Then load optional data (with shorter timeout for status checks)
+        return Promise.all([
+          stateManager.getMetrics().catch((e) => {
+            console.debug("[DASHBOARD] Metrics unavailable:", e.message);
+            return null;
+          }),
+          stateManager.getMetricsHistory({ limit: 60 }).catch(() => ({ history: [] })),
+          // Status checks will timeout faster now (3s instead of 15s)
+          stateManager.getLlamaStatus().catch((e) => {
+            console.debug("[DASHBOARD] Llama status unavailable:", e.message);
+            return null;
+          }),
+          stateManager.getSettings().catch(() => ({})),
+          stateManager.request("presets:list").catch(() => ({})),
+        ]).then(([metricsResponse, historyResponse, status, settings, presets]) => {
+          // Fix: status IS the status object, not status.status
+          // status can be null from catch block, handle both cases
+          const llamaStatus =
+            status && typeof status === "object" ? status : { status: "idle", port: null, url: null };
+          stateManager.set("llamaServerStatus", llamaStatus);
+          stateManager.set("metricsHistory", historyResponse?.history || []);
+          stateManager.set("metrics", metricsResponse?.metrics || null);
+          stateManager.set("settings", settings?.settings || {});
+          stateManager.set("presets", presets?.presets || []);
 
-      // Update UI if component still mounted
-      if (this.comp) {
-        this.comp.updateFromController(metrics?.metrics || null, history?.history || []);
-      }
-    }).catch(e => {
-      console.warn("[DASHBOARD] Data load failed:", e.message);
-    });
+          // Update UI if component still mounted - pass history to charts
+          if (this.comp) {
+            this.comp.updateFromController(metricsResponse?.metrics || null, historyResponse?.history || []);
+          }
+        });
+      })
+      .catch((e) => {
+        console.warn("[DASHBOARD] Data load failed:", e.message);
+      });
   }
 
   handleRouterAction(action, data) {
     switch (action) {
-      case "start": this._start(); break;
-      case "start-with-preset": this._startWithPreset(data); break;
-      case "stop": this._stop(); break;
-      case "restart": this._restart(); break;
+    case "start": this._start(); break;
+    case "start-with-preset": this._startWithPreset(data); break;
+    case "stop": this._stop(); break;
+    case "restart": this._restart(); break;
     }
   }
 
@@ -269,19 +303,19 @@ class DashboardController {
     */
   render() {
     console.log("[DASHBOARD] Render - creating page component...");
-    
+
     // Load initial data
     // this._loadData(); // Removed direct call
-    
+
     // Ensure chartManager is created
     this._ensureChartManager();
-    
+
     // Create page component with chartManager
     this.comp = new DashboardPage({ controller: this, chartManager: this.chartManager }); // Pass controller and chartManager to page
-    
+
     // Render component to HTML element (this.comp.render() now returns a DOM element)
     const el = this.comp.render();
-    
+
     // Ensure el is a valid Node before proceeding
     if (!(el instanceof Node)) {
       console.error("[DASHBOARD] DashboardPage.render() did not return a valid DOM element:", el);
@@ -292,18 +326,18 @@ class DashboardController {
     // Link component to DOM element
     this.comp._el = el;
     el._component = this.comp; // This line will now work as el is a valid Node
-    
+
     // Bind events
     this.comp.bindEvents();
-    
+
     // Start chart updates if component supports it
     if (this.comp.updateFromController && typeof this.comp.updateFromController === "function") {
       this._startChartUpdates();
     }
-    
+
     // Call onMount for the component
     this.comp.onMount?.();
-    
+
     console.log("[DASHBOARD] Render complete");
     return el;
   }

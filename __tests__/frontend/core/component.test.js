@@ -34,6 +34,9 @@ function createMockFn() {
 
 function createMockElement(tag) {
   let _parentNode = null;
+  const classList = new Set(); // Mock classList
+  const attributes = new Map(); // Mock attributes
+
   const el = {
     tagName: tag.toUpperCase(),
     className: "",
@@ -50,6 +53,29 @@ function createMockElement(tag) {
     set parentNode(v) {
       _parentNode = v;
     },
+    // Mock classList API
+    classList: {
+      add: createMockFn().mockImplementation((cls) => classList.add(cls)),
+      remove: createMockFn().mockImplementation((cls) => classList.delete(cls)),
+      contains: createMockFn().mockImplementation((cls) => classList.has(cls)),
+    },
+    // Mock attribute API
+    setAttribute: createMockFn().mockImplementation((name, value) => attributes.set(name, value)),
+    getAttribute: createMockFn().mockImplementation((name) => attributes.get(name)),
+    removeAttribute: createMockFn().mockImplementation((name) => attributes.delete(name)),
+    hasAttribute: createMockFn().mockImplementation((name) => attributes.has(name)),
+    // Mock querySelector for internal querying
+    querySelector: createMockFn().mockImplementation((selector) => {
+      // A very basic mock querySelector: checks direct children by class name or tag name
+      // Not a full CSS selector engine, but enough for basic component.$() functionality
+      if (selector.startsWith(".")) {
+        const cls = selector.substring(1);
+        return el.children.find(c => c.classList?.contains(cls)) || null;
+      } else if (selector === tag.toLowerCase()) {
+        return el; // Return self if selector matches own tag (e.g. div.$('div'))
+      }
+      return null; // For other selectors, return null for now
+    }),
   };
   el.appendChild = createMockFn();
   el.appendChild.mockImplementation(function (c) {
@@ -73,8 +99,6 @@ function createMockElement(tag) {
     if (ne) ne.parentNode = el.parentNode;
     el.parentNode = null;
   });
-  el.setAttribute = createMockFn();
-  el.getAttribute = createMockFn();
   el.addEventListener = createMockFn();
   el.contains = createMockFn().mockReturnValue(true);
   el.closest = createMockFn().mockImplementation(function () {
@@ -140,10 +164,11 @@ describe("Component - Event-Driven DOM Updates", function () {
       expect(p.appendChild.mock.calls.length).toBeGreaterThanOrEqual(1);
       expect(c._el).not.toBeNull();
     });
-    it("should return this when parent is null", function () {
+    it("should throw error when parent is null", function () {
       const c = new Component();
-      const result = c.mount(null);
-      expect(result).toBe(c);
+      expect(function () {
+        c.mount(null);
+      }).toThrow("[Component] Parent not found"); // Expect the error message from component-base.js
     });
     it("should call onMount lifecycle method", function () {
       let called = false;
@@ -299,7 +324,7 @@ describe("Component - Event-Driven DOM Updates", function () {
   });
 
   describe("Edge cases", function () {
-    it("should handle mount when render returns null", function () {
+    it("should throw error when render returns null", function () {
       class F extends Component {
         render() {
           return null;
@@ -313,8 +338,7 @@ describe("Component - Event-Driven DOM Updates", function () {
         },
       };
       const c = new F();
-      c.mount(p);
-      expect(c._el).toBeNull();
+      expect(() => c.mount(p)).toThrow("[Component] render() must return an HTML string or a DOM Node, received: object undefined");
     });
   });
 });

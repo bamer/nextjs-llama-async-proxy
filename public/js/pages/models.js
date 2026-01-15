@@ -102,7 +102,7 @@ class ModelsPage extends Component {
 
   _renderTable(models) {
     if (models.length === 0) {
-      return '<div class="empty-state">No models found</div>';
+      return "<div class=\"empty-state\">No models found</div>";
     }
 
     const rows = models

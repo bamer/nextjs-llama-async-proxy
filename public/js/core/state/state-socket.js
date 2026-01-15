@@ -152,20 +152,27 @@ class StateSocket {
   _doRequest(event, data, resolve, reject) {
     const reqId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const isConfigOperation = event.startsWith("config:") || event.startsWith("settings:");
-    const timeoutMs = isConfigOperation ? 10000 : 15000;
+    const isStatusCheck = event === "llama:status" || event === "metrics:get" || event === "models:list";
+    // Status checks should be fast, config operations get more time
+    const timeoutMs = isStatusCheck ? 3000 : (isConfigOperation ? 10000 : 15000);
     const timeout = setTimeout(() => {
-      console.warn("[STATE-SOCKET] Request timeout:", {
-        event,
-        requestId: reqId,
-        timeoutMs,
-        timeoutSeconds: timeoutMs / 1000,
-      });
       this.pending.delete(reqId);
-      reject(new Error(`Request timeout after ${timeoutMs / 1000}s for event: ${event}`));
+      // Don't log timeout for status checks (they're expected to fail when server is down)
+      if (!isStatusCheck) {
+        console.warn("[STATE-SOCKET] Request timeout:", {
+          event,
+          requestId: reqId,
+          timeoutMs,
+        });
+      }
+      reject(new Error(`Request timeout for: ${event}`));
     }, timeoutMs);
     this.pending.set(reqId, { resolve, reject, event, timeout });
     this.socket.emit(event, { ...data, requestId: reqId });
-    console.log("[DEBUG] StateSocket._doRequest:", { event, requestId: reqId, timeoutMs });
+    // Only log debug for non-status events to reduce noise
+    if (!isStatusCheck) {
+      console.log("[DEBUG] StateSocket._doRequest:", { event, requestId: reqId });
+    }
   }
 
   /**

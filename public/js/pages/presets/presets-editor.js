@@ -11,12 +11,12 @@ PresetsPage.prototype._updatePresetsList = function () {
   }
   if (!container) return;
 
-  let html = this.state.presets.map((preset) => {
+  const html = this.state.presets.map((preset) => {
     const presetName = preset?.name;
     const isActive = this.state.selectedPreset?.name === presetName;
     return `<div class="preset-item ${isActive ? "active" : ""}" data-preset-name="${presetName}">` +
-      `<span class="preset-name">${presetName}</span>` +
-      (presetName !== "default" ? `<span class="preset-delete" data-preset-name="${presetName}">×</span>` : "") + `</div>`;
+      `<span class="preset-name">${presetName}</span>${
+        presetName !== "default" ? `<span class="preset-delete" data-preset-name="${presetName}">×</span>` : ""  }</div>`;
   }).join("");
 
   container.innerHTML = html;
@@ -71,16 +71,16 @@ PresetsPage.prototype._renderEditor = function () {
               <strong>Added Parameters:</strong>
               <div class="added-params-list">
                 ${Object.entries(defaults).map(([key, value]) => {
-                  const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
-                  const escaped = String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-                  return `<div class="param-item-display" data-param-key="${key}">
+    const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
+    const escaped = String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    return `<div class="param-item-display" data-param-key="${key}">
                     <div class="param-name"><strong>${param?.label || key}</strong></div>
                     <div class="param-controls">
                       <input type="text" class="param-value-input" value="${escaped}" data-param-key="${key}" placeholder="Value">
                       <button class="btn-param-delete" data-param-key="${key}" title="Delete">×</button>
                     </div>
                   </div>`;
-                }).join("")}
+  }).join("")}
               </div>
             </div>
           ` : "<p class='defaults-hint'>Default preset starts empty</p>"}
@@ -147,7 +147,7 @@ PresetsPage.prototype._handleParamChange = async function (input) {
   try {
     const param = LLAMA_PARAMS.find((p) => p.iniKey === paramKey);
     if (!param) return;
-    let value = param.type === "number" ? parseFloat(newValue) : newValue;
+    const value = param.type === "number" ? parseFloat(newValue) : newValue;
     if (param.type === "number" && isNaN(value)) throw new Error("Invalid number");
     this.state.globalDefaults[paramKey] = value;
     await this._getService().updateDefaults(this.state.selectedPreset.name, this.state.globalDefaults);
@@ -180,7 +180,7 @@ PresetsPage.prototype._handleModelParamChange = async function (input) {
   try {
     const param = LLAMA_PARAMS.find((p) => p.iniKey === paramKey);
     if (!param) return;
-    let value = param.type === "number" ? parseFloat(newValue) : newValue;
+    const value = param.type === "number" ? parseFloat(newValue) : newValue;
     if (param.type === "number" && isNaN(value)) throw new Error("Invalid number");
     const modelIdx = this.state.standaloneModels.findIndex((m) => m.name === modelName);
     if (modelIdx < 0) return;

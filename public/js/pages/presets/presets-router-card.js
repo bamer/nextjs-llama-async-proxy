@@ -29,16 +29,16 @@ PresetsPage.prototype._updateRouterCard = function () {
     const routerModels = this.state.routerStatus?.models || [];
     const loadedCount = routerModels.filter((x) => x.state === "loaded").length;
 
-  // Helper to generate preset options
-  const getPresetOptions = () => {
-    return this.state.presets.map((preset) => {
-      const presetName = preset?.name;
-      const isSelected = this.state.selectedPreset?.name === presetName;
-      return `<option value="${presetName}" ${isSelected ? "selected" : ""}>${presetName}</option>`;
-    }).join("");
-  };
+    // Helper to generate preset options
+    const getPresetOptions = () => {
+      return this.state.presets.map((preset) => {
+        const presetName = preset?.name;
+        const isSelected = this.state.selectedPreset?.name === presetName;
+        return `<option value="${presetName}" ${isSelected ? "selected" : ""}>${presetName}</option>`;
+      }).join("");
+    };
 
-  controls.innerHTML = `
+    controls.innerHTML = `
     ${hasPresets ? `
       <div class="preset-selector">
         <select class="preset-dropdown" id="router-preset-select">
@@ -196,20 +196,20 @@ PresetsPage.prototype._handleRouterAction = function (action, data) {
   console.log("[PRESETS] RouterCard action:", action, data);
 
   switch (action) {
-    case "start":
-      this._handleLaunchServer();
-      break;
-    case "stop":
-      this._handleStopServer();
-      break;
-    case "restart":
-      this._handleStopServer().then(() => {
-        setTimeout(() => this._handleLaunchServer(), 2000);
-      });
-      break;
-    case "start-with-preset":
-      this._handleLaunchServerWithPreset(data);
-      break;
+  case "start":
+    this._handleLaunchServer();
+    break;
+  case "stop":
+    this._handleStopServer();
+    break;
+  case "restart":
+    this._handleStopServer().then(() => {
+      setTimeout(() => this._handleLaunchServer(), 2000);
+    });
+    break;
+  case "start-with-preset":
+    this._handleLaunchServerWithPreset(data);
+    break;
   }
 };
 

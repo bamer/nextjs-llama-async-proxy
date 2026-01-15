@@ -40,7 +40,7 @@ class SettingsPage extends Component {
   }
 
   async _save() {
-    const btn = this.$('[data-action="save"]');
+    const btn = this.$("[data-action=\"save\"]");
     if (btn) {
       btn.textContent = "Saving...";
       btn.disabled = true;
@@ -296,13 +296,13 @@ class SettingsPage extends Component {
           this.batch_size = val;
         },
         onTemperatureChange: (val) => {
-           this.temperature = val;
-         },
-         onRepeatPenaltyChange: (val) => {
-           this.repeatPenalty = val;
-         },
-       }),
-       Component.h(window.LoggingConfig, {
+          this.temperature = val;
+        },
+        onRepeatPenaltyChange: (val) => {
+          this.repeatPenalty = val;
+        },
+      }),
+      Component.h(window.LoggingConfig, {
         logLevel: this.logLevel,
         maxFileSize: this.maxFileSize,
         maxFiles: this.maxFiles,

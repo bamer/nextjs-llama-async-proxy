@@ -295,8 +295,8 @@ class ParameterForm extends Component {
       if (isValid) {
         text.innerHTML = "<strong>All parameters valid</strong>";
       } else {
-        text.innerHTML = `<strong>${this.validationSummary.errorCount} error(s) found</strong>` +
-          (this.validationSummary.warningCount > 0 ? `, ${this.validationSummary.warningCount} warning(s)` : "");
+        text.innerHTML = `<strong>${this.validationSummary.errorCount} error(s) found</strong>${
+          this.validationSummary.warningCount > 0 ? `, ${this.validationSummary.warningCount} warning(s)` : ""}`;
       }
     }
     if (errors) {
@@ -392,14 +392,14 @@ class ParameterForm extends Component {
         ),
         this.validationSummary?.hasErrors
           ? Component.h(
-              "button",
-              {
-                type: "button",
-                className: "btn btn-warning btn-sm",
-                "data-action": "show-validation",
-              },
-              `Show Errors (${this.validationSummary.errorCount})`
-            )
+            "button",
+            {
+              type: "button",
+              className: "btn btn-warning btn-sm",
+              "data-action": "show-validation",
+            },
+            `Show Errors (${this.validationSummary.errorCount})`
+          )
           : null,
         Component.h(
           "button",
@@ -434,24 +434,24 @@ class ParameterForm extends Component {
           isValid
             ? Component.h("strong", {}, "All parameters valid")
             : Component.h(
-                "div",
-                {},
-                Component.h("strong", {}, `${validationSummary.errorCount} error(s) found`),
-                validationSummary.warningCount > 0
-                  ? Component.h("span", {}, `, ${validationSummary.warningCount} warning(s)`)
-                  : null
-              ),
+              "div",
+              {},
+              Component.h("strong", {}, `${validationSummary.errorCount} error(s) found`),
+              validationSummary.warningCount > 0
+                ? Component.h("span", {}, `, ${validationSummary.warningCount} warning(s)`)
+                : null
+            ),
           !isValid && validationSummary.errorFields.length > 0
             ? Component.h(
-                "ul",
-                { className: "banner-errors" },
-                validationSummary.errorFields
-                  .slice(0, 5)
-                  .map((field) => Component.h("li", { key: field }, field)),
-                validationSummary.errorFields.length > 5
-                  ? Component.h("li", {}, `...and ${validationSummary.errorFields.length - 5} more`)
-                  : null
-              )
+              "ul",
+              { className: "banner-errors" },
+              validationSummary.errorFields
+                .slice(0, 5)
+                .map((field) => Component.h("li", { key: field }, field)),
+              validationSummary.errorFields.length > 5
+                ? Component.h("li", {}, `...and ${validationSummary.errorFields.length - 5} more`)
+                : null
+            )
             : null
         )
       )

@@ -101,10 +101,10 @@ class PresetsPage extends Component {
   _emit(event, data) {
     if (!this._el) return;
     switch (event) {
-      case "preset:select": this._handlePresetSelect(data); break;
-      case "preset:loaded": this._handlePresetLoaded(data); break;
-      case "defaults:toggle": this._toggleDefaultsSection(); break;
-      case "param:add": this._handleAddParam(data); break;
+    case "preset:select": this._handlePresetSelect(data); break;
+    case "preset:loaded": this._handlePresetLoaded(data); break;
+    case "defaults:toggle": this._toggleDefaultsSection(); break;
+    case "param:add": this._handleAddParam(data); break;
     }
   }
 

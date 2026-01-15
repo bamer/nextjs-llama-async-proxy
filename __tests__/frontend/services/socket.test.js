@@ -210,26 +210,10 @@ describe("SocketClient", function () {
       expect(mockSocket.on.mock.calls.length).toBeGreaterThan(0);
     });
 
-    it("should create new client instance for each connection attempt", function () {
-      // This test verifies that connect() can be called multiple times
-      // with different io configurations
-      mockIoFn = () => mockSocket;
-
-      const client1 = new SocketClient();
-      const client2 = new SocketClient();
-
-      client1.connect();
-      client2.connect();
-
-      expect(client1).not.toBe(client2);
-    });
-  });
-
-  describe("_connect", function () {
     it("should register connect handler", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
 
       expect(mockSocket.on.mock.calls.some((c) => c[0] === "connect")).toBe(true);
     });
@@ -237,7 +221,7 @@ describe("SocketClient", function () {
     it("should register disconnect handler", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
 
       expect(mockSocket.on.mock.calls.some((c) => c[0] === "disconnect")).toBe(true);
     });
@@ -245,7 +229,7 @@ describe("SocketClient", function () {
     it("should register connect_error handler", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
 
       expect(mockSocket.on.mock.calls.some((c) => c[0] === "connect_error")).toBe(true);
     });
@@ -253,7 +237,7 @@ describe("SocketClient", function () {
     it("should register onAny handler", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
 
       expect(mockSocket.onAny.mock.calls.length).toBeGreaterThan(0);
     });
@@ -262,7 +246,7 @@ describe("SocketClient", function () {
       mockIoFn = () => mockSocket;
       mockSocket.id = "test-socket-id";
       const client = new SocketClient();
-      client._connect();
+      client.connect();
 
       // Simulate connect event by triggering the registered handler
       const handlers = mockSocket._handlers;
@@ -277,7 +261,7 @@ describe("SocketClient", function () {
     it("should set _connected to true on connect", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
 
       // Trigger connect handler
       const handlers = mockSocket._handlers;
@@ -298,7 +282,7 @@ describe("SocketClient", function () {
       });
 
       // Connect to register socket handlers
-      client._connect();
+      client.connect();
 
       // Trigger connect handler - this should call client._emit("connect", client.socket.id)
       const handlers = mockSocket._handlers;
@@ -312,7 +296,7 @@ describe("SocketClient", function () {
     it("should set _connected to false on disconnect", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
 
       // First trigger connect to set _connected to true
       const handlers = mockSocket._handlers;
@@ -339,7 +323,7 @@ describe("SocketClient", function () {
       });
 
       // Connect to register socket handlers
-      client._connect();
+      client.connect();
 
       // Trigger disconnect handler
       const handlers = mockSocket._handlers;
@@ -359,7 +343,7 @@ describe("SocketClient", function () {
       });
 
       // Connect to register socket handlers
-      client._connect();
+      client.connect();
 
       // Trigger connect_error
       const handlers = mockSocket._handlers;
@@ -376,7 +360,7 @@ describe("SocketClient", function () {
     it("should call socket.disconnect", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
 
       client.disconnect();
 
@@ -386,7 +370,7 @@ describe("SocketClient", function () {
     it("should set socket to null", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
 
       client.disconnect();
 
@@ -411,7 +395,7 @@ describe("SocketClient", function () {
     it("should emit event to socket when connected", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
       mockSocket.connected = true;
 
       client.emit("test:event", { data: "test" });
@@ -447,7 +431,7 @@ describe("SocketClient", function () {
     it("should use empty object as default data", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
       mockSocket.connected = true;
 
       client.emit("test:event");
@@ -559,7 +543,7 @@ describe("SocketClient", function () {
     it("should return true when socket is connected", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
       mockSocket.connected = true;
 
       expect(client.isConnected).toBe(true);
@@ -590,7 +574,7 @@ describe("SocketClient", function () {
     it("should return socket id when available", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
       mockSocket.id = "socket-456";
 
       expect(client.id).toBe("socket-456");
@@ -725,7 +709,7 @@ describe("SocketClient", function () {
       });
 
       // Connect to register handlers including onAny
-      client._connect();
+      client.connect();
 
       // Get the onAny handler that was registered
       if (mockSocket._onAnyHandler) {
@@ -740,7 +724,7 @@ describe("SocketClient", function () {
     it("should handle emit with data containing special values", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
       mockSocket.connected = true;
 
       // Should not throw with null, undefined, etc.
@@ -756,7 +740,7 @@ describe("SocketClient", function () {
       const client = new SocketClient();
 
       // First connect
-      client._connect();
+      client.connect();
 
       const handlers = mockSocket._handlers;
 
@@ -817,7 +801,7 @@ describe("SocketClient", function () {
       });
 
       // Connect to register handlers on socket
-      client._connect();
+      client.connect();
 
       // Manually trigger the registered socket handlers
       const handlers = mockSocket._handlers;
@@ -847,7 +831,7 @@ describe("SocketClient", function () {
       // Calling _connect directly with undefined io should not crash
       // (it would crash in production, but we verify the code path exists)
       try {
-        client._connect();
+        client.connect();
       } catch (e) {
         // Expected - window.io() returns undefined or is not a function
         expect(e.message).toMatch(/undefined|not a function/i);

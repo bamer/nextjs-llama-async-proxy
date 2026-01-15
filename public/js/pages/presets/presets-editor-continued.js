@@ -20,16 +20,16 @@ PresetsPage.prototype._renderStandaloneHtml = function () {
             <strong>Parameters:</strong>
             <div class="model-params-list">
               ${modelParams.map(([key, value]) => {
-                const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
-                const escaped = String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-                return `<div class="param-item-display" data-param-key="${key}" data-model="${model.name}">
+    const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
+    const escaped = String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    return `<div class="param-item-display" data-param-key="${key}" data-model="${model.name}">
                   <div class="param-name"><strong>${param?.label || key}</strong></div>
                   <div class="param-controls">
                     <input type="text" class="param-value-input" value="${escaped}" data-param-key="${key}" data-model="${model.name}" placeholder="Value">
                     <button class="btn-param-delete" data-param-key="${key}" data-model="${model.name}" title="Delete">×</button>
                   </div>
                 </div>`;
-              }).join("")}
+  }).join("")}
             </div>
           </div>
         ` : "<p>No parameters</p>"}

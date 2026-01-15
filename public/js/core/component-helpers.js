@@ -71,11 +71,11 @@ Component.prototype.on = function (event, selector, handler) {
     typeof selector === "function"
       ? selector.bind(this)
       : (e) => {
-          const target = e.target.closest(selector);
-          if (target && this._el.contains(target)) {
-            handler.call(this, e, target);
-          }
-        };
+        const target = e.target.closest(selector);
+        if (target && this._el.contains(target)) {
+          handler.call(this, e, target);
+        }
+      };
 
   this._el.addEventListener(event, fn, false);
   this._eventListeners.push([this._el, event, fn]);

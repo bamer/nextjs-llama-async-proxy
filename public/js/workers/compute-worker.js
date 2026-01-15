@@ -11,68 +11,68 @@ self.onmessage = async (e) => {
     let result;
 
     switch (type) {
-      case "validate:preset":
-        result = await _validatePreset(payload);
-        break;
+    case "validate:preset":
+      result = await _validatePreset(payload);
+      break;
 
-      case "validate:parameters":
-        result = await _validateParameters(payload);
-        break;
+    case "validate:parameters":
+      result = await _validateParameters(payload);
+      break;
 
-      case "validate:value":
-        result = _validateValue(payload.value, payload.type, payload.options);
-        break;
+    case "validate:value":
+      result = _validateValue(payload.value, payload.type, payload.options);
+      break;
 
-      case "format:bytes":
-        result = _formatBytes(payload);
-        break;
+    case "format:bytes":
+      result = _formatBytes(payload);
+      break;
 
-      case "format:percent":
-        result = _formatPercent(payload);
-        break;
+    case "format:percent":
+      result = _formatPercent(payload);
+      break;
 
-      case "format:timestamp":
-        result = _formatTimestamp(payload);
-        break;
+    case "format:timestamp":
+      result = _formatTimestamp(payload);
+      break;
 
-      case "format:relative":
-        result = _formatRelativeTime(payload);
-        break;
+    case "format:relative":
+      result = _formatRelativeTime(payload);
+      break;
 
-      case "parse:ini":
-        result = _parseIni(payload);
-        break;
+    case "parse:ini":
+      result = _parseIni(payload);
+      break;
 
-      case "parse:json":
-        result = _parseJson(payload);
-        break;
+    case "parse:json":
+      result = _parseJson(payload);
+      break;
 
-      case "generate:id":
-        result = _generateId();
-        break;
+    case "generate:id":
+      result = _generateId();
+      break;
 
-      case "deep:clone":
-        result = _deepClone(payload);
-        break;
+    case "deep:clone":
+      result = _deepClone(payload);
+      break;
 
-      case "debounce":
-        result = { message: "debounce is a function factory, not a value" };
-        break;
+    case "debounce":
+      result = { message: "debounce is a function factory, not a value" };
+      break;
 
-      case "throttle":
-        result = { message: "throttle is a function factory, not a value" };
-        break;
+    case "throttle":
+      result = { message: "throttle is a function factory, not a value" };
+      break;
 
-      case "is:empty":
-        result = _isEmpty(payload);
-        break;
+    case "is:empty":
+      result = _isEmpty(payload);
+      break;
 
-      case "hash:simple":
-        result = _simpleHash(payload);
-        break;
+    case "hash:simple":
+      result = _simpleHash(payload);
+      break;
 
-      default:
-        throw new Error(`Unknown operation: ${type}`);
+    default:
+      throw new Error(`Unknown operation: ${type}`);
     }
 
     self.postMessage({ success: true, result, id });
@@ -86,52 +86,52 @@ self.onmessage = async (e) => {
  */
 function _validateValue(value, type, options = {}) {
   switch (type) {
-    case "string":
-      return typeof value === "string" && value.trim().length > 0;
+  case "string":
+    return typeof value === "string" && value.trim().length > 0;
 
-    case "number":
-      if (typeof value !== "number" || isNaN(value) || !isFinite(value)) return false;
-      if (options.min !== undefined && value < options.min) return false;
-      if (options.max !== undefined && value > options.max) return false;
+  case "number":
+    if (typeof value !== "number" || isNaN(value) || !isFinite(value)) return false;
+    if (options.min !== undefined && value < options.min) return false;
+    if (options.max !== undefined && value > options.max) return false;
+    return true;
+
+  case "integer":
+    return Number.isInteger(value) && !isNaN(value);
+
+  case "positive":
+    return typeof value === "number" && value > 0 && Number.isInteger(value);
+
+  case "email":
+    if (typeof value !== "string") return false;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(value);
+
+  case "url":
+    if (typeof value !== "string") return false;
+    try {
+      new URL(value);
       return true;
-
-    case "integer":
-      return Number.isInteger(value) && !isNaN(value);
-
-    case "positive":
-      return typeof value === "number" && value > 0 && Number.isInteger(value);
-
-    case "email":
-      if (typeof value !== "string") return false;
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return emailRegex.test(value);
-
-    case "url":
-      if (typeof value !== "string") return false;
-      try {
-        new URL(value);
-        return true;
-      } catch {
-        return false;
-      }
-
-    case "ipv4":
-      if (typeof value !== "string") return false;
-      const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
-      if (!ipv4Regex.test(value)) return false;
-      const parts = value.split(".").map(Number);
-      return parts.every((part) => part >= 0 && part <= 255);
-
-    case "port":
-      return _validateValue(value, "number", { min: 1, max: 65535 });
-
-    case "modelName":
-      if (typeof value !== "string") return false;
-      if (value.trim().length === 0 || value.trim().length > 100) return false;
-      return /^[a-zA-Z0-9_\-./]+$/.test(value);
-
-    default:
+    } catch {
       return false;
+    }
+
+  case "ipv4":
+    if (typeof value !== "string") return false;
+    const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+    if (!ipv4Regex.test(value)) return false;
+    const parts = value.split(".").map(Number);
+    return parts.every((part) => part >= 0 && part <= 255);
+
+  case "port":
+    return _validateValue(value, "number", { min: 1, max: 65535 });
+
+  case "modelName":
+    if (typeof value !== "string") return false;
+    if (value.trim().length === 0 || value.trim().length > 100) return false;
+    return /^[a-zA-Z0-9_\-./]+$/.test(value);
+
+  default:
+    return false;
   }
 }
 

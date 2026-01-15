@@ -16,15 +16,25 @@ export async function getLlamaStatus() {
   const { isPortInUse } = await import("./process.js");
 
   const isRunning = state.isRunning;
-  const portInUse = isPortInUse(state.port);
+  const portInUse = state.port ? await isPortInUse(state.port) : false;
 
   let modelsStatus = null;
+  let modelsError = null;
 
   if (isRunning || portInUse) {
     try {
-      modelsStatus = await llamaApiRequest("/models", "GET", null, url);
+      // Add timeout protection for API call
+      const timeoutMs = 5000;
+      const modelsPromise = llamaApiRequest("/models", "GET", null, url);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout")), timeoutMs)
+      );
+
+      modelsStatus = await Promise.race([modelsPromise, timeoutPromise]);
     } catch (e) {
+      modelsError = e.message;
       console.warn("[LLAMA] Failed to get models status:", e.message);
+      // Don't fail the whole status request, just log the warning
     }
   }
 
@@ -35,6 +45,7 @@ export async function getLlamaStatus() {
     processRunning: isRunning,
     mode: "router",
     models: modelsStatus?.models || [],
+    modelsError: modelsError || null,
   };
 }
 

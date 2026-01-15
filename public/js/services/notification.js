@@ -223,7 +223,7 @@ class NotificationService {
 
     let html = "";
     if (type === "loading") {
-      html = `<div class="toast-icon"><span class="spinner-sm"></span></div>`;
+      html = "<div class=\"toast-icon\"><span class=\"spinner-sm\"></span></div>";
     } else {
       html = `<div class="toast-icon">${this._getIcon(type)}</div>`;
     }

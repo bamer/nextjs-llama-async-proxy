@@ -67,8 +67,8 @@ class DashboardPage extends Component {
         if (routerCard) {
           const select = routerCard.querySelector("#preset-select");
           if (select) {
-            select.innerHTML = '<option value="">Select Preset...</option>' +
-              this.presets.map((p) => `<option value="${p.name}">${p.name}</option>`).join("");
+            select.innerHTML = `<option value="">Select Preset...</option>${
+              this.presets.map((p) => `<option value="${p.name}">${p.name}</option>`).join("")}`;
           }
         }
       })
@@ -78,6 +78,19 @@ class DashboardPage extends Component {
     this.unsubscribers.push(
       stateManager.subscribe("metrics", (m) => {
         this.handleMetricsChange(m);
+      })
+    );
+
+    // Subscribe to metrics history updates (for charts)
+    this.unsubscribers.push(
+      stateManager.subscribe("metricsHistory", (history) => {
+        if (Array.isArray(history) && history.length > 0 && this.chartManager) {
+          const metrics = stateManager.get("metrics") || {};
+          this.history = history;
+          this.chartManager.updateCharts(metrics, history);
+          // Also update ChartsSection's internal history
+          this._updateChartsSection();
+        }
       })
     );
 
@@ -96,9 +109,11 @@ class DashboardPage extends Component {
   handleMetricsChange(metrics) {
     this.metrics = metrics || { cpu: { usage: 0 }, memory: { used: 0 }, gpu: null };
     this.gpuMetrics = metrics?.gpu || { usage: 0, memoryUsed: 0, memoryTotal: 0, list: [] };
-    this.history = metrics?.history || [];
+    // Get history from state manager (updated via broadcast _addMetric)
+    // Don't rely on metrics.history as broadcast doesn't include it
+    this.history = stateManager.get("metricsHistory") || [];
 
-    if (this.chartManager) {
+    if (this.chartManager && this.history.length > 0) {
       this.chartManager.updateCharts(metrics, this.history);
     }
   }
@@ -161,7 +176,7 @@ class DashboardPage extends Component {
     // Update button
     const controls = routerCard.querySelector(".router-controls");
     if (controls) {
-      const btn = controls.querySelector('[data-action="start"], [data-action="stop"]');
+      const btn = controls.querySelector("[data-action=\"start\"], [data-action=\"stop\"]");
       if (btn) {
         if (isRunning) {
           btn.setAttribute("data-action", "stop");
@@ -175,13 +190,13 @@ class DashboardPage extends Component {
         btn.disabled = this.routerLoading;
       }
 
-      const restartBtn = controls.querySelector('[data-action="restart"]');
+      const restartBtn = controls.querySelector("[data-action=\"restart\"]");
       if (restartBtn) {
         restartBtn.disabled = !isRunning || this.routerLoading;
         restartBtn.textContent = this.routerLoading ? "🔄 Restarting..." : "🔄 Restart";
       }
 
-      const launchPresetBtn = controls.querySelector('[data-action="launch-preset"]');
+      const launchPresetBtn = controls.querySelector("[data-action=\"launch-preset\"]");
       if (launchPresetBtn) {
         launchPresetBtn.disabled = this.routerLoading;
         launchPresetBtn.textContent = this.routerLoading
@@ -242,6 +257,27 @@ class DashboardPage extends Component {
         usageCanvas.style.display = this.chartType === "usage" ? "block" : "none";
         memoryCanvas.style.display = this.chartType === "memory" ? "block" : "none";
       }
+
+      // Update ChartsSection's internal history reference
+      const chartsSectionComponent = chartsSection._component;
+      if (chartsSectionComponent) {
+        chartsSectionComponent.history = this.history;
+        chartsSectionComponent.updateDOM();
+      }
+    }
+  }
+
+  /**
+   * Update ChartsSection with new history
+   */
+  _updateChartsSection() {
+    const chartsSection = this._el?.querySelector(".charts-section");
+    if (chartsSection) {
+      const chartsSectionComponent = chartsSection._component;
+      if (chartsSectionComponent) {
+        chartsSectionComponent.history = this.history;
+        chartsSectionComponent.updateDOM();
+      }
     }
   }
 
@@ -256,8 +292,8 @@ class DashboardPage extends Component {
 
     // Update DOM
     if (this._el) {
-      const usageTab = this._el.querySelector('[data-chart="usage"]');
-      const memoryTab = this._el.querySelector('[data-chart="memory"]');
+      const usageTab = this._el.querySelector("[data-chart=\"usage\"]");
+      const memoryTab = this._el.querySelector("[data-chart=\"memory\"]");
       if (usageTab && memoryTab) {
         usageTab.classList.toggle("active", newType === "usage");
         memoryTab.classList.toggle("active", newType === "memory");

@@ -118,15 +118,33 @@ if (typeof ChartManager === "undefined") {
     }
 
     /**
-     * Update charts with new metrics data
-     * @param {Object} metrics - Current metrics data
-     * @param {Array} history - Historical metrics data
-     */
+      * Update charts with new metrics data
+      * @param {Object} metrics - Current metrics data
+      * @param {Array} history - Historical metrics data
+      */
     updateCharts(metrics, history) {
-      if (!history || history.length === 0) return;
+      if (!history) return;
 
-      this.usageChart.update(history);
-      this.memoryChart.update(history);
+      if (history.length > 0) {
+        // Update existing charts with new data
+        this.usageChart.update(history);
+        this.memoryChart.update(history);
+      } else {
+        // Create charts with empty data if they don't exist yet
+        // This ensures charts are ready when data arrives
+        if (!this.usageChart.exists()) {
+          const canvas = this._getChartCanvas("usage");
+          if (canvas && canvas.width > 0 && canvas.height > 0) {
+            this.usageChart.create(canvas, []);
+          }
+        }
+        if (!this.memoryChart.exists()) {
+          const canvas = this._getChartCanvas("memory");
+          if (canvas && canvas.width > 0 && canvas.height > 0) {
+            this.memoryChart.create(canvas, []);
+          }
+        }
+      }
     }
 
     /**

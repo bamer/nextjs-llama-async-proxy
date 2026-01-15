@@ -132,14 +132,14 @@ class StatsGrid extends Component {
           <div class="stat-content">
             <span class="stat-label">GPU Memory</span>
             <span class="stat-value">${
-              gpu?.memoryTotal > 0
-                ? `${window.AppUtils?.formatBytes?.(gpu?.memoryUsed || 0)} / ${window.AppUtils?.formatBytes?.(gpu?.memoryTotal || 0)}`
-                : `${(gpu?.usage || 0).toFixed(1)}%`
-            }</span>
+  gpu?.memoryTotal > 0
+    ? `${window.AppUtils?.formatBytes?.(gpu?.memoryUsed || 0)} / ${window.AppUtils?.formatBytes?.(gpu?.memoryTotal || 0)}`
+    : `${(gpu?.usage || 0).toFixed(1)}%`
+}</span>
             <div class="stat-bar">
               <div class="stat-bar-fill gpu" style="width: ${
-                gpu?.memoryTotal > 0 ? (gpu?.memoryUsed / gpu?.memoryTotal) * 100 : Math.min(gpu?.usage || 0, 100)
-              }%"></div>
+  gpu?.memoryTotal > 0 ? (gpu?.memoryUsed / gpu?.memoryTotal) * 100 : Math.min(gpu?.usage || 0, 100)
+}%"></div>
             </div>
           </div>
         </div>

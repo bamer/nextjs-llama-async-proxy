@@ -230,7 +230,7 @@ describe("SocketClient Branch Coverage", function () {
       mockIoFn = () => mockSocket;
 
       const client = new SocketClient();
-      client._connect();
+      client.connect();
 
       // Simulate connected state
       mockSocket._setConnectionState("connected");
@@ -258,7 +258,7 @@ describe("SocketClient Branch Coverage", function () {
     it("should emit when socket is connected (branch coverage)", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
       mockSocket.connected = true;
 
       client.emit("test:event", { data: "test" });
@@ -286,7 +286,7 @@ describe("SocketClient Branch Coverage", function () {
     it("should use default empty object for data", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
       mockSocket.connected = true;
 
       client.emit("test:event");
@@ -497,7 +497,7 @@ describe("SocketClient Branch Coverage", function () {
         receivedError = error;
       });
 
-      client._connect();
+      client.connect();
 
       // Trigger connect_error handler
       const handlers = mockSocket._handlers;
@@ -513,7 +513,7 @@ describe("SocketClient Branch Coverage", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
 
-      client._connect();
+      client.connect();
 
       // Trigger connect_error
       const handlers = mockSocket._handlers;
@@ -534,7 +534,7 @@ describe("SocketClient Branch Coverage", function () {
         errorCount++;
       });
 
-      client._connect();
+      client.connect();
 
       const handlers = mockSocket._handlers;
       const error = new Error("Test");
@@ -564,7 +564,7 @@ describe("SocketClient Branch Coverage", function () {
         receivedData = data;
       });
 
-      client._connect();
+      client.connect();
 
       // Simulate binary data via onAny handler
       const buffer = new ArrayBuffer(1024);
@@ -584,7 +584,7 @@ describe("SocketClient Branch Coverage", function () {
         receivedData = data;
       });
 
-      client._connect();
+      client.connect();
 
       // Simulate blob data via onAny handler
       const blob = new Blob(["test"], { type: "text/plain" });
@@ -604,7 +604,7 @@ describe("SocketClient Branch Coverage", function () {
         receivedData = data;
       });
 
-      client._connect();
+      client.connect();
 
       const uint8Data = new Uint8Array([1, 2, 3, 4, 5]);
       if (mockSocket._onAnyHandler) {
@@ -627,7 +627,7 @@ describe("SocketClient Branch Coverage", function () {
         binaryData = data;
       });
 
-      client._connect();
+      client.connect();
 
       // First emit JSON
       if (mockSocket._onAnyHandler) {
@@ -668,8 +668,8 @@ describe("SocketClient Branch Coverage", function () {
       const client1 = new SocketClient();
       const client2 = new SocketClient();
 
-      client1._connect();
-      client2._connect();
+      client1.connect();
+      client2.connect();
 
       expect(client1.socket).toBe(mockSocket1);
       expect(client2.socket).toBe(mockSocket2);
@@ -685,12 +685,12 @@ describe("SocketClient Branch Coverage", function () {
       };
 
       const client1 = new SocketClient();
-      client1._connect();
+      client1.connect();
 
       // Reset mock for second client
       mockIoFn = () => mockSocket2;
       const client2 = new SocketClient();
-      client2._connect();
+      client2.connect();
 
       let client1Events = 0;
       let client2Events = 0;
@@ -713,8 +713,8 @@ describe("SocketClient Branch Coverage", function () {
       const client2 = new SocketClient();
 
       // Connect both
-      client1._connect();
-      client2._connect();
+      client1.connect();
+      client2.connect();
 
       // Disconnect only client1
       client1.disconnect();
@@ -733,8 +733,8 @@ describe("SocketClient Branch Coverage", function () {
       const client1 = new SocketClient();
       const client2 = new SocketClient();
 
-      client1._connect();
-      client2._connect();
+      client1.connect();
+      client2.connect();
 
       mockSocket.connected = true;
 
@@ -756,7 +756,7 @@ describe("SocketClient Branch Coverage", function () {
     it("should register connect handler with correct callback", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
 
       const connectHandlers = mockSocket._handlers["connect"];
       expect(connectHandlers).toBeDefined();
@@ -766,7 +766,7 @@ describe("SocketClient Branch Coverage", function () {
     it("should register disconnect handler with correct callback", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
 
       const disconnectHandlers = mockSocket._handlers["disconnect"];
       expect(disconnectHandlers).toBeDefined();
@@ -776,7 +776,7 @@ describe("SocketClient Branch Coverage", function () {
     it("should register connect_error handler", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
 
       const errorHandlers = mockSocket._handlers["connect_error"];
       expect(errorHandlers).toBeDefined();
@@ -786,7 +786,7 @@ describe("SocketClient Branch Coverage", function () {
     it("should register onAny handler for event forwarding", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
 
       expect(mockSocket.onAny.mock.calls.length).toBe(1);
     });
@@ -803,7 +803,7 @@ describe("SocketClient Branch Coverage", function () {
       client.on("disconnect", () => (disconnectFired = true));
       client.on("connect_error", () => (errorFired = true));
 
-      client._connect();
+      client.connect();
 
       // Trigger all handlers
       const handlers = mockSocket._handlers;
@@ -820,7 +820,7 @@ describe("SocketClient Branch Coverage", function () {
     it("should handle removing handlers for internal socket events", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
 
       // Get registered handlers count
       const initialOnCalls = mockSocket.on.mock.calls.length;
@@ -839,7 +839,7 @@ describe("SocketClient Branch Coverage", function () {
       it("should return true when socket.connected is true", function () {
         mockIoFn = () => mockSocket;
         const client = new SocketClient();
-        client._connect();
+        client.connect();
         mockSocket.connected = true;
 
         expect(client.isConnected).toBe(true);
@@ -848,7 +848,7 @@ describe("SocketClient Branch Coverage", function () {
       it("should return false when socket.connected is false", function () {
         mockIoFn = () => mockSocket;
         const client = new SocketClient();
-        client._connect();
+        client.connect();
         mockSocket.connected = false;
 
         expect(client.isConnected).toBe(false);
@@ -872,7 +872,7 @@ describe("SocketClient Branch Coverage", function () {
       it("should return socket.id when available", function () {
         mockIoFn = () => mockSocket;
         const client = new SocketClient();
-        client._connect();
+        client.connect();
         mockSocket.id = "socket-123";
 
         expect(client.id).toBe("socket-123");
@@ -915,7 +915,7 @@ describe("SocketClient Branch Coverage", function () {
     it("emit should return this", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
       mockSocket.connected = true;
 
       expect(client.emit("test")).toBe(client);
@@ -976,7 +976,7 @@ describe("SocketClient Branch Coverage", function () {
     it("should handle null data in emit", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
       mockSocket.connected = true;
 
       expect(() => client.emit("test", null)).not.toThrow();
@@ -985,7 +985,7 @@ describe("SocketClient Branch Coverage", function () {
     it("should handle undefined data in emit", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
       mockSocket.connected = true;
 
       expect(() => client.emit("test", undefined)).not.toThrow();
@@ -994,7 +994,7 @@ describe("SocketClient Branch Coverage", function () {
     it("should handle circular reference in data", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
       mockSocket.connected = true;
 
       const circular = { self: null };
@@ -1006,7 +1006,7 @@ describe("SocketClient Branch Coverage", function () {
     it("should handle very large data payloads", function () {
       mockIoFn = () => mockSocket;
       const client = new SocketClient();
-      client._connect();
+      client.connect();
       mockSocket.connected = true;
 
       // Create large data object
@@ -1059,7 +1059,7 @@ describe("SocketClient Branch Coverage", function () {
         disconnectCalled = true;
       });
 
-      client._connect();
+      client.connect();
 
       // Trigger the disconnect event via the socket mock
       const handlers = mockSocket._handlers;
@@ -1076,7 +1076,7 @@ describe("SocketClient Branch Coverage", function () {
 
       for (let i = 0; i < 10; i++) {
         const client = new SocketClient();
-        client._connect();
+        client.connect();
         client.disconnect();
       }
 

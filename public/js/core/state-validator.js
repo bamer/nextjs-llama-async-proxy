@@ -207,20 +207,20 @@ class StateValidator {
    */
   _checkType(value, type) {
     switch (type) {
-      case "string":
-        return typeof value === "string";
-      case "number":
-        return typeof value === "number" && !isNaN(value);
-      case "boolean":
-        return typeof value === "boolean";
-      case "object":
-        return typeof value === "object" && value !== null && !Array.isArray(value);
-      case "array":
-        return Array.isArray(value);
-      case "null":
-        return value === null;
-      default:
-        return true;
+    case "string":
+      return typeof value === "string";
+    case "number":
+      return typeof value === "number" && !isNaN(value);
+    case "boolean":
+      return typeof value === "boolean";
+    case "object":
+      return typeof value === "object" && value !== null && !Array.isArray(value);
+    case "array":
+      return Array.isArray(value);
+    case "null":
+      return value === null;
+    default:
+      return true;
     }
   }
 

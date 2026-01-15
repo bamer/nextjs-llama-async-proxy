@@ -11,7 +11,7 @@
  */
 
 // Assign to window for backwards compatibility (no ES modules)
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   // Controllers are already assigned in their respective files
   // This file just provides a barrel import point
 }

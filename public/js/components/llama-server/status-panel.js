@@ -181,23 +181,23 @@ class LlamaServerStatusPanel extends Component {
 
   _getStatusIcon(status) {
     switch (status) {
-      case "running":
-        return "🟢";
-      case "stopped":
-        return "🔴";
-      default:
-        return "⚪";
+    case "running":
+      return "🟢";
+    case "stopped":
+      return "🔴";
+    default:
+      return "⚪";
     }
   }
 
   _getStatusText(status) {
     switch (status) {
-      case "running":
-        return "Running";
-      case "stopped":
-        return "Stopped";
-      default:
-        return "Unknown";
+    case "running":
+      return "Running";
+    case "stopped":
+      return "Stopped";
+    default:
+      return "Unknown";
     }
   }
 

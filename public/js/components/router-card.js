@@ -90,8 +90,8 @@ class RouterCard extends Component {
           // Update existing select
           const select = this._el.querySelector("#preset-select");
           if (select) {
-            select.innerHTML = '<option value="">Select Preset...</option>' +
-              this.presets.map((p) => `<option value="${p.name}">${p.name}</option>`).join("");
+            select.innerHTML = `<option value="">Select Preset...</option>${
+              this.presets.map((p) => `<option value="${p.name}">${p.name}</option>`).join("")}`;
           }
         }
       }
@@ -167,7 +167,7 @@ class RouterCard extends Component {
       modelsText.textContent = `Models: ${loadedCount}/${this.models.length} loaded`;
     }
 
-    const startStopBtn = this._el.querySelector('[data-action="start"], [data-action="stop"]');
+    const startStopBtn = this._el.querySelector("[data-action=\"start\"], [data-action=\"stop\"]");
     if (startStopBtn) {
       if (isRunning) {
         startStopBtn.setAttribute("data-action", "stop");
@@ -181,7 +181,7 @@ class RouterCard extends Component {
       startStopBtn.disabled = routerLoading;
     }
 
-    const restartBtn = this._el.querySelector('[data-action="restart"]');
+    const restartBtn = this._el.querySelector("[data-action=\"restart\"]");
     if (restartBtn) {
       restartBtn.disabled = !isRunning || routerLoading;
       restartBtn.textContent = routerLoading ? "RESTARTING..." : "RESTART";
@@ -206,7 +206,7 @@ class RouterCard extends Component {
     </div>
     <div class="router-controls">
       ${this.presets && this.presets.length > 0 ? `<div class="preset-selector"><select id="preset-select" class="preset-dropdown"><option value="">Select Preset...</option>${this.presets.map((preset) => `<option value="${preset.name}">${preset.name}</option>`).join("")}</select></div>` : ""}
-      ${isRunning ? '<button class="btn btn-danger" data-action="stop">STOP ROUTER</button>' : '<button class="btn btn-primary" data-action="start">START ROUTER</button>'}
+      ${isRunning ? "<button class=\"btn btn-danger\" data-action=\"stop\">STOP ROUTER</button>" : "<button class=\"btn btn-primary\" data-action=\"start\">START ROUTER</button>"}
       <button class="btn btn-secondary" data-action="restart" ${!isRunning ? "disabled" : ""}>RESTART</button>
     </div>
   </div>
