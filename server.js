@@ -25,6 +25,8 @@ import { setupGracefulShutdown } from "./server/shutdown.js";
 import { DB } from "./server/db/index.js";
 import { registerHandlers } from "./server/handlers.js";
 import { parseGgufMetadata } from "./server/gguf/metadata-parser.js";
+import { startLlamaServerRouter } from "./server/handlers/llama-router/index.js";
+import { autoStartLlamaServer } from "./server/server-startup.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -76,6 +78,13 @@ async function main() {
     console.log("\n== Llama Async Proxy ==");
     console.log(`> http://localhost:${PORT}`);
     console.log(`> Socket.IO: ws://localhost:${PORT}/llamaproxws\n`);
+
+    // Auto-start llama-server if enabled in config
+    autoStartLlamaServer({
+      db,
+      startLlamaServerRouter,
+      initializeLlamaMetrics,
+    });
   });
 
   setupGracefulShutdown(server);

@@ -36,6 +36,7 @@ class SettingsPage extends Component {
     this.llama_server_port = config.llama_server_port || 8080;
     this.llama_server_host = config.llama_server_host || "0.0.0.0";
     this.llama_server_metrics = config.llama_server_metrics !== false;
+    this.auto_start_on_launch = config.auto_start_on_launch !== false; // Auto-start llama-server on dashboard launch
     this.controller = props.controller;
   }
 
@@ -66,10 +67,10 @@ class SettingsPage extends Component {
         batch_size: this.batch_size,
         temperature: this.temperature,
         repeatPenalty: this.repeatPenalty,
-        llama_server_enabled: this.llama_server_enabled,
         llama_server_port: this.llama_server_port,
         llama_server_host: this.llama_server_host,
         llama_server_metrics: this.llama_server_metrics,
+        auto_start_on_launch: this.auto_start_on_launch,
       };
 
       const settings = {
@@ -190,12 +191,17 @@ class SettingsPage extends Component {
       if (config.batch_size !== undefined) this.batch_size = config.batch_size;
       if (config.temperature !== undefined) this.temperature = config.temperature;
       if (config.repeatPenalty !== undefined) this.repeatPenalty = config.repeatPenalty;
-      if (config.llama_server_enabled !== undefined)
-        this.llama_server_enabled = config.llama_server_enabled;
       if (config.llama_server_port !== undefined) this.llama_server_port = config.llama_server_port;
       if (config.llama_server_host !== undefined) this.llama_server_host = config.llama_server_host;
       if (config.llama_server_metrics !== undefined)
         this.llama_server_metrics = config.llama_server_metrics;
+      // New auto_start_on_launch parameter with backward compatibility
+      if (config.auto_start_on_launch !== undefined) {
+        this.auto_start_on_launch = config.auto_start_on_launch;
+      } else if (config.llama_server_enabled !== undefined) {
+        // Backward compatibility: rename old key to new key
+        this.auto_start_on_launch = config.llama_server_enabled;
+      }
 
       // Apply imported settings
       if (settings.maxModelsLoaded !== undefined) this.maxModelsLoaded = settings.maxModelsLoaded;
@@ -263,7 +269,7 @@ class SettingsPage extends Component {
         serverPath: this.serverPath,
         host: this.host,
         port: this.port,
-        enabled: this.llama_server_enabled,
+        autoStartOnLaunch: this.auto_start_on_launch,
         metricsEnabled: this.llama_server_metrics,
         onBaseModelsPathChange: (val) => {
           this.baseModelsPath = val;
@@ -277,8 +283,8 @@ class SettingsPage extends Component {
         onPortChange: (val) => {
           this.port = val;
         },
-        onEnabledChange: (val) => {
-          this.llama_server_enabled = val;
+        onAutoStartOnLaunchChange: (val) => {
+          this.auto_start_on_launch = val;
         },
         onMetricsEnabledChange: (val) => {
           this.llama_server_metrics = val;

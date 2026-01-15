@@ -11,7 +11,7 @@ class ServerPathsForm extends Component {
     this.serverPath = props.serverPath || "";
     this.host = props.host || "localhost";
     this.port = props.port || 8080;
-    this.enabled = props.enabled !== false;
+    this.autoStartOnLaunch = props.autoStartOnLaunch !== false;
     this.metricsEnabled = props.metricsEnabled !== false;
   }
 
@@ -45,10 +45,10 @@ class ServerPathsForm extends Component {
       this.props.onPortChange?.(val);
     });
 
-    // Enabled
-    this.on("change", "#enabled", (e) => {
-      this.enabled = e.target.checked;
-      this.props.onEnabledChange?.(e.target.checked);
+    // Auto-start on launch
+    this.on("change", "#autoStartOnLaunch", (e) => {
+      this.autoStartOnLaunch = e.target.checked;
+      this.props.onAutoStartOnLaunchChange?.(e.target.checked);
     });
 
     // Metrics Enabled
@@ -87,13 +87,15 @@ class ServerPathsForm extends Component {
       Component.h("h2", {}, "Server Paths"),
       Component.h("p", { className: "section-desc" }, "Configure paths and connection"),
       Component.h("div", { className: "card" }, [
-        Component.h("div", { className: "form-group" }, [
-          Component.h("label", {}, "Enable llama-server"),
-          Component.h("input", {
-            type: "checkbox",
-            id: "enabled",
-            checked: this.enabled,
-          }),
+        Component.h("div", { className: "form-group checkbox-group" }, [
+          Component.h("label", { className: "checkbox-label" }, [
+            Component.h("input", {
+              type: "checkbox",
+              id: "autoStartOnLaunch",
+              checked: this.autoStartOnLaunch,
+            }),
+            Component.h("span", { className: "checkbox-text" }, "Auto-start llama-server on dashboard launch"),
+          ]),
         ]),
         Component.h("div", { className: "paths-grid" }, [
           Component.h("div", { className: "form-group" }, [
