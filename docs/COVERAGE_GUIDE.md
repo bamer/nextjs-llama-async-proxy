@@ -12,7 +12,107 @@ pnpm test:coverage
 # 1. Run all tests with Jest
 # 2. Generate coverage reports (text, HTML, JSON)
 # 3. Display a formatted summary in the terminal
-# 4. Automatically open the HTML report in your browser
+# 4. Generate coverage report at coverage/index.html
+```
+
+## Test Suite Structure
+
+The project has **473+ comprehensive tests** organized as follows:
+
+```
+__tests__/
+├── server/                    # Backend tests
+│   ├── db/                    # Database layer tests (84 tests)
+│   ├── handlers/              # API handler tests
+│   │   └── llama-router/      # Router-specific tests
+│   └── metadata.test.js       # GGUF metadata parsing (60 tests)
+├── frontend/                  # Frontend tests
+│   ├── core/                  # Component, Router, State tests
+│   ├── components/            # UI component tests
+│   ├── services/              # Service layer tests
+│   └── utils/                 # Utility tests (323 tests)
+├── browser/                   # E2E browser tests
+├── integration/               # Integration tests
+└── utils/                     # Shared test utilities
+```
+
+### Test Coverage Summary
+
+| Test File | Tests | Coverage |
+|-----------|-------|----------|
+| `__tests__/server/db.test.js` | 84 tests | 100% DB operations |
+| `__tests__/server/metadata.test.js` | 60 tests | 100% metadata parsing |
+| `__tests__/utils/validation.test.js` | 230 tests | 100% validation functions |
+| `__tests__/utils/format.test.js` | 93 tests | 100% formatting functions |
+
+## Coverage Reports
+
+### Terminal Report
+
+When you run `pnpm test:coverage`, you'll see:
+
+```
+╔═══════════════════════════════════════════════════════════════
+               COVERAGE REPORT - TEST SUMMARY
+╔═══════════════════════════════════════════════════════════════
+
+  Metric          │  Statements  │  Branches  │  Functions  │  Lines
+───────────────────────────────────────────────────────────────
+  Coverage        │   XX.X%      │   XX.X%    │   XX.X%     │   XX.X%
+───────────────────────────────────────────────────────────────
+  Statements    : 1234/1444
+  Branches      : 567/690
+  Functions     : 234/263
+  Lines         : 1200/1388
+╔═══════════════════════════════════════════════════════════════
+
+File Coverage:
+
+   86.5%  server.js
+   89.2%  server/db.js
+   85.1%  public/js/utils/validation.js
+   92.3%  public/js/utils/format.js
+   ...
+
+╔═══════════════════════════════════════════════════════════════
+✓ HTML report generated at: coverage/index.html
+✓ Run 'open coverage/index.html' to view detailed report
+╔═══════════════════════════════════════════════════════════════
+```
+
+**Color coding:**
+
+- 🟢 Green (≥90%): Excellent coverage
+- 🟡 Yellow (≥80%): Good coverage
+- 🔴 Red (<80%): Needs improvement
+
+### HTML Report
+
+The HTML report includes:
+
+- **Summary dashboard** - Overview of all metrics
+- **File list** - Click to drill into specific files
+- **Line-by-line coverage** - See which lines are covered/uncovered
+- **Branch coverage** - View branch coverage for conditionals
+- **Filters** - Filter by coverage threshold
+
+View the report:
+
+```bash
+# Open the HTML report directly
+open coverage/index.html
+```
+
+### JSON Report
+
+For CI/CD integration or automated analysis:
+
+```bash
+# Full coverage details
+cat coverage/coverage-final.json
+
+# Summary only
+cat coverage/coverage-summary.json
 ```
 
 ## Coverage Reports

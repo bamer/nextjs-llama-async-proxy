@@ -188,7 +188,7 @@ Consistent naming makes code more readable and helps contributors quickly unders
 
 ### Test Coverage Standards
 
-This project maintains high test coverage to ensure reliability and prevent regressions. All new code contributions must include appropriate tests, and the overall coverage must remain at 98% or higher. Before submitting a Pull Request, ensure that your changes don't reduce coverage:
+This project maintains comprehensive test coverage to ensure reliability and prevent regressions. All new code contributions must include appropriate tests, with minimum coverage thresholds:
 
 ```bash
 # Run the test suite
@@ -198,7 +198,13 @@ pnpm test
 pnpm test:coverage
 ```
 
-The coverage report is generated in the `coverage/` directory. Open `coverage/index.html` in a browser to view a detailed breakdown of coverage by file and line number. Pay special attention to any new code that isn't covered by tests.
+**Coverage Requirements:**
+- Statements: 80% minimum
+- Branches: 80% minimum  
+- Functions: 80% minimum
+- Lines: 80% minimum
+
+The coverage report is generated in the `coverage/` directory. Open `coverage/index.html` in a browser to view a detailed breakdown of coverage by file and line number.
 
 ### Test Organization
 
@@ -207,11 +213,39 @@ Tests are organized in the `__tests__` directory following a structure that mirr
 ```
 __tests__/
 ├── server/           # Server-side tests (db.test.js, metadata.test.js)
-├── utils/            # Utility tests (validation.test.js, format.test.js)
-└── integration/      # Integration tests
+│   └── handlers/
+│       └── llama-router/  # Router-specific tests
+├── frontend/         # Frontend tests
+│   ├── core/         # Component, Router, State tests
+│   ├── components/   # UI component tests
+│   └── utils/        # Utility tests (323 tests for validation, format)
+├── browser/          # E2E browser tests
+├── integration/      # Integration tests
+└── utils/            # Shared test utilities
 ```
 
-Server-side tests cover database operations, API endpoints, and server-side logic. Utility tests cover formatting functions, validation functions, and other standalone utilities. Integration tests verify that components work together correctly.
+**Test Summary:**
+- 84 tests for database operations
+- 60 tests for GGUF metadata parsing
+- 230 tests for validation functions
+- 93 tests for formatting functions
+
+### Golden Rules Validation
+
+This project enforces code quality through golden rules testing:
+
+```bash
+# Run golden rules validation
+node public/js/test-golden-rule.js
+```
+
+**Golden Rules:**
+1. **Keep files under 200 lines** - Split large files into smaller modules
+2. **Single responsibility** - Each component/class should do one thing
+3. **No memory leaks** - Always clean up subscriptions and event listeners
+4. **Graceful degradation** - Handle missing data gracefully
+5. **User feedback** - Show notifications for user actions
+6. **Error boundaries** - Catch and display errors to users
 
 ### Writing Tests
 

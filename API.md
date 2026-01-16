@@ -531,6 +531,45 @@ socket.on("logs:entry", (data) => {
 });
 ```
 
+### Llama Router Events
+```javascript
+// Llama router status changed
+socket.on("llama:status", (data) => {
+  console.log("Router status:", data);
+});
+
+// Llama router process started
+socket.on("llama:started", (data) => {
+  console.log("Router started:", data);
+});
+
+// Llama router process stopped
+socket.on("llama:stopped", (data) => {
+  console.log("Router stopped:", data);
+});
+
+// Llama router error
+socket.on("llama:error", (data) => {
+  console.log("Router error:", data);
+});
+```
+
+### Configuration Events
+```javascript
+// Configuration changed
+socket.on("config:changed", (data) => {
+  console.log("Config updated:", data);
+});
+```
+
+### Settings Events
+```javascript
+// Settings changed
+socket.on("settings:changed", (data) => {
+  console.log("Settings updated:", data);
+});
+```
+
 ## Error Codes
 
 | Code | Description |
@@ -552,9 +591,10 @@ socket.on("logs:entry", (data) => {
 
 ## Version Compatibility
 
-- **API Version:** 1.0.0
+- **API Version:** 1.1.0
 - **Socket.IO Protocol:** v4
 - **Compatible with:** Socket.IO client 4.x
+- **llama.cpp**: Router mode with multiple model support
 
 ## Examples
 

@@ -1,34 +1,37 @@
 # Llama Async Proxy Dashboard - Changelog
 
-## Version 1.1.0 - January 14, 2026
+## Version 1.1.0 - January 2026
 
 ### Added
-- **Customer Release Package**: Complete documentation and installation guides
-- **INSTALL.md**: Step-by-step installation instructions
-- **USAGE.md**: Comprehensive user guide with workflows
-- **API.md**: Complete Socket.IO API documentation
-- **Performance Testing**: Startup and runtime performance benchmarks
-- **Error Handling**: Improved error boundaries and recovery
+- **Modular Frontend Architecture**: Dashboard components split into modular files (header.js, sidebar.js, main-content.js)
+- **Chart Management System**: New chart-manager.js with chart-usage.js and chart-memory.js for metrics visualization
+- **Llama Router Card**: New llama-router-card.js component for router management
+- **Command Palette**: keyboard-driven command interface (command-palette.js)
+- **Comprehensive Preset System**: parameter-form.js, parameter-input.js, parameters.js for configuration management
+- **File Logger**: server/handlers/file-logger.js for persistent logging
+- **Llama Router Handlers**: start.js, stop.js, status.js, process.js, process-manager.js, metrics-scraper.js
+- **Golden Rules Testing**: test-golden-rule.js for code quality enforcement
+- **Full Documentation Suite**: Complete INSTALL.md, USAGE.md, API.md, and docs/ folder
 
 ### Fixed
 - **Server Startup**: Fixed critical startup bugs preventing server launch
   - Fixed duplicate export in `gpu-monitor.js`
   - Fixed missing variable exports in `metrics.js`
   - Server now starts successfully in <1 second
-
-- **Test Suite**: Improved test stability and fixed event name mismatches
-  - Fixed file logger `LOGS_DIR` undefined error
-  - Fixed preset service test event names
-  - 7 additional tests now passing
-
 - **File Logger**: Fixed `readLogFile` method using correct instance variable
   - Changed `LOGS_DIR` global reference to `this.logsDir`
   - 38 file logger tests now passing
+- **Test Suite**: Improved test stability and fixed event name mismatches
+  - Fixed preset service test event names
+  - 7 additional tests now passing
+- **Router Status Detection**: Fixed isRunning detection logic to check processRunning, not just port
 
 ### Changed
+- **Package Manager**: Migrated from npm to pnpm for faster installs and better disk usage
+- **Development Mode**: Changed from `npm run dev` to `pnpm dev` using `--watch` flag
 - **Performance**: Optimized server startup time to <1 second
 - **Architecture**: Modular component structure for better maintainability
-- **Testing**: Improved test coverage and stability
+- **Testing**: Comprehensive test coverage with 473+ tests
 
 ### Security
 - **Input Validation**: Enhanced validation on all API endpoints
@@ -36,10 +39,11 @@
 - **XSS Prevention**: Output encoding for all user-facing content
 - **Secret Management**: No hardcoded credentials in codebase
 
-### Documentation
-- **README.md**: Updated with current feature list
-- **Architecture Docs**: Aligned with current codebase structure
-- **Inline Comments**: Improved code documentation
+### Code Standards
+- **200 Lines Rule**: All files kept under 200 lines with modular design
+- **Single Responsibility**: Each component/class does one thing
+- **Memory Safety**: All subscriptions and event listeners properly cleaned up
+- **Error Boundaries**: Errors caught and displayed to users gracefully
 
 ### Known Issues
 - Some integration tests require llama-server binary setup
