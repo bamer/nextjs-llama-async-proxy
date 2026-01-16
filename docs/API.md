@@ -1253,24 +1253,89 @@ Same as `llama:status` but specifically for the llama-server process.
 
 | Event | Direction | Payload |
 |-------|-----------|---------|
-| `llama-server:status` | S→C (broadcast) | `{status, metrics, uptime}` |
+| `llama-server:status` | S→C (broadcast) | `{status, url, port, metrics, rawMetrics}` |
 
 **Payload:**
 
 ```javascript
 {
   status: "running",
+  url: "http://127.0.0.1:8134",
+  port: 8134,
   metrics: {
-    activeModels: number,
-    tokensPerSecond: number,
-    queueSize: number,
-    totalRequests: number
+    // Throughput metrics
+    promptTokensSeconds: number,      // Average prompt tokens/second
+    predictedTokensSeconds: number,   // Average generation tokens/second
+    promptTokensTotal: number,        // Total prompt tokens processed
+    predictedTokensTotal: number,     // Total predicted tokens
+    
+    // Server configuration
+    vramTotal: number,                // Total VRAM in bytes
+    vramUsed: number,                 // Used VRAM in bytes
+    nCtx: number,                     // Context size
+    nParallel: number,                // Parallel processing slots
+    nThreads: number,                 // CPU threads
+    
+    // Request metrics
+    activeModels: number,             // Number of processing requests
+    queueSize: number,                // Number of deferred requests
+    totalRequests: number,            // Total decode calls
+    
+    // Advanced metrics
+    nDecodeTotal: number,             // Total llama_decode() calls
+    nBusySlotsPerDecode: number,      // Average busy slots per decode
+    nTokensMax: number,               // Largest observed tokens
+    promptSecondsTotal: number,       // Total prompt processing time
+    predictedSecondsTotal: number,    // Total prediction processing time
+    
+    // Legacy fields (for backward compatibility)
+    tokensPerSecond: number,          // Same as promptTokensSeconds
+    uptime: number                    // Server uptime in seconds
   },
-  uptime: number
+  rawMetrics: { /* Full Prometheus metrics response */ },
+  timestamp: 1704467890123
 }
 ```
 
-**Frequency:** Every 20 seconds
+**Frequency:** Every 10 seconds when clients are connected
+
+**Available Metrics from llama-server --metrics flag:**
+
+| Prometheus Metric | Internal Field | Description |
+|-------------------|----------------|-------------|
+| `llamacpp:prompt_tokens_seconds` | `tokensPerSecond` | Average prompt throughput |
+| `llamacpp:predicted_tokens_seconds` | `predictedTokensSeconds` | Average generation throughput |
+| `llamacpp:prompt_tokens_total` | `promptTokensTotal` | Total prompt tokens processed |
+| `llamacpp:tokens_predicted_total` | `predictedTokensTotal` | Total predicted tokens |
+| `llamacpp:requests_processing` | `activeModels` | Active requests |
+| `llamacpp:requests_deferred` | `queueSize` | Queued requests |
+| `llamacpp:n_decode_total` | `totalRequests` | Total decode calls |
+| `llamacpp:n_busy_slots_per_decode` | `nBusySlotsPerDecode` | Busy slots per decode |
+| `llamacpp:n_tokens_max` | `nTokensMax` | Maximum tokens observed |
+| `llamacpp:llm_server_vram_total` | `vramTotal` | Total VRAM |
+| `llamacpp:llm_server_vram_used` | `vramUsed` | Used VRAM |
+| `llamacpp:llm_server_n_ctx` | `nCtx` | Context size |
+| `llamacpp:llm_server_n_parallel` | `nParallel` | Parallel slots |
+| `llamacpp:llm_server_n_threads` | `nThreads` | CPU threads |
+
+**Example Usage:**
+
+```javascript
+// Subscribe to metrics updates
+socket.on("llama-server:status", (data) => {
+  if (data.type === "broadcast" && data.data) {
+    const { status, metrics } = data.data;
+    
+    // Update UI with metrics
+    document.getElementById("tokens-per-sec").textContent = 
+      metrics.promptTokensSeconds.toFixed(1);
+    document.getElementById("vram-used").textContent = 
+      formatBytes(metrics.vramUsed);
+    document.getElementById("active-requests").textContent = 
+      metrics.activeModels;
+  }
+});
+```
 
 ### 11.3 Llama Server Event
 

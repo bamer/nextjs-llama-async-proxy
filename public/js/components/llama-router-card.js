@@ -39,7 +39,10 @@ class LlamaRouterCard extends Component {
       })
     ];
 
-    if (window.MetricsScraper) this._setupScraper();
+    // Only set up scraper once (not on every mount/re-render)
+    if (window.MetricsScraper && !this._scraper) {
+      this._setupScraper();
+    }
   }
 
   destroy() {
@@ -48,8 +51,16 @@ class LlamaRouterCard extends Component {
   }
 
   _setupScraper() {
-    const url = window.stateLlamaServer?.getServerUrl?.();
-    if (!url) return;
+    // Get URL from status state (set by llama:status events)
+    const status = window.stateManager?.get?.("llamaServerStatus") || {};
+    const url = status.url;
+    
+    // Only set up scraper if server is running (has URL)
+    // This is expected to be null when llama-server is not running
+    if (!url) {
+      return; // Silent - no warning needed for expected state
+    }
+    
     this._scraper = new window.MetricsScraper(url, 5000);
     this._scraper.start(m => stateManager.set("llamaServerMetrics", m));
   }
@@ -63,75 +74,117 @@ class LlamaRouterCard extends Component {
     const status = this.props.status || {};
     const rs = this.props.routerStatus || {};
     
-    // FIXED: Only consider running if status is explicitly "running"
-    // The port being set doesn't mean the router is running - check processRunning
+    // Handle loading, running, and stopped states
+    const isLoading = status.status === "loading";
     const isRunning = status.status === "running" || status.processRunning === true;
-    const loading = this.routerLoading;
+    const isStopped = status.status === "idle" || status.status === "error";
+    const userLoading = this.routerLoading;
+
+    // Status: LOADING → STARTING/STOPPING → RUNNING/STOPPED
+    const displayLoading = isLoading || userLoading;
+    const displayStatus = isLoading ? "LOADING..." : (userLoading ? (isRunning ? "STOPPING..." : "STARTING...") : (isRunning ? "RUNNING" : "STOPPED"));
+    const displayClass = isLoading ? "loading" : (userLoading ? "loading" : (isRunning ? "running" : "stopped"));
 
     // 1. Status Indicator & Text
     const indicator = this.$(".status-indicator");
     if (indicator) {
-      indicator.className = `status-indicator ${loading ? "loading" : (isRunning ? "running" : "stopped")}`;
+      indicator.className = `status-indicator ${displayClass}`;
     }
     
-    this.setText(".badge-text", loading 
-      ? (isRunning ? "STOPPING..." : "STARTING...") 
-      : (isRunning ? "RUNNING" : "STOPPED")
-    );
+    this.setText(".badge-text", displayStatus);
 
-    // Header Port (RESPECT SETTINGS)
+    // Header Port
     const config = window.stateManager.get("config") || {};
     const displayPort = config.port || status.port || 8080;
     const titleText = isRunning ? `Llama Router : ${displayPort}` : "Llama Router";
     this.setText(".header-title-text", titleText);
 
-    // 2. Glance Grid
-    this.setText("[data-glance=\"prompt-ts\"]", `${(this.props.metrics?.promptTokensSeconds || 0).toFixed(1)} t/s`);
-    const loadedCount = (rs.models || []).filter(m => m.state === "loaded").length;
-    const totalModels = (this.props.models || []).length || 0;
-    this.setText("[data-glance=\"models\"]", `${loadedCount}/${totalModels}`);
-    this.setText("[data-glance=\"uptime\"]", window.FormatUtils.formatUptime((status.uptime || 0)/1000));
+    // 2. Glance Grid - Show loading or data
+    if (isLoading) {
+      this.setText("[data-glance=\"prompt-ts\"]", "...");
+      this.setText("[data-glance=\"models\"]", "...");
+      this.setText("[data-glance=\"vram\"]", "...");
+      this.setText("[data-glance=\"uptime\"]", "...");
+    } else {
+      this.setText("[data-glance=\"prompt-ts\"]", `${(this.props.metrics?.promptTokensSeconds || 0).toFixed(1)} t/s`);
+      const modelsData = status.models || rs.models || [];
+      const loadedCount = Array.isArray(modelsData) ? modelsData.filter(m => m.status?.value === "loaded").length : 0;
+      const totalModels = Array.isArray(modelsData) ? modelsData.length : (this.props.models || []).length || 0;
+      this.setText("[data-glance=\"models\"]", `${loadedCount}/${totalModels}`);
+      
+      const uptimeSeconds = this.props.metrics?.uptime || status.uptime || 0;
+      this.setText("[data-glance=\"uptime\"]", window.FormatUtils.formatUptime(uptimeSeconds));
+      
+      const predTs = this.props.metrics?.predictedTokensSeconds || 0;
+      this.setText("[data-glance=\"vram\"]", `${predTs.toFixed(1)} t/s`);
+    }
     
-    const vramTotal = this.props.metrics?.vramTotal || 0;
-    this.setText("[data-glance=\"vram\"]", vramTotal > 0 ? window.FormatUtils.formatBytes(vramTotal) : "N/A");
-
-    // 3. Single Unified Toggle Button
+    // 3. Toggle Button - disabled during loading
     const mainBtn = this.$("[data-action=\"toggle\"]");
     const restartBtn = this.$("[data-action=\"restart\"]");
 
     if (mainBtn) {
-      mainBtn.disabled = loading;
-      if (isRunning) {
-        mainBtn.textContent = loading ? "Stopping..." : "Stop Router";
+      mainBtn.disabled = displayLoading;
+      if (isRunning && !userLoading) {
+        mainBtn.textContent = "Stop Router";
         mainBtn.className = "btn btn-danger btn-stop";
         mainBtn.setAttribute("data-action-type", "stop");
-      } else {
-        mainBtn.textContent = loading ? "Starting..." : "Start Router";
+      } else if (!displayLoading) {
+        mainBtn.textContent = "Start Router";
         mainBtn.className = "btn btn-primary btn-start";
         mainBtn.setAttribute("data-action-type", "start");
       }
     }
     
     if (restartBtn) {
-      restartBtn.disabled = !isRunning || loading;
-      restartBtn.textContent = loading ? "Restarting..." : "Restart";
+      restartBtn.disabled = !isRunning || displayLoading;
+      restartBtn.textContent = displayLoading ? "Restarting..." : "Restart";
     }
   }
 
   _updateDetailedMetrics() {
-    if (!this._el || !this.props.metrics) return;
-    const m = this.props.metrics;
+    if (!this._el) return;
+    const m = this.props.metrics || {};
+    const status = this.props.status || {};
+    const modelsData = status.models || [];
+    
+    // Get server config from loaded model's args (if available)
+    let nCtx = "N/A";
+    let nParallel = "N/A";
+    let nThreads = "N/A";
+    
+    if (Array.isArray(modelsData)) {
+      const loadedModel = modelsData.find(model => model.status?.value === "loaded");
+      if (loadedModel?.args) {
+        // Parse args to extract config values
+        // Args format: --ctx-size 4096 --threads 4 --batch-size 2048
+        const argsStr = loadedModel.args.join(" ");
+        const ctxMatch = argsStr.match(/--ctx-size\s+(\d+)/);
+        const threadsMatch = argsStr.match(/--threads\s+(\d+)/);
+        const parallelMatch = argsStr.match(/--ubatch-size\s+(\d+)/);
+        
+        nCtx = ctxMatch ? ctxMatch[1] : "N/A";
+        nThreads = threadsMatch ? threadsMatch[1] : "N/A";
+        nParallel = parallelMatch ? parallelMatch[1] : "N/A";
+      }
+    }
+    
     this.setText("[data-metric=\"prompt-ts\"]", `${(m.promptTokensSeconds || 0).toFixed(2)} t/s`);
     this.setText("[data-metric=\"pred-ts\"]", `${(m.predictedTokensSeconds || 0).toFixed(2)} t/s`);
-    this.setText("[data-metric=\"vram-total\"]", window.FormatUtils.formatBytes(m.vramTotal || 0));
-    this.setText("[data-metric=\"vram-used\"]", window.FormatUtils.formatBytes(m.vramUsed || 0));
-    this.setText("[data-metric=\"n-ctx\"]", m.nCtx || "N/A");
-    this.setText("[data-metric=\"n-parallel\"]", m.nParallel || "N/A");
-    this.setText("[data-metric=\"n-threads\"]", m.nThreads || "N/A");
-    this.setText("[data-glance=\"prompt-ts\"]", `${(m.promptTokensSeconds || 0).toFixed(1)} t/s`);
     
-    const vramTotal = m.vramTotal || 0;
-    this.setText("[data-glance=\"vram\"]", vramTotal > 0 ? window.FormatUtils.formatBytes(vramTotal) : "N/A");
+    // Remove VRAM display or show as N/A since user has it elsewhere
+    this.setText("[data-metric=\"vram-total\"]", "N/A");
+    this.setText("[data-metric=\"vram-used\"]", "N/A");
+    
+    // Show server config from loaded model
+    this.setText("[data-metric=\"n-ctx\"]", nCtx);
+    this.setText("[data-metric=\"n-parallel\"]", nParallel);
+    this.setText("[data-metric=\"n-threads\"]", nThreads);
+    
+    // Update glance metrics
+    this.setText("[data-glance=\"prompt-ts\"]", `${(m.promptTokensSeconds || 0).toFixed(1)} t/s`);
+    const predTs = m.predictedTokensSeconds || 0;
+    this.setText("[data-glance=\"vram\"]", `${predTs.toFixed(1)} t/s`);
   }
 
   _updatePresetSelect() {
@@ -189,7 +242,7 @@ class LlamaRouterCard extends Component {
       Component.h("div", { className: "status-glance-grid" }, [
         this._renderGlanceItem("Prompt", "prompt-ts"),
         this._renderGlanceItem("Models", "models"),
-        this._renderGlanceItem("VRAM", "vram"),
+        this._renderGlanceItem("Predicted", "vram"),
         this._renderGlanceItem("Uptime", "uptime")
       ]),
       Component.h("div", { className: "status-controls-bar" }, [

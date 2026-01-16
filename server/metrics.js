@@ -1,6 +1,6 @@
 /**
  * Metrics Collection - Main entry point
- * Refactored to use separate modules (≤200 lines)
+ * Simplified with reduced frequency and minimal logging
  */
 
 import {
@@ -25,19 +25,16 @@ let metricsInterval = null;
 /**
  * Initialize llama-server metrics scraper
  */
-export function initializeLlamaMetricsScraper(port) {
-  initLlamaScraper(port);
+export function initializeLlamaMetricsScraper(port, db = null) {
+  initLlamaScraper(port, db);
 }
 
 /**
  * Update metrics collection interval based on active clients
  */
-export function updateMetricsInterval(io, db) {
-  const newInterval = activeClients > 0 ? 10000 : 60000;
-  console.log("[DEBUG] Updating metrics interval:", {
-    activeClients,
-    interval: `${newInterval / 1000}s`,
-  });
+function updateMetricsInterval(io, db) {
+  // Collect metrics every 30s when clients connected (was 10s)
+  const newInterval = activeClients > 0 ? 30000 : 120000;
 
   if (metricsInterval) {
     clearInterval(metricsInterval);
@@ -48,10 +45,6 @@ export function updateMetricsInterval(io, db) {
 
 /**
  * Start metrics collection with dynamic interval based on active clients.
- * Initializes CPU tracking and sets up client connection listeners.
- * @param {Object} io - Socket.IO server instance
- * @param {Object} db - Database instance
- * @returns {Promise<void>}
  */
 export async function startMetricsCollection(io, db) {
   initCpuTimes();
@@ -60,24 +53,18 @@ export async function startMetricsCollection(io, db) {
   if (typeof io.on === "function") {
     io.on("connection", () => {
       activeClients++;
-      console.log("[DEBUG] Client connected, active clients:", activeClients);
       updateMetricsInterval(io, db);
     });
 
     io.on("disconnect", () => {
       activeClients--;
-      console.log("[DEBUG] Client disconnected, active clients:", activeClients);
       updateMetricsInterval(io, db);
     });
   }
 }
 
 /**
- * Main metrics collection function that gathers and broadcasts all system metrics.
- * Collects CPU, memory, disk, GPU metrics and saves to database.
- * @param {Object} io - Socket.IO server instance
- * @param {Object} db - Database instance
- * @returns {Promise<void>}
+ * Main metrics collection function
  */
 export async function collectMetrics(io, db) {
   try {
@@ -85,7 +72,7 @@ export async function collectMetrics(io, db) {
     const cpuUsage = collectCpuMetrics();
     const { memoryUsedPercent, swapUsedPercent } = await collectMemoryMetrics();
     const { diskUsedPercent } = await collectDiskMetrics();
-    const { gpuUsage, gpuMemoryUsed, gpuMemoryTotal } = await collectGpuMetrics();
+    const { gpuUsage, gpuMemoryUsed, gpuMemoryTotal } = collectGpuMetrics();
 
     // Save to database
     db.saveMetrics({
@@ -119,16 +106,14 @@ export async function collectMetrics(io, db) {
       },
     });
 
-    // Prune old metrics every 6 minutes
+    // Prune old metrics every 6 minutes (12 calls at 30s intervals)
     const callCount = getMetricsCallCount();
-    if (callCount % 36 === 0) {
+    if (callCount % 12 === 0) {
       db.pruneMetrics(10000);
     }
 
-    // Collect llama-server metrics every 20s
-    if (callCount % 2 === 0) {
-      collectLlamaMetrics(io);
-    }
+    // Collect llama-server metrics (every collection now since interval is 30s)
+    collectLlamaMetrics(io, db);
   } catch (e) {
     console.error("[METRICS] Error:", e.message);
   }
@@ -138,12 +123,10 @@ export async function collectMetrics(io, db) {
  * Cleanup metrics collection
  */
 export function cleanupMetrics() {
-  console.log("[DEBUG] Cleaning up metrics collection resources");
   if (metricsInterval) {
     clearInterval(metricsInterval);
     metricsInterval = null;
   }
   resetMetricsCallCount();
   cleanupLlamaMetrics();
-  console.log("[DEBUG] Metrics cleanup complete");
 }

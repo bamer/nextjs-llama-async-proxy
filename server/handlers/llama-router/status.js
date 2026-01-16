@@ -18,13 +18,29 @@ export async function getLlamaStatus(db) {
   const url = getServerUrl();
   const { isPortInUse } = await import("./process.js");
 
-  // Check if our process is actually running (not just any process on the port)
+  // Check if server is running
+  // Case 1: We have a valid process reference that's still running
+  // Case 2: Port is in use AND we can successfully query the API
   const isRunning = state.isRunning;
   const portInUse = state.port ? await isPortInUse(state.port) : false;
 
-  // Only consider port "in use" if our process is actually running
-  // This prevents false positives when another process is using the port
-  const actuallyRunning = isRunning || (portInUse && process !== null);
+  // Try to query the API if port is in use (even without process reference)
+  // This handles cases where server was started externally or by previous process
+  let actuallyRunning = isRunning;
+  if (!actuallyRunning && portInUse) {
+    const testUrl = url || state.url || `http://127.0.0.1:${state.port}`;
+    try {
+      const testPromise = llamaApiRequest("/health", "GET", null, testUrl);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout")), 1000)
+      );
+      await Promise.race([testPromise, timeoutPromise]);
+      actuallyRunning = true; // API responded, server is running
+    } catch (e) {
+      console.warn("[LLAMA] Port in use but API not responding:", e.message);
+      actuallyRunning = false;
+    }
+  }
 
   let modelsStatus = null;
   let modelsError = null;
@@ -54,7 +70,8 @@ export async function getLlamaStatus(db) {
     url: actuallyRunning ? (url || state.url || `http://127.0.0.1:${state.port}`) : null,
     processRunning: isRunning,
     mode: "router",
-    models: modelsStatus?.models || [],
+    // API returns { data: [...], object: "list" } - use .data for models array
+    models: modelsStatus?.data || modelsStatus?.models || [],
     modelsError: modelsError || null,
   };
 }

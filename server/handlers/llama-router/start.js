@@ -19,6 +19,7 @@ import { llamaApiRequest } from "./api.js";
 let llamaServerProcess = null;
 let llamaServerPort = null; 
 let llamaServerUrl = null;
+let llamaServerStartTime = null; // Track server start time for uptime
 let logWriteStream = null;
 let notificationCallback = null;
 let stdoutListener = null; 
@@ -64,6 +65,15 @@ export function getRouterState(db) {
 
 export function getServerUrl() { return llamaServerUrl; }
 export function getServerProcess() { return llamaServerProcess; }
+
+/**
+ * Get llama-server uptime in seconds.
+ * @returns {number} Uptime in seconds, or 0 if server not started
+ */
+export function getServerUptime() {
+  if (!llamaServerStartTime) return 0;
+  return Math.floor((Date.now() - llamaServerStartTime) / 1000);
+}
 
 function notifyServerEvent(event, data) {
   console.log(`[LLAMA-NOTIFY] ${event}:`, data);
@@ -198,6 +208,7 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
           // Verify the server is actually responding
           await llamaApiRequest("/models", "GET", null, llamaServerUrl);
           console.log(`[LLAMA] Server is ready and responding on port ${llamaServerPort}`);
+          llamaServerStartTime = Date.now(); // Track start time for uptime
           notifyServerEvent("started", { port: llamaServerPort, url: llamaServerUrl, mode: "router", timestamp: Date.now() });
           return { success: true, port: llamaServerPort, url: llamaServerUrl };
         } catch (e) {

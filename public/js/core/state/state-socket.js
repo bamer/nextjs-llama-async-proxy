@@ -94,22 +94,9 @@ class StateSocket {
     const currentHistory = this.core.get("metricsHistory") || [];
     const newHistory = [...currentHistory, { ...m, ts: Date.now() }];
 
-    // Silenced the warning to prevent log flooding
-    /*
-    if (currentHistory.length >= this.maxHistory - 10) {
-      console.warn("[STATE-SOCKET] Metrics history approaching limit:", {
-        current: currentHistory.length,
-        max: this.maxHistory,
-      });
-    }
-    */
-
     const h = newHistory.slice(-this.maxHistory);
     this.core.set("metricsHistory", h);
-    console.log("[DEBUG] StateSocket._addMetric:", {
-      newLength: h.length,
-      maxHistory: this.maxHistory,
-    });
+    // Removed noisy debug log - metrics update every 30s, not needed
   }
 
   /**
@@ -148,7 +135,7 @@ class StateSocket {
   }
 
   /**
-   * Execute the actual socket request with timeout handling
+   * Execute the actual socket request - NO TIMEOUT
    * @param {string} event - Event name
    * @param {Object} data - Request data payload
    * @param {Function} resolve - Promise resolve callback
@@ -156,28 +143,16 @@ class StateSocket {
    */
   _doRequest(event, data, resolve, reject) {
     const reqId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const isConfigOperation = event.startsWith("config:") || event.startsWith("settings:");
-    const isStatusCheck = event === "llama:status" || event === "metrics:get" || event === "models:list";
-    // Status checks should be fast, config operations get more time
-    const timeoutMs = isStatusCheck ? 3000 : (isConfigOperation ? 10000 : 15000);
+    
+    // No timeout - let it complete when it completes
+    // Silently fail if server doesn't respond (not a critical error)
     const timeout = setTimeout(() => {
       this.pending.delete(reqId);
-      // Don't log timeout for status checks (they're expected to fail when server is down)
-      if (!isStatusCheck) {
-        console.warn("[STATE-SOCKET] Request timeout:", {
-          event,
-          requestId: reqId,
-          timeoutMs,
-        });
-      }
       reject(new Error(`Request timeout for: ${event}`));
-    }, timeoutMs);
+    }, 60000); // 60s max, then give up (very generous for localhost)
+    
     this.pending.set(reqId, { resolve, reject, event, timeout });
     this.socket.emit(event, { ...data, requestId: reqId });
-    // Only log debug for non-status events to reduce noise
-    if (!isStatusCheck) {
-      console.log("[DEBUG] StateSocket._doRequest:", { event, requestId: reqId });
-    }
   }
 
   /**

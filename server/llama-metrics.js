@@ -1,80 +1,73 @@
 /**
  * Llama Metrics - llama-server specific metrics collection
- * Part of metrics.js refactoring (≤200 lines)
+ * Simplified with minimal logging and efficient broadcasting
  */
 
 import { LlamaServerMetricsScraper } from "./handlers/llama-router/metrics-scraper.js";
+import { getServerUptime } from "./handlers/llama-router/start.js";
 
 let llamaMetricsScraper = null;
 
-/**
- * Initialize llama-server metrics scraper.
- * Creates a new LlamaServerMetricsScraper instance for the specified port.
- * @param {number} port - The port llama-server is running on
- */
-export function initializeLlamaMetricsScraper(port) {
-  console.log("[DEBUG] Initializing llama metrics scraper for port:", port);
-  llamaMetricsScraper = new LlamaServerMetricsScraper({
-    host: "127.0.0.1",
-    port: port,
-  });
-  console.log("[DEBUG] Llama metrics scraper initialized");
+export function initializeLlamaMetricsScraper(port, db = null) {
+  if (llamaMetricsScraper) {
+    llamaMetricsScraper.updatePort(port);
+  } else {
+    llamaMetricsScraper = new LlamaServerMetricsScraper({
+      host: "127.0.0.1",
+      port: port || 8080,
+    });
+  }
 }
 
-/**
- * Collect and broadcast llama-server metrics to connected clients.
- * @param {Object} io - Socket.IO server instance
- * @returns {Promise<void>}
- */
-export async function collectLlamaMetrics(io) {
-  if (!llamaMetricsScraper) {
-    return;
-  }
+export async function collectLlamaMetrics(io, db = null) {
+  if (!llamaMetricsScraper) return;
 
   try {
     const metrics = await llamaMetricsScraper.getMetrics();
     if (metrics) {
-      // Emit llama-server status with metrics
+      const currentPort = llamaMetricsScraper.port || 8080;
+      const url = `http://127.0.0.1:${currentPort}`;
+
+      // Build frontend-compatible format
+      const frontendMetrics = {
+        promptTokensSeconds: metrics.tokensPerSecond || 0,
+        predictedTokensSeconds: metrics.predictedTokensSeconds || metrics.tokensPerSecond || 0,
+        promptTokensTotal: metrics.promptTokensTotal || 0,
+        predictedTokensTotal: metrics.predictedTokensTotal || 0,
+        vramTotal: metrics.vramTotal || 0,
+        vramUsed: metrics.vramUsed || 0,
+        nCtx: metrics.nCtx || 0,
+        nParallel: metrics.nParallel || 0,
+        nThreads: metrics.nThreads || 0,
+        activeModels: metrics.activeModels || 0,
+        queueSize: metrics.queueSize || 0,
+        totalRequests: metrics.totalRequests || 0,
+        nDecodeTotal: metrics.nDecodeTotal || 0,
+        nBusySlotsPerDecode: metrics.nBusySlotsPerDecode || 0,
+        nTokensMax: metrics.nTokensMax || 0,
+        promptSecondsTotal: metrics.promptSecondsTotal || 0,
+        predictedSecondsTotal: metrics.predictedSecondsTotal || 0,
+        uptime: getServerUptime(),
+      };
+
+      // Broadcast metrics with type for filtering
       io.emit("llama-server:status", {
         type: "broadcast",
         data: {
           status: "running",
-          metrics: {
-            activeModels: metrics.activeModels || 0,
-            tokensPerSecond: metrics.tokensPerSecond || 0,
-            queueSize: metrics.queueSize || 0,
-            totalRequests: metrics.totalRequests || 0,
-            uptime: metrics.uptime || 0,
-          },
-          // Also include raw metrics for advanced parsing
+          url: url,
+          port: currentPort,
+          metrics: frontendMetrics,
           rawMetrics: metrics,
         },
         timestamp: Date.now(),
       });
     }
   } catch (e) {
-    // Only log once to avoid spam - metrics endpoint might not be enabled
-    if (!this._metricsErrorLogged) {
-      console.warn("[LLAMA-METRICS] Metrics collection failed:", e.message);
-      console.warn("[LLAMA-METRICS] Ensure llama-server is started with --metrics flag");
-      this._metricsErrorLogged = true;
-    }
+    // Silently fail - metrics are optional
   }
 }
 
-/**
- * Check if llama metrics scraper is initialized
- * @returns {boolean} True if initialized
- */
-export function isLlamaMetricsInitialized() {
-  return llamaMetricsScraper !== null;
-}
-
-/**
- * Cleanup llama metrics scraper
- */
 export function cleanupLlamaMetrics() {
-  if (llamaMetricsScraper) {
-    llamaMetricsScraper = null;
-  }
+  llamaMetricsScraper = null;
 }
