@@ -95,16 +95,16 @@
                   <strong>Added Parameters:</strong>
                   <div class="added-params-list">
                     ${Object.entries(defaults).map(([key, value]) => {
-        const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
-        const escaped = String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-        return `<div class="param-item-display" data-param-key="${key}">
+    const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
+    const escaped = String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    return `<div class="param-item-display" data-param-key="${key}">
                         <div class="param-name"><strong>${param?.label || key}</strong></div>
                         <div class="param-controls">
                           <input type="text" class="param-value-input" value="${escaped}" data-param-key="${key}" placeholder="Value">
                           <button class="btn-param-delete" data-param-key="${key}" title="Delete">×</button>
                         </div>
                       </div>`;
-      }).join("")}
+  }).join("")}
                   </div>
                 </div>
               ` : "<p class='defaults-hint'>Default preset starts empty</p>"}

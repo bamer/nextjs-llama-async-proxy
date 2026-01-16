@@ -7,16 +7,16 @@ class StateLlamaServer {
   constructor(stateCore, stateSocket) {
     this.core = stateCore;
     this.socket = stateSocket;
-    
+
     // Initialize with default loading state
-    this.core.set("llamaServerStatus", { 
-      status: "loading", 
-      port: null, 
-      url: null, 
+    this.core.set("llamaServerStatus", {
+      status: "loading",
+      port: null,
+      url: null,
       models: [],
-      mode: "router" 
+      mode: "router"
     });
-    
+
     // Set up handlers and fire requests
     this.setupBroadcastHandlers();
     this.queryStatusOnReady();
@@ -72,7 +72,7 @@ class StateLlamaServer {
    */
   mergeState(newData, options = {}) {
     const existing = this.core.get("llamaServerStatus") || {};
-    
+
     // Preserve models unless new data explicitly provides them
     const merged = {
       ...existing,
@@ -117,13 +117,13 @@ class StateLlamaServer {
       })
       .catch((e) => {
         // Failed to fetch - set idle state (not a warning, just expected)
-        this.mergeState({ 
-          status: "idle", 
-          port: null, 
-          url: null, 
+        this.mergeState({
+          status: "idle",
+          port: null,
+          url: null,
           mode: "router",
           models: [],
-          modelsError: e.message 
+          modelsError: e.message
         });
       });
     // No timeout - let it complete when it completes

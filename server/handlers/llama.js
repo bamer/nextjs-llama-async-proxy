@@ -165,11 +165,46 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
    */
   socket.on("llama:restart", async (req) => {
     const id = req?.requestId || Date.now();
-    await stopLlamaServerRouter();
-    setTimeout(() => {
-      // Internal re-trigger
-      socket.emit("llama:start", { requestId: id });
-    }, 2000);
+    try {
+      // Stop the server and wait for completion
+      await stopLlamaServerRouter();
+      
+      // Emit status update immediately
+      io.emit("llama:status", {
+        status: "idle",
+        port: null,
+        url: null,
+        mode: "router",
+        timestamp: Date.now(),
+      });
+      
+      // Small delay for clean shutdown (only 500ms)
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Start the server
+      const config = db.getConfig() || {};
+      const settings = db.getMeta("user_settings") || {};
+      const modelsDir = config.baseModelsPath;
+
+      const result = await startLlamaServerRouter(modelsDir, db, {
+        maxModels: settings.maxModelsLoaded || 4,
+        ctxSize: config.ctx_size || 4096,
+        threads: config.threads || 4,
+        noAutoLoad: !settings.autoLoadModels,
+      });
+
+      if (result.success) {
+        if (initializeLlamaMetrics) {
+          initializeLlamaMetrics(result.port);
+        }
+        ok(socket, "llama:restart:result", { success: true, ...result }, id);
+      } else {
+        err(socket, "llama:restart:result", result.error, id);
+      }
+    } catch (e) {
+      console.error("[LLAMA-HANDLERS] Error in llama:restart handler:", e.message);
+      err(socket, "llama:restart:result", e.message, id);
+    }
   });
 
   /**

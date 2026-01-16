@@ -285,20 +285,20 @@ class StateManager {
     * Delete log files from disk
     * @returns {Promise<Object>} Clear operation result
     */
-   async clearLogFiles() {
-     return this.api.clearLogFiles();
-   }
+  async clearLogFiles() {
+    return this.api.clearLogFiles();
+  }
 
-   /**
+  /**
     * Send a log entry to the server
     * @param {string} level - Log level (debug, info, warn, error)
     * @param {string} message - Log message
     * @param {string} source - Source identifier (default: "client")
     * @returns {void}
     */
-   log(level, message, source = "client") {
-     this.api.log(level, message, source);
-   }
+  log(level, message, source = "client") {
+    this.api.log(level, message, source);
+  }
 
   // ===== Direct Request Operations (delegate to StateSocket) =====
 

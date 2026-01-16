@@ -168,9 +168,9 @@
       }
 
       // Handle router control buttons
-      const startBtn = routerCard.querySelector('[data-action="router-start"]');
-      const stopBtn = routerCard.querySelector('[data-action="router-stop"]');
-      const restartBtn = routerCard.querySelector('[data-action="router-restart"]');
+      const startBtn = routerCard.querySelector("[data-action=\"router-start\"]");
+      const stopBtn = routerCard.querySelector("[data-action=\"router-stop\"]");
+      const restartBtn = routerCard.querySelector("[data-action=\"router-restart\"]");
 
       if (startBtn) {
         startBtn.addEventListener("click", () => {

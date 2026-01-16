@@ -115,23 +115,23 @@ class MetricsParser {
       // Throughput metrics - handle both old and new formats
       // Old: llamacpp:n_tokens_processed, llamacpp:n_tokens_predicted
       // New: llamacpp:prompt_tokens_seconds, llamacpp:predicted_tokens_seconds
-      promptTokensSeconds: 
-        metrics["llamacpp:prompt_tokens_seconds"] || 
+      promptTokensSeconds:
+        metrics["llamacpp:prompt_tokens_seconds"] ||
         metrics["llamacpp:tokens_predicted_seconds"] || 0,
-      predictedTokensSeconds: 
-        metrics["llamacpp:predicted_tokens_seconds"] || 
+      predictedTokensSeconds:
+        metrics["llamacpp:predicted_tokens_seconds"] ||
         metrics["llamacpp:tokens_predicted_seconds"] || 0,
-      
+
       // Token totals - handle both old and new formats
       // Old: llamacpp:n_tokens_processed, llamacpp:n_tokens_predicted, llamacpp:n_tokens_total
       // New: llamacpp:prompt_tokens_total, llamacpp:tokens_predicted_total
-      nTokensProcessed: 
-        metrics["llamacpp:n_tokens_processed"] || 
+      nTokensProcessed:
+        metrics["llamacpp:n_tokens_processed"] ||
         metrics["llamacpp:prompt_tokens_total"] || 0,
-      nTokensPredicted: 
-        metrics["llamacpp:n_tokens_predicted"] || 
+      nTokensPredicted:
+        metrics["llamacpp:n_tokens_predicted"] ||
         metrics["llamacpp:tokens_predicted_total"] || 0,
-      nTokensTotal: 
+      nTokensTotal:
         metrics["llamacpp:n_tokens_total"] || 0,
 
       // Server configuration
@@ -148,7 +148,7 @@ class MetricsParser {
       // Time metrics
       promptEvalTimeMs: metrics["llamacpp:prompt_eval_time_ms"] || 0,
       tokensEvaluatedPerSecond: metrics["llamacpp:tokens_evaluated_per_second"] || 0,
-      
+
       // Additional Prometheus metrics (if enabled)
       kvCacheUsageRatio: metrics["llamacpp:kv_cache_usage_ratio"] || 0,
       kvCacheTokens: metrics["llamacpp:kv_cache_tokens"] || 0,
@@ -159,90 +159,153 @@ class MetricsParser {
 }
 
 /**
- * Metrics Scraper
+ * Metrics Scraper - Async-first implementation
  * Fetches metrics from llama-server /metrics endpoint
  */
 
 class MetricsScraper {
-  constructor(serverUrl, pollIntervalMs = 5000) {
+  constructor(serverUrl, pollIntervalMs = 2000) {
     this.serverUrl = serverUrl;
-    this.pollIntervalMs = pollIntervalMs;
-    this.intervalId = null;
+    this.pollIntervalMs = Math.max(1000, pollIntervalMs); // Min 1s
+    this.abortController = null;
     this.onUpdate = null;
     this.lastMetrics = {};
+    this.isRunning = false;
+    this.consecutiveErrors = 0;
+    this.maxErrors = 5; // Stop after 5 consecutive errors
   }
 
   /**
-   * Start polling metrics
+   * Start polling metrics with async loop
    * @param {Function} onUpdate - Callback function with metrics
    */
   start(onUpdate) {
-    if (this.intervalId) {
-      this.stop();
+    if (this.isRunning) {
+      console.log("[MetricsScraper] Already running");
+      return;
     }
 
     this.onUpdate = onUpdate;
+    this.isRunning = true;
+    this.abortController = new AbortController();
+    this.consecutiveErrors = 0;
+
     console.log("[MetricsScraper] Starting metrics scraper for", this.serverUrl);
 
-    // Immediate fetch
-    this._fetchMetrics();
-
-    // Start polling
-    this.intervalId = setInterval(() => {
-      this._fetchMetrics();
-    }, this.pollIntervalMs);
+    // Start async polling loop
+    this._pollLoop();
   }
 
   /**
    * Stop polling metrics
    */
   stop() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-      console.log("[MetricsScraper] Stopped metrics scraper");
+    if (!this.isRunning) return;
+
+    this.isRunning = false;
+    if (this.abortController) {
+      this.abortController.abort();
+      this.abortController = null;
+    }
+    console.log("[MetricsScraper] Stopped metrics scraper");
+  }
+
+  /**
+   * Main async polling loop
+   * @private
+   */
+  async _pollLoop() {
+    while (this.isRunning) {
+      try {
+        await this._fetchMetrics();
+        this.consecutiveErrors = 0; // Reset error count on success
+
+        // Wait before next fetch
+        await this._delay(this.pollIntervalMs);
+      } catch (error) {
+        if (error.name === "AbortError") {
+          break; // Stop was called
+        }
+
+        this.consecutiveErrors++;
+        if (this.consecutiveErrors >= this.maxErrors) {
+          console.error("[MetricsScraper] Too many errors, stopping scraper");
+          this.stop();
+          break;
+        }
+
+        // Exponential backoff: wait longer between retries
+        const backoffTime = Math.min(10000, 1000 * this.consecutiveErrors);
+        await this._delay(backoffTime);
+      }
     }
   }
 
   /**
    * Fetch metrics from /metrics endpoint
+   * @private
    */
   async _fetchMetrics() {
-    try {
-      const metricsUrl = `${this.serverUrl}/metrics`;
-      const response = await fetch(metricsUrl);
+    const metricsUrl = `${this.serverUrl}/metrics`;
+    const signal = this.abortController?.signal;
 
-      if (!response.ok) {
-        console.warn("[MetricsScraper] Failed to fetch metrics:", response.status);
-        return;
-      }
+    const response = await fetch(metricsUrl, { signal, timeout: 5000 });
 
-      const metricsText = await response.text();
-      const parsedMetrics = MetricsParser.parse(metricsText);
-      const llamaMetrics = MetricsParser.extractLlamaCppMetrics(parsedMetrics);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: Failed to fetch metrics`);
+    }
 
-      // Only notify if metrics changed
-      if (this._hasMetricsChanged(llamaMetrics)) {
-        this.lastMetrics = llamaMetrics;
-        console.log("[DEBUG] MetricsScraper got new metrics:", llamaMetrics);
+    const metricsText = await response.text();
+    const parsedMetrics = MetricsParser.parse(metricsText);
+    const llamaMetrics = MetricsParser.extractLlamaCppMetrics(parsedMetrics);
 
-        if (this.onUpdate) {
+    // Only notify if metrics changed
+    if (this._hasMetricsChanged(llamaMetrics)) {
+      this.lastMetrics = { ...llamaMetrics };
+
+      if (this.onUpdate) {
+        try {
           this.onUpdate(llamaMetrics);
+        } catch (error) {
+          console.error("[MetricsScraper] Error in onUpdate callback:", error);
         }
       }
-    } catch (error) {
-      console.error("[MetricsScraper] Error fetching metrics:", error);
     }
   }
 
   /**
-   * Check if metrics have changed
+   * Helper to delay execution
+   * @private
+   */
+  _delay(ms) {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(resolve, ms);
+      this.abortController?.signal.addEventListener("abort", () => {
+        clearTimeout(timeout);
+        reject(new DOMException("Aborted", "AbortError"));
+      });
+    });
+  }
+
+  /**
+   * Check if metrics have changed significantly
+   * @private
    */
   _hasMetricsChanged(newMetrics) {
     const keys = Object.keys(newMetrics);
 
     for (const key of keys) {
-      if (newMetrics[key] !== this.lastMetrics[key]) {
+      // For performance metrics, allow small changes to reduce noise
+      const oldVal = this.lastMetrics[key] || 0;
+      const newVal = newMetrics[key] || 0;
+
+      // Allow 0.5% change threshold for token rates
+      if (key.includes("Seconds")) {
+        const threshold = Math.max(0.1, Math.abs(oldVal) * 0.005);
+        if (Math.abs(newVal - oldVal) > threshold) {
+          return true;
+        }
+      } else if (newVal !== oldVal) {
         return true;
       }
     }

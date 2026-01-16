@@ -9,7 +9,7 @@ class StateSocket {
     this.socket = null;
     this.pending = new Map();
     this.maxHistory = 1000; // Increased limit
-    this.maxLogs = 100; 
+    this.maxLogs = 100;
     this.connection = new StateConnectionHandlers(
       stateCore,
       () => this.core._notify("connectionStatus", "connected"),
@@ -143,14 +143,14 @@ class StateSocket {
    */
   _doRequest(event, data, resolve, reject) {
     const reqId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // No timeout - let it complete when it completes
     // Silently fail if server doesn't respond (not a critical error)
     const timeout = setTimeout(() => {
       this.pending.delete(reqId);
       reject(new Error(`Request timeout for: ${event}`));
     }, 60000); // 60s max, then give up (very generous for localhost)
-    
+
     this.pending.set(reqId, { resolve, reject, event, timeout });
     this.socket.emit(event, { ...data, requestId: reqId });
   }

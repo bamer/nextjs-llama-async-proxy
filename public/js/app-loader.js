@@ -93,7 +93,7 @@
                 }
                 return String(a);
               }).join(" ");
-              
+
               if (msg.length > 0 && msg.length < 5000 && !msg.includes("logs:entry")) {
                 isInternalLog = true;
                 socketClient.emit("logs:entry", {

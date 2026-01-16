@@ -71,16 +71,18 @@ class DashboardController {
   }
 
   /**
-   * Start periodic chart updates by subscribing to metricsHistory state changes.
-   * Updates the component with metrics and history data at regular intervals.
+   * Start chart updates using state subscription (no polling).
+   * Updates the component whenever metrics or history changes.
    * @returns {void}
    */
   _startChartUpdates() {
+    // Clean up any existing interval
     if (this.chartUpdateInterval) {
       clearInterval(this.chartUpdateInterval);
+      this.chartUpdateInterval = null;
     }
 
-    // Subscribe to metrics updates from broadcast
+    // Subscribe to metrics and history changes
     this._subscribe("metricsHistory", (history) => {
       if (this.comp && Array.isArray(history) && history.length > 0) {
         const metrics = stateManager.get("metrics");
@@ -88,58 +90,35 @@ class DashboardController {
       }
     });
 
-    // Periodic full refresh as fallback (every 30s instead of 3s for better performance)
-    this.chartUpdateInterval = setInterval(async () => {
-      try {
-        // Use cached data from broadcast when available
-        const cachedHistory = stateManager.get("metricsHistory") || [];
-        if (cachedHistory.length > 0) {
-          const metrics = stateManager.get("metrics");
-          if (this.comp) {
-            this.comp.updateFromController(metrics, cachedHistory);
-          }
-          return;
-        }
-
-        // Fallback to API call only if no cached data
-        const h = await stateManager.getMetricsHistory({ limit: 60 });
-        if (this.comp) {
-          const metrics = stateManager.get("metrics");
-          this.comp.updateFromController(metrics, h.history || []);
-        }
-      } catch (e) {
-        console.debug("[Dashboard] Chart update failed:", e.message);
+    this._subscribe("metrics", (metrics) => {
+      if (this.comp) {
+        const history = stateManager.get("metricsHistory") || [];
+        this.comp.updateFromController(metrics, history);
       }
-    }, 30000); // 30s instead of 3s for better performance
+    });
   }
 
   /**
    * Load data when socket is connected
    */
-  _loadDataWhenConnected() {
+  async _loadDataWhenConnected() {
     // Check if already connected
     if (stateManager.isConnected()) {
-      this._loadData();
+      await this._loadData();
       return;
     }
 
-    // Wait for connection, then load
-    const unsub = stateManager.subscribe("connectionStatus", (status) => {
-      if (status === "connected") {
-        unsub();
-        this._loadData();
-      }
+    // Wait for connection, then load (using promise-based approach)
+    await new Promise((resolve) => {
+      const unsub = stateManager.subscribe("connectionStatus", (status) => {
+        if (status === "connected") {
+          unsub();
+          resolve();
+        }
+      });
     });
 
-    // Safety timeout - load anyway after 5 seconds
-    setTimeout(() => {
-      unsub();
-      if (stateManager.isConnected()) {
-        this._loadData();
-      } else {
-        console.warn("[DASHBOARD] Socket not connected after 5s, skipping data load");
-      }
-    }, 5000);
+    await this._loadData();
   }
 
   /**
@@ -278,7 +257,7 @@ class DashboardController {
     stateManager.startLlama().then((response) => {
       console.log("[DASHBOARD] Start response:", response);
       showNotification("Starting router...", "info");
-      
+
       // Poll for status until running or timeout
       let attempts = 0;
       const maxAttempts = 15; // 15 seconds max
@@ -287,7 +266,7 @@ class DashboardController {
         try {
           const s = await stateManager.getLlamaStatus();
           console.log(`[DASHBOARD] Status check ${attempts}:`, s);
-          
+
           if (s?.status === "running") {
             clearInterval(pollInterval);
             stateManager.set("llamaServerStatus", s);
@@ -322,12 +301,12 @@ class DashboardController {
     if (!confirm("Stop router?")) return;
     this._setLoading(true);
     console.log("[DASHBOARD] Stopping router...");
-    
+
     stateManager.stopLlama()
       .then((result) => {
         console.log("[DASHBOARD] Stop response:", result);
         showNotification("Stopping router...", "info");
-        
+
         // Poll for status until idle or timeout
         let attempts = 0;
         const maxAttempts = 10; // 10 seconds max
@@ -336,7 +315,7 @@ class DashboardController {
           try {
             const s = await stateManager.getLlamaStatus();
             console.log(`[DASHBOARD] Stop status check ${attempts}:`, s);
-            
+
             if (s?.status === "idle" || !s?.processRunning) {
               clearInterval(pollInterval);
               stateManager.set("llamaServerStatus", { status: "idle", port: null, url: null });
@@ -377,7 +356,7 @@ class DashboardController {
     console.log("[DASHBOARD] Restarting router...");
     stateManager.restartLlama().then(() => {
       showNotification("Restarting router...", "info");
-      
+
       // Poll for status until running or timeout
       let attempts = 0;
       const maxAttempts = 20; // 20 seconds max for restart
@@ -386,7 +365,7 @@ class DashboardController {
         try {
           const s = await stateManager.getLlamaStatus();
           console.log(`[DASHBOARD] Restart status check ${attempts}:`, s);
-          
+
           if (s?.status === "running") {
             clearInterval(pollInterval);
             stateManager.set("llamaServerStatus", s);

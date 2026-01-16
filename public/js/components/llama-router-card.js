@@ -17,25 +17,25 @@ class LlamaRouterCard extends Component {
     this._updatePresetSelect();
 
     this.unsubscribers = [
-      stateManager.subscribe("llamaServerStatus", (s) => { 
-        this.props.status = s; 
-        this._updateUI(); 
+      stateManager.subscribe("llamaServerStatus", (s) => {
+        this.props.status = s;
+        this._updateUI();
       }),
-      stateManager.subscribe("routerStatus", (rs) => { 
-        this.props.routerStatus = rs; 
-        this._updateUI(); 
+      stateManager.subscribe("routerStatus", (rs) => {
+        this.props.routerStatus = rs;
+        this._updateUI();
       }),
-      stateManager.subscribe("llamaServerMetrics", (m) => { 
-        this.props.metrics = m; 
-        this._updateDetailedMetrics(); 
+      stateManager.subscribe("llamaServerMetrics", (m) => {
+        this.props.metrics = m;
+        this._updateDetailedMetrics();
       }),
-      stateManager.subscribe("presets", (p) => { 
-        this.props.presets = p || []; 
-        this._updatePresetSelect(); 
+      stateManager.subscribe("presets", (p) => {
+        this.props.presets = p || [];
+        this._updatePresetSelect();
       }),
-      stateManager.subscribe("routerLoading", (loading) => { 
-        this.routerLoading = !!loading; 
-        this._updateUI(); 
+      stateManager.subscribe("routerLoading", (loading) => {
+        this.routerLoading = !!loading;
+        this._updateUI();
       })
     ];
 
@@ -54,26 +54,52 @@ class LlamaRouterCard extends Component {
     // Get URL from status state (set by llama:status events)
     const status = window.stateManager?.get?.("llamaServerStatus") || {};
     const url = status.url;
-    
+
     // Only set up scraper if server is running (has URL)
     // This is expected to be null when llama-server is not running
     if (!url) {
       return; // Silent - no warning needed for expected state
     }
-    
-    this._scraper = new window.MetricsScraper(url, 5000);
-    this._scraper.start(m => stateManager.set("llamaServerMetrics", m));
+
+    // Use shorter interval (2s) for immediate feedback, but with smart dedup
+    this._scraper = new window.MetricsScraper(url, 2000);
+    this._scraper.start((metrics) => {
+      // Update state only when metrics actually change
+      const currentMetrics = stateManager.get("llamaServerMetrics") || {};
+
+      // Check if meaningful changes (> 0.1% change for token rates)
+      let hasChange = false;
+      for (const key in metrics) {
+        const oldVal = currentMetrics[key] || 0;
+        const newVal = metrics[key] || 0;
+
+        if (key.includes("Seconds")) {
+          const threshold = Math.max(0.05, Math.abs(oldVal) * 0.001);
+          if (Math.abs(newVal - oldVal) > threshold) {
+            hasChange = true;
+            break;
+          }
+        } else if (newVal !== oldVal) {
+          hasChange = true;
+          break;
+        }
+      }
+
+      if (hasChange) {
+        stateManager.set("llamaServerMetrics", metrics);
+      }
+    });
   }
 
   _updateUI() {
     if (!this._el) return;
-    
+
     // Maintain component link
     if (this._el._component !== this) this._el._component = this;
 
     const status = this.props.status || {};
     const rs = this.props.routerStatus || {};
-    
+
     // Handle loading, running, and stopped states
     const isLoading = status.status === "loading";
     const isRunning = status.status === "running" || status.processRunning === true;
@@ -90,7 +116,7 @@ class LlamaRouterCard extends Component {
     if (indicator) {
       indicator.className = `status-indicator ${displayClass}`;
     }
-    
+
     this.setText(".badge-text", displayStatus);
 
     // Header Port
@@ -111,14 +137,14 @@ class LlamaRouterCard extends Component {
       const loadedCount = Array.isArray(modelsData) ? modelsData.filter(m => m.status?.value === "loaded").length : 0;
       const totalModels = Array.isArray(modelsData) ? modelsData.length : (this.props.models || []).length || 0;
       this.setText("[data-glance=\"models\"]", `${loadedCount}/${totalModels}`);
-      
+
       const uptimeSeconds = this.props.metrics?.uptime || status.uptime || 0;
       this.setText("[data-glance=\"uptime\"]", window.FormatUtils.formatUptime(uptimeSeconds));
-      
+
       const predTs = this.props.metrics?.predictedTokensSeconds || 0;
       this.setText("[data-glance=\"vram\"]", `${predTs.toFixed(1)} t/s`);
     }
-    
+
     // 3. Toggle Button - disabled during loading
     const mainBtn = this.$("[data-action=\"toggle\"]");
     const restartBtn = this.$("[data-action=\"restart\"]");
@@ -135,7 +161,7 @@ class LlamaRouterCard extends Component {
         mainBtn.setAttribute("data-action-type", "start");
       }
     }
-    
+
     if (restartBtn) {
       restartBtn.disabled = !isRunning || displayLoading;
       restartBtn.textContent = displayLoading ? "Restarting..." : "Restart";
@@ -147,12 +173,12 @@ class LlamaRouterCard extends Component {
     const m = this.props.metrics || {};
     const status = this.props.status || {};
     const modelsData = status.models || [];
-    
+
     // Get server config from loaded model's args (if available)
     let nCtx = "N/A";
     let nParallel = "N/A";
     let nThreads = "N/A";
-    
+
     if (Array.isArray(modelsData)) {
       const loadedModel = modelsData.find(model => model.status?.value === "loaded");
       if (loadedModel?.args) {
@@ -162,25 +188,25 @@ class LlamaRouterCard extends Component {
         const ctxMatch = argsStr.match(/--ctx-size\s+(\d+)/);
         const threadsMatch = argsStr.match(/--threads\s+(\d+)/);
         const parallelMatch = argsStr.match(/--ubatch-size\s+(\d+)/);
-        
+
         nCtx = ctxMatch ? ctxMatch[1] : "N/A";
         nThreads = threadsMatch ? threadsMatch[1] : "N/A";
         nParallel = parallelMatch ? parallelMatch[1] : "N/A";
       }
     }
-    
+
     this.setText("[data-metric=\"prompt-ts\"]", `${(m.promptTokensSeconds || 0).toFixed(2)} t/s`);
     this.setText("[data-metric=\"pred-ts\"]", `${(m.predictedTokensSeconds || 0).toFixed(2)} t/s`);
-    
+
     // Remove VRAM display or show as N/A since user has it elsewhere
     this.setText("[data-metric=\"vram-total\"]", "N/A");
     this.setText("[data-metric=\"vram-used\"]", "N/A");
-    
+
     // Show server config from loaded model
     this.setText("[data-metric=\"n-ctx\"]", nCtx);
     this.setText("[data-metric=\"n-parallel\"]", nParallel);
     this.setText("[data-metric=\"n-threads\"]", nThreads);
-    
+
     // Update glance metrics
     this.setText("[data-glance=\"prompt-ts\"]", `${(m.promptTokensSeconds || 0).toFixed(1)} t/s`);
     const predTs = m.predictedTokensSeconds || 0;
@@ -206,11 +232,11 @@ class LlamaRouterCard extends Component {
       this.toggleClass(".details-toggle-btn", "expanded", isExpanded);
     });
     this.on("change", "#preset-select", (e) => { this.selectedPreset = e.target.value; });
-    
+
     this.on("click", "[data-action=\"toggle\"]", (e, target) => {
       if (this.routerLoading) return;
       const type = target.getAttribute("data-action-type");
-      
+
       if (type === "start") {
         if (this.selectedPreset) this.props.onAction("start-with-preset", this.selectedPreset);
         else this.props.onAction("start");
@@ -230,7 +256,7 @@ class LlamaRouterCard extends Component {
       Component.h("div", { className: "status-card-header" }, [
         Component.h("div", { className: "header-main" }, [
           Component.h("h3", { className: "header-title" }, [
-            Component.h("i", { className: "ri-server-line" }), 
+            Component.h("i", { className: "ri-server-line" }),
             Component.h("span", { className: "header-title-text" }, "Llama Router")
           ]),
           Component.h("div", { className: "status-badge-container" }, [
@@ -248,17 +274,17 @@ class LlamaRouterCard extends Component {
       Component.h("div", { className: "status-controls-bar" }, [
         Component.h("div", { className: "preset-group" }, [
           Component.h("select", { id: "preset-select", className: "preset-dropdown" }),
-          Component.h("button", { 
-            className: "btn btn-primary btn-start", 
-            "data-action": "toggle", 
-            "data-action-type": "start" 
+          Component.h("button", {
+            className: "btn btn-primary btn-start",
+            "data-action": "toggle",
+            "data-action-type": "start"
           }, "Start Router")
         ]),
         Component.h("div", { className: "action-group" }, [
-          Component.h("button", { 
-            className: "btn btn-secondary", 
-            "data-action": "restart", 
-            disabled: true 
+          Component.h("button", {
+            className: "btn btn-secondary",
+            "data-action": "restart",
+            disabled: true
           }, "Restart")
         ])
       ]),
@@ -283,7 +309,7 @@ class LlamaRouterCard extends Component {
   _renderMetricsGroup(title, metricsMap) {
     return Component.h("div", { className: "metrics-group" }, [
       Component.h("h4", {}, title),
-      Component.h("div", { className: "metrics-subgrid" }, 
+      Component.h("div", { className: "metrics-subgrid" },
         Object.entries(metricsMap).map(([name, dataKey]) => Component.h("div", { className: "metric-row" }, [
           Component.h("span", { className: "metric-name" }, name),
           Component.h("span", { className: "metric-data", "data-metric": dataKey }, "...")
