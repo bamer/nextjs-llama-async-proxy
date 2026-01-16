@@ -44,12 +44,7 @@ export function registerHandlers(io, db, ggufParser, initializeLlamaMetrics) {
   logger.setIo(io);
   logger.setDb(db);
 
-  // Register global handlers directly on 'io'
-  console.log("[HANDLERS] Registering global Llama handlers..."); // ADDED LOG
-  registerLlamaHandlers(io, db, initializeLlamaMetrics);
-  console.log("[HANDLERS] Global Llama handlers registered."); // ADDED LOG
-
-  io.on("connection", (socket) => { // This is the connection handler for individual sockets
+  io.on("connection", (socket) => { 
     const cid = socket.id;
     logger.info(`Client connected: ${cid}`);
 
@@ -60,5 +55,8 @@ export function registerHandlers(io, db, ggufParser, initializeLlamaMetrics) {
     registerLogsHandlers(socket, db);
     registerConfigHandlers(socket, db);
     registerPresetsHandlers(socket, db);
+    
+    // Moved inside connection block and added io parameter
+    registerLlamaHandlers(socket, io, db, initializeLlamaMetrics);
   });
 }

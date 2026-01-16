@@ -95,24 +95,21 @@ describe("Llama Router Status Functions", () => {
       });
     });
 
-    // Positive test: port is in use but process is null (crashed)
-    it("should return running status when port is in use but process is null", async () => {
+    // Edge case: port is in use but process is null (another process or stale port)
+    // NEW BEHAVIOR: Returns "idle" and null port because OUR process is not running
+    it("should return idle status when port is in use but process is null", async () => {
       // Arrange
       mockGetRouterState.mockReturnValue({ isRunning: false, port: 8080 });
       mockGetServerProcess.mockReturnValue(null);
       mockGetServerUrl.mockReturnValue("http://127.0.0.1:8080");
-      mockIsPortInUse.mockReturnValue(true);
-      mockLlamaApiRequest.mockResolvedValue({
-        models: [{ name: "model1.gguf" }],
-      });
+      mockIsPortInUse.mockReturnValue(true); // Another process might be using the port
 
       // Act
       const result = await getLlamaStatus();
 
-      // Assert
-      expect(result.status).toBe("running");
-      expect(result.port).toBe(8080);
-      expect(result.url).toBe("http://127.0.0.1:8080");
+      // Assert - Our process is null, so we report idle with null port
+      expect(result.status).toBe("idle");
+      expect(result.port).toBeNull(); // Port cleared when our process is not running
       expect(result.processRunning).toBe(false);
       expect(result.mode).toBe("router");
     });

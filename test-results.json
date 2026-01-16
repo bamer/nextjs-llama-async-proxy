@@ -1,38 +1,11 @@
 {
-  "timestamp": "2026-01-14T14:39:29.253Z",
+  "timestamp": "2026-01-15T14:40:47.240Z",
   "pages": [
     {
       "name": "Dashboard",
       "url": "http://localhost:3000/",
-      "status": "FAILED",
-      "screenshot": "./screenshots/golden-dashboard.png",
-      "errors": [
-        {
-          "type": "javascript",
-          "message": "Cannot set properties of null (setting '_component')"
-        },
-        {
-          "type": "javascript",
-          "message": "Cannot set properties of null (setting '_component')"
-        },
-        {
-          "type": "javascript",
-          "message": "Cannot set properties of null (setting '_component')"
-        }
-      ],
-      "warnings": [],
-      "elements": {
-        "buttons": 3,
-        "links": 0,
-        "inputs": 0,
-        "interactive": 3
-      }
-    },
-    {
-      "name": "Models",
-      "url": "http://localhost:3000/models",
       "status": "ERROR",
-      "screenshot": "./screenshots/golden-models.png",
+      "screenshot": "./screenshots/golden-dashboard.png",
       "errors": [
         {
           "type": "navigation",
@@ -41,7 +14,26 @@
       ],
       "warnings": [],
       "elements": {
-        "buttons": 30,
+        "buttons": 12,
+        "links": 0,
+        "inputs": 0,
+        "interactive": 0
+      }
+    },
+    {
+      "name": "Models",
+      "url": "http://localhost:3000/models",
+      "status": "ERROR",
+      "screenshot": null,
+      "errors": [
+        {
+          "type": "navigation",
+          "message": "page.goto: Target page, context or browser has been closed"
+        }
+      ],
+      "warnings": [],
+      "elements": {
+        "buttons": 0,
         "links": 0,
         "inputs": 0,
         "interactive": 0
@@ -126,8 +118,8 @@
   ],
   "summary": {
     "passed": 0,
-    "failed": 1,
-    "errors": 5
+    "failed": 0,
+    "errors": 6
   },
   "networkErrors": []
 }

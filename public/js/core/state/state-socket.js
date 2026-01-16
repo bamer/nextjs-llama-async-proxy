@@ -8,8 +8,8 @@ class StateSocket {
     this.core = stateCore;
     this.socket = null;
     this.pending = new Map();
-    this.maxHistory = 500; // Configurable max history size
-    this.maxLogs = 100; // Configurable max logs size
+    this.maxHistory = 1000; // Increased limit
+    this.maxLogs = 100; 
     this.connection = new StateConnectionHandlers(
       stateCore,
       () => this.core._notify("connectionStatus", "connected"),
@@ -94,13 +94,15 @@ class StateSocket {
     const currentHistory = this.core.get("metricsHistory") || [];
     const newHistory = [...currentHistory, { ...m, ts: Date.now() }];
 
-    // Add warning when approaching limit
+    // Silenced the warning to prevent log flooding
+    /*
     if (currentHistory.length >= this.maxHistory - 10) {
       console.warn("[STATE-SOCKET] Metrics history approaching limit:", {
         current: currentHistory.length,
         max: this.maxHistory,
       });
     }
+    */
 
     const h = newHistory.slice(-this.maxHistory);
     this.core.set("metricsHistory", h);

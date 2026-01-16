@@ -217,12 +217,24 @@ class DashboardController {
   }
 
   /**
+   * Set router loading state and update UI accordingly.
+   * @param {boolean} loading - Whether router is in loading state
+   * @returns {void}
+   */
+  _setLoading(loading) {
+    stateManager.set("routerLoading", !!loading);
+    if (this.comp) {
+      this.comp.setRouterLoading(!!loading);
+    }
+  }
+
+  /**
    * Start router with a specific preset configuration.
    * @param {string} presetName - Name of the preset to use
    * @returns {Promise<void>} Promise that resolves when router is started
    */
   _startWithPreset(presetName) {
-    if (this.comp) this.comp.setRouterLoading(true);
+    this._setLoading(true);
     const settings = stateManager.get("settings") || {};
     const config = stateManager.get("config") || {};
     showNotification(`Starting with preset "${presetName}"...`, "info");
@@ -243,84 +255,163 @@ class DashboardController {
             const rs = await stateManager.getRouterStatus();
             stateManager.set("routerStatus", rs.routerStatus);
           } finally {
-            if (this.comp) this.comp.setRouterLoading(false);
+            this._setLoading(false);
           }
         }, 3000);
       } else {
         showNotification(`Error: ${response?.error?.message || "Unknown error"}`, "error");
-        if (this.comp) this.comp.setRouterLoading(false);
+        this._setLoading(false);
       }
     }).catch((e) => {
       showNotification(`Failed: ${e.message}`, "error");
-      if (this.comp) this.comp.setRouterLoading(false);
+      this._setLoading(false);
     });
   }
 
   /**
-   * Start the llama router server.
-   * @returns {Promise<void>} Promise that resolves when server is started
-   */
+    * Start the llama router server.
+    * @returns {Promise<void>} Promise that resolves when server is started
+    */
   _start() {
-    if (this.comp) this.comp.setRouterLoading(true);
-    stateManager.startLlama().then(() => {
+    this._setLoading(true);
+    console.log("[DASHBOARD] Starting router...");
+    stateManager.startLlama().then((response) => {
+      console.log("[DASHBOARD] Start response:", response);
       showNotification("Starting router...", "info");
-      setTimeout(async () => {
+      
+      // Poll for status until running or timeout
+      let attempts = 0;
+      const maxAttempts = 15; // 15 seconds max
+      const pollInterval = setInterval(async () => {
+        attempts++;
         try {
           const s = await stateManager.getLlamaStatus();
-          stateManager.set("llamaServerStatus", s.status || null);
-          const rs = await stateManager.getRouterStatus();
-          stateManager.set("routerStatus", rs.routerStatus);
-          showNotification("Router started successfully", "success");
-        } finally {
-          if (this.comp) this.comp.setRouterLoading(false);
+          console.log(`[DASHBOARD] Status check ${attempts}:`, s);
+          
+          if (s?.status === "running") {
+            clearInterval(pollInterval);
+            stateManager.set("llamaServerStatus", s);
+            showNotification("Router started successfully", "success");
+            this._setLoading(false);
+          } else if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            console.warn("[DASHBOARD] Timeout waiting for router to start");
+            showNotification("Router start may have failed - please refresh", "warning");
+            this._setLoading(false);
+          }
+        } catch (e) {
+          console.warn(`[DASHBOARD] Status check ${attempts} failed:`, e.message);
+          if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            this._setLoading(false);
+          }
         }
-      }, 3000);
+      }, 1000);
     }).catch((e) => {
+      console.error("[DASHBOARD] Failed to start router:", e);
       showNotification(`Failed: ${e.message}`, "error");
-      if (this.comp) this.comp.setRouterLoading(false);
+      this._setLoading(false);
     });
   }
 
   /**
-   * Stop the llama router server after user confirmation.
-   * @returns {Promise<void>} Promise that resolves when server is stopped
-   */
+    * Stop the llama router server after user confirmation.
+    * @returns {Promise<void>} Promise that resolves when server is stopped
+    */
   _stop() {
     if (!confirm("Stop router?")) return;
-    if (this.comp) this.comp.setRouterLoading(true);
-    stateManager.stopLlama().then(() => {
-      stateManager.set("llamaServerStatus", { status: "idle", port: null });
-      stateManager.set("routerStatus", null);
-      showNotification("Router stopped", "success");
-    }).catch((e) => {
-      showNotification(`Failed: ${e.message}`, "error");
-    }).finally(() => {
-      if (this.comp) this.comp.setRouterLoading(false);
-    });
+    this._setLoading(true);
+    console.log("[DASHBOARD] Stopping router...");
+    
+    stateManager.stopLlama()
+      .then((result) => {
+        console.log("[DASHBOARD] Stop response:", result);
+        showNotification("Stopping router...", "info");
+        
+        // Poll for status until idle or timeout
+        let attempts = 0;
+        const maxAttempts = 10; // 10 seconds max
+        const pollInterval = setInterval(async () => {
+          attempts++;
+          try {
+            const s = await stateManager.getLlamaStatus();
+            console.log(`[DASHBOARD] Stop status check ${attempts}:`, s);
+            
+            if (s?.status === "idle" || !s?.processRunning) {
+              clearInterval(pollInterval);
+              stateManager.set("llamaServerStatus", { status: "idle", port: null, url: null });
+              stateManager.set("routerStatus", null);
+              showNotification("Router stopped", "success");
+              this._setLoading(false);
+            } else if (attempts >= maxAttempts) {
+              clearInterval(pollInterval);
+              console.warn("[DASHBOARD] Timeout waiting for router to stop");
+              // Force refresh status
+              const finalStatus = await stateManager.getLlamaStatus();
+              stateManager.set("llamaServerStatus", finalStatus);
+              showNotification("Stop command sent - please refresh if router is still running", "warning");
+              this._setLoading(false);
+            }
+          } catch (e) {
+            console.warn(`[DASHBOARD] Stop status check ${attempts} failed:`, e.message);
+            if (attempts >= maxAttempts) {
+              clearInterval(pollInterval);
+              this._setLoading(false);
+            }
+          }
+        }, 1000);
+      })
+      .catch((e) => {
+        console.error("[DASHBOARD] Failed to stop router:", e);
+        showNotification(`Failed: ${e.message}`, "error");
+        this._setLoading(false);
+      });
   }
 
   /**
-   * Restart the llama router server.
-   * @returns {Promise<void>} Promise that resolves when server is restarted
-   */
+    * Restart the llama router server.
+    * @returns {Promise<void>} Promise that resolves when server is restarted
+    */
   _restart() {
-    if (this.comp) this.comp.setRouterLoading(true);
+    this._setLoading(true);
+    console.log("[DASHBOARD] Restarting router...");
     stateManager.restartLlama().then(() => {
       showNotification("Restarting router...", "info");
-      setTimeout(async () => {
+      
+      // Poll for status until running or timeout
+      let attempts = 0;
+      const maxAttempts = 20; // 20 seconds max for restart
+      const pollInterval = setInterval(async () => {
+        attempts++;
         try {
           const s = await stateManager.getLlamaStatus();
-          stateManager.set("llamaServerStatus", s.status || null);
-          const rs = await stateManager.getRouterStatus();
-          stateManager.set("routerStatus", rs.routerStatus);
-          showNotification("Router restarted", "success");
-        } finally {
-          if (this.comp) this.comp.setRouterLoading(false);
+          console.log(`[DASHBOARD] Restart status check ${attempts}:`, s);
+          
+          if (s?.status === "running") {
+            clearInterval(pollInterval);
+            stateManager.set("llamaServerStatus", s);
+            const rs = await stateManager.getRouterStatus();
+            stateManager.set("routerStatus", rs);
+            showNotification("Router restarted", "success");
+            this._setLoading(false);
+          } else if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            console.warn("[DASHBOARD] Timeout waiting for router to restart");
+            showNotification("Router restart may have failed - please refresh", "warning");
+            this._setLoading(false);
+          }
+        } catch (e) {
+          console.warn(`[DASHBOARD] Restart status check ${attempts} failed:`, e.message);
+          if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            this._setLoading(false);
+          }
         }
-      }, 5000);
+      }, 1000);
     }).catch((e) => {
+      console.error("[DASHBOARD] Failed to restart router:", e);
       showNotification(`Failed: ${e.message}`, "error");
-      if (this.comp) this.comp.setRouterLoading(false);
+      this._setLoading(false);
     });
   }
 

@@ -76,27 +76,41 @@
         console.log("[App] State manager initialized");
 
         // Capture console logs and send to server (after stateManager is initialized)
-        // Store original methods first
+        /*
         const origLog = console.log;
         const origWarn = console.warn;
         const origError = console.error;
 
-        // Send to server helper (silent - no logging)
+        let isInternalLog = false;
+
         function sendToServer(level, args) {
+          if (isInternalLog) return; // Prevent infinite loop
           if (socketClient?.isConnected) {
-            const msg = args.map(a => typeof a === "object" ? JSON.stringify(a) : String(a)).join(" ");
-            if (msg.length < 5000) {
-              socketClient.emit("logs:entry", {
-                entry: { level, message: msg, source: "client", timestamp: Date.now() }
-              });
+            try {
+              const msg = args.map(a => {
+                if (typeof a === "object") {
+                  try { return JSON.stringify(a); } catch(e) { return "[Complex Object]"; }
+                }
+                return String(a);
+              }).join(" ");
+              
+              if (msg.length > 0 && msg.length < 5000 && !msg.includes("logs:entry")) {
+                isInternalLog = true;
+                socketClient.emit("logs:entry", {
+                  entry: { level, message: msg, source: "client", timestamp: Date.now() }
+                });
+                isInternalLog = false;
+              }
+            } catch (e) {
+              isInternalLog = false;
             }
           }
         }
 
-        // Override with original + sendToServer
         console.log = (...a) => { origLog.apply(console, a); sendToServer("debug", a); };
         console.warn = (...a) => { origWarn.apply(console, a); sendToServer("warn", a); };
         console.error = (...a) => { origError.apply(console, a); sendToServer("error", a); };
+        */
       }
 
       console.log("[App] Services initialized successfully");

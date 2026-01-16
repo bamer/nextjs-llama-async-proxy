@@ -1,41 +1,36 @@
 /**
  * Llama Router Process Management
  * Process spawning, port finding, and lifecycle management
+ * FIXED: Uses reliable net.connect for port checking
  */
 
 import fs from "fs";
 import path from "path";
 import os from "os";
-import { spawn, execSync } from "child_process";
+import net from "net";
+import { exec } from "child_process";
+import { promisify } from "util";
 import { DEFAULT_LLAMA_PORT, MAX_PORT } from "../constants.js";
+
+const execAsync = promisify(exec);
 
 /**
  * Find available port for llama-server.
- * Checks ports in the default range and returns the first available one.
- * @param {Function} isPortInUse - Function to check if a port is in use.
- * @returns {Promise<number>} First available port number, or MAX_PORT+1 if none found.
  */
-export async function findAvailablePort(isPortInUse) {
+export async function findAvailablePort(isPortInUseFn) {
   for (let port = DEFAULT_LLAMA_PORT; port <= MAX_PORT; port++) {
-    try {
-      if (!isPortInUse(port)) {
-        return port;
-      }
-    } catch {
-      // Port check failed, skip this port
+    if (!(await isPortInUseFn(port))) {
+      return port;
     }
   }
   return MAX_PORT + 1;
 }
 
 /**
- * Kill existing llama-server process.
- * Sends SIGTERM to the process for graceful shutdown.
- * @param {ChildProcess|null} llamaServerProcess - The process object to kill.
- * @returns {boolean} True if process was killed, false if process was null.
+ * Kill existing llama-server process gracefully.
  */
 export function killLlamaServer(llamaServerProcess) {
-  if (llamaServerProcess) {
+  if (llamaServerProcess && !llamaServerProcess.killed) {
     console.log("[LLAMA] Killing existing llama-server process...");
     llamaServerProcess.kill("SIGTERM");
     return true;
@@ -44,32 +39,45 @@ export function killLlamaServer(llamaServerProcess) {
 }
 
 /**
- * Check if a port is in use.
- * Uses lsof command to check if any process is listening on the port.
- * @param {number} port - Port number to check.
- * @returns {boolean} True if port is in use, false otherwise.
+ * Check if a port is in use using a socket connection.
  */
 export function isPortInUse(port) {
-  try {
-    execSync(`lsof -ti:${port} > /dev/null 2>&1`);
-    return true;
-  } catch {
-    return false;
-  }
+  return new Promise((resolve) => {
+    const socket = new net.Socket();
+    const timeout = 1000;
+
+    socket.setTimeout(timeout);
+    socket.once("error", () => {
+      socket.destroy();
+      resolve(false);
+    });
+    socket.once("timeout", () => {
+      socket.destroy();
+      resolve(false);
+    });
+    socket.connect(port, "127.0.0.1", () => {
+      socket.destroy();
+      resolve(true);
+    });
+  });
 }
 
 /**
  * Find and kill llama-server on a specific port.
- * Uses lsof to find the PID and kills the process with SIGKILL.
- * @param {number} port - Port number to check and kill process on.
- * @returns {boolean} True if process was found and killed, false otherwise.
  */
-export function killLlamaOnPort(port) {
+export async function killLlamaOnPort(port) {
   try {
-    const pid = execSync(`lsof -ti:${port}`).toString().trim();
+    const { stdout } = await execAsync(`lsof -ti:${port}`);
+    const pid = stdout.trim();
     if (pid) {
       console.log(`[LLAMA] Killing llama-server on port ${port} (PID: ${pid})`);
-      execSync(`kill -9 ${pid}`);
+      // Kill all processes on that port
+      const pids = pid.split("\n");
+      for (const p of pids) {
+        if (p.trim()) {
+          try { await execAsync(`kill -9 ${p.trim()}`); } catch (e) { /* ignore */ }
+        }
+      }
       return true;
     }
   } catch {
@@ -80,72 +88,44 @@ export function killLlamaOnPort(port) {
 
 /**
  * Find llama-server binary.
- * Searches common installation paths and PATH for llama-server executable.
- * @returns {string|null} Path to llama-server binary, or null if not found.
  */
 export function findLlamaServer() {
   const possiblePaths = [
     "/home/bamer/llama.cpp/build/bin/llama-server",
-    "/home/bamer/ik_llama.cpp/build/bin/llama-server",
     "/home/bamer/.local/share/voxd/bin/llama-server",
     "/usr/local/bin/llama-server",
     "/usr/bin/llama-server",
     "/home/bamer/.local/bin/llama-server",
     path.join(os.homedir(), ".local/bin/llama-server"),
-    "llama-server", // In PATH
+    "llama-server",
   ];
 
   for (const p of possiblePaths) {
-    try {
-      if (fs.existsSync(p)) {
-        return p;
-      }
-    } catch {
-      // Continue
-    }
+    if (fs.existsSync(p)) return p;
   }
 
-  // Try which command
-  try {
-    return execSync("which llama-server").toString().trim();
-  } catch {
-    return null;
-  }
+  return null;
 }
 
 /**
- * Stop llama-server process.
- * Kills the process by process reference and by port scanning.
- * @param {ChildProcess|null} llamaServerProcess - The process object to kill.
- * @param {number} llamaServerPort - Port number the server was running on.
- * @param {string} llamaServerUrl - URL of the server.
- * @param {Function} isPortInUse - Function to check if a port is in use.
- * @param {Function} killLlamaServerFn - Function to kill a process.
- * @param {Function} killLlamaOnPortFn - Function to kill process on a port.
- * @returns {Object} Result object with success status.
+ * Stop llama-server process asynchronously.
  */
-export function stopLlamaServer(
+export async function stopLlamaServer(
   llamaServerProcess,
   llamaServerPort,
   llamaServerUrl,
-  isPortInUse,
+  isPortInUseFn,
   killLlamaServerFn,
   killLlamaOnPortFn
 ) {
   console.log("[LLAMA] === STOPPING LLAMA-SERVER ===");
 
-  try {
-    const killed = killLlamaServerFn(llamaServerProcess);
-  } catch {
-    // Ignore errors from killLlamaServerFn
-  }
+  killLlamaServerFn(llamaServerProcess);
 
-  // Also kill by port
-  for (let p = DEFAULT_LLAMA_PORT; p <= MAX_PORT; p++) {
-    if (killLlamaOnPortFn(p)) {
-      console.log("[LLAMA] Killed llama-server on port", p);
-    }
+  if (llamaServerPort) {
+    await killLlamaOnPortFn(llamaServerPort);
   }
+  await killLlamaOnPortFn(DEFAULT_LLAMA_PORT);
 
   return { success: true };
 }

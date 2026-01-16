@@ -23,7 +23,7 @@
 @import "components/quick-wins.css";
 @import "components/toast.css";
 @import "components/command-palette.css";
-@import "components/llama-server-status-panel.css";
+@import "components/llama-router-card.css";
 
 /* Dashboard */
 @import "pages/dashboard/stats.css";

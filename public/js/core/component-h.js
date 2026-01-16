@@ -14,6 +14,12 @@
  * @returns {Node} Created DOM element
  */
 Component.h = function (tag, attrs = {}, ...children) {
+  // Handle Component instances (persistence)
+  if (tag instanceof Component) {
+    tag.props = attrs;
+    return tag._el || tag.render();
+  }
+
   // Handle Component classes
   if (typeof tag === "function" && tag.prototype instanceof Component) {
     const instance = new tag(attrs);
@@ -70,6 +76,7 @@ Component.h = function (tag, attrs = {}, ...children) {
     if (typeof c === "string" || typeof c === "number") {
       el.appendChild(document.createTextNode(String(c)));
     } else if (c instanceof Node) {
+      // If it's already a node, append it directly (don't wrap or clone)
       el.appendChild(c);
     } else if (c instanceof Component) {
       // A component child is assumed to return an HTML string or Node from render()

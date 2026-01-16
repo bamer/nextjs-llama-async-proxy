@@ -1,51 +1,70 @@
 /**
  * Start Llama Router
  * Router startup and process spawning
+ * RESPECTS USER SETTINGS FROM DATABASE
  */
 
 import fs from "fs";
 import path from "path";
 import { spawn } from "child_process";
-import { DEFAULT_LLAMA_PORT, MAX_PORT } from "../constants.js";
+import { DEFAULT_LLAMA_PORT } from "../constants.js";
 import {
-  findLlamaServer,
-  isPortInUse,
   killLlamaServer,
   killLlamaOnPort,
-  findAvailablePort,
+  isPortInUse,
 } from "./process.js";
 import { llamaApiRequest } from "./api.js";
 
 // Module-level state
 let llamaServerProcess = null;
-let llamaServerPort = DEFAULT_LLAMA_PORT;
+let llamaServerPort = null; 
 let llamaServerUrl = null;
 let logWriteStream = null;
 let notificationCallback = null;
-let exitHandlerRegistered = false;
-let stdoutListener = null; // Store stdout listener reference
-let stderrListener = null; // Store stderr listener reference
+let stdoutListener = null; 
+let stderrListener = null; 
 
-// Logs directory
 const LOGS_DIR = path.join(process.cwd(), "logs");
 if (!fs.existsSync(LOGS_DIR)) {
   fs.mkdirSync(LOGS_DIR, { recursive: true });
 }
 
 /**
- * Set callback for server events (start, stop, error).
- * Called by handlers/llama.js when registering handlers.
- * @param {Function} cb - Callback function to be called on server events.
+ * Set callback for server events.
  */
 export function setNotificationCallback(cb) {
   notificationCallback = cb;
 }
 
 /**
- * Notify clients about server events.
- * @param {string} event - Event type (started, stopped, error, closed).
- * @param {Object} data - Event data to send to clients.
+ * Get the current configured port for llama-server.
  */
+function getConfiguredPort(db) {
+  if (!db) return DEFAULT_LLAMA_PORT;
+  const config = db.getConfig() || {};
+  return config.port || config.llama_server_port || DEFAULT_LLAMA_PORT;
+}
+
+/**
+ * Get current router state
+ */
+export function getRouterState(db) {
+  if (!llamaServerPort && db) {
+    llamaServerPort = getConfiguredPort(db);
+    llamaServerUrl = `http://127.0.0.1:${llamaServerPort}`;
+  }
+
+  return {
+    process: llamaServerProcess,
+    port: llamaServerPort || DEFAULT_LLAMA_PORT,
+    url: llamaServerUrl,
+    isRunning: llamaServerProcess !== null && llamaServerProcess.exitCode === null,
+  };
+}
+
+export function getServerUrl() { return llamaServerUrl; }
+export function getServerProcess() { return llamaServerProcess; }
+
 function notifyServerEvent(event, data) {
   console.log(`[LLAMA-NOTIFY] ${event}:`, data);
   if (notificationCallback) {
@@ -53,368 +72,143 @@ function notifyServerEvent(event, data) {
   }
 }
 
-/**
- * Initialize log file for llama-server output.
- * Creates a log file in the logs directory for capturing server output.
- * @returns {string} Path to the created log file.
- */
 function initLogFile() {
   const logFile = path.join(LOGS_DIR, "llama-server.log");
-
-  // Create or truncate log file
   logWriteStream = fs.createWriteStream(logFile, { flags: "w" });
-
-  logWriteStream.write(`# Llama Server Log - Started at ${new Date().toISOString()}\n`);
-  logWriteStream.write(`# ============================================\n\n`);
-
+  logWriteStream.write(`# Llama Server Log - Started at ${new Date().toISOString()}\n\n`);
   return logFile;
 }
 
-/**
- * Write a log entry to the log file and console.
- * @param {string} level - Log level (INFO, ERROR, WARN, DEBUG).
- * @param {string} message - Log message to write.
- */
 function writeLog(level, message) {
-  const timestamp = new Date().toISOString();
-  const logLine = `[${timestamp}] [${level}] ${message}\n`;
-
-  if (logWriteStream) {
-    logWriteStream.write(logLine);
-  }
-
-  // Also print to console
-  if (level === "ERROR") {
-    console.error(`[LLAMA-LOG] ${message}`);
-  } else {
-    console.log(`[LLAMA-LOG] ${message}`);
-  }
+  const logLine = `[${new Date().toISOString()}] [${level}] ${message}\n`;
+  if (logWriteStream) logWriteStream.write(logLine);
+  if (level === "ERROR") console.error(`[LLAMA-LOG] ${message}`);
+  else console.log(`[LLAMA-LOG] ${message}`);
 }
 
-/**
- * Close the log file gracefully.
- * Writes a closing timestamp and ends the write stream.
- */
-function closeLogFile() {
-  if (logWriteStream) {
-    logWriteStream.write(`\n# Log closed at ${new Date().toISOString()}\n`);
-    logWriteStream.end();
-    logWriteStream = null;
-  }
-}
-
-/**
- * Cleanup function for llama-server process.
- * Made module-level to avoid closure issues and ensure proper cleanup.
- * Idempotent - safe to call multiple times.
- * Removes listeners, kills process, closes log file, and notifies clients.
- */
 function cleanupProcess() {
-  console.log("[LLAMA] Cleaning up process...");
-  writeLog("INFO", "Cleaning up llama-server process...");
-
-  // Remove stdout/stderr listeners to prevent memory leaks
-  if (stdoutListener && llamaServerProcess && llamaServerProcess.stdout) {
+  if (stdoutListener && llamaServerProcess?.stdout) {
     llamaServerProcess.stdout.removeListener("data", stdoutListener);
-    stdoutListener = null;
   }
-  if (stderrListener && llamaServerProcess && llamaServerProcess.stderr) {
+  if (stderrListener && llamaServerProcess?.stderr) {
     llamaServerProcess.stderr.removeListener("data", stderrListener);
-    stderrListener = null;
   }
 
-  if (llamaServerProcess) {
+  if (llamaServerProcess && !llamaServerProcess.killed) {
     try {
-      if (!llamaServerProcess.killed) {
-        console.log("[LLAMA] Killing process...");
-        writeLog("INFO", "Sending SIGTERM to llama-server process");
-        llamaServerProcess.kill("SIGTERM");
-        // Force kill after 5 seconds
-        setTimeout(() => {
-          if (llamaServerProcess && !llamaServerProcess.killed) {
-            console.log("[LLAMA] Force killing process...");
-            writeLog("INFO", "Force killing llama-server process with SIGKILL");
-            llamaServerProcess.kill("SIGKILL");
-          }
-        }, 5000);
-      }
+      llamaServerProcess.kill("SIGKILL");
     } catch (e) {
-      console.error("[LLAMA] Error during process cleanup:", e);
-      writeLog("ERROR", `Error during cleanup: ${e.message}`);
+      console.warn("[LLAMA] Failed to kill process:", e.message);
     }
   }
 
-  // Close log file
-  closeLogFile();
+  // Clear ALL module-level state to ensure clean restart
+  llamaServerProcess = null;
+  llamaServerPort = null;
+  llamaServerUrl = null;
 
-  // Notify clients that server stopped
+  if (logWriteStream) {
+    logWriteStream.end();
+    logWriteStream = null;
+  }
+
   notifyServerEvent("stopped", {
-    port: llamaServerPort,
-    url: llamaServerUrl,
+    port: null,
+    url: null,
     timestamp: Date.now(),
   });
 }
 
 /**
- * Handle process exit event.
- * Triggers cleanup when process exits.
- */
-function handleProcessExit() {
-  console.log("[LLAMA] Process exit detected, cleaning up");
-  cleanupProcess();
-}
-
-/**
- * Get current router state
- */
-export function getRouterState() {
-  return {
-    process: llamaServerProcess,
-    port: llamaServerPort,
-    url: llamaServerUrl,
-    isRunning: llamaServerProcess !== null && llamaServerProcess.exitCode === null,
-  };
-}
-
-/**
- * Get server URL
- */
-export function getServerUrl() {
-  return llamaServerUrl;
-}
-
-/**
- * Get server process
- */
-export function getServerProcess() {
-  return llamaServerProcess;
-}
-
-/**
  * Start llama-server in router mode.
- * Can use either --models-dir (auto-discovery) or --models-preset (INI config file).
- * Spawns the llama-server process and waits for it to be ready.
- * @param {string} modelsDir - Path to models directory or preset INI file.
- * @param {Object} db - Database object for config access.
- * @param {Object} [options] - Startup options.
- * @param {number} [options.maxModels=4] - Maximum number of models to load simultaneously.
- * @param {number} [options.threads=4] - Number of threads for processing.
- * @param {number} [options.ctxSize=4096] - Context size for model inference.
- * @param {boolean} [options.noAutoLoad=false] - Disable automatic model loading.
- * @param {boolean} [options.usePreset=false] - Force preset file mode.
- * @returns {Promise<Object>} Result object with success status, port, url, and mode.
- * @throws {Error} If llama-server binary is not found.
  */
 export async function startLlamaServerRouter(modelsDir, db, options = {}) {
-  console.log("[LLAMA] === STARTING LLAMA-SERVER IN ROUTER MODE ===");
-  console.log("[LLAMA] Models directory/preset:", modelsDir);
-  console.log("[LLAMA] Options:", options);
-
-  const llamaBin = findLlamaServer();
-  if (!llamaBin) {
-    const error = "llama-server binary not found! Install llama.cpp or add to PATH.";
-    console.error("[LLAMA] ERROR:", error);
-    return { success: false, error };
-  }
-  console.log("[LLAMA] Using binary:", llamaBin);
-
-  // Kill any existing llama-server
-  console.log("[LLAMA] Cleaning up existing processes...");
-  killLlamaServer(llamaServerProcess);
-  for (let p = DEFAULT_LLAMA_PORT; p <= MAX_PORT; p++) {
-    killLlamaOnPort(p);
+  const config = db.getConfig() || {};
+  const settings = db.getMeta("user_settings") || {};
+  
+  const llamaBin = config.serverPath || "/home/bamer/llama.cpp/build/bin/llama-server";
+  if (!fs.existsSync(llamaBin)) {
+    return { success: false, error: `llama-server not found at ${llamaBin}` };
   }
 
-  // Get port from config
-  const config = db.getConfig();
-  const configuredPort = config.port || 8080;
+  const configuredPort = getConfiguredPort(db);
+  
+  await killLlamaOnPort(configuredPort);
 
-  if (!(await isPortInUse(configuredPort))) {
-    llamaServerPort = configuredPort;
-  } else {
-    llamaServerPort = await findAvailablePort(isPortInUse);
-  }
-
+  llamaServerPort = configuredPort;
   llamaServerUrl = `http://127.0.0.1:${llamaServerPort}`;
-  console.log("[LLAMA] Final port:", llamaServerPort);
 
-  // Build command - support both directory and preset file modes
-  const optionsToUse = options || {};
-  const args = ["--port", String(llamaServerPort), "--host", "127.0.0.1"];
+  const args = [
+    "--port", String(llamaServerPort),
+    "--host", config.llama_server_host || "127.0.0.1",
+    "--threads", String(options.threads || config.threads || 4),
+    "--ctx-size", String(options.ctxSize || config.ctx_size || 4096),
+    "--models-max", String(options.maxModels || settings.maxModelsLoaded || 4),
+    "--metrics"
+  ];
 
-  // Determine if modelsDir is an INI preset file or a directory
-  const isPresetFile = modelsDir.endsWith(".ini") || options.usePreset;
+  const isPresetFile = modelsDir && (modelsDir.endsWith(".ini") || options.usePreset);
+  const baseModelsPath = config.baseModelsPath || "./models";
 
   if (isPresetFile) {
-    // Use preset mode (INI config file)
-    if (!fs.existsSync(modelsDir)) {
-      return { success: false, error: `Preset file not found: ${modelsDir}` };
-    }
-    console.log("[LLAMA] Using preset file mode:", modelsDir);
     args.push("--models-preset", modelsDir);
-
-    // In router mode, ALWAYS add the models directory from config for auto-discovery
-    // Create the directory if it doesn't exist
-    const baseModelsPath = config.baseModelsPath || "./models";
-
-    // Ensure the directory exists
-    if (!fs.existsSync(baseModelsPath)) {
-      console.log("[LLAMA] Creating models directory:", baseModelsPath);
-      try {
-        fs.mkdirSync(baseModelsPath, { recursive: true });
-      } catch (e) {
-        console.error("[LLAMA] Failed to create models directory:", e.message);
-      }
-    }
-
-    console.log("[LLAMA] Adding models directory for router mode:", baseModelsPath);
     args.push("--models-dir", baseModelsPath);
   } else {
-    // Use directory mode (auto-discovery)
-    if (!fs.existsSync(modelsDir)) {
-      return { success: false, error: `Models directory not found: ${modelsDir}` };
-    }
-    console.log("[LLAMA] Using models directory mode:", modelsDir);
-    args.push("--models-dir", modelsDir);
+    args.push("--models-dir", modelsDir || baseModelsPath);
   }
 
-  // Add common options
-  args.push(
-    "--models-max",
-    String(optionsToUse.maxModels || 4),
-    "--threads",
-    String(optionsToUse.threads || 4),
-    "--ctx-size",
-    String(optionsToUse.ctxSize || 4096),
-    "--metrics"
-  );
-
-  if (optionsToUse.noAutoLoad) {
+  if (settings.autoLoadModels === false || options.noAutoLoad) {
     args.push("--no-models-autoload");
   }
 
-  // Quote paths with spaces to handle paths like "/media/bamer/crucial MX300/..."
-  const quotePath = (p) => (p && p.includes(" ") ? `"${p}"` : p);
-
-  console.log("[LLAMA] Command:", llamaBin, args.map(quotePath).join(" "));
-
-  // Initialize log file for llama-server output
+  console.log("[LLAMA] Spawning:", llamaBin, args.join(" "));
   initLogFile();
-  writeLog(
-    "INFO",
-    `Starting llama-server with command: ${llamaBin} ${args.map(quotePath).join(" ")}`
-  );
+  writeLog("INFO", `Spawning: ${llamaBin} ${args.join(" ")}`);
 
-    // Spawn process
   try {
     llamaServerProcess = spawn(llamaBin, args, {
       stdio: ["pipe", "pipe", "pipe"],
-      env: { ...process.env },
+      env: { ...process.env }
     });
 
-    // Pipe stdout/stderr to log file
-    if (llamaServerProcess.stdout) {
-      stdoutListener = (data) => {
-        const message = data.toString().trim();
-        if (message) {
-          writeLog("INFO", message);
-        }
-      };
-      llamaServerProcess.stdout.on("data", stdoutListener);
-    }
+    if (!llamaServerProcess.pid) throw new Error("Failed to spawn process");
 
-    if (llamaServerProcess.stderr) {
-      stderrListener = (data) => {
-        const message = data.toString().trim();
-        if (message) {
-          writeLog("ERROR", message);
-        }
-      };
-      llamaServerProcess.stderr.on("data", stderrListener);
-    }
+    stdoutListener = (data) => writeLog("INFO", data.toString().trim());
+    stderrListener = (data) => writeLog("ERROR", data.toString().trim());
+    llamaServerProcess.stdout.on("data", stdoutListener);
+    llamaServerProcess.stderr.on("data", stderrListener);
 
-    // Register exit handler only once
-    if (!exitHandlerRegistered) {
-      process.on("exit", handleProcessExit);
-      exitHandlerRegistered = true;
-    }
-
-    llamaServerProcess.on("error", (err) => {
-      console.error("[LLAMA] Process ERROR:", err.message);
-      writeLog("ERROR", `Process error: ${err.message}`);
-      console.log("[LLAMA] Cleaning up after error");
-      cleanupProcess();
-      llamaServerProcess = null;
-
-      // Notify clients about error
-      notifyServerEvent("error", {
-        error: err.message,
-        port: llamaServerPort,
-        timestamp: Date.now(),
-      });
-    });
-
-    llamaServerProcess.on("close", (code, signal) => {
-      console.log("[LLAMA] Process CLOSED with code:", code, "signal:", signal);
-      writeLog("INFO", `Process closed with code ${code}, signal: ${signal}`);
-      console.log("[LLAMA] Cleaning up after close");
-      cleanupProcess();
-      llamaServerProcess = null;
-
-      // Notify clients about close
-      notifyServerEvent("closed", {
-        code,
-        signal,
-        port: llamaServerPort,
-        timestamp: Date.now(),
-      });
-    });
-
-    // Wait for server
-    let attempts = 0;
-    const maxAttempts = 60;
-
-    while (attempts < maxAttempts) {
-      await new Promise((r) => setTimeout(r, 1000));
-      attempts++;
-
-      if (isPortInUse(llamaServerPort)) {
+    for (let i = 0; i < 45; i++) {
+      await new Promise(r => setTimeout(r, 1000));
+      
+      // Check if process exited unexpectedly
+      if (llamaServerProcess.exitCode !== null) {
+        const errorMsg = `Process exited with code ${llamaServerProcess.exitCode}`;
+        console.error(`[LLAMA] ${errorMsg}`);
+        throw new Error(errorMsg);
+      }
+      
+      // Check if port is in use
+      if (await isPortInUse(llamaServerPort)) {
         try {
+          // Verify the server is actually responding
           await llamaApiRequest("/models", "GET", null, llamaServerUrl);
-          console.log("[LLAMA] Router server successfully started on port", llamaServerPort);
-          writeLog("INFO", `Router server successfully started on port ${llamaServerPort}`);
-
-          // Notify clients that server started
-          notifyServerEvent("started", {
-            port: llamaServerPort,
-            url: llamaServerUrl,
-            mode: "router",
-            timestamp: Date.now(),
-          });
-
-          return {
-            success: true,
-            port: llamaServerPort,
-            url: llamaServerUrl,
-            mode: "router",
-          };
-        } catch {
-          // Continue waiting
+          console.log(`[LLAMA] Server is ready and responding on port ${llamaServerPort}`);
+          notifyServerEvent("started", { port: llamaServerPort, url: llamaServerUrl, mode: "router", timestamp: Date.now() });
+          return { success: true, port: llamaServerPort, url: llamaServerUrl };
+        } catch (e) {
+          console.log(`[LLAMA] Port ${llamaServerPort} in use but server not responding yet, waiting...`);
         }
       }
-
-      if (llamaServerProcess && llamaServerProcess.exitCode !== null) {
-        writeLog("ERROR", `llama-server exited with code ${llamaServerProcess.exitCode}`);
-        return {
-          success: false,
-          error: `llama-server exited with code ${llamaServerProcess.exitCode}`,
-        };
+      
+      // Progress log every 10 seconds
+      if (i > 0 && i % 10 === 0) {
+        console.log(`[LLAMA] Still waiting for server... (${i}s elapsed)`);
       }
     }
-
-    writeLog("ERROR", "Timeout waiting for llama-server router to start");
-    return { success: false, error: "Timeout waiting for llama-server router to start" };
+    throw new Error("Timeout waiting for llama-server to start (45s)");
   } catch (e) {
-    return { success: false, error: `Failed to start llama-server router: ${e.message}` };
+    cleanupProcess();
+    return { success: false, error: e.message };
   }
 }

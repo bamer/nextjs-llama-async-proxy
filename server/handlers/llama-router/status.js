@@ -9,25 +9,34 @@ import { getServerProcess, getServerUrl, getRouterState } from "./start.js";
 /**
  * Get llama-server status (router mode).
  * Checks if the server is running and retrieves model information.
+ * @param {Object} db - Database instance.
  * @returns {Promise<Object>} Status object with running state, port, url, and model list.
  */
-export async function getLlamaStatus() {
-  const state = getRouterState();
+export async function getLlamaStatus(db) {
+  const state = getRouterState(db);
   const process = getServerProcess();
   const url = getServerUrl();
   const { isPortInUse } = await import("./process.js");
 
+  // Check if our process is actually running (not just any process on the port)
   const isRunning = state.isRunning;
   const portInUse = state.port ? await isPortInUse(state.port) : false;
+
+  // Only consider port "in use" if our process is actually running
+  // This prevents false positives when another process is using the port
+  const actuallyRunning = isRunning || (portInUse && process !== null);
 
   let modelsStatus = null;
   let modelsError = null;
 
-  if (isRunning || portInUse) {
+  if (actuallyRunning) {
     try {
+      // Use state.url or url
+      const finalUrl = url || state.url || `http://127.0.0.1:${state.port}`;
+
       // Add timeout protection for API call
-      const timeoutMs = 5000;
-      const modelsPromise = llamaApiRequest("/models", "GET", null, url);
+      const timeoutMs = 2000; // Shorter timeout for status check
+      const modelsPromise = llamaApiRequest("/models", "GET", null, finalUrl);
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error("Timeout")), timeoutMs)
       );
@@ -36,14 +45,13 @@ export async function getLlamaStatus() {
     } catch (e) {
       modelsError = e.message;
       console.warn("[LLAMA] Failed to get models status:", e.message);
-      // Don't fail the whole status request, just log the warning
     }
   }
 
   return {
-    status: isRunning || portInUse ? "running" : "idle",
-    port: isRunning || portInUse ? state.port : null,
-    url: isRunning || portInUse ? url : null,
+    status: actuallyRunning ? "running" : "idle",
+    port: actuallyRunning ? (state.port || null) : null,
+    url: actuallyRunning ? (url || state.url || `http://127.0.0.1:${state.port}`) : null,
     processRunning: isRunning,
     mode: "router",
     models: modelsStatus?.models || [],

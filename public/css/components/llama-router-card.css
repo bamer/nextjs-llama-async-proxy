@@ -1,0 +1,286 @@
+/* Llama Router Status Card - Modern Unified Design */
+.llama-router-status-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.llama-router-status-card:hover {
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Header Section */
+.status-card-header {
+  padding: var(--md) var(--lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.header-main {
+  display: flex;
+  align-items: center;
+  gap: var(--md);
+}
+
+.header-main h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--sm);
+}
+
+.header-main h3 i {
+  color: var(--primary);
+  font-size: 1.1rem;
+}
+
+.status-badge-container {
+  display: flex;
+  align-items: center;
+  gap: var(--sm);
+}
+
+/* At a Glance Grid */
+.status-glance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--md);
+  padding: var(--lg);
+  background: var(--card-bg);
+}
+
+.glance-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--xs);
+  padding: var(--md);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.glance-item:hover {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+.glance-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.glance-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+/* Control Bar */
+.status-controls-bar {
+  padding: var(--md) var(--lg);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--md);
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.status-controls-bar .btn {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  padding: var(--sm) var(--md);
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+/* RESPECT PROJECT THEME FOR BUTTONS */
+.status-controls-bar .btn-start {
+  background: #10b981 !important;
+  color: #fff !important;
+  border: 1px solid #059669 !important;
+}
+
+.status-controls-bar .btn-start:hover {
+  background: #059669 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.2);
+}
+
+.status-controls-bar .btn-stop {
+  background: #ef4444 !important;
+  color: #fff !important;
+  border: 1px solid #dc2626 !important;
+}
+
+.status-controls-bar .btn-stop:hover {
+  background: #dc2626 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.2);
+}
+
+.status-controls-bar .btn-secondary {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.status-controls-bar .btn-secondary:hover:not(:disabled) {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--primary-light) !important;
+  transform: translateY(-1px);
+}
+
+.status-controls-bar .btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.preset-group {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  gap: var(--xs);
+}
+
+.action-group {
+  display: flex;
+  gap: var(--sm);
+}
+
+/* Expandable Details */
+.details-toggle-btn {
+  width: 100%;
+  padding: var(--sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sm);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.details-toggle-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--primary);
+}
+
+.details-toggle-btn .chevron {
+  transition: transform 0.3s ease;
+}
+
+.details-toggle-btn.expanded .chevron {
+  transform: rotate(180deg);
+}
+
+.detailed-metrics-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 var(--lg) var(--lg) var(--lg);
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+}
+
+.detailed-metrics-area.expanded {
+  max-height: 1000px;
+  opacity: 1;
+  padding-top: var(--lg);
+}
+
+.metrics-group {
+  margin-bottom: var(--lg);
+}
+
+.metrics-group:last-child {
+  margin-bottom: 0;
+}
+
+.metrics-group h4 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin: 0 0 var(--md) 0;
+  padding-bottom: var(--xs);
+  border-bottom: 1px solid var(--border-color);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.metrics-subgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sm);
+}
+
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--xs) var(--sm);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+}
+
+.metric-name {
+  color: var(--text-secondary);
+}
+
+.metric-data {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+/* Status Colors */
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-indicator.running { background-color: var(--success); box-shadow: 0 0 8px var(--success); }
+.status-indicator.stopped { background-color: var(--danger); }
+.status-indicator.loading { background-color: var(--warning); animation: pulse 1.5s infinite; }
+
+@keyframes pulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Dark Mode Tweaks */
+html.dark-mode .glance-item:hover {
+  background: var(--gray-800);
+}
