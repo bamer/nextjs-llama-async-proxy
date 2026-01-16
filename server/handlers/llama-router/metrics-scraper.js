@@ -14,6 +14,7 @@ export class LlamaServerMetricsScraper {
     this.baseUrl = `http://${config.host || "localhost"}:${config.port || 8080}`;
     this.cache = new Map();
     this.cacheTTL = 5000; // 5 seconds
+    this._errorLogged = false;
   }
 
   /**
@@ -29,14 +30,30 @@ export class LlamaServerMetricsScraper {
         return cached.data;
       }
 
-      // Try common endpoints
-      const endpoints = ["/metrics", "/health", "/stats", "/v1/metrics"];
+      // Try common endpoints - llama-server with --metrics flag exposes /metrics
+      const endpoints = [
+        "/metrics",           // Prometheus endpoint (requires --metrics flag)
+        "/v1/metrics",        // Alternative Prometheus endpoint
+        "/health",            // Health check (might have some info)
+        "/props",             // Server properties (has some config)
+      ];
 
       for (const endpoint of endpoints) {
         try {
           console.log("[DEBUG] MetricsScraper: Trying endpoint:", endpoint);
           const data = await this._fetchEndpoint(endpoint);
           if (data) {
+            // If we got Prometheus format text, parse it
+            if (endpoint === "/metrics" && typeof data === "string") {
+              const parsed = this._parsePrometheusMetrics(data);
+              if (Object.keys(parsed).length > 0) {
+                this.cache.set("metrics", { data: parsed, timestamp: Date.now() });
+                console.log("[DEBUG] MetricsScraper: Parsed Prometheus metrics:", Object.keys(parsed).length, "metrics");
+                return parsed;
+              }
+            }
+            
+            // For JSON endpoints, use as-is
             this.cache.set("metrics", { data, timestamp: Date.now() });
             console.log("[DEBUG] MetricsScraper: Got metrics from:", endpoint);
             return data;
@@ -46,12 +63,68 @@ export class LlamaServerMetricsScraper {
         }
       }
 
-      console.warn("[DEBUG] MetricsScraper: All endpoints failed");
+      if (!this._errorLogged) {
+        console.warn("[DEBUG] MetricsScraper: All endpoints failed");
+        console.warn("[DEBUG] MetricsScraper: Ensure llama-server is started with --metrics flag");
+        this._errorLogged = true;
+      }
       return null;
     } catch (e) {
-      console.error("[METRICS-SCRAPER] Failed to get metrics:", e);
+      console.error("[METRICS-SCRAPER] Failed to get metrics:", e.message);
       return null;
     }
+  }
+
+  /**
+   * Parse Prometheus metrics text format
+   * @param {string} text - Raw Prometheus metrics text
+   * @returns {Object} Parsed metrics
+   */
+  _parsePrometheusMetrics(text) {
+    const metrics = {
+      uptime: 0,
+      activeModels: 0,
+      totalRequests: 0,
+      tokensPerSecond: 0,
+      queueSize: 0,
+    };
+
+    const lines = text.split("\n");
+    for (const line of lines) {
+      const trimmed = line.trim();
+      
+      // Skip empty lines and comments
+      if (!trimmed || trimmed.startsWith("#")) {
+        continue;
+      }
+
+      // Parse metric line: metric_name{labels} value
+      const spaceIndex = trimmed.lastIndexOf(" ");
+      if (spaceIndex === -1) continue;
+      
+      const metricName = trimmed.substring(0, spaceIndex);
+      const valueStr = trimmed.substring(spaceIndex + 1);
+      const value = parseFloat(valueStr);
+      
+      if (isNaN(value)) continue;
+
+      // Map Prometheus metric names to our internal format
+      if (metricName === "llamacpp:prompt_tokens_seconds") {
+        metrics.tokensPerSecond = value; // Use prompt tokens as main metric
+      } else if (metricName === "llamacpp:predicted_tokens_seconds") {
+        metrics.tokensPerSecond = Math.max(metrics.tokensPerSecond, value);
+      } else if (metricName === "llamacpp:prompt_tokens_total") {
+        metrics.promptTokensTotal = value;
+      } else if (metricName === "llamacpp:tokens_predicted_total") {
+        metrics.tokensPredictedTotal = value;
+      } else if (metricName === "llamacpp:requests_processing") {
+        metrics.activeModels = value;
+      } else if (metricName === "llamacpp:requests_deferred") {
+        metrics.queueSize = value;
+      }
+    }
+
+    return metrics;
   }
 
   /**

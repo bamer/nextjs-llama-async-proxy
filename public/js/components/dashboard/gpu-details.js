@@ -129,7 +129,14 @@ class GpuDetails extends Component {
 
       gpuList.innerHTML = this.gpuList
         .map(
-          (gpu) => `
+          (gpu) => {
+            // Check if we have valid utilization data
+            const hasUtilization = gpu.usage > 0 || gpu.memoryTotal > 0;
+            const usageDisplay = hasUtilization ? `${gpu.usage.toFixed(1)}%` : "N/A";
+            const usageWidth = hasUtilization ? Math.min(gpu.usage, 100) : 0;
+            const usageClass = hasUtilization ? "" : "metric-na";
+
+            return `
         <div class="gpu-card ${gpu.usage > 75 || (gpu.memoryTotal > 0 && gpu.memoryUsed / gpu.memoryTotal > 0.75) ? "high-usage" : ""}">
           <div class="gpu-info">
             <strong>${gpu.name}</strong>
@@ -138,8 +145,8 @@ class GpuDetails extends Component {
           <div class="gpu-metric">
             <span>Usage</span>
             <div class="metric-bar">
-              <div class="metric-fill" style="width: ${Math.min(gpu.usage, 100)}%"></div>
-              <span class="metric-text">${gpu.usage.toFixed(1)}%</span>
+              <div class="metric-fill ${usageClass}" style="width: ${usageWidth}%"></div>
+              <span class="metric-text">${usageDisplay}</span>
             </div>
           </div>
           ${gpu.memoryTotal > 0 ? `
@@ -152,7 +159,8 @@ class GpuDetails extends Component {
           </div>
           ` : ""}
         </div>
-      `
+      `;
+          }
         )
         .join("");
 
@@ -180,7 +188,14 @@ class GpuDetails extends Component {
           <div class="gpu-list">
             ${this.gpuList
     .map(
-      (gpu) => `
+      (gpu) => {
+        // Check if we have valid utilization data
+        const hasUtilization = gpu.usage > 0 || gpu.memoryTotal > 0;
+        const usageDisplay = hasUtilization ? `${gpu.usage.toFixed(1)}%` : "N/A";
+        const usageWidth = hasUtilization ? Math.min(gpu.usage, 100) : 0;
+        const usageClass = hasUtilization ? "" : "metric-na";
+
+        return `
               <div class="gpu-card ${gpu.usage > 75 || (gpu.memoryTotal > 0 && gpu.memoryUsed / gpu.memoryTotal > 0.75) ? "high-usage" : ""}">
                 <div class="gpu-info">
                   <strong>${gpu.name}</strong>
@@ -189,8 +204,8 @@ class GpuDetails extends Component {
                 <div class="gpu-metric">
                   <span>Usage</span>
                   <div class="metric-bar">
-                    <div class="metric-fill" style="width: ${Math.min(gpu.usage, 100)}%"></div>
-                    <span class="metric-text">${gpu.usage.toFixed(1)}%</span>
+                    <div class="metric-fill ${usageClass}" style="width: ${usageWidth}%"></div>
+                    <span class="metric-text">${usageDisplay}</span>
                   </div>
                 </div>
                 ${gpu.memoryTotal > 0 ? `
@@ -203,7 +218,8 @@ class GpuDetails extends Component {
                 </div>
                 ` : ""}
               </div>
-            `
+            `;
+      }
     )
     .join("")}
           </div>

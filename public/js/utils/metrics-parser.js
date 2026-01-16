@@ -106,14 +106,33 @@ class MetricsParser {
 
   /**
    * Extract specific llamacpp metrics
+   * Handles both old-style metrics (n_tokens_*) and new Prometheus metrics (prompt_tokens_*, etc.)
    * @param {Object} metrics - All parsed metrics
    * @returns {Object} Organized llamacpp metrics
    */
   static extractLlamaCppMetrics(metrics) {
     return {
-      // Throughput metrics
-      promptTokensSeconds: metrics["llamacpp:prompt_tokens_seconds"] || 0,
-      predictedTokensSeconds: metrics["llamacpp:predicted_tokens_seconds"] || 0,
+      // Throughput metrics - handle both old and new formats
+      // Old: llamacpp:n_tokens_processed, llamacpp:n_tokens_predicted
+      // New: llamacpp:prompt_tokens_seconds, llamacpp:predicted_tokens_seconds
+      promptTokensSeconds: 
+        metrics["llamacpp:prompt_tokens_seconds"] || 
+        metrics["llamacpp:tokens_predicted_seconds"] || 0,
+      predictedTokensSeconds: 
+        metrics["llamacpp:predicted_tokens_seconds"] || 
+        metrics["llamacpp:tokens_predicted_seconds"] || 0,
+      
+      // Token totals - handle both old and new formats
+      // Old: llamacpp:n_tokens_processed, llamacpp:n_tokens_predicted, llamacpp:n_tokens_total
+      // New: llamacpp:prompt_tokens_total, llamacpp:tokens_predicted_total
+      nTokensProcessed: 
+        metrics["llamacpp:n_tokens_processed"] || 
+        metrics["llamacpp:prompt_tokens_total"] || 0,
+      nTokensPredicted: 
+        metrics["llamacpp:n_tokens_predicted"] || 
+        metrics["llamacpp:tokens_predicted_total"] || 0,
+      nTokensTotal: 
+        metrics["llamacpp:n_tokens_total"] || 0,
 
       // Server configuration
       nCtx: metrics["llamacpp:llm_server_n_ctx"] || 0,
@@ -126,14 +145,15 @@ class MetricsParser {
       vramTotal: metrics["llamacpp:llm_server_vram_total"] || 0,
       vramUsed: metrics["llamacpp:llm_server_vram_used"] || 0,
 
-      // Token counts
-      nTokensProcessed: metrics["llamacpp:n_tokens_processed"] || 0,
-      nTokensPredicted: metrics["llamacpp:n_tokens_predicted"] || 0,
-      nTokensTotal: metrics["llamacpp:n_tokens_total"] || 0,
-
       // Time metrics
       promptEvalTimeMs: metrics["llamacpp:prompt_eval_time_ms"] || 0,
       tokensEvaluatedPerSecond: metrics["llamacpp:tokens_evaluated_per_second"] || 0,
+      
+      // Additional Prometheus metrics (if enabled)
+      kvCacheUsageRatio: metrics["llamacpp:kv_cache_usage_ratio"] || 0,
+      kvCacheTokens: metrics["llamacpp:kv_cache_tokens"] || 0,
+      requestsProcessing: metrics["llamacpp:requests_processing"] || 0,
+      requestsDeferred: metrics["llamacpp:requests_deferred"] || 0,
     };
   }
 }

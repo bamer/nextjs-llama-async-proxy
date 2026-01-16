@@ -196,6 +196,18 @@
   min-width: 2px;
 }
 
+/* When no utilization data is available */
+.metric-fill.metric-na {
+  background: var(--bg-quaternary);
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 5px,
+    var(--bg-tertiary) 5px,
+    var(--bg-tertiary) 10px
+  );
+}
+
 .metric-fill:not(:empty) {
   display: flex;
   align-items: center;

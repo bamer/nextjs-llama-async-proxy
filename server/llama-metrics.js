@@ -34,7 +34,7 @@ export async function collectLlamaMetrics(io) {
   try {
     const metrics = await llamaMetricsScraper.getMetrics();
     if (metrics) {
-      console.log("[DEBUG] Llama server metrics collected:", metrics);
+      // Emit llama-server status with metrics
       io.emit("llama-server:status", {
         type: "broadcast",
         data: {
@@ -44,14 +44,21 @@ export async function collectLlamaMetrics(io) {
             tokensPerSecond: metrics.tokensPerSecond || 0,
             queueSize: metrics.queueSize || 0,
             totalRequests: metrics.totalRequests || 0,
+            uptime: metrics.uptime || 0,
           },
-          uptime: metrics.uptime || 0,
+          // Also include raw metrics for advanced parsing
+          rawMetrics: metrics,
         },
         timestamp: Date.now(),
       });
     }
   } catch (e) {
-    console.error("[LLAMA-METRICS] Failed to collect metrics:", e.message);
+    // Only log once to avoid spam - metrics endpoint might not be enabled
+    if (!this._metricsErrorLogged) {
+      console.warn("[LLAMA-METRICS] Metrics collection failed:", e.message);
+      console.warn("[LLAMA-METRICS] Ensure llama-server is started with --metrics flag");
+      this._metricsErrorLogged = true;
+    }
   }
 }
 

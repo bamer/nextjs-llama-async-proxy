@@ -144,8 +144,12 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
     "--threads", String(options.threads || config.threads || 4),
     "--ctx-size", String(options.ctxSize || config.ctx_size || 4096),
     "--models-max", String(options.maxModels || settings.maxModelsLoaded || 4),
-    "--metrics"
   ];
+
+  // Add --metrics flag only if enabled in settings
+  if (config.llama_server_metrics) {
+    args.push("--metrics");
+  }
 
   const isPresetFile = modelsDir && (modelsDir.endsWith(".ini") || options.usePreset);
   const baseModelsPath = config.baseModelsPath || "./models";
