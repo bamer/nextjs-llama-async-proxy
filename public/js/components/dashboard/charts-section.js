@@ -11,11 +11,12 @@ class ChartsSection extends Component {
     this.history = props.history || [];
     this.chartStats = props.chartStats || { current: 0, avg: 0, max: 0 };
     this.chartManager = props.chartManager || null;
+    this.chartsInitialized = false;
   }
 
   /**
-   * Called after component is mounted to DOM. Initializes chart subscriptions and charts.
-   */
+    * Called after component is mounted to DOM. Initializes chart subscriptions and charts.
+    */
   onMount() {
     console.log("[CHARTS-SECTION] onMount called");
     // Subscribe to metrics history updates
@@ -25,19 +26,13 @@ class ChartsSection extends Component {
         this.updateDOM();
       }
     });
-    // Initialize charts after DOM is ready
-    requestAnimationFrame(() => {
-      console.log("[CHARTS-SECTION] requestAnimationFrame callback");
-      setTimeout(() => {
-        console.log("[CHARTS-SECTION] Calling _initCharts");
-        this._initCharts();
-      }, 100);
-    });
+    // Initialize charts immediately without artificial delays
+    this._initCharts();
   }
 
   /**
-   * Clean up subscriptions and event listeners.
-   */
+    * Clean up subscriptions and event listeners.
+    */
   destroy() {
     if (this._historyUnsub) {
       this._historyUnsub();
@@ -46,8 +41,8 @@ class ChartsSection extends Component {
   }
 
   /**
-   * Bind event listeners for chart tab interactions.
-   */
+    * Bind event listeners for chart tab interactions.
+    */
   bindEvents() {
     // Chart tab clicks
     this.on("click", "[data-chart]", (e) => {
@@ -56,16 +51,16 @@ class ChartsSection extends Component {
   }
 
   /**
-   * Get current chart type from parent DashboardPage
-   */
+    * Get current chart type from parent DashboardPage
+    */
   getChartType() {
     const dashboardPage = this._el?.closest(".dashboard-page");
     return dashboardPage?._component?.chartType || "usage";
   }
 
   /**
-   * Update component with new props
-   */
+    * Update component with new props
+    */
   updateData(history, chartStats) {
     let needsUpdate = false;
 
@@ -99,14 +94,8 @@ class ChartsSection extends Component {
       }
     }
 
-    // Update tab active states
-    const cpuTab = this._el?.querySelector("[data-chart=\"cpu\"]");
-    const gpuTab = this._el?.querySelector("[data-chart=\"gpu\"]");
-    if (cpuTab && gpuTab) {
-      const chartType = this.getChartType();
-      cpuTab.classList.toggle("active", chartType === "cpu");
-      gpuTab.classList.toggle("active", chartType === "gpu");
-    }
+    // Update tab active states - IMMEDIATE update
+    this._updateTabStates();
 
     // Hide overlay when data is available
     const overlay = this._el?.querySelector(".chart-empty-overlay");
@@ -118,11 +107,29 @@ class ChartsSection extends Component {
     this._updateVisibility();
   }
 
+  /**
+    * Update tab button active states immediately
+    */
+  _updateTabStates() {
+    const cpuTab = this._el?.querySelector("[data-chart=\"cpu\"]");
+    const gpuTab = this._el?.querySelector("[data-chart=\"memory\"]");
+    if (cpuTab && gpuTab) {
+      const chartType = this.getChartType();
+      cpuTab.classList.toggle("active", chartType === "usage");
+      gpuTab.classList.toggle("active", chartType === "memory");
+    }
+  }
+
   _initCharts() {
     console.log("[CHARTS-SECTION] _initCharts called");
 
     if (!this.chartManager) {
       console.log("[CHARTS-SECTION] No chartManager available");
+      return;
+    }
+
+    if (this.chartsInitialized) {
+      console.log("[CHARTS-SECTION] Charts already initialized, skipping");
       return;
     }
 
@@ -137,100 +144,78 @@ class ChartsSection extends Component {
       !!memoryCanvas
     );
 
-    // Wait for canvases to have actual dimensions before creating charts
-    this._ensureChartDimensions(usageCanvas, "usage", this.chartManager);
-    this._ensureChartDimensions(memoryCanvas, "memory", this.chartManager);
+    // Create charts immediately if canvases are available
+    if (usageCanvas && memoryCanvas) {
+      this._createChartsImmediately(usageCanvas, memoryCanvas);
+    } else {
+      // Wait for canvases with minimal delay
+      let attempts = 0;
+      const maxAttempts = 20; // Max 200ms (10 * 20ms)
+      const checkCanvas = () => {
+        const usageCanvas = this._el?.querySelector("#usageChart");
+        const memoryCanvas = this._el?.querySelector("#memoryChart");
+        if (usageCanvas && memoryCanvas) {
+          this._createChartsImmediately(usageCanvas, memoryCanvas);
+        } else if (attempts < maxAttempts) {
+          attempts++;
+          requestAnimationFrame(checkCanvas);
+        } else {
+          console.warn("[CHARTS-SECTION] Canvases not found after max attempts");
+        }
+      };
+      requestAnimationFrame(checkCanvas);
+    }
   }
 
   /**
-    * Wait for canvas to have actual dimensions before creating chart
+    * Create charts immediately without dimension polling
     */
-  _ensureChartDimensions(canvas, type, chartManager) {
-    console.log(
-      "[CHARTS-SECTION] _ensureChartDimensions called for type:",
-      type,
-      "canvas:",
-      !!canvas
-    );
-    if (!canvas) return;
+  _createChartsImmediately(usageCanvas, memoryCanvas) {
+    const dpr = window.devicePixelRatio || 1;
 
-    // Get container dimensions for fallback
-    const container = canvas.parentElement;
-    const getFallbackDimensions = () => {
+    // Set canvas dimensions based on container
+    const setCanvasDimensions = (canvas) => {
+      const container = canvas.parentElement;
       if (container) {
         const rect = container.getBoundingClientRect();
-        return { width: rect.width, height: 250 }; // Use container width, fixed height
-      }
-      return { width: 600, height: 250 }; // Default fallback
-    };
-
-    let retries = 0;
-    const maxRetries = 30; // Max 1.5 seconds of retries (30 * 50ms)
-
-    const checkDimensions = () => {
-      const rect = canvas.getBoundingClientRect();
-
-      if (rect.width > 0 && rect.height > 0) {
-        console.log(`[CHARTS-SECTION] Canvas ${type} dimensions:`, rect.width, "x", rect.height);
-        // Explicitly set canvas width/height attributes
-        canvas.width = Math.round(rect.width * (window.devicePixelRatio || 1));
-        canvas.height = Math.round(rect.height * (window.devicePixelRatio || 1));
-
-        // Get context with device pixel ratio
-        const ctx = canvas.getContext("2d");
-        ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
-
-        // Create the chart
-        if (type === "usage") {
-          chartManager.createUsageChart(canvas, this.history);
-        } else {
-          chartManager.createMemoryChart(canvas, this.history);
-        }
-
-        // Update visibility
-        this._updateVisibility();
-      } else if (retries < maxRetries) {
-        // Canvas doesn't have dimensions yet, retry
-        retries++;
-        setTimeout(checkDimensions, 50);
-      } else {
-        // Give up after max retries - use fallback dimensions
-        console.warn(
-          `[CHARTS-SECTION] Canvas ${type} failed to get dimensions after ${maxRetries} retries, using fallback`
-        );
-        const fallback = getFallbackDimensions();
-        const dpr = window.devicePixelRatio || 1;
-
-        canvas.width = Math.round(fallback.width * dpr);
-        canvas.height = Math.round(fallback.height * dpr);
-
-        // Style dimensions (CSS pixels)
-        canvas.style.width = `${fallback.width}px`;
-        canvas.style.height = `${fallback.height}px`;
-
-        // Get context with device pixel ratio
-        const ctx = canvas.getContext("2d");
-        ctx.scale(dpr, dpr);
-
-        // Create the chart with fallback dimensions
-        if (type === "usage") {
-          chartManager.createUsageChart(canvas, this.history);
-        } else {
-          chartManager.createMemoryChart(canvas, this.history);
-        }
-
-        // Update visibility
-        this._updateVisibility();
+        const width = rect.width || 600;
+        const height = 250;
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
       }
     };
 
-    // Start checking dimensions immediately
-    checkDimensions();
+    setCanvasDimensions(usageCanvas);
+    setCanvasDimensions(memoryCanvas);
+
+    // Create charts with current history
+    if (this.history.length > 0) {
+      this.chartManager.createUsageChart(usageCanvas, this.history);
+      this.chartManager.createMemoryChart(memoryCanvas, this.history);
+    } else {
+      this.chartManager.createUsageChart(usageCanvas, []);
+      this.chartManager.createMemoryChart(memoryCanvas, []);
+    }
+
+    this.chartsInitialized = true;
+
+    // Update visibility based on current chart type
+    this._updateVisibility();
+
+    // Hide overlay if we have data
+    if (this.history.length > 0) {
+      const overlay = this._el?.querySelector(".chart-empty-overlay");
+      if (overlay) overlay.style.display = "none";
+    }
+
+    console.log("[CHARTS-SECTION] Charts initialized successfully");
   }
 
   /**
-   * Update chart visibility based on current chart type
-   */
+    * Update chart visibility based on current chart type
+    */
   _updateVisibility() {
     const chartType = this.getChartType();
     const usageCanvas = this._el?.querySelector("#usageChart");
@@ -245,40 +230,34 @@ class ChartsSection extends Component {
   }
 
   /**
-   * Handle chart tab click events to switch between usage and memory charts.
-   * @param {Event} event - The click event.
-   */
+    * Handle chart tab click events to switch between usage and memory charts.
+    * @param {Event} event - The click event.
+    */
   handleChartTab(event) {
     const tab = event.target.closest("[data-chart]");
     if (!tab) return;
 
     const newType = tab.dataset.chart;
 
-    // Notify parent - parent will update chartType and trigger visibility update
+    // Map button type to chart type
+    const chartType = newType === "cpu" ? "usage" : "memory";
+
+    // Update parent state
     if (this.props.onChartTypeChange) {
-      this.props.onChartTypeChange(newType);
+      this.props.onChartTypeChange(chartType);
     }
 
-    if (this.chartManager) {
-      const canvas = this._el?.querySelector(newType === "usage" ? "#usageChart" : "#memoryChart");
+    // Update button states IMMEDIATELY (no wait for re-render)
+    this._updateTabStates();
 
-      if (canvas) {
-        // Use requestAnimationFrame to wait for visibility change to take effect
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            // Use _ensureChartDimensions for consistency with onMount
-            // This handles the case where canvas isn't visible yet and needs to wait for dimensions
-            this._ensureChartDimensions(canvas, newType, this.chartManager);
-          }, 10);
-        });
-      }
-    }
+    // Update canvas visibility (no chart recreation needed)
+    this._updateVisibility();
   }
 
   /**
-   * Render the charts section component.
-   * @returns {HTMLElement} The rendered component element.
-   */
+    * Render the charts section component.
+    * @returns {HTMLElement} The rendered component element.
+    */
   render() {
     const chartType = this.getChartType();
     const hasData = this.history.length > 0;
@@ -298,7 +277,7 @@ class ChartsSection extends Component {
             "button",
             {
               className: `chart-tab ${chartType === "usage" ? "active" : ""}`,
-              "data-chart": "usage",
+              "data-chart": "cpu",
             },
             "CPU & GPU Usage"
           ),

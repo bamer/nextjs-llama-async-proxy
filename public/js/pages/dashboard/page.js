@@ -110,7 +110,7 @@ class DashboardPage extends Component {
   }
 
   _updateRouterCardUI() {
-    // With LlamaRouterCard being event-driven and subscribing to state, 
+    // With LlamaRouterCard being event-driven and subscribing to state,
     // we don't need much manual DOM manipulation here anymore.
   }
 
@@ -142,6 +142,10 @@ class DashboardPage extends Component {
     if (chartsSection) {
       chartsSection.history = this.history;
       chartsSection.updateDOM();
+      // Ensure charts are initialized if they haven't been yet
+      if (!chartsSection.chartsInitialized && this.chartManager) {
+        chartsSection._initCharts();
+      }
     }
   }
 
