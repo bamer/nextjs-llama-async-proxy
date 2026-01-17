@@ -30,7 +30,16 @@ class DashboardPage extends Component {
 
   onMount() {
     console.log("[DEBUG] DashboardPage: onMount");
-    // Load data when connected
+
+    // INSTANT LOAD: Restore data from cache first (synchronous, instant)
+    // eslint-disable-next-line no-undef
+    if (window.cacheManager) {
+      console.log("[DASHBOARD] Restoring cached data...");
+      // eslint-disable-next-line no-undef
+      window.cacheManager.restoreToState(stateManager.core);
+    }
+
+    // Load fresh data from server in background (will update UI as it arrives)
     this.controller?._loadDataWhenConnected();
 
     // Subscribe to state changes

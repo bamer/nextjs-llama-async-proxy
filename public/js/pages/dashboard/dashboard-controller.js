@@ -99,58 +99,20 @@ class DashboardController {
   }
 
   /**
-    * Load data when socket is connected - truly async, no waiting
+    * Load data in parallel - no connection polling needed
+    * State-socket handles queuing if not connected yet
     */
   _loadDataWhenConnected() {
-    console.log("[DASHBOARD] _loadDataWhenConnected called, isConnected:", stateManager.isConnected());
-
-    // If already connected, load data immediately
-    if (stateManager.isConnected()) {
-      console.log("[DASHBOARD] Already connected, loading data in background...");
-      this._loadData();
-      return;
-    }
-
-    // Subscribe to connection and load when ready (no await, no blocking)
-    console.log("[DASHBOARD] Will load data when connected...");
-    const unsub = stateManager.subscribe("connectionStatus", (status) => {
-      if (status === "connected") {
-        unsub();
-        console.log("[DASHBOARD] Connection established, loading data in background...");
-        this._loadData();
-      }
-    });
-  }
-
-  /**
-    * Load all data in background - truly async, parallel requests, no timeouts.
-    * Data updates UI as it arrives, no waiting for all requests to complete.
-    */
-  _loadData() {
-    console.log("[DASHBOARD] _loadData() called");
-
-    // If not connected yet, schedule it for later (don't block)
-    if (!stateManager.isConnected()) {
-      console.log("[DASHBOARD] Not connected yet, scheduling data load...");
-      const checkConnection = setInterval(() => {
-        if (stateManager.isConnected()) {
-          clearInterval(checkConnection);
-          console.log("[DASHBOARD] Now connected, starting data load...");
-          this._loadDataAsync();
-        }
-      }, 100);
-      return;
-    }
-
-    // Connected, load data immediately
+    console.log("[DASHBOARD] Loading data (queued if not connected)...");
     this._loadDataAsync();
   }
 
   /**
-    * Actual data loading - parallel requests, no waiting, update UI as data arrives
+    * Load all data in parallel - requests are queued by state-socket if not connected
+    * Data updates UI as each piece arrives
     */
   _loadDataAsync() {
-    console.log("[DASHBOARD] Starting data loading (truly async)...");
+    console.log("[DASHBOARD] Starting parallel data requests...");
 
     // Fire ALL requests in parallel - no await, no blocking
     // Each request updates the UI independently when it completes

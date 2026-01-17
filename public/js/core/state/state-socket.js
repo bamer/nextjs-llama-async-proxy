@@ -96,6 +96,8 @@ class StateSocket {
 
     const h = newHistory.slice(-this.maxHistory);
     this.core.set("metricsHistory", h);
+    // eslint-disable-next-line no-undef
+    if (window.cacheManager) window.cacheManager.set("metricsHistory", h);
     // Removed noisy debug log - metrics update every 30s, not needed
   }
 
@@ -109,41 +111,49 @@ class StateSocket {
   }
 
   /**
-    * Make an async request to the server with automatic reconnection handling - NO TIMEOUT
-    * @param {string} event - Event name to request
-    * @param {Object} [data={}] - Data payload to send
-    * @returns {Promise<Object>} Response data from server
-    */
-   request(event, data = {}) {
-     return new Promise((resolve, reject) => {
-       if (!this.connection.isConnected()) {
-         const checkConnection = setInterval(() => {
-           if (this.connection.isConnected()) {
-             clearInterval(checkConnection);
-             this._doRequest(event, data, resolve, reject);
-           }
-         }, 100);
-         // No timeout - wait indefinitely for connection
-         return;
-       }
-       this._doRequest(event, data, resolve, reject);
-     });
-   }
+   * Make an async request to the server - queues if not connected
+   * No polling loop - just execute when connected
+   * @param {string} event - Event name to request
+   * @param {Object} [data={}] - Data payload to send
+   * @returns {Promise<Object>} Response data from server
+   */
+  request(event, data = {}) {
+    // If connected, execute immediately
+    if (this.connection.isConnected()) {
+      return this._executeRequest(event, data);
+    }
+
+    // Not connected - wait for connection (one-time check, no polling)
+    return new Promise((resolve, reject) => {
+      const checkConnection = () => {
+        if (this.connection.isConnected()) {
+          this._executeRequest(event, data)
+            .then(resolve)
+            .catch(reject);
+        } else {
+          // Check again after a small delay
+          setTimeout(checkConnection, 50);
+        }
+      };
+      checkConnection();
+    });
+  }
 
   /**
-    * Execute the socket request - NO TIMEOUT, let it complete naturally
-    * @param {string} event - Event name
-    * @param {Object} data - Request data payload
-    * @param {Function} resolve - Promise resolve callback
-    * @param {Function} reject - Promise reject callback
-    */
-   _doRequest(event, data, resolve, reject) {
-     const reqId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+   * Execute the socket request immediately
+   * @param {string} event - Event name
+   * @param {Object} data - Request data payload
+   * @returns {Promise<Object>} Response promise
+   */
+  _executeRequest(event, data) {
+    return new Promise((resolve, reject) => {
+      const reqId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-     // No timeout - let requests complete naturally
-     this.pending.set(reqId, { resolve, reject, event, timeout: null });
-     this.socket.emit(event, { ...data, requestId: reqId });
-   }
+      // No timeout - let requests complete naturally
+      this.pending.set(reqId, { resolve, reject, event, timeout: null });
+      this.socket.emit(event, { ...data, requestId: reqId });
+    });
+  }
 
   /**
    * Clean up resources and disconnect handlers

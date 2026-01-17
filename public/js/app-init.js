@@ -47,18 +47,32 @@
     }
   });
 
-  // Initialize services
-  document.addEventListener("DOMContentLoaded", () => {
+  // Initialize socket connection immediately (before DOMContentLoaded)
+  // This allows requests to be queued while socket establishes
+  function initializeSocket() {
     try {
+      console.log("[App] Initializing socket connection...");
       socketClient.connect();
       stateManager.init(socketClient);
-      window.stateLlamaServer = new window.StateLlamaServer(stateManager.core, stateManager.socket);
+      window.stateLlamaServer = new window.StateLlamaServer(
+        stateManager.core,
+        stateManager.socket
+      );
+      console.log("[App] Socket and state manager initialized");
     } catch (e) {
       console.error("[App] Service initialization failed:", e);
       showErrorBoundary(e);
-      return;
     }
-  });
+  }
+
+  // Initialize socket as soon as possible
+  if (document.readyState === "loading") {
+    // Still loading, wait for DOMContentLoaded but don't block
+    document.addEventListener("DOMContentLoaded", initializeSocket);
+  } else {
+    // Already loaded, initialize immediately
+    initializeSocket();
+  }
 
   window.showErrorBoundary = showErrorBoundary;
 })();
