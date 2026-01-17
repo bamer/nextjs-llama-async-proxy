@@ -33,9 +33,9 @@ export function initializeLlamaMetricsScraper(port, db = null) {
  * Update metrics collection interval based on active clients
  */
 function updateMetricsInterval(io, db) {
-  // Collect metrics every 5s when clients connected (for truly responsive UI)
+  // Collect metrics every 2s when clients connected (for truly responsive UI)
   // No collections when idle to save CPU
-  const newInterval = activeClients > 0 ? 5000 : 120000;
+  const newInterval = activeClients > 0 ? 2000 : 120000;
 
   if (metricsInterval) {
     clearInterval(metricsInterval);
