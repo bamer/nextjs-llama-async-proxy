@@ -97,8 +97,8 @@ export class LlamaServerProcessManager {
 
     // Try graceful shutdown first
     if (this.process.kill("SIGTERM")) {
-      // Wait 5 seconds for graceful shutdown
-      await new Promise((r) => setTimeout(r, 5000));
+      // Wait 1 second for graceful shutdown (reduced from 5 seconds)
+      await new Promise((r) => setTimeout(r, 1000));
 
       // Force kill if still running
       if (this.isRunning) {

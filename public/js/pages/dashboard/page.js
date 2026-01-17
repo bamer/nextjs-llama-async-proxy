@@ -32,6 +32,9 @@ class DashboardPage extends Component {
     console.log("[DashboardPage] onMount called");
     console.log("[DashboardPage] controller exists:", !!this.controller);
 
+    // Remove GPU section loading skeleton immediately for instant loading
+    this._updateGPUSection();
+
     // Skeleton UI is already applied during render(), but ensure it's there
     this._renderSkeletonUI();
 
@@ -107,15 +110,18 @@ class DashboardPage extends Component {
     const chartsSection = this.$("[data-section=\"charts\"]");
     const gpuSection = this.$("[data-section=\"gpu\"]");
 
+    // GPU section should load instantly - remove skeleton immediately
+    if (gpuSection) {
+      gpuSection.classList.remove("loading-skeleton");
+      gpuSection.setAttribute("aria-busy", "false");
+    }
+
     // Only add skeleton if data hasn't loaded yet
     if (metricsSection && !stateManager.get("metrics")) {
       metricsSection.classList.add("loading-skeleton");
     }
     if (chartsSection && !stateManager.get("metricsHistory")) {
       chartsSection.classList.add("loading-skeleton");
-    }
-    if (gpuSection && !stateManager.get("metrics")) {
-      gpuSection.classList.add("loading-skeleton");
     }
   }
 
