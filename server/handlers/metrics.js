@@ -41,8 +41,8 @@ export function registerMetricsHandlers(socket, db) {
   });
 
   /**
-   * Get metrics history
-   */
+    * Get metrics history (optimized: GPU list sent once, not per record)
+    */
   socket.on("metrics:history", (req, ack) => {
     const id = req?.requestId || Date.now();
     try {
@@ -55,12 +55,13 @@ export function registerMetricsHandlers(socket, db) {
           usage: m.gpu_usage || 0,
           memoryUsed: m.gpu_memory_used || 0,
           memoryTotal: m.gpu_memory_total || 0,
-          list: latestGpuList,
+          // Don't include list here - send once in metadata
         },
         uptime: m.uptime || 0,
         timestamp: m.timestamp,
       }));
-      ok(socket, "metrics:history:result", { history }, id, ack);
+      // Send GPU list once in metadata, not repeated in every record
+      ok(socket, "metrics:history:result", { history, gpuList: latestGpuList }, id, ack);
     } catch (e) {
       err(socket, "metrics:history:result", e.message, id, ack);
     }

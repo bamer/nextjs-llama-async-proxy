@@ -18,16 +18,31 @@ class ChartsSection extends Component {
     * Called after component is mounted to DOM. Initializes chart subscriptions and charts.
     */
   onMount() {
-    console.log("[CHARTS-SECTION] onMount called");
+    console.log("[CHARTS-SECTION] onMount called, history available:", this.history.length);
     // Subscribe to metrics history updates
     this._historyUnsub = stateManager.subscribe("metricsHistory", (history) => {
       if (Array.isArray(history) && history.length > 0) {
+        console.log("[CHARTS-SECTION] History updated from state:", history.length, "records");
         this.history = history;
         this.updateDOM();
+        // Initialize charts when history data arrives if not already done
+        if (!this.chartsInitialized) {
+          console.log("[CHARTS-SECTION] Initializing charts with new history data");
+          this._initCharts();
+        } else {
+          console.log("[CHARTS-SECTION] Updating charts with new history data");
+          this._updateChartsData();
+        }
       }
     });
-    // Initialize charts immediately without artificial delays
-    this._initCharts();
+    
+    // Initialize charts if history data is already available
+    if (this.history.length > 0) {
+      console.log("[CHARTS-SECTION] History already available in props, initializing charts");
+      this._initCharts();
+    } else {
+      console.log("[CHARTS-SECTION] No history data yet, waiting for subscription update");
+    }
   }
 
   /**
@@ -168,9 +183,30 @@ class ChartsSection extends Component {
   }
 
   /**
-    * Create charts immediately without dimension polling
-    */
-  _createChartsImmediately(usageCanvas, memoryCanvas) {
+     * Update existing charts with new data
+     */
+  _updateChartsData() {
+    if (!this.chartManager || !this.chartsInitialized) {
+      return;
+    }
+    console.log("[CHARTS-SECTION] Updating charts data with", this.history.length, "records");
+    if (this.history.length > 0) {
+      this.chartManager.updateCharts({}, this.history);
+      // Update stats
+      const stats = window.DashboardUtils?._calculateStats?.(this.history) || {
+        current: 0,
+        avg: 0,
+        max: 0,
+      };
+      this.chartStats = stats;
+      this.updateDOM();
+    }
+  }
+
+  /**
+     * Create charts immediately without dimension polling
+     */
+   _createChartsImmediately(usageCanvas, memoryCanvas) {
     const dpr = window.devicePixelRatio || 1;
 
     // Set canvas dimensions based on container

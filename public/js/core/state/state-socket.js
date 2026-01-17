@@ -109,46 +109,60 @@ class StateSocket {
   }
 
   /**
-   * Make an async request to the server - queues if not connected
-   * No polling loop - just execute when connected
-   * @param {string} event - Event name to request
-   * @param {Object} [data={}] - Data payload to send
-   * @returns {Promise<Object>} Response data from server
-   */
-  request(event, data = {}) {
-    // If connected, execute immediately
-    if (this.connection.isConnected()) {
-      return this._executeRequest(event, data);
+    * Make an async request to the server - event-based with proper async/await
+    * @param {string} event - Event name to request
+    * @param {Object} [data={}] - Data payload to send
+    * @returns {Promise<Object>} Response data from server
+    */
+  async request(event, data = {}) {
+    // Wait for connection if needed
+    if (!this.connection.isConnected()) {
+      await this._waitForConnection();
     }
-
-    // Not connected - wait for connection (one-time check, no polling)
-    return new Promise((resolve, reject) => {
-      const checkConnection = () => {
-        if (this.connection.isConnected()) {
-          this._executeRequest(event, data)
-            .then(resolve)
-            .catch(reject);
-        } else {
-          // Check again after a small delay
-          setTimeout(checkConnection, 50);
-        }
-      };
-      checkConnection();
-    });
+    return this._executeRequest(event, data);
   }
 
   /**
-   * Execute the socket request immediately
-   * @param {string} event - Event name
-   * @param {Object} data - Request data payload
-   * @returns {Promise<Object>} Response promise
-   */
-  _executeRequest(event, data) {
-    return new Promise((resolve, reject) => {
-      const reqId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    * Wait for socket connection with timeout
+    * @private
+    * @returns {Promise<void>} Resolves when connected
+    * @throws {Error} If timeout after 10 seconds
+    */
+  async _waitForConnection() {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
 
-      // No timeout - let requests complete naturally
-      this.pending.set(reqId, { resolve, reject, event, timeout: null });
+    try {
+      await new Promise((resolve, reject) => {
+        const onConnect = () => {
+          this.socket.off("connect", onConnect);
+          resolve();
+        };
+
+        controller.signal.addEventListener("abort", () => {
+          this.socket.off("connect", onConnect);
+          reject(new Error("Connection timeout"));
+        });
+
+        this.socket.on("connect", onConnect);
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  /**
+    * Execute the socket request immediately
+    * @private
+    * @param {string} event - Event name
+    * @param {Object} data - Request data payload
+    * @returns {Promise<Object>} Response promise
+    */
+  async _executeRequest(event, data) {
+    const reqId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    return new Promise((resolve, reject) => {
+      this.pending.set(reqId, { resolve, reject, event });
       this.socket.emit(event, { ...data, requestId: reqId });
     });
   }
