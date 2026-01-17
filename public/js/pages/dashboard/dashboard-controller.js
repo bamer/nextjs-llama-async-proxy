@@ -114,23 +114,24 @@ class DashboardController {
   _loadDataAsync() {
     console.log("[DASHBOARD] Starting parallel data requests...");
 
-    // Fire ALL requests in parallel - no await, no blocking
-    // Each request updates the UI independently when it completes
-    stateManager.getConfig()
+    // Use direct socket requests (bypass caching for initial load)
+    // This ensures promises execute and resolve properly
+    
+    stateManager.socket.request("config:get")
       .then((config) => {
         console.log("[DASHBOARD] Config loaded");
         if (this.comp) this.comp.updateConfig(config);
       })
       .catch((e) => console.warn("[DASHBOARD] Config load failed:", e.message));
 
-    stateManager.getModels()
+    stateManager.socket.request("models:list")
       .then((models) => {
-        console.log("[DASHBOARD] Models loaded:", models?.models?.length || 0, "models");
+        console.log("[DASHBOARD] Models loaded:", models?.models?.length || 0);
         if (this.comp) this.comp.updateModels(models);
       })
       .catch((e) => console.warn("[DASHBOARD] Models load failed:", e.message));
 
-    stateManager.getMetrics()
+    stateManager.socket.request("metrics:get")
       .then((metrics) => {
         console.log("[DASHBOARD] Metrics loaded");
         if (this.comp) {
@@ -140,9 +141,9 @@ class DashboardController {
       })
       .catch((e) => console.warn("[DASHBOARD] Metrics load failed:", e.message));
 
-    stateManager.getMetricsHistory({ limit: 60 })
+    stateManager.socket.request("metrics:history", { limit: 60 })
       .then((history) => {
-        console.log("[DASHBOARD] History loaded:", history?.history?.length || 0, "records");
+        console.log("[DASHBOARD] History loaded:", history?.history?.length || 0);
         if (this.comp) {
           const metrics = stateManager.get("metrics");
           this.comp.updateFromController(metrics?.metrics || null, history?.history || []);
@@ -150,16 +151,16 @@ class DashboardController {
       })
       .catch((e) => console.warn("[DASHBOARD] History load failed:", e.message));
 
-    stateManager.getSettings()
+    stateManager.socket.request("settings:get")
       .then((settings) => {
         console.log("[DASHBOARD] Settings loaded");
         if (this.comp) this.comp.updateSettings(settings);
       })
       .catch((e) => console.warn("[DASHBOARD] Settings load failed:", e.message));
 
-    stateManager.request("presets:list")
+    stateManager.socket.request("presets:list")
       .then((presets) => {
-        console.log("[DASHBOARD] Presets loaded:", presets?.presets?.length || 0, "presets");
+        console.log("[DASHBOARD] Presets loaded:", presets?.presets?.length || 0);
         if (this.comp) this.comp.updatePresets(presets);
       })
       .catch((e) => console.warn("[DASHBOARD] Presets load failed:", e.message));

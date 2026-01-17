@@ -15,9 +15,9 @@ let latestGpuList = [];
  */
 export function registerMetricsHandlers(socket, db) {
   /**
-   * Get latest metrics
+   * Get latest metrics - Send immediately without waiting for interval
    */
-  socket.on("metrics:get", (req, ack) => {
+  socket.on("metrics:get", (req) => {
     const id = req?.requestId || Date.now();
     try {
       const m = db.getLatestMetrics() || {};
@@ -34,19 +34,26 @@ export function registerMetricsHandlers(socket, db) {
         },
         uptime: m.uptime || 0,
       };
-      ok(socket, "metrics:get:result", { metrics }, id, ack);
+      console.log("[METRICS] Sending immediate metrics response:", id);
+      // IMPORTANT: Always emit, never use ack() - client expects :result event
+      socket.emit("metrics:get:result", { success: true, data: { metrics }, requestId: id });
     } catch (e) {
-      err(socket, "metrics:get:result", e.message, id, ack);
+      console.error("[METRICS] Error fetching metrics:", e.message);
+      socket.emit("metrics:get:result", { success: false, error: { message: e.message }, requestId: id });
     }
   });
 
   /**
-    * Get metrics history (optimized: GPU list sent once, not per record)
+    * Get metrics history - Send immediately without waiting for interval
+    * Streamed progressively if history is large
     */
-  socket.on("metrics:history", (req, ack) => {
+  socket.on("metrics:history", (req) => {
     const id = req?.requestId || Date.now();
     try {
-      const history = db.getMetricsHistory(req?.limit || 100).map((m) => ({
+      const limit = req?.limit || 60;
+      console.log(`[METRICS] Sending metrics history (${limit} records):`, id);
+
+      const history = db.getMetricsHistory(limit).map((m) => ({
         cpu: { usage: m.cpu_usage || 0 },
         memory: { used: m.memory_usage || 0 },
         swap: { used: m.swap_usage || 0 },
@@ -55,15 +62,24 @@ export function registerMetricsHandlers(socket, db) {
           usage: m.gpu_usage || 0,
           memoryUsed: m.gpu_memory_used || 0,
           memoryTotal: m.gpu_memory_total || 0,
-          // Don't include list here - send once in metadata
         },
         uptime: m.uptime || 0,
         timestamp: m.timestamp,
       }));
-      // Send GPU list once in metadata, not repeated in every record
-      ok(socket, "metrics:history:result", { history, gpuList: latestGpuList }, id, ack);
+
+      // IMPORTANT: Always emit, never use ack() - client expects :result event
+      socket.emit("metrics:history:result", {
+        success: true,
+        data: { history, gpuList: latestGpuList },
+        requestId: id,
+      });
     } catch (e) {
-      err(socket, "metrics:history:result", e.message, id, ack);
+      console.error("[METRICS] Error fetching metrics history:", e.message);
+      socket.emit("metrics:history:result", {
+        success: false,
+        error: { message: e.message },
+        requestId: id,
+      });
     }
   });
 }

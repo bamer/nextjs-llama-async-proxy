@@ -163,6 +163,7 @@ class StateSocket {
 
     return new Promise((resolve, reject) => {
       this.pending.set(reqId, { resolve, reject, event });
+      console.log("[StateSocket] Sending request:", event, "ID:", reqId);
       this.socket.emit(event, { ...data, requestId: reqId });
     });
   }

@@ -167,7 +167,9 @@ class CacheInstance {
     if (!forceRefresh) {
       const cached = this.get(key);
       if (cached !== null) {
-        return cached;
+        // IMPORTANT: Always return a Promise, even for cached values
+        // This ensures .then() chains work consistently
+        return Promise.resolve(cached);
       }
     }
 

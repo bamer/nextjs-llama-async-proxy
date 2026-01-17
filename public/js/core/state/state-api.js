@@ -162,7 +162,11 @@ class StateAPI {
    * @returns {Promise<Object>} Config
    */
   async getConfig() {
-    return this._cachedRequest("getConfig", "getConfig", () => this.socket.request("config:get"));
+    const result = this._cachedRequest("getConfig", "getConfig", () =>
+      this.socket.request("config:get")
+    );
+    console.log("[StateAPI] getConfig returning:", typeof result, "IsPromise:", result instanceof Promise);
+    return result;
   }
 
   /**

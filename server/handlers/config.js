@@ -15,46 +15,65 @@ export function registerConfigHandlers(socket, db) {
   /**
    * Get server configuration
    */
-  socket.on("config:get", (req, ack) => {
+  socket.on("config:get", (req) => {
     const id = req?.requestId || Date.now();
     try {
       const config = db.getConfig();
-      ok(socket, "config:get:result", { config }, id, ack);
+      // Always emit, never use ack() - client expects :result event
+      socket.emit("config:get:result", { success: true, data: { config }, requestId: id });
     } catch (e) {
-      err(socket, "config:get:result", e.message, id, ack);
+      socket.emit("config:get:result", {
+        success: false,
+        error: { message: e.message },
+        requestId: id,
+      });
     }
   });
 
   /**
    * Update server configuration
    */
-  socket.on("config:update", (req, ack) => {
+  socket.on("config:update", (req) => {
     const id = req?.requestId || Date.now();
     try {
       db.saveConfig(req?.config || {});
-      ok(socket, "config:update:result", { config: req?.config }, id, ack);
+      // Always emit, never use ack() - client expects :result event
+      socket.emit("config:update:result", {
+        success: true,
+        data: { config: req?.config },
+        requestId: id,
+      });
     } catch (e) {
-      err(socket, "config:update:result", e.message, id, ack);
+      socket.emit("config:update:result", {
+        success: false,
+        error: { message: e.message },
+        requestId: id,
+      });
     }
   });
 
   /**
    * Get user settings
    */
-  socket.on("settings:get", (req, ack) => {
+  socket.on("settings:get", (req) => {
     const id = req?.requestId || Date.now();
     try {
       const settings = db.getMeta("user_settings") || {};
-      ok(socket, "settings:get:result", { settings }, id, ack);
+      // Always emit, never use ack() - client expects :result event
+      socket.emit("settings:get:result", { success: true, data: { settings }, requestId: id });
     } catch (e) {
-      err(socket, "settings:get:result", e.message, id, ack);
+      socket.emit("settings:get:result", {
+        success: false,
+        error: { message: e.message },
+        requestId: id,
+      });
     }
   });
 
   /**
    * Update user settings
    */
-  socket.on("settings:update", (req, ack) => {
+  socket.on("settings:update", (req) => {
     const id = req?.requestId || Date.now();
     try {
       const settings = req?.settings || {};
@@ -66,9 +85,14 @@ export function registerConfigHandlers(socket, db) {
         console.log(`[DEBUG] Log level changed to: ${settings.logLevel}`);
       }
 
-      ok(socket, "settings:update:result", { settings }, id, ack);
+      // Always emit, never use ack() - client expects :result event
+      socket.emit("settings:update:result", { success: true, data: { settings }, requestId: id });
     } catch (e) {
-      err(socket, "settings:update:result", e.message, id, ack);
+      socket.emit("settings:update:result", {
+        success: false,
+        error: { message: e.message },
+        requestId: id,
+      });
     }
   });
 }

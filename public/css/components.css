@@ -1,4 +1,38 @@
 /**
+ * Skeleton Loading Styles
+ * Progressive loading placeholders
+ */
+@keyframes skeleton-pulse {
+  0% {
+    background-color: var(--bg-secondary, #f3f4f6);
+  }
+  50% {
+    background-color: var(--bg-tertiary, #e5e7eb);
+  }
+  100% {
+    background-color: var(--bg-secondary, #f3f4f6);
+  }
+}
+
+.loading-skeleton {
+  opacity: 0.7;
+}
+
+.loading-skeleton * {
+  animation: skeleton-pulse 2s ease-in-out infinite;
+  background-color: var(--bg-secondary, #f3f4f6);
+  color: transparent;
+}
+
+.loading-skeleton .metric-value,
+.loading-skeleton .chart-container,
+.loading-skeleton .stat-item {
+  min-height: 2rem;
+  border-radius: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+/**
  * Toast Notification Styles
  * Positioned in top-right corner with animations
  */

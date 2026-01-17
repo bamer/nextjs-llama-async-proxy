@@ -13,7 +13,9 @@ class StateResponseHandlers {
    */
   setup(socket) {
     const handleResponse = (event, data) => {
+      console.log("[StateResponse] Received:", event, "RequestID:", data?.requestId, "Pending count:", this.pending.size);
       if (data?.requestId && this.pending.has(data.requestId)) {
+        console.log("[StateResponse] Found pending request, resolving...");
         const p = this.pending.get(data.requestId);
         this.pending.delete(data.requestId);
         if (data.success) {
@@ -21,6 +23,8 @@ class StateResponseHandlers {
         } else {
           p.reject(new Error(data.error?.message || "Request failed"));
         }
+      } else {
+        console.log("[StateResponse] No pending request for", data?.requestId);
       }
     };
 

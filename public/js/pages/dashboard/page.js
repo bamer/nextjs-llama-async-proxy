@@ -29,11 +29,21 @@ class DashboardPage extends Component {
   }
 
   onMount() {
-    console.log("[DEBUG] DashboardPage: onMount");
-    // Load data from server
-    this.controller?._loadDataWhenConnected();
+    console.log("[DashboardPage] onMount called");
+    console.log("[DashboardPage] controller exists:", !!this.controller);
+    
+    // Skeleton UI is already applied during render(), but ensure it's there
+    this._renderSkeletonUI();
+    
+    // Start loading data asynchronously - fire and forget, updates arrive independently
+    console.log("[DashboardPage] Calling controller._loadDataWhenConnected()");
+    if (this.controller) {
+      this.controller._loadDataWhenConnected();
+    } else {
+      console.warn("[DashboardPage] Controller is undefined!");
+    }
 
-    // Subscribe to state changes
+    // Subscribe to state changes - updates will flow in as data arrives
     this.unsubscribers.push(
       stateManager.subscribe("llamaServerStatus", (status) => {
         this.status = status;
@@ -52,17 +62,19 @@ class DashboardPage extends Component {
     this.unsubscribers.push(
       stateManager.subscribe("presets", (presets) => {
         this.presets = presets || [];
+        this._updatePresetsSection();
       })
     );
 
-    // Subscribe to metrics updates
+    // Subscribe to metrics updates - arrive independently
     this.unsubscribers.push(
       stateManager.subscribe("metrics", (m) => {
         this.handleMetricsChange(m);
+        this._updateMetricsSection();
       })
     );
 
-    // Subscribe to metrics history updates (for charts)
+    // Subscribe to metrics history updates (for charts) - arrives independently
     this.unsubscribers.push(
       stateManager.subscribe("metricsHistory", (history) => {
         if (Array.isArray(history) && history.length > 0 && this.chartManager) {
@@ -81,6 +93,50 @@ class DashboardPage extends Component {
         this._updateRouterCardUI();
       })
     );
+  }
+
+  _renderSkeletonUI() {
+    // Skeleton UI is now included in render() method
+    // This method ensures it stays applied if needed
+    const root = this.$(".dashboard-main");
+    if (!root) return;
+
+    // Verify skeletons are still applied (in case of re-renders)
+    const metricsSection = this.$('[data-section="metrics"]');
+    const chartsSection = this.$('[data-section="charts"]');
+    const gpuSection = this.$('[data-section="gpu"]');
+
+    // Only add skeleton if data hasn't loaded yet
+    if (metricsSection && !stateManager.get("metrics")) {
+      metricsSection.classList.add("loading-skeleton");
+    }
+    if (chartsSection && !stateManager.get("metricsHistory")) {
+      chartsSection.classList.add("loading-skeleton");
+    }
+  }
+
+  _updateMetricsSection() {
+    const section = this.$("[data-section='metrics']");
+    if (section) {
+      section.classList.remove("loading-skeleton");
+      section.setAttribute("aria-busy", "false");
+    }
+  }
+
+  _updateChartsSection() {
+    const section = this.$("[data-section='charts']");
+    if (section) {
+      section.classList.remove("loading-skeleton");
+      section.setAttribute("aria-busy", "false");
+    }
+  }
+
+  _updatePresetsSection() {
+    const section = this.$("[data-section='presets']");
+    if (section) {
+      section.classList.remove("loading-skeleton");
+      section.setAttribute("aria-busy", "false");
+    }
   }
 
   handleMetricsChange(metrics) {
@@ -121,9 +177,10 @@ class DashboardPage extends Component {
       hasPresetsKey: !!presetsData?.presets,
       dataType: typeof presetsData,
       count: presets.length,
-      presets: presets.map(p => ({ name: p.name || p })),
+      presets: presets.map((p) => ({ name: p.name || p })),
     });
     stateManager.set("presets", presets);
+    this._updatePresetsSection();
     console.log("[DASHBOARD] Presets updated:", presets.length);
   }
 
@@ -151,6 +208,9 @@ class DashboardPage extends Component {
     if (this.chartManager) {
       this.chartManager.updateCharts(metrics, this.history);
     }
+
+    // Remove loading skeleton for metrics
+    this._updateMetricsSection();
 
     // Update sub-components via their direct update methods
     const statsGrid = this._el?.querySelector(".stats-grid")?._component;
@@ -196,12 +256,22 @@ class DashboardPage extends Component {
   }
 
   render() {
-    return Component.h("div", { className: "dashboard-page unified" }, [
-      Component.h(window.StatsGrid, {
-        metrics: this.metrics,
-        gpuMetrics: this.gpuMetrics,
-      }),
-      Component.h("div", { className: "dashboard-middle-row" }, [
+    return Component.h("div", { className: "dashboard-main dashboard-page unified" }, [
+      // Metrics section - loads independently
+      // START WITH LOADING SKELETON
+      Component.h("div", {
+        className: "metrics-section loading-skeleton",
+        "data-section": "metrics",
+        "aria-busy": "true",
+      }, [
+        Component.h(window.StatsGrid, {
+          metrics: this.metrics,
+          gpuMetrics: this.gpuMetrics,
+        }),
+      ]),
+      
+      // Router & Quick Actions section - ALWAYS VISIBLE (no loading state)
+      Component.h("div", { className: "dashboard-middle-row", "data-section": "router" }, [
         Component.h(window.LlamaRouterCard, {
           status: this.status,
           routerStatus: this.routerStatus,
@@ -214,7 +284,14 @@ class DashboardPage extends Component {
           onRefresh: () => this._refresh(),
         }),
       ]),
-      Component.h("div", { className: "content-row" }, [
+      
+      // Charts & Health section - loads independently
+      // START WITH LOADING SKELETON
+      Component.h("div", {
+        className: "content-row loading-skeleton",
+        "data-section": "charts",
+        "aria-busy": "true",
+      }, [
         Component.h(window.ChartsSection, {
           history: this.history,
           chartStats: this.chartStats,
@@ -226,7 +303,14 @@ class DashboardPage extends Component {
           gpuMetrics: this.gpuMetrics,
         }),
       ]),
-      Component.h("div", { className: "content-row" }, [
+      
+      // GPU Details section - loads independently
+      // START WITH LOADING SKELETON
+      Component.h("div", {
+        className: "content-row loading-skeleton",
+        "data-section": "gpu",
+        "aria-busy": "true",
+      }, [
         Component.h(window.GpuDetails, {
           gpuList: this.gpuMetrics?.list || [],
         }),
