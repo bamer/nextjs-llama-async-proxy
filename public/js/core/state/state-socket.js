@@ -27,11 +27,12 @@ class StateSocket {
   }
 
   /**
-   * Initialize the socket connection and set up all handlers
-   * @param {Object} socket - Socket.IO socket instance
-   */
+    * Initialize the socket connection and set up all handlers
+    * @param {Object} socket - Socket.IO socket instance (raw, not wrapped)
+    */
   init(socket) {
     this.socket = socket;
+    // All setup uses the raw Socket.IO socket directly
     this.connection.setup(socket);
     this.broadcast.setup(socket);
     this.response.setup(socket);

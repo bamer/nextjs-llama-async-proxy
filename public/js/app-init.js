@@ -51,9 +51,18 @@
   // This allows requests to be queued while socket establishes
   function initializeSocket() {
     try {
-      console.log("[App] Initializing socket connection...");
-      socketClient.connect();
-      stateManager.init(socketClient);
+      console.log("[App] Initializing socket connection with Socket.IO...");
+      // Use Socket.IO directly (no wrapper)
+      const socket = io(window.location.origin, { 
+        path: "/llamaproxws", 
+        transports: ["websocket"] 
+      });
+      
+      socket.on("connect", () => {
+        console.log("[App] Socket.IO connected, socket ID:", socket.id);
+      });
+      
+      stateManager.init(socket);
       window.stateLlamaServer = new window.StateLlamaServer(
         stateManager.core,
         stateManager.socket

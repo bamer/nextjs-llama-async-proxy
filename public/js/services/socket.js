@@ -131,7 +131,10 @@ class SocketClient {
    */
   emit(event, data = {}) {
     if (this.socket?.connected) {
+      console.log("[SocketClient] Emitting event via raw socket:", event, "connected:", !!this.socket.connected);
       this.socket.emit(event, data);
+    } else {
+      console.log("[SocketClient] Socket not connected, cannot emit:", event, "connected:", !!this.socket?.connected);
     }
     return this;
   }

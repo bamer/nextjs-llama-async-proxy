@@ -15,18 +15,30 @@ export function registerConfigHandlers(socket, db) {
   /**
    * Get server configuration
    */
-  socket.on("config:get", (req) => {
+  socket.on("config:get", (req, ack) => {
     const id = req?.requestId || Date.now();
+    console.log("[CONFIG] Received config:get request, ID:", id);
     try {
       const config = db.getConfig();
-      // Always emit, never use ack() - client expects :result event
-      socket.emit("config:get:result", { success: true, data: { config }, requestId: id });
+      console.log("[CONFIG] Sending config:get response, ID:", id);
+      const response = { success: true, data: { config }, requestId: id };
+      if (typeof ack === "function") {
+        ack(response);
+      } else {
+        socket.emit("config:get:result", response);
+      }
     } catch (e) {
-      socket.emit("config:get:result", {
+      console.error("[CONFIG] Error in config:get:", e.message);
+      const response = {
         success: false,
         error: { message: e.message },
         requestId: id,
-      });
+      };
+      if (typeof ack === "function") {
+        ack(response);
+      } else {
+        socket.emit("config:get:result", response);
+      }
     }
   });
 
@@ -55,18 +67,27 @@ export function registerConfigHandlers(socket, db) {
   /**
    * Get user settings
    */
-  socket.on("settings:get", (req) => {
+  socket.on("settings:get", (req, ack) => {
     const id = req?.requestId || Date.now();
     try {
       const settings = db.getMeta("user_settings") || {};
-      // Always emit, never use ack() - client expects :result event
-      socket.emit("settings:get:result", { success: true, data: { settings }, requestId: id });
+      const response = { success: true, data: { settings }, requestId: id };
+      if (typeof ack === "function") {
+        ack(response);
+      } else {
+        socket.emit("settings:get:result", response);
+      }
     } catch (e) {
-      socket.emit("settings:get:result", {
+      const response = {
         success: false,
         error: { message: e.message },
         requestId: id,
-      });
+      };
+      if (typeof ack === "function") {
+        ack(response);
+      } else {
+        socket.emit("settings:get:result", response);
+      }
     }
   });
 

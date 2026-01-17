@@ -119,51 +119,56 @@ class DashboardController {
     
     stateManager.socket.request("config:get")
       .then((config) => {
-        console.log("[DASHBOARD] Config loaded");
+        console.log("[DASHBOARD] ✓ Config loaded (promise resolved)", config);
         if (this.comp) this.comp.updateConfig(config);
       })
-      .catch((e) => console.warn("[DASHBOARD] Config load failed:", e.message));
+      .catch((e) => console.warn("[DASHBOARD] ✗ Config load failed:", e.message));
 
     stateManager.socket.request("models:list")
       .then((models) => {
-        console.log("[DASHBOARD] Models loaded:", models?.models?.length || 0);
+        console.log("[DASHBOARD] ✓ Models loaded (promise resolved):", models?.models?.length || 0);
         if (this.comp) this.comp.updateModels(models);
       })
-      .catch((e) => console.warn("[DASHBOARD] Models load failed:", e.message));
+      .catch((e) => console.warn("[DASHBOARD] ✗ Models load failed:", e.message));
 
     stateManager.socket.request("metrics:get")
       .then((metrics) => {
-        console.log("[DASHBOARD] Metrics loaded");
+        console.log("[DASHBOARD] ✓ Metrics loaded (promise resolved)", metrics);
+        // Store metrics in state so subscribers get notified
+        stateManager.set("metrics", metrics?.metrics || null);
         if (this.comp) {
           const history = stateManager.get("metricsHistory") || [];
           this.comp.updateFromController(metrics?.metrics || null, history);
         }
       })
-      .catch((e) => console.warn("[DASHBOARD] Metrics load failed:", e.message));
+      .catch((e) => console.warn("[DASHBOARD] ✗ Metrics load failed:", e.message));
 
     stateManager.socket.request("metrics:history", { limit: 60 })
       .then((history) => {
-        console.log("[DASHBOARD] History loaded:", history?.history?.length || 0);
+        console.log("[DASHBOARD] ✓ History loaded (promise resolved):", history?.history?.length || 0);
+        // Store history in state so subscribers get notified
+        const historyData = history?.history || [];
+        stateManager.set("metricsHistory", historyData);
         if (this.comp) {
           const metrics = stateManager.get("metrics");
-          this.comp.updateFromController(metrics?.metrics || null, history?.history || []);
+          this.comp.updateFromController(metrics?.metrics || null, historyData);
         }
       })
-      .catch((e) => console.warn("[DASHBOARD] History load failed:", e.message));
+      .catch((e) => console.warn("[DASHBOARD] ✗ History load failed:", e.message));
 
     stateManager.socket.request("settings:get")
       .then((settings) => {
-        console.log("[DASHBOARD] Settings loaded");
+        console.log("[DASHBOARD] ✓ Settings loaded (promise resolved)", settings);
         if (this.comp) this.comp.updateSettings(settings);
       })
-      .catch((e) => console.warn("[DASHBOARD] Settings load failed:", e.message));
+      .catch((e) => console.warn("[DASHBOARD] ✗ Settings load failed:", e.message));
 
     stateManager.socket.request("presets:list")
       .then((presets) => {
-        console.log("[DASHBOARD] Presets loaded:", presets?.presets?.length || 0);
+        console.log("[DASHBOARD] ✓ Presets loaded (promise resolved):", presets?.presets?.length || 0);
         if (this.comp) this.comp.updatePresets(presets);
       })
-      .catch((e) => console.warn("[DASHBOARD] Presets load failed:", e.message));
+      .catch((e) => console.warn("[DASHBOARD] ✗ Presets load failed:", e.message));
 
     console.log("[DASHBOARD] All data requests fired (UI will update as data arrives)");
   }
@@ -255,9 +260,9 @@ class DashboardController {
   }
 
   /**
-     * Start the llama router server.
-     * @returns {Promise<void>} Promise that resolves when server is started
-     */
+      * Start the llama router server.
+      * @returns {Promise<void>} Promise that resolves when server is started
+      */
   async _start() {
     this._setLoading(true);
     try {
@@ -266,8 +271,8 @@ class DashboardController {
       console.log("[DASHBOARD] Start response:", response);
       showNotification("Starting router...", "info");
 
-      // Wait for status to become running
-      const status = await this._waitForRouterStatus("running", 15000);
+      // Wait for status to become running (no timeout, fully async)
+      const status = await this._waitForRouterStatus("running");
       if (status?.status === "running") {
         stateManager.set("llamaServerStatus", status);
         showNotification("Router started successfully", "success");
@@ -283,42 +288,29 @@ class DashboardController {
   }
 
   /**
-    * Wait for router status change via event subscription (no polling)
-    * @private
-    * @param {string} targetStatus - Status to wait for (e.g., "running")
-    * @param {number} timeoutMs - Timeout in milliseconds
-    * @returns {Promise<Object>} Router status object
-    */
-  async _waitForRouterStatus(targetStatus, timeoutMs = 15000) {
-    const controller = new AbortController();
-    const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs);
-
-    return new Promise((resolve, reject) => {
+     * Wait for router status change via event subscription (fully async, no timeout)
+     * @private
+     * @param {string} targetStatus - Status to wait for (e.g., "running")
+     * @returns {Promise<Object>} Router status object
+     */
+  async _waitForRouterStatus(targetStatus) {
+    return new Promise((resolve) => {
       // Check current status first
       const currentStatus = stateManager.get("llamaServerStatus");
       if (currentStatus?.status === targetStatus) {
-        clearTimeout(timeoutHandle);
+        console.log("[DASHBOARD] Current status is already:", targetStatus);
         return resolve(currentStatus);
       }
 
-      // Subscribe to status changes (event-driven, no polling)
+      // Subscribe to status changes (event-driven, no polling, no timeout)
       const unsubscribe = stateManager.subscribe("llamaServerStatus", (status) => {
-        console.log("[DASHBOARD] Status changed:", status);
+        console.log("[DASHBOARD] Status event received:", status?.status);
         if (status?.status === targetStatus) {
-          clearTimeout(timeoutHandle);
-          controller.signal.removeEventListener("abort", onAbort);
+          console.log("[DASHBOARD] Target status reached:", targetStatus);
           unsubscribe();
           resolve(status);
         }
       });
-
-      // Handle timeout
-      const onAbort = () => {
-        unsubscribe();
-        reject(new Error(`Router did not reach "${targetStatus}" status within ${timeoutMs}ms`));
-      };
-
-      controller.signal.addEventListener("abort", onAbort);
     });
   }
 
