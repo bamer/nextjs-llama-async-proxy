@@ -114,6 +114,10 @@ class DashboardController {
   _loadDataAsync() {
     console.log("[DASHBOARD] Starting parallel data requests...");
 
+    // Track which data has been loaded to trigger removal of skeleton once all arrive
+    let loadedCount = 0;
+    const expectedCount = 6; // config, models, metrics, history, settings, presets
+    
     // Use direct socket requests (bypass caching for initial load)
     // This ensures promises execute and resolve properly
     
@@ -133,15 +137,21 @@ class DashboardController {
 
     stateManager.socket.request("metrics:get")
       .then((metrics) => {
-        console.log("[DASHBOARD] ✓ Metrics loaded (promise resolved)", metrics);
+        console.log("[DASHBOARD] ✓ Metrics loaded (promise resolved):", metrics);
         // Store metrics in state so subscribers get notified
-        stateManager.set("metrics", metrics?.metrics || null);
+        const metricsData = metrics?.metrics;
+        console.log("[DASHBOARD] Setting metrics in state:", metricsData);
+        stateManager.set("metrics", metricsData || null);
+        console.log("[DASHBOARD] Metrics state set. Subscribers should be notified");
         if (this.comp) {
           const history = stateManager.get("metricsHistory") || [];
-          this.comp.updateFromController(metrics?.metrics || null, history);
+          this.comp.updateFromController(metricsData || null, history);
         }
       })
-      .catch((e) => console.warn("[DASHBOARD] ✗ Metrics load failed:", e.message));
+      .catch((e) => {
+        console.error("[DASHBOARD] ✗ Metrics load failed:", e);
+        console.error("[DASHBOARD] Error details:", e.message);
+      });
 
     stateManager.socket.request("metrics:history", { limit: 60 })
       .then((history) => {

@@ -69,6 +69,7 @@ class DashboardPage extends Component {
     // Subscribe to metrics updates - arrive independently
     this.unsubscribers.push(
       stateManager.subscribe("metrics", (m) => {
+        console.log("[DashboardPage] Metrics subscription fired with:", m);
         this.handleMetricsChange(m);
         this._updateMetricsSection();
       })
@@ -118,6 +119,7 @@ class DashboardPage extends Component {
   _updateMetricsSection() {
     const section = this.$("[data-section='metrics']");
     if (section) {
+      console.log("[DashboardPage] _updateMetricsSection - removing skeleton");
       section.classList.remove("loading-skeleton");
       section.setAttribute("aria-busy", "false");
     }
@@ -126,6 +128,7 @@ class DashboardPage extends Component {
   _updateChartsSection() {
     const section = this.$("[data-section='charts']");
     if (section) {
+      console.log("[DashboardPage] _updateChartsSection - removing skeleton");
       section.classList.remove("loading-skeleton");
       section.setAttribute("aria-busy", "false");
     }
