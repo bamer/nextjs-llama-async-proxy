@@ -14,6 +14,7 @@ import {
   isPortInUse,
 } from "./process.js";
 import { llamaApiRequest } from "./api.js";
+import { initializeLlamaMetricsScraper } from "../../metrics.js";
 
 // Module-level state
 let llamaServerProcess = null;
@@ -209,6 +210,11 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
           await llamaApiRequest("/models", "GET", null, llamaServerUrl);
           console.log(`[LLAMA] Server is ready and responding on port ${llamaServerPort}`);
           llamaServerStartTime = Date.now(); // Track start time for uptime
+          
+          // UPDATE METRICS SCRAPER WITH CORRECT PORT
+          initializeLlamaMetricsScraper(llamaServerPort, null);
+          console.log(`[LLAMA] Updated metrics scraper to port ${llamaServerPort}`);
+          
           notifyServerEvent("started", { port: llamaServerPort, url: llamaServerUrl, mode: "router", timestamp: Date.now() });
           return { success: true, port: llamaServerPort, url: llamaServerUrl };
         } catch (e) {

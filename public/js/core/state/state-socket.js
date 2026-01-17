@@ -109,51 +109,41 @@ class StateSocket {
   }
 
   /**
-   * Make an async request to the server with automatic reconnection handling
-   * @param {string} event - Event name to request
-   * @param {Object} [data={}] - Data payload to send
-   * @returns {Promise<Object>} Response data from server
-   * @throws {Error} If connection timeout or server error
-   */
-  request(event, data = {}) {
-    return new Promise((resolve, reject) => {
-      if (!this.connection.isConnected()) {
-        const checkConnection = setInterval(() => {
-          if (this.connection.isConnected()) {
-            clearInterval(checkConnection);
-            this._doRequest(event, data, resolve, reject);
-          }
-        }, 100);
-        setTimeout(() => {
-          clearInterval(checkConnection);
-          reject(new Error("Connection timeout"));
-        }, 5000);
-        return;
-      }
-      this._doRequest(event, data, resolve, reject);
-    });
-  }
+    * Make an async request to the server with automatic reconnection handling - NO TIMEOUT
+    * @param {string} event - Event name to request
+    * @param {Object} [data={}] - Data payload to send
+    * @returns {Promise<Object>} Response data from server
+    */
+   request(event, data = {}) {
+     return new Promise((resolve, reject) => {
+       if (!this.connection.isConnected()) {
+         const checkConnection = setInterval(() => {
+           if (this.connection.isConnected()) {
+             clearInterval(checkConnection);
+             this._doRequest(event, data, resolve, reject);
+           }
+         }, 100);
+         // No timeout - wait indefinitely for connection
+         return;
+       }
+       this._doRequest(event, data, resolve, reject);
+     });
+   }
 
   /**
-   * Execute the actual socket request - NO TIMEOUT
-   * @param {string} event - Event name
-   * @param {Object} data - Request data payload
-   * @param {Function} resolve - Promise resolve callback
-   * @param {Function} reject - Promise reject callback
-   */
-  _doRequest(event, data, resolve, reject) {
-    const reqId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    * Execute the socket request - NO TIMEOUT, let it complete naturally
+    * @param {string} event - Event name
+    * @param {Object} data - Request data payload
+    * @param {Function} resolve - Promise resolve callback
+    * @param {Function} reject - Promise reject callback
+    */
+   _doRequest(event, data, resolve, reject) {
+     const reqId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // No timeout - let it complete when it completes
-    // Silently fail if server doesn't respond (not a critical error)
-    const timeout = setTimeout(() => {
-      this.pending.delete(reqId);
-      reject(new Error(`Request timeout for: ${event}`));
-    }, 60000); // 60s max, then give up (very generous for localhost)
-
-    this.pending.set(reqId, { resolve, reject, event, timeout });
-    this.socket.emit(event, { ...data, requestId: reqId });
-  }
+     // No timeout - let requests complete naturally
+     this.pending.set(reqId, { resolve, reject, event, timeout: null });
+     this.socket.emit(event, { ...data, requestId: reqId });
+   }
 
   /**
    * Clean up resources and disconnect handlers

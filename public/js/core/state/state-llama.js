@@ -1,6 +1,6 @@
 /**
- * Llama Server State Module - Async + Reactive
- * FIXED: No blocking, no timeouts - just fire requests and update when data arrives
+ * Llama Server State Module - Single Source of Truth
+ * ALL router status flows through this module
  */
 
 class StateLlamaServer {
@@ -9,13 +9,22 @@ class StateLlamaServer {
     this.socket = stateSocket;
 
     // Initialize with default loading state
-    this.core.set("llamaServerStatus", {
-      status: "loading",
+    // THIS IS THE SINGLE SOURCE OF TRUTH for router status
+    // Schema-compatible structure matching state-validator.js expectations
+    const initialState = {
+      status: "idle", // Start as idle, not loading (schema expects running/stopped/error)
       port: null,
-      url: null,
       models: [],
-      mode: "router"
-    });
+      // Additional fields not in schema (will be ignored by validator)
+      url: null,
+      mode: "router",
+      lastUpdated: Date.now(),
+      lastError: null,
+    };
+
+    this.core.set("llamaServerStatus", initialState);
+    // Also expose as routerStatus for backward compatibility (SAME data)
+    this.core.set("routerStatus", initialState);
 
     // Set up handlers and fire requests
     this.setupBroadcastHandlers();
@@ -23,20 +32,20 @@ class StateLlamaServer {
   }
 
   /**
-   * Set up broadcast handlers - all go through mergeState
+   * Set up broadcast handlers - ALL status updates flow through here
    */
   setupBroadcastHandlers() {
     if (!this.socket.socket) return;
 
-    // Primary: llama:status response (has models)
+    // Primary: llama:status response (authoritative status from backend)
     this.socket.socket.on("llama:status", (data) => {
       const statusData = data?.data ? data.data : data;
       if (statusData?.status) {
-        this.mergeState(statusData, { hasModels: true });
+        this.updateUnifiedStatus(statusData, { hasModels: true, source: "llama:status" });
       }
     });
 
-    // Secondary: llama:server-event (status changes only)
+    // Secondary: llama:server-event (state change events)
     this.socket.socket.on("llama:server-event", (event) => {
       const data = event?.data || event;
       let status = "unknown";
@@ -44,89 +53,110 @@ class StateLlamaServer {
       else if (event.type === "stopped" || event.type === "closed") status = "idle";
       else if (event.type === "error") status = "error";
 
-      this.mergeState({
+      this.updateUnifiedStatus({
         status,
         port: data.port || null,
         url: data.url || null,
         mode: data.mode || "router",
-      });
+      }, { source: "llama:server-event" });
     });
 
-    // Tertiary: llama-server:status (metrics only, preserve models)
+    // Tertiary: llama-server:status (metrics updates, preserve status)
     this.socket.socket.on("llama-server:status", (data) => {
       if (data?.type === "broadcast") {
         const newStatus = data.data;
-        this.mergeState({
-          status: newStatus.status,
-          url: newStatus.url,
-          port: newStatus.port,
-          metrics: newStatus.metrics,
-          rawMetrics: newStatus.rawMetrics,
-        });
+        // Only update metrics, don't change running state
+        const current = this.core.get("llamaServerStatus") || {};
+        this.core.set("llamaServerMetrics", newStatus.metrics || {});
+        
+        // Sync both states
+        this.core.set("routerStatus", { ...current, metrics: newStatus.metrics });
       }
+    });
+
+    // Handle router-stopped broadcast (clear models, keep status)
+    this.socket.socket.on("models:router-stopped", () => {
+      const current = this.core.get("llamaServerStatus") || {};
+      const newState = { ...current, models: [], status: "idle", port: null, url: null };
+      this.core.set("llamaServerStatus", newState);
+      this.core.set("routerStatus", newState);
+      console.log("[StateLlamaServer] Router stopped - cleared models and status");
     });
   }
 
   /**
-   * Merge new state data, preserving models
+   * UPDATE BOTH STATUS KEYS SIMULTANEOUSLY
+   * This ensures no state drift between llamaServerStatus and routerStatus
    */
-  mergeState(newData, options = {}) {
+  updateUnifiedStatus(newData, options = {}) {
     const existing = this.core.get("llamaServerStatus") || {};
 
-    // Preserve models unless new data explicitly provides them
+    // Normalize status to match schema enum (running, stopped, error)
+    let normalizedStatus = newData.status || existing.status || "idle";
+    if (!["running", "stopped", "error"].includes(normalizedStatus)) {
+      normalizedStatus = "idle"; // Default to idle for unknown statuses
+    }
+
+    // Merge new data
     const merged = {
       ...existing,
       ...newData,
-      models: options.hasModels ? newData.models : (existing.models || newData.models),
+      status: normalizedStatus,
+      port: newData.port !== undefined ? newData.port : existing.port,
+      lastUpdated: Date.now(),
+      lastError: null,
+      // Preserve models unless explicitly provided
+      models: options.hasModels ? (newData.models || []) : (existing.models || newData.models || []),
     };
 
+    // Set BOTH keys to the SAME value
     this.core.set("llamaServerStatus", merged);
-    if (newData.metrics) {
-      this.core.set("llamaServerMetrics", newData.metrics);
-    }
+    this.core.set("routerStatus", merged);
+
+    console.log(`[StateLlamaServer] Updated unified status: ${merged.status} (source: ${options.source || "unknown"})`);
   }
 
   /**
-   * Query server status - fire and forget, update when arrives
+   * Query server status - fire and forget
    */
   queryStatusOnReady() {
     if (!this.socket.socket) return;
 
-    // If already connected, fetch immediately
     if (this.socket.socket.connected) {
       this.fetchStatus();
       return;
     }
 
-    // Otherwise wait for connect event
     this.socket.socket.on("connect", () => {
       this.fetchStatus();
     });
   }
 
   /**
-   * Fetch status - NO TIMEOUT, fire and forget
+   * Fetch status from backend
    */
   fetchStatus() {
     this.socket.request("llama:status")
       .then((result) => {
         const statusData = result?.status || result;
         if (statusData) {
-          this.mergeState(statusData, { hasModels: true });
+          this.updateUnifiedStatus(statusData, { hasModels: true, source: "fetchStatus" });
         }
       })
       .catch((e) => {
-        // Failed to fetch - set idle state (not a warning, just expected)
-        this.mergeState({
+        // Failed to fetch - set idle state
+        const idleState = {
           status: "idle",
           port: null,
           url: null,
           mode: "router",
           models: [],
-          modelsError: e.message
-        });
+          lastUpdated: Date.now(),
+          lastError: e.message,
+        };
+        this.core.set("llamaServerStatus", idleState);
+        this.core.set("routerStatus", idleState);
       });
-    // No timeout - let it complete when it completes
   }
 
   async start() {

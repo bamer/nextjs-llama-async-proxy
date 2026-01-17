@@ -125,13 +125,25 @@ if (typeof ChartManager === "undefined") {
     updateCharts(metrics, history) {
       if (!history) return;
 
+      console.log(`[ChartManager] updateCharts called with ${history.length} records`);
+
       if (history.length > 0) {
-        // Update existing charts with new data
-        this.usageChart.update(history);
-        this.memoryChart.update(history);
+        // Get canvases
+        const usageCanvas = this._getChartCanvas("usage");
+        const memoryCanvas = this._getChartCanvas("memory");
+        
+        // Recreate charts with historical data (this ensures proper rendering)
+        if (usageCanvas && usageCanvas.width > 0 && usageCanvas.height > 0) {
+          console.log("[ChartManager] Recreating usage chart with historical data");
+          this.usageChart.create(usageCanvas, history);
+        }
+        
+        if (memoryCanvas && memoryCanvas.width > 0 && memoryCanvas.height > 0) {
+          console.log("[ChartManager] Recreating memory chart with historical data");
+          this.memoryChart.create(memoryCanvas, history);
+        }
       } else {
         // Create charts with empty data if they don't exist yet
-        // This ensures charts are ready when data arrives
         if (!this.usageChart.exists()) {
           const canvas = this._getChartCanvas("usage");
           if (canvas && canvas.width > 0 && canvas.height > 0) {

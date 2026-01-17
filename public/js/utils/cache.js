@@ -69,6 +69,7 @@ class CacheInstance {
   constructor(name, options = {}) {
     this._name = name;
     this._cache = new Map();
+    this._inFlight = new Map(); // Track ongoing requests to deduplicate concurrent calls
     this._ttl = options.ttl || 30000; // 30 seconds default
     this._maxSize = options.maxSize || 100;
     this._hits = 0;
@@ -170,6 +171,27 @@ class CacheInstance {
       }
     }
 
+    // Check if request is already in flight to deduplicate concurrent calls
+    if (this._inFlight.has(key)) {
+      return this._inFlight.get(key);
+    }
+
+    // Start the request and track it
+    const promise = this._doFetch(key, fetchFn, ttl);
+    this._inFlight.set(key, promise);
+
+    try {
+      return await promise;
+    } finally {
+      this._inFlight.delete(key);
+    }
+  }
+
+  /**
+   * Execute the actual fetch operation
+   * @private
+   */
+  async _doFetch(key, fetchFn, ttl) {
     const result = await fetchFn();
     this.set(key, result, ttl);
     return result;
@@ -228,6 +250,7 @@ class CacheInstance {
       clearInterval(this._cleaner);
       this._cleaner = null;
     }
+    this._inFlight.clear();
     this.clear();
   }
 

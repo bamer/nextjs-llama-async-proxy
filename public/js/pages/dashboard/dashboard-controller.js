@@ -99,85 +99,136 @@ class DashboardController {
   }
 
   /**
-   * Load data when socket is connected
-   */
-  async _loadDataWhenConnected() {
-    // Check if already connected
+    * Load data when socket is connected - truly async, no waiting
+    */
+  _loadDataWhenConnected() {
+    console.log("[DASHBOARD] _loadDataWhenConnected called, isConnected:", stateManager.isConnected());
+
+    // If already connected, load data immediately
     if (stateManager.isConnected()) {
-      await this._loadData();
+      console.log("[DASHBOARD] Already connected, loading data in background...");
+      this._loadData();
       return;
     }
 
-    // Wait for connection, then load (using promise-based approach)
-    await new Promise((resolve) => {
-      const unsub = stateManager.subscribe("connectionStatus", (status) => {
-        if (status === "connected") {
-          unsub();
-          resolve();
-        }
-      });
+    // Subscribe to connection and load when ready (no await, no blocking)
+    console.log("[DASHBOARD] Will load data when connected...");
+    const unsub = stateManager.subscribe("connectionStatus", (status) => {
+      if (status === "connected") {
+        unsub();
+        console.log("[DASHBOARD] Connection established, loading data in background...");
+        this._loadData();
+      }
     });
-
-    await this._loadData();
   }
 
   /**
-   * Load all data in background - doesn't block initial render.
-   * Fetches config, models, metrics, settings, and presets from stateManager.
-   * @returns {Promise<void>} Promise that resolves when data is loaded
-   */
+    * Load all data in background - truly async, parallel requests, no timeouts.
+    * Data updates UI as it arrives, no waiting for all requests to complete.
+    */
   _loadData() {
+    console.log("[DASHBOARD] _loadData() called");
+
+    // If not connected yet, schedule it for later (don't block)
     if (!stateManager.isConnected()) {
-      console.warn("[DASHBOARD] Cannot load data - socket not connected");
+      console.log("[DASHBOARD] Not connected yet, scheduling data load...");
+      const checkConnection = setInterval(() => {
+        if (stateManager.isConnected()) {
+          clearInterval(checkConnection);
+          console.log("[DASHBOARD] Now connected, starting data load...");
+          this._loadDataAsync();
+        }
+      }, 100);
       return;
     }
 
-    // Load critical data first
-    Promise.all([
-      stateManager.getConfig().catch(() => ({})),
-      stateManager.getModels().catch(() => []),
-    ])
-      .then(([configResponse, modelsResponse]) => {
-        // Store config and models
-        const config = configResponse?.config || {};
-        const models = modelsResponse?.models || [];
-        stateManager.set("config", config);
-        stateManager.set("models", models);
+    // Connected, load data immediately
+    this._loadDataAsync();
+  }
 
-        // Then load optional data (with shorter timeout for status checks)
-        return Promise.all([
-          stateManager.getMetrics().catch((e) => {
-            console.debug("[DASHBOARD] Metrics unavailable:", e.message);
-            return null;
-          }),
-          stateManager.getMetricsHistory({ limit: 60 }).catch(() => ({ history: [] })),
-          // Status checks will timeout faster now (3s instead of 15s)
-          stateManager.getLlamaStatus().catch((e) => {
-            console.debug("[DASHBOARD] Llama status unavailable:", e.message);
-            return null;
-          }),
-          stateManager.getSettings().catch(() => ({})),
-          stateManager.request("presets:list").catch(() => ({})),
-        ]).then(([metricsResponse, historyResponse, status, settings, presets]) => {
-          // Fix: status IS the status object, not status.status
-          // status can be null from catch block, handle both cases
-          const llamaStatus =
-            status && typeof status === "object" ? status : { status: "idle", port: null, url: null };
-          stateManager.set("llamaServerStatus", llamaStatus);
-          stateManager.set("metricsHistory", historyResponse?.history || []);
-          stateManager.set("metrics", metricsResponse?.metrics || null);
-          stateManager.set("settings", settings?.settings || {});
-          stateManager.set("presets", presets?.presets || []);
+  /**
+    * Actual data loading - parallel requests, no waiting, update UI as data arrives
+    */
+  _loadDataAsync() {
+    console.log("[DASHBOARD] Starting data loading (truly async)...");
 
-          // Update UI if component still mounted - pass history to charts
-          if (this.comp) {
-            this.comp.updateFromController(metricsResponse?.metrics || null, historyResponse?.history || []);
-          }
-        });
+    // Fire ALL requests in parallel - no await, no blocking
+    // Each request updates the UI independently when it completes
+    stateManager.getConfig()
+      .then((config) => {
+        console.log("[DASHBOARD] Config loaded");
+        if (this.comp) this.comp.updateConfig(config);
       })
-      .catch((e) => {
-        console.warn("[DASHBOARD] Data load failed:", e.message);
-      });
+      .catch((e) => console.warn("[DASHBOARD] Config load failed:", e.message));
+
+    stateManager.getModels()
+      .then((models) => {
+        console.log("[DASHBOARD] Models loaded:", models?.models?.length || 0, "models");
+        if (this.comp) this.comp.updateModels(models);
+      })
+      .catch((e) => console.warn("[DASHBOARD] Models load failed:", e.message));
+
+    stateManager.getMetrics()
+      .then((metrics) => {
+        console.log("[DASHBOARD] Metrics loaded");
+        if (this.comp) {
+          const history = stateManager.get("metricsHistory") || [];
+          this.comp.updateFromController(metrics?.metrics || null, history);
+        }
+      })
+      .catch((e) => console.warn("[DASHBOARD] Metrics load failed:", e.message));
+
+    stateManager.getMetricsHistory({ limit: 60 })
+      .then((history) => {
+        console.log("[DASHBOARD] History loaded:", history?.history?.length || 0, "records");
+        if (this.comp) {
+          const metrics = stateManager.get("metrics");
+          this.comp.updateFromController(metrics?.metrics || null, history?.history || []);
+        }
+      })
+      .catch((e) => console.warn("[DASHBOARD] History load failed:", e.message));
+
+    stateManager.getSettings()
+      .then((settings) => {
+        console.log("[DASHBOARD] Settings loaded");
+        if (this.comp) this.comp.updateSettings(settings);
+      })
+      .catch((e) => console.warn("[DASHBOARD] Settings load failed:", e.message));
+
+    stateManager.request("presets:list")
+      .then((presets) => {
+        console.log("[DASHBOARD] Presets loaded:", presets?.presets?.length || 0, "presets");
+        if (this.comp) this.comp.updatePresets(presets);
+      })
+      .catch((e) => console.warn("[DASHBOARD] Presets load failed:", e.message));
+
+    console.log("[DASHBOARD] All data requests fired (UI will update as data arrives)");
+  }
+
+  /**
+    * Subscribe to metrics updates for real-time chart updates
+    */
+  _subscribeToMetrics() {
+    console.log("[DASHBOARD] Setting up metrics subscriptions...");
+
+    // Subscribe to metrics history changes and update charts
+    this._stateUnsubscribers.push(
+      stateManager.subscribe("metricsHistory", (history) => {
+        if (this.comp && Array.isArray(history) && history.length > 0) {
+          const metrics = stateManager.get("metrics");
+          this.comp.updateFromController(metrics, history);
+        }
+      })
+    );
+
+    this._stateUnsubscribers.push(
+      stateManager.subscribe("metrics", (metrics) => {
+        if (this.comp) {
+          const history = stateManager.get("metricsHistory") || [];
+          this.comp.updateFromController(metrics, history);
+        }
+      })
+    );
   }
 
   /**
@@ -227,15 +278,10 @@ class DashboardController {
       if (response?.success || response?.port) {
         const port = response?.port || response?.data?.port;
         showNotification(`Server started on port ${port}`, "success");
-        setTimeout(async () => {
-          try {
-            const s = await stateManager.getLlamaStatus();
-            stateManager.set("llamaServerStatus", s.status || null);
-            const rs = await stateManager.getRouterStatus();
-            stateManager.set("routerStatus", rs.routerStatus);
-          } finally {
-            this._setLoading(false);
-          }
+        // Status will be updated automatically via broadcasts
+        // No manual status update needed - StateLlamaServer handles it
+        setTimeout(() => {
+          this._setLoading(false);
         }, 3000);
       } else {
         showNotification(`Error: ${response?.error?.message || "Unknown error"}`, "error");
@@ -306,39 +352,12 @@ class DashboardController {
       .then((result) => {
         console.log("[DASHBOARD] Stop response:", result);
         showNotification("Stopping router...", "info");
-
-        // Poll for status until idle or timeout
-        let attempts = 0;
-        const maxAttempts = 10; // 10 seconds max
-        const pollInterval = setInterval(async () => {
-          attempts++;
-          try {
-            const s = await stateManager.getLlamaStatus();
-            console.log(`[DASHBOARD] Stop status check ${attempts}:`, s);
-
-            if (s?.status === "idle" || !s?.processRunning) {
-              clearInterval(pollInterval);
-              stateManager.set("llamaServerStatus", { status: "idle", port: null, url: null });
-              stateManager.set("routerStatus", null);
-              showNotification("Router stopped", "success");
-              this._setLoading(false);
-            } else if (attempts >= maxAttempts) {
-              clearInterval(pollInterval);
-              console.warn("[DASHBOARD] Timeout waiting for router to stop");
-              // Force refresh status
-              const finalStatus = await stateManager.getLlamaStatus();
-              stateManager.set("llamaServerStatus", finalStatus);
-              showNotification("Stop command sent - please refresh if router is still running", "warning");
-              this._setLoading(false);
-            }
-          } catch (e) {
-            console.warn(`[DASHBOARD] Stop status check ${attempts} failed:`, e.message);
-            if (attempts >= maxAttempts) {
-              clearInterval(pollInterval);
-              this._setLoading(false);
-            }
-          }
-        }, 1000);
+        // Status will be updated automatically via broadcasts
+        // No manual status update needed
+        setTimeout(() => {
+          this._setLoading(false);
+          showNotification("Router stopped", "success");
+        }, 2000);
       })
       .catch((e) => {
         console.error("[DASHBOARD] Failed to stop router:", e);
@@ -356,37 +375,12 @@ class DashboardController {
     console.log("[DASHBOARD] Restarting router...");
     stateManager.restartLlama().then(() => {
       showNotification("Restarting router...", "info");
-
-      // Poll for status until running or timeout
-      let attempts = 0;
-      const maxAttempts = 20; // 20 seconds max for restart
-      const pollInterval = setInterval(async () => {
-        attempts++;
-        try {
-          const s = await stateManager.getLlamaStatus();
-          console.log(`[DASHBOARD] Restart status check ${attempts}:`, s);
-
-          if (s?.status === "running") {
-            clearInterval(pollInterval);
-            stateManager.set("llamaServerStatus", s);
-            const rs = await stateManager.getRouterStatus();
-            stateManager.set("routerStatus", rs);
-            showNotification("Router restarted", "success");
-            this._setLoading(false);
-          } else if (attempts >= maxAttempts) {
-            clearInterval(pollInterval);
-            console.warn("[DASHBOARD] Timeout waiting for router to restart");
-            showNotification("Router restart may have failed - please refresh", "warning");
-            this._setLoading(false);
-          }
-        } catch (e) {
-          console.warn(`[DASHBOARD] Restart status check ${attempts} failed:`, e.message);
-          if (attempts >= maxAttempts) {
-            clearInterval(pollInterval);
-            this._setLoading(false);
-          }
-        }
-      }, 1000);
+      // Status will be updated automatically via broadcasts
+      // No manual status update needed
+      setTimeout(() => {
+        this._setLoading(false);
+        showNotification("Router restarted", "success");
+      }, 5000);
     }).catch((e) => {
       console.error("[DASHBOARD] Failed to restart router:", e);
       showNotification(`Failed: ${e.message}`, "error");

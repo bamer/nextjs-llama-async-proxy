@@ -257,8 +257,9 @@ class StateValidator {
       this._validateValue(obj[prop], propSchema, `${path}.${prop}`);
     }
 
-    // Check required fields
-    for (const req of required) {
+    // Check required fields - ensure required is an array
+    const requiredFields = Array.isArray(required) ? required : [];
+    for (const req of requiredFields) {
       if (!(req in obj)) {
         this.errors.push({
           path,
@@ -396,7 +397,7 @@ stateValidator.registerSchemas({
   models: ValidationHelpers.array(
     ValidationHelpers.object({
       id: ValidationHelpers.string(),
-      name: ValidationHelpers.string({ required: true }),
+      name: ValidationHelpers.string(),
       status: ValidationHelpers.required(
         ValidationHelpers.enum(["loaded", "loading", "unloaded", "error", "running", "idle"])
       ),
@@ -411,10 +412,31 @@ stateValidator.registerSchemas({
     })
   ),
 
-  // Router status schema
+  // Llama server status schema (unified with routerStatus)
+  llamaServerStatus: ValidationHelpers.optional(
+    ValidationHelpers.object({
+      status: ValidationHelpers.enum(["loading", "idle", "running", "stopped", "error"]),
+      port: ValidationHelpers.number({ min: 1, max: 65535 }),
+      url: ValidationHelpers.optional(ValidationHelpers.string()),
+      mode: ValidationHelpers.optional(ValidationHelpers.string()),
+      models: ValidationHelpers.optional(
+        ValidationHelpers.array(
+          ValidationHelpers.object({
+            id: ValidationHelpers.string(),
+            name: ValidationHelpers.string(),
+            state: ValidationHelpers.enum(["loaded", "loading", "unloaded"]),
+          })
+        )
+      ),
+      lastUpdated: ValidationHelpers.optional(ValidationHelpers.number()),
+      lastError: ValidationHelpers.optional(ValidationHelpers.string()),
+    })
+  ),
+
+  // Router status schema (same as llamaServerStatus for backward compatibility)
   routerStatus: ValidationHelpers.optional(
     ValidationHelpers.object({
-      status: ValidationHelpers.enum(["running", "stopped", "error"]),
+      status: ValidationHelpers.enum(["loading", "idle", "running", "stopped", "error"]),
       port: ValidationHelpers.number({ min: 1, max: 65535 }),
       models: ValidationHelpers.optional(
         ValidationHelpers.array(

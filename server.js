@@ -52,7 +52,20 @@ async function main() {
   const io = new Server(server, {
     cors: { origin: "*", methods: ["GET", "POST"] },
     path: "/llamaproxws",
-    transports: ["websocket"],
+    transports: ["websocket"], // WebSocket only - polling is forbidden
+  });
+
+  // Debug WebSocket connections
+  io.engine.on("connection_error", (err) => {
+    console.error("[WS] Connection error:", {
+      message: err.message,
+      code: err.code,
+      context: err.context,
+    });
+  });
+
+  io.engine.on("connection", (socket) => {
+    console.log("[WS] New engine connection:", socket.id);
   });
 
   // Initialize llama metrics scraper (pass db for dynamic port lookup)

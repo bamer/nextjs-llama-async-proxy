@@ -70,10 +70,17 @@ export async function startMetricsCollection(io, db) {
 export async function collectMetrics(io, db) {
   try {
     // Collect system metrics
-    const cpuUsage = collectCpuMetrics();
-    const { memoryUsedPercent, swapUsedPercent } = await collectMemoryMetrics();
-    const { diskUsedPercent } = await collectDiskMetrics();
-    const { gpuUsage, gpuMemoryUsed, gpuMemoryTotal } = collectGpuMetrics();
+    // Use Promise.all for parallel async collection of independent metrics
+    const [cpuUsage, memoryMetrics, diskMetrics, gpuMetrics] = await Promise.all([
+      Promise.resolve(collectCpuMetrics()),
+      collectMemoryMetrics(),
+      collectDiskMetrics(),
+      collectGpuMetrics(),
+    ]);
+
+    const { memoryUsedPercent, swapUsedPercent } = memoryMetrics;
+    const { diskUsedPercent } = diskMetrics;
+    const { gpuUsage, gpuMemoryUsed, gpuMemoryTotal } = gpuMetrics;
 
     // Save to database
     db.saveMetrics({
@@ -113,8 +120,10 @@ export async function collectMetrics(io, db) {
       db.pruneMetrics(10000);
     }
 
-    // Collect llama-server metrics (every collection now since interval is 30s)
-    collectLlamaMetrics(io, db);
+    // Collect llama-server metrics (parallel with error handling)
+    collectLlamaMetrics(io, db).catch((e) => {
+      console.debug("[METRICS] Llama metrics collection skipped:", e.message);
+    });
   } catch (e) {
     console.error("[METRICS] Error:", e.message);
   }

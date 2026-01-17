@@ -15,7 +15,6 @@ class StateResponseHandlers {
     const handleResponse = (event, data) => {
       if (data?.requestId && this.pending.has(data.requestId)) {
         const p = this.pending.get(data.requestId);
-        if (p.timeout) clearTimeout(p.timeout);
         this.pending.delete(data.requestId);
         if (data.success) {
           p.resolve(data.data);

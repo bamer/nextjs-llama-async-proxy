@@ -19,11 +19,60 @@ export function initializeLlamaMetricsScraper(port, db = null) {
   }
 }
 
+/**
+ * Default metrics when llama-server is not running or metrics unavailable
+ */
+function getDefaultMetrics() {
+  return {
+    promptTokensSeconds: 0,
+    predictedTokensSeconds: 0,
+    promptTokensTotal: 0,
+    predictedTokensTotal: 0,
+    vramTotal: 0,
+    vramUsed: 0,
+    nCtx: 0,
+    nParallel: 0,
+    nThreads: 0,
+    activeModels: 0,
+    queueSize: 0,
+    totalRequests: 0,
+    nDecodeTotal: 0,
+    nBusySlotsPerDecode: 0,
+    nTokensMax: 0,
+    promptSecondsTotal: 0,
+    predictedSecondsTotal: 0,
+    uptime: 0,
+  };
+}
+
 export async function collectLlamaMetrics(io, db = null) {
-  if (!llamaMetricsScraper) return;
+  // Emit stopped status when server is not running
+  if (!llamaMetricsScraper) {
+    console.log("[DEBUG] LlamaMetrics: Scraper not initialized, emitting stopped status");
+    io.emit("llama-server:status", {
+      type: "broadcast",
+      data: {
+        status: "stopped",
+        url: null,
+        port: null,
+        metrics: getDefaultMetrics(),
+        rawMetrics: null,
+      },
+      timestamp: Date.now(),
+    });
+    return;
+  }
 
   try {
+    console.log("[DEBUG] LlamaMetrics: Fetching metrics from llama-server...");
     const metrics = await llamaMetricsScraper.getMetrics();
+    console.log("[DEBUG] LlamaMetrics: Raw metrics received:", {
+      hasData: !!metrics,
+      tokensPerSecond: metrics?.tokensPerSecond,
+      activeModels: metrics?.activeModels,
+      uptime: metrics?.uptime,
+    });
+
     if (metrics) {
       const currentPort = llamaMetricsScraper.port || 8080;
       const url = `http://127.0.0.1:${currentPort}`;
@@ -47,7 +96,7 @@ export async function collectLlamaMetrics(io, db = null) {
         nTokensMax: metrics.nTokensMax || 0,
         promptSecondsTotal: metrics.promptSecondsTotal || 0,
         predictedSecondsTotal: metrics.predictedSecondsTotal || 0,
-        uptime: getServerUptime(),
+        uptime: metrics.uptime || getServerUptime(),
       };
 
       // Broadcast metrics with type for filtering
@@ -62,9 +111,35 @@ export async function collectLlamaMetrics(io, db = null) {
         },
         timestamp: Date.now(),
       });
+      console.log("[DEBUG] LlamaMetrics: Emitted running status with metrics");
+    } else {
+      console.log("[DEBUG] LlamaMetrics: No metrics data, emitting running with zeros");
+      io.emit("llama-server:status", {
+        type: "broadcast",
+        data: {
+          status: "running",
+          url: null,
+          port: null,
+          metrics: getDefaultMetrics(),
+          rawMetrics: null,
+        },
+        timestamp: Date.now(),
+      });
     }
   } catch (e) {
-    // Silently fail - metrics are optional
+    console.warn("[LlamaMetrics] Metrics collection failed:", e.message);
+    // Emit metrics as zero on failure instead of silent drop
+    io.emit("llama-server:status", {
+      type: "broadcast",
+      data: {
+        status: "running",
+        url: null,
+        port: null,
+        metrics: getDefaultMetrics(),
+        rawMetrics: null,
+      },
+      timestamp: Date.now(),
+    });
   }
 }
 

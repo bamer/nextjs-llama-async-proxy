@@ -61,13 +61,27 @@ export function collectCpuMetrics() {
 export async function collectMemoryMetrics() {
   try {
     const memInfo = await si.mem();
-    if (!memInfo) return { memoryUsedPercent: 0, swapUsedPercent: 0 };
+    if (!memInfo) {
+      console.debug("[METRICS] Memory info not available from systeminformation");
+      return { memoryUsedPercent: 0, swapUsedPercent: 0 };
+    }
+
+    // Debug logging for swap diagnostics
+    const hasSwap = memInfo.swaptotal > 0;
+    console.log("[DEBUG] Memory metrics retrieved:", {
+      total: memInfo.total,
+      available: memInfo.available,
+      swapTotal: memInfo.swaptotal,
+      swapUsed: memInfo.swapused,
+      hasSwap: hasSwap,
+      swapUsage: hasSwap ? Math.round((memInfo.swapused / memInfo.swaptotal) * 1000) / 10 : 0,
+    });
 
     const actualUsed = memInfo.total - memInfo.available;
     const memoryUsedPercent = Math.round((actualUsed / memInfo.total) * 1000) / 10;
     let swapUsedPercent = 0;
 
-    if (memInfo.swaptotal > 0) {
+    if (hasSwap) {
       swapUsedPercent = Math.round((memInfo.swapused / memInfo.swaptotal) * 1000) / 10;
     }
 

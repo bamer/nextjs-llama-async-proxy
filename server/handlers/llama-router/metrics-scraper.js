@@ -29,33 +29,105 @@ export class LlamaServerMetricsScraper {
       return cached.data;
     }
 
-    // Try only /health endpoint (fastest) - we only need tokens/s for now
+    // Try multiple endpoints to get metrics
     try {
-      const data = await this._fetchEndpoint("/health", 2000);
-      if (data && typeof data === "object") {
-        // Extract what we can from health response
-        const metrics = {
-          tokensPerSecond: data.tokens_per_second || 0,
-          predictedTokensSeconds: data.tokens_per_second || 0,
-          uptime: 0,
-          activeModels: 0,
-          totalRequests: 0,
-          queueSize: 0,
-          vramTotal: 0,
-          vramUsed: 0,
-          nCtx: 0,
-          nParallel: 0,
-          nThreads: 0,
-        };
+      // First try /health endpoint (might return JSON or plain text)
+      const healthData = await this._fetchEndpoint("/health", 2000);
+      let metrics = this._extractMetricsFromHealth(healthData);
+
+      // If no useful metrics from health, try /metrics endpoint
+      if (!metrics || (metrics.tokensPerSecond === 0 && metrics.activeModels === 0)) {
+        metrics = await this._tryMetricsEndpoint();
+      }
+
+      if (metrics) {
         this.cache.set("metrics", { data: metrics, timestamp: Date.now() });
         return metrics;
       }
     } catch (e) {
-      // Health endpoint not available
+      console.debug("[LlamaMetrics] Failed to fetch metrics:", e.message);
     }
 
     // Return cached or null
     return cached?.data || null;
+  }
+
+  /**
+   * Extract metrics from health endpoint response
+   * Handles both JSON and plain text responses
+   */
+  _extractMetricsFromHealth(data) {
+    // If data is plain text "ok", return empty metrics
+    if (typeof data === "string") {
+      return {
+        tokensPerSecond: 0,
+        predictedTokensSeconds: 0,
+        uptime: 0,
+        activeModels: 0,
+        totalRequests: 0,
+        queueSize: 0,
+        vramTotal: 0,
+        vramUsed: 0,
+        nCtx: 0,
+        nParallel: 0,
+        nThreads: 0,
+        promptTokensTotal: 0,
+        predictedTokensTotal: 0,
+        promptSecondsTotal: 0,
+        predictedSecondsTotal: 0,
+        nDecodeTotal: 0,
+        nBusySlotsPerDecode: 0,
+        nTokensMax: 0,
+      };
+    }
+
+    // Try to extract from JSON response
+    if (data && typeof data === "object") {
+      return {
+        tokensPerSecond: data.tokens_per_second || data.tokensPerSecond || 0,
+        predictedTokensSeconds: data.predicted_tokens_seconds || data.predictedTokensSeconds || data.tokens_per_second || 0,
+        uptime: data.uptime || 0,
+        activeModels: data.active_models || data.activeModels || 0,
+        totalRequests: data.total_requests || data.totalRequests || 0,
+        queueSize: data.queue_size || data.queueSize || 0,
+        vramTotal: data.vram_total || data.vramTotal || 0,
+        vramUsed: data.vram_used || data.vramUsed || 0,
+        nCtx: data.n_ctx || data.nCtx || 0,
+        nParallel: data.n_parallel || data.nParallel || 0,
+        nThreads: data.n_threads || data.nThreads || 0,
+        promptTokensTotal: data.prompt_tokens_total || 0,
+        predictedTokensTotal: data.predicted_tokens_total || 0,
+        promptSecondsTotal: data.prompt_seconds_total || 0,
+        predictedSecondsTotal: data.predicted_seconds_total || 0,
+        nDecodeTotal: data.n_decode_total || 0,
+        nBusySlotsPerDecode: data.n_busy_slots_per_decode || 0,
+        nTokensMax: data.n_tokens_max || 0,
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Try to get metrics from /metrics endpoint
+   */
+  async _tryMetricsEndpoint() {
+    // Try common model paths
+    const modelPaths = ["", "/default", "/current"];
+    
+    for (const modelPath of modelPaths) {
+      try {
+        const endpoint = `/metrics${modelPath}`;
+        const data = await this._fetchEndpoint(endpoint, 3000);
+        if (data && typeof data === "object") {
+          return data;
+        }
+      } catch (e) {
+        // Continue to next model path
+      }
+    }
+
+    return null;
   }
 
   _parsePrometheusMetrics(text) {
