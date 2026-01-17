@@ -20,10 +20,7 @@ class StateBroadcastHandlers {
           timestamp: data.timestamp,
           modelsCount: data.data?.models?.length,
         });
-        const models = data.data?.models || [];
-        this.core.set("models", models);
-        // eslint-disable-next-line no-undef
-        if (window.cacheManager) window.cacheManager.set("models", models);
+        this.core.set("models", data.data?.models || []);
       }
     });
 
@@ -67,11 +64,8 @@ class StateBroadcastHandlers {
 
     socket.on("metrics:update", (data) => {
       if (data?.type === "broadcast" && this._shouldProcess("metrics:update", data.timestamp)) {
-        const metrics = data.data?.metrics;
-        this.core.set("metrics", metrics);
-        // eslint-disable-next-line no-undef
-        if (window.cacheManager) window.cacheManager.set("metrics", metrics);
-        this.handlers.onMetric?.(metrics);
+        this.core.set("metrics", data.data?.metrics);
+        this.handlers.onMetric?.(data.data?.metrics);
       }
     });
 

@@ -96,8 +96,6 @@ class StateSocket {
 
     const h = newHistory.slice(-this.maxHistory);
     this.core.set("metricsHistory", h);
-    // eslint-disable-next-line no-undef
-    if (window.cacheManager) window.cacheManager.set("metricsHistory", h);
     // Removed noisy debug log - metrics update every 30s, not needed
   }
 
