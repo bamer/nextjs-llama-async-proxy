@@ -123,6 +123,12 @@ class DashboardPage extends Component {
     if (chartsSection && !stateManager.get("metricsHistory")) {
       chartsSection.classList.add("loading-skeleton");
     }
+
+    // Check if we have cached GPU data and update immediately
+    const cachedMetrics = stateManager.get("metrics");
+    if (cachedMetrics?.gpu?.list) {
+      this._updateGPUWithCachedData(cachedMetrics);
+    }
   }
 
   _updateMetricsSection() {
@@ -157,6 +163,18 @@ class DashboardPage extends Component {
     if (section) {
       section.classList.remove("loading-skeleton");
       section.setAttribute("aria-busy", "false");
+    }
+  }
+
+  /**
+   * Update GPU component with cached data if available
+   */
+  _updateGPUWithCachedData(metrics) {
+    const gpuDetails = this._el?.querySelector(".gpu-details")?._component;
+    if (gpuDetails) {
+      gpuDetails.gpuList = metrics?.gpu?.list || [];
+      gpuDetails._updateGPUUI();
+      console.log("[DashboardPage] Updated GPU with cached data:", metrics?.gpu?.list?.length || 0);
     }
   }
 

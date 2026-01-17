@@ -13,6 +13,7 @@ class GpuDetails extends Component {
     this.gpuList = props.gpuList || [];
     this.expanded = false;
     this.unsubscriber = null;
+    this.loading = true; // Add loading state
   }
 
   /**
