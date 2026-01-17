@@ -1,8 +1,10 @@
 /**
  * File Logger class that logs to files in logs/ directory with daily rotation.
  * Integrates with Socket.IO for real-time broadcasting and database for persistence.
+ * Uses async file I/O to prevent event loop blocking.
  */
-import fs from "fs";
+
+import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -22,10 +24,31 @@ class FileLogger {
 
     this.logsDir = logsDir || path.join(path.dirname(__dirname), "..", "logs");
 
-    // Create logs directory if it doesn't exist
-    if (!fs.existsSync(this.logsDir)) {
-      fs.mkdirSync(this.logsDir, { recursive: true });
+    // Initialize logs directory asynchronously
+    this._initPromise = this._ensureLogsDir();
+  }
+
+  /**
+   * Ensure the logs directory exists.
+   * @returns {Promise<void>}
+   */
+  async _ensureLogsDir() {
+    try {
+      await fs.access(this.logsDir);
+    } catch {
+      await fs.mkdir(this.logsDir, { recursive: true });
       console.log(`[Logger] Created logs directory: ${this.logsDir}`);
+    }
+  }
+
+  /**
+   * Wait for initialization to complete.
+   * @returns {Promise<void>}
+   */
+  async _waitForInit() {
+    if (this._initPromise) {
+      await this._initPromise;
+      this._initPromise = null;
     }
   }
 
@@ -66,19 +89,20 @@ class FileLogger {
   }
 
   /**
-   * Write a log entry to the log file.
+   * Write a log entry to the log file asynchronously.
    * @param {string} level - Log level.
    * @param {string} msg - Message to write.
    * @param {string} source - Source identifier.
    */
-  writeToFile(level, msg, source) {
+  async writeToFile(level, msg, source) {
     try {
+      await this._waitForInit();
       const timestamp = new Date().toISOString();
       const logLine = `[${timestamp}] [${level.toUpperCase()}] [${source}] ${msg}\n`;
       const filePath = this.getLogFilePath();
 
-      // Append to log file
-      fs.appendFileSync(filePath, logLine, { encoding: "utf8" });
+      // Append to log file asynchronously
+      await fs.appendFile(filePath, logLine, { encoding: "utf8" });
     } catch (e) {
       console.error("[Logger] Error writing to log file:", e.message);
     }
@@ -99,7 +123,7 @@ class FileLogger {
 
     const timestamp = Date.now();
 
-    // Write to file
+    // Write to file (async, fire and forget for performance)
     this.writeToFile(level, msg, source);
 
     // Save to database
@@ -170,19 +194,23 @@ class FileLogger {
   }
 
   /**
-   * Read logs from a file.
+   * Read logs from a file asynchronously.
    * @param {string|null} fileName - Name of the log file to read.
-   * @returns {Array<Object>} Array of parsed log entries.
+   * @returns {Promise<Array<Object>>} Promise resolving to array of parsed log entries.
    */
-  readLogFile(fileName = null) {
+  async readLogFile(fileName = null) {
     try {
+      await this._waitForInit();
       const filePath = fileName ? path.join(this.logsDir, fileName) : this.getLogFilePath();
 
-      if (!fs.existsSync(filePath)) {
+      // Check if file exists
+      try {
+        await fs.access(filePath);
+      } catch {
         return [];
       }
 
-      const content = fs.readFileSync(filePath, { encoding: "utf8" });
+      const content = await fs.readFile(filePath, { encoding: "utf8" });
       const lines = content.trim().split("\n");
 
       return lines
@@ -210,16 +238,19 @@ class FileLogger {
 
   /**
    * List all log files in the logs directory.
-   * @returns {Array<string>} Array of log filenames sorted by name.
+   * @returns {Promise<Array<string>>} Promise resolving to array of log filenames sorted by name.
    */
-  listLogFiles() {
+  async listLogFiles() {
     try {
-      if (!fs.existsSync(this.logsDir)) {
+      await this._waitForInit();
+      try {
+        await fs.access(this.logsDir);
+      } catch {
         return [];
       }
 
-      return fs
-        .readdirSync(this.logsDir)
+      const files = await fs.readdir(this.logsDir);
+      return files
         .filter((f) => f.endsWith(".log"))
         .sort()
         .reverse();
@@ -231,18 +262,23 @@ class FileLogger {
 
   /**
    * Clear all log files from the logs directory.
-   * @returns {number} Number of files deleted.
+   * @returns {Promise<number>} Promise resolving to number of files deleted.
    */
-  clearLogFiles() {
+  async clearLogFiles() {
     try {
-      const files = this.listLogFiles();
+      await this._waitForInit();
+      const files = await this.listLogFiles();
       let cleared = 0;
 
-      files.forEach((file) => {
+      for (const file of files) {
         const filePath = path.join(this.logsDir, file);
-        fs.unlinkSync(filePath);
-        cleared++;
-      });
+        try {
+          await fs.unlink(filePath);
+          cleared++;
+        } catch {
+          console.warn(`[Logger] Could not delete file: ${filePath}`);
+        }
+      }
 
       this.info(`Cleared ${cleared} log files`, "logger");
       return cleared;
@@ -254,18 +290,23 @@ class FileLogger {
 
   /**
    * Get the total size of all log files in the directory.
-   * @returns {number} Total size in bytes.
+   * @returns {Promise<number>} Promise resolving to total size in bytes.
    */
-  getLogsDirectorySize() {
+  async getLogsDirectorySize() {
     try {
+      await this._waitForInit();
       let totalSize = 0;
-      const files = this.listLogFiles();
+      const files = await this.listLogFiles();
 
-      files.forEach((file) => {
+      for (const file of files) {
         const filePath = path.join(this.logsDir, file);
-        const stats = fs.statSync(filePath);
-        totalSize += stats.size;
-      });
+        try {
+          const stats = await fs.stat(filePath);
+          totalSize += stats.size;
+        } catch {
+          console.warn(`[Logger] Could not stat file: ${filePath}`);
+        }
+      }
 
       return totalSize;
     } catch (e) {

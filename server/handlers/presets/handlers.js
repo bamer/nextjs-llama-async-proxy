@@ -2,8 +2,10 @@
  * Presets Handlers
  * Socket.IO event handlers for preset operations
  * Split from presets.js to follow AGENTS.md 200-line rule
+ * Uses async utility functions for non-blocking I/O
  */
 
+import path from "path";
 import { logger } from "../logger.js";
 import { ok, err } from "../response.js";
 import {
@@ -33,11 +35,11 @@ export function registerPresetsHandlers(socket, db) {
   /**
    * List all presets
    */
-  socket.on("presets:list", (req, ack) => {
+  socket.on("presets:list", async (req, ack) => {
     const id = req?.requestId || Date.now();
     console.log("[DEBUG] Event: presets:list received, requestId:", id);
     try {
-      const presets = listPresets();
+      const presets = await listPresets();
       console.log("[DEBUG] Presets found:", presets);
       // Return array of preset objects as documented
       const presetsData = presets.map((name) => ({
@@ -56,12 +58,12 @@ export function registerPresetsHandlers(socket, db) {
   /**
    * Read preset content
    */
-  socket.on("presets:read", (req, ack) => {
+  socket.on("presets:read", async (req, ack) => {
     const id = req?.requestId || Date.now();
     console.log("[DEBUG] Event: presets:read", { filename: req.filename, requestId: id });
     try {
       const { filename } = req;
-      const preset = readPreset(filename);
+      const preset = await readPreset(filename);
       ok(socket, "presets:read:result", { preset }, id, ack);
     } catch (error) {
       console.error("[DEBUG] Error in presets:read:", error.message);
@@ -72,12 +74,12 @@ export function registerPresetsHandlers(socket, db) {
   /**
    * Get models from preset
    */
-  socket.on("presets:get-models", (req, ack) => {
+  socket.on("presets:get-models", async (req, ack) => {
     const id = req?.requestId || Date.now();
     console.log("[DEBUG] Event: presets:get-models", { filename: req.filename, requestId: id });
     try {
       const { filename } = req;
-      const models = getModelsFromPreset(filename);
+      const models = await getModelsFromPreset(filename);
       ok(socket, "presets:get-models:result", { models }, id, ack);
     } catch (error) {
       console.error("[DEBUG] Error in presets:get-models:", error.message);
@@ -88,12 +90,12 @@ export function registerPresetsHandlers(socket, db) {
   /**
    * Save preset
    */
-  socket.on("presets:save", (req, ack) => {
+  socket.on("presets:save", async (req, ack) => {
     const id = req?.requestId || Date.now();
     console.log("[DEBUG] Event: presets:save", { filename: req.filename, requestId: id });
     try {
       const { filename, config } = req;
-      const result = savePreset(filename, config);
+      const result = await savePreset(filename, config);
       ok(socket, "presets:save:result", result, id, ack);
     } catch (error) {
       console.error("[DEBUG] Error in presets:save:", error.message);
@@ -104,13 +106,13 @@ export function registerPresetsHandlers(socket, db) {
   /**
    * Create preset
    */
-  socket.on("presets:create", (req, ack) => {
+  socket.on("presets:create", async (req, ack) => {
     const id = req?.requestId || Date.now();
     console.log("[DEBUG] Event: presets:create", { filename: req.filename, requestId: id });
     try {
       const { filename, description } = req;
       const config = getDefaultConfig();
-      const result = savePreset(filename, config);
+      const result = await savePreset(filename, config);
       ok(socket, "presets:create:result", result, id, ack);
     } catch (error) {
       console.error("[DEBUG] Error in presets:create:", error.message);
@@ -121,12 +123,12 @@ export function registerPresetsHandlers(socket, db) {
   /**
    * Delete preset
    */
-  socket.on("presets:delete", (req, ack) => {
+  socket.on("presets:delete", async (req, ack) => {
     const id = req?.requestId || Date.now();
     console.log("[DEBUG] Event: presets:delete", { filename: req.filename, requestId: id });
     try {
       const { filename } = req;
-      const result = deletePreset(filename);
+      const result = await deletePreset(filename);
       ok(socket, "presets:delete:result", result, id, ack);
     } catch (error) {
       console.error("[DEBUG] Error in presets:delete:", error.message);
@@ -153,12 +155,12 @@ export function registerPresetsHandlers(socket, db) {
   /**
    * Add model to preset
    */
-  socket.on("presets:add-model", (req, ack) => {
+  socket.on("presets:add-model", async (req, ack) => {
     const id = req?.requestId || Date.now();
     console.log("[DEBUG] Event: presets:add-model", { filename: req.filename, model: req.modelName, requestId: id });
     try {
       const { filename, modelName, config } = req;
-      const result = updateModelInPreset(filename, modelName, config);
+      const result = await updateModelInPreset(filename, modelName, config);
       ok(socket, "presets:add-model:result", result, id, ack);
     } catch (error) {
       console.error("[DEBUG] Error in presets:add-model:", error.message);
@@ -169,12 +171,12 @@ export function registerPresetsHandlers(socket, db) {
   /**
    * Update model in preset
    */
-  socket.on("presets:update-model", (req, ack) => {
+  socket.on("presets:update-model", async (req, ack) => {
     const id = req?.requestId || Date.now();
     console.log("[DEBUG] Event: presets:update-model", { filename: req.filename, model: req.modelName, requestId: id });
     try {
       const { filename, modelName, config } = req;
-      const result = updateModelInPreset(filename, modelName, config);
+      const result = await updateModelInPreset(filename, modelName, config);
       ok(socket, "presets:update-model:result", result, id, ack);
     } catch (error) {
       console.error("[DEBUG] Error in presets:update-model:", error.message);
@@ -185,12 +187,12 @@ export function registerPresetsHandlers(socket, db) {
   /**
    * Remove model from preset
    */
-  socket.on("presets:remove-model", (req, ack) => {
+  socket.on("presets:remove-model", async (req, ack) => {
     const id = req?.requestId || Date.now();
     console.log("[DEBUG] Event: presets:remove-model", { filename: req.filename, model: req.modelName, requestId: id });
     try {
       const { filename, modelName } = req;
-      const result = removeModelFromPreset(filename, modelName);
+      const result = await removeModelFromPreset(filename, modelName);
       ok(socket, "presets:remove-model:result", result, id, ack);
     } catch (error) {
       console.error("[DEBUG] Error in presets:remove-model:", error.message);
@@ -201,12 +203,12 @@ export function registerPresetsHandlers(socket, db) {
   /**
    * Get defaults for preset
    */
-  socket.on("presets:get-defaults", (req, ack) => {
+  socket.on("presets:get-defaults", async (req, ack) => {
     const id = req?.requestId || Date.now();
     console.log("[DEBUG] Event: presets:get-defaults", { filename: req.filename, requestId: id });
     try {
       const { filename } = req;
-      const defaults = getPresetsDefaults(filename);
+      const defaults = await getPresetsDefaults(filename);
       ok(socket, "presets:get-defaults:result", { defaults }, id, ack);
     } catch (error) {
       console.error("[DEBUG] Error in presets:get-defaults:", error.message);
@@ -217,12 +219,12 @@ export function registerPresetsHandlers(socket, db) {
   /**
    * Update defaults in preset
    */
-  socket.on("presets:update-defaults", (req, ack) => {
+  socket.on("presets:update-defaults", async (req, ack) => {
     const id = req?.requestId || Date.now();
     console.log("[DEBUG] Event: presets:update-defaults", { filename: req.filename, requestId: id });
     try {
       const { filename, config } = req;
-      const preset = readPreset(filename);
+      const preset = await readPreset(filename);
       const existingSection = preset.parsed["*"] || {};
 
       const mergedSection = { ...existingSection };
@@ -237,7 +239,7 @@ export function registerPresetsHandlers(socket, db) {
       }
 
       preset.parsed["*"] = mergedSection;
-      savePreset(filename, preset.parsed);
+      await savePreset(filename, preset.parsed);
 
       console.log("[DEBUG] Preset defaults updated:", { filename });
       logger.info(`Preset defaults updated: ${filename}`);

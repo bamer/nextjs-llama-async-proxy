@@ -2,16 +2,26 @@
  * Presets Utilities
  * INI parsing, generation, and model configuration helpers
  * Split from presets.js to follow AGENTS.md 200-line rule
+ * Uses async file I/O to prevent event loop blocking
  */
 
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
 
 const PRESETS_DIR = path.join(process.cwd(), "config");
 
-// Ensure config directory exists
-if (!fs.existsSync(PRESETS_DIR)) {
-  fs.mkdirSync(PRESETS_DIR, { recursive: true });
+/**
+ * Ensure the presets directory exists.
+ * @returns {Promise<string>} Path to the presets directory.
+ */
+async function ensurePresetsDir() {
+  try {
+    await fs.access(PRESETS_DIR);
+    return PRESETS_DIR;
+  } catch {
+    await fs.mkdir(PRESETS_DIR, { recursive: true });
+    return PRESETS_DIR;
+  }
 }
 
 /**
@@ -195,7 +205,9 @@ export function modelToIniSection(section, config) {
 }
 
 /**
- * Parse INI value to appropriate type
+ * Parse INI value to appropriate type.
+ * @param {*} value - Value to parse.
+ * @returns {*} Parsed value with appropriate type.
  */
 function parseValue(value) {
   if (value === null || value === undefined) return null;
@@ -213,25 +225,43 @@ function parseValue(value) {
 }
 
 /**
+ * Check if a file exists and is accessible.
+ * @param {string} filepath - Path to the file.
+ * @returns {Promise<boolean>} True if file exists.
+ */
+async function fileExists(filepath) {
+  try {
+    await fs.access(filepath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Read and parse a preset file from the config directory.
  * @param {string} filename - Name of the preset (without extension).
- * @returns {Object} Preset object with filename, content, and parsed data.
+ * @returns {Promise<Object>} Promise resolving to preset object with filename, content, and parsed data.
+ * @throws {Error} If preset not found.
  */
-export function readPreset(filename) {
-  const filepath = path.join(PRESETS_DIR, `${filename}.ini`);
+export async function readPreset(filename) {
+  const presetsDir = await ensurePresetsDir();
+  const filepath = path.join(presetsDir, `${filename}.ini`);
 
-  if (!fs.existsSync(filepath)) {
+  if (!(await fileExists(filepath))) {
     throw new Error(`Preset not found: ${filename}`);
   }
 
-  const content = fs.readFileSync(filepath, "utf-8");
+  const content = await fs.readFile(filepath, "utf-8");
   const parsed = parseIni(content);
+
+  const stat = await fs.stat(filepath);
 
   return {
     filename,
     content,
     parsed,
-    lastModified: fs.statSync(filepath).mtime,
+    lastModified: stat.mtime,
   };
 }
 
@@ -239,13 +269,14 @@ export function readPreset(filename) {
  * Save a preset configuration to a file.
  * @param {string} filename - Name of the preset (without extension).
  * @param {Object} config - Configuration object to save.
- * @returns {Object} Save result with filename, path, size, and lastModified.
+ * @returns {Promise<Object>} Promise resolving to save result with filename, path, size, and lastModified.
  */
-export function savePreset(filename, config) {
-  const filepath = path.join(PRESETS_DIR, `${filename}.ini`);
+export async function savePreset(filename, config) {
+  const presetsDir = await ensurePresetsDir();
+  const filepath = path.join(presetsDir, `${filename}.ini`);
 
   const content = generateIni(config);
-  fs.writeFileSync(filepath, content, "utf-8");
+  await fs.writeFile(filepath, content, "utf-8");
 
   console.log(`[DEBUG] Preset saved: ${filepath}`);
 
@@ -260,16 +291,18 @@ export function savePreset(filename, config) {
 /**
  * Delete a preset file from the config directory.
  * @param {string} filename - Name of the preset (without extension).
- * @returns {Object} Delete result with filename and deleted status.
+ * @returns {Promise<Object>} Promise resolving to delete result with filename and deleted status.
+ * @throws {Error} If preset not found.
  */
-export function deletePreset(filename) {
-  const filepath = path.join(PRESETS_DIR, `${filename}.ini`);
+export async function deletePreset(filename) {
+  const presetsDir = await ensurePresetsDir();
+  const filepath = path.join(presetsDir, `${filename}.ini`);
 
-  if (!fs.existsSync(filepath)) {
+  if (!(await fileExists(filepath))) {
     throw new Error(`Preset not found: ${filename}`);
   }
 
-  fs.unlinkSync(filepath);
+  await fs.unlink(filepath);
 
   console.log(`[DEBUG] Preset deleted: ${filepath}`);
 
@@ -278,34 +311,35 @@ export function deletePreset(filename) {
 
 /**
  * List all preset files in the config directory.
- * @returns {Array<string>} Array of preset names (without extensions).
+ * @returns {Promise<Array<string>>} Promise resolving to array of preset names (without extensions).
  */
-export function listPresets() {
-  if (!fs.existsSync(PRESETS_DIR)) {
+export async function listPresets() {
+  const presetsDir = await ensurePresetsDir();
+
+  try {
+    const files = await fs.readdir(presetsDir);
+    return files
+      .filter((f) => f.endsWith(".ini"))
+      .map((f) => f.replace(/\.ini$/, ""))
+      .sort();
+  } catch {
     return [];
   }
-
-  const files = fs.readdirSync(PRESETS_DIR);
-  return files
-    .filter((f) => f.endsWith(".ini"))
-    .map((f) => f.replace(/\.ini$/, ""))
-    .sort();
 }
 
 /**
  * Extract all models from a preset file.
  * @param {string} filename - Name of the preset (without extension).
- * @returns {Object} Object mapping model names to their configurations.
+ * @returns {Promise<Object>} Promise resolving to object mapping model names to their configurations.
  */
-export function getModelsFromPreset(filename) {
-  const preset = readPreset(filename);
+export async function getModelsFromPreset(filename) {
+  const preset = await readPreset(filename);
   const models = {};
 
   for (const [section, params] of Object.entries(preset.parsed)) {
     if (section === "LLAMA_CONFIG_VERSION" || section === "*") continue;
 
     // Include all model sections, even those without a model property
-    // This allows adding placeholder models that will be configured later
     models[section] = iniSectionToModel(params, {});
   }
 
@@ -352,20 +386,22 @@ export function validateIni(content) {
  * @param {string} filename - Name of the preset (without extension).
  * @param {string} modelName - Name of the model section.
  * @param {Object} config - Model configuration to set.
- * @returns {Object} Update result with filename, modelName, and updated status.
+ * @returns {Promise<Object>} Promise resolving to update result with filename, modelName, and updated status.
  */
-export function updateModelInPreset(filename, modelName, config) {
-  const filepath = path.join(PRESETS_DIR, `${filename}.ini`);
+export async function updateModelInPreset(filename, modelName, config) {
+  const presetsDir = await ensurePresetsDir();
+  const filepath = path.join(presetsDir, `${filename}.ini`);
 
   let parsed = {};
-  if (fs.existsSync(filepath)) {
-    parsed = parseIni(fs.readFileSync(filepath, "utf-8"));
+  if (await fileExists(filepath)) {
+    const content = await fs.readFile(filepath, "utf-8");
+    parsed = parseIni(content);
   }
 
   parsed[modelName] = modelToIniSection(modelName, config);
 
   const content = generateIni(parsed);
-  fs.writeFileSync(filepath, content, "utf-8");
+  await fs.writeFile(filepath, content, "utf-8");
 
   console.log(`[DEBUG] Model ${modelName} updated in preset: ${filename}`);
 
@@ -376,16 +412,19 @@ export function updateModelInPreset(filename, modelName, config) {
  * Remove a model from a preset file.
  * @param {string} filename - Name of the preset (without extension).
  * @param {string} modelName - Name of the model section to remove.
- * @returns {Object} Remove result with filename, modelName, and removed status.
+ * @returns {Promise<Object>} Promise resolving to remove result with filename, modelName, and removed status.
+ * @throws {Error} If preset or model not found.
  */
-export function removeModelFromPreset(filename, modelName) {
-  const filepath = path.join(PRESETS_DIR, `${filename}.ini`);
+export async function removeModelFromPreset(filename, modelName) {
+  const presetsDir = await ensurePresetsDir();
+  const filepath = path.join(presetsDir, `${filename}.ini`);
 
-  if (!fs.existsSync(filepath)) {
+  if (!(await fileExists(filepath))) {
     throw new Error(`Preset not found: ${filename}`);
   }
 
-  const parsed = parseIni(fs.readFileSync(filepath, "utf-8"));
+  const content = await fs.readFile(filepath, "utf-8");
+  const parsed = parseIni(content);
 
   if (!parsed[modelName]) {
     throw new Error(`Model ${modelName} not found in preset`);
@@ -393,8 +432,8 @@ export function removeModelFromPreset(filename, modelName) {
 
   delete parsed[modelName];
 
-  const content = generateIni(parsed);
-  fs.writeFileSync(filepath, content, "utf-8");
+  const newContent = generateIni(parsed);
+  await fs.writeFile(filepath, newContent, "utf-8");
 
   console.log(`[DEBUG] Model ${modelName} removed from preset: ${filename}`);
 
@@ -404,16 +443,18 @@ export function removeModelFromPreset(filename, modelName) {
 /**
  * Get the defaults section from a preset file.
  * @param {string} filename - Name of the preset (without extension).
- * @returns {Object} Default configuration from the preset.
+ * @returns {Promise<Object>} Promise resolving to default configuration from the preset.
+ * @throws {Error} If preset not found.
  */
-export function getPresetsDefaults(filename) {
-  const filepath = path.join(PRESETS_DIR, `${filename}.ini`);
+export async function getPresetsDefaults(filename) {
+  const presetsDir = await ensurePresetsDir();
+  const filepath = path.join(presetsDir, `${filename}.ini`);
 
-  if (!fs.existsSync(filepath)) {
+  if (!(await fileExists(filepath))) {
     throw new Error(`Preset not found: ${filename}`);
   }
 
-  const content = fs.readFileSync(filepath, "utf-8");
+  const content = await fs.readFile(filepath, "utf-8");
   const parsed = parseIni(content);
 
   const defaults = parsed["*"] || {};

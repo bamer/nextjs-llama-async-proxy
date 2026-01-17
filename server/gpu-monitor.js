@@ -1,16 +1,20 @@
 /**
  * GPU Monitor - GPU metrics collection
  * Part of metrics.js refactoring (≤200 lines)
+ * Uses async operations to prevent event loop blocking
  */
 
-import { execSync } from "child_process";
+import { exec } from "child_process";
+import { promisify } from "util";
 import si from "systeminformation";
+
+const execAsync = promisify(exec);
 
 let gpuList = [];
 
 /**
  * Get current GPU list populated from last metrics collection.
- * @returns {Array<Object>} List of GPU objects with name, usage, memory info
+ * @returns {Array<Object>} List of GPU objects with name, usage, memory info.
  */
 export function getGpuList() {
   return gpuList;
@@ -18,7 +22,7 @@ export function getGpuList() {
 
 /**
  * Update GPU list from metrics collection.
- * @param {Array<Object>} newGpuList - New list of GPU objects
+ * @param {Array<Object>} newGpuList - New list of GPU objects.
  */
 export function updateGpuList(newGpuList) {
   gpuList = newGpuList;
@@ -26,19 +30,19 @@ export function updateGpuList(newGpuList) {
 
 /**
  * Try to get GPU metrics from nvidia-smi as fallback.
- * @returns {Object|null} GPU metrics or null if unavailable
+ * @returns {Promise<Object|null>} Promise resolving to GPU metrics or null if unavailable.
  */
-function tryNvidiaSmi() {
+async function tryNvidiaSmi() {
   try {
-    // Try to get GPU utilization and memory from nvidia-smi
-    const output = execSync(
+    // Use async exec with timeout instead of blocking execSync
+    const { stdout } = await execAsync(
       "nvidia-smi --query-gpu=index,utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>/dev/null",
-      { encoding: "utf8", timeout: 3000, maxBuffer: 1024 * 1024 }
-    ).trim();
+      { encoding: "utf8", timeout: 5000 }
+    );
 
-    if (!output) return null;
+    if (!stdout) return null;
 
-    const lines = output.split("\n");
+    const lines = stdout.split("\n");
     const gpus = [];
 
     for (const line of lines) {
@@ -54,7 +58,7 @@ function tryNvidiaSmi() {
     }
 
     return gpus.length > 0 ? gpus : null;
-  } catch (e) {
+  } catch {
     // nvidia-smi not available or failed
     return null;
   }
@@ -64,7 +68,7 @@ function tryNvidiaSmi() {
  * Collect GPU metrics from system information.
  * Queries available GPU controllers and calculates usage/memory.
  * Falls back to nvidia-smi if systeminformation doesn't provide utilization data.
- * @returns {Object} GPU metrics data with usage, memory values, and list
+ * @returns {Promise<Object>} Promise resolving to GPU metrics data with usage, memory values, and list.
  */
 export async function collectGpuMetrics() {
   let gpuListResult = [];
@@ -91,7 +95,7 @@ export async function collectGpuMetrics() {
       // If systeminformation didn't provide utilization data, try nvidia-smi
       if (!hasUtilizationData) {
         console.log("[DEBUG] GPU: systeminformation returned no utilization data, trying nvidia-smi...");
-        const nvidiaGpus = tryNvidiaSmi();
+        const nvidiaGpus = await tryNvidiaSmi();
 
         if (nvidiaGpus) {
           // Merge nvidia-smi data with systeminformation data

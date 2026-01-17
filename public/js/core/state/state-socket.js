@@ -10,6 +10,7 @@ class StateSocket {
     this.pending = new Map();
     this.maxHistory = 1000; // Increased limit
     this.maxLogs = 100;
+    this.maxPendingRequests = 200; // Prevent memory leaks from stale requests
     this.connection = new StateConnectionHandlers(
       stateCore,
       () => this.core._notify("connectionStatus", "connected"),
@@ -153,6 +154,23 @@ class StateSocket {
   }
 
   /**
+    * Prune oldest pending requests when map exceeds maximum size.
+    * Prevents memory leaks from stale or timed-out requests.
+    * @private
+    */
+  _prunePendingRequests() {
+    if (this.pending.size > this.maxPendingRequests) {
+      const firstKey = this.pending.keys().next().value;
+      const stale = this.pending.get(firstKey);
+      if (stale) {
+        stale.reject(new Error("Request timed out or evicted"));
+      }
+      this.pending.delete(firstKey);
+      console.warn("[StateSocket] Pruned stale request:", firstKey);
+    }
+  }
+
+  /**
     * Execute the socket request immediately
     * @private
     * @param {string} event - Event name
@@ -162,8 +180,11 @@ class StateSocket {
   async _executeRequest(event, data) {
     const reqId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+    // Prune oldest requests to prevent memory leaks
+    this._prunePendingRequests();
+
     return new Promise((resolve, reject) => {
-      this.pending.set(reqId, { resolve, reject, event });
+      this.pending.set(reqId, { resolve, reject, event, timestamp: Date.now() });
       console.log("[StateSocket] Sending request:", event, "ID:", reqId);
       this.socket.emit(event, { ...data, requestId: reqId });
     });
@@ -173,7 +194,13 @@ class StateSocket {
    * Clean up resources and disconnect handlers
    */
   destroy() {
+    // Reject all pending requests before cleanup
+    for (const [reqId, pending] of this.pending) {
+      pending.reject(new Error("Socket destroyed"));
+    }
+    this.pending.clear();
     this.connection.destroy();
+    this.broadcast?.destroy();
   }
 }
 

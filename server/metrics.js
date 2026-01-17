@@ -1,6 +1,7 @@
 /**
- * Metrics Collection - Main entry point
- * Simplified with reduced frequency and minimal logging
+ * Metrics Collection - Event-Driven Architecture
+ * Replaces fixed interval polling with WebSocket subscriptions
+ * Clients subscribe to metrics updates with configurable intervals
  */
 
 import {
@@ -18,60 +19,43 @@ import {
   cleanupLlamaMetrics,
 } from "./llama-metrics.js";
 
-// Module-level variables for metrics collection
-export let activeClients = 0;
-let metricsInterval = null;
+// Subscription management
+const subscriptions = new Map(); // socket.id -> { interval, lastEmit, timeoutId }
+const DEFAULT_INTERVAL = 2000; // 2 seconds default
+const MIN_INTERVAL = 1000; // 1 second minimum
+const MAX_INTERVAL = 60000; // 60 seconds maximum
+const PRUNE_INTERVAL = 10000; // Prune old metrics every 10 calls at default rate
 
 /**
- * Initialize llama-server metrics scraper
+ * Initialize llama-server metrics scraper.
+ * @param {number} port - Port for llama-server metrics scraper.
+ * @param {Object|null} db - Database instance.
  */
 export function initializeLlamaMetricsScraper(port, db = null) {
   initLlamaScraper(port, db);
 }
 
 /**
- * Update metrics collection interval based on active clients
+ * Get the subscription interval for a client, clamped to valid range.
+ * @param {number} requestedInterval - Requested interval from client.
+ * @returns {number} Clamped interval.
  */
-function updateMetricsInterval(io, db) {
-  // Collect metrics every 2s when clients connected (for truly responsive UI)
-  // No collections when idle to save CPU
-  const newInterval = activeClients > 0 ? 2000 : 120000;
-
-  if (metricsInterval) {
-    clearInterval(metricsInterval);
+function getClampedInterval(requestedInterval) {
+  const interval = parseInt(requestedInterval, 10);
+  if (isNaN(interval) || interval < MIN_INTERVAL) {
+    return DEFAULT_INTERVAL;
   }
-
-  metricsInterval = setInterval(() => collectMetrics(io, db), newInterval);
-  console.log(`[METRICS] Interval updated to ${newInterval}ms (${activeClients} clients)`);
+  return Math.min(interval, MAX_INTERVAL);
 }
 
 /**
- * Start metrics collection with dynamic interval based on active clients.
+ * Collect and emit metrics to a specific socket.
+ * @param {Object} socket - Socket.IO socket instance.
+ * @param {Object} db - Database instance.
  */
-export async function startMetricsCollection(io, db) {
-  initCpuTimes();
-  updateMetricsInterval(io, db);
-
-  if (typeof io.on === "function") {
-    io.on("connection", () => {
-      activeClients++;
-      updateMetricsInterval(io, db);
-    });
-
-    io.on("disconnect", () => {
-      activeClients--;
-      updateMetricsInterval(io, db);
-    });
-  }
-}
-
-/**
- * Main metrics collection function
- */
-export async function collectMetrics(io, db) {
+async function collectAndEmitMetrics(socket, db) {
   try {
-    // Collect system metrics
-    // Use Promise.all for parallel async collection of independent metrics
+    // Collect system metrics in parallel
     const [cpuUsage, memoryMetrics, diskMetrics, gpuMetrics] = await Promise.all([
       Promise.resolve(collectCpuMetrics()),
       collectMemoryMetrics(),
@@ -95,8 +79,8 @@ export async function collectMetrics(io, db) {
       gpu_memory_total: gpuMemoryTotal,
     });
 
-    // Emit to clients
-    io.emit("metrics:update", {
+    // Emit metrics update to specific socket
+    socket.emit("metrics:update", {
       type: "broadcast",
       data: {
         metrics: {
@@ -115,29 +99,214 @@ export async function collectMetrics(io, db) {
       },
     });
 
-    // Prune old metrics every 6 minutes (12 calls at 30s intervals)
-    const callCount = getMetricsCallCount();
-    if (callCount % 12 === 0) {
-      db.pruneMetrics(10000);
-    }
-
-    // Collect llama-server metrics (parallel with error handling)
-    collectLlamaMetrics(io, db).catch((e) => {
+    // Collect llama-server metrics (fire and forget)
+    collectLlamaMetrics(socket, db).catch((e) => {
       console.debug("[METRICS] Llama metrics collection skipped:", e.message);
     });
   } catch (e) {
-    console.error("[METRICS] Error:", e.message);
+    console.error("[METRICS] Error collecting metrics:", e.message);
   }
 }
 
 /**
- * Cleanup metrics collection
+ * Start the metrics collection interval for a subscription.
+ * @param {Object} socket - Socket.IO socket instance.
+ * @param {Object} db - Database instance.
+ * @param {number} interval - Collection interval in milliseconds.
+ */
+function startCollectionInterval(socket, db, interval) {
+  const subscription = subscriptions.get(socket.id);
+  if (!subscription) return;
+
+  // Clear any existing interval
+  if (subscription.timeoutId) {
+    clearInterval(subscription.timeoutId);
+  }
+
+  // Set up new interval
+  subscription.timeoutId = setInterval(() => {
+    collectAndEmitMetrics(socket, db);
+  }, interval);
+
+  // Emit initial metrics immediately
+  collectAndEmitMetrics(socket, db);
+}
+
+/**
+ * Register metrics subscription handlers on the socket.
+ * @param {Object} socket - Socket.IO socket instance.
+ * @param {Object} io - Socket.IO server instance.
+ * @param {Object} db - Database instance.
+ */
+export function registerMetricsHandlers(socket, io, db) {
+  /**
+   * Subscribe to metrics updates with optional interval.
+   * @param {Object} req - Request object with optional interval.
+   */
+  socket.on("metrics:subscribe", (req) => {
+    const interval = getClampedInterval(req?.interval);
+    const subscription = subscriptions.get(socket.id) || {};
+
+    subscription.interval = interval;
+    subscription.lastEmit = Date.now();
+
+    subscriptions.set(socket.id, subscription);
+
+    console.log(`[METRICS] Socket ${socket.id} subscribed with interval ${interval}ms`);
+
+    // Start collection interval for this socket
+    startCollectionInterval(socket, db, interval);
+
+    // Acknowledge subscription
+    socket.emit("metrics:subscribe:result", {
+      success: true,
+      interval,
+      message: `Subscribed to metrics with ${interval}ms interval`,
+    });
+  });
+
+  /**
+   * Update metrics subscription interval.
+   * @param {Object} req - Request object with new interval.
+   */
+  socket.on("metrics:update-interval", (req) => {
+    const subscription = subscriptions.get(socket.id);
+    if (!subscription) {
+      socket.emit("metrics:update-interval:result", {
+        success: false,
+        error: "Not subscribed to metrics",
+      });
+      return;
+    }
+
+    const newInterval = getClampedInterval(req?.interval);
+    subscription.interval = newInterval;
+
+    console.log(`[METRICS] Socket ${socket.id} updated interval to ${newInterval}ms`);
+
+    // Restart collection with new interval
+    startCollectionInterval(socket, db, newInterval);
+
+    socket.emit("metrics:update-interval:result", {
+      success: true,
+      interval: newInterval,
+    });
+  });
+
+  /**
+   * Unsubscribe from metrics updates.
+   */
+  socket.on("metrics:unsubscribe", () => {
+    const subscription = subscriptions.get(socket.id);
+    if (subscription) {
+      if (subscription.timeoutId) {
+        clearInterval(subscription.timeoutId);
+      }
+      subscriptions.delete(socket.id);
+      console.log(`[METRICS] Socket ${socket.id} unsubscribed from metrics`);
+    }
+
+    socket.emit("metrics:unsubscribe:result", {
+      success: true,
+      message: "Unsubscribed from metrics",
+    });
+  });
+
+  /**
+   * Handle socket disconnect - clean up subscription.
+   */
+  socket.on("disconnect", () => {
+    const subscription = subscriptions.get(socket.id);
+    if (subscription) {
+      if (subscription.timeoutId) {
+        clearInterval(subscription.timeoutId);
+      }
+      subscriptions.delete(socket.id);
+      console.log(`[METRICS] Socket ${socket.id} disconnected, subscription cleaned up`);
+    }
+  });
+
+  /**
+   * Get current metrics on demand.
+   */
+  socket.on("metrics:get", async (req, ack) => {
+    const id = req?.requestId || Date.now();
+    try {
+      const metrics = await collectMetricsForRequest(db);
+      socket.emit("metrics:get:result", { metrics }, id, ack);
+    } catch (e) {
+      socket.emit("metrics:get:result", { error: e.message }, id, ack);
+    }
+  });
+}
+
+/**
+ * Collect metrics for a one-time request.
+ * @param {Object} db - Database instance.
+ * @returns {Promise<Object>} Metrics object.
+ */
+async function collectMetricsForRequest(db) {
+  const [cpuUsage, memoryMetrics, diskMetrics, gpuMetrics] = await Promise.all([
+    Promise.resolve(collectCpuMetrics()),
+    collectMemoryMetrics(),
+    collectDiskMetrics(),
+    collectGpuMetrics(),
+  ]);
+
+  return {
+    cpu: { usage: cpuUsage },
+    memory: { used: memoryMetrics.memoryUsedPercent },
+    swap: { used: memoryMetrics.swapUsedPercent },
+    disk: { used: diskMetrics.diskUsedPercent },
+    gpu: {
+      usage: gpuMetrics.gpuUsage,
+      memoryUsed: gpuMetrics.gpuMemoryUsed,
+      memoryTotal: gpuMetrics.gpuMemoryTotal,
+      list: getGpuList(),
+    },
+    uptime: process.uptime(),
+  };
+}
+
+/**
+ * Start metrics collection system.
+ * @param {Object} io - Socket.IO server instance.
+ * @param {Object} db - Database instance.
+ */
+export async function startMetricsCollection(io, db) {
+  initCpuTimes();
+
+  // Register handlers for all sockets
+  io.on("connection", (socket) => {
+    registerMetricsHandlers(socket, io, db);
+  });
+
+  console.log("[METRICS] Event-driven metrics collection started");
+}
+
+/**
+ * Main metrics collection function - kept for backwards compatibility.
+ * @param {Object} io - Socket.IO server instance (unused in new architecture).
+ * @param {Object} db - Database instance.
+ */
+export async function collectMetrics(io, db) {
+  // In the new architecture, metrics are collected per-subscription
+  // This function is kept for any legacy code that calls it directly
+  await collectAndEmitMetrics(io, db);
+}
+
+/**
+ * Cleanup metrics collection.
  */
 export function cleanupMetrics() {
-  if (metricsInterval) {
-    clearInterval(metricsInterval);
-    metricsInterval = null;
+  // Clear all subscription intervals
+  for (const [socketId, subscription] of subscriptions) {
+    if (subscription.timeoutId) {
+      clearInterval(subscription.timeoutId);
+    }
   }
+  subscriptions.clear();
+
   resetMetricsCallCount();
   cleanupLlamaMetrics();
 }

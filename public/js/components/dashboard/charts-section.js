@@ -204,9 +204,9 @@ class ChartsSection extends Component {
   }
 
   /**
-     * Create charts immediately without dimension polling
-     */
-   _createChartsImmediately(usageCanvas, memoryCanvas) {
+   * Create charts immediately without dimension polling
+   */
+  _createChartsImmediately(usageCanvas, memoryCanvas) {
     const dpr = window.devicePixelRatio || 1;
 
     // Set canvas dimensions based on container

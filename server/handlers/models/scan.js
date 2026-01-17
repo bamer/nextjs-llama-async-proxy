@@ -1,14 +1,29 @@
 /**
  * Models Scan Handlers
  * Model discovery and cleanup operations
+ * Uses async file I/O to prevent event loop blocking
  */
 
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
 import { ok, err } from "../response.js";
 
 // Batch processing configuration
 const BATCH_SIZE = 5;
+
+/**
+ * Check if a directory exists and is accessible.
+ * @param {string} dirPath - Directory path to check.
+ * @returns {Promise<boolean>} True if directory exists and is accessible.
+ */
+async function directoryExists(dirPath) {
+  try {
+    await fs.access(dirPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Process array of items in batches with controlled concurrency.
@@ -24,6 +39,68 @@ async function processBatch(items, processor, batchSize = BATCH_SIZE) {
     const batchResults = await Promise.allSettled(batch.map((item) => processor(item)));
     results.push(...batchResults);
   }
+  return results;
+}
+
+/**
+ * Check if a file is a valid model file by extension and GGUF magic number.
+ * @param {string} fileName - Name of the file to check.
+ * @param {string} fullPath - Full path to the file.
+ * @returns {Promise<boolean>} True if valid model file, false otherwise.
+ */
+async function isValidModelFile(fileName, fullPath) {
+  const excludePatterns = [/mmproj/i, /-proj$/i, /\.factory$/i, /^_/i];
+  if (excludePatterns.some((p) => p.test(fileName))) {
+    return false;
+  }
+
+  if (fileName.toLowerCase().endsWith(".gguf")) {
+    try {
+      const fd = await fs.open(fullPath, "r");
+      const magicBuf = Buffer.alloc(4);
+      await fd.read(magicBuf, 0, 4, 0);
+      await fd.close();
+      const magic = new DataView(magicBuf.buffer).getUint32(0, true);
+      if (magic !== 0x46554747) {
+        return false;
+      }
+    } catch {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Recursively find all model files in a directory.
+ * @param {string} dir - Directory path to search.
+ * @returns {Promise<Array<string>>} Promise resolving to array of full paths to model files.
+ */
+async function findModelFiles(dir) {
+  const results = [];
+  const exts = [".gguf", ".bin", ".safetensors", ".pt", ".pth"];
+
+  try {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        const nestedFiles = await findModelFiles(fullPath);
+        results.push(...nestedFiles);
+      } else if (
+        entry.isFile() &&
+        exts.some((e) => entry.name.toLowerCase().endsWith(e)) &&
+        (await isValidModelFile(entry.name, fullPath))
+      ) {
+        results.push(fullPath);
+      }
+    }
+  } catch (error) {
+    console.warn("[SCAN] Error reading directory:", { dir, error: error.message });
+  }
+
   return results;
 }
 
@@ -44,73 +121,14 @@ export function registerModelsScanHandlers(socket, io, db, ggufParser) {
     try {
       const config = db.getConfig();
       const modelsDir = config.baseModelsPath;
-      const dirExists = fs.existsSync(modelsDir);
+      const dirExists = await directoryExists(modelsDir);
 
       let scanned = 0;
       let updated = 0;
       let existingCount = 0;
 
       if (dirExists) {
-        const exts = [".gguf", ".bin", ".safetensors", ".pt", ".pth"];
-        const excludePatterns = [/mmproj/i, /-proj$/i, /\.factory$/i, /^_/i];
-
-        /**
-         * Check if a file is a valid model file by extension and GGUF magic number.
-         * @param {string} fileName - Name of the file to check.
-         * @param {string} fullPath - Full path to the file.
-         * @returns {boolean} True if valid model file, false otherwise.
-         */
-        const isValidModelFile = (fileName, fullPath) => {
-          if (excludePatterns.some((p) => p.test(fileName))) {
-            return false;
-          }
-
-          if (fileName.toLowerCase().endsWith(".gguf")) {
-            try {
-              const fd = fs.openSync(fullPath, "r");
-              const magicBuf = Buffer.alloc(4);
-              fs.readSync(fd, magicBuf, 0, 4, 0);
-              fs.closeSync(fd);
-              const magic = new DataView(magicBuf.buffer).getUint32(0, true);
-              if (magic !== 0x46554747) {
-                return false;
-              }
-            } catch {
-              return false;
-            }
-          }
-
-          return true;
-        };
-
-        /**
-         * Recursively find all model files in a directory.
-         * @param {string} dir - Directory path to search.
-         * @returns {Array<string>} Array of full paths to model files.
-         */
-        const findModelFiles = (dir) => {
-          const results = [];
-          try {
-            const entries = fs.readdirSync(dir, { withFileTypes: true });
-            for (const entry of entries) {
-              const fullPath = path.join(dir, entry.name);
-              if (entry.isDirectory()) {
-                results.push(...findModelFiles(fullPath));
-              } else if (
-                entry.isFile() &&
-                exts.some((e) => entry.name.toLowerCase().endsWith(e)) &&
-                isValidModelFile(entry.name, fullPath)
-              ) {
-                results.push(fullPath);
-              }
-            }
-          } catch (error) {
-            console.warn("[SCAN] Error reading directory:", { dir, error: error.message });
-          }
-          return results;
-        };
-
-        const modelFiles = findModelFiles(modelsDir);
+        const modelFiles = await findModelFiles(modelsDir);
         const existingModels = db.getModels();
 
         console.log("[DEBUG] Found", modelFiles.length, "model files to process");

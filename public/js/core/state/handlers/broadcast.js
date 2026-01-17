@@ -1,12 +1,30 @@
 /**
  * State Broadcast Handlers - Handle broadcast events
+ * Includes memory leak prevention with Map size limits
  */
 
 class StateBroadcastHandlers {
+  /**
+   * Maximum number of event types to track in _lastTimestamps Map.
+   * Prevents unbounded memory growth from repeated unique event types.
+   */
+  static MAX_TIMESTAMP_ENTRIES = 100;
+
   constructor(stateCore, handlers) {
     this.core = stateCore;
     this.handlers = handlers;
     this._lastTimestamps = new Map(); // Track last timestamp for each event type
+  }
+
+  /**
+   * Remove oldest entry when Map exceeds maximum size.
+   * Uses FIFO eviction to keep most recent events.
+   */
+  _pruneTimestampsMap() {
+    if (this._lastTimestamps.size > StateBroadcastHandlers.MAX_TIMESTAMP_ENTRIES) {
+      const firstKey = this._lastTimestamps.keys().next().value;
+      this._lastTimestamps.delete(firstKey);
+    }
   }
 
   /**
@@ -78,11 +96,12 @@ class StateBroadcastHandlers {
   }
 
   /**
-   * Check if broadcast should be processed based on timestamp
-   * Only process if timestamp is newer than last seen
-   * @param {string} eventType - Event type
-   * @param {number} timestamp - Event timestamp
-   * @returns {boolean} True if should process
+   * Check if broadcast should be processed based on timestamp.
+   * Only process if timestamp is newer than last seen.
+   * Includes memory leak prevention with Map size limits.
+   * @param {string} eventType - Event type.
+   * @param {number} timestamp - Event timestamp.
+   * @returns {boolean} True if should process.
    */
   _shouldProcess(eventType, timestamp) {
     if (!timestamp) {
@@ -91,10 +110,19 @@ class StateBroadcastHandlers {
     const lastTs = this._lastTimestamps.get(eventType) || 0;
     if (timestamp > lastTs) {
       this._lastTimestamps.set(eventType, timestamp);
+      // Prune oldest entries to prevent memory leaks
+      this._pruneTimestampsMap();
       return true;
     }
     console.log("[DEBUG] Broadcast skipped (stale):", { eventType, timestamp, lastTs });
     return false;
+  }
+
+  /**
+   * Clean up resources.
+   */
+  destroy() {
+    this._lastTimestamps.clear();
   }
 }
 

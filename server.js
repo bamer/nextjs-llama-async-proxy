@@ -16,7 +16,6 @@ import si from "systeminformation";
 import {
   startMetricsCollection,
   initializeLlamaMetricsScraper,
-  activeClients,
   collectMetrics,
   initializeLlamaMetricsScraper as initializeLlamaMetrics,
 } from "./server/metrics.js";
