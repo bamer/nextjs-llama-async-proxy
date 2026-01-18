@@ -30,6 +30,14 @@ class ModelsController {
         }
       })
     );
+
+    // Listen for action events from components
+    this.unsubscribers.push(
+      stateManager.subscribe("action:models:scan", (data) => this._handleScan(data)),
+      stateManager.subscribe("action:models:load", (data) => this._handleLoad(data)),
+      stateManager.subscribe("action:models:unload", (data) => this._handleUnload(data)),
+      stateManager.subscribe("action:models:delete", (data) => this._handleDelete(data))
+    );
   }
 
   _handleRouterStatusChange(routerStatus) {
@@ -48,10 +56,6 @@ class ModelsController {
 
     stateManager.set("models", updatedModels);
 
-    if (this.comp && this.comp.updateModelList) {
-      this.comp.updateModelList(updatedModels);
-    }
-
     console.log("[DEBUG] Updated models for router status:", {
       count: updatedModels.length,
       routerRunning,
@@ -65,17 +69,142 @@ class ModelsController {
     const updatedModels = models.map((m) => ({ ...m, status: "unloaded" }));
     stateManager.set("models", updatedModels);
 
-    if (this.comp && this.comp.updateModelList) {
-      this.comp.updateModelList(updatedModels);
-    }
-
     console.log("[DEBUG] Marked all models as unloaded:", updatedModels.length);
+  }
+
+  async _handleScan(data) {
+    console.log("[MODELS] _handleScan() called");
+    try {
+      stateManager.setActionStatus("models:scan", {
+        status: "scanning",
+        message: "Scanning for models...",
+        progress: 0,
+      });
+
+      const result = await stateManager.scanModels(data?.path);
+      stateManager.set("models", result.models || []);
+
+      stateManager.setActionStatus("models:scan", {
+        status: "complete",
+        message: `Found ${result.models?.length || 0} models`,
+        progress: 100,
+      });
+    } catch (error) {
+      stateManager.setActionStatus("models:scan", {
+        status: "error",
+        error: error.message,
+      });
+      console.log("[MODELS] Scan error:", error.message);
+    }
+  }
+
+  async _handleLoad(data) {
+    const { modelId } = data;
+    console.log("[MODELS] _handleLoad() called for:", modelId);
+    try {
+      stateManager.setActionStatus("models:load", {
+        status: "loading",
+        modelId,
+        message: `Loading ${modelId}...`,
+      });
+
+      const result = await stateManager.loadModel(modelId);
+      if (result.success) {
+        stateManager.setActionStatus("models:load", {
+          status: "complete",
+          modelId,
+        });
+      } else {
+        stateManager.setActionStatus("models:load", {
+          status: "error",
+          modelId,
+          error: result.error || "Failed to load model",
+        });
+      }
+
+      // Refresh models list to show loaded status
+      await this._refresh();
+    } catch (error) {
+      stateManager.setActionStatus("models:load", {
+        status: "error",
+        modelId,
+        error: error.message,
+      });
+      console.log("[MODELS] Load model error:", error.message);
+    }
+  }
+
+  async _handleUnload(data) {
+    const { modelId } = data;
+    console.log("[MODELS] _handleUnload() called for:", modelId);
+    try {
+      stateManager.setActionStatus("models:unload", {
+        status: "loading",
+        modelId,
+        message: `Unloading ${modelId}...`,
+      });
+
+      const result = await stateManager.unloadModel(modelId);
+      if (result.success) {
+        stateManager.setActionStatus("models:unload", {
+          status: "complete",
+          modelId,
+        });
+      } else {
+        stateManager.setActionStatus("models:unload", {
+          status: "error",
+          modelId,
+          error: result.error || "Failed to unload model",
+        });
+      }
+
+      // Refresh models list
+      await this._refresh();
+    } catch (error) {
+      stateManager.setActionStatus("models:unload", {
+        status: "error",
+        modelId,
+        error: error.message,
+      });
+      console.log("[MODELS] Unload model error:", error.message);
+    }
+  }
+
+  async _handleDelete(data) {
+    const { modelId } = data;
+    console.log("[MODELS] _handleDelete() called for:", modelId);
+    try {
+      stateManager.setActionStatus("models:delete", {
+        status: "loading",
+        modelId,
+        message: `Deleting ${modelId}...`,
+      });
+
+      await stateManager.deleteModel(modelId);
+
+      stateManager.setActionStatus("models:delete", {
+        status: "complete",
+        modelId,
+      });
+
+      // Refresh models list
+      await this._refresh();
+    } catch (error) {
+      stateManager.setActionStatus("models:delete", {
+        status: "error",
+        modelId,
+        error: error.message,
+      });
+      console.log("[MODELS] Delete model error:", error.message);
+    }
   }
 
   willUnmount() {
     console.log("[MODELS] ModelsController.willUnmount() called");
-    this.unsubscribers.forEach((unsub) => unsub());
-    this.unsubscribers = [];
+    if (this.unsubscribers) {
+      this.unsubscribers.forEach((unsub) => unsub());
+      this.unsubscribers = [];
+    }
   }
 
   destroy() {
@@ -90,7 +219,7 @@ class ModelsController {
     console.log("[MODELS] Found", models.length, "models in cache");
 
     console.log("[MODELS] Creating ModelsPage component");
-    this.comp = new ModelsPage({ models: models, controller: this });
+    this.comp = new ModelsPage({ models: stateManager.get("models") || [] });
 
     console.log("[MODELS] Calling component.render()");
     const html = this.comp.render();
@@ -145,105 +274,10 @@ class ModelsController {
       stateManager.set("models", finalModels);
       stateManager.set("routerStatus", routerStatus);
 
-      // Update the UI if component is mounted
-      if (this.comp && this.comp.updateModelList) {
-        this.comp.updateModelList(finalModels);
-      }
-
       console.log("[MODELS] ModelsController.load() - END");
     } catch (e) {
       console.log("[MODELS] Load error:", e.message);
       // Don't show toast on background load error, just log it
-    }
-  }
-
-  async _refresh() {
-    console.log("[MODELS] _refresh() called");
-    try {
-      const rs = await stateManager.getRouterStatus();
-      console.log("[MODELS] Router status refreshed:", rs.routerStatus?.status);
-      stateManager.set("routerStatus", rs.routerStatus);
-
-      const config = stateManager.get("config") || {};
-      const settings = stateManager.get("settings") || {};
-
-      const models = stateManager.get("models") || [];
-      const updated = models.map((m) => {
-        const rm = rs.routerStatus?.models?.find((x) => x.id === m.name);
-        return rm ? { ...m, status: rm.state } : { ...m, status: "unloaded" };
-      });
-      stateManager.set("models", updated);
-      this.comp?.updateModelList(updated);
-      console.log("[MODELS] Refreshed", updated.length, "models");
-    } catch (e) {
-      console.log("[MODELS] Router not running during refresh");
-      const models = stateManager.get("models") || [];
-      const updated = models.map((m) => ({ ...m, status: "unloaded" }));
-      stateManager.set("models", updated);
-      const config = stateManager.get("config") || {};
-      stateManager.set("routerStatus", null);
-      this.comp?.updateModelList(updated);
-    }
-  }
-
-  async handleLoad(name) {
-    console.log("[MODELS] handleLoad() called for:", name);
-    this.comp?.setModelLoading(name, true);
-    showNotification(`Loading ${name}...`, "info");
-    try {
-      const result = await stateManager.loadModel(name);
-      if (result.success) {
-        showNotification("Model loaded", "success");
-      } else {
-        showNotification(result.error || "Failed to load model", "error");
-      }
-      await this._refresh();
-    } catch (e) {
-      console.log("[MODELS] Load model error:", e.message);
-      showNotification(e.message, "error");
-    } finally {
-      this.comp?.setModelLoading(name, false);
-    }
-  }
-
-  async handleUnload(name) {
-    console.log("[MODELS] handleUnload() called for:", name);
-    this.comp?.setModelLoading(name, true);
-    showNotification(`Unloading ${name}...`, "info");
-    try {
-      const result = await stateManager.unloadModel(name);
-      if (result.success) {
-        showNotification("Model unloaded", "success");
-      } else {
-        showNotification(result.error || "Failed to unload model", "error");
-      }
-      await this._refresh();
-    } catch (e) {
-      console.log("[MODELS] Unload model error:", e.message);
-      showNotification(e.message, "error");
-    } finally {
-      this.comp?.setModelLoading(name, false);
-    }
-  }
-
-  async handleScan() {
-    console.log("[MODELS] handleScan() called");
-    this.comp?.setScanning(true, "Starting scan...");
-    showNotification("Scanning...", "info");
-    try {
-      this.comp?.setScanning(true, "Scanning filesystem...");
-      const d = await stateManager.scanModels();
-      console.log("[MODELS] Scan result:", d);
-      this.comp?.setScanning(true, `Processed: ${d.scanned || 0} new, ${d.updated || 0} updated`);
-      const d2 = await stateManager.getModels();
-      this.comp?.updateModelList(d2.models || []);
-      this.comp?.setScanning(false);
-      showNotification(`Scanned: ${d.scanned || 0} new, ${d.updated || 0} updated`, "success");
-      console.log("[MODELS] Reloaded", d2.models?.length, "models");
-    } catch (e) {
-      this.comp?.setScanning(false);
-      console.log("[MODELS] Scan error:", e.message);
-      showNotification(`Scan failed: ${e.message}`, "error");
     }
   }
 

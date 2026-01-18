@@ -15,6 +15,78 @@ class ModelFilters extends Component {
     this.onSearchChange = props.onSearchChange;
     this.onStatusChange = props.onStatusChange;
     this.onFavoritesToggle = props.onFavoritesToggle;
+
+    this.unsubscribers = [];
+    this.state = {
+      viewMode: "table", // table | grid
+      sortBy: "name",    // name | size | date
+      filterBy: "all",   // all | loaded | unloaded
+    };
+  }
+
+  /**
+   * Subscribe to state changes for filter, sort, and view mode
+   */
+  onMount() {
+    this.unsubscribers.push(
+      stateManager.subscribe("page:models:viewMode", (mode) => {
+        if (mode && mode !== this.state.viewMode) {
+          this.state.viewMode = mode;
+          this._updateView();
+        }
+      }),
+      stateManager.subscribe("page:models:sortBy", (sort) => {
+        if (sort && sort !== this.state.sortBy) {
+          this.state.sortBy = sort;
+          this._applySort();
+        }
+      }),
+      stateManager.subscribe("page:models:filterBy", (filter) => {
+        if (filter && filter !== this.state.filterBy) {
+          this.state.filterBy = filter;
+          this._applyFilter();
+        }
+      })
+    );
+  }
+
+  /**
+   * Clean up subscriptions when component is destroyed
+   */
+  destroy() {
+    if (this.unsubscribers) {
+      this.unsubscribers.forEach(unsub => unsub());
+      this.unsubscribers = [];
+    }
+    super.destroy();
+  }
+
+  _updateView() {
+    // Update view mode UI (e.g., toggle between table/grid icons)
+    const viewToggle = this.$("[data-action=toggle-view]");
+    if (viewToggle) {
+      viewToggle.textContent = this.state.viewMode === "table" ? "☰" : "▦";
+    }
+  }
+
+  _applySort() {
+    // Trigger sort with current sortBy value
+    console.log("[ModelFilters] Applying sort:", this.state.sortBy);
+  }
+
+  _applyFilter() {
+    // Trigger filter with current filterBy value
+    console.log("[ModelFilters] Applying filter:", this.state.filterBy);
+  }
+
+  /**
+   * Updates the search input UI value.
+   */
+  _updateSearchUI() {
+    const input = this.$("[data-field=search]");
+    if (input) {
+      input.value = this.search;
+    }
   }
 
   /**
@@ -39,16 +111,20 @@ class ModelFilters extends Component {
       this.favoritesOnly = e.target.checked;
       this.onFavoritesToggle?.(this.favoritesOnly);
     });
-  }
 
-  /**
-   * Updates the search input UI value.
-   */
-  _updateSearchUI() {
-    const input = this.$("[data-field=search]");
-    if (input) {
-      input.value = this.search;
-    }
+    // View mode toggle
+    this.on("click", "[data-action=toggle-view]", () => {
+      const newViewMode = this.state.viewMode === "table" ? "grid" : "table";
+      stateManager.set("page:models:viewMode", newViewMode);
+    });
+
+    // Sort buttons
+    this.on("click", "[data-action=sort]", (e, target) => {
+      const sortBy = target.dataset.sortBy || target.closest("[data-sort-by]")?.dataset.sortBy;
+      if (sortBy) {
+        stateManager.set("page:models:sortBy", sortBy);
+      }
+    });
   }
 
   /**
@@ -78,6 +154,9 @@ class ModelFilters extends Component {
           />
           Show Favorites Only
         </label>
+        <button class="btn btn-sm" data-action="toggle-view" title="Toggle View Mode">
+          ${this.state.viewMode === "table" ? "☰" : "▦"}
+        </button>
       </div>
     `;
   }

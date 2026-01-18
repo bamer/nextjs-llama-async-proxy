@@ -50,7 +50,10 @@ class LlamaRouterCard extends Component {
   }
 
   destroy() {
-    this.unsubscribers.forEach(u => u());
+    if (this.unsubscribers) {
+      this.unsubscribers.forEach(u => u());
+      this.unsubscribers = [];
+    }
     if (this._scraper) this._scraper.stop();
   }
 

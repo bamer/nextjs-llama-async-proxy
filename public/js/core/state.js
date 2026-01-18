@@ -355,12 +355,89 @@ class StateManager {
   }
 
   /**
-     * Update application settings
-     * @param {Object} s - New settings values
-     * @returns {Promise<Object>} Update result
-     */
+      * Update application settings
+      * @param {Object} s - New settings values
+      * @returns {Promise<Object>} Update result
+      */
   async updateSettings(s) {
     return this.api.updateSettings(s);
+  }
+
+  // ===== Event-Driven Methods (Phase 3.1.1) =====
+
+  /**
+   * Emit an action event that components can listen to
+   * @param {string} event - Event name (e.g., "models:scan")
+   * @param {any} data - Event data
+   */
+  emit(event, data = null) {
+    const key = `actions:${event}`;
+    this.core.set(key, {
+      data,
+      timestamp: Date.now(),
+      event,
+    });
+  }
+
+  /**
+   * Subscribe to action events with wildcard support
+   * @param {string} event - Event pattern (e.g., "actions:models:*" or "models:*")
+   * @param {Function} callback - Callback function
+   * @returns {Function} Unsubscribe function
+   */
+  subscribeAction(event, callback) {
+    // Normalize event pattern - remove "actions:" prefix if present for pattern matching
+    const patternStr = event.replace(/^actions:/, "");
+    const pattern = new RegExp(`^${patternStr.replace(/\*/g, ".*")}$`);
+
+    return this.core.subscribe("actions", (actions) => {
+      if (pattern.test(actions.event)) {
+        callback(actions);
+      }
+    });
+  }
+
+  /**
+   * Set page-specific state for components to react to
+   * @param {string} page - Page name (e.g., "dashboard")
+   * @param {string} key - State key
+   * @param {any} value - State value
+   */
+  setPageState(page, key, value) {
+    const pageKey = `page:${page}`;
+    const current = this.core.get(pageKey) || {};
+    current[key] = value;
+    this.core.set(pageKey, current);
+  }
+
+  /**
+   * Get page-specific state
+   * @param {string} page - Page name
+   * @returns {Object} Page state
+   */
+  getPageState(page) {
+    return this.core.get(`page:${page}`) || {};
+  }
+
+  /**
+   * Set action status for components to display (loading, success, error)
+   * @param {string} action - Action identifier (e.g., "models:scan")
+   * @param {Object} status - Status object { status, message, progress, error }
+   */
+  setActionStatus(action, status) {
+    this.core.set(`actions:${action}`, {
+      ...status,
+      timestamp: Date.now(),
+    });
+  }
+
+  /**
+   * Get action status
+   * @param {string} action - Action identifier
+   * @returns {Object|null} Status object or null
+   */
+  getActionStatus(action) {
+    return this.core.get(`actions:${action}`);
   }
 }
 

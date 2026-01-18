@@ -11,11 +11,9 @@ class DashboardController {
     this._stateUnsubscribers = []; // Track state subscriptions for cleanup
   }
 
-  init() {}
-
   /**
-   * Initialize the ChartManager when first needed
-   */
+    * Initialize the ChartManager when first needed
+    */
   _ensureChartManager() {
     if (!this.chartManager && typeof ChartManager !== "undefined") {
       console.log("[DASHBOARD] Creating ChartManager instance");
@@ -49,6 +47,40 @@ class DashboardController {
     }
   }
 
+  /**
+   * Handle config update action from component
+   * @param {Object} config - The config data to update
+   */
+  _handleConfigUpdate(config) {
+    if (config) {
+      stateManager.set("config", config);
+    }
+  }
+
+  /**
+   * Handle chart zoom action from component
+   * @param {Object} range - The zoom range data
+   */
+  _handleChartZoom(range) {
+    stateManager.setPageState("dashboard", "chartZoomRange", range);
+  }
+
+  /**
+   * Handle export action from component
+   * @param {Object} data - The data to export
+   */
+  _handleExport(data) {
+    if (data) {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `dashboard-metrics-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  }
+
   willUnmount() {
     // Clean up chart interval
     if (this.chartUpdateInterval) {
@@ -62,6 +94,18 @@ class DashboardController {
       this.chartManager = null;
     }
 
+    // Clean up action unsubscribers
+    if (this._actionUnsubscribers && this._actionUnsubscribers.length > 0) {
+      this._actionUnsubscribers.forEach((unsub) => {
+        try {
+          if (typeof unsub === "function") unsub();
+        } catch (e) {
+          console.warn("[Dashboard] Error cleaning up action unsubscribe:", e);
+        }
+      });
+      this._actionUnsubscribers = [];
+    }
+
     // Clean up subscriptions
     this._cleanupSubscriptions();
   }
@@ -71,10 +115,10 @@ class DashboardController {
   }
 
   /**
-   * Start chart updates using state subscription (no polling).
-   * Updates the component whenever metrics or history changes.
-   * @returns {void}
-   */
+    * Start chart updates using state subscription (no polling).
+    * Updates the component whenever metrics or history changes.
+    * @returns {void}
+    */
   _startChartUpdates() {
     // Clean up any existing interval
     if (this.chartUpdateInterval) {
@@ -86,14 +130,14 @@ class DashboardController {
     this._subscribe("metricsHistory", (history) => {
       if (this.comp && Array.isArray(history) && history.length > 0) {
         const metrics = stateManager.get("metrics");
-        this.comp.updateFromController(metrics, history);
+        // State is already updated, component will react via its own subscription
       }
     });
 
     this._subscribe("metrics", (metrics) => {
       if (this.comp) {
         const history = stateManager.get("metricsHistory") || [];
-        this.comp.updateFromController(metrics, history);
+        // State is already updated, component will react via its own subscription
       }
     });
   }
@@ -124,14 +168,15 @@ class DashboardController {
     stateManager.socket.request("config:get")
       .then((config) => {
         console.log("[DASHBOARD] ✓ Config loaded (promise resolved)", config);
-        if (this.comp) this.comp.updateConfig(config);
+        stateManager.set("config", config);
       })
       .catch((e) => console.warn("[DASHBOARD] ✗ Config load failed:", e.message));
 
     stateManager.socket.request("models:list")
       .then((models) => {
         console.log("[DASHBOARD] ✓ Models loaded (promise resolved):", models?.models?.length || 0);
-        if (this.comp) this.comp.updateModels(models);
+        // Store only the models array, not the wrapper object
+        stateManager.set("models", models?.models || []);
       })
       .catch((e) => console.warn("[DASHBOARD] ✗ Models load failed:", e.message));
 
@@ -143,10 +188,6 @@ class DashboardController {
         console.log("[DASHBOARD] Setting metrics in state:", metricsData);
         stateManager.set("metrics", metricsData || null);
         console.log("[DASHBOARD] Metrics state set. Subscribers should be notified");
-        if (this.comp) {
-          const history = stateManager.get("metricsHistory") || [];
-          this.comp.updateFromController(metricsData || null, history);
-        }
       })
       .catch((e) => {
         console.error("[DASHBOARD] ✗ Metrics load failed:", e);
@@ -159,54 +200,25 @@ class DashboardController {
         // Store history in state so subscribers get notified
         const historyData = history?.history || [];
         stateManager.set("metricsHistory", historyData);
-        if (this.comp) {
-          const metrics = stateManager.get("metrics");
-          this.comp.updateFromController(metrics?.metrics || null, historyData);
-        }
       })
       .catch((e) => console.warn("[DASHBOARD] ✗ History load failed:", e.message));
 
     stateManager.socket.request("settings:get")
       .then((settings) => {
         console.log("[DASHBOARD] ✓ Settings loaded (promise resolved)", settings);
-        if (this.comp) this.comp.updateSettings(settings);
+        stateManager.set("settings", settings);
       })
       .catch((e) => console.warn("[DASHBOARD] ✗ Settings load failed:", e.message));
 
     stateManager.socket.request("presets:list")
       .then((presets) => {
         console.log("[DASHBOARD] ✓ Presets loaded (promise resolved):", presets?.presets?.length || 0);
-        if (this.comp) this.comp.updatePresets(presets);
+        // Store only the presets array, not the wrapper object
+        stateManager.set("presets", presets?.presets || []);
       })
       .catch((e) => console.warn("[DASHBOARD] ✗ Presets load failed:", e.message));
 
     console.log("[DASHBOARD] All data requests fired (UI will update as data arrives)");
-  }
-
-  /**
-    * Subscribe to metrics updates for real-time chart updates
-    */
-  _subscribeToMetrics() {
-    console.log("[DASHBOARD] Setting up metrics subscriptions...");
-
-    // Subscribe to metrics history changes and update charts
-    this._stateUnsubscribers.push(
-      stateManager.subscribe("metricsHistory", (history) => {
-        if (this.comp && Array.isArray(history) && history.length > 0) {
-          const metrics = stateManager.get("metrics");
-          this.comp.updateFromController(metrics, history);
-        }
-      })
-    );
-
-    this._stateUnsubscribers.push(
-      stateManager.subscribe("metrics", (metrics) => {
-        if (this.comp) {
-          const history = stateManager.get("metricsHistory") || [];
-          this.comp.updateFromController(metrics, history);
-        }
-      })
-    );
   }
 
   /**
@@ -231,9 +243,6 @@ class DashboardController {
    */
   _setLoading(loading) {
     stateManager.set("routerLoading", !!loading);
-    if (this.comp) {
-      this.comp.setRouterLoading(!!loading);
-    }
   }
 
   /**
@@ -363,9 +372,9 @@ class DashboardController {
   }
 
   /**
-    * Render the dashboard page - called by router
-    * @returns {HTMLElement} The rendered page element
-    */
+     * Render the dashboard page - called by router
+     * @returns {HTMLElement} The rendered page element
+     */
   render() {
     console.log("[DASHBOARD] Render - creating page component...");
 
@@ -373,7 +382,7 @@ class DashboardController {
     this._ensureChartManager();
 
     // Create page component with chartManager
-    this.comp = new DashboardPage({ controller: this, chartManager: this.chartManager }); // Pass controller and chartManager to page
+    this.comp = new DashboardPage({ chartManager: this.chartManager });
 
     // Render component to HTML element (this.comp.render() now returns a DOM element)
     const el = this.comp.render();
@@ -392,16 +401,37 @@ class DashboardController {
     // Bind events
     this.comp.bindEvents();
 
-    // Start chart updates if component supports it
-    if (this.comp.updateFromController && typeof this.comp.updateFromController === "function") {
-      this._startChartUpdates();
-    }
+    // Set up action listeners
+    this._actionUnsubscribers = [
+      stateManager.subscribe("action:dashboard:refresh", () => this._loadDataAsync()),
+      stateManager.subscribe("action:dashboard:config", (data) => this._handleConfigUpdate(data?.config)),
+      stateManager.subscribe("action:dashboard:chartZoom", (data) => this._handleChartZoom(data?.range)),
+      stateManager.subscribe("action:dashboard:export", (data) => this._handleExport(data?.data)),
+    ];
 
-    // Call onMount for the component
+    // Start chart updates
+    this._startChartUpdates();
+
+    // Call onMount for the component - this emits action:dashboard:refresh
+    // Our action listener above will trigger _loadDataAsync()
     this.comp.onMount?.();
+
+    // Also trigger data load directly as a fallback (modern async - no timeout)
+    // This ensures data loads even if action event timing is off
+    this._loadDataAsync();
 
     console.log("[DASHBOARD] Render complete");
     return el;
+  }
+
+  /**
+   * Called after component is mounted to DOM - ensure presets sync
+   */
+  didMount() {
+    console.log("[DASHBOARD] didMount - calling page component didMount for full sync");
+    if (this.comp && this.comp.didMount) {
+      this.comp.didMount();
+    }
   }
 }
 

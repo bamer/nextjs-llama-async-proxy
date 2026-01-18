@@ -20,7 +20,6 @@ class PresetsPage extends Component {
       serverPort: null,
       serverUrl: null,
     };
-    this.controller = props.controller;
     this._domCache = new Map();
     this._eventsBounded = false;
     this.debouncedFilter = AppUtils.debounce(this._handleFilter.bind(this), 300);
@@ -41,7 +40,7 @@ class PresetsPage extends Component {
     const newBtn = document.getElementById("btn-new-preset");
     if (newBtn) {
       newBtn.removeEventListener("click", this._boundHandleNewPreset);
-      this._boundHandleNewPreset = this._handleNewPreset.bind(this);
+      this._boundHandleNewPreset = () => stateManager.emit("action:presets:new");
       newBtn.addEventListener("click", this._boundHandleNewPreset);
     }
 
@@ -51,75 +50,101 @@ class PresetsPage extends Component {
     const stopBtn = document.getElementById("btn-stop-server");
     stopBtn && (stopBtn.onclick = () => this._handleStopServer());
 
-    this._subscribeToServerStatus();
+    // Subscribe to state changes instead of socket events
+    this.unsubscribers.push(
+      stateManager.subscribe("presets", this._onPresetsChange.bind(this)),
+      stateManager.subscribe("pageState:presets", this._onPresetsStateChange.bind(this)),
+      stateManager.subscribe("llamaServerStatus", this._onServerStatusChange.bind(this)),
+      stateManager.subscribe("actions:presets:save", this._onSaveAction.bind(this)),
+      stateManager.subscribe("actions:presets:delete", this._onDeleteAction.bind(this)),
+      stateManager.subscribe("actions:presets:apply", this._onApplyAction.bind(this)),
+      stateManager.subscribe("action:presets:loaded", this._onPresetLoaded.bind(this))
+    );
 
-    if (window.stateManager?.subscribe) {
-      this.unsubscribers.push(
-        window.stateManager.subscribe("llamaServerStatus", (status) => {
-          if (status) {
-            this.state.serverRunning = status.status === "running";
-            this.state.serverPort = status.port || null;
-            this.state.serverUrl = status.url || null;
-            this._updateRouterCardHTML();
-          }
-        })
-      );
+    // Emit event to trigger initial load
+    stateManager.emit("action:presets:load");
+  }
+
+  _onPresetsChange(presets) {
+    if (JSON.stringify(presets) !== JSON.stringify(this.state.presets)) {
+      this.state.presets = presets || [];
+      this._updatePresetsList();
+      // Auto-select first preset if none selected
+      if (presets.length > 0 && !this.state.selectedPreset) {
+        stateManager.emit("action:presets:select", { presetId: presets[0].name });
+      }
     }
+  }
 
-    this._bindRouterCardEvents();
+  _onPresetsStateChange(state) {
+    if (state?.selectedPresetId) {
+      const preset = this.state.presets.find((p) => p.name === state.selectedPresetId);
+      if (preset && this.state.selectedPreset?.name !== preset.name) {
+        this.state.selectedPreset = preset;
+        this._updatePresetsList();
+        stateManager.emit("action:presets:loadData", { presetId: preset.name });
+      }
+    }
+  }
+
+  _onServerStatusChange(status) {
+    if (status) {
+      this.state.serverRunning = status.status === "running";
+      this.state.serverPort = status.port || null;
+      this.state.serverUrl = status.url || null;
+      this._updateRouterCard();
+    }
+  }
+
+  _onSaveAction(action) {
+    if (action.status === "loading") {
+      this._setSaving(true);
+    } else {
+      this._setSaving(false);
+      if (action.status === "error") {
+        showNotification(`Save failed: ${action.error}`, "error");
+      }
+    }
+  }
+
+  _onDeleteAction(action) {
+    if (action.status === "complete") {
+      this._updatePresetsList();
+    } else if (action.status === "error") {
+      showNotification(`Delete failed: ${action.error}`, "error");
+    }
+  }
+
+  _onApplyAction(action) {
+    if (action.status === "applying") {
+      this._setApplying(true, action.presetId);
+    } else {
+      this._setApplying(false);
+      if (action.status === "error") {
+        showNotification(`Apply failed: ${action.error}`, "error");
+      }
+    }
+  }
+
+  _onPresetLoaded(data) {
+    this.state.globalDefaults = data.defaults;
+    this.state.standaloneModels = data.standaloneModels;
+    // Auto-expand models section when models are present
+    if (data.standaloneModels && data.standaloneModels.length > 0) {
+      this.state.expandedModels = {};
+      data.standaloneModels.forEach((m) => {
+        this.state.expandedModels[m.name] = true;
+      });
+    }
+    this._updateEditor();
   }
 
   /**
-   * Subscribe to server status events from socket connection.
-   * @returns {void}
-   */
-  _subscribeToServerStatus() {
-    if (!window.socketClient?.socket) return;
-
-    window.socketClient.socket.on("llama:status", (data) => {
-      if (data?.status) {
-        this.state.serverRunning = data.status === "running";
-        this.state.serverPort = data.port || null;
-        this.state.serverUrl = data.url || null;
-        this._updateServerStatusPanel();
-        this._updateRouterCard();
-      }
-    });
-
-    window.socketClient.socket.on("llama-server:status", (data) => {
-      if (data?.type === "broadcast" && data?.data) {
-        const status = data.data;
-        this.state.serverRunning = status.status === "running";
-        this.state.serverPort = status.port || null;
-        this.state.serverUrl = status.url || null;
-        this._updateServerStatusPanel();
-        this._updateRouterCard();
-      }
-    });
-  }
-
-  /**
-   * Get the presets service instance from controller or props.
+   * Get the presets service instance from props.
    * @returns {Object|null} PresetsService instance or null
    */
   _getService() {
-    return this._presetsService || (this.controller ? this.controller.presetsService : null);
-  }
-
-  /**
-   * Emit an internal event and handle it with the appropriate handler.
-   * @param {string} event - Event name to emit
-   * @param {*} data - Event data to pass to handler
-   * @returns {void}
-   */
-  _emit(event, data) {
-    if (!this._el) return;
-    switch (event) {
-    case "preset:select": this._handlePresetSelect(data); break;
-    case "preset:loaded": this._handlePresetLoaded(data); break;
-    case "defaults:toggle": this._toggleDefaultsSection(); break;
-    case "param:add": this._handleAddParam(data); break;
-    }
+    return this._presetsService;
   }
 
   /**
@@ -132,25 +157,7 @@ class PresetsPage extends Component {
     if (!preset) return;
     this.state.selectedPreset = preset;
     this._updatePresetsList();
-    this.controller?.loadPresetData(preset);
-  }
-
-  /**
-   * Handle preset loaded event with default parameters and models.
-   * @param {Object} data - Data object containing defaults and standaloneModels
-   * @returns {void}
-   */
-  _handlePresetLoaded(data) {
-    this.state.globalDefaults = data.defaults;
-    this.state.standaloneModels = data.standaloneModels;
-    // Auto-expand models section when models are present
-    if (data.standaloneModels && data.standaloneModels.length > 0) {
-      this.state.expandedModels = {};
-      data.standaloneModels.forEach((m) => {
-        this.state.expandedModels[m.name] = true;
-      });
-    }
-    this._updateEditor();
+    stateManager.emit("action:presets:loadData", { presetId: preset.name });
   }
 
   _handleFilter(query) {
@@ -176,7 +183,7 @@ class PresetsPage extends Component {
         this.state.globalDefaults[param.iniKey] = param.default;
         this._updateEditor();
       } else {
-        this.controller?.loadPresetData(this.state.selectedPreset);
+        stateManager.emit("action:presets:loadData", { presetId: this.state.selectedPreset.name });
       }
     } catch (error) {
       showNotification(`Error: ${error.message}`, "error");
@@ -188,18 +195,7 @@ class PresetsPage extends Component {
    * @returns {Promise<void>} Promise that resolves when preset is created
    */
   async _handleNewPreset() {
-    const name = prompt("Preset name:");
-    if (!name) return;
-    try {
-      await this._getService().createPreset(name);
-      showNotification(`Preset "${name}" created`, "success");
-      // Add object format as documented
-      this.state.presets = [...this.state.presets, { name, path: `${name}.ini`, file: `config/${name}.ini` }];
-      this._updatePresetsList();
-      this._emit("preset:select", name);
-    } catch (error) {
-      showNotification(`Error: ${error.message}`, "error");
-    }
+    stateManager.emit("action:presets:new");
   }
 
   /**
@@ -263,6 +259,14 @@ class PresetsPage extends Component {
     } catch (error) {
       showNotification(`Failed: ${error.message}`, "error");
     }
+  }
+
+  destroy() {
+    if (this.unsubscribers) {
+      this.unsubscribers.forEach((unsub) => unsub());
+      this.unsubscribers = [];
+    }
+    super.destroy();
   }
 
   bindEvents() {}

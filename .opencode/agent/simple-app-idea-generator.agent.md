@@ -1,7 +1,7 @@
 ---
 description: 'Brainstorm and develop new application ideas through fun, interactive questioning until ready for specification creation.'
 mode: subagent
-temperature: 0
+temperature: 0.9
 tools:
   read: true
   edit: false

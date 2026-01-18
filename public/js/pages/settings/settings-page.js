@@ -36,78 +36,297 @@ class SettingsPage extends Component {
     this.llama_server_port = config.llama_server_port || 8080;
     this.llama_server_host = config.llama_server_host || "0.0.0.0";
     this.llama_server_metrics = config.llama_server_metrics !== false;
-    this.auto_start_on_launch = config.auto_start_on_launch !== false; // Auto-start llama-server on dashboard launch
-    this.controller = props.controller;
+    this.auto_start_on_launch = config.auto_start_on_launch !== false;
+    this.unsubscribers = [];
+  }
+
+  onMount() {
+    console.log("[SettingsPage] onMount");
+
+    // Subscribe to state changes
+    this.unsubscribers.push(
+      stateManager.subscribe("config", this._onConfigChange.bind(this)),
+      stateManager.subscribe("settings", this._onSettingsChange.bind(this)),
+      stateManager.subscribe("llamaServerStatus", this._onLlamaStatusChange.bind(this)),
+      stateManager.subscribe("routerStatus", this._onRouterStatusChange.bind(this)),
+      stateManager.subscribe("presets", this._onPresetsChange.bind(this)),
+      stateManager.subscribe("actions:settings:save", this._onSaveAction.bind(this)),
+      stateManager.subscribe("actions:router:restart", this._onRestartAction.bind(this))
+    );
   }
 
   /**
-   * Save current configuration and settings to the server.
-   * Validates connection and updates stateManager with new values.
-   * @returns {Promise<void>} Promise that resolves when save is complete
+   * Handle config state changes.
+   * @param {Object} config - New config state
    */
-  async _save() {
+  _onConfigChange(config) {
+    if (JSON.stringify(config) !== JSON.stringify(this._getConfig())) {
+      this._applyConfig(config || {});
+    }
+  }
+
+  /**
+   * Get current config from properties.
+   * @returns {Object} Current config object
+   */
+  _getConfig() {
+    return {
+      serverPath: this.serverPath,
+      host: this.host,
+      port: this.port,
+      baseModelsPath: this.baseModelsPath,
+      ctx_size: this.ctx_size,
+      threads: this.threads,
+      batch_size: this.batch_size,
+      temperature: this.temperature,
+      repeatPenalty: this.repeatPenalty,
+      llama_server_port: this.llama_server_port,
+      llama_server_host: this.llama_server_host,
+      llama_server_metrics: this.llama_server_metrics,
+      auto_start_on_launch: this.auto_start_on_launch,
+    };
+  }
+
+  /**
+   * Apply config changes to properties.
+   * @param {Object} config - Config to apply
+   */
+  _applyConfig(config) {
+    if (config.serverPath !== undefined) this.serverPath = config.serverPath;
+    if (config.host !== undefined) this.host = config.host;
+    if (config.port !== undefined) this.port = config.port;
+    if (config.baseModelsPath !== undefined) this.baseModelsPath = config.baseModelsPath;
+    if (config.ctx_size !== undefined) this.ctx_size = config.ctx_size;
+    if (config.threads !== undefined) this.threads = config.threads;
+    if (config.batch_size !== undefined) this.batch_size = config.batch_size;
+    if (config.temperature !== undefined) this.temperature = config.temperature;
+    if (config.repeatPenalty !== undefined) this.repeatPenalty = config.repeatPenalty;
+    if (config.llama_server_port !== undefined) this.llama_server_port = config.llama_server_port;
+    if (config.llama_server_host !== undefined) this.llama_server_host = config.llama_server_host;
+    if (config.llama_server_metrics !== undefined) this.llama_server_metrics = config.llama_server_metrics;
+    if (config.auto_start_on_launch !== undefined) this.auto_start_on_launch = config.auto_start_on_launch;
+    this._updateConfigUI();
+  }
+
+  /**
+   * Handle settings state changes.
+   * @param {Object} settings - New settings state
+   */
+  _onSettingsChange(settings) {
+    if (JSON.stringify(settings) !== JSON.stringify(this._getSettings())) {
+      this._applySettings(settings || {});
+    }
+  }
+
+  /**
+   * Get current settings from properties.
+   * @returns {Object} Current settings object
+   */
+  _getSettings() {
+    return {
+      maxModelsLoaded: this.maxModelsLoaded,
+      parallelSlots: this.parallelSlots,
+      gpuLayers: this.gpuLayers,
+      logLevel: this.logLevel,
+      maxFileSize: this.maxFileSize,
+      maxFiles: this.maxFiles,
+      enableFileLogging: this.enableFileLogging,
+      enableDatabaseLogging: this.enableDatabaseLogging,
+      enableConsoleLogging: this.enableConsoleLogging,
+    };
+  }
+
+  /**
+   * Apply settings changes to properties.
+   * @param {Object} settings - Settings to apply
+   */
+  _applySettings(settings) {
+    if (settings.maxModelsLoaded !== undefined) this.maxModelsLoaded = settings.maxModelsLoaded;
+    if (settings.parallelSlots !== undefined) this.parallelSlots = settings.parallelSlots;
+    if (settings.gpuLayers !== undefined) this.gpuLayers = settings.gpuLayers;
+    if (settings.logLevel !== undefined) this.logLevel = settings.logLevel;
+    if (settings.maxFileSize !== undefined) this.maxFileSize = settings.maxFileSize;
+    if (settings.maxFiles !== undefined) this.maxFiles = settings.maxFiles;
+    if (settings.enableFileLogging !== undefined) this.enableFileLogging = settings.enableFileLogging;
+    if (settings.enableDatabaseLogging !== undefined) this.enableDatabaseLogging = settings.enableDatabaseLogging;
+    if (settings.enableConsoleLogging !== undefined) this.enableConsoleLogging = settings.enableConsoleLogging;
+    this._updateSettingsUI();
+  }
+
+  /**
+   * Handle llama server status changes.
+   * @param {Object} status - New llama status
+   */
+  _onLlamaStatusChange(status) {
+    this.llamaStatus = status || {};
+    this._updateStatusUI();
+  }
+
+  /**
+   * Handle router status changes.
+   * @param {Object} status - New router status
+   */
+  _onRouterStatusChange(status) {
+    this.routerStatus = status || {};
+    this._updateStatusUI();
+  }
+
+  /**
+   * Handle presets changes.
+   * @param {Array} presets - New presets list
+   */
+  _onPresetsChange(presets) {
+    this.presets = presets || [];
+    this._updatePresetsDropdown();
+  }
+
+  /**
+   * Handle save action status changes.
+   * @param {Object} action - Action status
+   */
+  _onSaveAction(action) {
     const btn = this.$("[data-action=\"save\"]");
     if (btn) {
-      btn.textContent = "Saving...";
-      btn.disabled = true;
-    }
-
-    try {
-      // Check connection via socketClient
-      if (typeof socketClient !== "undefined" && !socketClient.isConnected) {
-        throw new Error("Not connected to server");
-      }
-      // Also check via stateManager's internal socket if available
-      if (stateManager.socket && !stateManager.socket.isConnected) {
-        throw new Error("Not connected to server");
-      }
-
-      const config = {
-        serverPath: this.serverPath,
-        host: this.host,
-        port: this.port,
-        baseModelsPath: this.baseModelsPath,
-        ctx_size: this.ctx_size,
-        threads: this.threads,
-        batch_size: this.batch_size,
-        temperature: this.temperature,
-        repeatPenalty: this.repeatPenalty,
-        llama_server_port: this.llama_server_port,
-        llama_server_host: this.llama_server_host,
-        llama_server_metrics: this.llama_server_metrics,
-        auto_start_on_launch: this.auto_start_on_launch,
-      };
-
-      const settings = {
-        maxModelsLoaded: this.maxModelsLoaded,
-        parallelSlots: this.parallelSlots,
-        gpuLayers: this.gpuLayers,
-        logLevel: this.logLevel,
-        maxFileSize: this.maxFileSize,
-        maxFiles: this.maxFiles,
-        enableFileLogging: this.enableFileLogging,
-        enableDatabaseLogging: this.enableDatabaseLogging,
-        enableConsoleLogging: this.enableConsoleLogging,
-      };
-
-      console.log("[DEBUG] Saving config and settings", { config, settings });
-
-      await stateManager.updateConfig(config);
-      await stateManager.updateSettings(settings);
-
-      stateManager.set("config", config);
-      stateManager.set("settings", settings);
-
-      showNotification("Settings saved successfully", "success");
-    } catch (e) {
-      console.error("[DEBUG] Save failed:", e.message);
-      showNotification(`Save failed: ${e.message}`, "error");
-    } finally {
-      if (btn) {
+      if (action.status === "saving") {
+        btn.textContent = "Saving...";
+        btn.disabled = true;
+      } else {
         btn.textContent = "Save All Settings";
         btn.disabled = false;
       }
     }
+
+    if (action.status === "complete") {
+      showNotification("Settings saved", "success");
+    } else if (action.status === "error") {
+      showNotification(`Save failed: ${action.error}`, "error");
+    }
+  }
+
+  /**
+   * Handle restart action status changes.
+   * @param {Object} action - Action status
+   */
+  _onRestartAction(action) {
+    const restartBtn = this.$("[data-action=\"restart-router\"]");
+    if (restartBtn) {
+      if (action.status === "restarting") {
+        restartBtn.disabled = true;
+        restartBtn.textContent = "Restarting...";
+      } else {
+        restartBtn.disabled = false;
+        restartBtn.textContent = "Restart Router";
+      }
+    }
+
+    if (action.status === "error") {
+      showNotification(`Restart failed: ${action.error}`, "error");
+    }
+  }
+
+  /**
+   * Update config-related UI elements.
+   */
+  _updateConfigUI() {
+    const elements = this._el?.querySelectorAll("[data-field]");
+    if (elements) {
+      elements.forEach((el) => {
+        const field = el.dataset.field;
+        if (this[field] !== undefined) {
+          if (el.type === "checkbox") {
+            el.checked = this[field];
+          } else {
+            el.value = this[field];
+          }
+        }
+      });
+    }
+  }
+
+  /**
+   * Update settings-related UI elements.
+   */
+  _updateSettingsUI() {
+    const elements = this._el?.querySelectorAll("[data-setting]");
+    if (elements) {
+      elements.forEach((el) => {
+        const field = el.dataset.setting;
+        if (this[field] !== undefined) {
+          if (el.type === "checkbox") {
+            el.checked = this[field];
+          } else {
+            el.value = this[field];
+          }
+        }
+      });
+    }
+  }
+
+  /**
+   * Update presets dropdown.
+   */
+  _updatePresetsDropdown() {
+    const presetSelect = this._el?.querySelector("[data-field=\"activePreset\"]");
+    if (presetSelect) {
+      const currentValue = presetSelect.value;
+      presetSelect.innerHTML = '<option value="">-- Select Preset --</option>';
+      this.presets.forEach((preset) => {
+        const option = document.createElement("option");
+        option.value = preset.id;
+        option.textContent = preset.name;
+        presetSelect.appendChild(option);
+      });
+      if (currentValue) {
+        presetSelect.value = currentValue;
+      }
+    }
+  }
+
+  /**
+   * Clean up subscriptions.
+   */
+  destroy() {
+    if (this.unsubscribers) {
+      this.unsubscribers.forEach((unsub) => unsub());
+      this.unsubscribers = [];
+    }
+    super.destroy();
+  }
+
+  /**
+   * Emit save action with current config and settings.
+   */
+  _save() {
+    const config = {
+      serverPath: this.serverPath,
+      host: this.host,
+      port: this.port,
+      baseModelsPath: this.baseModelsPath,
+      ctx_size: this.ctx_size,
+      threads: this.threads,
+      batch_size: this.batch_size,
+      temperature: this.temperature,
+      repeatPenalty: this.repeatPenalty,
+      llama_server_port: this.llama_server_port,
+      llama_server_host: this.llama_server_host,
+      llama_server_metrics: this.llama_server_metrics,
+      auto_start_on_launch: this.auto_start_on_launch,
+    };
+
+    const settings = {
+      maxModelsLoaded: this.maxModelsLoaded,
+      parallelSlots: this.parallelSlots,
+      gpuLayers: this.gpuLayers,
+      logLevel: this.logLevel,
+      maxFileSize: this.maxFileSize,
+      maxFiles: this.maxFiles,
+      enableFileLogging: this.enableFileLogging,
+      enableDatabaseLogging: this.enableDatabaseLogging,
+      enableConsoleLogging: this.enableConsoleLogging,
+    };
+
+    console.log("[DEBUG] Emitting save action", { config, settings });
+    stateManager.emit("action:settings:save", { config, settings });
   }
 
   /**
@@ -147,103 +366,26 @@ class SettingsPage extends Component {
   }
 
   /**
-   * Export current configuration to a JSON file for backup.
-   * @returns {Promise<void>} Promise that resolves when export is complete
+   * Emit export action.
    */
-  async _exportConfig() {
-    console.log("[DEBUG] Exporting configuration");
-
-    try {
-      const config = stateManager.get("config") || {};
-      const settings = stateManager.get("settings") || {};
-
-      const fullConfig = {
-        config,
-        settings,
-        exportDate: new Date().toISOString(),
-        version: "1.0",
-      };
-
-      const data = JSON.stringify(fullConfig, null, 2);
-      const blob = new Blob([data], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `llama-dashboard-config-${Date.now()}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      console.log("[DEBUG] Configuration exported successfully");
-      showNotification("Configuration exported successfully", "success");
-    } catch (error) {
-      console.error("[DEBUG] Export error:", error);
-      showNotification(`Export failed: ${error.message}`, "error");
-    }
+  _exportConfig() {
+    console.log("[DEBUG] Emitting export action");
+    stateManager.emit("action:config:export");
   }
 
   /**
-   * Import configuration from a JSON file and apply settings.
+   * Emit import action with imported config.
    * @param {Object} importedConfig - Configuration object with config and settings properties
-   * @returns {Promise<void>} Promise that resolves when import is complete
    */
-  async _importConfig(importedConfig) {
-    console.log("[DEBUG] Importing configuration:", importedConfig);
+  _importConfig(importedConfig) {
+    console.log("[DEBUG] Emitting import action:", importedConfig);
 
     if (!importedConfig.config || !importedConfig.settings) {
       showNotification("Invalid configuration file", "error");
       return;
     }
 
-    try {
-      const { config, settings } = importedConfig;
-
-      // Apply imported config
-      if (config.serverPath !== undefined) this.serverPath = config.serverPath;
-      if (config.host !== undefined) this.host = config.host;
-      if (config.port !== undefined) this.port = config.port;
-      if (config.ctx_size !== undefined) this.ctx_size = config.ctx_size;
-      if (config.threads !== undefined) this.threads = config.threads;
-      if (config.batch_size !== undefined) this.batch_size = config.batch_size;
-      if (config.temperature !== undefined) this.temperature = config.temperature;
-      if (config.repeatPenalty !== undefined) this.repeatPenalty = config.repeatPenalty;
-      if (config.llama_server_port !== undefined) this.llama_server_port = config.llama_server_port;
-      if (config.llama_server_host !== undefined) this.llama_server_host = config.llama_server_host;
-      if (config.llama_server_metrics !== undefined)
-        this.llama_server_metrics = config.llama_server_metrics;
-      // New auto_start_on_launch parameter with backward compatibility
-      if (config.auto_start_on_launch !== undefined) {
-        this.auto_start_on_launch = config.auto_start_on_launch;
-      } else if (config.llama_server_enabled !== undefined) {
-        // Backward compatibility: rename old key to new key
-        this.auto_start_on_launch = config.llama_server_enabled;
-      }
-
-      // Apply imported settings
-      if (settings.maxModelsLoaded !== undefined) this.maxModelsLoaded = settings.maxModelsLoaded;
-      if (settings.parallelSlots !== undefined) this.parallelSlots = settings.parallelSlots;
-      if (settings.gpuLayers !== undefined) this.gpuLayers = settings.gpuLayers;
-      if (settings.logLevel !== undefined) this.logLevel = settings.logLevel;
-      if (settings.maxFileSize !== undefined) this.maxFileSize = settings.maxFileSize;
-      if (settings.maxFiles !== undefined) this.maxFiles = settings.maxFiles;
-      if (settings.enableFileLogging !== undefined)
-        this.enableFileLogging = settings.enableFileLogging;
-      if (settings.enableDatabaseLogging !== undefined)
-        this.enableDatabaseLogging = settings.enableDatabaseLogging;
-      if (settings.enableConsoleLogging !== undefined)
-        this.enableConsoleLogging = settings.enableConsoleLogging;
-
-      // Save to server
-      await this._save();
-
-      console.log("[DEBUG] Configuration imported successfully");
-      showNotification("Configuration imported successfully", "success");
-    } catch (error) {
-      console.error("[DEBUG] Import error:", error);
-      showNotification(`Import failed: ${error.message}`, "error");
-    }
+    stateManager.emit("action:config:import", { config: importedConfig.config });
   }
 
   render() {
@@ -262,7 +404,19 @@ class SettingsPage extends Component {
         presets: this.presets,
         maxModelsLoaded: this.maxModelsLoaded,
         ctxSize: this.ctx_size,
-        onAction: (action) => this.controller?.handleRouterAction(action),
+        onAction: (action) => {
+          switch (action) {
+          case "start":
+            stateManager.emit("action:router:start");
+            break;
+          case "stop":
+            stateManager.emit("action:router:stop");
+            break;
+          case "restart":
+            stateManager.emit("action:router:restart");
+            break;
+          }
+        },
       }),
       Component.h(window.RouterConfig, {
         maxModelsLoaded: this.maxModelsLoaded,

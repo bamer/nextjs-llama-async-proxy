@@ -85,13 +85,16 @@
       container.onclick = (e) => {
         const item = e.target.closest(".preset-item");
         if (item && !e.target.classList.contains("preset-delete")) {
-          this._emit("preset:select", item.dataset.presetName);
+          this._handlePresetSelect(item.dataset.presetName);
         }
       };
       container.querySelectorAll(".preset-delete").forEach((btn) => {
         btn.onclick = (e) => {
           e.stopPropagation();
-          this._handleDeletePreset(btn.dataset.presetName);
+          const presetId = btn.dataset.presetName;
+          if (confirm(`Delete preset "${presetId}"?`)) {
+            stateManager.emit("action:presets:delete", { presetId });
+          }
         };
       });
     };
@@ -102,7 +105,7 @@
      */
     PresetsPage.prototype._bindEditorEvents = function () {
       const defaultsHeader = document.getElementById("header-defaults");
-      defaultsHeader && (defaultsHeader.onclick = () => this._emit("defaults:toggle"));
+      defaultsHeader && (defaultsHeader.onclick = () => this._toggleDefaultsSection());
 
       const modelsHeader = document.getElementById("header-models");
       if (modelsHeader) {
@@ -119,7 +122,7 @@
       if (addParamSelect) {
         addParamSelect.onchange = (e) => {
           if (e.target.value) {
-            this._emit("param:add", { paramKey: e.target.value, section: e.target.dataset.section, name: e.target.dataset.name });
+            this._handleAddParam({ paramKey: e.target.value, section: e.target.dataset.section, name: e.target.dataset.name });
             e.target.value = "";
           }
         };
@@ -183,7 +186,7 @@
         this._updatePresetsList();
         if (this.state.selectedPreset?.name === name) {
           this.state.selectedPreset = this.state.presets[0] || null;
-          if (this.state.selectedPreset) this._emit("preset:select", this.state.selectedPreset.name);
+          if (this.state.selectedPreset) this._handlePresetSelect(this.state.selectedPreset.name);
           else {
             const editor = this._domCache.get("editor");
             if (editor) editor.innerHTML = "<div class='empty-state'>Select a preset</div>";
@@ -206,7 +209,7 @@
         await this._getService().addModel(this.state.selectedPreset.name, modelName, {});
         showNotification(`Model "${modelName}" added`, "success");
         select.value = "";
-        this.controller?.loadPresetData(this.state.selectedPreset);
+        stateManager.emit("action:presets:loadData", { presetId: this.state.selectedPreset.name });
       } catch (error) {
         showNotification(`Error: ${error.message}`, "error");
       }

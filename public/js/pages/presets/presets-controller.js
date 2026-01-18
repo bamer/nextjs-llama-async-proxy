@@ -22,7 +22,10 @@ class PresetsController {
   }
 
   willUnmount() {
-    this.unsubscribers.forEach((unsub) => unsub());
+    if (this.unsubscribers) {
+      this.unsubscribers.forEach((unsub) => unsub());
+      this.unsubscribers = [];
+    }
   }
 
   destroy() {
@@ -49,9 +52,9 @@ class PresetsController {
 
     this.comp = new window.PresetsPage({
       presetsService: this.presetsService,
-      controller: this,
       availableModels,
     });
+    this.init();
     const el = this.comp.render();
     this.comp._el = el;
     el._component = this.comp;
@@ -59,21 +62,23 @@ class PresetsController {
     return el;
   }
 
-  didMount() {
-    const newBtn = document.getElementById("btn-new-preset");
-    if (newBtn) {
-      newBtn.onclick = () => this.comp._handleNewPreset();
-    }
-    this.loadPresetsData();
+  init() {
+    console.log("[PRESETS] Controller init");
+
+    // Subscribe to action events from the page component
+    this.unsubscribers.push(
+      stateManager.subscribe("action:presets:load", () => this._loadPresets()),
+      stateManager.subscribe("action:presets:loadData", (data) => this._handleLoadData(data)),
+      stateManager.subscribe("action:presets:save", (data) => this._handleSave(data)),
+      stateManager.subscribe("action:presets:delete", (data) => this._handleDelete(data)),
+      stateManager.subscribe("action:presets:apply", (data) => this._handleApply(data)),
+      stateManager.subscribe("action:presets:select", (data) => this._handleSelect(data)),
+      stateManager.subscribe("action:presets:new", () => this._handleNew())
+    );
   }
 
-  /**
-   * Load presets data from the presets service and update state.
-   * Handles connection retry if socket is not yet available.
-   * @returns {Promise<void>} Promise that resolves when presets are loaded
-   */
-  async loadPresetsData() {
-    console.log("[PRESETS] loadPresetsData called");
+  async _loadPresets() {
+    console.log("[PRESETS] _loadPresets called");
     const service = this._ensureService();
 
     if (!service) {
@@ -81,7 +86,7 @@ class PresetsController {
       const checkSocket = () => {
         attempts++;
         if (window.socketClient?.socket?.connected) {
-          this.loadPresetsData();
+          this._loadPresets();
         } else if (attempts < 50) {
           setTimeout(checkSocket, 100);
         }
@@ -93,41 +98,159 @@ class PresetsController {
     try {
       const result = await service.listPresets();
       const presets = result?.presets || result || [];
-      if (this.comp) {
-        this.comp.state.presets = presets;
-        this.comp.state.loading = false;
-        this.comp._updatePresetsList();
-        if (presets.length > 0 && !this.comp.state.selectedPreset) {
-          this.comp._emit("preset:select", presets[0].name);  // Now presets[0] is an object with .name
-        }
-      }
-      this.loadAvailableModels();
+      stateManager.setPageState("presets", "presets", presets);
+      stateManager.setActionStatus("presets:load", { status: "complete" });
     } catch (error) {
       console.error("[PRESETS] Load presets error:", error.message, error.stack);
+      stateManager.setActionStatus("presets:load", { status: "error", error: error.message });
       ToastManager.error("Failed to load presets", {
-        action: { label: "Retry", handler: () => this.loadPresetsData() }
+        action: { label: "Retry", handler: () => this._loadPresets() }
       });
-      if (this.comp) {
-        this.comp.state.loading = false;
-      }
     }
   }
 
-  /**
-   * Load available models from stateManager and update component state.
-   * @returns {Promise<void>} Promise that resolves when models are loaded
-   */
-  async loadAvailableModels() {
+  async _handleLoadData(data) {
+    const { presetId } = data;
+    const service = this._ensureService();
+    if (!service) return;
+
     try {
-      const models = stateManager.get("models") || [];
-      if (this.comp) {
-        this.comp.state.availableModels = models;
-        if (this.comp.state.selectedPreset) {
-          this.comp._updateEditor();
-        }
+      const [modelsResult, defaultsResult] = await Promise.all([
+        service.getModelsFromPreset(presetId),
+        service.getDefaults(presetId),
+      ]);
+
+      const models = modelsResult || {};
+      const standaloneModels = [];
+
+      for (const modelName of Object.keys(models)) {
+        if (modelName === "*") continue;
+        standaloneModels.push({ name: modelName, fullName: modelName, ...models[modelName] });
       }
+
+      // Emit event with preset data
+      stateManager.emit("action:presets:loaded", {
+        preset: { name: presetId },
+        defaults: defaultsResult || {},
+        standaloneModels,
+      });
     } catch (error) {
-      console.error("[PRESETS] Load available models error:", error.message);
+      console.error("[PRESETS] Load preset data error:", error.message);
+      showNotification("Failed to load preset data", "error");
+    }
+  }
+
+  async _handleSave(data) {
+    const { preset, isNew } = data;
+    try {
+      stateManager.setActionStatus("presets:save", {
+        status: "saving",
+        presetId: preset.id
+      });
+
+      const service = this._ensureService();
+      if (isNew) {
+        await service.createPreset(preset.name);
+      } else {
+        await service.updatePreset(preset);
+      }
+
+      await this._loadPresets();
+
+      stateManager.setActionStatus("presets:save", {
+        status: "complete",
+        presetId: preset.id
+      });
+
+      showNotification("Preset saved successfully", "success");
+    } catch (error) {
+      stateManager.setActionStatus("presets:save", {
+        status: "error",
+        error: error.message
+      });
+      showNotification(`Failed to save preset: ${error.message}`, "error");
+    }
+  }
+
+  async _handleDelete(data) {
+    const { presetId } = data;
+    try {
+      stateManager.setActionStatus("presets:delete", {
+        status: "loading",
+        presetId
+      });
+
+      const service = this._ensureService();
+      await service.deletePreset(presetId);
+      await this._loadPresets();
+
+      stateManager.setActionStatus("presets:delete", {
+        status: "complete",
+        presetId
+      });
+
+      showNotification("Preset deleted", "success");
+    } catch (error) {
+      stateManager.setActionStatus("presets:delete", {
+        status: "error",
+        error: error.message
+      });
+      showNotification(`Failed to delete preset: ${error.message}`, "error");
+    }
+  }
+
+  async _handleApply(data) {
+    const { preset } = data;
+    try {
+      stateManager.setActionStatus("presets:apply", {
+        status: "applying",
+        presetId: preset.id
+      });
+
+      // Apply preset to llama.cpp
+      await stateManager.applyPreset(preset);
+
+      stateManager.setActionStatus("presets:apply", {
+        status: "complete",
+        presetId: preset.id
+      });
+
+      showNotification(`Preset "${preset.name}" applied`, "success");
+    } catch (error) {
+      stateManager.setActionStatus("presets:apply", {
+        status: "error",
+        error: error.message
+      });
+      showNotification(`Failed to apply preset: ${error.message}`, "error");
+    }
+  }
+
+  _handleSelect(data) {
+    const { presetId } = data;
+    stateManager.setPageState("presets", "selectedPresetId", presetId);
+  }
+
+  async _handleNew() {
+    const name = prompt("Preset name:");
+    if (!name) return;
+
+    try {
+      const service = this._ensureService();
+      await service.createPreset(name);
+      showNotification(`Preset "${name}" created`, "success");
+      await this._loadPresets();
+
+      // Emit select event for the new preset
+      stateManager.emit("action:presets:select", { presetId: name });
+    } catch (error) {
+      showNotification(`Error: ${error.message}`, "error");
+    }
+  }
+
+  didMount() {
+    const newBtn = document.getElementById("btn-new-preset");
+    if (newBtn) {
+      newBtn.onclick = () => stateManager.emit("action:presets:new");
     }
   }
 
@@ -161,13 +284,12 @@ class PresetsController {
         standaloneModels.push({ name: modelName, fullName: modelName, ...models[modelName] });
       }
 
-      if (this.comp) {
-        this.comp._emit("preset:loaded", {
-          preset: { name },
-          defaults: defaultsResult || {},
-          standaloneModels,
-        });
-      }
+      // Emit event with preset data
+      stateManager.emit("action:presets:loaded", {
+        preset: { name },
+        defaults: defaultsResult || {},
+        standaloneModels,
+      });
     } catch (error) {
       console.error("[PRESETS] Load preset data error:", error.message);
       showNotification("Failed to load preset data", "error");

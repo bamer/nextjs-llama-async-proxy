@@ -3,34 +3,41 @@
  */
 
 class DashboardPage extends Component {
-  constructor(props) {
+  constructor(props = {}) {
     super(props);
 
-    this.metrics = props.metrics || { cpu: { usage: 0 }, memory: { used: 0 }, gpu: null };
-    this.gpuMetrics = props.gpuMetrics || { usage: 0, memoryUsed: 0, memoryTotal: 0 };
-    this.models = props.models || [];
-    this.status = props.status || null;
-    this.routerStatus = props.routerStatus || null;
-    this.presets = props.presets || [];
-    this.history = props.history || [];
+    // Local component state (no controller reference)
+    this.state = {
+      initialized: false,
+      connected: false,
+      metrics: null,
+      history: [],
+      gpuMetrics: null,
+      models: [],
+      presets: [],
+      config: {},
+      settings: {},
+      llamaStatus: null,
+      routerStatus: null,
+      routerLoading: false,
+    };
+
+    // Chart and UI state
     this.chartType = "usage";
-    this.chartStats = window.DashboardUtils?._calculateStats?.(this.history) || {
+    this.chartStats = {
       current: 0,
       avg: 0,
       max: 0,
     };
     this.loading = false;
-    this.routerLoading = false;
     this.selectedPreset = null;
-    this.controller = props.controller;
     this.chartManager = props.chartManager;
     this.unsubscribers = [];
     this.routerCardUpdater = null;
   }
 
   onMount() {
-    console.log("[DashboardPage] onMount called");
-    console.log("[DashboardPage] controller exists:", !!this.controller);
+    console.log("[DashboardPage] onMount - subscribing to state");
 
     // Remove GPU section loading skeleton immediately for instant loading
     this._updateGPUSection();
@@ -38,65 +45,240 @@ class DashboardPage extends Component {
     // Skeleton UI is already applied during render(), but ensure it's there
     this._renderSkeletonUI();
 
-    // Start loading data asynchronously - fire and forget, updates arrive independently
-    console.log("[DashboardPage] Calling controller._loadDataWhenConnected()");
-    if (this.controller) {
-      this.controller._loadDataWhenConnected();
-    } else {
-      console.warn("[DashboardPage] Controller is undefined!");
+    // Subscribe to all state changes
+    this.unsubscribers.push(
+      stateManager.subscribe("metrics", this._onMetricsChange.bind(this)),
+      stateManager.subscribe("metricsHistory", this._onHistoryChange.bind(this)),
+      stateManager.subscribe("models", this._onModelsChange.bind(this)),
+      stateManager.subscribe("presets", this._onPresetsChange.bind(this)),
+      stateManager.subscribe("config", this._onConfigChange.bind(this)),
+      stateManager.subscribe("settings", this._onSettingsChange.bind(this)),
+      stateManager.subscribe("llamaServerStatus", this._onLlamaStatusChange.bind(this)),
+      stateManager.subscribe("routerStatus", this._onRouterStatusChange.bind(this)),
+      stateManager.subscribe("routerLoading", this._onRouterLoadingChange.bind(this)),
+      stateManager.subscribe("actions:dashboard:refresh", this._onRefreshAction.bind(this))
+    );
+
+    // Emit event to trigger data load (controller listens and fetches fresh data)
+    stateManager.emit("action:dashboard:refresh");
+
+    // Also check if state already has data and update UI immediately
+    // This handles the case where we returned to the page and state has data
+    // but subscriptions didn't trigger because data hasn't changed
+    this._syncStateToUI();
+  }
+
+  /**
+   * Sync all state data to UI - called on mount to ensure fresh data is displayed
+   */
+  _syncStateToUI() {
+    const metrics = stateManager.get("metrics");
+    const history = stateManager.get("metricsHistory");
+    const models = stateManager.get("models");
+    const presets = stateManager.get("presets");
+    const config = stateManager.get("config");
+    const settings = stateManager.get("settings");
+    const llamaStatus = stateManager.get("llamaServerStatus");
+    const routerStatus = stateManager.get("routerStatus");
+
+    // Update local state and UI for each data source
+    if (metrics) {
+      this.state.metrics = metrics;
+      this.state.gpuMetrics = metrics?.gpu || { usage: 0, memoryUsed: 0, memoryTotal: 0, list: [] };
+      this._updateMetricsUI();
     }
 
-    // Subscribe to state changes - updates will flow in as data arrives
-    this.unsubscribers.push(
-      stateManager.subscribe("llamaServerStatus", (status) => {
-        this.status = status;
-        this._updateRouterCardUI();
-      })
-    );
+    if (history && history.length > 0) {
+      this.state.history = history;
+      this._updateHistoryUI();
+    }
 
-    this.unsubscribers.push(
-      stateManager.subscribe("routerStatus", (rs) => {
-        this.routerStatus = rs;
-        this._updateRouterCardUI();
-      })
-    );
+    if (models) {
+      this.state.models = models;
+      this._updateModelsUI();
+    }
 
-    // Subscribe to presets changes
-    this.unsubscribers.push(
-      stateManager.subscribe("presets", (presets) => {
-        this.presets = presets || [];
-        this._updatePresetsSection();
-      })
-    );
+    if (presets) {
+      this.state.presets = presets;
+      this._updatePresetsUI();
+    }
 
-    // Subscribe to metrics updates - arrive independently
-    this.unsubscribers.push(
-      stateManager.subscribe("metrics", (m) => {
-        console.log("[DashboardPage] Metrics subscription fired with:", m);
-        this.handleMetricsChange(m);
-        this._updateMetricsSection();
-      })
-    );
+    if (config) {
+      this.state.config = config;
+      this._updateConfigUI();
+    }
 
-    // Subscribe to metrics history updates (for charts) - arrives independently
-    this.unsubscribers.push(
-      stateManager.subscribe("metricsHistory", (history) => {
-        if (Array.isArray(history) && history.length > 0 && this.chartManager) {
-          const metrics = stateManager.get("metrics") || {};
-          this.history = history;
-          this.chartManager.updateCharts(metrics, history);
-          this._updateChartsSection();
-        }
-      })
-    );
+    if (settings) {
+      this.state.settings = settings;
+      this._updateSettingsUI();
+    }
 
-    // Sync with global loading state
-    this.unsubscribers.push(
-      stateManager.subscribe("routerLoading", (loading) => {
-        this.routerLoading = !!loading;
-        this._updateRouterCardUI();
-      })
-    );
+    if (llamaStatus) {
+      this.state.llamaStatus = llamaStatus;
+      this._updateLlamaStatusUI();
+    }
+
+    if (routerStatus) {
+      this.state.routerStatus = routerStatus;
+      this._updateRouterStatusUI();
+    }
+
+    console.log("[DashboardPage] _syncStateToUI - state synced from stateManager");
+  }
+
+  _onMetricsChange(metrics) {
+    console.log("[DashboardPage] _onMetricsChange:", metrics);
+    if (JSON.stringify(metrics) !== JSON.stringify(this.state.metrics)) {
+      this.state.metrics = metrics;
+      this.state.gpuMetrics = metrics?.gpu || { usage: 0, memoryUsed: 0, memoryTotal: 0, list: [] };
+      this._updateMetricsUI();
+    }
+  }
+
+  _onHistoryChange(history) {
+    if (JSON.stringify(history) !== JSON.stringify(this.state.history)) {
+      this.state.history = history || [];
+      this._updateHistoryUI();
+    }
+  }
+
+  _onModelsChange(models) {
+    this.state.models = models || [];
+    this._updateModelsUI();
+  }
+
+  _onPresetsChange(presets) {
+    this.state.presets = presets || [];
+    this._updatePresetsUI();
+  }
+
+  _onConfigChange(config) {
+    this.state.config = config || {};
+    this._updateConfigUI();
+  }
+
+  _onSettingsChange(settings) {
+    this.state.settings = settings || {};
+    this._updateSettingsUI();
+  }
+
+  _onLlamaStatusChange(status) {
+    this.state.llamaStatus = status;
+    this._updateLlamaStatusUI();
+  }
+
+  _onRouterStatusChange(status) {
+    this.state.routerStatus = status;
+    this._updateRouterStatusUI();
+  }
+
+  _onRouterLoadingChange(loading) {
+    this.state.routerLoading = !!loading;
+    this._updateRouterStatusUI();
+  }
+
+  _onRefreshAction(action) {
+    if (action?.status === "loading") {
+      this._setLoading(true);
+    } else {
+      this._setLoading(false);
+    }
+  }
+
+  _updateMetricsUI() {
+    // Update SystemHealth and GpuDetails components directly
+    this._updateSystemHealthAndGPU();
+
+    // Update StatsGrid component
+    const statsGrid = this._el?.querySelector(".stats-grid")?._component;
+    if (statsGrid) {
+      statsGrid.updateMetrics(this.state.metrics, this.state.gpuMetrics);
+    }
+
+    // Update charts with new metrics
+    if (this.chartManager && this.state.history.length > 0) {
+      this.chartManager.updateCharts(this.state.metrics, this.state.history);
+    }
+
+    // Remove loading skeleton for metrics
+    this._updateMetricsSection();
+  }
+
+  _updateHistoryUI() {
+    // Update charts section
+    this._updateChartsSection();
+
+    // Update ChartsSection component
+    const chartsSection = this._el?.querySelector(".charts-section")?._component;
+    if (chartsSection) {
+      chartsSection.history = this.state.history;
+      chartsSection.updateDOM();
+      // Ensure charts are initialized if they haven't been yet
+      if (!chartsSection.chartsInitialized && this.chartManager) {
+        chartsSection._initCharts();
+      }
+    }
+
+    // Update chart stats - guard against undefined/null history
+    const history = this.state.history || [];
+    this.chartStats = (history.length > 0 && window.DashboardUtils?._calculateStats)
+      ? window.DashboardUtils._calculateStats(history)
+      : {
+          current: 0,
+          avg: 0,
+          max: 0,
+        };
+  }
+
+  _updateModelsUI() {
+    // Models are displayed in LlamaRouterCard which subscribes to state
+    console.log("[DashboardPage] _updateModelsUI - models updated:", this.state.models.length);
+  }
+
+  _updatePresetsUI() {
+    // Update LlamaRouterCard with presets data
+    const routerCard = this.$(".llama-router-card")?._component;
+    if (routerCard) {
+      routerCard.props.presets = this.state.presets || [];
+      // Force update if the method exists
+      if (typeof routerCard._updatePresetSelect === "function") {
+        routerCard._updatePresetSelect();
+      }
+    }
+    this._updatePresetsSection();
+    console.log("[DashboardPage] _updatePresetsUI - presets updated:", this.state.presets.length);
+  }
+
+  _updateConfigUI() {
+    console.log("[DashboardPage] _updateConfigUI - config updated");
+  }
+
+  _updateSettingsUI() {
+    console.log("[DashboardPage] _updateSettingsUI - settings updated");
+  }
+
+  _updateLlamaStatusUI() {
+    // LlamaRouterCard subscribes to state, no direct update needed
+    console.log("[DashboardPage] _updateLlamaStatusUI - status:", this.state.llamaStatus);
+  }
+
+  _updateRouterStatusUI() {
+    // LlamaRouterCard subscribes to state, no direct update needed
+    console.log("[DashboardPage] _updateRouterStatusUI - routerStatus:", this.state.routerStatus);
+  }
+
+  _setLoading(loading) {
+    this.loading = loading;
+    const refreshBtn = this.$("[data-action=refresh]");
+    if (refreshBtn) {
+      if (loading) {
+        refreshBtn.disabled = true;
+        refreshBtn.classList.add("loading");
+      } else {
+        refreshBtn.disabled = false;
+        refreshBtn.classList.remove("loading");
+      }
+    }
   }
 
   _renderSkeletonUI() {
@@ -178,30 +360,17 @@ class DashboardPage extends Component {
     }
   }
 
-  handleMetricsChange(metrics) {
-    this.metrics = metrics || { cpu: { usage: 0 }, memory: { used: 0 }, gpu: null };
-    this.gpuMetrics = metrics?.gpu || { usage: 0, memoryUsed: 0, memoryTotal: 0, list: [] };
-    this.history = stateManager.get("metricsHistory") || [];
-
-    if (this.chartManager && this.history.length > 0) {
-      this.chartManager.updateCharts(metrics, this.history);
-    }
-
-    // Update SystemHealth and GpuDetails components directly
-    this._updateSystemHealthAndGPU();
-  }
-
   _updateSystemHealthAndGPU() {
     // Update SystemHealth component
     const systemHealth = this._el?.querySelector(".health-section")?._component;
     if (systemHealth) {
-      systemHealth.updateMetrics(this.metrics, this.gpuMetrics);
+      systemHealth.updateMetrics(this.state.metrics, this.state.gpuMetrics);
     }
 
     // Update GpuDetails component
     const gpuDetails = this._el?.querySelector(".gpu-details")?._component;
     if (gpuDetails) {
-      gpuDetails.gpuList = this.gpuMetrics?.list || [];
+      gpuDetails.gpuList = this.state.gpuMetrics?.list || [];
       gpuDetails._updateGPUUI();
     }
 
@@ -210,122 +379,47 @@ class DashboardPage extends Component {
   }
 
   destroy() {
-    this.unsubscribers.forEach((unsub) => unsub());
-    this.unsubscribers = [];
+    console.log("[DashboardPage] destroy - cleaning up");
+    if (this.unsubscribers) {
+      this.unsubscribers.forEach((unsub) => unsub());
+      this.unsubscribers = [];
+    }
+
+    if (this.chartManager) {
+      this.chartManager.destroy();
+    }
+
+    super.destroy();
   }
 
   bindEvents() {
     this.on("click", "[data-action=refresh]", (e) => {
       e.preventDefault();
-      this._refresh();
+      this._handleRefreshClick();
     });
   }
 
-  setRouterLoading(loading) {
-    stateManager.set("routerLoading", !!loading);
+  _handleChartZoom(range) {
+    stateManager.emit("action:dashboard:chartZoom", { range });
   }
 
-  _updateRouterCardUI() {
-    // With LlamaRouterCard being event-driven and subscribing to state,
-    // we don't need much manual DOM manipulation here anymore.
+  _handleRefreshClick() {
+    stateManager.emit("action:dashboard:refresh");
   }
 
-  updatePresets(presetsData) {
-    // Handle both direct preset list and wrapped response
-    const presets = presetsData?.presets || presetsData || [];
-    console.log("[DASHBOARD] updatePresets called with:", {
-      hasPresetsKey: !!presetsData?.presets,
-      dataType: typeof presetsData,
-      count: presets.length,
-      presets: presets.map((p) => ({ name: p.name || p })),
-    });
-    stateManager.set("presets", presets);
-    this._updatePresetsSection();
-    console.log("[DASHBOARD] Presets updated:", presets.length);
-  }
-
-  updateSettings(settings) {
-    stateManager.set("settings", settings);
-    console.log("[DASHBOARD] Settings updated");
-  }
-
-  updateConfig(config) {
-    stateManager.set("config", config);
-    console.log("[DASHBOARD] Config updated");
-  }
-
-  updateModels(modelsData) {
-    const models = modelsData?.models || modelsData || [];
-    stateManager.set("models", models);
-    console.log("[DASHBOARD] Models updated:", models.length);
-  }
-
-  updateFromController(metrics, history) {
-    this.metrics = metrics || this.metrics;
-    this.gpuMetrics = metrics?.gpu || this.gpuMetrics;
-    this.history = history;
-
-    if (this.chartManager) {
-      this.chartManager.updateCharts(metrics, history);
-    }
-
-    // Remove loading skeleton for metrics
-    this._updateMetricsSection();
-
-    // Update sub-components via their direct update methods
-    const statsGrid = this._el?.querySelector(".stats-grid")?._component;
-    if (statsGrid) statsGrid.updateMetrics(this.metrics, this.gpuMetrics);
-
-    const systemHealth = this._el?.querySelector(".health-section")?._component;
-    if (systemHealth) systemHealth.updateMetrics(this.metrics, this.gpuMetrics);
-
-    const gpuDetails = this._el?.querySelector(".gpu-details")?._component;
-    if (gpuDetails) {
-      gpuDetails.gpuList = this.gpuMetrics?.list || [];
-      gpuDetails._updateGPUUI();
-    }
-
-    // Update charts section
-    this._updateChartsSection();
-
-    // Update GPU section loading state
-    this._updateGPUSection();
-  }
-
-  _updateChartsSection() {
-    const section = this.$("[data-section='charts']");
-    if (section) {
-      console.log("[DashboardPage] _updateChartsSection - removing skeleton");
-      section.classList.remove("loading-skeleton");
-      section.setAttribute("aria-busy", "false");
-    }
-
-    const chartsSection = this._el?.querySelector(".charts-section")?._component;
-    if (chartsSection) {
-      chartsSection.history = this.history;
-      chartsSection.updateDOM();
-      // Ensure charts are initialized if they haven't been yet
-      if (!chartsSection.chartsInitialized && this.chartManager) {
-        chartsSection._initCharts();
-      }
-    }
+  _handleExportMetrics() {
+    const data = {
+      metrics: this.state.metrics,
+      history: this.state.history,
+      exportedAt: new Date().toISOString(),
+    };
+    stateManager.emit("action:dashboard:export", { data });
   }
 
   handleChartTypeChange(newType) {
     if (newType === this.chartType) return;
     this.chartType = newType;
     if (this.chartManager) this.chartManager.setChartType(newType);
-  }
-
-  async _refresh() {
-    this.loading = true;
-    try {
-      await this.controller?.load();
-      showNotification("Dashboard refreshed", "success");
-    } catch (e) {
-      showNotification("Refresh failed", "error");
-    }
-    this.loading = false;
   }
 
   render() {
@@ -338,23 +432,23 @@ class DashboardPage extends Component {
         "aria-busy": "true",
       }, [
         Component.h(window.StatsGrid, {
-          metrics: this.metrics,
-          gpuMetrics: this.gpuMetrics,
+          metrics: this.state.metrics || this.metrics,
+          gpuMetrics: this.state.gpuMetrics || this.gpuMetrics,
         }),
       ]),
 
       // Router & Quick Actions section - ALWAYS VISIBLE (no loading state)
       Component.h("div", { className: "dashboard-middle-row", "data-section": "router" }, [
         Component.h(window.LlamaRouterCard, {
-          status: this.status,
-          routerStatus: this.routerStatus,
-          models: this.models,
-          presets: this.presets,
+          status: this.state.llamaStatus || this.status,
+          routerStatus: this.state.routerStatus || this.routerStatus,
+          models: this.state.models || this.models,
+          presets: this.state.presets || this.presets,
           metrics: stateManager.get("llamaServerMetrics"),
-          onAction: (action, data) => this.controller?.handleRouterAction(action, data),
+          onAction: (action, data) => this._handleRouterAction(action, data),
         }),
         Component.h(window.QuickActions, {
-          onRefresh: () => this._refresh(),
+          onRefresh: () => this._handleRefreshClick(),
         }),
       ]),
 
@@ -366,14 +460,14 @@ class DashboardPage extends Component {
         "aria-busy": "true",
       }, [
         Component.h(window.ChartsSection, {
-          history: this.history,
+          history: this.state.history || this.history,
           chartStats: this.chartStats,
           chartManager: this.chartManager,
           onChartTypeChange: (type) => this.handleChartTypeChange(type),
         }),
         Component.h(window.SystemHealth, {
-          metrics: this.metrics,
-          gpuMetrics: this.gpuMetrics,
+          metrics: this.state.metrics || this.metrics,
+          gpuMetrics: this.state.gpuMetrics || this.gpuMetrics,
         }),
       ]),
 
@@ -385,10 +479,15 @@ class DashboardPage extends Component {
         "aria-busy": "true",
       }, [
         Component.h(window.GpuDetails, {
-          gpuList: this.gpuMetrics?.list || [],
+          gpuList: (this.state.gpuMetrics || this.gpuMetrics)?.list || [],
         }),
       ]),
     ]);
+  }
+
+  _handleRouterAction(action, data) {
+    // Emit action events for router interactions
+    stateManager.emit("action:dashboard:routerAction", { action, data });
   }
 }
 

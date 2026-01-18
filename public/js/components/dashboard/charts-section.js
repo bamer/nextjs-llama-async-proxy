@@ -12,6 +12,8 @@ class ChartsSection extends Component {
     this.chartStats = props.chartStats || { current: 0, avg: 0, max: 0 };
     this.chartManager = props.chartManager || null;
     this.chartsInitialized = false;
+    this.unsubscribers = [];
+    this._refreshInterval = null;
   }
 
   /**
@@ -19,23 +21,15 @@ class ChartsSection extends Component {
     */
   onMount() {
     console.log("[CHARTS-SECTION] onMount called, history available:", this.history.length);
-    // Subscribe to metrics history updates
-    this._historyUnsub = stateManager.subscribe("metricsHistory", (history) => {
-      if (Array.isArray(history) && history.length > 0) {
-        console.log("[CHARTS-SECTION] History updated from state:", history.length, "records");
-        this.history = history;
-        this.updateDOM();
-        // Initialize charts when history data arrives if not already done
-        if (!this.chartsInitialized) {
-          console.log("[CHARTS-SECTION] Initializing charts with new history data");
-          this._initCharts();
-        } else {
-          console.log("[CHARTS-SECTION] Updating charts with new history data");
-          this._updateChartsData();
-        }
-      }
-    });
-    
+
+    // Subscribe to state changes
+    this.unsubscribers.push(
+      stateManager.subscribe("metricsHistory", this._onHistoryChange.bind(this)),
+      stateManager.subscribe("metrics", this._onMetricsChange.bind(this)),
+      stateManager.subscribe("page:dashboard:chartZoomRange", this._onZoomChange.bind(this)),
+      stateManager.subscribe("page:dashboard:refreshInterval", this._onRefreshIntervalChange.bind(this))
+    );
+
     // Initialize charts if history data is already available
     if (this.history.length > 0) {
       console.log("[CHARTS-SECTION] History already available in props, initializing charts");
@@ -45,12 +39,65 @@ class ChartsSection extends Component {
     }
   }
 
+  _onHistoryChange(history) {
+    if (Array.isArray(history) && history.length > 0) {
+      console.log("[CHARTS-SECTION] History updated from state:", history.length, "records");
+      this.history = history;
+      this.updateDOM();
+      // Initialize charts when history data arrives if not already done
+      if (!this.chartsInitialized) {
+        console.log("[CHARTS-SECTION] Initializing charts with new history data");
+        this._initCharts();
+      } else {
+        console.log("[CHARTS-SECTION] Updating charts with new history data");
+        this._updateChartsData();
+      }
+    }
+  }
+
+  _onMetricsChange(metrics) {
+    // Can be used for additional metrics updates if needed
+    console.log("[CHARTS-SECTION] Metrics updated from state");
+  }
+
+  _onZoomChange(range) {
+    if (range) {
+      this._applyZoom(range);
+    }
+  }
+
+  _onRefreshIntervalChange(interval) {
+    if (interval && interval !== this._refreshInterval) {
+      this._refreshInterval = interval;
+      this._restartUpdateInterval();
+    }
+  }
+
+  _applyZoom(range) {
+    // Apply zoom range to charts if chartManager supports it
+    if (this.chartManager && this.chartsInitialized) {
+      console.log("[CHARTS-SECTION] Applying zoom range:", range);
+    }
+  }
+
+  _restartUpdateInterval() {
+    // Restart refresh interval with new value
+    if (this._refreshInterval) {
+      console.log("[CHARTS-SECTION] Restarting refresh interval:", this._refreshInterval);
+    }
+  }
+
   /**
-    * Clean up subscriptions and event listeners.
-    */
+   * Clean up subscriptions and event listeners.
+   */
   destroy() {
-    if (this._historyUnsub) {
-      this._historyUnsub();
+    if (this.unsubscribers) {
+      this.unsubscribers.forEach(unsub => unsub());
+      this.unsubscribers = [];
+    }
+    if (this._refreshInterval) {
+      clearInterval(this._refreshInterval);
+      this._refreshInterval = null;
     }
     super.destroy();
   }

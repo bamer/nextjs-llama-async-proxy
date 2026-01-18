@@ -189,6 +189,20 @@ export class LlamaServerMetricsScraper {
       } else if (metricName === "llamacpp:n_decode_total") {
         metrics.nDecodeTotal = value;
         metrics.totalRequests = value;
+      } else if (metricName === "llamacpp:n_busy_slots_per_decode") {
+        metrics.nBusySlotsPerDecode = value;
+      } else if (metricName === "llamacpp:prompt_tokens_total") {
+        metrics.promptTokensTotal = value;
+        metrics.nTokensProcessed = value;
+      } else if (metricName === "llamacpp:tokens_predicted_total") {
+        metrics.predictedTokensTotal = value;
+        metrics.nTokensPredicted = value;
+      } else if (metricName === "llamacpp:prompt_seconds_total") {
+        metrics.promptSecondsTotal = value;
+      } else if (metricName === "llamacpp:tokens_predicted_seconds_total") {
+        metrics.predictedSecondsTotal = value;
+      } else if (metricName === "llamacpp:n_tokens_max") {
+        metrics.nTokensMax = value;
       }
     }
 

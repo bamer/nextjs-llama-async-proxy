@@ -29,29 +29,37 @@ class SettingsController {
     // Clean up any existing status subscriptions first
     this._cleanupStatusSubscriptions();
 
+    // NEW: Listen for action events
+    this.unsubscribers.push(
+      stateManager.subscribe("action:settings:save", (data) => this._handleSave(data)),
+      stateManager.subscribe("action:settings:reset", () => this._handleReset()),
+      stateManager.subscribe("action:router:start", () => this._handleRouterStart()),
+      stateManager.subscribe("action:router:restart", () => this._handleRouterRestart()),
+      stateManager.subscribe("action:router:stop", () => this._handleRouterStop()),
+      stateManager.subscribe("action:config:import", (data) => this._handleImport(data)),
+      stateManager.subscribe("action:config:export", () => this._handleExport())
+    );
+
     // Subscribe to router status updates
     this.statusUnsubscribers.push(
       stateManager.subscribe("llamaStatus", (status) => {
-        if (this.comp) {
-          this.comp.llamaStatus = status;
-          this.comp._updateStatusUI();
-        }
+        stateManager.set("llamaServerStatus", status);
       })
     );
 
     // Subscribe to router status updates
     this.statusUnsubscribers.push(
       stateManager.subscribe("routerStatus", (rs) => {
-        if (this.comp) {
-          this.comp.routerStatus = rs;
-          this.comp._updateStatusUI();
-        }
+        stateManager.set("routerStatus", rs);
       })
     );
   }
 
   willUnmount() {
-    this.unsubscribers.forEach((unsub) => unsub());
+    if (this.unsubscribers) {
+      this.unsubscribers.forEach((unsub) => unsub());
+      this.unsubscribers = [];
+    }
     this._cleanupStatusSubscriptions();
   }
 
@@ -63,21 +71,7 @@ class SettingsController {
     // Load critical data first
     await this._loadCriticalData();
 
-    // Get available data
-    const config = stateManager.get("config") || {};
-    const settings = stateManager.get("settings") || {};
-    const llamaStatus = stateManager.get("llamaStatus") || null;
-    const routerStatus = stateManager.get("routerStatus") || null;
-    const presets = stateManager.get("presets") || [];
-
-    this.comp = new window.SettingsPage({
-      config,
-      settings,
-      llamaStatus,
-      routerStatus,
-      presets,
-      controller: this,
-    });
+    this.comp = new window.SettingsPage({});
 
     const el = this.comp.render();
     this.comp._el = el;
@@ -120,15 +114,151 @@ class SettingsController {
       .then(([status, presets]) => {
         stateManager.set("llamaStatus", status?.status || null);
         stateManager.set("presets", presets?.presets || []);
-
-        // Update UI if component still mounted
-        if (this.comp && this.comp._updateStatusUI) {
-          this.comp._updateStatusUI();
-        }
       })
       .catch((e) => {
         console.warn("[SETTINGS] Optional data load failed:", e.message);
       });
+  }
+
+  /**
+   * Handle settings save action.
+   * @param {Object} data - Data containing config and settings
+   */
+  async _handleSave(data) {
+    const { config, settings } = data;
+    try {
+      stateManager.setActionStatus("settings:save", { status: "saving" });
+
+      await stateManager.updateConfig(config);
+      await stateManager.updateSettings(settings);
+
+      stateManager.set("config", config);
+      stateManager.set("settings", settings);
+
+      stateManager.setActionStatus("settings:save", { status: "complete" });
+      showNotification("Settings saved successfully", "success");
+    } catch (error) {
+      stateManager.setActionStatus("settings:save", {
+        status: "error",
+        error: error.message,
+      });
+      showNotification(`Failed to save settings: ${error.message}`, "error");
+    }
+  }
+
+  /**
+   * Handle settings reset action.
+   */
+  async _handleReset() {
+    try {
+      stateManager.setActionStatus("settings:reset", { status: "resetting" });
+
+      const config = await stateManager.resetConfig();
+      const settings = await stateManager.resetSettings();
+
+      stateManager.set("config", config);
+      stateManager.set("settings", settings);
+
+      stateManager.setActionStatus("settings:reset", { status: "complete" });
+      showNotification("Settings reset to defaults", "success");
+    } catch (error) {
+      stateManager.setActionStatus("settings:reset", {
+        status: "error",
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * Handle router restart action.
+   */
+  async _handleRouterRestart() {
+    try {
+      stateManager.setActionStatus("router:restart", { status: "restarting" });
+
+      await stateManager.restartLlama();
+
+      stateManager.setActionStatus("router:restart", { status: "complete" });
+      showNotification("Router restarted successfully", "success");
+    } catch (error) {
+      stateManager.setActionStatus("router:restart", {
+        status: "error",
+        error: error.message,
+      });
+      showNotification(`Failed to restart router: ${error.message}`, "error");
+    }
+  }
+
+  /**
+   * Handle router start action.
+   */
+  async _handleRouterStart() {
+    try {
+      stateManager.setActionStatus("router:start", { status: "starting" });
+
+      await stateManager.startLlama();
+
+      stateManager.setActionStatus("router:start", { status: "complete" });
+      showNotification("Router started successfully", "success");
+    } catch (error) {
+      stateManager.setActionStatus("router:start", {
+        status: "error",
+        error: error.message,
+      });
+      showNotification(`Failed to start router: ${error.message}`, "error");
+    }
+  }
+
+  /**
+   * Handle router stop action.
+   */
+  async _handleRouterStop() {
+    try {
+      stateManager.setActionStatus("router:stop", { status: "stopping" });
+
+      await stateManager.stopLlama();
+
+      stateManager.setActionStatus("router:stop", { status: "complete" });
+      showNotification("Router stopped", "success");
+    } catch (error) {
+      stateManager.setActionStatus("router:stop", {
+        status: "error",
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * Handle config import action.
+   * @param {Object} data - Data containing config
+   */
+  _handleImport(data) {
+    const { config } = data;
+    if (config) {
+      stateManager.set("config", config);
+      showNotification("Configuration imported", "success");
+    }
+  }
+
+  /**
+   * Handle config export action.
+   */
+  _handleExport() {
+    const config = stateManager.get("config");
+    const settings = stateManager.get("settings");
+    const data = {
+      config,
+      settings,
+      exportedAt: new Date().toISOString(),
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `llama-proxy-settings-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   /**

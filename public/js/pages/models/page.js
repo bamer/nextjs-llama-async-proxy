@@ -15,11 +15,11 @@ class ModelsPage extends Component {
     this.sortOrder = "asc";
     this.lastSearchValue = "";
     this.lastStatusValue = "all";
-    this.controller = props.controller;
     this.debouncedSearch = AppUtils.debounce(this._handleSearch.bind(this), 300);
     this.scanning = false;
     this.scanProgress = "";
     this.loadingModels = new Set(); // Track models being loaded/unloaded
+    this.unsubscribers = []; // State subscriptions cleanup
     console.log("[MODELS] Initialized with", this.models.length, "models");
   }
 
@@ -239,21 +239,21 @@ class ModelsPage extends Component {
     });
 
     this.on("click", "[data-action=scan]", () => {
-      this.controller?.handleScan();
+      stateManager.emit("models:scan", { path: this._getCurrentPath() });
     });
 
     this.on("click", "[data-action=cleanup]", () => {
-      this.controller?.handleCleanup();
+      stateManager.emit("models:cleanup", {});
     });
 
     this.on("click", "[data-action=load]", (e) => {
-      const name = e.target.closest("[data-action=load]").dataset.name;
-      this.controller?.handleLoad(name);
+      const modelId = e.target.closest("[data-action=load]").dataset.name;
+      stateManager.emit("models:load", { modelId });
     });
 
     this.on("click", "[data-action=unload]", (e) => {
-      const name = e.target.closest("[data-action=unload]").dataset.name;
-      this.controller?.handleUnload(name);
+      const modelId = e.target.closest("[data-action=unload]").dataset.name;
+      stateManager.emit("models:unload", { modelId });
     });
 
     this.on("input", "[data-field=search]", (e) => {
@@ -275,6 +275,132 @@ class ModelsPage extends Component {
   }
 
   /**
+   * Handle model list changes from state manager.
+   * @param {Array} models - Updated model list
+   */
+  _onModelsChange(models) {
+    if (JSON.stringify(models) !== JSON.stringify(this.models)) {
+      this.models = models || [];
+      this._updateModelListUI();
+    }
+  }
+
+  /**
+   * Handle scan action status changes.
+   * @param {Object} action - Action status object with status and message
+   */
+  _onScanAction(action) {
+    this.scanning = action.status === "scanning";
+    this.scanProgress = action.message || "";
+    this._updateScanningUI();
+  }
+
+  /**
+   * Handle model load/unload action status changes.
+   * @param {Object} action - Action status object with status, modelId, and optional error
+   */
+  _onLoadAction(action) {
+    if (action.status === "loading") {
+      this._setModelLoading(action.modelId, true);
+    } else {
+      this._setModelLoading(action.modelId, false);
+      if (action.status === "error") {
+        showNotification(`Failed to load model: ${action.error}`, "error");
+      } else if (action.status === "success") {
+        showNotification("Model loaded successfully", "success");
+      }
+    }
+  }
+
+  /**
+   * Handle model unload action status changes.
+   * @param {Object} action - Action status object with status and modelId
+   */
+  _onUnloadAction(action) {
+    this._setModelLoading(action.modelId, false);
+    if (action.status === "success") {
+      showNotification("Model unloaded successfully", "success");
+    } else if (action.status === "error") {
+      showNotification(`Failed to unload model: ${action.error}`, "error");
+    }
+  }
+
+  /**
+   * Handle model delete action status changes.
+   * @param {Object} action - Action status object with status and optional error
+   */
+  _onDeleteAction(action) {
+    if (action.status === "error") {
+      showNotification(`Failed to delete model: ${action.error}`, "error");
+    } else if (action.status === "success") {
+      showNotification("Model deleted successfully", "success");
+    }
+  }
+
+  /**
+   * Update the model list UI with current models.
+   */
+  _updateModelListUI() {
+    const tbody = this.$(".models-table tbody");
+    if (tbody) {
+      tbody.innerHTML = this._getFiltered().map((m) => this._renderRow(m)).join("");
+    }
+  }
+
+  /**
+   * Update scanning UI based on current scanning state.
+   */
+  _updateScanningUI() {
+    const scanBtn = this.$("[data-action=scan]");
+    if (scanBtn) {
+      scanBtn.disabled = this.scanning;
+      scanBtn.textContent = this.scanning ? "Scanning..." : "Scan";
+    }
+    const toolbar = this.$(".toolbar");
+    if (toolbar) {
+      let progressEl = toolbar.querySelector(".scan-progress");
+      if (this.scanning && this.scanProgress) {
+        if (!progressEl) {
+          progressEl = document.createElement("span");
+          progressEl.className = "scan-progress";
+          toolbar.insertBefore(progressEl, toolbar.children[toolbar.children.length - 1]);
+        }
+        progressEl.textContent = this.scanProgress;
+      } else if (progressEl) {
+        progressEl.remove();
+      }
+    }
+  }
+
+  /**
+   * Set loading state for a specific model in the UI.
+   * @param {string} modelId - Model identifier
+   * @param {boolean} loading - Whether the model is being loaded
+   */
+  _setModelLoading(modelId, loading) {
+    const row = this.$(`[data-name="${modelId}"]`);
+    if (row) {
+      const loadBtn = row.querySelector("[data-action=load]");
+      if (loadBtn) {
+        loadBtn.disabled = loading;
+        loadBtn.textContent = loading ? "Loading..." : "Load";
+      }
+      const statusCell = row.querySelector("td:nth-child(2)");
+      if (statusCell && loading) {
+        statusCell.innerHTML = '<span class="badge warning">Loading...</span>';
+      }
+    }
+  }
+
+  /**
+   * Get the current models path from the input field.
+   * @returns {string} Current models path
+   */
+  _getCurrentPath() {
+    return "";
+  }
+
+  /**
    * Update the model list and refresh the table UI.
    * @param {Array} models - Array of model objects
    * @returns {void}
@@ -293,26 +419,7 @@ class ModelsPage extends Component {
   setScanning(isScanning, progress = "") {
     this.scanning = isScanning;
     this.scanProgress = progress;
-    const scanBtn = this.$("[data-action=scan]");
-    if (scanBtn) {
-      scanBtn.textContent = isScanning ? "Scanning..." : "Scan";
-      scanBtn.disabled = isScanning;
-    }
-    const toolbar = this.$(".toolbar");
-    if (toolbar) {
-      // Update or add progress indicator
-      let progressEl = toolbar.querySelector(".scan-progress");
-      if (isScanning && progress) {
-        if (!progressEl) {
-          progressEl = document.createElement("span");
-          progressEl.className = "scan-progress";
-          toolbar.insertBefore(progressEl, toolbar.children[toolbar.children.length - 1]);
-        }
-        progressEl.textContent = progress;
-      } else if (progressEl) {
-        progressEl.remove();
-      }
-    }
+    this._updateScanningUI();
   }
 
   /**
@@ -322,3 +429,42 @@ class ModelsPage extends Component {
    * @returns {void}
    */
   setModelLoading(modelName, isLoading) {
+    if (isLoading) {
+      this.loadingModels.add(modelName);
+    } else {
+      this.loadingModels.delete(modelName);
+    }
+    this._updateTable();
+  }
+
+  /**
+   * Called after component is mounted to DOM.
+   * Sets up state subscriptions for event-driven updates.
+   */
+  onMount() {
+    console.log("[MODELS] onMount");
+
+    // Subscribe to state changes
+    this.unsubscribers.push(
+      stateManager.subscribe("models", this._onModelsChange.bind(this)),
+      stateManager.subscribeAction("models:scan", this._onScanAction.bind(this)),
+      stateManager.subscribeAction("models:load", this._onLoadAction.bind(this)),
+      stateManager.subscribeAction("models:unload", this._onUnloadAction.bind(this)),
+      stateManager.subscribeAction("models:delete", this._onDeleteAction.bind(this))
+    );
+
+    // Trigger initial model load
+    stateManager.emit("models:load");
+  }
+
+  /**
+   * Cleanup subscriptions and event listeners.
+   */
+  destroy() {
+    if (this.unsubscribers) {
+      this.unsubscribers.forEach((unsub) => unsub());
+      this.unsubscribers = [];
+    }
+    super.destroy();
+  }
+}

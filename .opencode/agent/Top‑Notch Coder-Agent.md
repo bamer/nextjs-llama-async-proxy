@@ -1,7 +1,7 @@
 ---
 description: "Elite-level coding agent with deep expertise in Next.js 16, React 19.2, and modern web development"
 mode: subagent
-model: opencode/minimax-free
+model: opencode/minimax-m2.1-free
 temperature: 0.1
 tools:
   read: true
