@@ -38,7 +38,7 @@
 /* Settings */
 @import "pages/settings/forms.css";
 @import "pages/settings/router.css";
-@import "pages/settings/logging.css";
+@import "pages/settings/settings-page.css";
 
 /* Logs */
 @import "pages/logs/viewer.css";

@@ -94,35 +94,35 @@ class SettingsController {
   }
 
   /**
-   * Load critical data (config and settings) - non-blocking
+   * Load critical data (router config and logging config) - non-blocking
    * @returns {Promise<void>}
    */
   async _loadCriticalData() {
     console.log("[SETTINGS] Loading critical data...");
     try {
-      // Load config
-      const configPromise = stateManager.getConfig().then(c => {
-        console.log("[SETTINGS] Config response received:", !!c);
-        const config = c?.config || c || {};
-        stateManager.set("config", config);
-        console.log("[SETTINGS] Config loaded, keys:", Object.keys(config));
+      // Load router config
+      const routerPromise = stateManager.getRouterConfig().then(r => {
+        console.log("[SETTINGS] Router config response received:", !!r);
+        const config = r?.config || {};
+        stateManager.set("routerConfig", config);
+        console.log("[SETTINGS] Router config loaded, keys:", Object.keys(config));
       }).catch(e => {
-        console.error("[SETTINGS] Config load error:", e.message);
-        stateManager.set("config", {});
+        console.error("[SETTINGS] Router config load error:", e.message);
+        stateManager.set("routerConfig", {});
       });
 
-      // Load settings
-      const settingsPromise = stateManager.getSettings().then(s => {
-        console.log("[SETTINGS] Settings response received:", !!s);
-        const settings = s?.settings || s || {};
-        stateManager.set("settings", settings);
-        console.log("[SETTINGS] Settings loaded, keys:", Object.keys(settings));
+      // Load logging config
+      const loggingPromise = stateManager.getLoggingConfig().then(l => {
+        console.log("[SETTINGS] Logging config response received:", !!l);
+        const config = l?.config || {};
+        stateManager.set("loggingConfig", config);
+        console.log("[SETTINGS] Logging config loaded, keys:", Object.keys(config));
       }).catch(e => {
-        console.error("[SETTINGS] Settings load error:", e.message);
-        stateManager.set("settings", {});
+        console.error("[SETTINGS] Logging config load error:", e.message);
+        stateManager.set("loggingConfig", {});
       });
 
-      await Promise.all([configPromise, settingsPromise]);
+      await Promise.all([routerPromise, loggingPromise]);
       console.log("[SETTINGS] All data loaded successfully");
     } catch (e) {
       console.error("[SETTINGS] Data load failed:", e.message);
@@ -148,24 +148,26 @@ class SettingsController {
 
   /**
    * Handle settings save action.
-   * @param {Object} data - Data containing config and settings
+   * @param {Object} data - Data containing router config and logging config
    */
   async _handleSave(data) {
     console.log("[SETTINGS] _handleSave called with:", data ? "data present" : "no data");
     const { config, settings } = data;
+    // config = router config
+    // settings = logging config (renamed for clarity)
     try {
       stateManager.setActionStatus("settings:save", { status: "saving" });
-      console.log("[SETTINGS] Saving config:", config);
-      console.log("[SETTINGS] Saving settings:", settings);
+      console.log("[SETTINGS] Saving router config:", config);
+      console.log("[SETTINGS] Saving logging config:", settings);
 
-      const configResult = await stateManager.updateConfig(config);
-      console.log("[SETTINGS] Config result:", configResult);
+      const routerResult = await stateManager.updateRouterConfig(config);
+      console.log("[SETTINGS] Router config result:", routerResult);
 
-      const settingsResult = await stateManager.updateSettings(settings);
-      console.log("[SETTINGS] Settings result:", settingsResult);
+      const loggingResult = await stateManager.updateLoggingConfig(settings);
+      console.log("[SETTINGS] Logging config result:", loggingResult);
 
-      stateManager.set("config", config);
-      stateManager.set("settings", settings);
+      stateManager.set("routerConfig", config);
+      stateManager.set("loggingConfig", settings);
 
       stateManager.setActionStatus("settings:save", { status: "complete" });
       showNotification("Settings saved successfully", "success");
@@ -186,11 +188,11 @@ class SettingsController {
     try {
       stateManager.setActionStatus("settings:reset", { status: "resetting" });
 
-      const config = await stateManager.resetConfig();
-      const settings = await stateManager.resetSettings();
+      const routerConfig = await stateManager.resetRouterConfig();
+      const loggingConfig = await stateManager.resetLoggingConfig();
 
-      stateManager.set("config", config);
-      stateManager.set("settings", settings);
+      stateManager.set("routerConfig", routerConfig);
+      stateManager.set("loggingConfig", loggingConfig);
 
       stateManager.setActionStatus("settings:reset", { status: "complete" });
       showNotification("Settings reset to defaults", "success");
@@ -263,12 +265,12 @@ class SettingsController {
 
   /**
    * Handle config import action.
-   * @param {Object} data - Data containing config
+   * @param {Object} data - Data containing router config
    */
   _handleImport(data) {
     const { config } = data;
     if (config) {
-      stateManager.set("config", config);
+      stateManager.set("routerConfig", config);
       showNotification("Configuration imported", "success");
     }
   }
@@ -277,11 +279,11 @@ class SettingsController {
    * Handle config export action.
    */
   _handleExport() {
-    const config = stateManager.get("config");
-    const settings = stateManager.get("settings");
+    const routerConfig = stateManager.get("routerConfig");
+    const loggingConfig = stateManager.get("loggingConfig");
     const data = {
-      config,
-      settings,
+      routerConfig,
+      loggingConfig,
       exportedAt: new Date().toISOString(),
     };
 

@@ -64,6 +64,14 @@ class StateResponseHandlers {
       "llama:restart:result",
       "llama:config:result",
       "presets:list:result",
+      // Router Config events (unified schema)
+      "routerConfig:get:result",
+      "routerConfig:update:result",
+      "routerConfig:reset:result",
+      // Logging Config events (unified schema)
+      "loggingConfig:get:result",
+      "loggingConfig:update:result",
+      "loggingConfig:reset:result",
     ];
 
     responseEvents.forEach((evt) => {

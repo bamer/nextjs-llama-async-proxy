@@ -10,34 +10,51 @@ class SettingsPage extends Component {
     const config = props.config || {};
     const settings = props.settings || {};
 
-    // Direct properties instead of state
-    this.serverPath = config.serverPath || "";
-    this.host = config.host || "localhost";
-    this.port = config.port || 8080;
-    this.baseModelsPath = config.baseModelsPath || "";
-    this.ctx_size = config.ctx_size || 4096;
-    this.threads = config.threads || 4;
-    this.batch_size = config.batch_size || 512;
-    this.temperature = config.temperature || 0.7;
-    this.repeatPenalty = config.repeatPenalty || 1.1;
-    this.maxModelsLoaded = settings.maxModelsLoaded || 4;
-    this.parallelSlots = settings.parallelSlots || 1;
-    this.gpuLayers = settings.gpuLayers || 0;
+    // Unified router configuration object
+    this.routerConfig = config || this._getRouterDefaults();
+
+    // Logging settings (kept separate)
     this.logLevel = settings.logLevel || "info";
     this.maxFileSize = settings.maxFileSize || 10485760;
     this.maxFiles = settings.maxFiles || 7;
     this.enableFileLogging = settings.enableFileLogging !== false;
     this.enableDatabaseLogging = settings.enableDatabaseLogging !== false;
     this.enableConsoleLogging = settings.enableConsoleLogging !== false;
+
+    // Status and presets
     this.routerStatus = props.routerStatus || null;
     this.llamaStatus = props.llamaStatus || null;
     this.presets = props.presets || [];
+
+    // Llama server specific settings (not part of routerConfig)
     this.llama_server_enabled = config.llama_server_enabled !== false;
     this.llama_server_port = config.llama_server_port || 8080;
     this.llama_server_host = config.llama_server_host || "0.0.0.0";
     this.llama_server_metrics = config.llama_server_metrics !== false;
     this.auto_start_on_launch = config.auto_start_on_launch !== false;
+
     this.unsubscribers = [];
+  }
+
+  /**
+   * Get default router configuration values
+   * @returns {Object} Default router configuration
+   */
+  _getRouterDefaults() {
+    return {
+      modelsPath: "",
+      serverPath: "",
+      host: "0.0.0.0",
+      port: 8080,
+      maxModelsLoaded: 4,
+      parallelSlots: 1,
+      ctxSize: 4096,
+      gpuLayers: 0,
+      threads: 4,
+      batchSize: 512,
+      temperature: 0.7,
+      repeatPenalty: 1.1,
+    };
   }
 
   onMount() {
@@ -45,7 +62,7 @@ class SettingsPage extends Component {
 
     // Subscribe to state changes
     this.unsubscribers.push(
-      stateManager.subscribe("config", this._onConfigChange.bind(this)),
+      stateManager.subscribe("routerConfig", this._onRouterConfigChange.bind(this)),
       stateManager.subscribe("settings", this._onSettingsChange.bind(this)),
       stateManager.subscribe("llamaServerStatus", this._onLlamaStatusChange.bind(this)),
       stateManager.subscribe("routerStatus", this._onRouterStatusChange.bind(this)),
@@ -56,56 +73,14 @@ class SettingsPage extends Component {
   }
 
   /**
-   * Handle config state changes.
-   * @param {Object} config - New config state
+   * Handle routerConfig state changes.
+   * @param {Object} config - New router config state
    */
-  _onConfigChange(config) {
-    if (JSON.stringify(config) !== JSON.stringify(this._getConfig())) {
-      this._applyConfig(config || {});
+  _onRouterConfigChange(config) {
+    if (JSON.stringify(config) !== JSON.stringify(this.routerConfig)) {
+      this.routerConfig = { ...this.routerConfig, ...config };
+      this._updateRouterConfigUI();
     }
-  }
-
-  /**
-   * Get current config from properties.
-   * @returns {Object} Current config object
-   */
-  _getConfig() {
-    return {
-      serverPath: this.serverPath,
-      host: this.host,
-      port: this.port,
-      baseModelsPath: this.baseModelsPath,
-      ctx_size: this.ctx_size,
-      threads: this.threads,
-      batch_size: this.batch_size,
-      temperature: this.temperature,
-      repeatPenalty: this.repeatPenalty,
-      llama_server_port: this.llama_server_port,
-      llama_server_host: this.llama_server_host,
-      llama_server_metrics: this.llama_server_metrics,
-      auto_start_on_launch: this.auto_start_on_launch,
-    };
-  }
-
-  /**
-   * Apply config changes to properties.
-   * @param {Object} config - Config to apply
-   */
-  _applyConfig(config) {
-    if (config.serverPath !== undefined) this.serverPath = config.serverPath;
-    if (config.host !== undefined) this.host = config.host;
-    if (config.port !== undefined) this.port = config.port;
-    if (config.baseModelsPath !== undefined) this.baseModelsPath = config.baseModelsPath;
-    if (config.ctx_size !== undefined) this.ctx_size = config.ctx_size;
-    if (config.threads !== undefined) this.threads = config.threads;
-    if (config.batch_size !== undefined) this.batch_size = config.batch_size;
-    if (config.temperature !== undefined) this.temperature = config.temperature;
-    if (config.repeatPenalty !== undefined) this.repeatPenalty = config.repeatPenalty;
-    if (config.llama_server_port !== undefined) this.llama_server_port = config.llama_server_port;
-    if (config.llama_server_host !== undefined) this.llama_server_host = config.llama_server_host;
-    if (config.llama_server_metrics !== undefined) this.llama_server_metrics = config.llama_server_metrics;
-    if (config.auto_start_on_launch !== undefined) this.auto_start_on_launch = config.auto_start_on_launch;
-    this._updateConfigUI();
   }
 
   /**
@@ -124,9 +99,9 @@ class SettingsPage extends Component {
    */
   _getSettings() {
     return {
-      maxModelsLoaded: this.maxModelsLoaded,
-      parallelSlots: this.parallelSlots,
-      gpuLayers: this.gpuLayers,
+      maxModelsLoaded: this.routerConfig.maxModelsLoaded,
+      parallelSlots: this.routerConfig.parallelSlots,
+      gpuLayers: this.routerConfig.gpuLayers,
       logLevel: this.logLevel,
       maxFileSize: this.maxFileSize,
       maxFiles: this.maxFiles,
@@ -141,9 +116,9 @@ class SettingsPage extends Component {
    * @param {Object} settings - Settings to apply
    */
   _applySettings(settings) {
-    if (settings.maxModelsLoaded !== undefined) this.maxModelsLoaded = settings.maxModelsLoaded;
-    if (settings.parallelSlots !== undefined) this.parallelSlots = settings.parallelSlots;
-    if (settings.gpuLayers !== undefined) this.gpuLayers = settings.gpuLayers;
+    if (settings.maxModelsLoaded !== undefined) this.routerConfig.maxModelsLoaded = settings.maxModelsLoaded;
+    if (settings.parallelSlots !== undefined) this.routerConfig.parallelSlots = settings.parallelSlots;
+    if (settings.gpuLayers !== undefined) this.routerConfig.gpuLayers = settings.gpuLayers;
     if (settings.logLevel !== undefined) this.logLevel = settings.logLevel;
     if (settings.maxFileSize !== undefined) this.maxFileSize = settings.maxFileSize;
     if (settings.maxFiles !== undefined) this.maxFiles = settings.maxFiles;
@@ -244,6 +219,39 @@ class SettingsPage extends Component {
   }
 
   /**
+   * Update router config UI elements from the unified config object.
+   */
+  _updateRouterConfigUI() {
+    if (!this._el) return;
+
+    const fields = [
+      "modelsPath",
+      "serverPath",
+      "host",
+      "port",
+      "maxModelsLoaded",
+      "parallelSlots",
+      "ctxSize",
+      "gpuLayers",
+      "threads",
+      "batchSize",
+      "temperature",
+      "repeatPenalty",
+    ];
+
+    fields.forEach((field) => {
+      const input = this._el.querySelector(`[data-field="${field}"]`);
+      if (input && this.routerConfig[field] !== undefined) {
+        if (input.type === "checkbox") {
+          input.checked = !!this.routerConfig[field];
+        } else {
+          input.value = this.routerConfig[field];
+        }
+      }
+    });
+  }
+
+  /**
    * Update settings-related UI elements.
    */
   _updateSettingsUI() {
@@ -297,16 +305,17 @@ class SettingsPage extends Component {
    * Emit save action with current config and settings.
    */
   _save() {
+    // Convert routerConfig from camelCase to snake_case for backend compatibility
     const config = {
-      serverPath: this.serverPath,
-      host: this.host,
-      port: this.port,
-      baseModelsPath: this.baseModelsPath,
-      ctx_size: this.ctx_size,
-      threads: this.threads,
-      batch_size: this.batch_size,
-      temperature: this.temperature,
-      repeatPenalty: this.repeatPenalty,
+      modelsPath: this.routerConfig.modelsPath,
+      serverPath: this.routerConfig.serverPath,
+      host: this.routerConfig.host,
+      port: this.routerConfig.port,
+      ctx_size: this.routerConfig.ctxSize,
+      threads: this.routerConfig.threads,
+      batch_size: this.routerConfig.batchSize,
+      temperature: this.routerConfig.temperature,
+      repeatPenalty: this.routerConfig.repeatPenalty,
       llama_server_port: this.llama_server_port,
       llama_server_host: this.llama_server_host,
       llama_server_metrics: this.llama_server_metrics,
@@ -314,9 +323,9 @@ class SettingsPage extends Component {
     };
 
     const settings = {
-      maxModelsLoaded: this.maxModelsLoaded,
-      parallelSlots: this.parallelSlots,
-      gpuLayers: this.gpuLayers,
+      maxModelsLoaded: this.routerConfig.maxModelsLoaded,
+      parallelSlots: this.routerConfig.parallelSlots,
+      gpuLayers: this.routerConfig.gpuLayers,
       logLevel: this.logLevel,
       maxFileSize: this.maxFileSize,
       maxFiles: this.maxFiles,
@@ -341,7 +350,7 @@ class SettingsPage extends Component {
     const rs = this.routerStatus || {};
     const ls = this.llamaStatus || {};
     const isRunning = rs.port || ls.port;
-    const displayPort = rs.port || ls.port || this.port;
+    const displayPort = rs.port || ls.port || this.routerConfig.port;
 
     // Update status badge
     const statusBadge = routerCard.querySelector(".status-badge");
@@ -392,7 +401,7 @@ class SettingsPage extends Component {
     const rs = this.routerStatus || {};
     const ls = this.llamaStatus || {};
     const isRunning = rs.port || ls.port;
-    const displayPort = rs.port || ls.port || this.port;
+    const displayPort = rs.port || ls.port || this.routerConfig.port;
 
     return Component.h("div", { className: "settings-page" }, [
       Component.h("h1", {}, "Settings"),
@@ -415,66 +424,12 @@ class SettingsPage extends Component {
           }
         },
       }),
-      Component.h(window.RouterConfig, {
-        maxModelsLoaded: this.maxModelsLoaded,
-        parallelSlots: this.parallelSlots,
-        ctx_size: this.ctx_size,
-        gpuLayers: this.gpuLayers,
-        onMaxModelsLoadedChange: (val) => {
-          this.maxModelsLoaded = val;
-        },
-        onParallelSlotsChange: (val) => {
-          this.parallelSlots = val;
-        },
-        onCtxSizeChange: (val) => {
-          this.ctx_size = val;
-        },
-        onGpuLayersChange: (val) => {
-          this.gpuLayers = val;
-        },
-      }),
-      Component.h(window.ServerPathsForm, {
-        baseModelsPath: this.baseModelsPath,
-        serverPath: this.serverPath,
-        host: this.host,
-        port: this.port,
-        autoStartOnLaunch: this.auto_start_on_launch,
-        metricsEnabled: this.llama_server_metrics,
-        onBaseModelsPathChange: (val) => {
-          this.baseModelsPath = val;
-        },
-        onServerPathChange: (val) => {
-          this.serverPath = val;
-        },
-        onHostChange: (val) => {
-          this.host = val;
-        },
-        onPortChange: (val) => {
-          this.port = val;
-        },
-        onAutoStartOnLaunchChange: (val) => {
-          this.auto_start_on_launch = val;
-        },
-        onMetricsEnabledChange: (val) => {
-          this.llama_server_metrics = val;
-        },
-      }),
-      Component.h(window.ModelDefaultsForm, {
-        threads: this.threads,
-        batch_size: this.batch_size,
-        temperature: this.temperature,
-        repeatPenalty: this.repeatPenalty,
-        onThreadsChange: (val) => {
-          this.threads = val;
-        },
-        onBatchSizeChange: (val) => {
-          this.batch_size = val;
-        },
-        onTemperatureChange: (val) => {
-          this.temperature = val;
-        },
-        onRepeatPenaltyChange: (val) => {
-          this.repeatPenalty = val;
+      // Unified Llama Router Configuration component
+      Component.h(window.LlamaRouterConfig, {
+        config: this.routerConfig,
+        onChange: (field, value) => {
+          this.routerConfig[field] = value;
+          console.log("[DEBUG] SettingsPage LlamaRouterConfig.onChange:", { field, value });
         },
       }),
       Component.h(window.LoggingConfig, {

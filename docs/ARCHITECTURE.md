@@ -214,6 +214,79 @@ Added missing Prometheus metric mappings in `metrics-scraper.js`:
 - `tokens_predicted_seconds_total`
 - `n_tokens_max`
 
+### Settings Page Refactoring (January 2026)
+
+The settings page was refactored to unify scattered router configuration parameters into a clean, streamlined schema.
+
+#### Problem Identified
+
+The settings page had confusing parameter placement across three separate components:
+- **RouterConfig**: maxModelsLoaded, parallelSlots, ctx_size, gpuLayers
+- **ServerPathsForm**: baseModelsPath, serverPath, host, port, autoStartOnLaunch, metricsEnabled
+- **ModelDefaultsForm**: threads, batch_size, temperature, repeatPenalty
+
+Parameters were split between `server_config` and `user_settings` tables with no clear organization.
+
+#### Solution: Unified Schema
+
+**New Database Schema:**
+
+| Table | Key | Type | Description |
+|-------|-----|------|-------------|
+| `router_config` | `config` | TEXT | JSON object containing all router settings |
+| `logging_config` | `config` | TEXT | JSON object containing all logging settings |
+
+**router_config fields (stored in single JSON config):**
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `modelsPath` | TEXT | `/path/to/models` | Directory containing GGUF model files |
+| `serverPath` | TEXT | `/path/to/llama-server` | Path to llama-server binary |
+| `host` | TEXT | `0.0.0.0` | Listen interface |
+| `port` | INTEGER | `8080` | HTTP listen port |
+| `maxModelsLoaded` | INTEGER | `4` | Maximum models to keep in memory |
+| `parallelSlots` | INTEGER | `1` | Number of parallel processing slots |
+| `ctxSize` | INTEGER | `4096` | Token context window size |
+| `gpuLayers` | INTEGER | `0` | Model layers to offload to GPU |
+| `threads` | INTEGER | `4` | CPU threads for inference |
+| `batchSize` | INTEGER | `512` | Processing batch size |
+| `temperature` | REAL | `0.8` | Response randomness |
+| `repeatPenalty` | REAL | `1.1` | Penalize repeated tokens |
+
+**logging_config fields (stored in single JSON config):**
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `logLevel` | TEXT | `info` | Log verbosity (debug, info, warning, error) |
+| `maxFileSizeMb` | INTEGER | `10` | Per log file size limit |
+| `maxLogFiles` | INTEGER | `7` | Number of days to retain |
+| `fileLogging` | BOOLEAN | `true` | Write to logs/app-YYYYMMDD.log |
+| `databaseLogging` | BOOLEAN | `true` | Store in SQLite |
+| `consoleLogging` | BOOLEAN | `true` | Output to server stdout |
+
+#### New Frontend Components
+
+| File | Purpose |
+|------|---------|
+| `llama-router-config.js` | Unified router configuration form (replaces 3 components) |
+| `logging-config.js` | Logging configuration form |
+| `save-section.js` | Save configuration section |
+
+#### API Methods
+
+| Method | Description |
+|--------|-------------|
+| `getRouterConfig()` | Fetch router configuration |
+| `updateRouterConfig(config)` | Update router configuration |
+| `resetRouterConfig()` | Reset to defaults |
+| `getLoggingConfig()` | Fetch logging configuration |
+| `updateLoggingConfig(config)` | Update logging configuration |
+| `resetLoggingConfig()` | Reset to defaults |
+
+#### Migration Script
+
+Migration `004_unify_router_config.js` handles the transition from the old schema to the new unified schema, preserving backward compatibility.
+
 ## Key Components
 
 ### Frontend Structure
@@ -298,6 +371,15 @@ server/handlers/
 | `llama-router-card.js` | 340 | Router status and control with metrics scraping |
 | `llama-server-config.js` | 50 | Server configuration |
 
+**Settings Components:**
+
+| File | Approx. Lines | Purpose |
+|------|---------------|---------|
+| `llama-router-config.js` | 200 | Unified router configuration form |
+| `logging-config.js` | 120 | Logging configuration form |
+| `save-section.js` | 80 | Save configuration section |
+| `config-export-import.js` | 100 | Export/import configuration |
+
 **Preset Components:**
 
 | File | Approx. Lines | Purpose |
@@ -355,8 +437,12 @@ Server ───> All Clients
 | `llama:status` | Get router status |
 | `llama:start` | Start router |
 | `llama:stop` | Stop router |
-| `config:get` | Get configuration |
-| `config:update` | Update configuration |
+| `routerConfig:get` | Get router configuration |
+| `routerConfig:update` | Update router configuration |
+| `routerConfig:reset` | Reset router configuration |
+| `loggingConfig:get` | Get logging configuration |
+| `loggingConfig:update` | Update logging configuration |
+| `loggingConfig:reset` | Reset logging configuration |
 
 **Server → Client:**
 
@@ -388,6 +474,24 @@ CREATE TABLE models (
   threads INTEGER DEFAULT 4,
   created_at INTEGER,
   updated_at INTEGER
+);
+```
+
+### Router Config Table (Unified Schema)
+
+```sql
+CREATE TABLE router_config (
+  id INTEGER PRIMARY KEY DEFAULT 1,
+  config TEXT DEFAULT '{"modelsPath":"/path/to/models","serverPath":"/path/to/llama-server","host":"0.0.0.0","port":8080,"maxModelsLoaded":4,"parallelSlots":1,"ctxSize":4096,"gpuLayers":0,"threads":4,"batchSize":512,"temperature":0.8,"repeatPenalty":1.1}'
+);
+```
+
+### Logging Config Table
+
+```sql
+CREATE TABLE logging_config (
+  id INTEGER PRIMARY KEY DEFAULT 1,
+  config TEXT DEFAULT '{"logLevel":"info","maxFileSizeMb":10,"maxLogFiles":7,"fileLogging":true,"databaseLogging":true,"consoleLogging":true}'
 );
 ```
 

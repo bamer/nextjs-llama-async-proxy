@@ -196,6 +196,108 @@ class StateAPI {
   async updateSettings(s) {
     return this.socket.request("settings:update", { settings: s });
   }
+
+  // ===== Router Config Operations =====
+
+  /**
+   * Get router configuration from server
+   * @returns {Promise<Object>} Router config
+   */
+  async getRouterConfig() {
+    console.log("[DEBUG] StateAPI getRouterConfig request");
+    try {
+      const result = await this.socket.request("routerConfig:get");
+      console.log("[DEBUG] StateAPI getRouterConfig response:", result);
+      return result;
+    } catch (error) {
+      console.error("[DEBUG] StateAPI getRouterConfig error:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update router configuration
+   * @param {Object} config - Partial or full config object
+   * @returns {Promise<Object>} Updated config
+   */
+  async updateRouterConfig(config) {
+    console.log("[DEBUG] StateAPI updateRouterConfig request:", config);
+    try {
+      const result = await this.socket.request("routerConfig:update", { config });
+      console.log("[DEBUG] StateAPI updateRouterConfig response:", result);
+      return result;
+    } catch (error) {
+      console.error("[DEBUG] StateAPI updateRouterConfig error:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reset router config to defaults
+   * @returns {Promise<Object>} Default config
+   */
+  async resetRouterConfig() {
+    console.log("[DEBUG] StateAPI resetRouterConfig request");
+    try {
+      const result = await this.socket.request("routerConfig:reset");
+      console.log("[DEBUG] StateAPI resetRouterConfig response:", result);
+      return result;
+    } catch (error) {
+      console.error("[DEBUG] StateAPI resetRouterConfig error:", error);
+      throw error;
+    }
+  }
+
+  // ===== Logging Config Operations =====
+
+  /**
+   * Get logging configuration from server
+   * @returns {Promise<Object>} Logging config
+   */
+  async getLoggingConfig() {
+    console.log("[DEBUG] StateAPI getLoggingConfig request");
+    try {
+      const result = await this.socket.request("loggingConfig:get");
+      console.log("[DEBUG] StateAPI getLoggingConfig response:", result);
+      return result;
+    } catch (error) {
+      console.error("[DEBUG] StateAPI getLoggingConfig error:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update logging configuration
+   * @param {Object} config - Partial or full config object
+   * @returns {Promise<Object>} Updated config
+   */
+  async updateLoggingConfig(config) {
+    console.log("[DEBUG] StateAPI updateLoggingConfig request:", config);
+    try {
+      const result = await this.socket.request("loggingConfig:update", { config });
+      console.log("[DEBUG] StateAPI updateLoggingConfig response:", result);
+      return result;
+    } catch (error) {
+      console.error("[DEBUG] StateAPI updateLoggingConfig error:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reset logging config to defaults
+   * @returns {Promise<Object>} Default config
+   */
+  async resetLoggingConfig() {
+    console.log("[DEBUG] StateAPI resetLoggingConfig request");
+    try {
+      const result = await this.socket.request("loggingConfig:reset");
+      console.log("[DEBUG] StateAPI resetLoggingConfig response:", result);
+      return result;
+    } catch (error) {
+      console.error("[DEBUG] StateAPI resetLoggingConfig error:", error);
+      throw error;
+    }
+  }
 }
 
 window.StateAPI = StateAPI;

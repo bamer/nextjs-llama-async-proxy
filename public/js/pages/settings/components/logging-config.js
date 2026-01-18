@@ -1,5 +1,6 @@
 /**
  * Logging Configuration Component - Event-Driven DOM Updates
+ * Styled consistently with dashboard and settings page
  */
 
 class LoggingConfig extends Component {
@@ -25,6 +26,8 @@ class LoggingConfig extends Component {
       });
       this.logLevel = val;
       this._updateUI();
+      e.target.classList.add("changed");
+      setTimeout(() => e.target.classList.remove("changed"), 500);
       this.props.onLogLevelChange?.(val);
     });
 
@@ -33,6 +36,8 @@ class LoggingConfig extends Component {
       const val = parseInt(e.target.value) || 10;
       this.maxFileSizeMB = val;
       this._updateUI();
+      e.target.classList.add("changed");
+      setTimeout(() => e.target.classList.remove("changed"), 500);
       // Convert MB to bytes for the callback
       this.props.onMaxFileSizeChange?.(val * 1024 * 1024);
     });
@@ -42,6 +47,8 @@ class LoggingConfig extends Component {
       const val = parseInt(e.target.value) || 7;
       this.maxFiles = val;
       this._updateUI();
+      e.target.classList.add("changed");
+      setTimeout(() => e.target.classList.remove("changed"), 500);
       this.props.onMaxFilesChange?.(val);
     });
 
@@ -49,6 +56,8 @@ class LoggingConfig extends Component {
     this.on("change", "[data-field=enable-file-logging]", (e) => {
       this.enableFileLogging = e.target.checked;
       this._updateUI();
+      e.target.classList.add("changed");
+      setTimeout(() => e.target.classList.remove("changed"), 500);
       this.props.onEnableFileLoggingChange?.(this.enableFileLogging);
     });
 
@@ -56,6 +65,8 @@ class LoggingConfig extends Component {
     this.on("change", "[data-field=enable-database-logging]", (e) => {
       this.enableDatabaseLogging = e.target.checked;
       this._updateUI();
+      e.target.classList.add("changed");
+      setTimeout(() => e.target.classList.remove("changed"), 500);
       this.props.onEnableDatabaseLoggingChange?.(this.enableDatabaseLogging);
     });
 
@@ -63,6 +74,8 @@ class LoggingConfig extends Component {
     this.on("change", "[data-field=enable-console-logging]", (e) => {
       this.enableConsoleLogging = e.target.checked;
       this._updateUI();
+      e.target.classList.add("changed");
+      setTimeout(() => e.target.classList.remove("changed"), 500);
       this.props.onEnableConsoleLoggingChange?.(this.enableConsoleLogging);
     });
   }
@@ -109,77 +122,103 @@ class LoggingConfig extends Component {
     }
   }
 
+  /**
+   * Render a checkbox with label and description
+   */
+  _renderCheckbox(field, label, description, checked) {
+    return Component.h("label", { className: "checkbox-label" }, [
+      Component.h("input", {
+        type: "checkbox",
+        "data-field": field,
+        checked: checked,
+        className: "checkbox-input",
+      }),
+      Component.h("div", { className: "checkbox-content" }, [
+        Component.h("span", { className: "checkbox-title" }, label),
+        Component.h("small", { className: "checkbox-desc" }, description),
+      ]),
+    ]);
+  }
+
   render() {
     return Component.h("div", { className: "settings-section" }, [
-      Component.h("h2", {}, "Logging Configuration"),
+      Component.h("h2", { className: "section-title" }, "Logging Configuration"),
       Component.h("p", { className: "section-desc" }, "Configure log collection and retention"),
-      Component.h("div", { className: "card" }, [
-        Component.h("div", { className: "logging-grid" }, [
+
+      // Main settings card
+      Component.h("div", { className: "card settings-card" }, [
+        Component.h("h3", { className: "card-title" }, "General Settings"),
+        Component.h("div", { className: "form-grid logging-grid" }, [
+          // Log Level
           Component.h("div", { className: "form-group" }, [
-            Component.h("label", {}, "Log Level"),
-            Component.h("select", { "data-field": "log-level", value: this.logLevel }, [
+            Component.h("label", { for: "log-level", className: "field-label" }, "Log Level"),
+            Component.h("select", {
+              id: "log-level",
+              "data-field": "log-level",
+              value: this.logLevel,
+              className: "field-select",
+            }, [
               Component.h("option", { value: "debug" }, "Debug"),
               Component.h("option", { value: "info" }, "Info"),
               Component.h("option", { value: "warn" }, "Warning"),
               Component.h("option", { value: "error" }, "Error"),
             ]),
-            Component.h("small", {}, "Most to least verbose"),
+            Component.h("small", { className: "field-help" }, "Most to least verbose"),
           ]),
+          // Max File Size
           Component.h("div", { className: "form-group" }, [
-            Component.h("label", {}, "Max File Size (MB)"),
+            Component.h("label", { for: "max-file-size", className: "field-label" }, "Max File Size (MB)"),
             Component.h("input", {
               type: "number",
+              id: "max-file-size",
               "data-field": "max-file-size",
               value: this.maxFileSizeMB,
               min: "1",
               max: "1000",
               step: "1",
+              className: "field-input",
             }),
-            Component.h("small", {}, "Per log file"),
+            Component.h("small", { className: "field-help" }, "Per log file"),
           ]),
+          // Max Files
           Component.h("div", { className: "form-group" }, [
-            Component.h("label", {}, "Max Log Files"),
+            Component.h("label", { for: "max-files", className: "field-label" }, "Max Log Files"),
             Component.h("input", {
               type: "number",
+              id: "max-files",
               "data-field": "max-files",
               value: this.maxFiles,
               min: "1",
               max: "30",
+              className: "field-input",
             }),
-            Component.h("small", {}, "Number of days to retain"),
+            Component.h("small", { className: "field-help" }, "Number of days to retain"),
           ]),
         ]),
       ]),
-      Component.h("div", { className: "card" }, [
-        Component.h("h3", {}, "Logging Targets"),
+
+      // Logging Targets card
+      Component.h("div", { className: "card settings-card" }, [
+        Component.h("h3", { className: "card-title" }, "Logging Targets"),
         Component.h("div", { className: "checkbox-group" }, [
-          Component.h("label", { className: "checkbox-label" }, [
-            Component.h("input", {
-              type: "checkbox",
-              "data-field": "enable-file-logging",
-              checked: this.enableFileLogging,
-            }),
-            Component.h("span", {}, "File Logging"),
-            Component.h("small", {}, "Write to logs/app-YYYYMMDD.log"),
-          ]),
-          Component.h("label", { className: "checkbox-label" }, [
-            Component.h("input", {
-              type: "checkbox",
-              "data-field": "enable-database-logging",
-              checked: this.enableDatabaseLogging,
-            }),
-            Component.h("span", {}, "Database Logging"),
-            Component.h("small", {}, "Store in SQLite for quick access"),
-          ]),
-          Component.h("label", { className: "checkbox-label" }, [
-            Component.h("input", {
-              type: "checkbox",
-              "data-field": "enable-console-logging",
-              checked: this.enableConsoleLogging,
-            }),
-            Component.h("span", {}, "Console Logging"),
-            Component.h("small", {}, "Output to server stdout"),
-          ]),
+          this._renderCheckbox(
+            "enable-file-logging",
+            "File Logging",
+            "Write to logs/app-YYYYMMDD.log",
+            this.enableFileLogging
+          ),
+          this._renderCheckbox(
+            "enable-database-logging",
+            "Database Logging",
+            "Store in SQLite for quick access",
+            this.enableDatabaseLogging
+          ),
+          this._renderCheckbox(
+            "enable-console-logging",
+            "Console Logging",
+            "Output to server stdout",
+            this.enableConsoleLogging
+          ),
         ]),
       ]),
     ]);

@@ -363,16 +363,68 @@ class StateManager {
     return this.api.getSettings();
   }
 
-  /**
+   /**
       * Update application settings
       * @param {Object} s - New settings values
       * @returns {Promise<Object>} Update result
       */
-  async updateSettings(s) {
-    return this.api.updateSettings(s);
-  }
+   async updateSettings(s) {
+     return this.api.updateSettings(s);
+   }
 
-  // ===== Event-Driven Methods (Phase 3.1.1) =====
+   // ===== Router Config Operations (Unified Schema) =====
+
+   /**
+      * Get router configuration
+      * @returns {Promise<Object>} Router configuration object
+      */
+   async getRouterConfig() {
+     return this.api.getRouterConfig();
+   }
+
+   /**
+      * Update router configuration
+      * @param {Object} c - New router configuration values
+      * @returns {Promise<Object>} Update result
+      */
+   async updateRouterConfig(c) {
+     return this.api.updateRouterConfig(c);
+   }
+
+   /**
+      * Reset router configuration to defaults
+      * @returns {Promise<Object>} Default configuration
+      */
+   async resetRouterConfig() {
+     return this.api.resetRouterConfig();
+   }
+
+   /**
+      * Get logging configuration
+      * @returns {Promise<Object>} Logging configuration object
+      */
+   async getLoggingConfig() {
+     return this.api.getLoggingConfig();
+   }
+
+   /**
+      * Update logging configuration
+      * @param {Object} c - New logging configuration values
+      * @returns {Promise<Object>} Update result
+      */
+   async updateLoggingConfig(c) {
+     return this.api.updateLoggingConfig(c);
+   }
+
+   /**
+      * Reset logging configuration to defaults
+      * @returns {Promise<Object>} Default configuration
+      */
+   async resetLoggingConfig() {
+     return this.api.resetLoggingConfig();
+   }
+
+   // ===== Event-Driven Methods (Phase 3.1.1) =====
 
   /**
    * Emit an action event that components can listen to

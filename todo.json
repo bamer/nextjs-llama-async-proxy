@@ -1,79 +1,205 @@
 [
   {
-    taskId: "T-001",
-    role: "coder",
-    description: "Create RouterCard component",
-    filesAffected: ["public/js/pages/settings/components/router-card.js"],
-    status: "DONE",
+    "taskId": "MIG-001",
+    "role": "coder-agent",
+    "description": "Create database migration script to unify router config schema",
+    "filesAffected": [
+      "server/db/migrations/004_unify_router_config.js"
+    ],
+    "inputs": {
+      "migrationType": "schema_consolidation",
+      "sourceTables": ["server_config", "metadata"],
+      "targetTable": "router_config",
+      "backupRequired": true
+    },
+    "successCriteria": [
+      "Migration script runs without errors",
+      "Existing config data is preserved",
+      "New schema structure matches design document"
+    ],
+    "dependsOn": [],
+    "status": "PENDING"
   },
   {
-    taskId: "T-002",
-    role: "coder",
-    description: "Create ServerPaths form component",
-    filesAffected: ["public/js/pages/settings/components/server-paths.js"],
-    status: "DONE",
+    "taskId": "MIG-002",
+    "role": "coder-agent",
+    "description": "Update server DB layer with new config accessors",
+    "filesAffected": [
+      "server/db/config.js"
+    ],
+    "inputs": {
+      "operations": ["getRouterConfig", "saveRouterConfig", "getLoggingConfig", "saveLoggingConfig"]
+    },
+    "successCriteria": [
+      "All new config functions work correctly",
+      "Backwards compatibility with existing code"
+    ],
+    "dependsOn": ["MIG-001"],
+    "status": "PENDING"
   },
   {
-    taskId: "T-003",
-    role: "coder",
-    description: "Create ModelDefaults form component",
-    filesAffected: ["public/js/pages/settings/components/model-defaults.js"],
-    status: "DONE",
+    "taskId": "MIG-003",
+    "role": "coder-agent",
+    "description": "Update server config handlers for new schema",
+    "filesAffected": [
+      "server/handlers/config.js"
+    ],
+    "inputs": {
+      "endpoints": ["config:get", "config:update", "settings:get", "settings:update"]
+    },
+    "successCriteria": [
+      "All endpoints return new unified schema",
+      "Save operations write to correct tables"
+    ],
+    "dependsOn": ["MIG-002"],
+    "status": "PENDING"
   },
   {
-    taskId: "T-004",
-    role: "coder",
-    description: "Create SaveSection component",
-    filesAffected: ["public/js/pages/settings/components/save-section.js"],
-    status: "DONE",
+    "taskId": "API-001",
+    "role": "coder-agent",
+    "description": "Update frontend state API with new router config methods",
+    "filesAffected": [
+      "public/js/core/state/state-api.js"
+    ],
+    "inputs": {
+      "methods": ["getRouterConfig", "updateRouterConfig", "getLoggingConfig", "updateLoggingConfig"]
+    },
+    "successCriteria": [
+      "All new API methods return correct data",
+      "Socket requests/responses work correctly"
+    ],
+    "dependsOn": ["MIG-003"],
+    "status": "PENDING"
   },
   {
-    taskId: "T-005",
-    role: "coder",
-    description: "Create SettingsPage component",
-    filesAffected: ["public/js/pages/settings/settings-page.js"],
-    status: "DONE",
+    "taskId": "API-002",
+    "role": "coder-agent",
+    "description": "Update settings controller for new unified config",
+    "filesAffected": [
+      "public/js/pages/settings/settings-controller.js"
+    ],
+    "inputs": {
+      "operations": ["load", "save", "reset"],
+      "newSchema": "router_config + logging_config"
+    },
+    "successCriteria": [
+      "Config loads correctly on page mount",
+      "Save writes to new schema",
+      "Reset works with new schema"
+    ],
+    "dependsOn": ["API-001"],
+    "status": "PENDING"
   },
   {
-    taskId: "T-006",
-    role: "coder",
-    description: "Create SettingsController",
-    filesAffected: ["public/js/pages/settings/settings-controller.js"],
-    status: "DONE",
+    "taskId": "UI-001",
+    "role": "coder-agent",
+    "description": "Create unified LlamaRouterConfig component",
+    "filesAffected": [
+      "public/js/pages/settings/components/llama-router-config.js"
+    ],
+    "inputs": {
+      "sections": ["paths", "network", "routerBehavior", "inferenceDefaults"],
+      "eventDriven": true
+    },
+    "successCriteria": [
+      "Component renders all config sections",
+      "State subscriptions work correctly",
+      "Clean up subscriptions on destroy"
+    ],
+    "dependsOn": [],
+    "status": "PENDING"
   },
   {
-    taskId: "T-007",
-    role: "coder",
-    description: "Create index barrel export",
-    filesAffected: ["public/js/pages/settings/index.js"],
-    status: "DONE",
+    "taskId": "UI-002",
+    "role": "coder-agent",
+    "description": "Update settings page to use new unified component",
+    "filesAffected": [
+      "public/js/pages/settings/settings-page.js",
+      "public/js/pages/settings/index.js"
+    ],
+    "inputs": {
+      "remove": ["RouterConfig", "ServerPathsForm", "ModelDefaultsForm"],
+      "add": ["LlamaRouterConfig"]
+    },
+    "successCriteria": [
+      "Settings page renders without errors",
+      "All form fields populate correctly",
+      "Save/reset actions work"
+    ],
+    "dependsOn": ["UI-001", "API-002"],
+    "status": "PENDING"
   },
   {
-    taskId: "T-008",
-    role: "coder",
-    description: "Update index.html with new script path",
-    filesAffected: ["public/index.html"],
-    status: "DONE",
+    "taskId": "TEST-001",
+    "role": "tester-agent",
+    "description": "Run database migration and verify data",
+    "filesAffected": [],
+    "inputs": {
+      "testType": "integration",
+      "operations": ["migrate", "read", "write"]
+    },
+    "successCriteria": [
+      "Migration completes successfully",
+      "Data integrity preserved",
+      "New schema queryable"
+    ],
+    "dependsOn": ["MIG-001"],
+    "status": "PENDING"
   },
   {
-    taskId: "T-009",
-    role: "janitor-agent-bamer",
-    description: "Delete old settings.js file",
-    filesAffected: ["public/js/pages/settings.js"],
-    status: "DONE",
+    "taskId": "TEST-002",
+    "role": "tester-agent",
+    "description": "Test full settings page flow",
+    "filesAffected": [],
+    "inputs": {
+      "testType": "e2e",
+      "page": "/settings",
+      "operations": ["load", "edit", "save", "reset"]
+    },
+    "successCriteria": [
+      "Settings page loads immediately",
+      "Form fields populate from database",
+      "Save writes correct data",
+      "Reset restores defaults"
+    ],
+    "dependsOn": ["UI-002"],
+    "status": "PENDING"
   },
   {
-    taskId: "T-010",
-    role: "tester-agent",
-    description: "Run tests to verify functionality",
-    filesAffected: [],
-    status: "DONE",
+    "taskId": "CLEAN-001",
+    "role": "janitor-agent",
+    "description": "Remove old duplicate component files",
+    "filesAffected": [],
+    "inputs": {
+      "filesToDelete": [
+        "public/js/pages/settings/components/router-config.js",
+        "public/js/pages/settings/components/server-paths.js",
+        "public/js/pages/settings/components/model-defaults.js"
+      ]
+    },
+    "successCriteria": [
+      "Old files removed",
+      "No import errors in settings page"
+    ],
+    "dependsOn": ["UI-002"],
+    "status": "PENDING"
   },
   {
-    taskId: "T-011",
-    role: "reviewer-agent",
-    description: "Review modularized code",
-    filesAffected: ["public/js/pages/settings/"],
-    status: "DONE",
-  },
-];
+    "taskId": "DOCS-001",
+    "role": "docs-agent",
+    "description": "Update documentation for new config schema",
+    "filesAffected": [
+      "docs/README.md",
+      "docs/ARCHITECTURE.md"
+    ],
+    "inputs": {
+      "sections": ["Configuration", "Database Schema", "Settings Page"]
+    },
+    "successCriteria": [
+      "Docs updated with new schema",
+      "API documentation correct"
+    ],
+    "dependsOn": ["TEST-002"],
+    "status": "PENDING"
+  }
+]
