@@ -1,5 +1,6 @@
 /**
  * Save Section Component
+ * Consistent styling with dashboard cards
  */
 
 class SaveSection extends Component {
@@ -7,40 +8,37 @@ class SaveSection extends Component {
     super(props);
   }
 
+  bindEvents() {
+    // Save button click handler
+    this.on("click", "[data-action=save]", (e) => {
+      e.preventDefault();
+      // The actual save is handled by settings-page.js via state subscription
+    });
+  }
+
   render() {
-    return Component.h(
-      "div",
-      {},
-      Component.h(
-        "div",
-        { className: "settings-section" },
+    return Component.h("div", { className: "settings-page" }, [
+      // Save Configuration Card
+      Component.h("div", { className: "save-section" }, [
+        Component.h("h3", { className: "save-title" }, "Save Configuration"),
+        Component.h("p", { className: "save-desc" }, "Settings apply on router restart"),
         Component.h(
           "div",
-          { className: "card actions-card" },
-          Component.h("h3", {}, "Save Configuration"),
-          Component.h("p", { className: "info" }, "Settings apply on router restart"),
+          { className: "save-actions" },
           Component.h(
-            "div",
-            { className: "action-buttons" },
-            Component.h(
-              "button",
-              { className: "btn btn-primary", "data-action": "save" },
-              "Save Settings"
-            )
+            "button",
+            { className: "btn btn-primary btn-lg", "data-action": "save" },
+            "Save All Settings"
           )
-        )
-      ),
-      Component.h(
-        "div",
-        { className: "settings-section" },
-        Component.h(
-          "div",
-          { className: "card about-card" },
-          Component.h("h3", {}, "Llama Async Proxy Dashboard"),
-          Component.h("p", {}, "Version 1.2")
-        )
-      )
-    );
+        ),
+      ]),
+
+      // About Card
+      Component.h("div", { className: "about-section" }, [
+        Component.h("h3", { className: "about-title" }, "Llama Async Proxy Dashboard"),
+        Component.h("p", { className: "about-version" }, "Version 1.2"),
+      ]),
+    ]);
   }
 }
 
