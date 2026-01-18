@@ -14,6 +14,7 @@ class LoggingConfig extends Component {
     this.enableFileLogging = props.enableFileLogging !== false;
     this.enableDatabaseLogging = props.enableDatabaseLogging !== false;
     this.enableConsoleLogging = props.enableConsoleLogging !== false;
+    this.onSave = props.onSave || (() => {});
   }
 
   bindEvents() {
@@ -77,6 +78,11 @@ class LoggingConfig extends Component {
       e.target.classList.add("changed");
       setTimeout(() => e.target.classList.remove("changed"), 500);
       this.props.onEnableConsoleLoggingChange?.(this.enableConsoleLogging);
+    });
+
+    // Save button click handler
+    this.on("click", "[data-action=save-logging-config]", () => {
+      this.onSave();
     });
   }
 
@@ -161,9 +167,12 @@ class LoggingConfig extends Component {
     // to avoid conflicts with parent section containers
     return Component.h("div", { className: "logging-config-form" }, [
 
-      // Main settings card
+      // Single card containing all logging configuration
       Component.h("div", { className: "card settings-card" }, [
-        Component.h("h3", { className: "card-title" }, "General Settings"),
+        Component.h("h3", { className: "card-title" }, "Logging Configuration"),
+
+        // General Settings
+        Component.h("h4", { className: "card-subtitle" }, "General Settings"),
         Component.h("div", { className: "form-grid logging-grid" }, [
           // Log Level
           Component.h("div", { className: "form-group" }, [
@@ -211,11 +220,9 @@ class LoggingConfig extends Component {
             Component.h("small", { className: "field-help" }, "Number of days to retain"),
           ]),
         ]),
-      ]),
 
-      // Logging Targets card
-      Component.h("div", { className: "card settings-card" }, [
-        Component.h("h3", { className: "card-title" }, "Logging Targets"),
+        // Logging Targets
+        Component.h("h4", { className: "card-subtitle" }, "Logging Targets"),
         Component.h("div", { className: "checkbox-group" }, [
           this._renderCheckbox(
             "enable-file-logging",
@@ -234,6 +241,18 @@ class LoggingConfig extends Component {
             "Console Logging",
             "Output to server stdout",
             this.enableConsoleLogging
+          ),
+        ]),
+
+        // Save Button inside the card
+        Component.h("div", { className: "card-actions" }, [
+          Component.h(
+            "button",
+            {
+              className: "btn btn-secondary btn-lg",
+              "data-action": "save-logging-config",
+            },
+            "Save Logging Settings"
           ),
         ]),
       ]),

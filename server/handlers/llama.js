@@ -73,7 +73,8 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
     const id = req?.requestId || Date.now();
     getLlamaStatus(db)
       .then((status) => {
-        ok(socket, "llama:status:result", { status }, id, ack);
+        // Pass status directly - don't wrap in { status }
+        ok(socket, "llama:status:result", status, id, ack);
       })
       .catch((e) => {
         err(socket, "llama:status:result", e.message, id, ack);

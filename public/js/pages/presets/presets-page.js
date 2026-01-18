@@ -47,7 +47,7 @@ class PresetsPage extends Component {
       socketClient.on("llama:status", (data) => {
         console.log("[DEBUG] llama:status broadcast");
         if (data.status) {
-          this.state.serverRunning = data.status.status === "running";
+          this.state.serverRunning = data.status === "running";
           this.state.serverPort = data.status.port || null;
         }
         this._updateStatusUI();

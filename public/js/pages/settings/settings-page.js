@@ -66,19 +66,22 @@ class SettingsPage extends Component {
 
     // Listen to socket broadcasts directly (replaces stateManager.subscribe)
     this.unsubscribers.push(
-      socketClient.on("config:updated", (data) => {
-        console.log("[DEBUG] config:updated received");
-        if (data.routerConfig) {
-          this.routerConfig = { ...this._getRouterDefaults(), ...this.routerConfig, ...data.routerConfig };
+      socketClient.on("routerConfig:updated", (data) => {
+        console.log("[DEBUG] routerConfig:updated received");
+        if (data.config) {
+          this.routerConfig = { ...this._getRouterDefaults(), ...this.routerConfig, ...data.config };
           this._updateRouterConfigUI();
         }
-        if (data.loggingConfig) {
-          this.logLevel = data.loggingConfig.logLevel || this.logLevel;
-          this.maxFileSize = data.loggingConfig.maxFileSize || this.maxFileSize;
-          this.maxFiles = data.loggingConfig.maxFiles || this.maxFiles;
-          this.enableFileLogging = data.loggingConfig.enableFileLogging !== false;
-          this.enableDatabaseLogging = data.loggingConfig.enableDatabaseLogging !== false;
-          this.enableConsoleLogging = data.loggingConfig.enableConsoleLogging !== false;
+      }),
+      socketClient.on("loggingConfig:updated", (data) => {
+        console.log("[DEBUG] loggingConfig:updated received");
+        if (data.config) {
+          this.logLevel = data.config.logLevel || this.logLevel;
+          this.maxFileSize = data.config.maxFileSize || this.maxFileSize;
+          this.maxFiles = data.config.maxFiles || this.maxFiles;
+          this.enableFileLogging = data.config.enableFileLogging !== false;
+          this.enableDatabaseLogging = data.config.enableDatabaseLogging !== false;
+          this.enableConsoleLogging = data.config.enableConsoleLogging !== false;
           this._updateLoggingConfigUI();
         }
       }),
@@ -541,8 +544,8 @@ class SettingsPage extends Component {
         Component.h("p", { className: "section-desc" }, "Configure llama.cpp router paths, network, behavior, and inference defaults"),
         Component.h(window.LlamaRouterConfig, {
           config: this.routerConfig,
+          onSave: this._handleSaveRouter.bind(this),
           onChange: (field, value) => {
-            // Track changes in localChanges instead of direct routerConfig modification
             this._localRouterChanges[field] = value;
             console.log("[DEBUG] SettingsPage LlamaRouterConfig.onChange:", { field, value, totalChanges: Object.keys(this._localRouterChanges).length });
           },
@@ -560,6 +563,7 @@ class SettingsPage extends Component {
           enableFileLogging: this.enableFileLogging,
           enableDatabaseLogging: this.enableDatabaseLogging,
           enableConsoleLogging: this.enableConsoleLogging,
+          onSave: this._handleSaveLogging.bind(this),
           onLogLevelChange: (val) => {
             this._localLoggingChanges.logLevel = val;
             this.logLevel = val;
@@ -595,9 +599,91 @@ class SettingsPage extends Component {
         }),
       ]),
 
-      // Save Section
-      Component.h(window.SaveSection),
+      // About Card
+      Component.h("div", { className: "settings-section" }, [
+        Component.h("div", { className: "card settings-card" }, [
+          Component.h("h3", { className: "card-title" }, "Llama Async Proxy Dashboard"),
+          Component.h("p", { className: "card-desc" }, "Version 1.2"),
+        ]),
+      ]),
     ]);
+  }
+
+  /**
+   * Save only router configuration
+   */
+  async _handleSaveRouter() {
+    console.log("[SETTINGS] Saving router config...");
+    const currentRouterConfig = this.routerConfig || {};
+    const config = {
+      modelsPath: this._localRouterChanges.modelsPath !== undefined
+        ? this._localRouterChanges.modelsPath
+        : (currentRouterConfig.modelsPath || ""),
+      serverPath: this._localRouterChanges.serverPath !== undefined
+        ? this._localRouterChanges.serverPath
+        : (currentRouterConfig.serverPath || ""),
+      host: this._localRouterChanges.host !== undefined
+        ? this._localRouterChanges.host
+        : (currentRouterConfig.host || "0.0.0.0"),
+      port: parseInt(this._localRouterChanges.port) || parseInt(currentRouterConfig.port) || 8080,
+      maxModelsLoaded: parseInt(this._localRouterChanges.maxModelsLoaded) || parseInt(currentRouterConfig.maxModelsLoaded) || 4,
+      parallelSlots: parseInt(this._localRouterChanges.parallelSlots) || parseInt(currentRouterConfig.parallelSlots) || 1,
+      ctxSize: parseInt(this._localRouterChanges.ctxSize) || parseInt(currentRouterConfig.ctxSize) || 4096,
+      gpuLayers: parseInt(this._localRouterChanges.gpuLayers) || parseInt(currentRouterConfig.gpuLayers) || 0,
+      threads: parseInt(this._localRouterChanges.threads) || parseInt(currentRouterConfig.threads) || 4,
+      batchSize: parseInt(this._localRouterChanges.batchSize) || parseInt(currentRouterConfig.batchSize) || 512,
+      temperature: parseFloat(this._localRouterChanges.temperature) || parseFloat(currentRouterConfig.temperature) || 0.7,
+      repeatPenalty: parseFloat(this._localRouterChanges.repeatPenalty) || parseFloat(currentRouterConfig.repeatPenalty) || 1.1,
+      metricsEnabled: this._localRouterChanges.metricsEnabled !== undefined
+        ? this._localRouterChanges.metricsEnabled
+        : (currentRouterConfig.metricsEnabled !== false),
+      autoStartOnLaunch: this._localRouterChanges.autoStartOnLaunch !== undefined
+        ? this._localRouterChanges.autoStartOnLaunch
+        : (currentRouterConfig.autoStartOnLaunch === true),
+    };
+
+    try {
+      const response = await socketClient.request("routerConfig:update", { config });
+      if (response.success) {
+        showNotification("Router settings saved successfully", "success");
+        this._localRouterChanges = {};
+        this.routerConfig = { ...this.routerConfig, ...config };
+        this._updateRouterConfigUI();
+      } else {
+        showNotification("Save failed: " + response.error, "error");
+      }
+    } catch (e) {
+      console.error("[SETTINGS] Router save error:", e);
+      showNotification("Save error: " + e.message, "error");
+    }
+  }
+
+  /**
+   * Save only logging configuration
+   */
+  async _handleSaveLogging() {
+    console.log("[SETTINGS] Saving logging config...");
+    const config = {
+      logLevel: this.logLevel,
+      maxFileSize: this.maxFileSize,
+      maxFiles: this.maxFiles,
+      enableFileLogging: this.enableFileLogging,
+      enableDatabaseLogging: this.enableDatabaseLogging,
+      enableConsoleLogging: this.enableConsoleLogging,
+    };
+
+    try {
+      const response = await socketClient.request("loggingConfig:update", { config });
+      if (response.success) {
+        showNotification("Logging settings saved successfully", "success");
+        this._localLoggingChanges = {};
+      } else {
+        showNotification("Save failed: " + response.error, "error");
+      }
+    } catch (e) {
+      console.error("[SETTINGS] Logging save error:", e);
+      showNotification("Save error: " + e.message, "error");
+    }
   }
 }
 

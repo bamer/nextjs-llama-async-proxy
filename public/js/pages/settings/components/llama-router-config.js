@@ -11,6 +11,7 @@ class LlamaRouterConfig extends Component {
     // Direct properties instead of state
     this.config = props.config || this._getDefaults();
     this.unsubscribers = [];
+    this.onSave = props.onSave || (() => {});
   }
 
   /**
@@ -37,8 +38,8 @@ class LlamaRouterConfig extends Component {
   onMount() {
     // Subscribe to socket broadcasts for router config updates
     this.unsubscribers.push(
-      socketClient.on("router:status", this._onRouterStatus.bind(this)),
-      socketClient.on("config:updated", this._onConfigUpdated.bind(this))
+      socketClient.on("llama:status", this._onRouterStatus.bind(this)),
+      socketClient.on("routerConfig:updated", this._onConfigUpdated.bind(this))
     );
   }
 
@@ -55,12 +56,12 @@ class LlamaRouterConfig extends Component {
   }
 
   /**
-   * Handle config:updated broadcast
+   * Handle routerConfig:updated broadcast
    * @param {Object} data - Config update data
    */
   _onConfigUpdated(data) {
     if (data?.config && typeof data.config === "object") {
-      console.log("[LlamaRouterConfig] Config updated via broadcast");
+      console.log("[LlamaRouterConfig] RouterConfig updated via broadcast");
       this.config = { ...this.config, ...data.config };
       this._updateUI();
     }
@@ -142,9 +143,11 @@ class LlamaRouterConfig extends Component {
 
       // Call change callback if provided
       this.props.onChange?.(field, value);
+    });
 
-      // Request config update via socket if connected
-      this._requestConfigUpdate(field, value);
+    // Save button click handler
+    this.on("click", "[data-action=save-router-config]", () => {
+      this.onSave();
     });
   }
 
@@ -160,14 +163,12 @@ class LlamaRouterConfig extends Component {
     }
 
     try {
-      const response = await socketClient.request("config:update", {
-        field,
-        value,
-        timestamp: Date.now(),
+      const response = await socketClient.request("routerConfig:update", {
+        config: { [field]: value },
       });
 
       if (response.success) {
-        console.log("[LlamaRouterConfig] Config update requested via socket:", field, value);
+        console.log("[LlamaRouterConfig] RouterConfig update requested via socket:", field, value);
       } else {
         console.error("[LlamaRouterConfig] Config update failed:", response.error);
       }
@@ -241,9 +242,12 @@ class LlamaRouterConfig extends Component {
     const c = this.config;
 
     return Component.h("div", { className: "router-config-form" }, [
-      // ===== Section 1: Paths =====
+      // Single card containing all router configuration
       Component.h("div", { className: "card settings-card" }, [
-        Component.h("h3", { className: "card-title" }, "Paths"),
+        Component.h("h3", { className: "card-title" }, "Router Configuration"),
+
+        // Paths
+        Component.h("h4", { className: "card-subtitle" }, "Paths"),
         Component.h("div", { className: "form-grid" }, [
           this._renderField("modelsPath", "Models Path", "text", {
             value: c.modelsPath,
@@ -256,11 +260,9 @@ class LlamaRouterConfig extends Component {
             helpText: "Path to llama-server binary",
           }),
         ]),
-      ]),
 
-      // ===== Section 2: Network =====
-      Component.h("div", { className: "card settings-card" }, [
-        Component.h("h3", { className: "card-title" }, "Network"),
+        // Network
+        Component.h("h4", { className: "card-subtitle" }, "Network"),
         Component.h("div", { className: "form-grid" }, [
           this._renderField("host", "Host", "text", {
             value: c.host,
@@ -274,11 +276,9 @@ class LlamaRouterConfig extends Component {
             helpText: "HTTP listen port",
           }),
         ]),
-      ]),
 
-      // ===== Section 3: Router Behavior =====
-      Component.h("div", { className: "card settings-card" }, [
-        Component.h("h3", { className: "card-title" }, "Router Behavior"),
+        // Router Behavior
+        Component.h("h4", { className: "card-subtitle" }, "Router Behavior"),
         Component.h("div", { className: "form-grid" }, [
           this._renderField("maxModelsLoaded", "Max Models", "number", {
             value: c.maxModelsLoaded,
@@ -314,11 +314,9 @@ class LlamaRouterConfig extends Component {
             Component.h("span", {}, "Enable metrics endpoint"),
           ]),
         ]),
-      ]),
 
-      // ===== Section 4: Inference Defaults =====
-      Component.h("div", { className: "card settings-card" }, [
-        Component.h("h3", { className: "card-title" }, "Inference Defaults"),
+        // Inference Defaults
+        Component.h("h4", { className: "card-subtitle" }, "Inference Defaults"),
         Component.h("div", { className: "form-grid inference-grid" }, [
           this._renderField("ctxSize", "Context Size", "number", {
             value: c.ctxSize,
@@ -354,11 +352,23 @@ class LlamaRouterConfig extends Component {
           }),
           this._renderField("repeatPenalty", "Repeat Penalty", "number", {
             value: c.repeatPenalty,
-            min: 0,
-            max: 2,
-            step: 0.1,
-            helpText: "Token repetition",
+            min: 1.0,
+            max: 2.0,
+            step: 0.05,
+            helpText: "Token repetition penalty",
           }),
+        ]),
+
+        // Save Button inside the card
+        Component.h("div", { className: "card-actions" }, [
+          Component.h(
+            "button",
+            {
+              className: "btn btn-primary btn-lg",
+              "data-action": "save-router-config",
+            },
+            "Save Router Settings"
+          ),
         ]),
       ]),
     ]);

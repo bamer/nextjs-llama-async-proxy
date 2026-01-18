@@ -1,6 +1,6 @@
 /**
  * Settings Export/Import Component
- * Adds export and import configuration buttons
+ * Card-style with export and import buttons inside
  */
 
 class ConfigExportImport extends Component {
@@ -18,26 +18,28 @@ class ConfigExportImport extends Component {
     return Component.h(
       "div",
       { className: "config-export-import" },
-      Component.h("h2", {}, "Export / Import Configuration"),
-      Component.h(
-        "p",
-        { className: "hint" },
-        "Export your settings to a JSON file or import settings from a file."
-      ),
-      Component.h(
-        "div",
-        { className: "export-import-buttons" },
+      // Single card with Export/Import
+      Component.h("div", { className: "card settings-card" }, [
+        Component.h("h3", { className: "card-title" }, "Export / Import Configuration"),
         Component.h(
-          "button",
-          { className: "btn btn-secondary", "data-action": "export" },
-          "Export"
+          "p",
+          { className: "card-desc" },
+          "Export your settings to a JSON file or import settings from a file."
         ),
-        Component.h(
-          "button",
-          { className: "btn btn-secondary", "data-action": "import" },
-          "Import"
-        )
-      ),
+        // Buttons inside the card
+        Component.h("div", { className: "card-actions" }, [
+          Component.h(
+            "button",
+            { className: "btn btn-secondary", "data-action": "export" },
+            "Export"
+          ),
+          Component.h(
+            "button",
+            { className: "btn btn-secondary", "data-action": "import" },
+            "Import"
+          ),
+        ]),
+      ]),
       Component.h("input", {
         type: "file",
         "data-field": "import-file",

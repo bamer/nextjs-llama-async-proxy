@@ -438,6 +438,81 @@
   .metrics-subgrid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Card Actions - Save buttons inside cards (matching LlamaRouterCard button style) */
+.card-actions {
+  display: flex;
+  gap: var(--sm);
+  padding: var(--md);
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  border-radius: 0 0 var(--radius) var(--radius);
+  margin: 0 calc(-1 * var(--md)) calc(-1 * var(--md));
+  width: calc(100% + var(--md) * 2);
+}
+
+.card-actions .btn {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-size: 0.8125rem;
+  padding: var(--sm) var(--lg);
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sm);
+  transition: all var(--transition-fast);
+  border-radius: var(--radius);
+}
+
+.card-actions .btn-primary {
+  background: var(--success);
+  color: #fff;
+  border: 1px solid var(--success-dark);
+}
+
+.card-actions .btn-primary:hover:not(:disabled) {
+  background: var(--success-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.card-actions .btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.card-actions .btn-secondary:hover:not(:disabled) {
+  background: var(--border-color);
+  color: var(--text-primary);
+}
+
+.card-actions .btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.card-actions .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Card subtitles */
+.card-subtitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #6b6b7b);
+  margin: var(--md) var(--md) var(--xs);
+  padding-bottom: var(--xs);
+  border-bottom: 1px solid var(--border-color);
+}
+
+  .metrics-subgrid {
+    grid-template-columns: 1fr;
+  }
 
   .status-card-header {
     flex-direction: column;
