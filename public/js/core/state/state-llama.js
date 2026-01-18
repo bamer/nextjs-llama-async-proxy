@@ -177,6 +177,8 @@ class StateLlamaServer {
 
   /**
    * Fetch status from backend
+   * Note: On timeout, we DON'T change status - the existing status is preserved.
+   * This prevents stale requests from overwriting current status.
    */
   fetchStatus() {
     this.socket.request("llama:status")
@@ -187,18 +189,9 @@ class StateLlamaServer {
         }
       })
       .catch((e) => {
-        // Failed to fetch - set idle state
-        const idleState = {
-          status: "idle",
-          port: null,
-          url: null,
-          mode: "router",
-          models: [],
-          lastUpdated: Date.now(),
-          lastError: e.message,
-        };
-        this.core.set("llamaServerStatus", idleState);
-        this.core.set("routerStatus", idleState);
+        // Timeout or error - DON'T change status, just log
+        // The current status (running/stopped) reflects reality
+        console.debug("[StateLlamaServer] Status fetch failed:", e.message, "- preserving current status");
       });
   }
 

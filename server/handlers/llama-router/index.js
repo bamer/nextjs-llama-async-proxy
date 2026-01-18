@@ -11,7 +11,7 @@ export {
   setNotificationCallback,
 } from "./start.js";
 export { stopLlamaServerRouter } from "./stop.js";
-export { getLlamaStatus, loadModel, unloadModel } from "./status.js";
+export { getLlamaStatus, loadModel, unloadModel, detectLlamaServer } from "./status.js";
 export { llamaApiRequest } from "./api.js";
 export {
   isPortInUse,

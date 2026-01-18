@@ -17,8 +17,8 @@
  * Default values for router_config table
  */
 const ROUTER_CONFIG_DEFAULTS = {
-  modelsPath: "./models",
-  serverPath: "/home/bamer/llama.cpp/build/bin/llama-server",
+  modelsPath: "",
+  serverPath: "",
   host: "0.0.0.0",
   port: 8080,
   maxModelsLoaded: 4,

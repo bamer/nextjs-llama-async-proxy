@@ -6,7 +6,7 @@
 
 import fs from "fs";
 import path from "path";
-import { spawn } from "child_process";
+import { spawn, execSync } from "child_process";
 import { DEFAULT_LLAMA_PORT } from "../constants.js";
 import {
   killLlamaServer,
@@ -15,6 +15,7 @@ import {
 } from "./process.js";
 import { llamaApiRequest } from "./api.js";
 import { initializeLlamaMetricsScraper } from "../../metrics.js";
+import { getRouterConfig } from "../../db/config.js";
 
 // Module-level state
 let llamaServerProcess = null;
@@ -131,15 +132,87 @@ function cleanupProcess() {
 }
 
 /**
+ * Find llama-server binary in PATH or common locations.
+ * @returns {string|null} Path to llama-server or null if not found
+ */
+function findLlamaServer() {
+  try {
+    // Try to find via which command
+    const result = execSync("which llama-server 2>/dev/null || command -v llama-server 2>/dev/null", {
+      encoding: "utf-8",
+      timeout: 5000,
+    }).trim();
+    if (result && fs.existsSync(result)) {
+      return result;
+    }
+  } catch (e) {
+    // which command not found or llama-server not in PATH
+  }
+
+  // Common locations to check
+  const commonPaths = [
+    "/usr/local/bin/llama-server",
+    "/usr/bin/llama-server",
+    "/home/bamer/.local/bin/llama-server",
+    process.env.HOME + "/.local/bin/llama-server",
+  ];
+
+  for (const p of commonPaths) {
+    if (p && fs.existsSync(p)) {
+      return p;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Get the llama-server binary path from config or find it.
+ * @param {Object} routerConfig - Router configuration
+ * @returns {{path: string, found: boolean}}
+ */
+function getLlamaServerPath(routerConfig) {
+  const configuredPath = routerConfig?.serverPath;
+
+  if (configuredPath) {
+    // Check if it's a file directly
+    if (fs.existsSync(configuredPath) && fs.statSync(configuredPath).isFile()) {
+      return { path: configuredPath, found: true };
+    }
+
+    // Check if it's a directory, look for llama-server inside
+    if (fs.existsSync(configuredPath) && fs.statSync(configuredPath).isDirectory()) {
+      const inside = path.join(configuredPath, "llama-server");
+      if (fs.existsSync(inside) && fs.statSync(inside).isFile()) {
+        return { path: inside, found: true };
+      }
+    }
+  }
+
+  // Try to find in PATH or common locations
+  const foundPath = findLlamaServer();
+  if (foundPath) {
+    return { path: foundPath, found: true };
+  }
+
+  // Return configured path even if it doesn't exist (for error message)
+  return { path: configuredPath || "llama-server", found: false };
+}
+
+/**
  * Start llama-server in router mode.
  */
 export async function startLlamaServerRouter(modelsDir, db, options = {}) {
-  const config = db.getConfig() || {};
+  const routerConfig = getRouterConfig(db.db);
   const settings = db.getMeta("user_settings") || {};
-  
-  const llamaBin = config.serverPath || "/home/bamer/llama.cpp/build/bin/llama-server";
-  if (!fs.existsSync(llamaBin)) {
-    return { success: false, error: `llama-server not found at ${llamaBin}` };
+
+  const { path: llamaBin, found } = getLlamaServerPath(routerConfig);
+
+  if (!found) {
+    return {
+      success: false,
+      error: `llama-server not found. Please configure the server path in Settings > Router Configuration. Searched: ${llamaBin}`,
+    };
   }
 
   const configuredPort = getConfiguredPort(db);
@@ -151,19 +224,19 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
 
   const args = [
     "--port", String(llamaServerPort),
-    "--host", config.llama_server_host || "127.0.0.1",
-    "--threads", String(options.threads || config.threads || 4),
-    "--ctx-size", String(options.ctxSize || config.ctx_size || 4096),
-    "--models-max", String(options.maxModels || settings.maxModelsLoaded || 4),
+    "--host", routerConfig.host || "127.0.0.1",
+    "--threads", String(options.threads || routerConfig.threads || 4),
+    "--ctx-size", String(options.ctxSize || routerConfig.ctxSize || 4096),
+    "--models-max", String(options.maxModels || routerConfig.maxModelsLoaded || 4),
   ];
 
   // Add --metrics flag only if enabled in settings
-  if (config.llama_server_metrics) {
+  if (routerConfig.metricsEnabled) {
     args.push("--metrics");
   }
 
   const isPresetFile = modelsDir && (modelsDir.endsWith(".ini") || options.usePreset);
-  const baseModelsPath = config.baseModelsPath || "./models";
+  const baseModelsPath = routerConfig.modelsPath || "./models";
 
   if (isPresetFile) {
     args.push("--models-preset", modelsDir);

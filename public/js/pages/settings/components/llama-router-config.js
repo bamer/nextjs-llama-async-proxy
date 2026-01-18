@@ -173,14 +173,11 @@ class LlamaRouterConfig extends Component {
   render() {
     const c = this.config;
 
-    return Component.h("div", { className: "settings-section" }, [
-      Component.h("h2", { className: "section-title" }, "Llama Router Configuration"),
-      Component.h("p", { className: "section-desc" }, "Configure llama.cpp router paths, network, and inference defaults"),
-
+    return Component.h("div", { className: "router-config-form" }, [
       // ===== Section 1: Paths =====
       Component.h("div", { className: "card settings-card" }, [
         Component.h("h3", { className: "card-title" }, "Paths"),
-        Component.h("div", { className: "form-grid paths-grid" }, [
+        Component.h("div", { className: "form-grid" }, [
           this._renderField("modelsPath", "Models Path", "text", {
             value: c.modelsPath,
             placeholder: "/path/to/models",
@@ -197,7 +194,7 @@ class LlamaRouterConfig extends Component {
       // ===== Section 2: Network =====
       Component.h("div", { className: "card settings-card" }, [
         Component.h("h3", { className: "card-title" }, "Network"),
-        Component.h("div", { className: "form-grid network-grid" }, [
+        Component.h("div", { className: "form-grid" }, [
           this._renderField("host", "Host", "text", {
             value: c.host,
             placeholder: "0.0.0.0",
@@ -215,7 +212,7 @@ class LlamaRouterConfig extends Component {
       // ===== Section 3: Router Behavior =====
       Component.h("div", { className: "card settings-card" }, [
         Component.h("h3", { className: "card-title" }, "Router Behavior"),
-        Component.h("div", { className: "form-grid router-grid" }, [
+        Component.h("div", { className: "form-grid" }, [
           this._renderField("maxModelsLoaded", "Max Models", "number", {
             value: c.maxModelsLoaded,
             min: 1,
@@ -228,6 +225,27 @@ class LlamaRouterConfig extends Component {
             max: 16,
             helpText: "Processing slots",
           }),
+        ]),
+        // Auto-start and metrics checkboxes
+        Component.h("div", { className: "form-row" }, [
+          Component.h("label", { className: "checkbox-label" }, [
+            Component.h("input", {
+              type: "checkbox",
+              id: "router-autoStartOnLaunch",
+              "data-field": "autoStartOnLaunch",
+              checked: c.autoStartOnLaunch === true || c.autoStartOnLaunch === "true",
+            }),
+            Component.h("span", {}, "Auto-start on server launch"),
+          ]),
+          Component.h("label", { className: "checkbox-label" }, [
+            Component.h("input", {
+              type: "checkbox",
+              id: "router-metricsEnabled",
+              "data-field": "metricsEnabled",
+              checked: c.metricsEnabled !== false && c.metricsEnabled !== "false",
+            }),
+            Component.h("span", {}, "Enable metrics endpoint"),
+          ]),
         ]),
       ]),
 

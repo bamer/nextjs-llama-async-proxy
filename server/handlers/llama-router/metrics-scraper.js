@@ -1,6 +1,6 @@
 /**
  * llama-server Metrics Scraper - Simplified & Robust
- * FIXED: Reduced timeouts, fewer endpoints, minimal debug logging
+ * FIXED: Supports model-specific metrics from llama-server
  */
 import http from "http";
 
@@ -9,6 +9,7 @@ export class LlamaServerMetricsScraper {
     this.host = config.host || "localhost";
     this.port = config.port || 8080;
     this.baseUrl = `http://${this.host}:${this.port}`;
+    this.modelName = config.modelName || null;
     this.cache = new Map();
     this.cacheTTL = 10000; // 10 seconds
     this._errorLogged = false;
@@ -18,6 +19,13 @@ export class LlamaServerMetricsScraper {
     if (port && port !== this.port) {
       this.port = port;
       this.baseUrl = `http://${this.host}:${this.port}`;
+      this.cache.clear();
+    }
+  }
+
+  updateModel(modelName) {
+    if (modelName && modelName !== this.modelName) {
+      this.modelName = modelName;
       this.cache.clear();
     }
   }
@@ -144,11 +152,26 @@ export class LlamaServerMetricsScraper {
 
   /**
    * Try to get metrics from /metrics endpoint
+   * llama-server requires a model name: /metrics?model=ModelName
    */
   async _tryMetricsEndpoint() {
-    // Try common model paths
-    const modelPaths = ["", "/default", "/current"];
-    
+    // FIRST: Try with model name if available (most accurate)
+    if (this.modelName) {
+      try {
+        const endpoint = `/metrics?model=${encodeURIComponent(this.modelName)}`;
+        const data = await this._fetchEndpoint(endpoint, 3000);
+        if (data && typeof data === "object") {
+          console.debug(`[METRICS] Got metrics for model: ${this.modelName}`);
+          return data;
+        }
+      } catch (e) {
+        console.debug(`[METRICS] Model-specific metrics failed: ${e.message}`);
+      }
+    }
+
+    // SECOND: Try common model paths (legacy support)
+    const modelPaths = ["/default", "/current"];
+
     for (const modelPath of modelPaths) {
       try {
         const endpoint = `/metrics${modelPath}`;

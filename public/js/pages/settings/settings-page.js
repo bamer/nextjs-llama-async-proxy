@@ -1,7 +1,9 @@
 /**
  * Settings Page Component - Event-Driven DOM Updates
- * Composes RouterCard, ServerPathsForm, ModelDefaultsForm, and SaveSection
+ * Composes RouterCard, RouterConfig, LoggingConfig, and SaveSection
  */
+
+console.log("[DEBUG] settings-page.js loaded");
 
 class SettingsPage extends Component {
   constructor(props) {
@@ -10,10 +12,15 @@ class SettingsPage extends Component {
     const config = props.config || {};
     const settings = props.settings || {};
 
-    // Unified router configuration object
+    // Unified router configuration object - single source of truth
     this.routerConfig = config || this._getRouterDefaults();
 
-    // Logging settings (kept separate)
+    // Local change tracking - accumulates ALL changes before save
+    // This fixes the issue where only changed fields were saved
+    this._localRouterChanges = {};
+    this._localLoggingChanges = {};
+
+    // Logging settings (separate from router config)
     this.logLevel = settings.logLevel || "info";
     this.maxFileSize = settings.maxFileSize || 10485760;
     this.maxFiles = settings.maxFiles || 7;
@@ -25,13 +32,6 @@ class SettingsPage extends Component {
     this.routerStatus = props.routerStatus || null;
     this.llamaStatus = props.llamaStatus || null;
     this.presets = props.presets || [];
-
-    // Llama server specific settings (not part of routerConfig)
-    this.llama_server_enabled = config.llama_server_enabled !== false;
-    this.llama_server_port = config.llama_server_port || 8080;
-    this.llama_server_host = config.llama_server_host || "0.0.0.0";
-    this.llama_server_metrics = config.llama_server_metrics !== false;
-    this.auto_start_on_launch = config.auto_start_on_launch !== false;
 
     this.unsubscribers = [];
   }
@@ -60,10 +60,14 @@ class SettingsPage extends Component {
   onMount() {
     console.log("[SettingsPage] onMount");
 
+    // CRITICAL: Mount child components FIRST so bindEvents() is called
+    // This ensures LlamaRouterCard, LlamaRouterConfig, LoggingConfig, etc. work
+    this._mountChildren();
+
     // Subscribe to state changes
     this.unsubscribers.push(
       stateManager.subscribe("routerConfig", this._onRouterConfigChange.bind(this)),
-      stateManager.subscribe("settings", this._onSettingsChange.bind(this)),
+      stateManager.subscribe("loggingConfig", this._onLoggingConfigChange.bind(this)),
       stateManager.subscribe("llamaServerStatus", this._onLlamaStatusChange.bind(this)),
       stateManager.subscribe("routerStatus", this._onRouterStatusChange.bind(this)),
       stateManager.subscribe("presets", this._onPresetsChange.bind(this)),
@@ -77,55 +81,27 @@ class SettingsPage extends Component {
    * @param {Object} config - New router config state
    */
   _onRouterConfigChange(config) {
-    if (JSON.stringify(config) !== JSON.stringify(this.routerConfig)) {
-      this.routerConfig = { ...this.routerConfig, ...config };
+    if (config && typeof config === "object") {
+      // Merge with existing to preserve all fields
+      this.routerConfig = { ...this._getRouterDefaults(), ...this.routerConfig, ...config };
       this._updateRouterConfigUI();
     }
   }
 
   /**
-   * Handle settings state changes.
-   * @param {Object} settings - New settings state
+   * Handle logging config state changes.
+   * @param {Object} config - New logging config state
    */
-  _onSettingsChange(settings) {
-    if (JSON.stringify(settings) !== JSON.stringify(this._getSettings())) {
-      this._applySettings(settings || {});
+  _onLoggingConfigChange(config) {
+    if (config && typeof config === "object") {
+      this.logLevel = config.logLevel || this.logLevel;
+      this.maxFileSize = config.maxFileSize || this.maxFileSize;
+      this.maxFiles = config.maxFiles || this.maxFiles;
+      this.enableFileLogging = config.enableFileLogging !== false;
+      this.enableDatabaseLogging = config.enableDatabaseLogging !== false;
+      this.enableConsoleLogging = config.enableConsoleLogging !== false;
+      this._updateLoggingConfigUI();
     }
-  }
-
-  /**
-   * Get current settings from properties.
-   * @returns {Object} Current settings object
-   */
-  _getSettings() {
-    return {
-      maxModelsLoaded: this.routerConfig.maxModelsLoaded,
-      parallelSlots: this.routerConfig.parallelSlots,
-      gpuLayers: this.routerConfig.gpuLayers,
-      logLevel: this.logLevel,
-      maxFileSize: this.maxFileSize,
-      maxFiles: this.maxFiles,
-      enableFileLogging: this.enableFileLogging,
-      enableDatabaseLogging: this.enableDatabaseLogging,
-      enableConsoleLogging: this.enableConsoleLogging,
-    };
-  }
-
-  /**
-   * Apply settings changes to properties.
-   * @param {Object} settings - Settings to apply
-   */
-  _applySettings(settings) {
-    if (settings.maxModelsLoaded !== undefined) this.routerConfig.maxModelsLoaded = settings.maxModelsLoaded;
-    if (settings.parallelSlots !== undefined) this.routerConfig.parallelSlots = settings.parallelSlots;
-    if (settings.gpuLayers !== undefined) this.routerConfig.gpuLayers = settings.gpuLayers;
-    if (settings.logLevel !== undefined) this.logLevel = settings.logLevel;
-    if (settings.maxFileSize !== undefined) this.maxFileSize = settings.maxFileSize;
-    if (settings.maxFiles !== undefined) this.maxFiles = settings.maxFiles;
-    if (settings.enableFileLogging !== undefined) this.enableFileLogging = settings.enableFileLogging;
-    if (settings.enableDatabaseLogging !== undefined) this.enableDatabaseLogging = settings.enableDatabaseLogging;
-    if (settings.enableConsoleLogging !== undefined) this.enableConsoleLogging = settings.enableConsoleLogging;
-    this._updateSettingsUI();
   }
 
   /**
@@ -172,7 +148,7 @@ class SettingsPage extends Component {
     }
 
     if (action.status === "complete") {
-      showNotification("Settings saved", "success");
+      showNotification("Settings saved successfully", "success");
     } else if (action.status === "error") {
       showNotification(`Save failed: ${action.error}`, "error");
     }
@@ -196,25 +172,6 @@ class SettingsPage extends Component {
 
     if (action.status === "error") {
       showNotification(`Restart failed: ${action.error}`, "error");
-    }
-  }
-
-  /**
-   * Update config-related UI elements.
-   */
-  _updateConfigUI() {
-    const elements = this._el?.querySelectorAll("[data-field]");
-    if (elements) {
-      elements.forEach((el) => {
-        const field = el.dataset.field;
-        if (this[field] !== undefined) {
-          if (el.type === "checkbox") {
-            el.checked = this[field];
-          } else {
-            el.value = this[field];
-          }
-        }
-      });
     }
   }
 
@@ -252,22 +209,45 @@ class SettingsPage extends Component {
   }
 
   /**
-   * Update settings-related UI elements.
+   * Update logging config UI elements.
    */
-  _updateSettingsUI() {
-    const elements = this._el?.querySelectorAll("[data-setting]");
-    if (elements) {
-      elements.forEach((el) => {
-        const field = el.dataset.setting;
-        if (this[field] !== undefined) {
-          if (el.type === "checkbox") {
-            el.checked = this[field];
-          } else {
-            el.value = this[field];
-          }
-        }
-      });
+  _updateLoggingConfigUI() {
+    if (!this._el) return;
+
+    // Update log level select
+    const logLevelSelect = this._el.querySelector("[data-field=log-level]");
+    if (logLevelSelect && logLevelSelect.value !== this.logLevel) {
+      logLevelSelect.value = this.logLevel;
     }
+
+    // Update max file size input
+    const maxFileSizeInput = this._el.querySelector("[data-field=max-file-size]");
+    if (maxFileSizeInput) {
+      const mb = Math.round(this.maxFileSize / 1024 / 1024);
+      if (parseInt(maxFileSizeInput.value) !== mb) {
+        maxFileSizeInput.value = mb;
+      }
+    }
+
+    // Update max files input
+    const maxFilesInput = this._el.querySelector("[data-field=max-files]");
+    if (maxFilesInput && parseInt(maxFilesInput.value) !== this.maxFiles) {
+      maxFilesInput.value = this.maxFiles;
+    }
+
+    // Update checkboxes
+    const checkboxes = [
+      { field: "enable-file-logging", value: this.enableFileLogging },
+      { field: "enable-database-logging", value: this.enableDatabaseLogging },
+      { field: "enable-console-logging", value: this.enableConsoleLogging },
+    ];
+
+    checkboxes.forEach(({ field, value }) => {
+      const checkbox = this._el.querySelector(`[data-field="${field}"]`);
+      if (checkbox && checkbox.checked !== value) {
+        checkbox.checked = value;
+      }
+    });
   }
 
   /**
@@ -277,7 +257,7 @@ class SettingsPage extends Component {
     const presetSelect = this._el?.querySelector("[data-field=\"activePreset\"]");
     if (presetSelect) {
       const currentValue = presetSelect.value;
-      presetSelect.innerHTML = '<option value="">-- Select Preset --</option>';
+      presetSelect.innerHTML = "<option value=\"\">-- Select Preset --</option>";
       this.presets.forEach((preset) => {
         const option = document.createElement("option");
         option.value = preset.id;
@@ -287,6 +267,30 @@ class SettingsPage extends Component {
       if (currentValue) {
         presetSelect.value = currentValue;
       }
+    }
+  }
+
+  /**
+   * Update the status UI display based on current router and llama server status.
+   */
+  async _updateStatusUI() {
+    const routerCard = this._el?.querySelector(".llama-router-status-card");
+    if (!routerCard) return;
+
+    const rs = this.routerStatus || {};
+    const ls = this.llamaStatus || {};
+    const isRunning = rs.port || ls.port;
+    const displayPort = rs.port || ls.port || this.routerConfig.port;
+
+    const statusBadge = routerCard.querySelector(".status-badge");
+    if (statusBadge) {
+      statusBadge.textContent = isRunning ? "RUNNING" : "STOPPED";
+      statusBadge.className = `status-badge ${isRunning ? "running" : "idle"}`;
+    }
+
+    const portDisplay = routerCard.querySelector(".header-title-text");
+    if (portDisplay) {
+      portDisplay.textContent = isRunning ? `Llama Router : ${displayPort}` : "Llama Router";
     }
   }
 
@@ -302,68 +306,72 @@ class SettingsPage extends Component {
   }
 
   /**
-   * Emit save action with current config and settings.
+   * Save all settings - unified save for router and logging config
+   * Fix: Merge local changes with CURRENT state values to ensure all fields are saved
    */
   _save() {
-    // Convert routerConfig from camelCase to snake_case for backend compatibility
-    const config = {
-      modelsPath: this.routerConfig.modelsPath,
-      serverPath: this.routerConfig.serverPath,
-      host: this.routerConfig.host,
-      port: this.routerConfig.port,
-      ctx_size: this.routerConfig.ctxSize,
-      threads: this.routerConfig.threads,
-      batch_size: this.routerConfig.batchSize,
-      temperature: this.routerConfig.temperature,
-      repeatPenalty: this.routerConfig.repeatPenalty,
-      llama_server_port: this.llama_server_port,
-      llama_server_host: this.llama_server_host,
-      llama_server_metrics: this.llama_server_metrics,
-      auto_start_on_launch: this.auto_start_on_launch,
+    // Get CURRENT values from state (these are the source of truth after load)
+    const currentRouterConfig = stateManager.get("routerConfig") || this.routerConfig;
+    const currentLoggingConfig = stateManager.get("loggingConfig") || {};
+
+    // Merge local changes with current state values
+    // This ensures ALL fields are sent to the server, not just changed ones
+    const routerConfig = {
+      ...currentRouterConfig,
+      ...this._localRouterChanges,
+      // Ensure required fields are present
+      modelsPath: this._localRouterChanges.modelsPath !== undefined
+        ? this._localRouterChanges.modelsPath
+        : (currentRouterConfig.modelsPath || ""),
+      serverPath: this._localRouterChanges.serverPath !== undefined
+        ? this._localRouterChanges.serverPath
+        : (currentRouterConfig.serverPath || ""),
+      host: this._localRouterChanges.host !== undefined
+        ? this._localRouterChanges.host
+        : (currentRouterConfig.host || "0.0.0.0"),
+      port: parseInt(this._localRouterChanges.port) || parseInt(currentRouterConfig.port) || 8080,
+      maxModelsLoaded: parseInt(this._localRouterChanges.maxModelsLoaded) || parseInt(currentRouterConfig.maxModelsLoaded) || 4,
+      parallelSlots: parseInt(this._localRouterChanges.parallelSlots) || parseInt(currentRouterConfig.parallelSlots) || 1,
+      ctxSize: parseInt(this._localRouterChanges.ctxSize) || parseInt(currentRouterConfig.ctxSize) || 4096,
+      gpuLayers: parseInt(this._localRouterChanges.gpuLayers) || parseInt(currentRouterConfig.gpuLayers) || 0,
+      threads: parseInt(this._localRouterChanges.threads) || parseInt(currentRouterConfig.threads) || 4,
+      batchSize: parseInt(this._localRouterChanges.batchSize) || parseInt(currentRouterConfig.batchSize) || 512,
+      temperature: parseFloat(this._localRouterChanges.temperature) || parseFloat(currentRouterConfig.temperature) || 0.7,
+      repeatPenalty: parseFloat(this._localRouterChanges.repeatPenalty) || parseFloat(currentRouterConfig.repeatPenalty) || 1.1,
     };
 
-    const settings = {
-      maxModelsLoaded: this.routerConfig.maxModelsLoaded,
-      parallelSlots: this.routerConfig.parallelSlots,
-      gpuLayers: this.routerConfig.gpuLayers,
-      logLevel: this.logLevel,
-      maxFileSize: this.maxFileSize,
-      maxFiles: this.maxFiles,
-      enableFileLogging: this.enableFileLogging,
-      enableDatabaseLogging: this.enableDatabaseLogging,
-      enableConsoleLogging: this.enableConsoleLogging,
+    // Merge logging config changes with current state
+    const loggingConfig = {
+      ...currentLoggingConfig,
+      ...this._localLoggingChanges,
+      logLevel: this._localLoggingChanges.logLevel !== undefined
+        ? this._localLoggingChanges.logLevel
+        : (currentLoggingConfig.logLevel || "info"),
+      maxFileSize: (parseInt(this._localLoggingChanges.maxFileSize) || parseInt(currentLoggingConfig.maxFileSize) || 10) * 1024 * 1024,
+      maxFiles: parseInt(this._localLoggingChanges.maxFiles) || parseInt(currentLoggingConfig.maxFiles) || 7,
+      enableFileLogging: this._localLoggingChanges.enableFileLogging !== undefined
+        ? this._localLoggingChanges.enableFileLogging
+        : (currentLoggingConfig.enableFileLogging !== false),
+      enableDatabaseLogging: this._localLoggingChanges.enableDatabaseLogging !== undefined
+        ? this._localLoggingChanges.enableDatabaseLogging
+        : (currentLoggingConfig.enableDatabaseLogging !== false),
+      enableConsoleLogging: this._localLoggingChanges.enableConsoleLogging !== undefined
+        ? this._localLoggingChanges.enableConsoleLogging
+        : (currentLoggingConfig.enableConsoleLogging !== false),
     };
 
-    console.log("[DEBUG] Emitting save action", { config, settings });
-    stateManager.emit("action:settings:save", { config, settings });
-  }
+    console.log("[DEBUG] _save - routerConfig:", JSON.stringify(routerConfig, null, 2));
+    console.log("[DEBUG] _save - loggingConfig:", JSON.stringify(loggingConfig, null, 2));
 
-  /**
-   * Update the status UI display based on current router and llama server status.
-   * @returns {void}
-   */
-  async _updateStatusUI() {
-    // Update the LlamaRouterCard component's status display
-    const routerCard = this._el?.querySelector(".llama-router-status-card");
-    if (!routerCard) return;
+    // Clear local changes after building the save payload
+    this._localRouterChanges = {};
+    this._localLoggingChanges = {};
 
-    const rs = this.routerStatus || {};
-    const ls = this.llamaStatus || {};
-    const isRunning = rs.port || ls.port;
-    const displayPort = rs.port || ls.port || this.routerConfig.port;
-
-    // Update status badge
-    const statusBadge = routerCard.querySelector(".status-badge");
-    if (statusBadge) {
-      statusBadge.textContent = isRunning ? "RUNNING" : "STOPPED";
-      statusBadge.className = `status-badge ${isRunning ? "running" : "idle"}`;
-    }
-
-    // Update port display in header
-    const portDisplay = routerCard.querySelector(".header-title-text");
-    if (portDisplay) {
-      portDisplay.textContent = isRunning ? `Llama Router : ${displayPort}` : "Llama Router";
-    }
+    // Emit the save action with both configs
+    stateManager.emit("action:settings:save", {
+      routerConfig,
+      loggingConfig,
+    });
   }
 
   bindEvents() {
@@ -371,6 +379,33 @@ class SettingsPage extends Component {
     this.on("click", "[data-action=save]", (e) => {
       e.preventDefault();
       this._save();
+    });
+
+    // Router config changes - track in localChanges instead of directly modifying routerConfig
+    this.on("change", "[data-field]", (e) => {
+      const target = e.target;
+      const field = target.dataset.field;
+      if (!field) return;
+
+      let value;
+      if (target.type === "checkbox") {
+        value = target.checked;
+      } else if (target.type === "number") {
+        value = target.step && target.step.includes(".")
+          ? parseFloat(target.value)
+          : parseInt(target.value, 10);
+        value = isNaN(value) ? 0 : value;
+      } else {
+        value = target.value;
+      }
+
+      // Track change in localChanges (will be merged with state on save)
+      this._localRouterChanges[field] = value;
+      console.log("[DEBUG] SettingsPage field change tracked:", { field, value, totalChanges: Object.keys(this._localRouterChanges).length });
+
+      // Visual feedback
+      target.classList.add("changed");
+      setTimeout(() => target.classList.remove("changed"), 500);
     });
   }
 
@@ -384,17 +419,25 @@ class SettingsPage extends Component {
 
   /**
    * Emit import action with imported config.
-   * @param {Object} importedConfig - Configuration object with config and settings properties
+   * @param {Object} importedConfig - Configuration object
    */
   _importConfig(importedConfig) {
     console.log("[DEBUG] Emitting import action:", importedConfig);
 
-    if (!importedConfig.config || !importedConfig.settings) {
+    if (!importedConfig.routerConfig && !importedConfig.loggingConfig) {
       showNotification("Invalid configuration file", "error");
       return;
     }
 
-    stateManager.emit("action:config:import", { config: importedConfig.config });
+    // Apply imported configs to state
+    if (importedConfig.routerConfig) {
+      stateManager.set("routerConfig", importedConfig.routerConfig);
+    }
+    if (importedConfig.loggingConfig) {
+      stateManager.set("loggingConfig", importedConfig.loggingConfig);
+    }
+
+    showNotification("Configuration imported successfully", "success");
   }
 
   render() {
@@ -404,65 +447,96 @@ class SettingsPage extends Component {
     const displayPort = rs.port || ls.port || this.routerConfig.port;
 
     return Component.h("div", { className: "settings-page" }, [
-      Component.h("h1", {}, "Settings"),
-      Component.h(window.LlamaRouterCard, {
-        status: this.llamaStatus,
-        routerStatus: this.routerStatus,
-        models: this.models || [],
-        presets: this.presets,
-        onAction: (action) => {
-          switch (action) {
-          case "start":
-            stateManager.emit("action:router:start");
-            break;
-          case "stop":
-            stateManager.emit("action:router:stop");
-            break;
-          case "restart":
-            stateManager.emit("action:router:restart");
-            break;
-          }
-        },
-      }),
-      // Unified Llama Router Configuration component
-      Component.h(window.LlamaRouterConfig, {
-        config: this.routerConfig,
-        onChange: (field, value) => {
-          this.routerConfig[field] = value;
-          console.log("[DEBUG] SettingsPage LlamaRouterConfig.onChange:", { field, value });
-        },
-      }),
-      Component.h(window.LoggingConfig, {
-        logLevel: this.logLevel,
-        maxFileSize: this.maxFileSize,
-        maxFiles: this.maxFiles,
-        enableFileLogging: this.enableFileLogging,
-        enableDatabaseLogging: this.enableDatabaseLogging,
-        enableConsoleLogging: this.enableConsoleLogging,
-        onLogLevelChange: (val) => {
-          console.log("[DEBUG] SettingsPage.onLogLevelChange:", { val, oldValue: this.logLevel });
-          this.logLevel = val;
-        },
-        onMaxFileSizeChange: (val) => {
-          this.maxFileSize = val;
-        },
-        onMaxFilesChange: (val) => {
-          this.maxFiles = val;
-        },
-        onEnableFileLoggingChange: (val) => {
-          this.enableFileLogging = val;
-        },
-        onEnableDatabaseLoggingChange: (val) => {
-          this.enableDatabaseLogging = val;
-        },
-        onEnableConsoleLoggingChange: (val) => {
-          this.enableConsoleLogging = val;
-        },
-      }),
-      Component.h(window.ConfigExportImport, {
-        onExport: this._exportConfig.bind(this),
-        onImport: this._importConfig.bind(this),
-      }),
+      // Llama Router Card with status and controls
+      Component.h("div", { className: "settings-card" }, [
+        Component.h("div", { className: "router-card-wrapper" }, [
+          Component.h(window.LlamaRouterCard, {
+            status: this.llamaStatus,
+            routerStatus: this.routerStatus,
+            models: this.models || [],
+            presets: this.presets,
+            onAction: (action, data) => {
+              console.log("[DEBUG] settings-page onAction:", { action, data });
+              switch (action) {
+              case "start":
+                stateManager.emit("action:router:start");
+                break;
+              case "start-with-preset":
+                stateManager.emit("action:router:start-with-preset", data);
+                break;
+              case "stop":
+                stateManager.emit("action:router:stop");
+                break;
+              case "restart":
+                stateManager.emit("action:router:restart");
+                break;
+              }
+            },
+          }),
+        ]),
+      ]),
+
+      // Unified Llama Router Configuration
+      Component.h("div", { className: "settings-section" }, [
+        Component.h("h2", { className: "section-title" }, "Router Configuration"),
+        Component.h("p", { className: "section-desc" }, "Configure llama.cpp router paths, network, behavior, and inference defaults"),
+        Component.h(window.LlamaRouterConfig, {
+          config: this.routerConfig,
+          onChange: (field, value) => {
+            // Track changes in localChanges instead of direct routerConfig modification
+            this._localRouterChanges[field] = value;
+            console.log("[DEBUG] SettingsPage LlamaRouterConfig.onChange:", { field, value, totalChanges: Object.keys(this._localRouterChanges).length });
+          },
+        }),
+      ]),
+
+      // Logging Configuration
+      Component.h("div", { className: "settings-section" }, [
+        Component.h("h2", { className: "section-title" }, "Logging Configuration"),
+        Component.h("p", { className: "section-desc" }, "Configure log collection and retention"),
+        Component.h(window.LoggingConfig, {
+          logLevel: this.logLevel,
+          maxFileSize: this.maxFileSize,
+          maxFiles: this.maxFiles,
+          enableFileLogging: this.enableFileLogging,
+          enableDatabaseLogging: this.enableDatabaseLogging,
+          enableConsoleLogging: this.enableConsoleLogging,
+          onLogLevelChange: (val) => {
+            this._localLoggingChanges.logLevel = val;
+            this.logLevel = val;
+          },
+          onMaxFileSizeChange: (val) => {
+            this._localLoggingChanges.maxFileSize = val;
+            this.maxFileSize = val;
+          },
+          onMaxFilesChange: (val) => {
+            this._localLoggingChanges.maxFiles = val;
+            this.maxFiles = val;
+          },
+          onEnableFileLoggingChange: (val) => {
+            this._localLoggingChanges.enableFileLogging = val;
+            this.enableFileLogging = val;
+          },
+          onEnableDatabaseLoggingChange: (val) => {
+            this._localLoggingChanges.enableDatabaseLogging = val;
+            this.enableDatabaseLogging = val;
+          },
+          onEnableConsoleLoggingChange: (val) => {
+            this._localLoggingChanges.enableConsoleLogging = val;
+            this.enableConsoleLogging = val;
+          },
+        }),
+      ]),
+
+      // Export/Import
+      Component.h("div", { className: "settings-section" }, [
+        Component.h(window.ConfigExportImport, {
+          onExport: this._exportConfig.bind(this),
+          onImport: this._importConfig.bind(this),
+        }),
+      ]),
+
+      // Save Section
       Component.h(window.SaveSection),
     ]);
   }

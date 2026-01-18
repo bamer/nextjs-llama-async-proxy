@@ -141,9 +141,9 @@ class LoggingConfig extends Component {
   }
 
   render() {
-    return Component.h("div", { className: "settings-section" }, [
-      Component.h("h2", { className: "section-title" }, "Logging Configuration"),
-      Component.h("p", { className: "section-desc" }, "Configure log collection and retention"),
+    // Container class changed from "settings-section" to "logging-config-form"
+    // to avoid conflicts with parent section containers
+    return Component.h("div", { className: "logging-config-form" }, [
 
       // Main settings card
       Component.h("div", { className: "card settings-card" }, [

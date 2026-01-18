@@ -8,10 +8,11 @@ const Database = pkg.Database;
 
 /**
  * Default values for router_config table
+ * NOTE: Paths are intentionally left empty to force user configuration
  */
 export const ROUTER_CONFIG_DEFAULTS = {
-  modelsPath: "./models",
-  serverPath: "/home/bamer/llama.cpp/build/bin/llama-server",
+  modelsPath: "",
+  serverPath: "",
   host: "0.0.0.0",
   port: 8080,
   maxModelsLoaded: 4,
@@ -42,7 +43,6 @@ export const LOGGING_CONFIG_DEFAULTS = {
  * Default server configuration (legacy format)
  */
 const DEFAULT_CONFIG = {
-  serverPath: "/home/bamer/llama.cpp/build/bin/llama-server",
   host: "localhost",
   port: 8080,
   baseModelsPath: "./models",

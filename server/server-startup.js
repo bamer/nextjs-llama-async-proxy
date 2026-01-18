@@ -5,6 +5,7 @@
  */
 
 import fs from "fs";
+import { getRouterConfig } from "./db/config.js";
 
 /**
  * Auto-start llama-server if enabled in config.
@@ -16,17 +17,24 @@ import fs from "fs";
  * @returns {Promise<Object|null>} Result object with port on success, null on failure/skip
  */
 export async function autoStartLlamaServer({ db, startLlamaServerRouter, initializeLlamaMetrics }) {
-  const config = db.getConfig();
+  // Use the NEW unified config API (router_config table)
+  const routerConfig = getRouterConfig(db.db);
 
-  // Use new name or fallback to old for backward compatibility
-  const autoStartEnabled = config.auto_start_on_launch ?? config.llama_server_enabled;
+  // Use new name with fallback to old for backward compatibility
+  const autoStartEnabled = routerConfig.autoStartOnLaunch ?? routerConfig.auto_start_on_launch ?? false;
+
+  console.log("[SERVER] Auto-start check:", {
+    autoStartOnLaunch: routerConfig.autoStartOnLaunch,
+    auto_start_on_launch: routerConfig.auto_start_on_launch,
+    autoStartEnabled
+  });
 
   if (!autoStartEnabled) {
-    console.log("[SERVER] Llama-server auto-start disabled (auto_start_on_launch: false)");
+    console.log("[SERVER] Llama-server auto-start disabled (autoStartOnLaunch: false)");
     return null;
   }
 
-  const modelsDir = config.baseModelsPath;
+  const modelsDir = routerConfig.modelsPath;
   if (!modelsDir) {
     console.log("[SERVER] Llama-server auto-start skipped: models directory not configured");
     return null;
@@ -37,14 +45,14 @@ export async function autoStartLlamaServer({ db, startLlamaServerRouter, initial
     return null;
   }
 
-  console.log("[SERVER] Auto-starting llama-server (auto_start_on_launch: true)...");
+  console.log("[SERVER] Auto-starting llama-server (autoStartOnLaunch: true)...");
 
   try {
     const settings = db.getMeta("user_settings") || {};
     const result = await startLlamaServerRouter(modelsDir, db, {
-      maxModels: settings.maxModelsLoaded || 4,
-      ctxSize: config.ctx_size || 4096,
-      threads: config.threads || 4,
+      maxModels: routerConfig.maxModelsLoaded || settings.maxModelsLoaded || 4,
+      ctxSize: routerConfig.ctxSize || 4096,
+      threads: routerConfig.threads || 4,
       noAutoLoad: !settings.autoLoadModels,
     });
 

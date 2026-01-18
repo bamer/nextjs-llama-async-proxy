@@ -61,13 +61,11 @@ class SocketClient {
           console.error("[SocketClient] Failed to connect due to script load error:", e);
           this._emit("connect_error", e);
         });
-      return this; // Return this to allow chaining for the initial call, subsequent connection will happen via promise
+      return this;
     }
 
     // If io is still loading, wait for it
     if (this._ioLoading) {
-      // This state should ideally not be reached if the above logic is correct
-      // But as a safeguard, we return early. The promise from _loadIoScript will re-call connect.
       return this;
     }
 
@@ -75,7 +73,16 @@ class SocketClient {
     console.log("[SocketClient] Connecting to:", window.location.origin);
     console.log("[SocketClient] Options:", this.options);
 
-    this.socket = io(window.location.origin, this.options);
+    // Create socket with reconnection settings
+    this.socket = io(window.location.origin, {
+      ...this.options,
+      // Reconnection settings for stability
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 10000,
+    });
 
     this.socket.on("connect", () => {
       console.log("[SocketClient] Connected! Socket ID:", this.socket.id);
@@ -97,6 +104,18 @@ class SocketClient {
 
     this.socket.on("connect_timeout", (err) => {
       console.error("[SocketClient] Connect timeout:", err);
+    });
+
+    this.socket.on("reconnect_attempt", (attempt) => {
+      console.log("[SocketClient] Reconnection attempt:", attempt);
+    });
+
+    this.socket.on("reconnect", (attempt) => {
+      console.log("[SocketClient] Reconnected after", attempt, "attempts");
+    });
+
+    this.socket.on("reconnect_failed", () => {
+      console.error("[SocketClient] Reconnection failed after all attempts");
     });
 
     // Log when websocket is used

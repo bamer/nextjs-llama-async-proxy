@@ -34,6 +34,7 @@ class SettingsController {
       stateManager.subscribe("action:settings:save", (state) => this._handleSave(state.data)),
       stateManager.subscribe("action:settings:reset", () => this._handleReset()),
       stateManager.subscribe("action:router:start", () => this._handleRouterStart()),
+      stateManager.subscribe("action:router:start-with-preset", (state) => this._handleRouterStartWithPreset(state?.data)),
       stateManager.subscribe("action:router:restart", () => this._handleRouterRestart()),
       stateManager.subscribe("action:router:stop", () => this._handleRouterStop()),
       stateManager.subscribe("action:config:import", (state) => this._handleImport(state.data)),
@@ -152,25 +153,27 @@ class SettingsController {
    */
   async _handleSave(data) {
     console.log("[SETTINGS] _handleSave called with:", data ? "data present" : "no data");
-    const { config, settings } = data;
-    // config = router config
-    // settings = logging config (renamed for clarity)
+    const { routerConfig, loggingConfig } = data;
+
     try {
       stateManager.setActionStatus("settings:save", { status: "saving" });
-      console.log("[SETTINGS] Saving router config:", config);
-      console.log("[SETTINGS] Saving logging config:", settings);
+      console.log("[SETTINGS] Saving routerConfig:", JSON.stringify(routerConfig, null, 2));
+      console.log("[SETTINGS] Saving loggingConfig:", JSON.stringify(loggingConfig, null, 2));
 
-      const routerResult = await stateManager.updateRouterConfig(config);
-      console.log("[SETTINGS] Router config result:", routerResult);
+      // Save router config (all fields including paths, network, behavior, inference)
+      const routerResult = await stateManager.updateRouterConfig(routerConfig);
+      console.log("[SETTINGS] Router config saved:", routerResult?.success);
 
-      const loggingResult = await stateManager.updateLoggingConfig(settings);
-      console.log("[SETTINGS] Logging config result:", loggingResult);
+      // Save logging config
+      const loggingResult = await stateManager.updateLoggingConfig(loggingConfig);
+      console.log("[SETTINGS] Logging config saved:", loggingResult?.success);
 
-      stateManager.set("routerConfig", config);
-      stateManager.set("loggingConfig", settings);
+      // Update local state with the saved configs
+      stateManager.set("routerConfig", routerConfig);
+      stateManager.set("loggingConfig", loggingConfig);
 
       stateManager.setActionStatus("settings:save", { status: "complete" });
-      showNotification("Settings saved successfully", "success");
+      showNotification("All settings saved successfully", "success");
     } catch (error) {
       console.error("[SETTINGS] Save error:", error.message);
       stateManager.setActionStatus("settings:save", {
@@ -227,9 +230,10 @@ class SettingsController {
   /**
    * Handle router start action.
    */
-  async _handleRouterStart() {
+  async _handleRouterStart() { console.log("[DEBUG] _handleRouterStart called");
     try {
       stateManager.setActionStatus("router:start", { status: "starting" });
+      console.log("[DEBUG] Calling stateManager.startLlama()");
 
       await stateManager.startLlama();
 
@@ -241,6 +245,33 @@ class SettingsController {
         error: error.message,
       });
       showNotification(`Failed to start router: ${error.message}`, "error");
+    }
+  }
+
+  /**
+   * Handle router start with preset action.
+   * @param {string} presetName - Name of the preset to use
+   */
+  async _handleRouterStartWithPreset(presetName) {
+    console.log("[DEBUG] _handleRouterStartWithPreset called:", { presetName });
+    if (!presetName) {
+      showNotification("Please select a preset first", "warning");
+      return;
+    }
+    try {
+      stateManager.setActionStatus("router:start", { status: "starting" });
+      console.log("[DEBUG] Calling stateManager.startLlamaWithPreset():", presetName);
+
+      await stateManager.startLlamaWithPreset(presetName);
+
+      stateManager.setActionStatus("router:start", { status: "complete" });
+      showNotification(`Router started with preset: ${presetName}`, "success");
+    } catch (error) {
+      stateManager.setActionStatus("router:start", {
+        status: "error",
+        error: error.message,
+      });
+      showNotification(`Failed to start router with preset: ${error.message}`, "error");
     }
   }
 
@@ -285,6 +316,7 @@ class SettingsController {
       routerConfig,
       loggingConfig,
       exportedAt: new Date().toISOString(),
+      version: "1.0", // Config format version for future compatibility
     };
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });

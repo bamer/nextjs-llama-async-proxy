@@ -104,7 +104,11 @@ async function main() {
       methods: ["GET", "POST"],
     },
     path: "/llamaproxws",
-    transports: ["websocket"], // WebSocket only - polling is forbidden
+    transports: ["websocket"],
+    // Increase ping timeouts for stability during heavy processing (llama-server startup)
+    pingTimeout: 60000, // Wait 60s for ping response (default: 20s)
+    pingInterval: 25000, // Send ping every 25s (default: 25s)
+    connectTimeout: 10000,
   });
 
   // Apply rate limiting middleware
