@@ -7,7 +7,7 @@ console.log("🔧 Testing GPU loading fix...");
 
 // Mock the necessary components and state
 const mockStateManager = {
-  get: function(key) {
+  get: function (key) {
     if (key === "metrics") {
       return {
         cpu: { usage: 25 },
@@ -23,15 +23,15 @@ const mockStateManager = {
               usage: 30,
               memoryUsed: 2048 * 1024 * 1024,
               memoryTotal: 8192 * 1024 * 1024,
-              hasUtilizationData: true
-            }
-          ]
-        }
+              hasUtilizationData: true,
+            },
+          ],
+        },
       };
     }
     return null;
   },
-  subscribe: function(key, callback) {
+  subscribe: function (key, callback) {
     console.log(`[MOCK] Subscribed to ${key}`);
     // Simulate immediate callback with data
     if (key === "metrics") {
@@ -40,7 +40,7 @@ const mockStateManager = {
       }, 100);
     }
     return () => console.log(`[MOCK] Unsubscribed from ${key}`);
-  }
+  },
 };
 
 // Mock the Component base class

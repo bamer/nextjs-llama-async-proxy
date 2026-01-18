@@ -36,6 +36,21 @@ Browser (Vanilla JavaScript)
 3. **Event-Driven Updates**: Components subscribe to state changes, no polling
 4. **Request/Response Pattern**: Client emits intents, server emits state
 5. **Real-Time Broadcasts**: Server pushes updates to all connected clients
+6. **Deferred Component Mounting**: Children mounted after parent ready (prevents race conditions)
+
+### Recent Updates (January 2026)
+
+#### Component Lifecycle Improvements
+
+- **Deferred Child Mounting**: Child components now mount after parent is ready
+- **New `didMount()` Hook**: Runs after component and all children are mounted
+- **State Sync on Return**: Pages sync cached state when navigating back
+
+#### Bug Fixes
+
+- **Presets Loading**: Fixed presets not loading when returning to Dashboard
+- **Selector Fix**: Corrected CSS class selector for LlamaRouterCard
+- **Metrics Scraping**: Added missing Prometheus metric mappings
 
 ## Documentation Structure
 

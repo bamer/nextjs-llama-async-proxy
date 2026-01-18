@@ -73,10 +73,29 @@ The main `layout.js` component was refactored to adhere to the "200 lines per fi
 
 The base `Component` class includes comprehensive lifecycle hooks:
 
-- `willMount()` - Before component is added to DOM
-- `didMount()` - After component is added to DOM
-- `willDestroy()` - Before component is removed from DOM
-- `didDestroy()` - After component is removed from DOM
+- `constructor(props)` - Initialize component
+- `render()` - Return virtual DOM element
+- `bindEvents()` - Set up event listeners
+- `onMount()` - Called when added to DOM (before children mounted)
+- `didMount()` - Called after component and all children mounted (NEW)
+- `destroy()` - Cleanup when component is removed
+
+**Deferred Child Mounting:**
+
+To ensure proper initialization order, child components are queued during render and mounted in parent's `onMount()`:
+
+```javascript
+class ParentComponent extends Component {
+  onMount() {
+    // Mount children FIRST - they need parent ready
+    this._mountChildren();
+
+    // THEN set up parent subscriptions
+    // State changes will now correctly notify children
+    stateManager.subscribe("data", this._onDataChange.bind(this));
+  }
+}
+```
 
 **DOM Helper Improvements:**
 
@@ -102,6 +121,99 @@ Fixed `readLogFile` method to use `this.logsDir` instead of global `LOGS_DIR`. 3
 
 `registerLlamaHandlers` is registered globally (not per-socket), improving consistency across connections.
 
+### Component Lifecycle Refactoring (January 2026)
+
+The component system was enhanced to properly handle nested component mounting order and state synchronization when navigating between pages.
+
+#### Child Component Mounting Order
+
+**Problem:** Child components' `onMount()` was called BEFORE the parent was fully initialized, causing subscriptions to be set up before data was synced from stateManager.
+
+**Solution:** Implemented a deferred mounting system:
+
+| File | Purpose |
+|------|---------|
+| `component-base.js` | Added `_pendingChildMounts` queue and `_mountChildren()` method |
+| `component-h.js` | Modified to queue child `onMount()` calls instead of calling immediately |
+| `page.js` (dashboard) | Calls `_mountChildren()` FIRST in `onMount()`, then sets up subscriptions |
+
+**Mounting Sequence (FIXED):**
+
+```
+1. Parent.render() creates child component instances
+2. component-h.js queues children in _pendingChildMounts
+3. Parent.onMount() is called
+4. Parent calls this._mountChildren() FIRST
+5. Children.onMount() runs (parent subscriptions already set up)
+6. State changes trigger child subscriptions correctly
+```
+
+#### didMount() Lifecycle Method
+
+Added a new `didMount()` lifecycle hook that runs AFTER the component and all children are mounted:
+
+```javascript
+// Base Component class
+didMount() {}
+
+// DashboardController
+didMount() {
+  if (this.comp && this.comp.didMount) {
+    this.comp.didMount();
+  }
+}
+
+// DashboardPage
+didMount() {
+  this._syncStateToUI();  // Sync cached state when returning to page
+}
+```
+
+**Router Integration:** The router calls `controller.didMount()` after navigation completes.
+
+#### State Sync on Page Return
+
+Added `_syncStateToUI()` method to handle cached state when returning to a page:
+
+```javascript
+_syncStateToUI() {
+  const metrics = stateManager.get("metrics");
+  const presets = stateManager.get("presets");
+  // ... sync all state data to UI
+
+  // This handles the case where:
+  // 1. Data is already in stateManager (from previous visit)
+  // 2. But subscriptions didn't trigger (no "change" event)
+}
+```
+
+**Why This Matters:**
+- When navigating from Dashboard → Models → Dashboard
+- Presets are already in `stateManager.get("presets")`
+- But the state subscription callback won't fire (same reference)
+- `_syncStateToUI()` ensures UI updates with cached data
+
+#### Preset Selector Bug Fix
+
+Fixed a critical bug where presets didn't load when navigating back to Dashboard:
+
+**Root Cause:** Wrong CSS class selector
+- Code used: `.llama-router-card`
+- Actual class: `.llama-router-status-card`
+
+**Files Modified:**
+- `public/js/pages/dashboard/page.js` - Fixed selector and added debug logging
+
+### Metrics Scraping Improvements
+
+Added missing Prometheus metric mappings in `metrics-scraper.js`:
+- `prompt_tokens_total`
+- `tokens_predicted_total`
+- `n_busy_slots_per_decode`
+- `prompt_seconds_total`
+- `tokens_predicted_seconds_total`
+- `n_tokens_max`
+
 ## Key Components
 
 ### Frontend Structure
@@ -109,25 +221,34 @@ Fixed `readLogFile` method to use `this.logsDir` instead of global `LOGS_DIR`. 3
 ```
 public/js/
 ├── core/
-│   ├── component.js      # Base Component class
-│   ├── router.js         # History API router
-│   ├── state.js          # Event-driven state manager
-│   └── component-h.js    # Element factory
+│   ├── component-base.js     # Base Component class with lifecycle
+│   ├── component-h.js        # Virtual DOM element creation
+│   ├── router.js             # History API router with didMount support
+│   ├── state.js              # Event-driven state manager
+│   └── state/
+│       ├── state-core.js     # Core get/set/subscribe/notify
+│       ├── state-api.js      # API request methods
+│       ├── state-models.js   # Model operations
+│       ├── state-socket.js   # Socket.IO wrapper
+│       └── state-requests.js # Request queuing
 ├── services/
-│   └── socket.js         # Socket.IO client
+│   └── socket.js             # Socket.IO client
 ├── pages/
-│   ├── dashboard/        # Dashboard controller
-│   ├── models/           # Models page controller
-│   ├── monitoring/       # Monitoring page controller
-│   ├── logs/             # Logs page controller
-│   ├── configuration/    # Configuration page
-│   └── settings/         # Settings page
+│   ├── dashboard/
+│   │   ├── page.js           # Dashboard page (with _syncStateToUI)
+│   │   ├── dashboard-controller.js # Controller (with didMount)
+│   │   └── components/       # Dashboard-specific components
+│   ├── models/               # Models page controller
+│   ├── monitoring/           # Monitoring page controller
+│   ├── logs/                 # Logs page controller
+│   ├── configuration/        # Configuration page
+│   └── settings/             # Settings page
 └── components/
-    ├── layout/           # Layout components
-    ├── dashboard/        # Dashboard widgets
-    ├── models/           # Model components
-    ├── presets/          # Preset components
-    └── llama-server/     # Llama server components
+    ├── layout/               # Layout components
+    ├── dashboard/            # Dashboard widgets
+    ├── models/               # Model components
+    ├── presets/              # Preset components
+    └── llama-router-card.js  # Router status and control
 ```
 
 ### Server Handlers
@@ -174,7 +295,7 @@ server/handlers/
 
 | File | Approx. Lines | Purpose |
 |------|---------------|---------|
-| `llama-router-card.js` | 250 | Router status and control |
+| `llama-router-card.js` | 340 | Router status and control with metrics scraping |
 | `llama-server-config.js` | 50 | Server configuration |
 
 **Preset Components:**

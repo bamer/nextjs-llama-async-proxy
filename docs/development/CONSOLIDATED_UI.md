@@ -14,7 +14,8 @@ Comprehensive documentation for all user interface improvements, styling, theme 
 6. [Form Elements](#form-elements)
 7. [Visual Results](#visual-results)
 8. [Browser Compatibility](#browser-compatibility)
-9. [Consolidated From](#consolidated-from)
+9. [Component Lifecycle (January 2026)](#component-lifecycle-january-2026)
+10. [Consolidated From](#consolidated-from)
 
 ---
 
@@ -604,5 +605,210 @@ This document was consolidated from the following source files:
 
 ---
 
-**Last Updated**: January 2026  
-**Version**: 1.0 (Consolidated)
+**Last Updated**: January 2026
+**Version**: 1.1 (Added Component Lifecycle)
+
+---
+
+## Component Lifecycle (January 2026)
+
+### Overview
+
+The component system was enhanced to properly handle nested component mounting order and state synchronization when navigating between pages. This fixes issues where child components weren't receiving state updates correctly.
+
+### Child Component Mounting Order
+
+#### Problem
+
+Previously, child components' `onMount()` was called BEFORE the parent was fully initialized:
+
+```javascript
+// BEFORE (race condition):
+// 1. Parent.render() creates child
+// 2. component-h.js calls child.onMount() IMMEDIATELY
+// 3. Child sets up subscription
+// 4. But parent hasn't subscribed yet!
+// 5. State changes happen, child misses them
+```
+
+#### Solution: Deferred Mounting
+
+Implemented a queue-based system where children are mounted after the parent is ready:
+
+```javascript
+// AFTER (correct order):
+// 1. Parent.render() creates child
+// 2. component-h.js queues child in _pendingChildMounts
+// 3. Parent.onMount() is called
+// 4. Parent calls this._mountChildren() FIRST
+// 5. Children.onMount() runs (parent subscriptions already set up)
+// 6. State changes trigger child subscriptions correctly
+```
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `component-base.js` | Added `_pendingChildMounts` array and `_mountChildren()` method |
+| `component-h.js` | Modified to queue children instead of calling onMount immediately |
+| `dashboard/page.js` | Calls `_mountChildren()` FIRST in `onMount()` |
+| `dashboard/dashboard-controller.js` | Added `didMount()` method |
+
+### Implementation Details
+
+#### Component Base (`component-base.js`)
+
+```javascript
+class Component {
+  constructor(props = {}) {
+    this._pendingChildMounts = [];  // Queue for child onMount calls
+  }
+
+  /**
+   * Mount all queued child components. Called at the end of onMount().
+   * This ensures child onMount() runs AFTER parent is fully ready.
+   */
+  _mountChildren() {
+    while (this._pendingChildMounts.length > 0) {
+      const { instance, el } = this._pendingChildMounts.shift();
+      if (instance && el) {
+        el._component = instance;
+        instance._el = el;
+        instance.bindEvents();
+        instance.onMount?.();  // Now parent is ready!
+      }
+    }
+    this._pendingChildMounts = [];
+  }
+}
+```
+
+#### Component Factory (`component-h.js`)
+
+```javascript
+Component.h = function (tag, attrs = {}, ...children) {
+  // Handle Component classes
+  if (typeof tag === "function" && tag.prototype instanceof Component) {
+    const instance = new tag(attrs);
+
+    if (typeof instance.onMount === "function") {
+      // Check if parent is being created (we're inside a render)
+      if (this && this._pendingChildMounts !== undefined) {
+        this._pendingChildMounts.push({ instance, el });
+      } else {
+        // No parent to queue to, call directly
+        instance.onMount();
+      }
+    }
+    // ...
+  }
+};
+```
+
+#### Dashboard Page (`dashboard/page.js`)
+
+```javascript
+class DashboardPage extends Component {
+  onMount() {
+    // Mount child components FIRST - they need to be ready before we sync state
+    // This ensures LlamaRouterCard.onMount() sets up subscriptions before presets arrive
+    this._mountChildren();
+
+    // Subscribe to all state changes
+    this.unsubscribers.push(
+      stateManager.subscribe("presets", this._onPresetsChange.bind(this)),
+      // ... other subscriptions
+    );
+  }
+}
+```
+
+### didMount() Lifecycle Hook
+
+Added a new `didMount()` lifecycle hook that runs AFTER the component and all children are mounted:
+
+```javascript
+class DashboardPage extends Component {
+  /**
+   * Called after component is fully mounted to DOM - sync state to UI
+   * This runs after all child components are mounted, so routerCard is available
+   */
+  didMount() {
+    this._syncStateToUI();
+  }
+}
+```
+
+**Router Integration:**
+
+```javascript
+// In router.js
+_callDidMount(el) {
+  if (el._component && el._component.didMount && !el._component._mounted) {
+    el._component._mounted = true;
+    el._component.didMount();
+  }
+  // Recursively call on all children
+  if (el.children) {
+    Array.from(el.children).forEach((c) => this._callDidMount(c));
+  }
+}
+```
+
+### State Sync on Page Return
+
+Added `_syncStateToUI()` method to handle cached state when returning to a page:
+
+```javascript
+_syncStateToUI() {
+  const metrics = stateManager.get("metrics");
+  const presets = stateManager.get("presets");
+
+  if (presets) {
+    this.state.presets = presets;
+    this._updatePresetsUI();
+  }
+  // ... sync other state data
+}
+```
+
+**Why This Matters:**
+
+When navigating from Dashboard → Models → Dashboard:
+1. Presets are loaded and stored in `stateManager.get("presets")`
+2. User navigates to Models page
+3. User navigates back to Dashboard
+4. Presets are already in stateManager (cached)
+5. But the state subscription callback won't fire (same reference)
+6. `_syncStateToUI()` in `didMount()` ensures UI updates with cached data
+
+### Preset Selector Bug Fix
+
+Fixed a critical bug where presets didn't load when navigating back to Dashboard:
+
+**Root Cause:** Wrong CSS class selector
+- Code used: `.llama-router-card`
+- Actual class: `.llama-router-status-card`
+
+**Fix:**
+```javascript
+// BEFORE (always null):
+const routerCard = this.$(".llama-router-card")?._component;
+
+// AFTER (finds the element):
+const routerCard = this.$(".llama-router-status-card")?._component;
+```
+
+### Testing the Fix
+
+1. Navigate to Dashboard - presets should appear in dropdown
+2. Navigate to Models page
+3. Navigate back to Dashboard
+4. Presets should still appear (was broken before fix)
+
+Check browser console for logs:
+```
+[LlamaRouterCard] Constructor - presets: { count: 3, ... }
+[DashboardPage] _syncStateToUI - state synced from stateManager
+[DashboardPage] _updatePresetsUI - directly updated routerCard: 3
+```
