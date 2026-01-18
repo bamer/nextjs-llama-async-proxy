@@ -2,7 +2,37 @@
 
 ## Overview
 
-The Llama Async Proxy Dashboard provides a real-time API via Socket.IO for all operations. All API communication uses JSON objects with a consistent response format.
+The Llama Async Proxy Dashboard provides a real-time API via Socket.IO for all operations. This is a **socket-first architecture** - components call `socketClient.request()` directly and listen to broadcasts for updates.
+
+**See SOCKET_CONTRACTS.md for the complete, authoritative API reference.**
+
+## Quick Start
+
+```javascript
+// Using socketClient (recommended - returns Promises)
+const response = await socketClient.request("models:list", {});
+if (response.success) {
+  console.log("Models:", response.data.models);
+}
+
+// Listen for broadcasts
+socketClient.on("models:updated", (data) => {
+  console.log("Models changed:", data.models);
+});
+```
+
+## Response Format
+
+All API responses follow this format:
+
+```javascript
+{
+  success: boolean,
+  data?: any,
+  error?: string,
+  timestamp: string  // ISO 8601 format
+}
+```
 
 ## Connection
 
@@ -11,7 +41,28 @@ The Llama Async Proxy Dashboard provides a real-time API via Socket.IO for all o
 ws://localhost:3000/llamaproxws
 ```
 
-### Connection Example (JavaScript)
+### Using socketClient (Recommended)
+The application provides a global `socketClient` that handles connection automatically:
+
+```javascript
+// socketClient is auto-initialized in app.js
+// Connection status
+socketClient.isConnected; // true/false
+
+// Make a request (returns Promise)
+const response = await socketClient.request("models:list", {});
+
+// Listen for broadcasts
+socketClient.on("models:updated", (data) => {
+  // Handle update
+});
+
+// Unsubscribe
+const unsub = socketClient.on("event", handler);
+unsub();
+```
+
+### Direct Socket.IO Connection
 ```javascript
 const socket = io("http://localhost:3000/llamaproxws", {
   transports: ["websocket"],
@@ -27,22 +78,11 @@ socket.on("connect", () => {
 socket.on("disconnect", (reason) => {
   console.log("Disconnected:", reason);
 });
-```
 
-## Response Format
-
-All API responses follow this format:
-
-```javascript
-{
-  success: boolean,
-  data?: any,
-  error?: {
-    message: string,
-    code?: string
-  },
-  timestamp: string  // ISO 8601 format
-}
+// Use callback pattern for direct socket
+socket.emit("models:list", {}, (response) => {
+  console.log(response);
+});
 ```
 
 ### Success Response Example

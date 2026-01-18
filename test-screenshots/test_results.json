@@ -1,0 +1,87 @@
+{
+  "timestamp": "2026-01-18T22:22:43.942087",
+  "url": "http://localhost:3000",
+  "total_tests": 15,
+  "passed": 14,
+  "failed": 1,
+  "success_rate": "93.3%",
+  "final_status": "ISSUES FOUND (1 failures)",
+  "console_errors": 2,
+  "tests": [
+    {
+      "name": "Dashboard Load",
+      "passed": true,
+      "details": "Page loaded successfully"
+    },
+    {
+      "name": "Page Title",
+      "passed": true,
+      "details": "Title: Llama Async Proxy"
+    },
+    {
+      "name": "Header Element",
+      "passed": true,
+      "details": "Header/ nav found"
+    },
+    {
+      "name": "Main Content Area",
+      "passed": true,
+      "details": "Main content found"
+    },
+    {
+      "name": "Socket.IO Client Exists",
+      "passed": true,
+      "details": "Type: object"
+    },
+    {
+      "name": "Socket.IO Connected",
+      "passed": true,
+      "details": "Connection status: True"
+    },
+    {
+      "name": "No stateManager",
+      "passed": true,
+      "details": "stateManager not found (pure Socket.IO architecture)"
+    },
+    {
+      "name": "Models Page Navigation",
+      "passed": true,
+      "details": "Successfully navigated to Models page"
+    },
+    {
+      "name": "Models Content Present",
+      "passed": true,
+      "details": "Models content found"
+    },
+    {
+      "name": "Presets Page Navigation",
+      "passed": true,
+      "details": "Successfully navigated to Presets page"
+    },
+    {
+      "name": "Presets Content Present",
+      "passed": true,
+      "details": "Presets content found"
+    },
+    {
+      "name": "Dashboard Return",
+      "passed": true,
+      "details": "Successfully returned to Dashboard"
+    },
+    {
+      "name": "Button Interactions",
+      "passed": true,
+      "details": "Successfully clicked 2 buttons"
+    },
+    {
+      "name": "Socket.IO Maintains Connection",
+      "passed": true,
+      "details": "Connection maintained: True"
+    },
+    {
+      "name": "No JavaScript Errors",
+      "passed": false,
+      "details": "Found 2 JS errors"
+    }
+  ]
+}

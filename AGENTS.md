@@ -220,8 +220,9 @@ class MyComponent extends Component {
   onMount() {
     // Setup subscriptions, start intervals, etc.
     this.unsubscribers = [
-      stateManager.subscribe("data", (data) => {
-        this.data = data;
+      // Listen to socket broadcasts for real-time updates
+      socketClient.on("models:updated", (data) => {
+        this.models = data.models || [];
         this._updateUI();
       }),
     ];
@@ -358,42 +359,72 @@ const query = window.router.getQuery();
 
 ### State Management
 
-Use the global `stateManager` for shared state:
+**IMPORTANT**: stateManager is now **cache-only**. Use `socketClient.request()` directly for all API calls.
 
 ```javascript
-// Subscribe to state changes
+// ❌ OLD - Don't do this anymore
+const data = await stateManager.getModels();
+const models = await stateManager.loadModel(name);
+stateManager.subscribe("models", callback);
+
+// ✅ NEW - Direct socket calls
+const response = await socketClient.request("models:list", {});
+this.models = response.data || [];
+
+const response = await socketClient.request("models:load", { modelName: name });
+if (response.success) {
+  showNotification("Model loaded", "success");
+}
+
+socketClient.on("models:updated", (data) => {
+  this.models = data.models || [];
+  stateManager.set("models", this.models); // Optional cache
+});
+```
+
+**stateManager is now used only for caching**:
+```javascript
+// Get cached state
+const models = stateManager.get("models") || [];
+
+// Set cached state (after loading from socket)
+stateManager.set("models", this.models);
+
+// Subscribe to state changes (rarely needed with broadcasts)
 stateManager.subscribe("models", (models) => {
   console.log("Models changed:", models);
 });
-
-// Update state
-stateManager.set("currentModel", model);
-
-// Get state
-const models = stateManager.get("models");
-const allState = stateManager.getState();
-
-// Make API requests
-const data = await stateManager.getModels();
-await stateManager.startModel(modelId);
-await stateManager.updateConfig(config);
 ```
 
 ### Socket.IO Patterns
 
-The socket client is auto-initialized in app.js:
+The socket client is auto-initialized in app.js. Use `socketClient.request()` for API calls and `socketClient.on()` for broadcasts:
 
 ```javascript
 // Connection status
 socketClient.isConnected; // true/false
 
-// Listen for events
-socketClient.on("models:list", (data) => {
-  // Handle broadcast
+// Make a request (returns Promise with {success, data?, error?, timestamp})
+const response = await socketClient.request("models:list", {});
+if (response.success) {
+  console.log("Models:", response.data.models);
+} else {
+  showNotification(response.error, "error");
+}
+
+// Listen for broadcasts (real-time updates)
+socketClient.on("models:updated", (data) => {
+  console.log("Models updated:", data.models);
+  // Update UI without re-fetching
 });
 
-// Send requests (use stateManager.request for better API)
-stateManager.request("models:start", { modelId: "123" });
+socketClient.on("router:status", (data) => {
+  console.log("Router status:", data.status);
+});
+
+// Unsubscribe when done
+const unsub = socketClient.on("event", handler);
+unsub(); // Cleanup
 ```
 
 ### Error Handling
@@ -405,7 +436,7 @@ stateManager.request("models:start", { modelId: "123" });
 
 ```javascript
 try {
-  await stateManager.startModel(modelId);
+  await socketClient.request("models:load", { modelName: "mistral-7b" });
   showNotification("Model started successfully", "success");
 } catch (error) {
   console.error("[Models] Failed to start model:", error);
@@ -896,12 +927,14 @@ handleClick(event) {
 ```javascript
 async loadData() {
   try {
-    this.setState({ loading: true });
-    const data = await stateManager.getData();
-    this.setState({ data, loading: false });
+    this.loading = true;
+    const response = await socketClient.request("data:list", {});
+    this.data = response.data || [];
+    this.loading = false;
   } catch (error) {
     console.error('[Page] Failed to load data:', error);
-    this.setState({ error: error.message, loading: false });
+    this.error = error.message;
+    this.loading = false;
   }
 }
 ```

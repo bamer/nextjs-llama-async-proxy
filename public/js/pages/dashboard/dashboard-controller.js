@@ -1,19 +1,33 @@
 /**
- * Dashboard Controller - Main controller with router actions
+ * Dashboard Controller - Socket-First Architecture
+ *
+ * Socket contracts:
+ * - metrics:get           GET current metrics
+ * - metrics:history       GET historical metrics
+ * - models:list           GET all models
+ * - config:get            GET configuration
+ * - settings:get          GET application settings
+ * - presets:list          GET all presets
+ * - router:start          POST start router
+ * - router:stop           POST stop router
+ * - router:restart        POST restart router
+ * - router:start-preset   POST start with preset
+ * - metrics:updated       [BROADCAST] Metrics changed
+ * - router:status         [BROADCAST] Router status changed
  */
 
 class DashboardController {
   constructor(options = {}) {
     this.router = options.router || window.router;
     this.comp = null;
-    this.chartUpdateInterval = null;
-    this.chartManager = null; // Will be initialized when component mounts
-    this._stateUnsubscribers = []; // Track state subscriptions for cleanup
+    this.chartManager = null;
+    this.socketUnsubscribers = [];
+    this.routerLoading = false; // Local state instead of stateManager
   }
 
   /**
-    * Initialize the ChartManager when first needed
-    */
+   * Initialize the ChartManager when first needed
+   */
   _ensureChartManager() {
     if (!this.chartManager && typeof ChartManager !== "undefined") {
       console.log("[DASHBOARD] Creating ChartManager instance");
@@ -23,55 +37,27 @@ class DashboardController {
   }
 
   /**
-   * Register a state subscription for cleanup
-   */
-  _subscribe(key, callback) {
-    const unsub = stateManager.subscribe(key, callback);
-    this._stateUnsubscribers.push(unsub);
-    return unsub;
-  }
-
-  /**
-   * Cleanup all state subscriptions
-   */
-  _cleanupSubscriptions() {
-    if (this._stateUnsubscribers && this._stateUnsubscribers.length > 0) {
-      this._stateUnsubscribers.forEach((unsub) => {
-        try {
-          if (typeof unsub === "function") unsub();
-        } catch (e) {
-          console.warn("[Dashboard] Error cleaning up subscription:", e);
-        }
-      });
-      this._stateUnsubscribers = [];
-    }
-  }
-
-  /**
    * Handle config update action from component
-   * @param {Object} config - The config data to update
    */
   _handleConfigUpdate(config) {
-    if (config) {
-      stateManager.set("config", config);
-    }
+    // No-op: config is not cached
   }
 
   /**
    * Handle chart zoom action from component
-   * @param {Object} range - The zoom range data
    */
   _handleChartZoom(range) {
-    stateManager.setPageState("dashboard", "chartZoomRange", range);
+    // No-op: zoom is local state
   }
 
   /**
    * Handle export action from component
-   * @param {Object} data - The data to export
    */
   _handleExport(data) {
     if (data) {
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -82,10 +68,16 @@ class DashboardController {
   }
 
   willUnmount() {
-    // Clean up chart interval
-    if (this.chartUpdateInterval) {
-      clearInterval(this.chartUpdateInterval);
-      this.chartUpdateInterval = null;
+    // Clean up socket subscriptions
+    if (this.socketUnsubscribers && this.socketUnsubscribers.length > 0) {
+      this.socketUnsubscribers.forEach((unsub) => {
+        try {
+          if (typeof unsub === "function") unsub();
+        } catch (e) {
+          console.warn("[Dashboard] Error cleaning up subscription:", e);
+        }
+      });
+      this.socketUnsubscribers = [];
     }
 
     // Clean up chart manager
@@ -94,20 +86,11 @@ class DashboardController {
       this.chartManager = null;
     }
 
-    // Clean up action unsubscribers
-    if (this._actionUnsubscribers && this._actionUnsubscribers.length > 0) {
-      this._actionUnsubscribers.forEach((unsub) => {
-        try {
-          if (typeof unsub === "function") unsub();
-        } catch (e) {
-          console.warn("[Dashboard] Error cleaning up action unsubscribe:", e);
-        }
-      });
-      this._actionUnsubscribers = [];
+    // Clean up component
+    if (this.comp) {
+      this.comp.destroy?.();
+      this.comp = null;
     }
-
-    // Clean up subscriptions
-    this._cleanupSubscriptions();
   }
 
   destroy() {
@@ -115,226 +98,153 @@ class DashboardController {
   }
 
   /**
-    * Start chart updates using state subscription (no polling).
-    * Updates the component whenever metrics or history changes.
-    * @returns {void}
-    */
-  _startChartUpdates() {
-    // Clean up any existing interval
-    if (this.chartUpdateInterval) {
-      clearInterval(this.chartUpdateInterval);
-      this.chartUpdateInterval = null;
-    }
-
-    // Subscribe to metrics and history changes
-    this._subscribe("metricsHistory", (history) => {
-      if (this.comp && Array.isArray(history) && history.length > 0) {
-        const metrics = stateManager.get("metrics");
-        // State is already updated, component will react via its own subscription
-      }
-    });
-
-    this._subscribe("metrics", (metrics) => {
-      if (this.comp) {
-        const history = stateManager.get("metricsHistory") || [];
-        // State is already updated, component will react via its own subscription
-      }
-    });
-  }
-
-  /**
-    * Load data in parallel - no connection polling needed
-    * State-socket handles queuing if not connected yet
-    */
-  _loadDataWhenConnected() {
-    console.log("[DASHBOARD] Loading data (queued if not connected)...");
-    this._loadDataAsync();
-  }
-
-  /**
-    * Load all data in parallel - requests are queued by state-socket if not connected
-    * Data updates UI as each piece arrives
-    */
+   * Load all data in parallel via socket calls
+   */
   async _loadDataAsync() {
     try {
-      console.log("[DASHBOARD] Starting parallel data requests...");
+      console.log("[DASHBOARD] Loading data via socket...");
 
-      const [config, models, metrics, history, settings, presets] = await Promise.all([
-        stateManager.socket.request("config:get"),
-        stateManager.socket.request("models:list"),
-        stateManager.socket.request("metrics:get"),
-        stateManager.socket.request("metrics:history", { limit: 60 }),
-        stateManager.socket.request("settings:get"),
-        stateManager.socket.request("presets:list"),
-      ]);
+      const [configRes, modelsRes, metricsRes, historyRes, settingsRes, presetsRes] =
+        await Promise.all([
+          socketClient.request("config:get", {}),
+          socketClient.request("models:list", {}),
+          socketClient.request("metrics:get", {}),
+          socketClient.request("metrics:history", { limit: 60 }),
+          socketClient.request("settings:get", {}),
+          socketClient.request("presets:list", {}),
+        ]);
 
-      stateManager.set("config", config);
-      stateManager.set("models", models?.models || []);
-      stateManager.set("metrics", metrics?.metrics || null);
-      stateManager.set("metricsHistory", history?.history || []);
-      stateManager.set("settings", settings);
-      stateManager.set("presets", presets?.presets || []);
+      // Return loaded data (no caching)
+      const data = {
+        config: configRes.success ? configRes.data.config || {} : {},
+        models: modelsRes.success ? modelsRes.data || [] : [],
+        metrics: metricsRes.success ? metricsRes.data : null,
+        metricsHistory: historyRes.success ? historyRes.data || [] : [],
+        settings: settingsRes.success ? settingsRes.data || {} : {},
+        presets: presetsRes.success ? presetsRes.data.presets || [] : [],
+      };
 
-      console.log("[DASHBOARD] All data loaded in parallel");
+      console.log("[DASHBOARD] All data loaded successfully");
+      return data;
     } catch (e) {
       console.error("[DASHBOARD] Failed to load data:", e);
+      showNotification("Failed to load dashboard data", "error");
+      return null;
     }
   }
 
   /**
-   * Handle router actions from the UI (start, stop, restart, start-with-preset).
-   * @param {string} action - The action to perform
-   * @param {Object} data - Additional data for the action (e.g., preset name)
-   * @returns {void}
+   * Start router with a specific preset configuration
    */
-  handleRouterAction(action, data) {
-    switch (action) {
-    case "start": this._start(); break;
-    case "start-with-preset": this._startWithPreset(data); break;
-    case "stop": this._stop(); break;
-    case "restart": this._restart(); break;
-    }
-  }
-
-  /**
-   * Set router loading state and update UI accordingly.
-   * @param {boolean} loading - Whether router is in loading state
-   * @returns {void}
-   */
-  _setLoading(loading) {
-    stateManager.set("routerLoading", !!loading);
-  }
-
-  /**
-    * Start router with a specific preset configuration.
-    * @param {string} presetName - Name of the preset to use
-    * @returns {Promise<void>} Promise that resolves when router is started
-    */
   async _startWithPreset(presetName) {
-    this._setLoading(true);
+    this.routerLoading = true;
+
     try {
-      const settings = stateManager.get("settings") || {};
-      const config = stateManager.get("config") || {};
+      console.log("[DEBUG] Starting router with preset:", presetName);
       showNotification(`Starting with preset "${presetName}"...`, "info");
 
-      const response = await stateManager.request("llama:start-with-preset", {
-        presetName: presetName,
-        maxModels: settings.maxModelsLoaded || 4,
-        ctxSize: config.ctx_size || 4096,
-        threads: 4,
+      const response = await socketClient.request("router:start-preset", {
+        presetName,
       });
 
-      if (response?.success || response?.port) {
-        const port = response?.port || response?.data?.port;
-        showNotification(`Server started on port ${port}`, "success");
-        // Status will be updated automatically via broadcasts
+      if (response.success) {
+        showNotification(
+          `Router started with preset "${presetName}"`,
+          "success"
+        );
+        // Server broadcasts router:status
       } else {
-        showNotification(`Error: ${response?.error?.message || "Unknown error"}`, "error");
+        showNotification(`Failed: ${response.error}`, "error");
       }
     } catch (e) {
-      showNotification(`Failed: ${e.message}`, "error");
+      console.error("[DASHBOARD] Failed to start with preset:", e);
+      showNotification(`Error: ${e.message}`, "error");
     } finally {
-      this._setLoading(false);
+      this.routerLoading = false;
     }
   }
 
   /**
-      * Start the llama router server.
-      * @returns {Promise<void>} Promise that resolves when server is started
-      */
+   * Start the llama router server
+   */
   async _start() {
-    this._setLoading(true);
+    this.routerLoading = true;
+
     try {
-      console.log("[DASHBOARD] Starting router...");
-      const response = await stateManager.startLlama();
-      console.log("[DASHBOARD] Start response:", response);
+      console.log("[DEBUG] Starting router");
       showNotification("Starting router...", "info");
 
-      // Wait for status to become running (no timeout, fully async)
-      const status = await this._waitForRouterStatus("running");
-      if (status?.status === "running") {
-        stateManager.set("llamaServerStatus", status);
+      const response = await socketClient.request("router:start", {});
+
+      if (response.success) {
         showNotification("Router started successfully", "success");
+        // Server broadcasts router:status
       } else {
-        showNotification("Router start may have failed - please refresh", "warning");
+        showNotification(`Failed: ${response.error}`, "error");
       }
     } catch (e) {
       console.error("[DASHBOARD] Failed to start router:", e);
-      showNotification(`Failed: ${e.message}`, "error");
+      showNotification(`Error: ${e.message}`, "error");
     } finally {
-      this._setLoading(false);
+      this.routerLoading = false;
     }
   }
 
   /**
-     * Wait for router status change via event subscription (fully async, no timeout)
-     * @private
-     * @param {string} targetStatus - Status to wait for (e.g., "running")
-     * @returns {Promise<Object>} Router status object
-     */
-  async _waitForRouterStatus(targetStatus) {
-    return new Promise((resolve) => {
-      // Check current status first
-      const currentStatus = stateManager.get("llamaServerStatus");
-      if (currentStatus?.status === targetStatus) {
-        console.log("[DASHBOARD] Current status is already:", targetStatus);
-        return resolve(currentStatus);
-      }
-
-      // Subscribe to status changes (event-driven, no polling, no timeout)
-      const unsubscribe = stateManager.subscribe("llamaServerStatus", (status) => {
-        console.log("[DASHBOARD] Status event received:", status?.status);
-        if (status?.status === targetStatus) {
-          console.log("[DASHBOARD] Target status reached:", targetStatus);
-          unsubscribe();
-          resolve(status);
-        }
-      });
-    });
-  }
-
-  /**
-     * Stop the llama router server after user confirmation.
-     * @returns {Promise<void>} Promise that resolves when server is stopped
-     */
+   * Stop the llama router server
+   */
   async _stop() {
     if (!confirm("Stop router?")) return;
-    this._setLoading(true);
+
+    this.routerLoading = true;
+
     try {
-      console.log("[DASHBOARD] Stopping router...");
-      const result = await stateManager.stopLlama();
-      console.log("[DASHBOARD] Stop response:", result);
-      showNotification("Router stopped", "success");
+      console.log("[DEBUG] Stopping router");
+
+      const response = await socketClient.request("router:stop", {});
+
+      if (response.success) {
+        showNotification("Router stopped", "success");
+        // Server broadcasts router:status
+      } else {
+        showNotification(`Failed: ${response.error}`, "error");
+      }
     } catch (e) {
       console.error("[DASHBOARD] Failed to stop router:", e);
-      showNotification(`Failed: ${e.message}`, "error");
+      showNotification(`Error: ${e.message}`, "error");
     } finally {
-      this._setLoading(false);
+      this.routerLoading = false;
     }
   }
 
   /**
-     * Restart the llama router server.
-     * @returns {Promise<void>} Promise that resolves when server is restarted
-     */
+   * Restart the llama router server
+   */
   async _restart() {
-    this._setLoading(true);
+    this.routerLoading = true;
+
     try {
-      console.log("[DASHBOARD] Restarting router...");
-      await stateManager.restartLlama();
-      showNotification("Router restarted", "success");
+      console.log("[DEBUG] Restarting router");
+
+      const response = await socketClient.request("router:restart", {});
+
+      if (response.success) {
+        showNotification("Router restarted successfully", "success");
+        // Server broadcasts router:status
+      } else {
+        showNotification(`Failed: ${response.error}`, "error");
+      }
     } catch (e) {
       console.error("[DASHBOARD] Failed to restart router:", e);
-      showNotification(`Failed: ${e.message}`, "error");
+      showNotification(`Error: ${e.message}`, "error");
     } finally {
-      this._setLoading(false);
+      this.routerLoading = false;
     }
   }
 
   /**
-     * Render the dashboard page - called by router
-     * @returns {HTMLElement} The rendered page element
-     */
+   * Render the dashboard page
+   */
   render() {
     console.log("[DASHBOARD] Render - creating page component...");
 
@@ -344,51 +254,36 @@ class DashboardController {
     // Create page component with chartManager
     this.comp = new DashboardPage({ chartManager: this.chartManager });
 
-    // Render component to HTML element (this.comp.render() now returns a DOM element)
+    // Render component to DOM
     const el = this.comp.render();
 
-    // Ensure el is a valid Node before proceeding
     if (!(el instanceof Node)) {
-      console.error("[DASHBOARD] DashboardPage.render() did not return a valid DOM element:", el);
-      // Fallback or throw error to trigger error boundary
-      return document.createElement("div"); // Return an empty div to prevent further errors
+      console.error("[DASHBOARD] DashboardPage.render() did not return a valid DOM element");
+      return document.createElement("div");
     }
 
     // Link component to DOM element
     this.comp._el = el;
-    el._component = this.comp; // This line will now work as el is a valid Node
+    el._component = this.comp;
 
     // Bind events
     this.comp.bindEvents();
 
-    // Set up action listeners
-    this._actionUnsubscribers = [
-      stateManager.subscribe("action:dashboard:refresh", () => this._loadDataAsync()),
-      stateManager.subscribe("action:dashboard:config", (data) => this._handleConfigUpdate(data?.config)),
-      stateManager.subscribe("action:dashboard:chartZoom", (data) => this._handleChartZoom(data?.range)),
-      stateManager.subscribe("action:dashboard:export", (data) => this._handleExport(data?.data)),
-    ];
-
-    // Start chart updates
-    this._startChartUpdates();
-
-    // Call onMount for the component - this emits action:dashboard:refresh
-    // Our action listener above will trigger _loadDataAsync()
-    this.comp.onMount?.();
-
-    // Also trigger data load directly as a fallback (modern async - no timeout)
-    // This ensures data loads even if action event timing is off
+    // Load initial data
     this._loadDataAsync();
+
+    // Call onMount
+    this.comp.onMount?.();
 
     console.log("[DASHBOARD] Render complete");
     return el;
   }
 
   /**
-   * Called after component is mounted to DOM - ensure presets sync
+   * Called after component is mounted to DOM
    */
   didMount() {
-    console.log("[DASHBOARD] didMount - calling page component didMount for full sync");
+    console.log("[DASHBOARD] didMount");
     if (this.comp && this.comp.didMount) {
       this.comp.didMount();
     }

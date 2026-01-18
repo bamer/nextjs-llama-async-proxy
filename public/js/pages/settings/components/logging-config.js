@@ -123,6 +123,22 @@ class LoggingConfig extends Component {
   }
 
   /**
+   * Update the config from parent component
+   * @param {Object} config - New logging configuration
+   */
+  updateConfig(config) {
+    if (config) {
+      if (config.logLevel !== undefined) this.logLevel = config.logLevel;
+      if (config.maxFileSize !== undefined) this.maxFileSizeMB = Math.round(config.maxFileSize / 1024 / 1024);
+      if (config.maxFiles !== undefined) this.maxFiles = config.maxFiles;
+      if (config.enableFileLogging !== undefined) this.enableFileLogging = config.enableFileLogging;
+      if (config.enableDatabaseLogging !== undefined) this.enableDatabaseLogging = config.enableDatabaseLogging;
+      if (config.enableConsoleLogging !== undefined) this.enableConsoleLogging = config.enableConsoleLogging;
+      this._updateUI();
+    }
+  }
+
+  /**
    * Render a checkbox with label and description
    */
   _renderCheckbox(field, label, description, checked) {

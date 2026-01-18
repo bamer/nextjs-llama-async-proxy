@@ -1,6 +1,12 @@
 /**
  * Presets Editor Continued - Model and event bindings
  * Part of the modular Presets page refactoring
+ *
+ * Socket contracts:
+ * - presets:list            GET all presets
+ * - presets:delete          POST delete preset
+ * - presets:loadData        POST reload preset data
+ * - presets:updated         [BROADCAST] Presets changed
  */
 
 (function() {
@@ -93,7 +99,7 @@
           e.stopPropagation();
           const presetId = btn.dataset.presetName;
           if (confirm(`Delete preset "${presetId}"?`)) {
-            stateManager.emit("action:presets:delete", { presetId });
+            this._handleDeletePreset(presetId);
           }
         };
       });
@@ -165,7 +171,7 @@
       this._el?.querySelectorAll(".param-add-select[data-section='model']").forEach((select) => {
         select.onchange = (e) => {
           if (e.target.value) {
-            this._handleAddModelParam({ paramKey: e.target.value, modelName: e.target.dataset.model });
+            this._handleAddModelParam({ paramKey: e.target.value, modelName: select.dataset.model });
             e.target.value = "";
           }
         };
@@ -180,17 +186,23 @@
     PresetsPage.prototype._handleDeletePreset = async function (name) {
       if (!confirm(`Delete preset "${name}"?`)) return;
       try {
-        await this._getService().deletePreset(name);
-        showNotification(`Preset "${name}" deleted`, "success");
-        this.state.presets = this.state.presets.filter((p) => p.name !== name);
-        this._updatePresetsList();
-        if (this.state.selectedPreset?.name === name) {
-          this.state.selectedPreset = this.state.presets[0] || null;
-          if (this.state.selectedPreset) this._handlePresetSelect(this.state.selectedPreset.name);
-          else {
-            const editor = this._domCache.get("editor");
-            if (editor) editor.innerHTML = "<div class='empty-state'>Select a preset</div>";
+        // Use direct socket call instead of stateManager.emit
+        const response = await socketClient.request("presets:delete", { presetId: name });
+        if (response.success) {
+          showNotification(`Preset "${name}" deleted`, "success");
+          this.state.presets = this.state.presets.filter((p) => p.name !== name);
+          this._updatePresetsList();
+          if (this.state.selectedPreset?.name === name) {
+            this.state.selectedPreset = this.state.presets[0] || null;
+            if (this.state.selectedPreset) {
+              await this._handlePresetSelect(this.state.selectedPreset.name);
+            } else {
+              const editor = this._domCache.get("editor");
+              if (editor) editor.innerHTML = "<div class='empty-state'>Select a preset</div>";
+            }
           }
+        } else {
+          throw new Error(response.error?.message || "Failed to delete preset");
         }
       } catch (error) {
         showNotification(`Error: ${error.message}`, "error");
@@ -209,7 +221,10 @@
         await this._getService().addModel(this.state.selectedPreset.name, modelName, {});
         showNotification(`Model "${modelName}" added`, "success");
         select.value = "";
-        stateManager.emit("action:presets:loadData", { presetId: this.state.selectedPreset.name });
+        // Use direct socket call instead of stateManager.emit
+        await socketClient.request("presets:loadData", { presetId: this.state.selectedPreset.name });
+        // Reload the selected preset to get updated data
+        await this._handlePresetSelect(this.state.selectedPreset.name);
       } catch (error) {
         showNotification(`Error: ${error.message}`, "error");
       }

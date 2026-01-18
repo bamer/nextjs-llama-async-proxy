@@ -1,18 +1,24 @@
 /**
- * Response Helpers
- * Socket.IO ack callback formatting utilities
+ * Response Helper Functions
+ * Standardized response format for Socket.IO handlers
  */
 
 /**
- * Send a successful response via ack callback or emit event.
- * @param {Object} socket - Socket.IO socket instance.
- * @param {string} event - Event name to emit.
- * @param {Object} data - Data to send in the response.
- * @param {number} reqId - Request identifier.
- * @param {Function} ack - Optional acknowledgment callback.
+ * Send a success response
+ * @param {Object} socket - Socket.IO socket instance
+ * @param {string} event - Event name for response
+ * @param {Object} data - Response data
+ * @param {string} id - Request ID
+ * @param {Function} ack - Acknowledgment callback (optional)
  */
-export function ok(socket, event, data, reqId, ack) {
-  const response = { success: true, data, requestId: reqId, timestamp: Date.now() };
+export function ok(socket, event, data, id, ack) {
+  const response = {
+    success: true,
+    data,
+    requestId: id,
+    timestamp: new Date().toISOString(),
+  };
+
   if (typeof ack === "function") {
     ack(response);
   } else {
@@ -21,20 +27,21 @@ export function ok(socket, event, data, reqId, ack) {
 }
 
 /**
- * Send an error response via ack callback or emit event.
- * @param {Object} socket - Socket.IO socket instance.
- * @param {string} event - Event name to emit.
- * @param {string} message - Error message to send.
- * @param {number} reqId - Request identifier.
- * @param {Function} ack - Optional acknowledgment callback.
+ * Send an error response
+ * @param {Object} socket - Socket.IO socket instance
+ * @param {string} event - Event name for response
+ * @param {string} error - Error message
+ * @param {string} id - Request ID
+ * @param {Function} ack - Acknowledgment callback (optional)
  */
-export function err(socket, event, message, reqId, ack) {
+export function err(socket, event, error, id, ack) {
   const response = {
     success: false,
-    error: { message },
-    requestId: reqId,
-    timestamp: Date.now(),
+    error: { message: error },
+    requestId: id,
+    timestamp: new Date().toISOString(),
   };
+
   if (typeof ack === "function") {
     ack(response);
   } else {

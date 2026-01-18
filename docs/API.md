@@ -1551,7 +1551,7 @@ let modelCache = null;
 
 async function getModels() {
   if (modelCache) return modelCache;
-  const response = await stateManager.getModels();
+  const response = await socketClient.request("models:list", {});
   modelCache = response.data.models;
   return modelCache;
 }

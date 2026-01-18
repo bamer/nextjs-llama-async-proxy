@@ -254,7 +254,6 @@ class DebugDashboard {
       "Debug System": window.DEBUG_SYSTEM ? "✅ Active" : "❌ Inactive",
       "Client Logger": window.clientLogger ? "✅ Active" : "❌ Inactive",
       "Socket Client": window.socketClient ? "✅ Active" : "❌ Inactive",
-      "State Manager": window.stateManager ? "✅ Active" : "❌ Inactive",
       "Socket Connected": window.socketClient?.isConnected ? "✅ Connected" : "❌ Disconnected",
       "Page Ready": document.readyState === "complete" ? "✅ Complete" : "⏳ Loading"
     };

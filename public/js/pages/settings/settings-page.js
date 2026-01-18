@@ -37,9 +37,9 @@ class SettingsPage extends Component {
   }
 
   /**
-   * Get default router configuration values
-   * @returns {Object} Default router configuration
-   */
+     * Get default router configuration values
+     * @returns {Object} Default router configuration
+     */
   _getRouterDefaults() {
     return {
       modelsPath: "",
@@ -58,28 +58,48 @@ class SettingsPage extends Component {
   }
 
   onMount() {
-    console.log("[SettingsPage] onMount");
+    console.log("[DEBUG] SettingsPage onMount");
 
     // CRITICAL: Mount child components FIRST so bindEvents() is called
     // This ensures LlamaRouterCard, LlamaRouterConfig, LoggingConfig, etc. work
     this._mountChildren();
 
-    // Subscribe to state changes
+    // Listen to socket broadcasts directly (replaces stateManager.subscribe)
     this.unsubscribers.push(
-      stateManager.subscribe("routerConfig", this._onRouterConfigChange.bind(this)),
-      stateManager.subscribe("loggingConfig", this._onLoggingConfigChange.bind(this)),
-      stateManager.subscribe("llamaServerStatus", this._onLlamaStatusChange.bind(this)),
-      stateManager.subscribe("routerStatus", this._onRouterStatusChange.bind(this)),
-      stateManager.subscribe("presets", this._onPresetsChange.bind(this)),
-      stateManager.subscribe("actions:settings:save", this._onSaveAction.bind(this)),
-      stateManager.subscribe("actions:router:restart", this._onRestartAction.bind(this))
+      socketClient.on("config:updated", (data) => {
+        console.log("[DEBUG] config:updated received");
+        if (data.routerConfig) {
+          this.routerConfig = { ...this._getRouterDefaults(), ...this.routerConfig, ...data.routerConfig };
+          this._updateRouterConfigUI();
+        }
+        if (data.loggingConfig) {
+          this.logLevel = data.loggingConfig.logLevel || this.logLevel;
+          this.maxFileSize = data.loggingConfig.maxFileSize || this.maxFileSize;
+          this.maxFiles = data.loggingConfig.maxFiles || this.maxFiles;
+          this.enableFileLogging = data.loggingConfig.enableFileLogging !== false;
+          this.enableDatabaseLogging = data.loggingConfig.enableDatabaseLogging !== false;
+          this.enableConsoleLogging = data.loggingConfig.enableConsoleLogging !== false;
+          this._updateLoggingConfigUI();
+        }
+      }),
+      socketClient.on("llama:status", (data) => {
+        console.log("[DEBUG] llama:status received");
+        this.routerStatus = data || {};
+        this.llamaStatus = data.status || {};
+        this._updateStatusUI();
+      }),
+      socketClient.on("presets:updated", (data) => {
+        console.log("[DEBUG] presets:updated received");
+        this.presets = data.presets || [];
+        this._updatePresetsDropdown();
+      })
     );
   }
 
   /**
-   * Handle routerConfig state changes.
-   * @param {Object} config - New router config state
-   */
+     * Handle routerConfig state changes.
+     * @param {Object} config - New router config state
+     */
   _onRouterConfigChange(config) {
     if (config && typeof config === "object") {
       // Merge with existing to preserve all fields
@@ -89,9 +109,9 @@ class SettingsPage extends Component {
   }
 
   /**
-   * Handle logging config state changes.
-   * @param {Object} config - New logging config state
-   */
+     * Handle logging config state changes.
+     * @param {Object} config - New logging config state
+     */
   _onLoggingConfigChange(config) {
     if (config && typeof config === "object") {
       this.logLevel = config.logLevel || this.logLevel;
@@ -105,36 +125,36 @@ class SettingsPage extends Component {
   }
 
   /**
-   * Handle llama server status changes.
-   * @param {Object} status - New llama status
-   */
+     * Handle llama server status changes.
+     * @param {Object} status - New llama status
+     */
   _onLlamaStatusChange(status) {
     this.llamaStatus = status || {};
     this._updateStatusUI();
   }
 
   /**
-   * Handle router status changes.
-   * @param {Object} status - New router status
-   */
+     * Handle router status changes.
+     * @param {Object} status - New router status
+     */
   _onRouterStatusChange(status) {
     this.routerStatus = status || {};
     this._updateStatusUI();
   }
 
   /**
-   * Handle presets changes.
-   * @param {Array} presets - New presets list
-   */
+     * Handle presets changes.
+     * @param {Array} presets - New presets list
+     */
   _onPresetsChange(presets) {
     this.presets = presets || [];
     this._updatePresetsDropdown();
   }
 
   /**
-   * Handle save action status changes.
-   * @param {Object} action - Action status
-   */
+     * Handle save action status changes.
+     * @param {Object} action - Action status
+     */
   _onSaveAction(action) {
     const btn = this.$("[data-action=\"save\"]");
     if (btn) {
@@ -155,9 +175,9 @@ class SettingsPage extends Component {
   }
 
   /**
-   * Handle restart action status changes.
-   * @param {Object} action - Action status
-   */
+     * Handle restart action status changes.
+     * @param {Object} action - Action status
+     */
   _onRestartAction(action) {
     const restartBtn = this.$("[data-action=\"restart-router\"]");
     if (restartBtn) {
@@ -176,8 +196,8 @@ class SettingsPage extends Component {
   }
 
   /**
-   * Update router config UI elements from the unified config object.
-   */
+     * Update router config UI elements from the unified config object.
+     */
   _updateRouterConfigUI() {
     if (!this._el) return;
 
@@ -209,8 +229,8 @@ class SettingsPage extends Component {
   }
 
   /**
-   * Update logging config UI elements.
-   */
+     * Update logging config UI elements.
+     */
   _updateLoggingConfigUI() {
     if (!this._el) return;
 
@@ -251,8 +271,8 @@ class SettingsPage extends Component {
   }
 
   /**
-   * Update presets dropdown.
-   */
+     * Update presets dropdown.
+     */
   _updatePresetsDropdown() {
     const presetSelect = this._el?.querySelector("[data-field=\"activePreset\"]");
     if (presetSelect) {
@@ -271,8 +291,8 @@ class SettingsPage extends Component {
   }
 
   /**
-   * Update the status UI display based on current router and llama server status.
-   */
+     * Update the status UI display based on current router and llama server status.
+     */
   async _updateStatusUI() {
     const routerCard = this._el?.querySelector(".llama-router-status-card");
     if (!routerCard) return;
@@ -295,8 +315,8 @@ class SettingsPage extends Component {
   }
 
   /**
-   * Clean up subscriptions.
-   */
+     * Clean up subscriptions.
+     */
   destroy() {
     if (this.unsubscribers) {
       this.unsubscribers.forEach((unsub) => unsub());
@@ -306,20 +326,24 @@ class SettingsPage extends Component {
   }
 
   /**
-   * Save all settings - unified save for router and logging config
-   * Fix: Merge local changes with CURRENT state values to ensure all fields are saved
-   */
+     * Save all settings via socket
+     */
   _save() {
-    // Get CURRENT values from state (these are the source of truth after load)
-    const currentRouterConfig = stateManager.get("routerConfig") || this.routerConfig;
-    const currentLoggingConfig = stateManager.get("loggingConfig") || {};
+    // Use local component state instead of stateManager.get()
+    const currentRouterConfig = this.routerConfig || this._getRouterDefaults();
+    const currentLoggingConfig = {
+      logLevel: this.logLevel || "info",
+      maxFileSize: this.maxFileSize || 10485760,
+      maxFiles: this.maxFiles || 7,
+      enableFileLogging: this.enableFileLogging !== false,
+      enableDatabaseLogging: this.enableDatabaseLogging !== false,
+      enableConsoleLogging: this.enableConsoleLogging !== false,
+    };
 
     // Merge local changes with current state values
-    // This ensures ALL fields are sent to the server, not just changed ones
     const routerConfig = {
       ...currentRouterConfig,
       ...this._localRouterChanges,
-      // Ensure required fields are present
       modelsPath: this._localRouterChanges.modelsPath !== undefined
         ? this._localRouterChanges.modelsPath
         : (currentRouterConfig.modelsPath || ""),
@@ -340,7 +364,6 @@ class SettingsPage extends Component {
       repeatPenalty: parseFloat(this._localRouterChanges.repeatPenalty) || parseFloat(currentRouterConfig.repeatPenalty) || 1.1,
     };
 
-    // Merge logging config changes with current state
     const loggingConfig = {
       ...currentLoggingConfig,
       ...this._localLoggingChanges,
@@ -360,18 +383,17 @@ class SettingsPage extends Component {
         : (currentLoggingConfig.enableConsoleLogging !== false),
     };
 
-    console.log("[DEBUG] _save - routerConfig:", JSON.stringify(routerConfig, null, 2));
-    console.log("[DEBUG] _save - loggingConfig:", JSON.stringify(loggingConfig, null, 2));
+    console.log("[DEBUG] Saving via socket");
 
-    // Clear local changes after building the save payload
+    // Clear local changes
     this._localRouterChanges = {};
     this._localLoggingChanges = {};
 
-    // Emit the save action with both configs
-    stateManager.emit("action:settings:save", {
-      routerConfig,
-      loggingConfig,
-    });
+    // Call controller handler directly
+    const controller = this._el?._component?._controller;
+    if (controller) {
+      controller.handleSave({ routerConfig, loggingConfig });
+    }
   }
 
   bindEvents() {
@@ -410,34 +432,70 @@ class SettingsPage extends Component {
   }
 
   /**
-   * Emit export action.
-   */
-  _exportConfig() {
-    console.log("[DEBUG] Emitting export action");
-    stateManager.emit("action:config:export");
+     * Emit export action - use direct socket call
+     */
+  async _exportConfig() {
+    console.log("[DEBUG] Exporting config via socket");
+    try {
+      const response = await socketClient.request("config:export", {});
+      if (response.success) {
+        // Trigger download of exported config
+        const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `llama-config-${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showNotification("Configuration exported", "success");
+      } else {
+        showNotification("Export failed: " + response.error, "error");
+      }
+    } catch (e) {
+      console.error("[DEBUG] Export error:", e);
+      showNotification("Export error: " + e.message, "error");
+    }
   }
 
   /**
-   * Emit import action with imported config.
-   * @param {Object} importedConfig - Configuration object
-   */
-  _importConfig(importedConfig) {
-    console.log("[DEBUG] Emitting import action:", importedConfig);
+     * Emit import action with imported config - use direct socket call
+     * @param {Object} importedConfig - Configuration object
+     */
+  async _importConfig(importedConfig) {
+    console.log("[DEBUG] Importing config via socket:", importedConfig);
 
     if (!importedConfig.routerConfig && !importedConfig.loggingConfig) {
       showNotification("Invalid configuration file", "error");
       return;
     }
 
-    // Apply imported configs to state
-    if (importedConfig.routerConfig) {
-      stateManager.set("routerConfig", importedConfig.routerConfig);
-    }
-    if (importedConfig.loggingConfig) {
-      stateManager.set("loggingConfig", importedConfig.loggingConfig);
-    }
+    try {
+      // Apply imported configs via socket request
+      if (importedConfig.routerConfig) {
+        this.routerConfig = { ...this.routerConfig, ...importedConfig.routerConfig };
+        this._updateRouterConfigUI();
+      }
+      if (importedConfig.loggingConfig) {
+        this.logLevel = importedConfig.loggingConfig.logLevel || this.logLevel;
+        this.maxFileSize = importedConfig.loggingConfig.maxFileSize || this.maxFileSize;
+        this.maxFiles = importedConfig.loggingConfig.maxFiles || this.maxFiles;
+        this.enableFileLogging = importedConfig.loggingConfig.enableFileLogging !== false;
+        this.enableDatabaseLogging = importedConfig.loggingConfig.enableDatabaseLogging !== false;
+        this.enableConsoleLogging = importedConfig.loggingConfig.enableConsoleLogging !== false;
+        this._updateLoggingConfigUI();
+      }
 
-    showNotification("Configuration imported successfully", "success");
+      // Request server to save imported config
+      const response = await socketClient.request("config:import", importedConfig);
+      if (response.success) {
+        showNotification("Configuration imported successfully", "success");
+      } else {
+        showNotification("Import failed: " + response.error, "error");
+      }
+    } catch (e) {
+      console.error("[DEBUG] Import error:", e);
+      showNotification("Import error: " + e.message, "error");
+    }
   }
 
   render() {
@@ -457,18 +515,19 @@ class SettingsPage extends Component {
             presets: this.presets,
             onAction: (action, data) => {
               console.log("[DEBUG] settings-page onAction:", { action, data });
+              const controller = this._el?._component?._controller;
               switch (action) {
               case "start":
-                stateManager.emit("action:router:start");
+                controller?.handleRouterStart();
                 break;
               case "start-with-preset":
-                stateManager.emit("action:router:start-with-preset", data);
+                controller?.handleRouterStartWithPreset(data);
                 break;
               case "stop":
-                stateManager.emit("action:router:stop");
+                controller?.handleRouterStop();
                 break;
               case "restart":
-                stateManager.emit("action:router:restart");
+                controller?.handleRouterRestart();
                 break;
               }
             },

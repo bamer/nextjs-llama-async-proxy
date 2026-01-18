@@ -1,7 +1,7 @@
 /**
  * Llama Router Config Component - Unified Configuration
  * Replaces RouterConfig, ServerPathsForm, and ModelDefaultsForm
- * Event-Driven DOM Updates with state subscriptions
+ * Event-Driven DOM Updates with socket broadcasts
  */
 
 class LlamaRouterConfig extends Component {
@@ -35,10 +35,35 @@ class LlamaRouterConfig extends Component {
   }
 
   onMount() {
-    // Subscribe to routerConfig state changes
+    // Subscribe to socket broadcasts for router config updates
     this.unsubscribers.push(
-      stateManager.subscribe("routerConfig", this._onConfigChange.bind(this))
+      socketClient.on("router:status", this._onRouterStatus.bind(this)),
+      socketClient.on("config:updated", this._onConfigUpdated.bind(this))
     );
+  }
+
+  /**
+   * Handle router:status broadcast
+   * @param {Object} data - Router status data
+   */
+  _onRouterStatus(data) {
+    if (data?.config) {
+      console.log("[LlamaRouterConfig] Router config updated via broadcast");
+      this.config = { ...this.config, ...data.config };
+      this._updateUI();
+    }
+  }
+
+  /**
+   * Handle config:updated broadcast
+   * @param {Object} data - Config update data
+   */
+  _onConfigUpdated(data) {
+    if (data?.config && typeof data.config === "object") {
+      console.log("[LlamaRouterConfig] Config updated via broadcast");
+      this.config = { ...this.config, ...data.config };
+      this._updateUI();
+    }
   }
 
   /**
@@ -117,7 +142,49 @@ class LlamaRouterConfig extends Component {
 
       // Call change callback if provided
       this.props.onChange?.(field, value);
+
+      // Request config update via socket if connected
+      this._requestConfigUpdate(field, value);
     });
+  }
+
+  /**
+   * Request config update via socket
+   * @param {string} field - Field name
+   * @param {any} value - New value
+   */
+  async _requestConfigUpdate(field, value) {
+    if (!socketClient?.isConnected) {
+      console.warn("[LlamaRouterConfig] Socket not connected, config change not propagated");
+      return;
+    }
+
+    try {
+      const response = await socketClient.request("config:update", {
+        field,
+        value,
+        timestamp: Date.now(),
+      });
+
+      if (response.success) {
+        console.log("[LlamaRouterConfig] Config update requested via socket:", field, value);
+      } else {
+        console.error("[LlamaRouterConfig] Config update failed:", response.error);
+      }
+    } catch (error) {
+      console.error("[LlamaRouterConfig] Config update request failed:", error);
+    }
+  }
+
+  /**
+   * Update the config from parent component
+   * @param {Object} newConfig - New configuration object
+   */
+  updateConfig(newConfig) {
+    if (newConfig && typeof newConfig === "object") {
+      this.config = { ...this.config, ...newConfig };
+      this._updateUI();
+    }
   }
 
   /**

@@ -67,13 +67,30 @@ class Header extends Component {
   }
 
   /**
-   * Called after mounting to subscribe to connection status and route changes.
+   * Called after mounting to subscribe to router status and route changes.
    */
   onMount() {
+    // Subscribe to router status broadcasts via socket
     this.unsubscribers.push(
-      stateManager.subscribe("connectionStatus", (s) => {
-        this.online = s === "connected";
-        this._updateUI(s);
+      socketClient.on("router:status", (data) => {
+        const status = data?.status || "disconnected";
+        this.online = status === "running";
+        this._updateUI(status);
+      })
+    );
+
+    // Also listen for connection-related events
+    this.unsubscribers.push(
+      socketClient.on("models:updated", () => {
+        // Refresh connection status when models update
+        socketClient.request("router:status", {}).then((response) => {
+          const status = response?.data?.status || "disconnected";
+          this.online = status === "running";
+          this._updateUI(status);
+        }).catch(() => {
+          this.online = false;
+          this._updateUI("disconnected");
+        });
       })
     );
 
@@ -116,13 +133,13 @@ class Header extends Component {
     if (st) {
       const dot = st.querySelector(".dot");
       const txt = st.querySelector(".text");
-      if (dot) dot.className = `dot ${s === "connected" ? "connected" : "disconnected"}`;
-      if (txt) txt.textContent = s === "connected" ? "Connected" : "Disconnected";
+      if (dot) dot.className = `dot ${s === "running" ? "connected" : "disconnected"}`;
+      if (txt) txt.textContent = s === "running" ? "Connected" : "Disconnected";
     }
     const hs = this.$(".header-status");
     if (hs) {
       hs.innerHTML =
-        s === "connected"
+        s === "running"
           ? "<span class=\"badge online\">● Online</span>"
           : "<span class=\"badge offline\">● Offline</span>";
     }

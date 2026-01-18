@@ -25,29 +25,14 @@ class ModelFilters extends Component {
   }
 
   /**
-   * Subscribe to state changes for filter, sort, and view mode
+   * Called after component is mounted to DOM.
+   * For page-specific state (viewMode, sortBy, filterBy), we use local state.
+   * These are truly local to this component and don't need to be shared.
    */
   onMount() {
-    this.unsubscribers.push(
-      stateManager.subscribe("page:models:viewMode", (mode) => {
-        if (mode && mode !== this.state.viewMode) {
-          this.state.viewMode = mode;
-          this._updateView();
-        }
-      }),
-      stateManager.subscribe("page:models:sortBy", (sort) => {
-        if (sort && sort !== this.state.sortBy) {
-          this.state.sortBy = sort;
-          this._applySort();
-        }
-      }),
-      stateManager.subscribe("page:models:filterBy", (filter) => {
-        if (filter && filter !== this.state.filterBy) {
-          this.state.filterBy = filter;
-          this._applyFilter();
-        }
-      })
-    );
+    // No socket subscriptions needed for local UI state
+    // View mode, sort, and filter are all local UI concerns
+    console.log("[ModelFilters] onMount - using local state for view/sort/filter");
   }
 
   /**
@@ -72,11 +57,15 @@ class ModelFilters extends Component {
   _applySort() {
     // Trigger sort with current sortBy value
     console.log("[ModelFilters] Applying sort:", this.state.sortBy);
+    // Call parent callback if provided
+    this.props.onSortChange?.(this.state.sortBy);
   }
 
   _applyFilter() {
     // Trigger filter with current filterBy value
     console.log("[ModelFilters] Applying filter:", this.state.filterBy);
+    // Call parent callback if provided
+    this.props.onFilterChange?.(this.state.filterBy);
   }
 
   /**
@@ -112,17 +101,30 @@ class ModelFilters extends Component {
       this.onFavoritesToggle?.(this.favoritesOnly);
     });
 
-    // View mode toggle
+    // View mode toggle - use local state instead of stateManager
     this.on("click", "[data-action=toggle-view]", () => {
       const newViewMode = this.state.viewMode === "table" ? "grid" : "table";
-      stateManager.set("page:models:viewMode", newViewMode);
+      this.state.viewMode = newViewMode;
+      this._updateView();
+      // Call parent callback if provided
+      this.props.onViewModeChange?.(newViewMode);
     });
 
-    // Sort buttons
+    // Sort buttons - use local state instead of stateManager
     this.on("click", "[data-action=sort]", (e, target) => {
       const sortBy = target.dataset.sortBy || target.closest("[data-sort-by]")?.dataset.sortBy;
-      if (sortBy) {
-        stateManager.set("page:models:sortBy", sortBy);
+      if (sortBy && sortBy !== this.state.sortBy) {
+        this.state.sortBy = sortBy;
+        this._applySort();
+      }
+    });
+
+    // Filter buttons - use local state instead of stateManager
+    this.on("click", "[data-action=filter]", (e, target) => {
+      const filterBy = target.dataset.filterBy || target.closest("[data-filter-by]")?.dataset.filterBy;
+      if (filterBy && filterBy !== this.state.filterBy) {
+        this.state.filterBy = filterBy;
+        this._applyFilter();
       }
     });
   }
@@ -154,9 +156,21 @@ class ModelFilters extends Component {
           />
           Show Favorites Only
         </label>
-        <button class="btn btn-sm" data-action="toggle-view" title="Toggle View Mode">
-          ${this.state.viewMode === "table" ? "☰" : "▦"}
-        </button>
+        <div class="filter-actions">
+          <button class="btn btn-sm" data-action="toggle-view" title="Toggle View Mode">
+            ${this.state.viewMode === "table" ? "☰" : "▦"}
+          </button>
+        </div>
+      </div>
+      <div class="sort-filter-bar">
+        <span class="sort-label">Sort by:</span>
+        <button class="btn btn-xs ${this.state.sortBy === "name" ? "active" : ""}" data-action="sort" data-sort-by="name">Name</button>
+        <button class="btn btn-xs ${this.state.sortBy === "size" ? "active" : ""}" data-action="sort" data-sort-by="size">Size</button>
+        <button class="btn btn-xs ${this.state.sortBy === "date" ? "active" : ""}" data-action="sort" data-sort-by="date">Date</button>
+        <span class="filter-label">Filter:</span>
+        <button class="btn btn-xs ${this.state.filterBy === "all" ? "active" : ""}" data-action="filter" data-filter-by="all">All</button>
+        <button class="btn btn-xs ${this.state.filterBy === "loaded" ? "active" : ""}" data-action="filter" data-filter-by="loaded">Loaded</button>
+        <button class="btn btn-xs ${this.state.filterBy === "unloaded" ? "active" : ""}" data-action="filter" data-filter-by="unloaded">Unloaded</button>
       </div>
     `;
   }

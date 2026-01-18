@@ -1,19 +1,30 @@
 /**
  * Models Page - Table display and filtering
+ * Socket-First Architecture Pattern
+ *
+ * Socket contracts used:
+ * - models:list        GET all models
+ * - models:load        POST load a model
+ * - models:unload      POST unload a model
+ * - models:scan        POST scan for new models
+ * - models:cleanup     POST cleanup invalid models
+ * - models:updated     [BROADCAST] Models changed
  */
 
 class ModelsPage extends Component {
   constructor(props) {
     super(props);
+    this.routerStatus = props.routerStatus || null;
+    this.config = props.config || {};
     this.models = props.models || [];
     this.filters = { status: "all", search: "" };
+    this.loading = false;
+    this.unsubscribers = [];
   }
 
   render() {
-    const routerStatus = stateManager.get("routerStatus");
-    const routerRunning = routerStatus?.status === "running";
-    const config = stateManager.get("config") || {};
-    const port = routerStatus?.port || config.port || 8080;
+    const routerRunning = this.routerStatus?.status === "running" || this.routerStatus?.status === "ready";
+    const port = this.routerStatus?.port || this.config.port || 8080;
     const filtered = this._getFiltered();
 
     return Component.h("div", { className: "models-page" }, [
@@ -173,90 +184,209 @@ class ModelsPage extends Component {
   }
 
   /**
+   * Load all models from server using socket-first pattern.
+   * @returns {Promise<void>} Promise that resolves when models are loaded
+   */
+  async _loadModels() {
+    try {
+      this.loading = true;
+      console.log("[DEBUG] ModelsPage: Loading models via socket...");
+
+      const response = await socketClient.request("models:list", {});
+
+      if (response.success) {
+        this.models = response.data.models || [];
+        console.log("[DEBUG] ModelsPage: Loaded", this.models.length, "models");
+      } else {
+        console.error("[DEBUG] ModelsPage: Failed to load models:", response.error);
+        showNotification(response.error || "Failed to load models", "error");
+      }
+    } catch (error) {
+      console.error("[DEBUG] ModelsPage: Error loading models:", error);
+      showNotification("Error loading models: " + error.message, "error");
+    } finally {
+      this.loading = false;
+      this._updateTable();
+    }
+  }
+
+  /**
    * Refresh models data by fetching latest router status and model states.
    * @returns {Promise<void>} Promise that resolves when refresh is complete
    */
   async _refresh() {
     try {
-      const rs = await stateManager.getRouterStatus();
-      stateManager.set("routerStatus", rs.routerStatus);
-      const models = stateManager.get("models") || [];
-      const updated = models.map((m) => {
-        const rm = rs.routerStatus?.models?.find((x) => x.id === m.name);
-        return rm ? { ...m, status: rm.state } : { ...m, status: "unloaded" };
+      console.log("[DEBUG] ModelsPage: Refreshing model status...");
+
+      // Get router status via socket
+      const rsResponse = await socketClient.request("llama:status", {});
+      if (rsResponse.success) {
+        this.routerStatus = rsResponse.data;
+      }
+
+      // Update model statuses from router
+      const updated = this.models.map((m) => {
+        const rm = rsResponse.data?.models?.find((x) => x.id === m.name || x.name === m.name);
+        return rm ? { ...m, status: rm.state || rm.status } : { ...m, status: "unloaded" };
       });
-      stateManager.set("models", updated);
+
       this.models = updated;
       this._updateTable();
-    } catch {
-      const models = stateManager.get("models") || [];
-      const updated = models.map((m) => ({ ...m, status: "unloaded" }));
-      stateManager.set("models", updated);
+    } catch (error) {
+      console.error("[DEBUG] ModelsPage: Refresh failed:", error);
+      // Fall back to marking all as unloaded
+      const updated = this.models.map((m) => ({ ...m, status: "unloaded" }));
       this.models = updated;
       this._updateTable();
     }
   }
 
   /**
-   * Load a model by name via stateManager.
+   * Load a model by name via socket-first pattern.
    * @param {string} name - Name of the model to load
    * @returns {Promise<void>} Promise that resolves when model is loaded
    */
   async _loadModel(name) {
     try {
-      await stateManager.loadModel(name);
-      showNotification("Model loaded", "success");
+      this.loading = true;
+      console.log("[DEBUG] ModelsPage: Loading model", name);
+
+      const response = await socketClient.request("models:load", { modelName: name });
+
+      if (response.success) {
+        showNotification(`Model ${name} loaded`, "success");
+        // Server broadcasts models:updated - we'll receive it via subscription
+      } else {
+        showNotification(response.error || `Failed to load ${name}`, "error");
+      }
+    } catch (error) {
+      console.error("[DEBUG] ModelsPage: Load failed:", error);
+      showNotification("Error loading model: " + error.message, "error");
+    } finally {
+      this.loading = false;
       this._refresh();
-    } catch (e) {
-      showNotification(e.message, "error");
     }
   }
 
   /**
-   * Unload a model by name via stateManager.
+   * Unload a model by name via socket-first pattern.
    * @param {string} name - Name of the model to unload
    * @returns {Promise<void>} Promise that resolves when model is unloaded
    */
   async _unloadModel(name) {
     try {
-      await stateManager.unloadModel(name);
-      showNotification("Model unloaded", "success");
+      this.loading = true;
+      console.log("[DEBUG] ModelsPage: Unloading model", name);
+
+      const response = await socketClient.request("models:unload", { modelName: name });
+
+      if (response.success) {
+        showNotification(`Model ${name} unloaded`, "success");
+        // Server broadcasts models:updated - we'll receive it via subscription
+      } else {
+        showNotification(response.error || `Failed to unload ${name}`, "error");
+      }
+    } catch (error) {
+      console.error("[DEBUG] ModelsPage: Unload failed:", error);
+      showNotification("Error unloading model: " + error.message, "error");
+    } finally {
+      this.loading = false;
       this._refresh();
-    } catch (e) {
-      showNotification(e.message, "error");
     }
   }
 
   /**
-   * Scan filesystem for models and update model list.
+   * Scan filesystem for models and update model list via socket-first pattern.
    * @returns {Promise<void>} Promise that resolves when scan is complete
    */
   async _scan() {
     showNotification("Scanning...", "info");
     try {
-      await stateManager.scanModels();
-      const d = await stateManager.getModels();
-      this.models = d.models || [];
-      stateManager.set("models", this.models);
-      this._updateTable();
-      showNotification(`Found ${this.models.length} models`, "success");
-    } catch (e) {
-      showNotification(`Scan failed: ${e.message}`, "error");
+      console.log("[DEBUG] ModelsPage: Scanning for models...");
+
+      const response = await socketClient.request("models:scan", {});
+
+      if (response.success) {
+        // Server broadcasts models:updated, so reload models
+        await this._loadModels();
+        showNotification(`Found ${response.data.total} models`, "success");
+      } else {
+        showNotification(response.error || "Scan failed", "error");
+      }
+    } catch (error) {
+      console.error("[DEBUG] ModelsPage: Scan failed:", error);
+      showNotification("Scan failed: " + error.message, "error");
     }
   }
 
   /**
-   * Cleanup invalid or duplicate models from the database.
+   * Cleanup invalid or duplicate models from the database via socket-first pattern.
    * @returns {Promise<void>} Promise that resolves when cleanup is complete
    */
   async _cleanup() {
     showNotification("Cleaning...", "info");
     try {
-      const d = await stateManager.cleanupModels();
-      showNotification(`Removed ${d.deletedCount || 0} models`, "success");
-    } catch (e) {
-      showNotification(`Cleanup failed: ${e.message}`, "error");
+      console.log("[DEBUG] ModelsPage: Cleaning up models...");
+
+      const response = await socketClient.request("models:cleanup", {});
+
+      if (response.success) {
+        showNotification(`Removed ${response.data.deletedCount || 0} models`, "success");
+        // Reload models after cleanup
+        await this._loadModels();
+      } else {
+        showNotification(response.error || "Cleanup failed", "error");
+      }
+    } catch (error) {
+      console.error("[DEBUG] ModelsPage: Cleanup failed:", error);
+      showNotification("Cleanup failed: " + error.message, "error");
     }
+  }
+
+  /**
+   * Called when component is mounted to DOM.
+   * Sets up socket subscriptions and loads initial data.
+   */
+  onMount() {
+    console.log("[DEBUG] ModelsPage: onMount - setting up subscriptions...");
+
+    // Listen for broadcast updates from server
+    this.unsubscribers.push(
+      socketClient.on("models:updated", (data) => {
+        console.log("[DEBUG] ModelsPage: Received models:updated broadcast");
+        this.models = data.models || [];
+        this._updateTable();
+      }),
+      socketClient.on("models:created", (data) => {
+        console.log("[DEBUG] ModelsPage: Received models:created broadcast");
+        this._loadModels();
+      }),
+      socketClient.on("models:deleted", (data) => {
+        console.log("[DEBUG] ModelsPage: Received models:deleted broadcast");
+        this._loadModels();
+      }),
+      socketClient.on("router:status", (data) => {
+        console.log("[DEBUG] ModelsPage: Received router:status broadcast");
+        this.routerStatus = data.status || null;
+        this.replaceWith(this.render());
+      })
+    );
+  }
+
+  /**
+   * Called when component is about to be unmounted.
+   * Cleans up socket subscriptions.
+   */
+  destroy() {
+    console.log("[DEBUG] ModelsPage: destroy - cleaning up subscriptions");
+    this.unsubscribers.forEach((unsub) => {
+      try {
+        unsub();
+      } catch (e) {
+        console.warn("[DEBUG] ModelsPage: Error cleaning up subscription:", e);
+      }
+    });
+    this.unsubscribers = [];
   }
 }
 

@@ -1,15 +1,22 @@
 /**
  * Models Scan Handlers
- * Model discovery and cleanup operations
- * Uses async file I/O to prevent event loop blocking
+ * Model discovery and cleanup operations with standardized callback pattern
  */
 
 import fs from "fs/promises";
 import path from "path";
-import { ok, err } from "../response.js";
 
 // Batch processing configuration
 const BATCH_SIZE = 5;
+
+/**
+ * Generate a unique request ID for tracking requests
+ * @param {object} req - Request object
+ * @returns {string} Request ID
+ */
+function getRequestId(req) {
+  return req?.requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
 
 /**
  * Check if a directory exists and is accessible.
@@ -107,20 +114,26 @@ async function findModelFiles(dir) {
 /**
  * Register models scan handlers on the socket.
  * @param {object} socket - Socket.IO socket instance.
- * @param {object} io - Socket.IO server instance.
+ * @param {object} io - Socket.IO server instance (for broadcasting).
  * @param {object} db - Database instance.
  * @param {function} ggufParser - GGUF metadata parser function.
  */
 export function registerModelsScanHandlers(socket, io, db, ggufParser) {
   /**
    * Scan models directory for new model files.
-   * @param {object} req - Request object containing optional requestId.
+   * CONTRACT:
+   * - Input: { path?: string }
+   * - Output: { success: true, data: { scanned, updated, total }, timestamp: string }
+   * - Broadcasts: models:updated
    */
-  socket.on("models:scan", async (req) => {
-    const id = req?.requestId || Date.now();
+  socket.on("models:scan", async (req, callback) => {
+    const id = getRequestId(req);
+
+    console.log("[DEBUG] models:scan request", { requestId: id });
+
     try {
       const config = db.getConfig();
-      const modelsDir = config.baseModelsPath;
+      const modelsDir = req?.path || config.baseModelsPath;
       const dirExists = await directoryExists(modelsDir);
 
       let scanned = 0;
@@ -217,24 +230,69 @@ export function registerModelsScanHandlers(socket, io, db, ggufParser) {
       }
 
       const allModels = db.getModels();
-      ok(socket, "models:scan:result", { scanned, updated, total: allModels.length }, id);
-      io.emit("models:scanned", { scanned, updated, total: allModels.length });
+
+      // Broadcast models:updated to all clients
+      socket.broadcast.emit("models:updated", {
+        models: allModels,
+        scanned,
+        updated,
+        timestamp: new Date().toISOString(),
+      });
+
+      console.log("[DEBUG] models:scan response", { requestId: id, scanned, updated, total: allModels.length });
+
+      callback({
+        success: true,
+        data: { scanned, updated, total: allModels.length },
+        timestamp: new Date().toISOString(),
+      });
     } catch (e) {
-      err(socket, "models:scan:result", e.message, id);
+      console.error("[ERROR] models:scan failed:", e.message);
+      callback({
+        success: false,
+        error: e.message || "Failed to scan models",
+        timestamp: new Date().toISOString(),
+      });
     }
   });
 
   /**
    * Cleanup invalid models that no longer exist on disk.
-   * @param {object} req - Request object containing optional requestId.
+   * CONTRACT:
+   * - Input: {}
+   * - Output: { success: true, data: { deletedCount }, timestamp: string }
+   * - Broadcasts: models:updated
    */
-  socket.on("models:cleanup", (req) => {
-    const id = req?.requestId || Date.now();
+  socket.on("models:cleanup", (req, callback) => {
+    const id = getRequestId(req);
+
+    console.log("[DEBUG] models:cleanup request", { requestId: id });
+
     try {
       const deletedCount = db.cleanupMissingFiles();
-      ok(socket, "models:cleanup:result", { deletedCount }, id);
+
+      // Broadcast models:updated to all clients
+      const allModels = db.getModels();
+      socket.broadcast.emit("models:updated", {
+        models: allModels,
+        cleaned: deletedCount,
+        timestamp: new Date().toISOString(),
+      });
+
+      console.log("[DEBUG] models:cleanup response", { requestId: id, deletedCount });
+
+      callback({
+        success: true,
+        data: { deletedCount },
+        timestamp: new Date().toISOString(),
+      });
     } catch (e) {
-      err(socket, "models:cleanup:result", e.message, id);
+      console.error("[ERROR] models:cleanup failed:", e.message);
+      callback({
+        success: false,
+        error: e.message || "Failed to cleanup models",
+        timestamp: new Date().toISOString(),
+      });
     }
   });
 }

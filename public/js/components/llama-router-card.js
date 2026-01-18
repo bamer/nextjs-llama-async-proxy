@@ -1,7 +1,7 @@
 /**
  * LlamaRouterCard - Modern Unified Component
  * Pure Event-Driven DOM Updates
- * FIXED: Single toggle button, respects correct port from config
+ * Socket-First Architecture: No stateManager dependency
  */
 class LlamaRouterCard extends Component {
   constructor(props) {
@@ -9,6 +9,11 @@ class LlamaRouterCard extends Component {
     this.routerLoading = false;
     this.unsubscribers = [];
     this.selectedPreset = "";
+    this.status = {};
+    this.routerStatus = {};
+    this.metrics = {};
+    this.presets = [];
+    this.config = {};
     console.log("[LlamaRouterCard] Constructor - presets:", {
       count: props?.presets?.length || 0,
       presets: props?.presets?.map(p => ({ name: p.name || p })) || [],
@@ -20,29 +25,24 @@ class LlamaRouterCard extends Component {
     this._updateUI();
     this._updatePresetSelect();
 
+    // Subscribe to socket broadcasts instead of stateManager
     this.unsubscribers = [
-      stateManager.subscribe("llamaServerStatus", (s) => {
-        this.props.status = s;
+      socketClient.on("llama:status", (data) => {
+        this.status = data || {};
         this._updateUI();
       }),
-      stateManager.subscribe("routerStatus", (rs) => {
-        this.props.routerStatus = rs;
+      socketClient.on("router:status", (data) => {
+        this.routerStatus = data || {};
         this._updateUI();
       }),
-      stateManager.subscribe("llamaServerMetrics", (m) => {
-        this.props.metrics = m;
-        // Update BOTH detailed metrics AND glance grid (for real-time updates)
-        this._updateDetailedMetrics();
+      socketClient.on("router:loading", (data) => {
+        this.routerLoading = !!data?.loading;
         this._updateUI();
       }),
-      stateManager.subscribe("presets", (p) => {
-        this.props.presets = p || [];
+      socketClient.on("presets:updated", (data) => {
+        this.presets = data?.presets || [];
         this._updatePresetSelect();
       }),
-      stateManager.subscribe("routerLoading", (loading) => {
-        this.routerLoading = !!loading;
-        this._updateUI();
-      })
     ];
 
     // Only set up scraper once (not on every mount/re-render)
@@ -60,9 +60,8 @@ class LlamaRouterCard extends Component {
   }
 
   _setupScraper() {
-    // Get URL from status state (set by llama:status events)
-    const status = window.stateManager?.get?.("llamaServerStatus") || {};
-    const url = status.url;
+    // Get URL from routerStatus (set by router:status events)
+    const url = this.routerStatus?.url;
 
     // Only set up scraper if server is running (has URL)
     // This is expected to be null when llama-server is not running
@@ -73,8 +72,8 @@ class LlamaRouterCard extends Component {
     // Use shorter interval (2s) for immediate feedback, but with smart dedup
     this._scraper = new window.MetricsScraper(url, 2000);
     this._scraper.start((metrics) => {
-      // Update state only when metrics actually change
-      const currentMetrics = stateManager.get("llamaServerMetrics") || {};
+      // Update local state only when metrics actually change
+      const currentMetrics = this.metrics || {};
 
       // Check if meaningful changes (> 0.1% change for token rates)
       let hasChange = false;
@@ -95,7 +94,10 @@ class LlamaRouterCard extends Component {
       }
 
       if (hasChange) {
-        stateManager.set("llamaServerMetrics", metrics);
+        this.metrics = metrics;
+        // Update BOTH detailed metrics AND glance grid (for real-time updates)
+        this._updateDetailedMetrics();
+        this._updateUI();
       }
     });
   }
@@ -106,9 +108,9 @@ class LlamaRouterCard extends Component {
     // Maintain component link
     if (this._el._component !== this) this._el._component = this;
 
-    const status = this.props.status || {};
-    const rs = this.props.routerStatus || {};
-    const metrics = this.props.metrics || {};
+    const status = this.status || {};
+    const rs = this.routerStatus || {};
+    const metrics = this.metrics || {};
 
     // Handle loading, running, and stopped states
     const isLoading = status.status === "loading";
@@ -130,8 +132,7 @@ class LlamaRouterCard extends Component {
     this.setText(".badge-text", displayStatus);
 
     // Header Port
-    const config = window.stateManager.get("config") || {};
-    const displayPort = config.port || status.port || 8080;
+    const displayPort = this.config?.port || rs?.port || status.port || 8080;
     const titleText = isRunning ? `Llama Router : ${displayPort}` : "Llama Router";
     this.setText(".header-title-text", titleText);
 
@@ -195,8 +196,8 @@ class LlamaRouterCard extends Component {
    * Update the loaded models list display in the UI
    */
   _updateLoadedModelsList() {
-    const status = this.props.status || {};
-    const rs = this.props.routerStatus || {};
+    const status = this.status || {};
+    const rs = this.routerStatus || {};
     const modelsData = status.models || rs.models || [];
 
     const loadedModelsContainer = this.$(".loaded-models-list");
@@ -240,8 +241,8 @@ class LlamaRouterCard extends Component {
 
   _updateDetailedMetrics() {
     if (!this._el) return;
-    const m = this.props.metrics || {};
-    const status = this.props.status || {};
+    const m = this.metrics || {};
+    const status = this.status || {};
     const modelsData = status.models || [];
 
     // Get server config from loaded model's args (if available)
@@ -293,7 +294,19 @@ class LlamaRouterCard extends Component {
   _updatePresetSelect() {
     const select = this.$("#preset-select");
     if (!select) return;
-    const presets = this.props.presets || [];
+
+    let presets = this.presets || [];
+
+    // Ensure presets is an array
+    if (!Array.isArray(presets)) {
+      console.error("[LlamaRouterCard] presets is not an array:", {
+        type: typeof presets,
+        isArray: Array.isArray(presets),
+        keys: Object.keys(presets || {})
+      });
+      presets = [];
+    }
+
     const currentVal = this.selectedPreset;
 
     // Log for debugging

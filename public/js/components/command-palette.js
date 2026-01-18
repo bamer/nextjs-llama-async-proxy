@@ -14,6 +14,7 @@ class CommandPalette extends Component {
     this.filteredCommands = [...this.commands];
     this.selectedIndex = 0;
     this.query = "";
+    this.routerStatus = "unknown";
   }
 
   /**
@@ -63,10 +64,15 @@ class CommandPalette extends Component {
     ];
   }
 
-  _routerStatus() {
-    const status = stateManager.get("routerStatus") || "unknown";
-    ToastManager.info(`Router Status: ${status}`, 3000);
-    console.log("[CommandPalette] Router status:", status);
+  async _routerStatus() {
+    try {
+      const response = await socketClient.request("router:status", {});
+      this.routerStatus = response.data?.status || "unknown";
+    } catch (e) {
+      this.routerStatus = "unknown";
+    }
+    ToastManager.info(`Router Status: ${this.routerStatus}`, 3000);
+    console.log("[CommandPalette] Router status:", this.routerStatus);
   }
 
   _clearCache() {
@@ -81,8 +87,8 @@ class CommandPalette extends Component {
 
   _exportLogs() {
     ToastManager.info("Exporting logs...", 2000);
-    // Trigger log export through state manager
-    stateManager.request("logs:export").then(() => {
+    // Trigger log export through socket
+    socketClient.request("logs:export", {}).then(() => {
       ToastManager.success("Logs exported successfully", 3000);
     }).catch((e) => {
       ToastManager.error(`Export failed: ${e.message}`, 3000);
@@ -121,7 +127,7 @@ class CommandPalette extends Component {
   }
 
   _routerAction(action) {
-    stateManager.request("llama:action", { action }).catch((e) => {
+    socketClient.request("router:action", { action }).catch((e) => {
       ToastManager.error(`Failed to ${action} router: ${e.message}`);
     });
   }
@@ -138,7 +144,7 @@ class CommandPalette extends Component {
       else ToastManager.info("Use Models page to scan", 2000);
       break;
     case "reload":
-      stateManager.getModels().then(() => {
+      socketClient.request("models:list", {}).then(() => {
         ToastManager.success("Models reloaded", 2000);
       }).catch((e) => {
         ToastManager.error(`Failed: ${e.message}`, 3000);
@@ -150,7 +156,7 @@ class CommandPalette extends Component {
       else ToastManager.info("Use Models page to load", 2000);
       break;
     case "unloadAll":
-      stateManager.request("models:unloadAll").then(() => {
+      socketClient.request("models:unloadAll", {}).then(() => {
         ToastManager.success("All models unloaded", 2000);
       }).catch((e) => {
         ToastManager.error(`Failed: ${e.message}`, 3000);
@@ -158,7 +164,7 @@ class CommandPalette extends Component {
       break;
     case "scanPresets":
     case "reloadPresets":
-      stateManager.getPresets().then(() => {
+      socketClient.request("presets:list", {}).then(() => {
         ToastManager.success("Presets reloaded", 2000);
       }).catch((e) => {
         ToastManager.error(`Failed: ${e.message}`, 3000);

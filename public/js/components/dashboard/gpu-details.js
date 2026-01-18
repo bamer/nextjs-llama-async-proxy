@@ -12,31 +12,42 @@ class GpuDetails extends Component {
     super(props);
     this.gpuList = props.gpuList || [];
     this.expanded = false;
-    this.unsubscriber = null;
+    this.unsubscribers = [];
     this.loading = true; // Add loading state
   }
 
   /**
-   * Called after component is mounted to DOM. Subscribes to metrics state changes.
+   * Called after component is mounted to DOM. Subscribes to metrics socket broadcasts.
    */
   onMount() {
-    // Subscribe to metrics changes to update GPU list
-    this.unsubscriber = stateManager.subscribe("metrics", (metrics) => {
-      const newList = metrics?.gpu?.list || [];
-      // Use reference comparison instead of JSON.stringify (performance)
-      // Also check length to handle edge cases
-      const hasNewData = newList.length > 0 && newList !== this.gpuList;
-      const shouldUpdate = hasNewData || (newList.length !== (this.gpuList?.length || 0));
-
-      if (shouldUpdate) {
-        this.gpuList = newList;
-        this._updateGPUUI();
-      }
-    });
+    // Subscribe to socket broadcasts instead of stateManager
+    this.unsubscribers.push(
+      socketClient.on("metrics:updated", this._onMetricsUpdated.bind(this))
+    );
 
     // If we have GPU data already from props, update UI immediately
     if (this.gpuList && this.gpuList.length > 0) {
       console.log("[GpuDetails] onMount - GPU data available, updating UI:", this.gpuList.length);
+      this.loading = false;
+      this._updateGPUUI();
+    }
+  }
+
+  /**
+   * Handle metrics:updated broadcast from socket
+   */
+  _onMetricsUpdated(data) {
+    const metrics = data?.metrics || {};
+    const newList = metrics?.gpu?.list || [];
+
+    // Use reference comparison instead of JSON.stringify (performance)
+    // Also check length to handle edge cases
+    const hasNewData = newList.length > 0 && newList !== this.gpuList;
+    const shouldUpdate = hasNewData || (newList.length !== (this.gpuList?.length || 0));
+
+    if (shouldUpdate) {
+      this.gpuList = newList;
+      this.loading = false;
       this._updateGPUUI();
     }
   }
@@ -45,7 +56,10 @@ class GpuDetails extends Component {
    * Cleans up subscriptions when component is destroyed.
    */
   destroy() {
-    this.unsubscriber?.();
+    if (this.unsubscribers) {
+      this.unsubscribers.forEach(unsub => unsub());
+      this.unsubscribers = [];
+    }
   }
 
   /**
@@ -99,10 +113,25 @@ class GpuDetails extends Component {
     const noDataEl = this._el.querySelector(".gpu-no-data");
     const headerEl = this._el.querySelector(".gpu-header");
 
+    if (this.loading) {
+      // Still loading, show loading state
+      if (!noDataEl) {
+        const loadingHtml = `<p class="gpu-loading">Loading GPU info...</p>`;
+        this._el.innerHTML = loadingHtml;
+      }
+      return;
+    }
+
     if (this.gpuList && this.gpuList.length > 0) {
       // GPUs detected - replace "No GPU detected" with actual content
       if (noDataEl) {
         noDataEl.remove();
+      }
+
+      // Remove loading state if present
+      const loadingEl = this._el.querySelector(".gpu-loading");
+      if (loadingEl) {
+        loadingEl.remove();
       }
 
       // Create header if it doesn't exist
@@ -182,10 +211,26 @@ class GpuDetails extends Component {
   }
 
   /**
+   * Update GPU data from parent component
+   * @param {Array} gpuList - New GPU list data
+   */
+  updateGpuList(gpuList) {
+    if (gpuList && gpuList !== this.gpuList) {
+      this.gpuList = gpuList;
+      this.loading = false;
+      this._updateGPUUI();
+    }
+  }
+
+  /**
    * Renders the GPU details component showing GPU devices or "No GPU detected" message.
    * @returns {string} HTML string containing the GPU details section.
    */
   render() {
+    if (this.loading) {
+      return `<div class="gpu-details"><p class="gpu-loading">Loading GPU info...</p></div>`;
+    }
+
     if (!this.gpuList || this.gpuList.length === 0) {
       return "<div class=\"gpu-details\"><p class=\"gpu-no-data\">No GPU detected</p></div>";
     }

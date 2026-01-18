@@ -67,51 +67,45 @@
 
       if (typeof socketClient !== "undefined") {
         socketClient.connect();
-        console.log("[App] Socket.IO connected");
+        console.log("[App] Socket.IO connecting...");
       }
 
-      if (typeof stateManager !== "undefined") {
-        stateManager.init(socketClient);
-        window.stateLlamaServer = new window.StateLlamaServer(stateManager.core, stateManager.socket);
-        console.log("[App] State manager initialized");
+      // Capture console logs and send to server
+      /*
+      const origLog = console.log;
+      const origWarn = console.warn;
+      const origError = console.error;
 
-        // Capture console logs and send to server (after stateManager is initialized)
-        /*
-        const origLog = console.log;
-        const origWarn = console.warn;
-        const origError = console.error;
+      let isInternalLog = false;
 
-        let isInternalLog = false;
-
-        function sendToServer(level, args) {
-          if (isInternalLog) return; // Prevent infinite loop
-          if (socketClient?.isConnected) {
-            try {
-              const msg = args.map(a => {
-                if (typeof a === "object") {
-                  try { return JSON.stringify(a); } catch(e) { return "[Complex Object]"; }
-                }
-                return String(a);
-              }).join(" ");
-
-              if (msg.length > 0 && msg.length < 5000 && !msg.includes("logs:entry")) {
-                isInternalLog = true;
-                socketClient.emit("logs:entry", {
-                  entry: { level, message: msg, source: "client", timestamp: Date.now() }
-                });
-                isInternalLog = false;
+      function sendToServer(level, args) {
+        if (isInternalLog) return; // Prevent infinite loop
+        if (socketClient?.isConnected) {
+          try {
+            const msg = args.map(a => {
+              if (typeof a === "object") {
+                try { return JSON.stringify(a); } catch(e) { return "[Complex Object]"; }
               }
-            } catch (e) {
+              return String(a);
+            }).join(" ");
+
+            if (msg.length > 0 && msg.length < 5000 && !msg.includes("logs:entry")) {
+              isInternalLog = true;
+              socketClient.emit("logs:entry", {
+                entry: { level, message: msg, source: "client", timestamp: Date.now() }
+              });
               isInternalLog = false;
             }
+          } catch (e) {
+            isInternalLog = false;
           }
         }
-
-        console.log = (...a) => { origLog.apply(console, a); sendToServer("debug", a); };
-        console.warn = (...a) => { origWarn.apply(console, a); sendToServer("warn", a); };
-        console.error = (...a) => { origError.apply(console, a); sendToServer("error", a); };
-        */
       }
+
+      console.log = (...a) => { origLog.apply(console, a); sendToServer("debug", a); };
+      console.warn = (...a) => { origWarn.apply(console, a); sendToServer("warn", a); };
+      console.error = (...a) => { origError.apply(console, a); sendToServer("error", a); };
+      */
 
       console.log("[App] Services initialized successfully");
     } catch (e) {

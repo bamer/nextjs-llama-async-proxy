@@ -20,6 +20,12 @@ class ModelsPage extends Component {
     this.scanProgress = "";
     this.loadingModels = new Set(); // Track models being loaded/unloaded
     this.unsubscribers = []; // State subscriptions cleanup
+
+    // Local state for config and router status (replaced stateManager.get())
+    this.config = {};
+    this.routerStatus = { status: "not_running" };
+    this.port = 8080;
+
     console.log("[MODELS] Initialized with", this.models.length, "models");
   }
 
@@ -28,10 +34,8 @@ class ModelsPage extends Component {
     const filtered = this._getFiltered();
     console.log("[MODELS] Filtered models:", filtered.length);
 
-    const config = stateManager.get("config") || {};
-    const port = config.llama_server_port || 8080;
-    const routerStatus = stateManager.get("routerStatus") || {};
-    const routerRunning = routerStatus?.status === "running";
+    const routerRunning = this.routerStatus?.status === "running";
+    const port = this.port;
 
     const rows = filtered
       .map((m) => this._renderRow(m))
@@ -238,22 +242,78 @@ class ModelsPage extends Component {
       this._updateTable();
     });
 
-    this.on("click", "[data-action=scan]", () => {
-      stateManager.emit("models:scan", { path: this._getCurrentPath() });
+    this.on("click", "[data-action=scan]", async () => {
+      if (this.scanning) return;
+      this.scanning = true;
+      this._updateScanningUI();
+
+      try {
+        const response = await socketClient.request("models:scan", { path: this._getCurrentPath() });
+        if (response.success) {
+          console.log("[MODELS] Scan completed:", response.data);
+        } else {
+          showNotification("Scan failed: " + (response.error?.message || "Unknown error"), "error");
+        }
+      } catch (error) {
+        console.error("[MODELS] Scan error:", error);
+        showNotification("Scan failed: " + error.message, "error");
+      } finally {
+        this.scanning = false;
+        this.scanProgress = "";
+        this._updateScanningUI();
+      }
     });
 
-    this.on("click", "[data-action=cleanup]", () => {
-      stateManager.emit("models:cleanup", {});
+    this.on("click", "[data-action=cleanup]", async () => {
+      try {
+        const response = await socketClient.request("models:cleanup", {});
+        if (response.success) {
+          showNotification("Cleanup completed", "success");
+        } else {
+          showNotification("Cleanup failed: " + (response.error?.message || "Unknown error"), "error");
+        }
+      } catch (error) {
+        console.error("[MODELS] Cleanup error:", error);
+        showNotification("Cleanup failed: " + error.message, "error");
+      }
     });
 
-    this.on("click", "[data-action=load]", (e) => {
-      const modelId = e.target.closest("[data-action=load]").dataset.name;
-      stateManager.emit("models:load", { modelId });
+    this.on("click", "[data-action=load]", async (e) => {
+      const modelName = e.target.closest("[data-action=load]").dataset.name;
+      this._setModelLoading(modelName, true);
+
+      try {
+        const response = await socketClient.request("models:load", { modelName });
+        if (response.success) {
+          showNotification("Model loaded successfully", "success");
+        } else {
+          showNotification("Failed to load model: " + (response.error?.message || "Unknown error"), "error");
+        }
+      } catch (error) {
+        console.error("[MODELS] Load error:", error);
+        showNotification("Failed to load model: " + error.message, "error");
+      } finally {
+        this._setModelLoading(modelName, false);
+      }
     });
 
-    this.on("click", "[data-action=unload]", (e) => {
-      const modelId = e.target.closest("[data-action=unload]").dataset.name;
-      stateManager.emit("models:unload", { modelId });
+    this.on("click", "[data-action=unload]", async (e) => {
+      const modelName = e.target.closest("[data-action=unload]").dataset.name;
+      this._setModelLoading(modelName, true);
+
+      try {
+        const response = await socketClient.request("models:unload", { modelName });
+        if (response.success) {
+          showNotification("Model unloaded successfully", "success");
+        } else {
+          showNotification("Failed to unload model: " + (response.error?.message || "Unknown error"), "error");
+        }
+      } catch (error) {
+        console.error("[MODELS] Unload error:", error);
+        showNotification("Failed to unload model: " + error.message, "error");
+      } finally {
+        this._setModelLoading(modelName, false);
+      }
     });
 
     this.on("input", "[data-field=search]", (e) => {
@@ -275,66 +335,34 @@ class ModelsPage extends Component {
   }
 
   /**
-   * Handle model list changes from state manager.
-   * @param {Array} models - Updated model list
+   * Handle model list changes from socket broadcast.
+   * @param {Array} data - Updated model list data
    */
-  _onModelsChange(models) {
+  _onModelsUpdated(data) {
+    const models = data?.models || [];
     if (JSON.stringify(models) !== JSON.stringify(this.models)) {
-      this.models = models || [];
+      this.models = models;
       this._updateModelListUI();
     }
   }
 
   /**
-   * Handle scan action status changes.
-   * @param {Object} action - Action status object with status and message
+   * Handle router status changes from socket broadcast.
+   * @param {Object} data - Router status data
    */
-  _onScanAction(action) {
-    this.scanning = action.status === "scanning";
-    this.scanProgress = action.message || "";
-    this._updateScanningUI();
+  _onRouterStatusUpdate(data) {
+    this.routerStatus = data || {};
+    this._updateRouterUI();
   }
 
   /**
-   * Handle model load/unload action status changes.
-   * @param {Object} action - Action status object with status, modelId, and optional error
+   * Handle config changes from socket broadcast.
+   * @param {Object} data - Config data
    */
-  _onLoadAction(action) {
-    if (action.status === "loading") {
-      this._setModelLoading(action.modelId, true);
-    } else {
-      this._setModelLoading(action.modelId, false);
-      if (action.status === "error") {
-        showNotification(`Failed to load model: ${action.error}`, "error");
-      } else if (action.status === "success") {
-        showNotification("Model loaded successfully", "success");
-      }
-    }
-  }
-
-  /**
-   * Handle model unload action status changes.
-   * @param {Object} action - Action status object with status and modelId
-   */
-  _onUnloadAction(action) {
-    this._setModelLoading(action.modelId, false);
-    if (action.status === "success") {
-      showNotification("Model unloaded successfully", "success");
-    } else if (action.status === "error") {
-      showNotification(`Failed to unload model: ${action.error}`, "error");
-    }
-  }
-
-  /**
-   * Handle model delete action status changes.
-   * @param {Object} action - Action status object with status and optional error
-   */
-  _onDeleteAction(action) {
-    if (action.status === "error") {
-      showNotification(`Failed to delete model: ${action.error}`, "error");
-    } else if (action.status === "success") {
-      showNotification("Model deleted successfully", "success");
-    }
+  _onConfigUpdate(data) {
+    this.config = data || {};
+    this.port = this.config.llama_server_port || 8080;
+    this._updateRouterUI();
   }
 
   /**
@@ -369,6 +397,18 @@ class ModelsPage extends Component {
       } else if (progressEl) {
         progressEl.remove();
       }
+    }
+  }
+
+  /**
+   * Update router status UI.
+   */
+  _updateRouterUI() {
+    const indicator = this.$(".router-indicator");
+    if (indicator) {
+      const routerRunning = this.routerStatus?.status === "running";
+      indicator.className = `router-indicator ${routerRunning ? "success" : "default"}`;
+      indicator.textContent = `Router ${routerRunning ? "Active" : "Not Running"} (${this.port})`;
     }
   }
 
@@ -439,22 +479,55 @@ class ModelsPage extends Component {
 
   /**
    * Called after component is mounted to DOM.
-   * Sets up state subscriptions for event-driven updates.
+   * Sets up socket subscriptions for event-driven updates.
    */
-  onMount() {
+  async onMount() {
     console.log("[MODELS] onMount");
 
-    // Subscribe to state changes
+    // Load initial config and router status
+    try {
+      const [configResponse, routerResponse] = await Promise.all([
+        socketClient.request("config:get", {}),
+        socketClient.request("router:status", {}),
+      ]);
+
+      if (configResponse.success && configResponse.data?.config) {
+        this.config = configResponse.data.config;
+        this.port = this.config.llama_server_port || 8080;
+      }
+
+      if (routerResponse.success && routerResponse.data) {
+        this.routerStatus = routerResponse.data;
+      }
+    } catch (error) {
+      console.error("[MODELS] Failed to load initial config/router status:", error);
+    }
+
+    // Subscribe to socket broadcasts (replaced stateManager.subscribe())
     this.unsubscribers.push(
-      stateManager.subscribe("models", this._onModelsChange.bind(this)),
-      stateManager.subscribeAction("models:scan", this._onScanAction.bind(this)),
-      stateManager.subscribeAction("models:load", this._onLoadAction.bind(this)),
-      stateManager.subscribeAction("models:unload", this._onUnloadAction.bind(this)),
-      stateManager.subscribeAction("models:delete", this._onDeleteAction.bind(this))
+      socketClient.on("models:updated", this._onModelsUpdated.bind(this)),
+      socketClient.on("router:status", this._onRouterStatusUpdate.bind(this)),
+      socketClient.on("config:updated", this._onConfigUpdate.bind(this))
     );
 
-    // Trigger initial model load
-    stateManager.emit("models:load");
+    // Load initial model list
+    this._loadModelList();
+  }
+
+  /**
+   * Load the model list from the server.
+   */
+  async _loadModelList() {
+    try {
+      const response = await socketClient.request("models:list", {});
+      if (response.success && response.data) {
+        this.models = response.data.models || [];
+        this._updateModelListUI();
+      }
+    } catch (error) {
+      console.error("[MODELS] Failed to load models:", error);
+      showNotification("Failed to load models: " + error.message, "error");
+    }
   }
 
   /**

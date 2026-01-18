@@ -1,16 +1,21 @@
 /**
- * Logs Page - Event-Driven DOM Updates
+ * Logs Page - Socket-First Architecture
+ *
+ * Socket contracts:
+ * - logs:get           GET log entries
+ * - logs:clear         CLEAR all logs
+ * - logs:updated       [BROADCAST] Logs changed
+ * - logs:cleared       [BROADCAST] Logs cleared
  */
 
 class LogsController {
   constructor(options = {}) {
     this.router = options.router || window.router;
     this.comp = null;
-    this.unsubscriber = null;
   }
 
   willUnmount() {
-    this.unsubscriber?.();
+    this.comp?.destroy();
   }
 
   destroy() {
@@ -18,21 +23,22 @@ class LogsController {
   }
 
   async render() {
-    console.log("[DEBUG] LogsController.render() called");
+    console.log("[DEBUG] LogsController.render() - loading logs...");
 
+    // Load initial logs from socket
+    let logs = [];
     try {
-      const d = await stateManager.readLogFile();
-      stateManager.set("logs", d.logs || []);
-    } catch (e) {
-      try {
-        const d = await stateManager.getLogs({ limit: 100 });
-        stateManager.set("logs", d.logs || []);
-      } catch (e2) {
-        stateManager.set("logs", []);
+      const response = await socketClient.request("logs:get", { limit: 100 });
+
+      if (response.success) {
+        logs = response.data.logs || [];
+      } else {
+        console.error("[LogsController] Failed to load logs:", response.error);
       }
+    } catch (error) {
+      console.error("[LogsController] Load error:", error);
     }
 
-    const logs = stateManager.get("logs") || [];
     this.comp = new LogsPage({ logs });
     this.comp._controller = this;
 
@@ -55,17 +61,34 @@ class LogsPage extends Component {
     super(props);
     this.logs = props.logs || [];
     this.filters = { level: "all", search: "" };
+    this.unsubscribers = [];
   }
 
   onMount() {
-    this._controller.unsubscriber = stateManager.subscribe("logs", (logs) => {
-      this.logs = logs || [];
-      this._updateLogs();
-    });
+    console.log("[DEBUG] LogsPage.onMount() - subscribing to broadcasts");
+
+    // Listen to socket broadcasts for updates
+    this.unsubscribers.push(
+      socketClient.on("logs:updated", (data) => {
+        console.log("[DEBUG] logs:updated broadcast received");
+        this.logs = Array.isArray(data?.logs) ? data.logs : [];
+        this._updateLogs();
+      })
+    );
+
+    this.unsubscribers.push(
+      socketClient.on("logs:cleared", () => {
+        console.log("[DEBUG] logs:cleared broadcast received");
+        this.logs = [];
+        this._updateLogs();
+      })
+    );
   }
 
   destroy() {
-    this._controller.unsubscriber?.();
+    console.log("[DEBUG] LogsPage.destroy() - cleanup");
+    this.unsubscribers.forEach((unsub) => unsub?.());
+    this.unsubscribers = [];
   }
 
   bindEvents() {
@@ -81,26 +104,48 @@ class LogsPage extends Component {
 
     this.on("click", "[data-action=clear]", () => {
       if (confirm("Clear all logs?")) {
-        Promise.all([
-          stateManager.clearLogs().catch(() => {}),
-          stateManager.clearLogFiles().catch(() => {}),
-        ]).then(() => {
-          this.logs = [];
-          stateManager.set("logs", []);
-          showNotification("Logs cleared", "success");
-        });
+        this._clearLogs();
       }
     });
 
     this.on("click", "[data-action=export]", () => {
-      const d = JSON.stringify(this.logs, null, 2);
-      const b = new Blob([d], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(b);
-      a.download = `logs-${new Date().toISOString()}.json`;
-      a.click();
-      showNotification("Logs exported", "success");
+      this._exportLogs();
     });
+  }
+
+  async _clearLogs() {
+    try {
+      console.log("[DEBUG] Clearing logs");
+
+      const response = await socketClient.request("logs:clear", {});
+
+      if (response.success) {
+        showNotification("Logs cleared", "success");
+        // Server broadcasts logs:cleared
+      } else {
+        showNotification(`Failed: ${response.error}`, "error");
+      }
+    } catch (error) {
+      console.error("[LogsPage] Clear failed:", error);
+      showNotification(`Error: ${error.message}`, "error");
+    }
+  }
+
+  _exportLogs() {
+    try {
+      const data = JSON.stringify(this.logs, null, 2);
+      const blob = new Blob([data], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `logs-${new Date().toISOString()}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      showNotification("Logs exported", "success");
+    } catch (error) {
+      console.error("[LogsPage] Export failed:", error);
+      showNotification("Export failed", "error");
+    }
   }
 
   /**
@@ -108,7 +153,16 @@ class LogsPage extends Component {
    * @returns {Array} Filtered array of log entries
    */
   _getFiltered() {
-    let ls = [...(this.logs || [])];
+    // Ensure logs is always an array
+    let logsArray = [];
+    if (Array.isArray(this.logs)) {
+      logsArray = this.logs;
+    } else if (this.logs && typeof this.logs === "object") {
+      // Convert object to array if needed
+      logsArray = Object.values(this.logs);
+    }
+
+    let ls = [...logsArray];
 
     if (this.filters.level && this.filters.level !== "all") {
       ls = ls.filter((l) => l.level === this.filters.level);
@@ -143,15 +197,14 @@ class LogsPage extends Component {
 
     if (filtered.length === 0) {
       container.innerHTML = "<p class=\"empty\">No logs found</p>";
-      return;
+    } else {
+      container.innerHTML = visibleLogs
+        .map(
+          (l) =>
+            `<div class="log-entry level-${l.level || "info"}"><span class="log-time">${this._time(l.timestamp)}</span><span class="log-level">${(l.level || "info").toUpperCase()}</span><span class="log-msg">${String(l.message)}</span></div>`
+        )
+        .join("");
     }
-
-    container.innerHTML = visibleLogs
-      .map(
-        (l) =>
-          `<div class="log-entry level-${l.level || "info"}"><span class="log-time">${this._time(l.timestamp)}</span><span class="log-level">${(l.level || "info").toUpperCase()}</span><span class="log-msg">${String(l.message)}</span></div>`
-      )
-      .join("");
 
     const toolbar = this.$(".toolbar h2");
     if (toolbar) {
@@ -180,15 +233,15 @@ class LogsPage extends Component {
         </div>
         <div class="logs-container">
           ${
-  filtered.length === 0
-    ? "<p class=\"empty\">No logs found</p>"
-    : visibleLogs
-      .map(
-        (l) =>
-          `<div class="log-entry level-${l.level || "info"}"><span class="log-time">${this._time(l.timestamp)}</span><span class="log-level">${(l.level || "info").toUpperCase()}</span><span class="log-msg">${String(l.message)}</span></div>`
-      )
-      .join("")
-}
+            filtered.length === 0
+              ? "<p class=\"empty\">No logs found</p>"
+              : visibleLogs
+                .map(
+                  (l) =>
+                    `<div class="log-entry level-${l.level || "info"}"><span class="log-time">${this._time(l.timestamp)}</span><span class="log-level">${(l.level || "info").toUpperCase()}</span><span class="log-msg">${String(l.message)}</span></div>`
+                )
+                .join("")
+          }
         </div>
       </div>
     `;

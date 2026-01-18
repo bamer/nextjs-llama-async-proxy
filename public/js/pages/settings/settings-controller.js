@@ -1,6 +1,6 @@
 /**
  * Settings Controller
- * Event-driven controller using state subscriptions instead of polling
+ * Event-driven controller using direct socket calls
  */
 
 class SettingsController {
@@ -8,60 +8,11 @@ class SettingsController {
     this.router = options.router || window.router;
     this.comp = null;
     this.unsubscribers = [];
-    this.statusUnsubscribers = []; // Separate cleanup for status subscriptions
-  }
-
-  /**
-   * Clean up all status subscriptions.
-   */
-  _cleanupStatusSubscriptions() {
-    this.statusUnsubscribers.forEach((unsub) => {
-      try {
-        if (typeof unsub === "function") unsub();
-      } catch (e) {
-        console.warn("[SETTINGS] Error cleaning up status subscription:", e);
-      }
-    });
-    this.statusUnsubscribers = [];
-  }
-
-  init() {
-    // Clean up any existing status subscriptions first
-    this._cleanupStatusSubscriptions();
-
-    // NEW: Listen for action events
-    this.unsubscribers.push(
-      stateManager.subscribe("action:settings:save", (state) => this._handleSave(state.data)),
-      stateManager.subscribe("action:settings:reset", () => this._handleReset()),
-      stateManager.subscribe("action:router:start", () => this._handleRouterStart()),
-      stateManager.subscribe("action:router:start-with-preset", (state) => this._handleRouterStartWithPreset(state?.data)),
-      stateManager.subscribe("action:router:restart", () => this._handleRouterRestart()),
-      stateManager.subscribe("action:router:stop", () => this._handleRouterStop()),
-      stateManager.subscribe("action:config:import", (state) => this._handleImport(state.data)),
-      stateManager.subscribe("action:config:export", () => this._handleExport())
-    );
-
-    // Subscribe to router status updates
-    this.statusUnsubscribers.push(
-      stateManager.subscribe("llamaStatus", (status) => {
-        stateManager.set("llamaServerStatus", status);
-      })
-    );
-
-    // Subscribe to router status updates
-    this.statusUnsubscribers.push(
-      stateManager.subscribe("routerStatus", (rs) => {
-        stateManager.set("routerStatus", rs);
-      })
-    );
   }
 
   willUnmount() {
-    if (this.unsubscribers) {
-      this.unsubscribers.forEach((unsub) => unsub());
-      this.unsubscribers = [];
-    }
-    this._cleanupStatusSubscriptions();
+    this.unsubscribers.forEach((unsub) => unsub());
+    this.unsubscribers = [];
   }
 
   destroy() {
@@ -81,15 +32,10 @@ class SettingsController {
 
     this.comp.didMount && this.comp.didMount();
 
-    this.init();
-
     // Load data in background (non-blocking)
     this._loadCriticalData().catch(e => {
       console.warn("[SETTINGS] Background data load failed:", e.message);
     });
-
-    // Load optional data in background
-    this._loadOptionalData();
 
     return el;
   }
@@ -99,367 +45,242 @@ class SettingsController {
    * @returns {Promise<void>}
    */
   async _loadCriticalData() {
-    console.log("[SETTINGS] Loading critical data...");
+    console.log("[SETTINGS] Loading critical config data via socket...");
+
     try {
-      // Load router config
-      const routerPromise = stateManager.getRouterConfig().then(r => {
-        console.log("[SETTINGS] Router config response received:", !!r);
-        const config = r?.config || {};
-        stateManager.set("routerConfig", config);
-        console.log("[SETTINGS] Router config loaded, keys:", Object.keys(config));
-      }).catch(e => {
-        console.error("[SETTINGS] Router config load error:", e.message);
-        stateManager.set("routerConfig", {});
-      });
+      const [routerConfig, loggingConfig, llamaStatus, presets] = await Promise.all([
+        socketClient.request("routerConfig:get", {}).then(r => r.success ? r.data.config : null),
+        socketClient.request("loggingConfig:get", {}).then(r => r.success ? r.data.config : null),
+        socketClient.request("llama:status", {}).then(r => r.success ? r.data : null),
+        socketClient.request("presets:list", {}).then(r => r.success ? r.data.presets : [])
+      ]);
 
-      // Load logging config
-      const loggingPromise = stateManager.getLoggingConfig().then(l => {
-        console.log("[SETTINGS] Logging config response received:", !!l);
-        const config = l?.config || {};
-        stateManager.set("loggingConfig", config);
-        console.log("[SETTINGS] Logging config loaded, keys:", Object.keys(config));
-      }).catch(e => {
-        console.error("[SETTINGS] Logging config load error:", e.message);
-        stateManager.set("loggingConfig", {});
-      });
+      // Update component with loaded data
+      if (this.comp) {
+        if (routerConfig) {
+          this.comp.routerConfig = routerConfig;
+          this.comp._updateRouterConfigUI();
+        }
+        if (loggingConfig) {
+          this.comp.logLevel = loggingConfig.logLevel || this.comp.logLevel;
+          this.comp.maxFileSize = loggingConfig.maxFileSize || this.comp.maxFileSize;
+          this.comp.maxFiles = loggingConfig.maxFiles || this.comp.maxFiles;
+          this.comp.enableFileLogging = loggingConfig.enableFileLogging !== false;
+          this.comp.enableDatabaseLogging = loggingConfig.enableDatabaseLogging !== false;
+          this.comp.enableConsoleLogging = loggingConfig.enableConsoleLogging !== false;
+          this.comp._updateLoggingConfigUI();
+        }
+        if (llamaStatus) {
+          this.comp.llamaStatus = llamaStatus;
+          this.comp.routerStatus = llamaStatus;
+          this.comp._updateStatusUI();
+        }
+        if (presets.length > 0) {
+          this.comp.presets = presets;
+          this.comp._updatePresetsDropdown();
+        }
+      }
 
-      await Promise.all([routerPromise, loggingPromise]);
-      console.log("[SETTINGS] All data loaded successfully");
+      console.log("[SETTINGS] Critical data loaded");
     } catch (e) {
-      console.error("[SETTINGS] Data load failed:", e.message);
+      console.error("[SETTINGS] Failed to load critical data:", e);
     }
   }
 
   /**
-   * Load optional data - doesn't block initial render.
+   * Save settings via direct socket call (public wrapper)
    */
-  _loadOptionalData() {
-    Promise.all([
-      stateManager.getLlamaStatus().catch(() => null),
-      stateManager.request("presets:list").catch(() => []),
-    ])
-      .then(([status, presets]) => {
-        stateManager.set("llamaStatus", status?.status || null);
-        stateManager.set("presets", presets?.presets || []);
-      })
-      .catch((e) => {
-        console.warn("[SETTINGS] Optional data load failed:", e.message);
-      });
+  async handleSave(data) {
+    return this._handleSave(data);
   }
 
   /**
-   * Handle settings save action.
-   * @param {Object} data - Data containing router config and logging config
+   * Save settings via direct socket call
    */
   async _handleSave(data) {
-    console.log("[SETTINGS] _handleSave called with:", data ? "data present" : "no data");
-    const { routerConfig, loggingConfig } = data;
+    console.log("[SETTINGS] Saving settings via socket...", data);
 
     try {
-      stateManager.setActionStatus("settings:save", { status: "saving" });
-      console.log("[SETTINGS] Saving routerConfig:", JSON.stringify(routerConfig, null, 2));
-      console.log("[SETTINGS] Saving loggingConfig:", JSON.stringify(loggingConfig, null, 2));
+      const [routerResult, loggingResult] = await Promise.all([
+        socketClient.request("routerConfig:update", { config: data.routerConfig }),
+        socketClient.request("loggingConfig:update", { config: data.loggingConfig })
+      ]);
 
-      // Save router config (all fields including paths, network, behavior, inference)
-      const routerResult = await stateManager.updateRouterConfig(routerConfig);
-      console.log("[SETTINGS] Router config saved:", routerResult?.success);
-
-      // Save logging config
-      const loggingResult = await stateManager.updateLoggingConfig(loggingConfig);
-      console.log("[SETTINGS] Logging config saved:", loggingResult?.success);
-
-      // Update local state with the saved configs
-      stateManager.set("routerConfig", routerConfig);
-      stateManager.set("loggingConfig", loggingConfig);
-
-      stateManager.setActionStatus("settings:save", { status: "complete" });
-      showNotification("All settings saved successfully", "success");
-    } catch (error) {
-      console.error("[SETTINGS] Save error:", error.message);
-      stateManager.setActionStatus("settings:save", {
-        status: "error",
-        error: error.message,
-      });
-      showNotification(`Failed to save settings: ${error.message}`, "error");
+      if (routerResult.success && loggingResult.success) {
+        showNotification("Settings saved successfully", "success");
+        if (this.comp) {
+          this.comp.routerConfig = { ...this.comp.routerConfig, ...data.routerConfig };
+          this.comp.loggingConfig = { ...this.comp.loggingConfig, ...data.loggingConfig };
+          this.comp._localRouterChanges = {};
+          this.comp._localLoggingChanges = {};
+        }
+      } else {
+        const errors = [];
+        if (!routerResult.success) errors.push(routerResult.error);
+        if (!loggingResult.success) errors.push(loggingResult.error);
+        showNotification("Save failed: " + errors.join(", "), "error");
+      }
+    } catch (e) {
+      console.error("[SETTINGS] Save error:", e);
+      showNotification("Save error: " + e.message, "error");
     }
   }
 
   /**
-   * Handle settings reset action.
+   * Reset settings to defaults
    */
   async _handleReset() {
+    console.log("[SETTINGS] Resetting settings to defaults...");
+
     try {
-      stateManager.setActionStatus("settings:reset", { status: "resetting" });
+      const [routerResult, loggingResult] = await Promise.all([
+        socketClient.request("routerConfig:reset", {}),
+        socketClient.request("loggingConfig:reset", {})
+      ]);
 
-      const routerConfig = await stateManager.resetRouterConfig();
-      const loggingConfig = await stateManager.resetLoggingConfig();
+      if (routerResult.success && loggingResult.success) {
+        const routerConfig = routerResult.data?.config || {};
+        const loggingConfig = loggingResult.data?.config || {};
 
-      stateManager.set("routerConfig", routerConfig);
-      stateManager.set("loggingConfig", loggingConfig);
+        showNotification("Settings reset to defaults", "success");
 
-      stateManager.setActionStatus("settings:reset", { status: "complete" });
-      showNotification("Settings reset to defaults", "success");
-    } catch (error) {
-      stateManager.setActionStatus("settings:reset", {
-        status: "error",
-        error: error.message,
-      });
-    }
-  }
-
-  /**
-   * Handle router restart action.
-   */
-  async _handleRouterRestart() {
-    try {
-      stateManager.setActionStatus("router:restart", { status: "restarting" });
-
-      await stateManager.restartLlama();
-
-      stateManager.setActionStatus("router:restart", { status: "complete" });
-      showNotification("Router restarted successfully", "success");
-    } catch (error) {
-      stateManager.setActionStatus("router:restart", {
-        status: "error",
-        error: error.message,
-      });
-      showNotification(`Failed to restart router: ${error.message}`, "error");
-    }
-  }
-
-  /**
-   * Handle router start action.
-   */
-  async _handleRouterStart() { console.log("[DEBUG] _handleRouterStart called");
-    try {
-      stateManager.setActionStatus("router:start", { status: "starting" });
-      console.log("[DEBUG] Calling stateManager.startLlama()");
-
-      await stateManager.startLlama();
-
-      stateManager.setActionStatus("router:start", { status: "complete" });
-      showNotification("Router started successfully", "success");
-    } catch (error) {
-      stateManager.setActionStatus("router:start", {
-        status: "error",
-        error: error.message,
-      });
-      showNotification(`Failed to start router: ${error.message}`, "error");
-    }
-  }
-
-  /**
-   * Handle router start with preset action.
-   * @param {string} presetName - Name of the preset to use
-   */
-  async _handleRouterStartWithPreset(presetName) {
-    console.log("[DEBUG] _handleRouterStartWithPreset called:", { presetName });
-    if (!presetName) {
-      showNotification("Please select a preset first", "warning");
-      return;
-    }
-    try {
-      stateManager.setActionStatus("router:start", { status: "starting" });
-      console.log("[DEBUG] Calling stateManager.startLlamaWithPreset():", presetName);
-
-      await stateManager.startLlamaWithPreset(presetName);
-
-      stateManager.setActionStatus("router:start", { status: "complete" });
-      showNotification(`Router started with preset: ${presetName}`, "success");
-    } catch (error) {
-      stateManager.setActionStatus("router:start", {
-        status: "error",
-        error: error.message,
-      });
-      showNotification(`Failed to start router with preset: ${error.message}`, "error");
-    }
-  }
-
-  /**
-   * Handle router stop action.
-   */
-  async _handleRouterStop() {
-    try {
-      stateManager.setActionStatus("router:stop", { status: "stopping" });
-
-      await stateManager.stopLlama();
-
-      stateManager.setActionStatus("router:stop", { status: "complete" });
-      showNotification("Router stopped", "success");
-    } catch (error) {
-      stateManager.setActionStatus("router:stop", {
-        status: "error",
-        error: error.message,
-      });
-    }
-  }
-
-  /**
-   * Handle config import action.
-   * @param {Object} data - Data containing router config
-   */
-  _handleImport(data) {
-    const { config } = data;
-    if (config) {
-      stateManager.set("routerConfig", config);
-      showNotification("Configuration imported", "success");
-    }
-  }
-
-  /**
-   * Handle config export action.
-   */
-  _handleExport() {
-    const routerConfig = stateManager.get("routerConfig");
-    const loggingConfig = stateManager.get("loggingConfig");
-    const data = {
-      routerConfig,
-      loggingConfig,
-      exportedAt: new Date().toISOString(),
-      version: "1.0", // Config format version for future compatibility
-    };
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `llama-proxy-settings-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  /**
-   * Handle router actions from the UI (start, stop, restart).
-   * @param {string} action - The action to perform.
-   * @returns {Promise<void>} Promise that resolves when action is complete.
-   */
-  async handleRouterAction(action) {
-    switch (action) {
-    case "start":
-      await this._start();
-      break;
-    case "stop":
-      await this._stop();
-      break;
-    case "restart":
-      await this._restart();
-      break;
-    }
-  }
-
-  /**
-   * Wait for router status change via event subscription (fully async, no polling).
-   * @param {string} targetStatus - Status to wait for (e.g., "running", "idle").
-   * @param {number} timeoutMs - Timeout in milliseconds (default: 30000).
-   * @returns {Promise<Object|null>} Router status object or null if timeout.
-   */
-  _waitForStatusChange(targetStatus, timeoutMs = 30000) {
-    return new Promise((resolve) => {
-      // Check current status first
-      const currentStatus = stateManager.get("llamaStatus");
-      if (currentStatus?.status === targetStatus) {
-        console.log("[SETTINGS] Current status is already:", targetStatus);
-        return resolve(currentStatus);
-      }
-
-      // Set up timeout
-      const timeoutId = setTimeout(() => {
-        unsubscribe();
-        console.warn("[SETTINGS] Status change timeout, still waiting for:", targetStatus);
-        resolve(null);
-      }, timeoutMs);
-
-      // Subscribe to status changes (event-driven, no polling)
-      const unsubscribe = stateManager.subscribe("llamaServerStatus", (status) => {
-        console.log("[SETTINGS] Status event received:", status?.status);
-        if (status?.status === targetStatus) {
-          clearTimeout(timeoutId);
-          unsubscribe();
-          console.log("[SETTINGS] Target status reached:", targetStatus);
-          resolve(status);
+        if (this.comp) {
+          this.comp.routerConfig = routerConfig;
+          this.comp.loggingConfig = loggingConfig;
+          this.comp._updateRouterConfigUI();
+          this.comp._updateLoggingConfigUI();
+          this.comp._localRouterChanges = {};
+          this.comp._localLoggingChanges = {};
         }
-      });
-
-      // Also track in statusUnsubscribers for cleanup
-      this.statusUnsubscribers.push(unsubscribe);
-    });
+      } else {
+        showNotification("Reset failed", "error");
+      }
+    } catch (e) {
+      console.error("[SETTINGS] Reset error:", e);
+      showNotification("Reset error: " + e.message, "error");
+    }
   }
 
   /**
-   * Start the llama router server.
-   * Uses event-driven status waiting instead of setTimeout polling.
-   * @returns {Promise<void>} Promise that resolves when server is started.
+   * Start router
    */
-  async _start() {
+  async _handleRouterStart() {
+    console.log("[SETTINGS] Starting router via socket...");
+
     try {
-      await stateManager.startLlama();
-      showNotification("Starting router...", "info");
-
-      // Wait for router to reach "running" status via event subscription
-      const status = await this._waitForStatusChange("running", 30000);
-
-      if (status) {
-        stateManager.set("llamaStatus", status);
+      const response = await socketClient.request("router:start", {});
+      if (response.success) {
         showNotification("Router started successfully", "success");
       } else {
-        showNotification("Router may have started - please refresh to verify", "warning");
+        showNotification("Failed to start router: " + response.error, "error");
       }
     } catch (e) {
-      showNotification(`Failed: ${e.message}`, "error");
+      console.error("[SETTINGS] Start router error:", e);
+      showNotification("Start error: " + e.message, "error");
     }
   }
 
   /**
-   * Stop the llama router server after user confirmation.
-   * Uses event-driven status waiting instead of setTimeout polling.
-   * @returns {Promise<void>} Promise that resolves when server is stopped.
+   * Start router with preset
    */
-  async _stop() {
-    if (!confirm("Stop router?")) return;
+  async _handleRouterStartWithPreset(presetName) {
+    console.log("[SETTINGS] Starting router with preset:", presetName);
+
     try {
-      await stateManager.stopLlama();
-      showNotification("Stopping router...", "info");
-
-      // Wait for router to reach "idle" status via event subscription
-      const status = await this._waitForStatusChange("idle", 15000);
-
-      if (status) {
-        stateManager.set("llamaStatus", status);
-        stateManager.set("routerStatus", null);
-        showNotification("Router stopped successfully", "success");
+      const response = await socketClient.request("router:start-preset", { presetName });
+      if (response.success) {
+        showNotification("Router started with preset: " + presetName, "success");
       } else {
-        // Fallback to idle state if timeout
-        const idleStatus = { status: "idle", port: null };
-        stateManager.set("llamaStatus", idleStatus);
-        stateManager.set("routerStatus", null);
-        showNotification("Router stopped", "success");
+        showNotification("Failed to start router: " + response.error, "error");
       }
     } catch (e) {
-      showNotification(`Failed: ${e.message}`, "error");
+      console.error("[SETTINGS] Start with preset error:", e);
+      showNotification("Start error: " + e.message, "error");
     }
   }
 
   /**
-   * Restart the llama router server.
-   * Uses event-driven status waiting instead of setTimeout polling.
-   * @returns {Promise<void>} Promise that resolves when server is restarted.
+   * Restart router
    */
-  async _restart() {
+  async _handleRouterRestart() {
+    console.log("[SETTINGS] Restarting router via socket...");
+
     try {
-      await stateManager.restartLlama();
-      showNotification("Restarting router...", "info");
-
-      // Wait for router to reach "running" status via event subscription
-      const status = await this._waitForStatusChange("running", 30000);
-
-      if (status) {
-        stateManager.set("llamaStatus", status);
+      const response = await socketClient.request("router:restart", {});
+      if (response.success) {
         showNotification("Router restarted successfully", "success");
       } else {
-        showNotification("Router may have restarted - please refresh to verify", "warning");
+        showNotification("Failed to restart router: " + response.error, "error");
       }
     } catch (e) {
-      showNotification(`Failed: ${e.message}`, "error");
+      console.error("[SETTINGS] Restart router error:", e);
+      showNotification("Restart error: " + e.message, "error");
+    }
+  }
+
+  /**
+   * Stop router
+   */
+  async _handleRouterStop() {
+    console.log("[SETTINGS] Stopping router via socket...");
+
+    try {
+      const response = await socketClient.request("router:stop", {});
+      if (response.success) {
+        showNotification("Router stopped", "success");
+      } else {
+        showNotification("Failed to stop router: " + response.error, "error");
+      }
+    } catch (e) {
+      console.error("[SETTINGS] Stop router error:", e);
+      showNotification("Stop error: " + e.message, "error");
+    }
+  }
+
+  /**
+   * Export config
+   */
+  async _handleExport() {
+    console.log("[SETTINGS] Exporting config via socket...");
+
+    try {
+      const response = await socketClient.request("config:export", {});
+      if (response.success) {
+        const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `llama-config-${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showNotification("Configuration exported", "success");
+      } else {
+        showNotification("Export failed: " + response.error, "error");
+      }
+    } catch (e) {
+      console.error("[SETTINGS] Export error:", e);
+      showNotification("Export error: " + e.message, "error");
+    }
+  }
+
+  /**
+   * Import config
+   */
+  async _handleImport(importedConfig) {
+    console.log("[SETTINGS] Importing config via socket...", importedConfig);
+
+    try {
+      const response = await socketClient.request("config:import", importedConfig);
+      if (response.success) {
+        showNotification("Configuration imported successfully", "success");
+        // Reload config
+        this._loadCriticalData();
+      } else {
+        showNotification("Import failed: " + response.error, "error");
+      }
+    } catch (e) {
+      console.error("[SETTINGS] Import error:", e);
+      showNotification("Import error: " + e.message, "error");
     }
   }
 }

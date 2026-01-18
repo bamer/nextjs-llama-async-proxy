@@ -14,6 +14,10 @@ class ChartsSection extends Component {
     this.chartsInitialized = false;
     this.unsubscribers = [];
     this._refreshInterval = null;
+
+    // Local state for page-specific settings
+    this.chartZoomRange = null;
+    this.refreshIntervalValue = null;
   }
 
   /**
@@ -22,12 +26,10 @@ class ChartsSection extends Component {
   onMount() {
     console.log("[CHARTS-SECTION] onMount called, history available:", this.history.length);
 
-    // Subscribe to state changes
+    // Subscribe to socket broadcasts instead of stateManager
     this.unsubscribers.push(
-      stateManager.subscribe("metricsHistory", this._onHistoryChange.bind(this)),
-      stateManager.subscribe("metrics", this._onMetricsChange.bind(this)),
-      stateManager.subscribe("page:dashboard:chartZoomRange", this._onZoomChange.bind(this)),
-      stateManager.subscribe("page:dashboard:refreshInterval", this._onRefreshIntervalChange.bind(this))
+      socketClient.on("metrics:history:updated", this._onHistoryChange.bind(this)),
+      socketClient.on("metrics:updated", this._onMetricsChange.bind(this))
     );
 
     // Initialize charts if history data is already available
@@ -39,9 +41,10 @@ class ChartsSection extends Component {
     }
   }
 
-  _onHistoryChange(history) {
+  _onHistoryChange(data) {
+    const history = data?.history || [];
     if (Array.isArray(history) && history.length > 0) {
-      console.log("[CHARTS-SECTION] History updated from state:", history.length, "records");
+      console.log("[CHARTS-SECTION] History updated from socket:", history.length, "records");
       this.history = history;
       this.updateDOM();
       // Initialize charts when history data arrives if not already done
@@ -55,13 +58,15 @@ class ChartsSection extends Component {
     }
   }
 
-  _onMetricsChange(metrics) {
+  _onMetricsChange(data) {
     // Can be used for additional metrics updates if needed
-    console.log("[CHARTS-SECTION] Metrics updated from state");
+    const metrics = data?.metrics || {};
+    console.log("[CHARTS-SECTION] Metrics updated from socket:", metrics);
   }
 
   _onZoomChange(range) {
     if (range) {
+      this.chartZoomRange = range;
       this._applyZoom(range);
     }
   }

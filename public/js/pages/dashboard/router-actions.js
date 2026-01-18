@@ -1,19 +1,29 @@
 /**
- * Router Actions Handler - Event-Driven Router Control
+ * Router Actions Handler - Socket-First Architecture
  * Handles start, stop, restart, and preset-based router operations
  * Part of the event-driven architecture (≤200 lines)
- * 
+ *
+ * Socket contracts:
+ * - router:start           POST start router
+ * - router:stop            POST stop router
+ * - router:restart         POST restart router
+ * - router:start-preset    POST start with preset
+ * - router:status          [BROADCAST] Status changed
+ *
  * This file is loaded as a global script - NOT an ES module
  */
 
+// Local loading state (replaces stateManager.set/get)
+let routerLoading = false;
+
 /**
  * Handle router action events (start, stop, restart, start-with-preset)
- * Uses Socket.IO via stateManager for backend communication
- * 
+ * Uses Socket.IO directly for backend communication
+ *
  * @param {string} action - Action to perform: "start", "stop", "restart", "start-with-preset"
  * @param {string} [presetName] - Optional preset name for "start-with-preset" action
  * @returns {Promise<void>}
- * 
+ *
  * @example
  * ```javascript
  * await window.handleRouterAction("start");
@@ -22,7 +32,7 @@
  * await window.handleRouterAction("restart");
  * ```
  */
-window.handleRouterAction = async function(action, presetName) {
+window.handleRouterAction = async function (action, presetName) {
   console.log("[RouterActions] Handling action:", action, presetName);
 
   // Validate action
@@ -32,36 +42,69 @@ window.handleRouterAction = async function(action, presetName) {
     return;
   }
 
-  // Set loading state
-  stateManager.set("routerLoading", true);
+  // Set local loading state (replaces stateManager.set("routerLoading", true))
+  routerLoading = true;
 
   try {
+    let response;
+
     switch (action) {
       case "start":
-        await stateManager.startLlama();
-        console.log("[RouterActions] Router started successfully");
-        showNotification("Router started successfully", "success");
+        console.log("[DEBUG] Starting router");
+        response = await socketClient.request("router:start", {});
+
+        if (response.success) {
+          console.log("[RouterActions] Router started successfully");
+          showNotification("Router started successfully", "success");
+          // Server broadcasts router:status
+        } else {
+          throw new Error(response.error || "Failed to start router");
+        }
         break;
 
       case "start-with-preset":
         if (!presetName) {
           throw new Error("Preset name required for start-with-preset action");
         }
-        await stateManager.startLlamaWithPreset(presetName);
-        console.log("[RouterActions] Router started with preset:", presetName);
-        showNotification(`Router started with preset: ${presetName}`, "success");
+
+        console.log("[DEBUG] Starting router with preset:", presetName);
+        response = await socketClient.request("router:start-preset", {
+          presetName,
+        });
+
+        if (response.success) {
+          console.log("[RouterActions] Router started with preset:", presetName);
+          showNotification(`Router started with preset: ${presetName}`, "success");
+          // Server broadcasts router:status
+        } else {
+          throw new Error(response.error || "Failed to start router");
+        }
         break;
 
       case "stop":
-        await stateManager.stopLlama();
-        console.log("[RouterActions] Router stopped");
-        showNotification("Router stopped", "info");
+        console.log("[DEBUG] Stopping router");
+        response = await socketClient.request("router:stop", {});
+
+        if (response.success) {
+          console.log("[RouterActions] Router stopped");
+          showNotification("Router stopped", "info");
+          // Server broadcasts router:status
+        } else {
+          throw new Error(response.error || "Failed to stop router");
+        }
         break;
 
       case "restart":
-        await stateManager.restartLlama();
-        console.log("[RouterActions] Router restarted");
-        showNotification("Router restarted successfully", "success");
+        console.log("[DEBUG] Restarting router");
+        response = await socketClient.request("router:restart", {});
+
+        if (response.success) {
+          console.log("[RouterActions] Router restarted");
+          showNotification("Router restarted successfully", "success");
+          // Server broadcasts router:status
+        } else {
+          throw new Error(response.error || "Failed to restart router");
+        }
         break;
 
       default:
@@ -73,7 +116,15 @@ window.handleRouterAction = async function(action, presetName) {
     showNotification(`Failed to ${action} router: ${error.message}`, "error");
     throw error;
   } finally {
-    // Always clear loading state
-    stateManager.set("routerLoading", false);
+    // Always clear local loading state (replaces stateManager.set("routerLoading", false))
+    routerLoading = false;
   }
+};
+
+/**
+ * Get current router loading state
+ * @returns {boolean} Whether router operation is in progress
+ */
+window.isRouterLoading = function () {
+  return routerLoading;
 };

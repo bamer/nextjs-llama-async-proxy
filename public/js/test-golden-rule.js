@@ -64,26 +64,7 @@
     return typeof window.socketClient?.isConnected !== "undefined";
   });
 
-  // 3. Test State Management
-  console.log("\n--- STATE MANAGEMENT TESTS ---");
-
-  test("stateManager available", () => {
-    return typeof window.stateManager !== "undefined";
-  });
-
-  test("stateManager.get method exists", () => {
-    return typeof window.stateManager?.get === "function";
-  });
-
-  test("stateManager.set method exists", () => {
-    return typeof window.stateManager?.set === "function";
-  });
-
-  test("stateManager.subscribe method exists", () => {
-    return typeof window.stateManager?.subscribe === "function";
-  });
-
-  // 4. Test Component System
+  // 3. Test Component System
   console.log("\n--- COMPONENT SYSTEM TESTS ---");
 
   test("Component base class available", () => {
@@ -103,7 +84,7 @@
     }
   });
 
-  // 5. Test Router
+  // 4. Test Router
   console.log("\n--- ROUTER TESTS ---");
 
   test("Router available", () => {
@@ -118,7 +99,7 @@
     return typeof window.router?.register === "function";
   });
 
-  // 6. Test Utility Functions
+  // 5. Test Utility Functions
   console.log("\n--- UTILITY TESTS ---");
 
   test("AppUtils available", () => {
@@ -133,7 +114,7 @@
     return AppUtils?.formatBytes(1024 * 1024) === "1.00 MB";
   });
 
-  // 7. Test Dashboard Specific
+  // 6. Test Dashboard Specific
   console.log("\n--- DASHBOARD SPECIFIC TESTS ---");
 
   test("Dashboard has chartUpdateInterval protection", () => {
@@ -146,13 +127,13 @@
            typeof DashboardController !== "undefined";
   });
 
-  // 8. Test Navigation
+  // 7. Test Navigation
   console.log("\n--- NAVIGATION TESTS ---");
 
   const navLinks = document.querySelectorAll("nav a, .nav a, [data-page], [href^='/']");
   test("Navigation links exist", () => navLinks.length > 0);
 
-  // 9. Check Console for Errors
+  // 8. Check Console for Errors
   console.log("\n--- CONSOLE ERROR CHECK ---");
 
   test("No JavaScript errors in console", () => {
@@ -160,7 +141,7 @@
     return true; // Manual verification needed
   });
 
-  // 10. Test Interactive Elements
+  // 9. Test Interactive Elements
   console.log("\n--- INTERACTIVE ELEMENTS ---");
 
   const buttons = document.querySelectorAll("button");

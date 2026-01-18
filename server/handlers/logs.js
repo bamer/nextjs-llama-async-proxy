@@ -1,12 +1,10 @@
 /**
  * Logs Handlers
- * Socket.IO handlers for log operations
- * Uses async file I/O and path traversal protection
+ * Socket.IO handlers for log operations with standardized callback pattern
  */
 
 import fs from "fs/promises";
 import path from "path";
-import { ok, err } from "./response.js";
 import { fileLogger } from "./file-logger.js";
 
 // Constants for log directory and file
@@ -14,42 +12,43 @@ const LOG_DIR = path.resolve(process.cwd(), "logs");
 const LLAMA_SERVER_LOG = "llama-server.log";
 
 /**
+ * Generate a unique request ID for tracking requests
+ * @param {object} req - Request object
+ * @returns {string} Request ID
+ */
+function getRequestId(req) {
+  return req?.requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/**
  * Validates that a log filename is safe and within the logs directory.
- * Prevents path traversal attacks by ensuring the resolved path is within LOG_DIR.
  * @param {string} fileName - The filename to validate.
  * @returns {Promise<string>} The validated absolute path to the log file.
  * @throws {Error} If the filename is invalid or outside the logs directory.
  */
 async function validateLogPath(fileName) {
-  // Reject empty, null, or undefined filenames
   if (!fileName || typeof fileName !== "string") {
     throw new Error("Invalid log filename: must be a non-empty string");
   }
 
-  // Reject absolute paths - prevents access to system files
   if (path.isAbsolute(fileName)) {
     throw new Error("Invalid log filename: absolute paths are not allowed");
   }
 
-  // Reject paths that would traverse outside the logs directory
   if (fileName.includes("..") || fileName.includes("/..") || fileName.includes("../")) {
     throw new Error("Invalid log filename: path traversal is not allowed");
   }
 
-  // Reject paths with null bytes (old school attack)
   if (fileName.includes("\0")) {
     throw new Error("Invalid log filename: null bytes are not allowed");
   }
 
-  // Resolve the full path and verify it's within LOG_DIR
   const resolvedPath = path.resolve(LOG_DIR, fileName);
 
-  // Ensure the resolved path is within the logs directory
   if (!resolvedPath.startsWith(LOG_DIR)) {
     throw new Error("Invalid log filename: path is outside the logs directory");
   }
 
-  // Verify the file exists and is accessible
   try {
     await fs.access(resolvedPath);
   } catch {
@@ -75,6 +74,7 @@ async function fileExists(filePath) {
 
 /**
  * Register all Socket.IO event handlers for log operations.
+ * All handlers use standardized callback pattern.
  * @param {Object} socket - Socket.IO socket instance.
  * @param {Object} db - Database instance.
  */
@@ -83,112 +83,213 @@ export function registerLogsHandlers(socket, db) {
   fileLogger.setDb(db);
 
   /**
-   * Get logs from database
+   * Get logs from database.
+   * CONTRACT:
+   * - Input: { limit?: number }
+   * - Output: { success: true, data: { logs }, timestamp: string }
    */
-  socket.on("logs:get", (req, ack) => {
-    const id = req?.requestId || Date.now();
+  socket.on("logs:get", (req, callback) => {
+    const id = getRequestId(req);
+    console.log("[DEBUG] logs:get request", { requestId: id, limit: req?.limit });
+
     try {
       const logs = db.getLogs(req?.limit || 100);
-      ok(socket, "logs:get:result", { logs }, id, ack);
+
+      console.log("[DEBUG] logs:get response", { requestId: id, count: logs.length });
+
+      callback({
+        success: true,
+        data: { logs },
+        timestamp: new Date().toISOString(),
+      });
     } catch (e) {
-      err(socket, "logs:get:result", e.message, id, ack);
+      console.error("[ERROR] logs:get failed:", e.message);
+      callback({
+        success: false,
+        error: e.message || "Failed to get logs",
+        timestamp: new Date().toISOString(),
+      });
     }
   });
 
   /**
-   * Get logs from file
+   * Get logs from file.
+   * CONTRACT:
+   * - Input: { fileName?: string }
+   * - Output: { success: true, data: { logs, fileName }, timestamp: string }
    */
-  socket.on("logs:read-file", async (req, ack) => {
-    const id = req?.requestId || Date.now();
+  socket.on("logs:read-file", async (req, callback) => {
+    const id = getRequestId(req);
+    const fileName = req?.fileName || null;
+
+    console.log("[DEBUG] logs:read-file request", { requestId: id, fileName });
+
     try {
-      const fileName = req?.fileName || null;
       const logs = await fileLogger.readLogFile(fileName);
-      ok(
-        socket,
-        "logs:read-file:result",
-        { logs, fileName: fileName || fileLogger.getLogFileName() },
-        id,
-        ack
-      );
+
+      console.log("[DEBUG] logs:read-file response", { requestId: id, count: logs.length });
+
+      callback({
+        success: true,
+        data: {
+          logs,
+          fileName: fileName || fileLogger.getLogFileName(),
+        },
+        timestamp: new Date().toISOString(),
+      });
     } catch (e) {
-      err(socket, "logs:read-file:result", e.message, id, ack);
+      console.error("[ERROR] logs:read-file failed:", e.message);
+      callback({
+        success: false,
+        error: e.message || "Failed to read log file",
+        timestamp: new Date().toISOString(),
+      });
     }
   });
 
   /**
-   * List log files
+   * List log files.
+   * CONTRACT:
+   * - Input: {}
+   * - Output: { success: true, data: { files, size }, timestamp: string }
    */
-  socket.on("logs:list-files", async (req, ack) => {
-    const id = req?.requestId || Date.now();
+  socket.on("logs:list-files", async (req, callback) => {
+    const id = getRequestId(req);
+
+    console.log("[DEBUG] logs:list-files request", { requestId: id });
+
     try {
       const files = await fileLogger.listLogFiles();
       const size = await fileLogger.getLogsDirectorySize();
-      ok(socket, "logs:list-files:result", { files, size }, id, ack);
+
+      console.log("[DEBUG] logs:list-files response", { requestId: id, count: files.length });
+
+      callback({
+        success: true,
+        data: { files, size },
+        timestamp: new Date().toISOString(),
+      });
     } catch (e) {
-      err(socket, "logs:list-files:result", e.message, id, ack);
+      console.error("[ERROR] logs:list-files failed:", e.message);
+      callback({
+        success: false,
+        error: e.message || "Failed to list log files",
+        timestamp: new Date().toISOString(),
+      });
     }
   });
 
   /**
-   * Clear logs from database
+   * Clear logs from database.
+   * CONTRACT:
+   * - Input: {}
+   * - Output: { success: true, data: { cleared }, timestamp: string }
+   * - Broadcasts: logs:cleared
    */
-  socket.on("logs:clear", (req, ack) => {
-    const id = req?.requestId || Date.now();
+  socket.on("logs:clear", (req, callback) => {
+    const id = getRequestId(req);
+
+    console.log("[DEBUG] logs:clear request", { requestId: id });
+
     try {
       const cleared = db.clearLogs();
-      ok(socket, "logs:clear:result", { cleared }, id, ack);
+
+      // Broadcast to all clients
+      socket.broadcast.emit("logs:cleared", {
+        count: cleared,
+        timestamp: new Date().toISOString(),
+      });
+
+      console.log("[DEBUG] logs:clear response", { requestId: id, cleared });
+
+      callback({
+        success: true,
+        data: { cleared },
+        timestamp: new Date().toISOString(),
+      });
     } catch (e) {
-      err(socket, "logs:clear:result", e.message, id, ack);
+      console.error("[ERROR] logs:clear failed:", e.message);
+      callback({
+        success: false,
+        error: e.message || "Failed to clear logs",
+        timestamp: new Date().toISOString(),
+      });
     }
   });
 
   /**
-   * Clear log files
+   * Clear log files.
+   * CONTRACT:
+   * - Input: {}
+   * - Output: { success: true, data: { cleared }, timestamp: string }
    */
-  socket.on("logs:clear-files", async (req, ack) => {
-    const id = req?.requestId || Date.now();
+  socket.on("logs:clear-files", async (req, callback) => {
+    const id = getRequestId(req);
+
+    console.log("[DEBUG] logs:clear-files request", { requestId: id });
+
     try {
       const cleared = await fileLogger.clearLogFiles();
-      ok(socket, "logs:clear-files:result", { cleared }, id, ack);
+
+      // Broadcast to all clients
+      socket.broadcast.emit("logs:cleared", {
+        count: cleared,
+        timestamp: new Date().toISOString(),
+      });
+
+      console.log("[DEBUG] logs:clear-files response", { requestId: id, cleared });
+
+      callback({
+        success: true,
+        data: { cleared },
+        timestamp: new Date().toISOString(),
+      });
     } catch (e) {
-      err(socket, "logs:clear-files:result", e.message, id, ack);
+      console.error("[ERROR] logs:clear-files failed:", e.message);
+      callback({
+        success: false,
+        error: e.message || "Failed to clear log files",
+        timestamp: new Date().toISOString(),
+      });
     }
   });
 
   /**
    * Read llama-server log file with path traversal protection.
+   * CONTRACT:
+   * - Input: {}
+   * - Output: { success: true, data: { logs, fileName }, timestamp: string }
    */
-  socket.on("logs:read-llama-server", async (req, ack) => {
-    const id = req?.requestId || Date.now();
-    try {
-      // Use constant filename for llama-server.log instead of user input
-      const llamaLogPath = path.join(LOG_DIR, LLAMA_SERVER_LOG);
+  socket.on("logs:read-llama-server", async (req, callback) => {
+    const id = getRequestId(req);
 
-      // Check if file exists using async
+    console.log("[DEBUG] logs:read-llama-server request", { requestId: id });
+
+    try {
+      const llamaLogPath = path.join(LOG_DIR, LLAMA_SERVER_LOG);
       const exists = await fileExists(llamaLogPath);
+
       if (!exists) {
-        ok(
-          socket,
-          "logs:read-llama-server:result",
-          {
+        console.log("[DEBUG] llama-server.log not found", { requestId: id });
+
+        callback({
+          success: true,
+          data: {
             logs: [],
             fileName: LLAMA_SERVER_LOG,
             message: "Log file not found",
           },
-          id,
-          ack
-        );
+          timestamp: new Date().toISOString(),
+        });
         return;
       }
 
-      // Read file asynchronously
       const content = await fs.readFile(llamaLogPath, { encoding: "utf8" });
       const lines = content.trim().split("\n");
 
       const logs = lines
         .filter((line) => line.trim() && !line.startsWith("#"))
         .map((line) => {
-          // Parse: [timestamp] [LEVEL] message
           const match = line.match(/\[([^\]]+)\]\s\[([^\]]+)\]\s(.+)/);
           if (match) {
             return {
@@ -205,23 +306,31 @@ export function registerLogsHandlers(socket, db) {
         })
         .reverse();
 
-      ok(
-        socket,
-        "logs:read-llama-server:result",
-        {
+      console.log("[DEBUG] logs:read-llama-server response", { requestId: id, count: logs.length });
+
+      callback({
+        success: true,
+        data: {
           logs,
           fileName: LLAMA_SERVER_LOG,
         },
-        id,
-        ack
-      );
+        timestamp: new Date().toISOString(),
+      });
     } catch (e) {
-      err(socket, "logs:read-llama-server:result", e.message, id, ack);
+      console.error("[ERROR] logs:read-llama-server failed:", e.message);
+      callback({
+        success: false,
+        error: e.message || "Failed to read llama-server log",
+        timestamp: new Date().toISOString(),
+      });
     }
   });
 
   /**
-   * Receive log entry from client and log it on server
+   * Receive log entry from client and log it on server.
+   * Type: One-way (no callback)
+   * CONTRACT:
+   * - Input: { entry: { level, message, source? } }
    */
   socket.on("logs:entry", (req) => {
     const entry = req?.entry;

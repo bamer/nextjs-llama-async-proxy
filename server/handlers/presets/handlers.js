@@ -41,14 +41,14 @@ export function registerPresetsHandlers(socket, db) {
     try {
       const presets = await listPresets();
       console.log("[DEBUG] Presets found:", presets);
-      // Return array of preset objects as documented
-      const presetsData = presets.map((name) => ({
-        name,
-        path: `${name}.ini`,
-        file: `${PRESETS_DIR}/${name}.ini`,
-      }));
-      console.log("[DEBUG] Sending presets response:", { presets: presetsData.length });
-      ok(socket, "presets:list:result", { presets: presetsData }, id, ack);
+       // Return array of preset objects as documented
+       const presetsData = presets.map((name) => ({
+         name,
+         path: `${name}.ini`,
+         file: `${PRESETS_DIR}/${name}.ini`,
+       }));
+       console.log("[DEBUG] Sending presets response:", { count: presetsData.length, data: presetsData });
+        ok(socket, "presets:list:result", { presets: presetsData }, id, ack);
     } catch (error) {
       console.error("[DEBUG] Error in presets:list:", error.message, error.stack);
       err(socket, "presets:list:result", error.message, id, ack);

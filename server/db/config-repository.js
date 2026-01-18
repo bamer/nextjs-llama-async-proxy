@@ -6,7 +6,7 @@
  * This class exists to maintain backward compatibility with code using db.config.get().
  */
 
-import { getRouterConfig, saveRouterConfig, ROUTER_CONFIG_DEFAULTS } from "./config.js";
+import { getRouterConfig, saveRouterConfig, getLoggingConfig, saveLoggingConfig, ROUTER_CONFIG_DEFAULTS } from "./config.js";
 
 // Map unified config keys to legacy keys for backward compatibility
 const KEY_MAP = {
@@ -77,31 +77,42 @@ export class ConfigRepository {
   }
 
   /**
-   * Save configuration to database
-   * Saves to the unified router_config table
-   * @param {Object} config - Configuration to save (legacy format)
-   */
-  save(config) {
-    try {
-      // Convert legacy format to unified format
-      const unifiedConfig = {
-        serverPath: config.serverPath || "",
-        modelsPath: config.baseModelsPath || config.modelsPath || "",
-        host: config.llama_server_host || config.host || "0.0.0.0",
-        port: parseInt(config.llama_server_port) || parseInt(config.port) || 8080,
-        threads: parseInt(config.threads) || 4,
-        ctxSize: parseInt(config.ctx_size) || parseInt(config.ctxSize) || 4096,
-        batchSize: parseInt(config.batch_size) || parseInt(config.batchSize) || 512,
-        autoStartOnLaunch: config.auto_start_on_launch === true,
-        metricsEnabled: config.llama_server_metrics !== false,
-      };
+    * Save configuration to database
+    * Saves to the unified router_config and logging_config tables
+    * @param {Object} config - Configuration to save (can be legacy format or new { routerConfig, loggingConfig } format)
+    */
+   save(config) {
+     try {
+       // Check if this is the new format { routerConfig, loggingConfig }
+       if (config.routerConfig) {
+         console.log("[DEBUG] Saving new format config");
+         saveRouterConfig(this.db, config.routerConfig);
+         if (config.loggingConfig) {
+           console.log("[DEBUG] Saving logging config");
+           saveLoggingConfig(this.db, config.loggingConfig);
+         }
+         return;
+       }
 
-      saveRouterConfig(this.db, unifiedConfig);
-    } catch (e) {
-      console.error("ConfigRepository.save() error:", e);
-      throw e;
-    }
-  }
+       // Convert legacy format to unified format
+       const unifiedConfig = {
+         serverPath: config.serverPath || "",
+         modelsPath: config.baseModelsPath || config.modelsPath || "",
+         host: config.llama_server_host || config.host || "0.0.0.0",
+         port: parseInt(config.llama_server_port) || parseInt(config.port) || 8080,
+         threads: parseInt(config.threads) || 4,
+         ctxSize: parseInt(config.ctx_size) || parseInt(config.ctxSize) || 4096,
+         batchSize: parseInt(config.batch_size) || parseInt(config.batchSize) || 512,
+         autoStartOnLaunch: config.auto_start_on_launch === true,
+         metricsEnabled: config.llama_server_metrics !== false,
+       };
+
+       saveRouterConfig(this.db, unifiedConfig);
+     } catch (e) {
+       console.error("ConfigRepository.save() error:", e);
+       throw e;
+     }
+   }
 }
 
 export default ConfigRepository;

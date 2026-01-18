@@ -48,7 +48,6 @@ class LoggingSystemIntegrationTests {
         const ready = window.DEBUG_SYSTEM &&
                      window.clientLogger &&
                      window.socketClient &&
-                     window.stateManager &&
                      window.socketClient.isConnected;
 
         if (ready) {
@@ -242,45 +241,34 @@ class LoggingSystemIntegrationTests {
       const testMessage = `TEST_UI_UPDATE_${Date.now()}`;
       let uiUpdated = false;
 
-      // Get initial log count
-      const initialLogs = window.stateManager.get("logs") || [];
-      const initialCount = initialLogs.length;
+      // Listen for logs:new broadcast
+      const broadcastHandler = (data) => {
+        if (data && data.data && data.data.message && data.data.message.includes(testMessage)) {
+          uiUpdated = true;
+          try {
+            this.assert(data.type === "broadcast", "Broadcast has correct type");
+            this.assert(data.data.message.includes("[CLIENT]"), "Message has client prefix");
 
-      // Monitor state changes
-      const unsubscribe = window.stateManager.subscribe("logs", (logs) => {
-        const currentLogs = logs || [];
-        if (currentLogs.length > initialCount) {
-          // Check if our test message is in the logs
-          const found = currentLogs.some(log =>
-            log.message && log.message.includes(testMessage)
-          );
-
-          if (found) {
-            uiUpdated = true;
-            try {
-              this.assert(currentLogs.length === initialCount + 1, "Log count increased by 1");
-              this.assert(found, "Test message found in logs");
-
-              // Check debug system
-              if (window.DEBUG_SYSTEM?.logging) {
-                const stats = window.DEBUG_SYSTEM.logging.getStats();
-                this.assert(stats.displayed > 0, "Debug system recorded display event");
-              }
-
-              console.log("✅ UI update test passed");
-              this.results.passed++;
-              unsubscribe();
-              resolve();
-            } catch (error) {
-              console.error("❌ UI update test failed:", error);
-              this.results.failed++;
-              this.results.errors.push({ test: "uiUpdate", error: error.message });
-              unsubscribe();
-              resolve();
+            // Check debug system
+            if (window.DEBUG_SYSTEM?.logging) {
+              const stats = window.DEBUG_SYSTEM.logging.getStats();
+              this.assert(stats.displayed > 0, "Debug system recorded display event");
             }
+
+            console.log("✅ UI update test passed");
+            this.results.passed++;
+            resolve();
+          } catch (error) {
+            console.error("❌ UI update test failed:", error);
+            this.results.failed++;
+            this.results.errors.push({ test: "uiUpdate", error: error.message });
+            resolve();
           }
         }
-      });
+      };
+
+      // Set up broadcast listener
+      window.socketClient.on("logs:new", broadcastHandler);
 
       // Send test log
       setTimeout(() => {
@@ -289,7 +277,7 @@ class LoggingSystemIntegrationTests {
 
       // Timeout after 5 seconds
       setTimeout(() => {
-        unsubscribe();
+        window.socketClient.off("logs:new", broadcastHandler);
         if (!uiUpdated) {
           console.error("❌ UI update test failed: no UI update detected");
           this.results.failed++;
@@ -309,21 +297,24 @@ class LoggingSystemIntegrationTests {
 
       for (let i = 0; i < testRuns; i++) {
         const startTime = performance.now();
-        console.log(`PERF_TEST_${i}_${Date.now()}`);
+        const testMessage = `PERF_TEST_${i}_${Date.now()}`;
 
-        // Wait for UI update
+        // Wait for broadcast
         await new Promise((resolve) => {
-          const unsubscribe = window.stateManager.subscribe("logs", (logs) => {
-            const found = (logs || []).some(log => log.message && log.message.includes(`PERF_TEST_${i}`));
-            if (found) {
+          const broadcastHandler = (data) => {
+            if (data && data.data && data.data.message && data.data.message.includes(testMessage)) {
               latencies.push(performance.now() - startTime);
-              unsubscribe();
+              window.socketClient.off("logs:new", broadcastHandler);
               resolve();
             }
-          });
+          };
+
+          window.socketClient.on("logs:new", broadcastHandler);
+
+          console.log(testMessage);
 
           setTimeout(() => {
-            unsubscribe();
+            window.socketClient.off("logs:new", broadcastHandler);
             resolve();
           }, 1000);
         });

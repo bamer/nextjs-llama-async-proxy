@@ -145,7 +145,7 @@ export function registerMetricsHandlers(socket, io, db) {
    * Subscribe to metrics updates with optional interval.
    * @param {Object} req - Request object with optional interval.
    */
-  socket.on("metrics:subscribe", (req) => {
+  socket.on("metrics:subscribe", (req, callback) => {
     const interval = getClampedInterval(req?.interval);
     const subscription = subscriptions.get(socket.id) || {};
 
@@ -159,7 +159,16 @@ export function registerMetricsHandlers(socket, io, db) {
     // Start collection interval for this socket
     startCollectionInterval(socket, db, interval);
 
-    // Acknowledge subscription
+    // Acknowledge subscription with callback
+    if (callback) {
+      callback({
+        success: true,
+        interval,
+        message: `Subscribed to metrics with ${interval}ms interval`,
+      });
+    }
+
+    // Also emit for any listeners
     socket.emit("metrics:subscribe:result", {
       success: true,
       interval,

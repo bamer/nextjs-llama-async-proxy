@@ -67,8 +67,8 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
   }
 
   /**
-   * Get llama server status (llama:status)
-   */
+    * Get llama server status
+    */
   socket.on("llama:status", (req, ack) => {
     const id = req?.requestId || Date.now();
     getLlamaStatus(db)
@@ -81,8 +81,8 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
   });
 
   /**
-   * Start llama server
-   */
+    * Start llama server
+    */
   socket.on("llama:start", async (req) => {
     const id = req?.requestId || Date.now();
     console.log(`[LLAMA-HANDLERS] Received llama:start event from client ${socket.id}. Request ID: ${id}`);

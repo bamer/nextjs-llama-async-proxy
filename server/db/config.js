@@ -64,14 +64,34 @@ function getTimestamp() {
 }
 
 /**
+ * Get the actual database instance (handles both raw Database and DB wrapper)
+ * @param {Object} db - Better-sqlite3 database instance or DB wrapper
+ * @returns {Object} Raw database instance
+ */
+function getDb(db) {
+  // If db has .prepare directly (raw Database instance), use it
+  if (db && typeof db.prepare === "function") {
+    return db;
+  }
+  // If db has a .db property with .prepare (DB wrapper), use that
+  if (db && db.db && typeof db.db.prepare === "function") {
+    return db.db;
+  }
+  // Fallback - should not happen
+  console.error("[DEBUG] getDb: Unknown db type", typeof db, db);
+  return db;
+}
+
+/**
  * Get full router configuration from database
- * @param {Database} db - Better-sqlite3 database instance
+ * @param {Object} db - Database instance (raw or wrapper)
  * @returns {Object} Router configuration object with defaults applied
  */
 export function getRouterConfig(db) {
+  const database = getDb(db);
   console.log("[DEBUG] getRouterConfig called");
   try {
-    const result = db
+    const result = database
       .prepare("SELECT value, updated_at FROM router_config WHERE key = ?")
       .get("config");
 
@@ -94,15 +114,16 @@ export function getRouterConfig(db) {
 
 /**
  * Save router configuration to database
- * @param {Database} db - Better-sqlite3 database instance
+ * @param {Object} db - Database instance (raw or wrapper)
  * @param {Object} config - Router configuration to save
  * @returns {Object} Saved configuration
  */
 export function saveRouterConfig(db, config) {
+  const database = getDb(db);
   console.log("[DEBUG] saveRouterConfig called with config:", JSON.stringify(config, null, 2));
   try {
     const timestamp = getTimestamp();
-    const stmt = db.prepare(
+    const stmt = database.prepare(
       "INSERT OR REPLACE INTO router_config (key, value, updated_at) VALUES (?, ?, ?)"
     );
 
@@ -120,10 +141,11 @@ export function saveRouterConfig(db, config) {
 
 /**
  * Reset router configuration to defaults
- * @param {Database} db - Better-sqlite3 database instance
+ * @param {Object} db - Database instance (raw or wrapper)
  * @returns {Object} Default router configuration
  */
 export function resetRouterConfig(db) {
+  const database = getDb(db);
   console.log("[DEBUG] resetRouterConfig called");
   try {
     const defaults = { ...ROUTER_CONFIG_DEFAULTS };
@@ -137,13 +159,14 @@ export function resetRouterConfig(db) {
 
 /**
  * Get logging configuration from database
- * @param {Database} db - Better-sqlite3 database instance
+ * @param {Object} db - Database instance (raw or wrapper)
  * @returns {Object} Logging configuration object with defaults applied
  */
 export function getLoggingConfig(db) {
+  const database = getDb(db);
   console.log("[DEBUG] getLoggingConfig called");
   try {
-    const result = db
+    const result = database
       .prepare("SELECT value, updated_at FROM logging_config WHERE key = ?")
       .get("config");
 
@@ -166,15 +189,16 @@ export function getLoggingConfig(db) {
 
 /**
  * Save logging configuration to database
- * @param {Database} db - Better-sqlite3 database instance
+ * @param {Object} db - Database instance (raw or wrapper)
  * @param {Object} config - Logging configuration to save
  * @returns {Object} Saved configuration
  */
 export function saveLoggingConfig(db, config) {
+  const database = getDb(db);
   console.log("[DEBUG] saveLoggingConfig called with config:", JSON.stringify(config, null, 2));
   try {
     const timestamp = getTimestamp();
-    const stmt = db.prepare(
+    const stmt = database.prepare(
       "INSERT OR REPLACE INTO logging_config (key, value, updated_at) VALUES (?, ?, ?)"
     );
 
@@ -192,10 +216,11 @@ export function saveLoggingConfig(db, config) {
 
 /**
  * Reset logging configuration to defaults
- * @param {Database} db - Better-sqlite3 database instance
+ * @param {Object} db - Database instance (raw or wrapper)
  * @returns {Object} Default logging configuration
  */
 export function resetLoggingConfig(db) {
+  const database = getDb(db);
   console.log("[DEBUG] resetLoggingConfig called");
   try {
     const defaults = { ...LOGGING_CONFIG_DEFAULTS };

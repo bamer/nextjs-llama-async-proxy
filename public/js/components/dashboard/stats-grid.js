@@ -22,25 +22,30 @@ class StatsGrid extends Component {
       uptime: 0,
     };
     this.gpuMetrics = props.gpuMetrics || { usage: 0, memoryUsed: 0, memoryTotal: 0 };
-    this.unsubscriber = null;
+    this.unsubscribers = [];
   }
 
   /**
-   * Subscribe to metrics changes when component mounts
+   * Subscribe to metrics changes via socket broadcast when component mounts
+   * Replaces stateManager.subscribe("metrics", ...)
    */
   onMount() {
-    this.unsubscriber = stateManager.subscribe("metrics", (metrics) => {
-      if (metrics) {
-        this.updateMetrics(metrics);
-      }
-    });
+    // Listen to metrics:updated broadcast from server
+    this.unsubscribers.push(
+      socketClient.on("metrics:updated", (data) => {
+        if (data && data.metrics) {
+          this.updateMetrics(data.metrics, data.gpuMetrics);
+        }
+      })
+    );
   }
 
   /**
-   * Clean up subscription when component is destroyed
+   * Clean up subscriptions when component is destroyed
    */
   destroy() {
-    this.unsubscriber?.();
+    this.unsubscribers.forEach((unsub) => unsub());
+    this.unsubscribers = [];
   }
 
   /**

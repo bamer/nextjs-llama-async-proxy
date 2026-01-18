@@ -9,25 +9,24 @@
   "use strict";
 
   // Error boundary
-  function showErrorBoundary(error) {
-    const appEl = document.getElementById("app");
-    if (appEl) {
-      appEl.innerHTML = `
-        <div class="error-boundary">
-          <div class="error-boundary-content">
-            <h1>Application Error</h1>
-            <p>Something went wrong while initializing the application.</p>
-            <div class="error-details">
-              <strong>Error:</strong>
-              <pre>${error.message || error}</pre>
+function showErrorBoundary(error) {
+  const appEl = document.getElementById("app");
+  if (appEl) {
+     appEl.innerHTML = `
+          <div class="error-boundary client"> (loaded from services/socket-client.js)
+           <div class="error-boundary-content">
+             <h1>Application Error</h1>
+             <p>Something went wrong while initializing application.</p>
+             <div class="error-details">
+               <strong>Error:</strong>
+               <pre>${error.message || error}</pre>
+             </div>
+             <button onclick="location.reload()" class="btn btn-primary">Reload Application</button>
             </div>
-            <button onclick="location.reload()" class="btn btn-primary">Reload Application</button>
-          </div>
-        </div>
-      `;
-    }
+          </div>`;
+   }
   }
-
+  
   // Error handlers
   window.addEventListener("error", (e) => {
     const msg = e.error?.message || "An unexpected error occurred";
@@ -51,26 +50,23 @@
   // This allows requests to be queued while socket establishes
   function initializeSocket() {
     try {
-      console.log("[App] Initializing socket connection with Socket.IO...");
-      // Use Socket.IO directly (no wrapper)
-      const socket = io(window.location.origin, { 
-        path: "/llamaproxws", 
-        transports: ["websocket"] 
+      console.log("[App] Initializing socket client...");
+      
+      // socketClient is a global singleton created in services/socket.js
+      if (typeof socketClient === "undefined") {
+        throw new Error("socketClient not found. Check that socket.js is loaded.");
+      }
+      
+      // Connect the socket client
+      socketClient.connect();
+      console.log("[App] Socket client initialized");
+      
+      // Subscribe to metrics updates for real-time data
+      socketClient.on("connect", () => {
+        console.log("[App] Socket.IO connected, subscribing to metrics...");
+        socketClient.request("metrics:subscribe", { interval: 2000 });
       });
       
-      socket.on("connect", () => {
-        console.log("[App] Socket.IO connected, socket ID:", socket.id);
-        // Subscribe to metrics updates for real-time data
-        socket.emit("metrics:subscribe", { interval: 2000 });
-        console.log("[App] Subscribed to metrics with 2s interval");
-      });
-      
-      stateManager.init(socket);
-      window.stateLlamaServer = new window.StateLlamaServer(
-        stateManager.core,
-        stateManager.socket
-      );
-      console.log("[App] Socket and state manager initialized");
     } catch (e) {
       console.error("[App] Service initialization failed:", e);
       showErrorBoundary(e);

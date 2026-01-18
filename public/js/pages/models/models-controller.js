@@ -6,31 +6,33 @@ class ModelsController {
   constructor(options = {}) {
     this.router = options.router || window.router;
     this.comp = null;
-    this._stateUnsubscribers = []; // Track state subscriptions for cleanup
+    this.models = [];
+    this.routerStatus = null;
+    this._unsubscribers = [];
   }
 
   /**
-   * Register a state subscription for cleanup
+   * Register a socket subscription for cleanup
    */
-  _subscribe(key, callback) {
-    const unsub = stateManager.subscribe(key, callback);
-    this._stateUnsubscribers.push(unsub);
+  _subscribe(event, callback) {
+    const unsub = socketClient.on(event, callback);
+    this._unsubscribers.push(unsub);
     return unsub;
   }
 
   /**
-   * Cleanup all state subscriptions
+   * Cleanup all socket subscriptions
    */
   _cleanupSubscriptions() {
-    if (this._stateUnsubscribers && this._stateUnsubscribers.length > 0) {
-      this._stateUnsubscribers.forEach((unsub) => {
+    if (this._unsubscribers && this._unsubscribers.length > 0) {
+      this._unsubscribers.forEach((unsub) => {
         try {
           if (typeof unsub === "function") unsub();
         } catch (e) {
           console.warn("[Models] Error cleaning up subscription:", e);
         }
       });
-      this._stateUnsubscribers = [];
+      this._unsubscribers = [];
     }
   }
 
@@ -45,33 +47,40 @@ class ModelsController {
 
   async render() {
     await this.load();
-    const models = stateManager.get("models") || [];
-    this.comp = new ModelsPage({ models });
+    this.comp = new ModelsPage({ models: this.models });
     return this.comp.render();
   }
 
   /**
-   * Load models from stateManager and update router status.
+   * Load models from socket and update router status.
    * Sets models status to "unloaded" if router is not running.
    * @returns {Promise<void>} Promise that resolves when models are loaded
    */
   async load() {
     try {
-      const d = await stateManager.getModels();
-      const models = d.models || [];
+      // Fetch models via socket
+      const response = await socketClient.request("models:list", {});
+      const models = response.data || [];
       let routerStatus = null;
+
+      // Fetch router status via socket
       try {
-        const rs = await stateManager.getRouterStatus();
-        routerStatus = rs.routerStatus;
+        const rsResponse = await socketClient.request("router:status", {});
+        routerStatus = rsResponse.data || null;
       } catch (e) {
         console.log("[MODELS] Router not running:", e.message);
       }
+
       const routerRunning = routerStatus?.status === "running";
-      const finalModels = routerRunning
+      this.models = routerRunning
         ? models
         : models.map((m) => ({ ...m, status: "unloaded" }));
-      stateManager.set("models", finalModels);
-      stateManager.set("routerStatus", routerStatus);
+      this.routerStatus = routerStatus;
+
+      // Subscribe to updates
+      this._subscribe("models:updated", (data) => {
+        this.models = data.models || [];
+      });
     } catch (e) {
       console.error("[MODELS] Load error:", e);
     }

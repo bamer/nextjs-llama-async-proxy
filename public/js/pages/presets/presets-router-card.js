@@ -3,10 +3,10 @@
  * Extends PresetsPage with router card methods
  */
 
-(function() {
+(function () {
   /**
-   * Extend PresetsPage prototype when available
-   */
+     * Extend PresetsPage prototype when available
+     */
   function extendPresetsPage() {
     const PresetsPage = window.PresetsPage;
     if (!PresetsPage) {
@@ -16,9 +16,9 @@
     }
 
     /**
-     * Update the router card DOM elements with current state.
-     * @returns {void}
-     */
+         * Update the router card DOM elements with current state.
+         * @returns {void}
+         */
     PresetsPage.prototype._updateRouterCard = function () {
       const routerContainer = this._domCache.get("router-card-container");
       if (!routerContainer) return;
@@ -78,9 +78,9 @@
     };
 
     /**
-     * Update the router card HTML content with current state.
-     * @returns {void}
-     */
+         * Update the router card HTML content with current state.
+         * @returns {void}
+         */
     PresetsPage.prototype._updateRouterCardHTML = function () {
       const routerContainer = document.getElementById("router-card");
       if (!routerContainer) return;
@@ -91,9 +91,9 @@
     };
 
     /**
-     * Render the router card HTML with current state.
-     * @returns {string} HTML string for the router card
-     */
+         * Render the router card HTML with current state.
+         * @returns {string} HTML string for the router card
+         */
     PresetsPage.prototype._renderRouterCard = function () {
       const isRunning = this.state.serverRunning;
       const displayPort = this.state.serverPort || this.state.configPort || 8080;
@@ -141,9 +141,9 @@
     };
 
     /**
-     * Bind event listeners for router card interactions.
-     * @returns {void}
-     */
+         * Bind event listeners for router card interactions.
+         * @returns {void}
+         */
     PresetsPage.prototype._bindRouterCardEvents = function () {
       const routerCard = document.getElementById("router-card");
       if (!routerCard) return;
@@ -202,10 +202,10 @@
     };
 
     /**
-     * Launch the server with a specific preset.
-     * @param {string} presetName - Name of the preset to use.
-     * @returns {Promise<void>} Promise that resolves when server is launched
-     */
+         * Launch the server with a specific preset via socket
+         * @param {string} presetName - Name of the preset to use.
+         * @returns {Promise<void>} Promise that resolves when server is launched
+         */
     PresetsPage.prototype._handleLaunchServerWithPreset = function () {
       const presetName = this.state.selectedPreset?.name;
       if (!presetName) {
@@ -213,42 +213,70 @@
         return Promise.reject(new Error("No preset selected"));
       }
 
+      console.log("[DEBUG] Starting server with preset:", presetName);
       showNotification(`Starting server with preset: ${presetName}`, "info");
 
-      return stateManager.startLlamaWithPreset(presetName)
-        .then(() => {
-          showNotification(`Server started with preset: ${presetName}`, "success");
+      return socketClient
+        .request("router:start-preset", { presetName })
+        .then((response) => {
+          if (response.success) {
+            showNotification(`Server started with preset: ${presetName}`, "success");
+          } else {
+            showNotification(`Error: ${response.error}`, "error");
+            throw new Error(response.error);
+          }
         })
         .catch((e) => {
+          console.error("[DEBUG] Start with preset error:", e.message);
           showNotification(`Failed to start server: ${e.message}`, "error");
           throw e;
         });
     };
 
     /**
-     * Launch the server with default settings or selected preset.
-     * @returns {Promise<void>} Promise that resolves when server is launched
-     */
+         * Launch the server via socket
+         * @returns {Promise<void>} Promise that resolves when server is launched
+         */
     PresetsPage.prototype._handleLaunchServer = function () {
+      console.log("[DEBUG] Starting server");
       showNotification("Starting server...", "info");
-      stateManager.startLlama().then(() => {
-        showNotification("Server started", "success");
-      }).catch((e) => {
-        showNotification(`Failed: ${e.message}`, "error");
-      });
+
+      return socketClient
+        .request("router:start", {})
+        .then((response) => {
+          if (response.success) {
+            showNotification("Server started", "success");
+          } else {
+            showNotification(`Error: ${response.error}`, "error");
+          }
+        })
+        .catch((e) => {
+          console.error("[DEBUG] Start error:", e.message);
+          showNotification(`Failed: ${e.message}`, "error");
+        });
     };
 
     /**
-     * Stop the server and update state accordingly.
-     * @returns {Promise<void>} Promise that resolves when server is stopped
-     */
+         * Stop the server via socket
+         * @returns {Promise<void>} Promise that resolves when server is stopped
+         */
     PresetsPage.prototype._handleStopServer = function () {
+      console.log("[DEBUG] Stopping server");
       showNotification("Stopping server...", "info");
-      return stateManager.stopLlama().then(() => {
-        showNotification("Server stopped", "success");
-      }).catch((e) => {
-        showNotification(`Failed: ${e.message}`, "error");
-      });
+
+      return socketClient
+        .request("router:stop", {})
+        .then((response) => {
+          if (response.success) {
+            showNotification("Server stopped", "success");
+          } else {
+            showNotification(`Error: ${response.error}`, "error");
+          }
+        })
+        .catch((e) => {
+          console.error("[DEBUG] Stop error:", e.message);
+          showNotification(`Failed: ${e.message}`, "error");
+        });
     };
 
     console.log("[PRESETS] PresetsPage extended with router card methods");

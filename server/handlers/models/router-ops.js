@@ -1,92 +1,149 @@
 /**
  * Models Router Operations
- * Model load/unload via router
+ * Model load/unload via router with standardized callback pattern
  */
 
-import { ok, err } from "../response.js";
-import { loadModel, unloadModel } from "../llama-router/index.js";
-import { getLlamaStatus } from "../llama-router/index.js";
+import { loadModel, unloadModel, getLlamaStatus } from "../llama-router/index.js";
+
+/**
+ * Generate a unique request ID for tracking requests
+ * @param {object} req - Request object
+ * @returns {string} Request ID
+ */
+function getRequestId(req) {
+  return req?.requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
 
 /**
  * Register models router operations handlers on the socket.
  * @param {object} socket - Socket.IO socket instance.
- * @param {object} io - Socket.IO server instance.
+ * @param {object} io - Socket.IO server instance (for broadcasting).
  */
 export function registerModelsRouterHandlers(socket, io) {
   /**
    * Load a model via the llama.cpp router.
-   * @param {object} req - Request object containing modelName/modelId and optional requestId.
+   * CONTRACT:
+   * - Input: { modelName: string }
+   * - Output: { success: true, data: { modelName, status: "loaded" }, timestamp: string }
+   * - Broadcasts: models:updated, llama:status
    */
-  socket.on("models:load", (req) => {
-    const id = req?.requestId || Date.now();
+  socket.on("models:load", async (req, callback) => {
+    const id = getRequestId(req);
     const modelName = req?.modelName || req?.modelId;
 
-    loadModel(modelName)
-      .then(async (result) => {
-        if (result.success) {
-          // Broadcast models:status for individual model update
-          io.emit("models:status", { modelName, status: "loaded" });
+    console.log("[DEBUG] models:load request", { requestId: id, modelName });
 
-          // Broadcast FULL llama:status so all clients get updated models list
-          const fullStatus = await getLlamaStatus();
-          io.emit("llama:status", {
-            ...fullStatus,
-            timestamp: Date.now(),
-          });
+    try {
+      const result = await loadModel(modelName);
 
-          // Also emit models:updated with the full list for clarity
-          io.emit("models:updated", {
-            models: fullStatus.models || [],
-            loaded: modelName,
-            action: "loaded",
-          });
+      if (result.success) {
+        // Get full status and broadcast to all clients
+        const fullStatus = await getLlamaStatus();
 
-          ok(socket, "models:load:result", { modelName, status: "loaded" }, id);
-        } else {
-          io.emit("models:status", { modelName, status: "error", error: result.error });
-          err(socket, "models:load:result", result.error, id);
-        }
-      })
-      .catch((e) => {
-        err(socket, "models:load:result", e.message, id);
+        // Broadcast llama:status update
+        socket.broadcast.emit("llama:status", {
+          ...fullStatus,
+          timestamp: new Date().toISOString(),
+        });
+
+        // Broadcast models:updated with full list
+        socket.broadcast.emit("models:updated", {
+          models: fullStatus.models || [],
+          loaded: modelName,
+          action: "loaded",
+          timestamp: new Date().toISOString(),
+        });
+
+        console.log("[DEBUG] models:load response", { requestId: id, modelName, success: true });
+
+        callback({
+          success: true,
+          data: { modelName, status: "loaded" },
+          timestamp: new Date().toISOString(),
+        });
+      } else {
+        console.error("[ERROR] models:load failed:", result.error);
+
+        socket.broadcast.emit("models:status", {
+          modelName,
+          status: "error",
+          error: result.error,
+          timestamp: new Date().toISOString(),
+        });
+
+        callback({
+          success: false,
+          error: result.error || "Failed to load model",
+          timestamp: new Date().toISOString(),
+        });
+      }
+    } catch (e) {
+      console.error("[ERROR] models:load exception:", e.message);
+      callback({
+        success: false,
+        error: e.message || "Failed to load model",
+        timestamp: new Date().toISOString(),
       });
+    }
   });
 
   /**
    * Unload a model via the llama.cpp router.
-   * @param {object} req - Request object containing modelName/modelId and optional requestId.
+   * CONTRACT:
+   * - Input: { modelName: string }
+   * - Output: { success: true, data: { modelName, status: "unloaded" }, timestamp: string }
+   * - Broadcasts: models:updated, llama:status
    */
-  socket.on("models:unload", (req) => {
-    const id = req?.requestId || Date.now();
+  socket.on("models:unload", async (req, callback) => {
+    const id = getRequestId(req);
     const modelName = req?.modelName || req?.modelId;
 
-    unloadModel(modelName)
-      .then(async (result) => {
-        if (result.success) {
-          // Broadcast models:status for individual model update
-          io.emit("models:status", { modelName, status: "unloaded" });
+    console.log("[DEBUG] models:unload request", { requestId: id, modelName });
 
-          // Broadcast FULL llama:status so all clients get updated models list
-          const fullStatus = await getLlamaStatus();
-          io.emit("llama:status", {
-            ...fullStatus,
-            timestamp: Date.now(),
-          });
+    try {
+      const result = await unloadModel(modelName);
 
-          // Also emit models:updated with the full list for clarity
-          io.emit("models:updated", {
-            models: fullStatus.models || [],
-            unloaded: modelName,
-            action: "unloaded",
-          });
+      if (result.success) {
+        // Get full status and broadcast to all clients
+        const fullStatus = await getLlamaStatus();
 
-          ok(socket, "models:unload:result", { modelName, status: "unloaded" }, id);
-        } else {
-          err(socket, "models:unload:result", result.error, id);
-        }
-      })
-      .catch((e) => {
-        err(socket, "models:unload:result", e.message, id);
-      });
+        // Broadcast llama:status update
+        socket.broadcast.emit("llama:status", {
+          ...fullStatus,
+          timestamp: new Date().toISOString(),
+        });
+
+        // Broadcast models:updated with full list
+        socket.broadcast.emit("models:updated", {
+          models: fullStatus.models || [],
+          unloaded: modelName,
+          action: "unloaded",
+          timestamp: new Date().toISOString(),
+        });
+
+        console.log("[DEBUG] models:unload response", { requestId: id, modelName, success: true });
+
+        callback({
+          success: true,
+          data: { modelName, status: "unloaded" },
+          timestamp: new Date().toISOString(),
+        });
+      } else {
+        console.error("[ERROR] models:unload failed:", result.error);
+
+        callback({
+          success: false,
+          error: result.error || "Failed to unload model",
+          timestamp: new Date().toISOString(),
+        });
+      }
+    } catch (e) {
+      console.error("[ERROR] models:unload exception:", e.message);
+        callback({
+          success: false,
+          error: e.message || "Failed to unload model",
+          timestamp: new Date().toISOString(),
+        });
+    }
   });
 }

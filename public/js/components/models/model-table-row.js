@@ -22,21 +22,41 @@ class ModelTableRow extends Component {
   }
 
   /**
-   * Subscribe to action status for this model's loading state
+   * Called after component is mounted to DOM.
+   * Listen to socket broadcasts for model status updates.
    */
   onMount() {
+    // Subscribe to socket broadcasts for model status changes
     this.unsubscribers.push(
-      stateManager.subscribe("actions:models:load", (action) => {
-        if (action.modelId === this.model.name) {
-          this._setLoading(action.status === "loading");
-        }
-      }),
-      stateManager.subscribe("actions:models:unload", (action) => {
-        if (action.modelId === this.model.name) {
-          this._setLoading(false);
-        }
-      })
+      socketClient.on("models:updated", this._onModelsUpdated.bind(this)),
+      socketClient.on("model:status", this._onModelStatusChange.bind(this))
     );
+  }
+
+  /**
+   * Handle models:updated broadcast - check if this model is affected
+   */
+  _onModelsUpdated(data) {
+    const models = data?.models || [];
+    const updatedModel = models.find(m => m.name === this.model.name);
+    if (updatedModel && updatedModel.status !== this.model.status) {
+      console.log("[ModelTableRow] Model status updated via broadcast:", this.model.name, updatedModel.status);
+      this.model = { ...this.model, ...updatedModel };
+      this.state.status = updatedModel.status;
+      this._updateStatusUI();
+    }
+  }
+
+  /**
+   * Handle model:status broadcast - for targeted status updates
+   */
+  _onModelStatusChange(data) {
+    if (data?.modelName === this.model.name) {
+      console.log("[ModelTableRow] Model status changed:", this.model.name, data.status);
+      this.state.status = data.status;
+      this._setLoading(data.loading || false);
+      this._updateStatusUI();
+    }
   }
 
   /**
@@ -48,6 +68,16 @@ class ModelTableRow extends Component {
       this.unsubscribers = [];
     }
     super.destroy();
+  }
+
+  /**
+   * Update just the status cell without full re-render
+   */
+  _updateStatusUI() {
+    const statusCell = this.$(".status-cell");
+    if (statusCell) {
+      statusCell.textContent = this.statusBadge(this.state.status);
+    }
   }
 
   _setLoading(loading) {
@@ -87,6 +117,18 @@ class ModelTableRow extends Component {
         this.onAction?.(this.model);
       }
     });
+  }
+
+  /**
+   * Update the model data for this row
+   * @param {Object} model - Updated model data
+   */
+  updateModel(model) {
+    if (model && model.name === this.model.name) {
+      this.model = { ...this.model, ...model };
+      this.state.status = model.status || this.state.status;
+      this._updateStatusUI();
+    }
   }
 
   /**
