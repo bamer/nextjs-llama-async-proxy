@@ -33,6 +33,29 @@ const PRESETS_DIR = "config";
  */
 export function registerPresetsHandlers(socket, db) {
   /**
+   * Broadcast presets:updated to all clients
+   */
+  async function broadcastPresetsUpdated() {
+    try {
+      const presets = await listPresets();
+      const presetsData = await Promise.all(presets.map(async (name) => {
+        const preset = await readPreset(name);
+        return {
+          name,
+          path: `${name}.ini`,
+          file: `${PRESETS_DIR}/${name}.ini`,
+          parameters: preset.parsed || {},
+          raw: preset.content || "",
+        };
+      }));
+      socket.broadcast.emit("presets:updated", { presets: presetsData });
+      console.log("[DEBUG] Broadcasted presets:updated with", presetsData.length, "presets");
+    } catch (error) {
+      console.error("[DEBUG] Error broadcasting presets:updated:", error.message);
+    }
+  }
+
+  /**
    * List all presets
    */
   socket.on("presets:list", async (req, ack) => {
@@ -125,51 +148,54 @@ export function registerPresetsHandlers(socket, db) {
   /**
    * Save preset
    */
-  socket.on("presets:save", async (req, ack) => {
-    const id = req?.requestId || Date.now();
-    console.log("[DEBUG] Event: presets:save", { filename: req.filename, requestId: id });
-    try {
-      const { filename, config } = req;
-      const result = await savePreset(filename, config);
-      ok(socket, "presets:save:result", result, id, ack);
-    } catch (error) {
-      console.error("[DEBUG] Error in presets:save:", error.message);
-      err(socket, "presets:save:result", error.message, id, ack);
-    }
-  });
+   socket.on("presets:save", async (req, ack) => {
+     const id = req?.requestId || Date.now();
+     console.log("[DEBUG] Event: presets:save", { filename: req.filename, requestId: id });
+     try {
+       const { filename, config } = req;
+       const result = await savePreset(filename, config);
+       await broadcastPresetsUpdated();
+       ok(socket, "presets:save:result", result, id, ack);
+     } catch (error) {
+       console.error("[DEBUG] Error in presets:save:", error.message);
+       err(socket, "presets:save:result", error.message, id, ack);
+     }
+   });
 
   /**
    * Create preset
    */
-  socket.on("presets:create", async (req, ack) => {
-    const id = req?.requestId || Date.now();
-    console.log("[DEBUG] Event: presets:create", { filename: req.filename, requestId: id });
-    try {
-      const { filename, description } = req;
-      const config = getDefaultConfig();
-      const result = await savePreset(filename, config);
-      ok(socket, "presets:create:result", result, id, ack);
-    } catch (error) {
-      console.error("[DEBUG] Error in presets:create:", error.message);
-      err(socket, "presets:create:result", error.message, id, ack);
-    }
-  });
+   socket.on("presets:create", async (req, ack) => {
+     const id = req?.requestId || Date.now();
+     console.log("[DEBUG] Event: presets:create", { filename: req.filename, requestId: id });
+     try {
+       const { filename, description } = req;
+       const config = getDefaultConfig();
+       const result = await savePreset(filename, config);
+       await broadcastPresetsUpdated();
+       ok(socket, "presets:create:result", result, id, ack);
+     } catch (error) {
+       console.error("[DEBUG] Error in presets:create:", error.message);
+       err(socket, "presets:create:result", error.message, id, ack);
+     }
+   });
 
   /**
    * Delete preset
    */
-  socket.on("presets:delete", async (req, ack) => {
-    const id = req?.requestId || Date.now();
-    console.log("[DEBUG] Event: presets:delete", { filename: req.filename, requestId: id });
-    try {
-      const { filename } = req;
-      const result = await deletePreset(filename);
-      ok(socket, "presets:delete:result", result, id, ack);
-    } catch (error) {
-      console.error("[DEBUG] Error in presets:delete:", error.message);
-      err(socket, "presets:delete:result", error.message, id, ack);
-    }
-  });
+   socket.on("presets:delete", async (req, ack) => {
+     const id = req?.requestId || Date.now();
+     console.log("[DEBUG] Event: presets:delete", { filename: req.filename, requestId: id });
+     try {
+       const { filename } = req;
+       const result = await deletePreset(filename);
+       await broadcastPresetsUpdated();
+       ok(socket, "presets:delete:result", result, id, ack);
+     } catch (error) {
+       console.error("[DEBUG] Error in presets:delete:", error.message);
+       err(socket, "presets:delete:result", error.message, id, ack);
+     }
+   });
 
   /**
    * Validate INI content
@@ -190,50 +216,53 @@ export function registerPresetsHandlers(socket, db) {
   /**
    * Add model to preset
    */
-  socket.on("presets:add-model", async (req, ack) => {
-    const id = req?.requestId || Date.now();
-    console.log("[DEBUG] Event: presets:add-model", { filename: req.filename, model: req.modelName, requestId: id });
-    try {
-      const { filename, modelName, config } = req;
-      const result = await updateModelInPreset(filename, modelName, config);
-      ok(socket, "presets:add-model:result", result, id, ack);
-    } catch (error) {
-      console.error("[DEBUG] Error in presets:add-model:", error.message);
-      err(socket, "presets:add-model:result", error.message, id, ack);
-    }
-  });
+   socket.on("presets:add-model", async (req, ack) => {
+     const id = req?.requestId || Date.now();
+     console.log("[DEBUG] Event: presets:add-model", { filename: req.filename, model: req.modelName, requestId: id });
+     try {
+       const { filename, modelName, config } = req;
+       const result = await updateModelInPreset(filename, modelName, config);
+       await broadcastPresetsUpdated();
+       ok(socket, "presets:add-model:result", result, id, ack);
+     } catch (error) {
+       console.error("[DEBUG] Error in presets:add-model:", error.message);
+       err(socket, "presets:add-model:result", error.message, id, ack);
+     }
+   });
 
   /**
    * Update model in preset
    */
-  socket.on("presets:update-model", async (req, ack) => {
-    const id = req?.requestId || Date.now();
-    console.log("[DEBUG] Event: presets:update-model", { filename: req.filename, model: req.modelName, requestId: id });
-    try {
-      const { filename, modelName, config } = req;
-      const result = await updateModelInPreset(filename, modelName, config);
-      ok(socket, "presets:update-model:result", result, id, ack);
-    } catch (error) {
-      console.error("[DEBUG] Error in presets:update-model:", error.message);
-      err(socket, "presets:update-model:result", error.message, id, ack);
-    }
-  });
+   socket.on("presets:update-model", async (req, ack) => {
+     const id = req?.requestId || Date.now();
+     console.log("[DEBUG] Event: presets:update-model", { filename: req.filename, model: req.modelName, requestId: id });
+     try {
+       const { filename, modelName, config } = req;
+       const result = await updateModelInPreset(filename, modelName, config);
+       await broadcastPresetsUpdated();
+       ok(socket, "presets:update-model:result", result, id, ack);
+     } catch (error) {
+       console.error("[DEBUG] Error in presets:update-model:", error.message);
+       err(socket, "presets:update-model:result", error.message, id, ack);
+     }
+   });
 
-  /**
-   * Remove model from preset
-   */
-  socket.on("presets:remove-model", async (req, ack) => {
-    const id = req?.requestId || Date.now();
-    console.log("[DEBUG] Event: presets:remove-model", { filename: req.filename, model: req.modelName, requestId: id });
-    try {
-      const { filename, modelName } = req;
-      const result = await removeModelFromPreset(filename, modelName);
-      ok(socket, "presets:remove-model:result", result, id, ack);
-    } catch (error) {
-      console.error("[DEBUG] Error in presets:remove-model:", error.message);
-      err(socket, "presets:remove-model:result", error.message, id, ack);
-    }
-  });
+   /**
+    * Remove model from preset
+    */
+   socket.on("presets:remove-model", async (req, ack) => {
+     const id = req?.requestId || Date.now();
+     console.log("[DEBUG] Event: presets:remove-model", { filename: req.filename, model: req.modelName, requestId: id });
+     try {
+       const { filename, modelName } = req;
+       const result = await removeModelFromPreset(filename, modelName);
+       await broadcastPresetsUpdated();
+       ok(socket, "presets:remove-model:result", result, id, ack);
+     } catch (error) {
+       console.error("[DEBUG] Error in presets:remove-model:", error.message);
+       err(socket, "presets:remove-model:result", error.message, id, ack);
+     }
+   });
 
   /**
    * Get defaults for preset
@@ -254,41 +283,42 @@ export function registerPresetsHandlers(socket, db) {
   /**
    * Update defaults in preset
    */
-  socket.on("presets:update-defaults", async (req, ack) => {
-    const id = req?.requestId || Date.now();
-    console.log("[DEBUG] Event: presets:update-defaults", { filename: req.filename, requestId: id });
-    try {
-      const { filename, config } = req;
-      const preset = await readPreset(filename);
-      const existingSection = preset.parsed["*"] || {};
+   socket.on("presets:update-defaults", async (req, ack) => {
+     const id = req?.requestId || Date.now();
+     console.log("[DEBUG] Event: presets:update-defaults", { filename: req.filename, requestId: id });
+     try {
+       const { filename, config } = req;
+       const preset = await readPreset(filename);
+       const existingSection = preset.parsed["*"] || {};
 
-      const mergedSection = { ...existingSection };
-      const newIniSection = modelToIniSection("*", config);
-      Object.assign(mergedSection, newIniSection);
+       const mergedSection = { ...existingSection };
+       const newIniSection = modelToIniSection("*", config);
+       Object.assign(mergedSection, newIniSection);
 
-      for (const [key, value] of Object.entries(config)) {
-        if (value === null || value === undefined) {
-          const iniKey = key.replace(/([A-Z])/g, "-$1").toLowerCase();
-          delete mergedSection[iniKey];
-        }
-      }
+       for (const [key, value] of Object.entries(config)) {
+         if (value === null || value === undefined) {
+           const iniKey = key.replace(/([A-Z])/g, "-$1").toLowerCase();
+           delete mergedSection[iniKey];
+         }
+       }
 
-      preset.parsed["*"] = mergedSection;
-      await savePreset(filename, preset.parsed);
+       preset.parsed["*"] = mergedSection;
+       await savePreset(filename, preset.parsed);
+       await broadcastPresetsUpdated();
 
-      console.log("[DEBUG] Preset defaults updated:", { filename });
-      logger.info(`Preset defaults updated: ${filename}`);
+       console.log("[DEBUG] Preset defaults updated:", { filename });
+       logger.info(`Preset defaults updated: ${filename}`);
 
-      const result = {
-        filename,
-        defaults: iniSectionToModel(mergedSection, {}),
-      };
-      ok(socket, "presets:update-defaults:result", result, id, ack);
-    } catch (error) {
-      console.error("[DEBUG] Error in presets:update-defaults:", error.message);
-      err(socket, "presets:update-defaults:result", error.message, id, ack);
-    }
-  });
+       const result = {
+         filename,
+         defaults: iniSectionToModel(mergedSection, {}),
+       };
+       ok(socket, "presets:update-defaults:result", result, id, ack);
+     } catch (error) {
+       console.error("[DEBUG] Error in presets:update-defaults:", error.message);
+       err(socket, "presets:update-defaults:result", error.message, id, ack);
+     }
+   });
 
   /**
    * Get models directory

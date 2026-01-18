@@ -40,7 +40,9 @@ class LlamaRouterCard extends Component {
         this._updateUI();
       }),
       socketClient.on("presets:updated", (data) => {
+        // Update from broadcast - use props.presets
         this.presets = data?.presets || [];
+        this.props.presets = this.presets;
         this._updatePresetSelect();
       }),
     ];
@@ -295,7 +297,8 @@ class LlamaRouterCard extends Component {
     const select = this.$("#preset-select");
     if (!select) return;
 
-    let presets = this.presets || [];
+    // Use props.presets which gets updated by the parent
+    let presets = this.props.presets || [];
 
     // Ensure presets is an array
     if (!Array.isArray(presets)) {
