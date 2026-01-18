@@ -502,61 +502,170 @@ const copy = AppUtils.deepClone(obj);
 AppUtils.isEmpty({}); // true
 ```
 
-## Controller Pattern
+## Architecture: Decentralized Socket-First Design
 
-Pages use a Controller + Component pattern:
+**KEY PRINCIPLE**: Components call stable Socket.IO handlers directly. stateManager is optional for caching, not gating.
+
+```
+┌─────────────────┐
+│   Components    │ Direct socket calls
+└────────┬────────┘
+         │ socketClient.request("models:list", {})
+         ↓
+┌─────────────────┐
+│  Socket.IO      │ Stable contracts
+└────────┬────────┘
+         │
+         ↓
+┌─────────────────┐
+│ Server Handler  │ Business logic, broadcasts
+└─────────────────┘
+```
+
+### Socket Handler Contracts
+
+All Socket.IO handlers are stable, documented contracts:
 
 ```javascript
-class ModelsController {
-  constructor(options = {}) {
-    this.router = options.router || window.router;
-    this.unsubscribers = [];
-    this.component = null;
+// Server handler - crystal clear input/output
+socket.on("models:list", (req, callback) => {
+  const models = db.getModels();
+  callback({ success: true, data: models });
+  
+  // Broadcast to all clients for cross-component sync
+  socket.broadcast.emit("models:updated", { models });
+});
+
+socket.on("models:load", (req, callback) => {
+  try {
+    const result = loadModel(req.modelName);
+    callback({ success: true, data: result });
+    socket.broadcast.emit("models:updated", { models: getModels() });
+  } catch (error) {
+    callback({ success: false, error: error.message });
+  }
+});
+```
+
+### Component Pattern: Direct Socket Calls
+
+Components call socket handlers directly and listen to broadcasts:
+
+```javascript
+class ModelsPage extends Component {
+  constructor(props) {
+    super(props);
+    this.models = [];
+    this.loading = false;
   }
 
-  init() {
-    // Setup subscriptions
-    this.unsubscribers.push(stateManager.subscribe("models", this.onModelsChange.bind(this)));
-    this.loadModels();
-  }
-
-  async loadModels() {
-    const data = await stateManager.getModels();
-    stateManager.set("models", data.models || []);
-  }
-
-  onModelsChange(models) {
-    if (this.component) {
-      this.component.updateModelList(models);
+  async onMount() {
+    // Direct socket call - no stateManager gating
+    try {
+      this.loading = true;
+      const response = await socketClient.request("models:list", {});
+      this.models = response.data || [];
+      this.render();
+    } catch (error) {
+      console.error("[ModelsPage] Failed to load:", error);
+    } finally {
+      this.loading = false;
     }
+
+    // Listen to broadcasts for cross-component sync
+    this.unsubscribers = [
+      socketClient.on("models:updated", (data) => {
+        this.models = data.models || [];
+        this.render();
+      }),
+    ];
   }
 
-  willUnmount() {
-    // Cleanup subscriptions
-    this.unsubscribers.forEach((unsub) => unsub());
-    if (this.component) {
-      this.component.destroy();
+  async handleLoadModel(modelName) {
+    try {
+      this.loading = true;
+      const response = await socketClient.request("models:load", {
+        modelName,
+      });
+      if (response.success) {
+        showNotification("Model loaded", "success");
+        // Broadcast handler will update other components
+      } else {
+        showNotification(response.error, "error");
+      }
+    } finally {
+      this.loading = false;
     }
   }
 
   destroy() {
-    this.willUnmount();
-  }
-
-  render() {
-    this.component = new ModelsPage({
-      models: stateManager.get("models") || [],
-    });
-    this.init();
-    return this.component.render();
-  }
-
-  didMount() {
-    if (this.component && this.component.didMount) {
-      this.component.didMount();
-    }
+    this.unsubscribers?.forEach((unsub) => unsub());
   }
 }
+```
+
+### stateManager Role: Minimal Cache Only
+
+Use stateManager **only** for caching shared state, not for gating requests:
+
+```javascript
+// In a component that needs cached state
+onMount() {
+  // Try cache first
+  this.models = stateManager.get("models") || [];
+  
+  // Then refresh from server
+  socketClient.request("models:list", {}).then((response) => {
+    this.models = response.data;
+    // Update cache for other components
+    stateManager.set("models", this.models);
+    this.render();
+  });
+}
+```
+
+### Rules for Stable Contracts
+
+1. **One handler = one job** - `models:list` lists, `models:load` loads
+2. **Handler signature is frozen** - once defined, don't change input/output
+3. **Always return callback with {success, data/error}** format
+4. **Broadcast for shared state changes** - don't rely on requestor to propagate
+5. **No business logic in stateManager** - only in handlers
+6. **No handler calls other handlers** - chain on client side if needed
+
+### Handler Naming Convention
+
+```
+<domain>:<action>
+
+models:list         // GET all models
+models:load         // POST start model
+models:unload       // POST stop model
+models:delete       // DELETE model
+models:scan         // POST scan disk
+router:status       // GET router status
+router:restart      // POST restart
+config:get          // GET config
+config:update       // POST update config
+```
+
+### Old Controller Pattern (Deprecated)
+
+Don't do this anymore:
+
+```javascript
+// ❌ OLD - stateManager as gatekeeper
+async loadModels() {
+  const data = await stateManager.getModels();
+  stateManager.set("models", data.models || []);
+}
+
+// ✅ NEW - direct socket call
+async loadModels() {
+  const response = await socketClient.request("models:list", {});
+  this.models = response.data || [];
+}
+```
 ```
 
 ## Event-Driven Logging
@@ -801,6 +910,10 @@ async loadData() {
 
 - [docs/README.md](docs/README.md) - User guide
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - Technical architecture
+- [SOCKET_CONTRACTS.md](SOCKET_CONTRACTS.md) - **IMPORTANT** Stable socket API reference
+- [REFACTORING_GUIDE.md](REFACTORING_GUIDE.md) - How to refactor components to socket-first
+- [SERVER_HANDLER_TEMPLATE.md](SERVER_HANDLER_TEMPLATE.md) - Server handler best practices
+- [MIGRATION_TO_SOCKET_FIRST.md](MIGRATION_TO_SOCKET_FIRST.md) - Full migration plan
 
 ---
 

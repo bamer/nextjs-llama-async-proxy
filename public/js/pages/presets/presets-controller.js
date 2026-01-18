@@ -98,7 +98,7 @@ class PresetsController {
     try {
       const result = await service.listPresets();
       const presets = result?.presets || result || [];
-      stateManager.setPageState("presets", "presets", presets);
+      stateManager.set("presets", presets);
       stateManager.setActionStatus("presets:load", { status: "complete" });
     } catch (error) {
       console.error("[PRESETS] Load presets error:", error.message, error.stack);

@@ -189,12 +189,22 @@ class SocketClient {
   }
 
   /**
-   * Make a request and wait for response
+   * Make a request and wait for response with automatic connection waiting
    * Returns a Promise that resolves with the response
+   * @param {string} event - Event name (e.g., "models:list", "router:status")
+   * @param {Object} data - Request data
+   * @param {number} timeout - Request timeout in ms (default 30000)
+   * @returns {Promise} Promise resolving to {success, data/error}
    */
-  async request(event, data = {}) {
+  async request(event, data = {}, timeout = 30000) {
+    // Wait for connection if not connected
     if (!this.socket?.connected) {
-      throw new Error("Socket not connected");
+      console.log(`[SocketClient] Waiting for connection to send: ${event}`);
+      await this._waitForConnection(5000);
+    }
+
+    if (!this.socket?.connected) {
+      throw new Error(`Cannot send ${event}: Not connected to server`);
     }
 
     // Generate unique request ID
@@ -203,20 +213,56 @@ class SocketClient {
 
     return new Promise((resolve, reject) => {
       // Set timeout
-      const timeout = setTimeout(() => {
+      const timeoutHandle = setTimeout(() => {
         this.off(responseEvent);
-        reject(new Error(`Request timeout: ${event}`));
-      }, 30000);
+        reject(new Error(`Request timeout (${timeout}ms): ${event}`));
+      }, timeout);
 
       // Listen for response
-      this.once(responseEvent, (response) => {
-        clearTimeout(timeout);
-        this.off(responseEvent);
+      const handler = (response) => {
+        clearTimeout(timeoutHandle);
+        this.off(responseEvent, handler);
         resolve(response);
-      });
+      };
+
+      this.on(responseEvent, handler);
 
       // Send request
-      this.socket.emit(event, { ...data, requestId });
+      try {
+        this.socket.emit(event, { ...data, requestId });
+      } catch (e) {
+        clearTimeout(timeoutHandle);
+        this.off(responseEvent, handler);
+        reject(e);
+      }
+    });
+  }
+
+  /**
+   * Wait for socket to connect
+   * @param {number} timeout - Max wait time in ms
+   * @returns {Promise} Resolves when connected or rejects on timeout
+   */
+  async _waitForConnection(timeout = 5000) {
+    if (this.socket?.connected) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error("Connection timeout"));
+      }, timeout);
+
+      const checkConnection = () => {
+        if (this.socket?.connected) {
+          clearTimeout(timer);
+          resolve();
+        } else {
+          setTimeout(checkConnection, 100);
+        }
+      };
+
+      checkConnection();
     });
   }
 
