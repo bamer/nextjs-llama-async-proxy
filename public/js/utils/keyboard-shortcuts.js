@@ -64,7 +64,7 @@ class KeyboardShortcuts {
       parts.push("shift");
     }
 
-    const key = e.key.toLowerCase();
+    const key = (e.key || "").toLowerCase();
     if (key !== "control" && key !== "alt" && key !== "shift" && key !== "meta") {
       parts.push(key);
     }

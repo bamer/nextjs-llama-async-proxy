@@ -684,3 +684,82 @@ html.dark-mode .data-table__skeleton-placeholder {
   background: linear-gradient(90deg, var(--gray-700, #374151) 25%, var(--gray-600, #4b5563) 50%, var(--gray-700, #374151) 75%);
   background-size: 200% 100%;
 }
+
+/**
+ * Llama Router Card Styles
+ * Loaded models display section
+ */
+.loaded-models-section {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  background: var(--bg-secondary, #f9fafb);
+}
+
+.loaded-models-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.5rem 0;
+}
+
+.loaded-models-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-height: 2rem;
+}
+
+.loaded-model-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+
+.loaded-model-item .model-name {
+  font-weight: 500;
+  color: var(--text-primary, #1f2937);
+  word-break: break-all;
+}
+
+.loaded-model-item .model-size {
+  font-size: 0.75rem;
+  color: var(--text-tertiary, #9ca3af);
+  margin-left: 0.5rem;
+}
+
+.no-models-loaded {
+  padding: 0.75rem;
+  text-align: center;
+  color: var(--text-tertiary, #9ca3af);
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+html.dark-mode .loaded-models-section {
+  background: var(--gray-800, #1f2937);
+  border-color: var(--gray-700, #374151);
+}
+
+html.dark-mode .loaded-models-title {
+  color: var(--gray-400, #9ca3af);
+}
+
+html.dark-mode .loaded-model-item {
+  background: var(--gray-900, #111827);
+  border-color: var(--gray-700, #374151);
+}
+
+html.dark-mode .loaded-model-item .model-name {
+  color: var(--gray-100, #f3f4f6);
+}
+
+html.dark-mode .no-models-loaded {
+  color: var(--gray-500, #6b7280);
+}

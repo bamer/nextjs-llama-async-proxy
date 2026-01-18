@@ -82,6 +82,49 @@ class StateLlamaServer {
       this.core.set("routerStatus", newState);
       console.log("[StateLlamaServer] Router stopped - cleared models and status");
     });
+
+    // Handle models:updated broadcast - update models list when models load/unload
+    this.socket.socket.on("models:updated", (data) => {
+      console.log("[StateLlamaServer] Models updated:", data);
+      const current = this.core.get("llamaServerStatus") || {};
+      const updatedState = {
+        ...current,
+        models: data.models || [],
+        lastUpdated: Date.now(),
+      };
+      this.core.set("llamaServerStatus", updatedState);
+      this.core.set("routerStatus", updatedState);
+      console.log("[StateLlamaServer] Updated models list from models:updated event");
+    });
+
+    // Handle models:status broadcast - update individual model status
+    this.socket.socket.on("models:status", (data) => {
+      console.log("[StateLlamaServer] Model status change:", data);
+      const current = this.core.get("llamaServerStatus") || {};
+      const models = current.models || [];
+      
+      // Update the specific model's status
+      const updatedModels = models.map((m) => {
+        // Handle both id and name field formats
+        const modelId = m.id || m.name;
+        if (modelId === data.modelName) {
+          return {
+            ...m,
+            status: { value: data.status, description: data.status },
+          };
+        }
+        return m;
+      });
+      
+      const updatedState = {
+        ...current,
+        models: updatedModels,
+        lastUpdated: Date.now(),
+      };
+      this.core.set("llamaServerStatus", updatedState);
+      this.core.set("routerStatus", updatedState);
+      console.log("[StateLlamaServer] Updated individual model status");
+    });
   }
 
   /**

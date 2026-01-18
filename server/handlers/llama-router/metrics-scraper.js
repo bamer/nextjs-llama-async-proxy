@@ -35,15 +35,22 @@ export class LlamaServerMetricsScraper {
       const healthData = await this._fetchEndpoint("/health", 2000);
       let metrics = this._extractMetricsFromHealth(healthData);
 
-      // If no useful metrics from health, try /metrics endpoint
-      if (!metrics || (metrics.tokensPerSecond === 0 && metrics.activeModels === 0)) {
-        metrics = await this._tryMetricsEndpoint();
+      // If health endpoint returned valid data (hasData: true), use it
+      // Even if tokens are 0, we have valid uptime from server
+      if (metrics && metrics.hasData === true) {
+        this.cache.set("metrics", { data: metrics, timestamp: Date.now() });
+        return metrics;
       }
 
+      // Try /metrics endpoint if health didn't return valid data
+      metrics = await this._tryMetricsEndpoint();
       if (metrics) {
         this.cache.set("metrics", { data: metrics, timestamp: Date.now() });
         return metrics;
       }
+
+      // Return cached data or null
+      return cached?.data || null;
     } catch (e) {
       console.debug("[LlamaMetrics] Failed to fetch metrics:", e.message);
     }
@@ -78,6 +85,32 @@ export class LlamaServerMetricsScraper {
         nDecodeTotal: 0,
         nBusySlotsPerDecode: 0,
         nTokensMax: 0,
+        hasData: true,
+      };
+    }
+
+    // If data is an object with raw text (from failed JSON parse), treat as "ok"
+    if (data && typeof data === "object" && data.raw !== undefined) {
+      return {
+        tokensPerSecond: 0,
+        predictedTokensSeconds: 0,
+        uptime: 0,
+        activeModels: 0,
+        totalRequests: 0,
+        queueSize: 0,
+        vramTotal: 0,
+        vramUsed: 0,
+        nCtx: 0,
+        nParallel: 0,
+        nThreads: 0,
+        promptTokensTotal: 0,
+        predictedTokensTotal: 0,
+        promptSecondsTotal: 0,
+        predictedSecondsTotal: 0,
+        nDecodeTotal: 0,
+        nBusySlotsPerDecode: 0,
+        nTokensMax: 0,
+        hasData: true,
       };
     }
 
@@ -86,7 +119,7 @@ export class LlamaServerMetricsScraper {
       return {
         tokensPerSecond: data.tokens_per_second || data.tokensPerSecond || 0,
         predictedTokensSeconds: data.predicted_tokens_seconds || data.predictedTokensSeconds || data.tokens_per_second || 0,
-        uptime: data.uptime || 0,
+        uptime: data.uptime || data.uptime_s || data.server_uptime || data["server-uptime"] || 0,
         activeModels: data.active_models || data.activeModels || 0,
         totalRequests: data.total_requests || data.totalRequests || 0,
         queueSize: data.queue_size || data.queueSize || 0,
@@ -102,6 +135,7 @@ export class LlamaServerMetricsScraper {
         nDecodeTotal: data.n_decode_total || 0,
         nBusySlotsPerDecode: data.n_busy_slots_per_decode || 0,
         nTokensMax: data.n_tokens_max || 0,
+        hasData: true,
       };
     }
 

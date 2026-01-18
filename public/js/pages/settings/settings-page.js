@@ -334,8 +334,8 @@ class SettingsPage extends Component {
    * @returns {void}
    */
   async _updateStatusUI() {
-    // Update the RouterCard component's status display
-    const routerCard = this._el?.querySelector(".router-card");
+    // Update the LlamaRouterCard component's status display
+    const routerCard = this._el?.querySelector(".llama-router-status-card");
     if (!routerCard) return;
 
     const rs = this.routerStatus || {};
@@ -350,10 +350,10 @@ class SettingsPage extends Component {
       statusBadge.className = `status-badge ${isRunning ? "running" : "idle"}`;
     }
 
-    // Update port display
-    const portDisplay = routerCard.querySelector(".router-port-display");
+    // Update port display in header
+    const portDisplay = routerCard.querySelector(".header-title-text");
     if (portDisplay) {
-      portDisplay.textContent = displayPort || "?";
+      portDisplay.textContent = isRunning ? `Llama Router : ${displayPort}` : "Llama Router";
     }
   }
 
@@ -396,14 +396,11 @@ class SettingsPage extends Component {
 
     return Component.h("div", { className: "settings-page" }, [
       Component.h("h1", {}, "Settings"),
-      Component.h(window.RouterCard, {
+      Component.h(window.LlamaRouterCard, {
         status: this.llamaStatus,
         routerStatus: this.routerStatus,
         models: this.models || [],
-        configPort: this.port,
         presets: this.presets,
-        maxModelsLoaded: this.maxModelsLoaded,
-        ctxSize: this.ctx_size,
         onAction: (action) => {
           switch (action) {
           case "start":

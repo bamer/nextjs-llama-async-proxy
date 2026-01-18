@@ -380,8 +380,8 @@ class StateManager {
    * @param {any} data - Event data
    */
   emit(event, data = null) {
-    const key = `actions:${event}`;
-    this.core.set(key, {
+    // Use event directly as key (don't add prefix)
+    this.core.set(event, {
       data,
       timestamp: Date.now(),
       event,

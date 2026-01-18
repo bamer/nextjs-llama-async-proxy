@@ -19,12 +19,18 @@ class StateResponseHandlers {
         const p = this.pending.get(data.requestId);
         this.pending.delete(data.requestId);
         if (data.success) {
+          console.log("[StateResponse] Resolving with data:", data.data);
           p.resolve(data.data);
         } else {
+          console.log("[StateResponse] Rejecting:", data.error);
           p.reject(new Error(data.error?.message || "Request failed"));
         }
       } else {
-        console.log("[StateResponse] No pending request for", data?.requestId);
+        console.log("[StateResponse] No pending request for", data?.requestId, "Looking for:", event);
+        // Debug: show what pending requests we have
+        if (this.pending.size > 0) {
+          console.log("[StateResponse] Pending requests:", Array.from(this.pending.keys()));
+        }
       }
     };
 

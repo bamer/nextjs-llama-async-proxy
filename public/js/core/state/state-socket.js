@@ -177,18 +177,28 @@ class StateSocket {
     * @param {Object} data - Request data payload
     * @returns {Promise<Object>} Response promise
     */
-  async _executeRequest(event, data) {
-    const reqId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+   async _executeRequest(event, data) {
+     const reqId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Prune oldest requests to prevent memory leaks
-    this._prunePendingRequests();
+     // Prune oldest requests to prevent memory leaks
+     this._prunePendingRequests();
 
-    return new Promise((resolve, reject) => {
-      this.pending.set(reqId, { resolve, reject, event, timestamp: Date.now() });
-      console.log("[StateSocket] Sending request:", event, "ID:", reqId);
-      this.socket.emit(event, { ...data, requestId: reqId });
-    });
-  }
+     console.log("[StateSocket] Sending request:", event, "ID:", reqId, "Pending:", this.pending.size);
+
+     return new Promise((resolve, reject) => {
+       this.pending.set(reqId, { resolve, reject, event, timestamp: Date.now() });
+       this.socket.emit(event, { ...data, requestId: reqId });
+
+       // Add timeout to prevent hanging
+       setTimeout(() => {
+         if (this.pending.has(reqId)) {
+           console.warn("[StateSocket] Request timeout:", event, "ID:", reqId);
+           this.pending.delete(reqId);
+           reject(new Error("Request timeout"));
+         }
+       }, 10000);
+     });
+   }
 
   /**
    * Clean up resources and disconnect handlers

@@ -31,12 +31,12 @@ class SettingsController {
 
     // NEW: Listen for action events
     this.unsubscribers.push(
-      stateManager.subscribe("action:settings:save", (data) => this._handleSave(data)),
+      stateManager.subscribe("action:settings:save", (state) => this._handleSave(state.data)),
       stateManager.subscribe("action:settings:reset", () => this._handleReset()),
       stateManager.subscribe("action:router:start", () => this._handleRouterStart()),
       stateManager.subscribe("action:router:restart", () => this._handleRouterRestart()),
       stateManager.subscribe("action:router:stop", () => this._handleRouterStop()),
-      stateManager.subscribe("action:config:import", (data) => this._handleImport(data)),
+      stateManager.subscribe("action:config:import", (state) => this._handleImport(state.data)),
       stateManager.subscribe("action:config:export", () => this._handleExport())
     );
 
@@ -68,9 +68,7 @@ class SettingsController {
   }
 
   async render() {
-    // Load critical data first
-    await this._loadCriticalData();
-
+    // Create component first (don't wait for data)
     this.comp = new window.SettingsPage({});
 
     const el = this.comp.render();
@@ -84,6 +82,11 @@ class SettingsController {
 
     this.init();
 
+    // Load data in background (non-blocking)
+    this._loadCriticalData().catch(e => {
+      console.warn("[SETTINGS] Background data load failed:", e.message);
+    });
+
     // Load optional data in background
     this._loadOptionalData();
 
@@ -91,16 +94,39 @@ class SettingsController {
   }
 
   /**
-   * Load critical data that blocks initial render (config and settings).
-   * @returns {Promise<void>} Promise that resolves when critical data is loaded.
+   * Load critical data (config and settings) - non-blocking
+   * @returns {Promise<void>}
    */
   async _loadCriticalData() {
-    const [c, s] = await Promise.all([
-      stateManager.getConfig(),
-      stateManager.getSettings(),
-    ]);
-    stateManager.set("config", c.config || {});
-    stateManager.set("settings", s.settings || {});
+    console.log("[SETTINGS] Loading critical data...");
+    try {
+      // Load config
+      const configPromise = stateManager.getConfig().then(c => {
+        console.log("[SETTINGS] Config response received:", !!c);
+        const config = c?.config || c || {};
+        stateManager.set("config", config);
+        console.log("[SETTINGS] Config loaded, keys:", Object.keys(config));
+      }).catch(e => {
+        console.error("[SETTINGS] Config load error:", e.message);
+        stateManager.set("config", {});
+      });
+
+      // Load settings
+      const settingsPromise = stateManager.getSettings().then(s => {
+        console.log("[SETTINGS] Settings response received:", !!s);
+        const settings = s?.settings || s || {};
+        stateManager.set("settings", settings);
+        console.log("[SETTINGS] Settings loaded, keys:", Object.keys(settings));
+      }).catch(e => {
+        console.error("[SETTINGS] Settings load error:", e.message);
+        stateManager.set("settings", {});
+      });
+
+      await Promise.all([configPromise, settingsPromise]);
+      console.log("[SETTINGS] All data loaded successfully");
+    } catch (e) {
+      console.error("[SETTINGS] Data load failed:", e.message);
+    }
   }
 
   /**
@@ -125,12 +151,18 @@ class SettingsController {
    * @param {Object} data - Data containing config and settings
    */
   async _handleSave(data) {
+    console.log("[SETTINGS] _handleSave called with:", data ? "data present" : "no data");
     const { config, settings } = data;
     try {
       stateManager.setActionStatus("settings:save", { status: "saving" });
+      console.log("[SETTINGS] Saving config:", config);
+      console.log("[SETTINGS] Saving settings:", settings);
 
-      await stateManager.updateConfig(config);
-      await stateManager.updateSettings(settings);
+      const configResult = await stateManager.updateConfig(config);
+      console.log("[SETTINGS] Config result:", configResult);
+
+      const settingsResult = await stateManager.updateSettings(settings);
+      console.log("[SETTINGS] Settings result:", settingsResult);
 
       stateManager.set("config", config);
       stateManager.set("settings", settings);
@@ -138,6 +170,7 @@ class SettingsController {
       stateManager.setActionStatus("settings:save", { status: "complete" });
       showNotification("Settings saved successfully", "success");
     } catch (error) {
+      console.error("[SETTINGS] Save error:", error.message);
       stateManager.setActionStatus("settings:save", {
         status: "error",
         error: error.message,

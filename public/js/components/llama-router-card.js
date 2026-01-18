@@ -31,7 +31,9 @@ class LlamaRouterCard extends Component {
       }),
       stateManager.subscribe("llamaServerMetrics", (m) => {
         this.props.metrics = m;
+        // Update BOTH detailed metrics AND glance grid (for real-time updates)
         this._updateDetailedMetrics();
+        this._updateUI();
       }),
       stateManager.subscribe("presets", (p) => {
         this.props.presets = p || [];
@@ -106,6 +108,7 @@ class LlamaRouterCard extends Component {
 
     const status = this.props.status || {};
     const rs = this.props.routerStatus || {};
+    const metrics = this.props.metrics || {};
 
     // Handle loading, running, and stopped states
     const isLoading = status.status === "loading";
@@ -132,24 +135,34 @@ class LlamaRouterCard extends Component {
     const titleText = isRunning ? `Llama Router : ${displayPort}` : "Llama Router";
     this.setText(".header-title-text", titleText);
 
-    // 2. Glance Grid - Show loading or data
+    // 2. Glance Grid - Show loading or data (order: Prompt, Predicted, Models, Uptime)
     if (isLoading) {
       this.setText("[data-glance=\"prompt-ts\"]", "...");
+      this.setText("[data-glance=\"pred-ts\"]", "...");
       this.setText("[data-glance=\"models\"]", "...");
-      this.setText("[data-glance=\"vram\"]", "...");
       this.setText("[data-glance=\"uptime\"]", "...");
     } else {
-      this.setText("[data-glance=\"prompt-ts\"]", `${(this.props.metrics?.promptTokensSeconds || 0).toFixed(1)} t/s`);
+      // Prompt tokens/second
+      const promptTs = metrics.promptTokensSeconds || 0;
+      this.setText("[data-glance=\"prompt-ts\"]", `${promptTs.toFixed(1)} t/s`);
+
+      // Predicted tokens/second
+      const predTs = metrics.predictedTokensSeconds || 0;
+      this.setText("[data-glance=\"pred-ts\"]", `${predTs.toFixed(1)} t/s`);
+
+      // Models count
       const modelsData = status.models || rs.models || [];
       const loadedCount = Array.isArray(modelsData) ? modelsData.filter(m => m.status?.value === "loaded").length : 0;
       const totalModels = Array.isArray(modelsData) ? modelsData.length : (this.props.models || []).length || 0;
       this.setText("[data-glance=\"models\"]", `${loadedCount}/${totalModels}`);
 
-      const uptimeSeconds = this.props.metrics?.uptime || status.uptime || 0;
+      // Uptime - prefer metrics.uptime, fallback to status.uptime, then server start time
+      let uptimeSeconds = metrics.uptime || status.uptime || 0;
+      // If still 0, calculate from server start time if available
+      if (uptimeSeconds === 0 && status.startTime) {
+        uptimeSeconds = Math.floor((Date.now() - status.startTime) / 1000);
+      }
       this.setText("[data-glance=\"uptime\"]", window.FormatUtils.formatUptime(uptimeSeconds));
-
-      const predTs = this.props.metrics?.predictedTokensSeconds || 0;
-      this.setText("[data-glance=\"vram\"]", `${predTs.toFixed(1)} t/s`);
     }
 
     // 3. Toggle Button - disabled during loading
@@ -173,6 +186,56 @@ class LlamaRouterCard extends Component {
       restartBtn.disabled = !isRunning || displayLoading;
       restartBtn.textContent = displayLoading ? "Restarting..." : "Restart";
     }
+
+    // 4. Update loaded models list display
+    this._updateLoadedModelsList();
+  }
+
+  /**
+   * Update the loaded models list display in the UI
+   */
+  _updateLoadedModelsList() {
+    const status = this.props.status || {};
+    const rs = this.props.routerStatus || {};
+    const modelsData = status.models || rs.models || [];
+
+    const loadedModelsContainer = this.$(".loaded-models-list");
+    if (!loadedModelsContainer) return;
+
+    // Filter for loaded models
+    const loadedModels = modelsData.filter(m => m.status?.value === "loaded");
+
+    if (loadedModels.length === 0) {
+      loadedModelsContainer.innerHTML = '<div class="no-models-loaded">No models loaded</div>';
+      return;
+    }
+
+    // Render loaded models
+    const modelsHtml = loadedModels.map(m => {
+      const modelName = m.id || m.name || "Unknown";
+      const size = m.size ? this._formatModelSize(m.size) : "";
+      return `<div class="loaded-model-item" data-model="${modelName}">
+        <span class="model-name">${modelName}</span>
+        ${size ? `<span class="model-size">${size}</span>` : ""}
+      </div>`;
+    }).join("");
+
+    loadedModelsContainer.innerHTML = modelsHtml;
+  }
+
+  /**
+   * Format model size for display
+   */
+  _formatModelSize(bytes) {
+    if (!bytes) return "";
+    const units = ["B", "KB", "MB", "GB", "TB"];
+    let size = bytes;
+    let unitIndex = 0;
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+    return `${size.toFixed(1)} ${units[unitIndex]}`;
   }
 
   _updateDetailedMetrics() {
@@ -214,10 +277,17 @@ class LlamaRouterCard extends Component {
     this.setText("[data-metric=\"n-parallel\"]", nParallel);
     this.setText("[data-metric=\"n-threads\"]", nThreads);
 
-    // Update glance metrics
+    // Update glance metrics for real-time display
     this.setText("[data-glance=\"prompt-ts\"]", `${(m.promptTokensSeconds || 0).toFixed(1)} t/s`);
     const predTs = m.predictedTokensSeconds || 0;
-    this.setText("[data-glance=\"vram\"]", `${predTs.toFixed(1)} t/s`);
+    this.setText("[data-glance=\"pred-ts\"]", `${predTs.toFixed(1)} t/s`);
+
+    // Update uptime in glance grid
+    let uptimeSeconds = m.uptime || status.uptime || 0;
+    if (uptimeSeconds === 0 && status.startTime) {
+      uptimeSeconds = Math.floor((Date.now() - status.startTime) / 1000);
+    }
+    this.setText("[data-glance=\"uptime\"]", window.FormatUtils.formatUptime(uptimeSeconds));
   }
 
   _updatePresetSelect() {
@@ -281,11 +351,19 @@ class LlamaRouterCard extends Component {
           ])
         ])
       ]),
+      // Glance grid order: Prompt, Predicted, Models, Uptime (as requested)
       Component.h("div", { className: "status-glance-grid" }, [
         this._renderGlanceItem("Prompt", "prompt-ts"),
+        this._renderGlanceItem("Predicted", "pred-ts"),
         this._renderGlanceItem("Models", "models"),
-        this._renderGlanceItem("Predicted", "vram"),
         this._renderGlanceItem("Uptime", "uptime")
+      ]),
+      // Loaded Models Section - Shows currently loaded models
+      Component.h("div", { className: "loaded-models-section" }, [
+        Component.h("h4", { className: "loaded-models-title" }, "Loaded Models"),
+        Component.h("div", { className: "loaded-models-list" }, [
+          Component.h("div", { className: "no-models-loaded" }, "No models loaded")
+        ])
       ]),
       Component.h("div", { className: "status-controls-bar" }, [
         Component.h("div", { className: "preset-group" }, [
