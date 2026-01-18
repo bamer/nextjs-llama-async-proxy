@@ -60,6 +60,9 @@
       
       socket.on("connect", () => {
         console.log("[App] Socket.IO connected, socket ID:", socket.id);
+        // Subscribe to metrics updates for real-time data
+        socket.emit("metrics:subscribe", { interval: 2000 });
+        console.log("[App] Subscribed to metrics with 2s interval");
       });
       
       stateManager.init(socket);

@@ -15,6 +15,7 @@ export class LlamaServerProcessManager {
    * @param {number} [config.batchSize] - Batch size for inference.
    * @param {number} [config.threads] - Number of threads to use.
    * @param {number} [config.ngl] - Number of GPU layers to offload.
+   * @param {Object} [config.io] - Socket.IO server instance for broadcasting logs.
    */
   constructor(config) {
     this.config = config;
@@ -25,6 +26,71 @@ export class LlamaServerProcessManager {
     this.isRunning = false;
     this.startTime = null;
     this.pid = null;
+    this.io = config.io || null; // Socket.IO instance for broadcasting
+  }
+
+  /**
+   * Set Socket.IO instance for broadcasting logs.
+   * @param {Object} io - Socket.IO server instance.
+   */
+  setIo(io) {
+    this.io = io;
+  }
+
+  /**
+   * Start llama-server as child process
+   * @returns {Promise<ChildProcess>}
+   */
+  async start() {
+    if (this.isRunning) {
+      console.log("[DEBUG] llama-server already running, PID:", this.pid);
+      return this.process;
+    }
+
+    const args = this._buildArgs();
+    console.log("[DEBUG] Starting llama-server with args:", args);
+
+    this.process = spawn("llama-server", args, {
+      cwd: this.config.baseModelsPath || process.cwd(),
+      stdio: ["pipe", "pipe", "pipe"],
+      env: {
+        ...process.env,
+        LLAMA_METRICS_ENABLED: "1",
+      },
+    });
+
+    this.pid = this.process.pid;
+    this.startTime = Date.now();
+    this.isRunning = true;
+
+    // Capture stdout
+    this.process.stdout.on("data", (data) => {
+      const line = data.toString();
+      this.stdoutLines.push(line);
+      this._parseOutput(line, "stdout");
+    });
+
+    // Capture stderr
+    this.process.stderr.on("data", (data) => {
+      const line = data.toString();
+      this.stderrLines.push(line);
+      this._parseOutput(line, "stderr");
+    });
+
+    // Handle process exit
+    this.process.on("exit", (code, signal) => {
+      console.log("[DEBUG] llama-server exited:", { code, signal });
+      this.isRunning = false;
+      this._cleanup();
+    });
+
+    // Handle process errors
+    this.process.on("error", (error) => {
+      console.error("[DEBUG] llama-server error:", error);
+      this.isRunning = false;
+    });
+
+    return this.process;
   }
 
   /**
@@ -174,9 +240,9 @@ export class LlamaServerProcessManager {
       timestamp: Date.now(),
     };
 
-    // Emit to logs via socket
-    if (global.io) {
-      global.io.emit("logs:entry", {
+    // Emit to logs via Socket.IO (use instance io, NOT global.io)
+    if (this.io) {
+      this.io.emit("logs:entry", {
         type: "broadcast",
         data: { entry: logEntry },
       });

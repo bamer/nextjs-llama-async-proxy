@@ -52,10 +52,10 @@ describe("Server.js - Source Structure Tests", () => {
     });
 
     it("should create data directory if not exists", () => {
-      // Positive test: verify directory creation logic
+      // Positive test: verify directory creation logic (async version)
       expect(
         serverSource.includes(
-          "if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true })"
+          "await fs.promises.mkdir(dataDir, { recursive: true })"
         )
       ).toBe(true);
     });
@@ -71,8 +71,11 @@ describe("Server.js - Source Structure Tests", () => {
     });
 
     it("should configure Socket.IO with CORS", () => {
-      // Positive test: verify CORS configuration
-      expect(serverSource.includes('cors: { origin: "*", methods: ["GET", "POST"] }')).toBe(true);
+      // Positive test: verify CORS configuration with environment-based origin
+      expect(serverSource.includes("origin:")).toBe(true);
+      expect(serverSource.includes("process.env.NODE_ENV === \"production\"")).toBe(true);
+      expect(serverSource.includes("cors")).toBe(true);
+      expect(serverSource.includes('methods: ["GET", "POST"]')).toBe(true);
     });
 
     it("should configure Socket.IO path", () => {

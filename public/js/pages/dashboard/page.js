@@ -90,6 +90,8 @@ class DashboardPage extends Component {
       this.state.metrics = metrics;
       this.state.gpuMetrics = metrics?.gpu || { usage: 0, memoryUsed: 0, memoryTotal: 0, list: [] };
       this._updateMetricsUI();
+      // Update GPU and system health components - THIS WAS MISSING!
+      this._updateSystemHealthAndGPU();
     }
 
     if (history && history.length > 0) {
@@ -131,11 +133,13 @@ class DashboardPage extends Component {
   }
 
   _onMetricsChange(metrics) {
-    console.log("[DashboardPage] _onMetricsChange:", metrics);
-    if (JSON.stringify(metrics) !== JSON.stringify(this.state.metrics)) {
+    if (metrics !== this.state.metrics) {
       this.state.metrics = metrics;
       this.state.gpuMetrics = metrics?.gpu || { usage: 0, memoryUsed: 0, memoryTotal: 0, list: [] };
       this._updateMetricsUI();
+      // CRITICAL: Update GPU and system health when metrics change!
+      // This was missing - the subscription was updating state but not UI
+      this._updateSystemHealthAndGPU();
     }
   }
 
@@ -383,11 +387,57 @@ class DashboardPage extends Component {
       systemHealth.updateMetrics(this.state.metrics, this.state.gpuMetrics);
     }
 
-    // Update GpuDetails component
-    const gpuDetails = this._el?.querySelector(".gpu-details")?._component;
+    // Update GpuDetails component - with robust error handling
+    const gpuContainer = this._el?.querySelector('[data-section="gpu"]');
+    const gpuDetailsEl = gpuContainer?.querySelector(".gpu-details");
+    const gpuDetails = gpuDetailsEl?._component;
+
     if (gpuDetails) {
-      gpuDetails.gpuList = this.state.gpuMetrics?.list || [];
+      // Create synthetic GPU entry from aggregate metrics if list is empty
+      let gpuList = this.state.gpuMetrics?.list || [];
+      if (gpuList.length === 0 && this.state.gpuMetrics?.usage !== undefined) {
+        // No per-GPU data available, create synthetic entry from aggregate metrics
+        gpuList = [{
+          name: "GPU",
+          vendor: "Unknown",
+          usage: this.state.gpuMetrics.usage,
+          memoryUsed: this.state.gpuMetrics.memoryUsed,
+          memoryTotal: this.state.gpuMetrics.memoryTotal,
+        }];
+      }
+      gpuDetails.gpuList = gpuList;
+      // Ensure the component has its _el set before updating UI
+      if (!gpuDetails._el && gpuDetailsEl) {
+        gpuDetails._el = gpuDetailsEl;
+      }
       gpuDetails._updateGPUUI();
+    } else if (gpuDetailsEl) {
+      // Fallback: Direct DOM update if component reference is missing
+      const noDataEl = gpuDetailsEl.querySelector(".gpu-no-data");
+      if (noDataEl) {
+        noDataEl.remove();
+      }
+      // Create synthetic GPU entry from aggregate metrics if list is empty
+      let gpuList = this.state.gpuMetrics?.list || [];
+      if (gpuList.length === 0 && this.state.gpuMetrics?.usage !== undefined) {
+        gpuList = [{
+          name: "GPU",
+          vendor: "Unknown",
+          usage: this.state.gpuMetrics.usage,
+          memoryUsed: this.state.gpuMetrics.memoryUsed,
+          memoryTotal: this.state.gpuMetrics.memoryTotal,
+        }];
+      }
+      // Re-render the GPU component
+      const newGpuDetails = new window.GpuDetails({
+        gpuList: gpuList,
+      });
+      gpuDetailsEl.innerHTML = newGpuDetails.render();
+      gpuDetailsEl._component = newGpuDetails;
+      newGpuDetails._el = gpuDetailsEl;
+      newGpuDetails.bindEvents();
+      newGpuDetails.onMount?.();
+      console.log("[DashboardPage] GpuDetails recreated via fallback");
     }
 
     // Remove loading skeletons

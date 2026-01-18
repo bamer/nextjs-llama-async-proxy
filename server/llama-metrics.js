@@ -45,11 +45,17 @@ function getDefaultMetrics() {
   };
 }
 
-export async function collectLlamaMetrics(io, db = null) {
+export async function collectLlamaMetrics(socket, db = null) {
+  // Validate socket has emit method
+  if (!socket || typeof socket.emit !== "function") {
+    console.debug("[LlamaMetrics] Invalid socket, skipping metrics emission");
+    return;
+  }
+
   // Emit stopped status when server is not running
   if (!llamaMetricsScraper) {
-    console.log("[DEBUG] LlamaMetrics: Scraper not initialized, emitting stopped status");
-    io.emit("llama-server:status", {
+    console.debug("[DEBUG] LlamaMetrics: Scraper not initialized, emitting stopped status");
+    socket.broadcast.emit("llama-server:status", {
       type: "broadcast",
       data: {
         status: "stopped",
@@ -64,9 +70,9 @@ export async function collectLlamaMetrics(io, db = null) {
   }
 
   try {
-    console.log("[DEBUG] LlamaMetrics: Fetching metrics from llama-server...");
+    console.debug("[DEBUG] LlamaMetrics: Fetching metrics from llama-server...");
     const metrics = await llamaMetricsScraper.getMetrics();
-    console.log("[DEBUG] LlamaMetrics: Raw metrics received:", {
+    console.debug("[DEBUG] LlamaMetrics: Raw metrics received:", {
       hasData: !!metrics,
       tokensPerSecond: metrics?.tokensPerSecond,
       activeModels: metrics?.activeModels,
@@ -100,7 +106,7 @@ export async function collectLlamaMetrics(io, db = null) {
       };
 
       // Broadcast metrics with type for filtering
-      io.emit("llama-server:status", {
+      socket.broadcast.emit("llama-server:status", {
         type: "broadcast",
         data: {
           status: "running",
@@ -111,10 +117,10 @@ export async function collectLlamaMetrics(io, db = null) {
         },
         timestamp: Date.now(),
       });
-      console.log("[DEBUG] LlamaMetrics: Emitted running status with metrics");
+      console.debug("[DEBUG] LlamaMetrics: Emitted running status with metrics");
     } else {
-      console.log("[DEBUG] LlamaMetrics: No metrics data, emitting running with zeros");
-      io.emit("llama-server:status", {
+      console.debug("[DEBUG] LlamaMetrics: No metrics data, emitting running with zeros");
+      socket.broadcast.emit("llama-server:status", {
         type: "broadcast",
         data: {
           status: "running",
@@ -129,7 +135,7 @@ export async function collectLlamaMetrics(io, db = null) {
   } catch (e) {
     console.warn("[LlamaMetrics] Metrics collection failed:", e.message);
     // Emit metrics as zero on failure instead of silent drop
-    io.emit("llama-server:status", {
+    socket.broadcast.emit("llama-server:status", {
       type: "broadcast",
       data: {
         status: "running",

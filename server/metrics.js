@@ -79,9 +79,11 @@ async function collectAndEmitMetrics(socket, db) {
       gpu_memory_total: gpuMemoryTotal,
     });
 
-    // Emit metrics update to specific socket
-    socket.emit("metrics:update", {
+    // Broadcast metrics update to ALL connected clients (except sender)
+    // Using socket.broadcast.emit to reach all clients
+    socket.broadcast.emit("metrics:update", {
       type: "broadcast",
+      timestamp: Date.now(),
       data: {
         metrics: {
           cpu: { usage: cpuUsage },
@@ -92,7 +94,7 @@ async function collectAndEmitMetrics(socket, db) {
             usage: gpuUsage,
             memoryUsed: gpuMemoryUsed,
             memoryTotal: gpuMemoryTotal,
-            list: getGpuList(),
+            list: gpuMetrics.gpuList, // Use the GPU list from collected metrics
           },
           uptime: process.uptime(),
         },
@@ -262,7 +264,7 @@ async function collectMetricsForRequest(db) {
       usage: gpuMetrics.gpuUsage,
       memoryUsed: gpuMetrics.gpuMemoryUsed,
       memoryTotal: gpuMetrics.gpuMemoryTotal,
-      list: getGpuList(),
+      list: gpuMetrics.gpuList, // Use the GPU list from collected metrics
     },
     uptime: process.uptime(),
   };
@@ -299,14 +301,16 @@ export async function collectMetrics(io, db) {
  * Cleanup metrics collection.
  */
 export function cleanupMetrics() {
-  // Clear all subscription intervals
-  for (const [socketId, subscription] of subscriptions) {
-    if (subscription.timeoutId) {
-      clearInterval(subscription.timeoutId);
-    }
-  }
+  subscriptions.forEach(sub => {
+    if (sub.timeoutId) clearInterval(sub.timeoutId);
+  });
   subscriptions.clear();
 
   resetMetricsCallCount();
   cleanupLlamaMetrics();
+
+  // Add GPU cleanup - check if function exists first
+  if (typeof cleanupGpuMonitor === "function") {
+    cleanupGpuMonitor();
+  }
 }

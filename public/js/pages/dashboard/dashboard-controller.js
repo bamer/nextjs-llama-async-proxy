@@ -155,70 +155,30 @@ class DashboardController {
     * Load all data in parallel - requests are queued by state-socket if not connected
     * Data updates UI as each piece arrives
     */
-  _loadDataAsync() {
-    console.log("[DASHBOARD] Starting parallel data requests...");
+  async _loadDataAsync() {
+    try {
+      console.log("[DASHBOARD] Starting parallel data requests...");
 
-    // Track which data has been loaded to trigger removal of skeleton once all arrive
-    let loadedCount = 0;
-    const expectedCount = 6; // config, models, metrics, history, settings, presets
-    
-    // Use direct socket requests (bypass caching for initial load)
-    // This ensures promises execute and resolve properly
-    
-    stateManager.socket.request("config:get")
-      .then((config) => {
-        console.log("[DASHBOARD] ✓ Config loaded (promise resolved)", config);
-        stateManager.set("config", config);
-      })
-      .catch((e) => console.warn("[DASHBOARD] ✗ Config load failed:", e.message));
+      const [config, models, metrics, history, settings, presets] = await Promise.all([
+        stateManager.socket.request("config:get"),
+        stateManager.socket.request("models:list"),
+        stateManager.socket.request("metrics:get"),
+        stateManager.socket.request("metrics:history", { limit: 60 }),
+        stateManager.socket.request("settings:get"),
+        stateManager.socket.request("presets:list"),
+      ]);
 
-    stateManager.socket.request("models:list")
-      .then((models) => {
-        console.log("[DASHBOARD] ✓ Models loaded (promise resolved):", models?.models?.length || 0);
-        // Store only the models array, not the wrapper object
-        stateManager.set("models", models?.models || []);
-      })
-      .catch((e) => console.warn("[DASHBOARD] ✗ Models load failed:", e.message));
+      stateManager.set("config", config);
+      stateManager.set("models", models?.models || []);
+      stateManager.set("metrics", metrics?.metrics || null);
+      stateManager.set("metricsHistory", history?.history || []);
+      stateManager.set("settings", settings);
+      stateManager.set("presets", presets?.presets || []);
 
-    stateManager.socket.request("metrics:get")
-      .then((metrics) => {
-        console.log("[DASHBOARD] ✓ Metrics loaded (promise resolved):", metrics);
-        // Store metrics in state so subscribers get notified
-        const metricsData = metrics?.metrics;
-        console.log("[DASHBOARD] Setting metrics in state:", metricsData);
-        stateManager.set("metrics", metricsData || null);
-        console.log("[DASHBOARD] Metrics state set. Subscribers should be notified");
-      })
-      .catch((e) => {
-        console.error("[DASHBOARD] ✗ Metrics load failed:", e);
-        console.error("[DASHBOARD] Error details:", e.message);
-      });
-
-    stateManager.socket.request("metrics:history", { limit: 60 })
-      .then((history) => {
-        console.log("[DASHBOARD] ✓ History loaded (promise resolved):", history?.history?.length || 0);
-        // Store history in state so subscribers get notified
-        const historyData = history?.history || [];
-        stateManager.set("metricsHistory", historyData);
-      })
-      .catch((e) => console.warn("[DASHBOARD] ✗ History load failed:", e.message));
-
-    stateManager.socket.request("settings:get")
-      .then((settings) => {
-        console.log("[DASHBOARD] ✓ Settings loaded (promise resolved)", settings);
-        stateManager.set("settings", settings);
-      })
-      .catch((e) => console.warn("[DASHBOARD] ✗ Settings load failed:", e.message));
-
-    stateManager.socket.request("presets:list")
-      .then((presets) => {
-        console.log("[DASHBOARD] ✓ Presets loaded (promise resolved):", presets?.presets?.length || 0);
-        // Store only the presets array, not the wrapper object
-        stateManager.set("presets", presets?.presets || []);
-      })
-      .catch((e) => console.warn("[DASHBOARD] ✗ Presets load failed:", e.message));
-
-    console.log("[DASHBOARD] All data requests fired (UI will update as data arrives)");
+      console.log("[DASHBOARD] All data loaded in parallel");
+    } catch (e) {
+      console.error("[DASHBOARD] Failed to load data:", e);
+    }
   }
 
   /**

@@ -34,8 +34,55 @@ const PORT = 3000;
 // No need for local variables like lastCpuTimes, metricsCallCount, metricsInterval, activeClients, llamaMetricsScraper
 // These are managed within server/metrics.js
 
+// Rate limiting state
+const rateLimitStore = new Map();
+const RATE_LIMIT_WINDOW = 1000; // 1 second
+const MAX_EVENTS_PER_WINDOW = 10; // Max 10 events per second per socket
+
+/**
+ * Create rate limiter middleware for Socket.IO
+ * @returns {Function} Socket.IO middleware function
+ */
+function createRateLimiter() {
+  return (socket, next) => {
+    const clientId = socket.id;
+    const now = Date.now();
+
+    if (!rateLimitStore.has(clientId)) {
+      rateLimitStore.set(clientId, { count: 0, lastReset: now });
+    }
+
+    const clientData = rateLimitStore.get(clientId);
+
+    // Reset counter if window has passed
+    if (now - clientData.lastReset > RATE_LIMIT_WINDOW) {
+      clientData.count = 0;
+      clientData.lastReset = now;
+    }
+
+    // Increment counter
+    clientData.count++;
+
+    // Check limit
+    if (clientData.count > MAX_EVENTS_PER_WINDOW) {
+      console.warn(`[RATE LIMIT] Client ${clientId} exceeded limit, disconnecting`);
+      return next(new Error("Rate limit exceeded"));
+    }
+
+    next();
+  };
+}
+
 // Export for testing
-export { startMetricsCollection, setupGracefulShutdown, main };
+export {
+  startMetricsCollection,
+  setupGracefulShutdown,
+  main,
+  rateLimitStore,
+  RATE_LIMIT_WINDOW,
+  MAX_EVENTS_PER_WINDOW,
+  createRateLimiter,
+};
 
 /**
  * Main server entry point that initializes all components.
@@ -43,16 +90,25 @@ export { startMetricsCollection, setupGracefulShutdown, main };
  */
 async function main() {
   const dataDir = path.join(process.cwd(), "data");
-  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  await fs.promises.mkdir(dataDir, { recursive: true });
 
   const db = new DB();
   const app = express();
   const server = http.createServer(app);
   const io = new Server(server, {
-    cors: { origin: "*", methods: ["GET", "POST"] },
+    cors: {
+      origin:
+        process.env.NODE_ENV === "production"
+          ? ["https://yourdomain.com", "http://yourdomain.com"]
+          : ["http://localhost:3000", "http://127.0.0.1:3000"],
+      methods: ["GET", "POST"],
+    },
     path: "/llamaproxws",
     transports: ["websocket"], // WebSocket only - polling is forbidden
   });
+
+  // Apply rate limiting middleware
+  io.use(createRateLimiter());
 
   // Debug WebSocket connections
   io.engine.on("connection_error", (err) => {
@@ -65,6 +121,12 @@ async function main() {
 
   io.engine.on("connection", (socket) => {
     console.log("[WS] New engine connection:", socket.id);
+
+    // Cleanup rate limit store on disconnect
+    socket.on("disconnect", (reason) => {
+      rateLimitStore.delete(socket.id);
+      console.log(`[WS] Client ${socket.id} disconnected: ${reason}`);
+    });
   });
 
   // Initialize llama metrics scraper (pass db for dynamic port lookup)

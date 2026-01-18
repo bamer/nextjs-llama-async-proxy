@@ -23,11 +23,22 @@ class GpuDetails extends Component {
     // Subscribe to metrics changes to update GPU list
     this.unsubscriber = stateManager.subscribe("metrics", (metrics) => {
       const newList = metrics?.gpu?.list || [];
-      if (JSON.stringify(newList) !== JSON.stringify(this.gpuList || [])) {
+      // Use reference comparison instead of JSON.stringify (performance)
+      // Also check length to handle edge cases
+      const hasNewData = newList.length > 0 && newList !== this.gpuList;
+      const shouldUpdate = hasNewData || (newList.length !== (this.gpuList?.length || 0));
+
+      if (shouldUpdate) {
         this.gpuList = newList;
         this._updateGPUUI();
       }
     });
+
+    // If we have GPU data already from props, update UI immediately
+    if (this.gpuList && this.gpuList.length > 0) {
+      console.log("[GpuDetails] onMount - GPU data available, updating UI:", this.gpuList.length);
+      this._updateGPUUI();
+    }
   }
 
   /**
