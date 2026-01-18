@@ -27,6 +27,11 @@ class PresetsPage extends Component {
   onMount() {
     console.log("[DEBUG] PresetsPage onMount");
 
+    // Initialize expandedModels if not set
+    if (this.state.expandedModels === undefined) {
+      this.state.expandedModels = true;
+    }
+
     // Listen to socket broadcasts
     this.unsubscribers.push(
       socketClient.on("presets:updated", (data) => {

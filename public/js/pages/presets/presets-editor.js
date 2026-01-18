@@ -74,7 +74,7 @@
         .join("");
 
       const hasModels = this.state.standaloneModels && this.state.standaloneModels.length > 0;
-      const modelsListHtml = hasModels ? this._renderStandaloneHtml() : "<p>No models added</p>";
+      const modelsExpanded = this.state.expandedModels !== false;
 
       editor.innerHTML = `
         <div class="editor-header">
@@ -124,23 +124,27 @@
             </div>
           ` : ""}
         </div>
-        <div class="section standalone-section">
+        <div class="section models-section">
           <div class="section-header" id="header-models">
             <span class="section-icon">📄</span><span class="section-title">Models</span>
-            <span class="section-toggle" id="toggle-models">${hasModels ? "▼" : "▶"}</span>
+            <span class="section-toggle">${modelsExpanded ? "▼" : "▶"}</span>
           </div>
-          <div class="add-model-controls" style="display:${hasModels ? "" : "none"};">
-            <select class="model-select" id="select-add-model">
-              <option value="">-- Select model --</option>
-              ${(this.state.availableModels || [])
-                .map((m) => `<option value="${this._escapeHtml(m.name)}">${this._escapeHtml(m.name)}</option>`)
-                .join("")}
-            </select>
-            <button class="btn btn-secondary" id="btn-add-standalone">+ Add</button>
-          </div>
-          <div class="standalone-list" id="standalone-list" style="display:${hasModels ? "" : "none"};">
-            ${modelsListHtml}
-          </div>
+          ${modelsExpanded ? `
+            <div class="section-content" id="content-models">
+              <div class="add-model-controls">
+                <select class="model-select" id="select-add-model">
+                  <option value="">-- Select model --</option>
+                  ${(this.state.availableModels || [])
+                    .map((m) => `<option value="${this._escapeHtml(m.name)}">${this._escapeHtml(m.name)}</option>`)
+                    .join("")}
+                </select>
+                <button class="btn btn-secondary" id="btn-add-standalone">+ Add</button>
+              </div>
+              <div class="standalone-list" id="standalone-list">
+                ${hasModels ? this._renderStandaloneHtml() : "<p>No models added</p>"}
+              </div>
+            </div>
+          ` : ""}
         </div>
       `;
 
@@ -149,62 +153,69 @@
     };
 
     /**
-     * Render standalone models HTML
-     */
+      * Render standalone models HTML - all models in ONE card
+      */
     PresetsPage.prototype._renderStandaloneHtml = function () {
       const hasModels = this.state.standaloneModels && this.state.standaloneModels.length > 0;
       if (!hasModels) return "<p>No models added</p>";
 
-      return this.state.standaloneModels
-        .map((model) => {
-          const modelName = model.name;
-          const modelParams = { ...model };
-          delete modelParams.name;
-          delete modelParams.fullName;
+      return `
+        <div class="models-card">
+          <div class="models-card-header">
+            <span class="models-count">${this.state.standaloneModels.length} model${this.state.standaloneModels.length !== 1 ? "s" : ""}</span>
+          </div>
+          <div class="models-card-content">
+            ${this.state.standaloneModels
+              .map((model) => {
+                const modelName = model.name;
+                const modelParams = { ...model };
+                delete modelParams.name;
+                delete modelParams.fullName;
 
-          return `
-            <div class="standalone-item" data-model-name="${this._escapeHtml(modelName)}">
-              <div class="standalone-header">
-                <span class="standalone-name">${this._escapeHtml(modelName)}</span>
-                <button class="btn btn-danger btn-sm btn-delete-model" data-model-name="${this._escapeHtml(modelName)}">Delete</button>
-              </div>
-              <div class="standalone-params">
-                ${Object.entries(modelParams)
-                  .map(([key, value]) => {
-                    const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
-                    const escaped = String(value)
-                      .replace(/&/g, "&amp;")
-                      .replace(/</g, "&lt;")
-                      .replace(/>/g, "&gt;")
-                      .replace(/"/g, "&quot;");
-                    return `
-                      <div class="param-item-display" data-model="${this._escapeHtml(modelName)}" data-param-key="${key}">
-                        <div class="param-name"><strong>${param?.label || key}</strong></div>
-                        <div class="param-controls">
-                          <input type="text" class="param-value-input" value="${escaped}" data-model="${this._escapeHtml(
-                            modelName
-                          )}" data-param-key="${key}" placeholder="Value">
-                          <button class="btn-param-delete" data-model="${this._escapeHtml(
-                            modelName
-                          )}" data-param-key="${key}" title="Delete">×</button>
-                        </div>
+                return `
+                  <div class="model-item" data-model-name="${this._escapeHtml(modelName)}">
+                    <div class="model-header">
+                      <span class="model-name">${this._escapeHtml(modelName)}</span>
+                      <button class="btn btn-danger btn-sm btn-delete-model" data-model-name="${this._escapeHtml(modelName)}">Delete</button>
+                    </div>
+                    <div class="model-params">
+                      ${Object.entries(modelParams).length > 0 ? `
+                        ${Object.entries(modelParams)
+                          .map(([key, value]) => {
+                            const param = LLAMA_PARAMS.find((p) => p.iniKey === key);
+                            const escaped = String(value)
+                              .replace(/&/g, "&amp;")
+                              .replace(/</g, "&lt;")
+                              .replace(/>/g, "&gt;")
+                              .replace(/"/g, "&quot;");
+                            return `
+                              <div class="param-item-display" data-model="${this._escapeHtml(modelName)}" data-param-key="${key}">
+                                <div class="param-name"><strong>${param?.label || key}</strong></div>
+                                <div class="param-controls">
+                                  <input type="text" class="param-value-input" value="${escaped}" data-model="${this._escapeHtml(modelName)}" data-param-key="${key}" placeholder="Value">
+                                  <button class="btn-param-delete" data-model="${this._escapeHtml(modelName)}" data-param-key="${key}" title="Delete">×</button>
+                                </div>
+                              </div>
+                            `;
+                          })
+                          .join("")}
+                      ` : ""}
+                      <div class="add-model-param-controls">
+                        <select class="param-add-select model-param-select" data-model="${this._escapeHtml(modelName)}">
+                          <option value="">-- Add param --</option>
+                          ${LLAMA_PARAMS.filter((p) => !modelParams[p.iniKey])
+                            .map((p) => `<option value="${p.key}">${p.label}</option>`)
+                            .join("")}
+                        </select>
                       </div>
-                    `;
-                  })
-                  .join("")}
-                <div class="add-model-param-controls">
-                  <select class="param-add-select model-param-select" data-model="${this._escapeHtml(modelName)}">
-                    <option value="">-- Add param --</option>
-                    ${LLAMA_PARAMS.filter((p) => !modelParams[p.iniKey])
-                      .map((p) => `<option value="${p.key}">${p.label}</option>`)
-                      .join("")}
-                  </select>
-                </div>
-              </div>
-            </div>
-          `;
-        })
-        .join("");
+                    </div>
+                  </div>
+                `;
+              })
+              .join("")}
+          </div>
+        </div>
+      `;
     };
 
     /**
@@ -473,10 +484,10 @@
     };
 
     /**
-     * Bind editor events.
-     */
+      * Bind editor events.
+      */
     PresetsPage.prototype._bindEditorEvents = function () {
-      // Section toggles
+      // Section toggles - Defaults
       const headerDefaults = document.getElementById("header-defaults");
       if (headerDefaults) {
         headerDefaults.onclick = () => {
@@ -484,6 +495,17 @@
           headerDefaults.querySelector(".section-toggle").textContent = this.state.expandedDefaults ? "▼" : "▶";
           const content = document.getElementById("content-defaults");
           if (content) content.style.display = this.state.expandedDefaults ? "" : "none";
+        };
+      }
+
+      // Section toggle - Models
+      const headerModels = document.getElementById("header-models");
+      if (headerModels) {
+        headerModels.onclick = () => {
+          this.state.expandedModels = !this.state.expandedModels;
+          headerModels.querySelector(".section-toggle").textContent = this.state.expandedModels ? "▼" : "▶";
+          const content = document.getElementById("content-models");
+          if (content) content.style.display = this.state.expandedModels ? "" : "none";
         };
       }
 
