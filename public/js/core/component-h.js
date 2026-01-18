@@ -28,10 +28,26 @@ Component.h = function (tag, attrs = {}, ...children) {
     const el = instance._htmlToElement(html);
 
     if (el instanceof Node) {
-      el._component = instance;
-      instance._el = el;
-      instance.bindEvents();
-      instance.onMount?.();
+      // Queue child mount instead of calling onMount immediately
+      // This allows parent onMount to complete first
+      // The parent must call instance._mountChildren() in its onMount()
+      if (typeof instance.onMount === "function") {
+        // Check if parent is being created (we're inside a render)
+        // In that case, queue for later
+        if (this && this._pendingChildMounts !== undefined) {
+          this._pendingChildMounts.push({ instance, el });
+        } else {
+          // No parent to queue to, call directly
+          el._component = instance;
+          instance._el = el;
+          instance.bindEvents();
+          instance.onMount();
+        }
+      } else {
+        el._component = instance;
+        instance._el = el;
+        instance.bindEvents();
+      }
     } else {
       console.error("[Component.h] Failed to create DOM element from component render, got:", el);
     }

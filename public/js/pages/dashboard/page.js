@@ -45,6 +45,10 @@ class DashboardPage extends Component {
     // Skeleton UI is already applied during render(), but ensure it's there
     this._renderSkeletonUI();
 
+    // Mount child components FIRST - they need to be ready before we sync state
+    // This ensures LlamaRouterCard.onMount() sets up subscriptions before presets arrive
+    this._mountChildren();
+
     // Subscribe to all state changes
     this.unsubscribers.push(
       stateManager.subscribe("metrics", this._onMetricsChange.bind(this)),
@@ -237,16 +241,28 @@ class DashboardPage extends Component {
 
   _updatePresetsUI() {
     // Update LlamaRouterCard with presets data
-    const routerCard = this.$(".llama-router-card")?._component;
+    // Note: class is "llama-router-status-card" not "llama-router-card"
+    const routerCard = this.$(".llama-router-status-card")?._component;
     if (routerCard) {
-      routerCard.props.presets = this.state.presets || [];
+      const currentPresets = this.state.presets || [];
+      routerCard.props.presets = currentPresets;
       // Force update if the method exists
       if (typeof routerCard._updatePresetSelect === "function") {
         routerCard._updatePresetSelect();
       }
+      console.log("[DashboardPage] _updatePresetsUI - directly updated routerCard:", currentPresets.length);
+    } else {
+      console.warn("[DashboardPage] _updatePresetsUI - routerCard not found!");
+      // Debug: list all components with _component reference
+      const allComponents = this._el?.querySelectorAll("[class*='llama']");
+      if (allComponents) {
+        console.log("[DashboardPage] Found elements with 'llama' class:", allComponents.length);
+        Array.from(allComponents).forEach(el => {
+          console.log("  -", el.className, "has _component:", !!el._component);
+        });
+      }
     }
     this._updatePresetsSection();
-    console.log("[DashboardPage] _updatePresetsUI - presets updated:", this.state.presets.length);
   }
 
   _updateConfigUI() {
@@ -397,6 +413,15 @@ class DashboardPage extends Component {
       e.preventDefault();
       this._handleRefreshClick();
     });
+  }
+
+  /**
+   * Called after component is fully mounted to DOM - sync state to UI
+   * This runs after all child components are mounted, so routerCard is available
+   */
+  didMount() {
+    console.log("[DashboardPage] didMount - syncing state to UI");
+    this._syncStateToUI();
   }
 
   _handleChartZoom(range) {

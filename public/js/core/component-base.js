@@ -12,6 +12,7 @@ class Component {
     this.props = props;
     this._el = null;
     this._eventListeners = [];
+    this._pendingChildMounts = []; // Queue for child onMount calls
     console.log(`[${this.constructor.name}] Created`);
   }
 
@@ -70,9 +71,26 @@ class Component {
   bindEvents() {}
 
   /**
-   * Called after component is mounted to DOM. Override in subclasses.
-   */
+    * Called after component is mounted to DOM. Override in subclasses.
+    */
   onMount() {}
+
+  /**
+   * Mount all queued child components. Called at the end of onMount().
+   * This ensures child onMount() runs AFTER parent is fully ready.
+   */
+  _mountChildren() {
+    while (this._pendingChildMounts.length > 0) {
+      const { instance, el } = this._pendingChildMounts.shift();
+      if (instance && el) {
+        el._component = instance;
+        instance._el = el;
+        instance.bindEvents();
+        instance.onMount?.();
+      }
+    }
+    this._pendingChildMounts = [];
+  }
 
   /**
    * Senior-level cleanup with comprehensive memory management
