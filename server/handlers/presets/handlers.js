@@ -41,14 +41,19 @@ export function registerPresetsHandlers(socket, db) {
     try {
       const presets = await listPresets();
       console.log("[DEBUG] Presets found:", presets);
-       // Return array of preset objects as documented
-       const presetsData = presets.map((name) => ({
-         name,
-         path: `${name}.ini`,
-         file: `${PRESETS_DIR}/${name}.ini`,
-       }));
-       console.log("[DEBUG] Sending presets response:", { count: presetsData.length, data: presetsData });
-        ok(socket, "presets:list:result", { presets: presetsData }, id, ack);
+      // Return array of preset objects with parameters
+      const presetsData = await Promise.all(presets.map(async (name) => {
+        const preset = await readPreset(name);  // name is already without .ini
+        return {
+          name,
+          path: `${name}.ini`,
+          file: `${PRESETS_DIR}/${name}.ini`,
+          parameters: preset.parsed || {},
+          raw: preset.content || "",
+        };
+      }));
+      console.log("[DEBUG] Sending presets response:", { count: presetsData.length, data: presetsData });
+      ok(socket, "presets:list:result", { presets: presetsData }, id, ack);
     } catch (error) {
       console.error("[DEBUG] Error in presets:list:", error.message, error.stack);
       err(socket, "presets:list:result", error.message, id, ack);
@@ -84,6 +89,36 @@ export function registerPresetsHandlers(socket, db) {
     } catch (error) {
       console.error("[DEBUG] Error in presets:get-models:", error.message);
       err(socket, "presets:get-models:result", error.message, id, ack);
+    }
+  });
+
+  /**
+   * Save preset with raw INI content
+   */
+  socket.on("presets:save-raw", async (req, ack) => {
+    const id = req?.requestId || Date.now();
+    console.log("[DEBUG] Event: presets:save-raw", { filename: req.filename, requestId: id });
+    try {
+      const { filename, content } = req;
+      if (!content) {
+        err(socket, "presets:save-raw:result", "No content provided", id, ack);
+        return;
+      }
+      
+      const presetsDir = await ensurePresetsDir();
+      const filepath = path.join(presetsDir, `${filename}.ini`);
+      await fs.writeFile(filepath, content, "utf-8");
+
+      console.log(`[DEBUG] Preset saved: ${filepath}`);
+      ok(socket, "presets:save-raw:result", {
+        filename,
+        path: filepath,
+        size: content.length,
+        lastModified: new Date(),
+      }, id, ack);
+    } catch (error) {
+      console.error("[DEBUG] Error in presets:save-raw:", error.message);
+      err(socket, "presets:save-raw:result", error.message, id, ack);
     }
   });
 

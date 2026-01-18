@@ -45,28 +45,38 @@ class PresetsController {
     this.comp.bindEvents();
     this.comp.onMount?.();
 
+    // Load presets
+    this._loadPresetsAsync();
+
     return el;
   }
 
   /**
      * Load presets via socket
      */
-  async _loadPresetsAsync() {
-    console.log("[DEBUG] Loading presets");
-    try {
-      const response = await socketClient.request("presets:list", {});
-      if (response.success) {
-        console.log("[DEBUG] Presets loaded:", response.data.length);
-        // Update component directly instead of stateManager
-        if (this.comp) {
-          this.comp.state.presets = response.data || [];
-          this.comp._updatePresetsUI();
-        }
-      }
-    } catch (error) {
-      console.error("[DEBUG] Failed to load presets:", error.message);
-    }
-  }
+   async _loadPresetsAsync() {
+     console.log("[DEBUG] Loading presets");
+     try {
+       const response = await socketClient.request("presets:list", {});
+       if (response.success) {
+         // Ensure presets is always an array
+         let presets = [];
+         if (Array.isArray(response.data)) {
+           presets = response.data;
+         } else if (response.data && Array.isArray(response.data.presets)) {
+           presets = response.data.presets;
+         }
+         console.log("[DEBUG] Presets loaded:", presets.length);
+         // Update component directly instead of stateManager
+         if (this.comp) {
+           this.comp.state.presets = presets;
+           this.comp._updatePresetsUI();
+         }
+       }
+     } catch (error) {
+       console.error("[DEBUG] Failed to load presets:", error.message);
+     }
+   }
 
   /**
      * Save preset via socket
