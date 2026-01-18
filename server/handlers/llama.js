@@ -84,88 +84,88 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
   /**
     * Start llama server
     */
-  socket.on("llama:start", async (req) => {
-    const id = req?.requestId || Date.now();
-    console.log(`[LLAMA-HANDLERS] Received llama:start event from client ${socket.id}. Request ID: ${id}`);
+   socket.on("llama:start", async (req, ack) => {
+     const id = req?.requestId || Date.now();
+     console.log(`[LLAMA-HANDLERS] Received llama:start event from client ${socket.id}. Request ID: ${id}`);
 
-    try {
-      const config = db.getConfig() || {};
-      const settings = db.getMeta("user_settings") || {};
-      const modelsDir = config.baseModelsPath;
+     try {
+       const config = db.getConfig() || {};
+       const settings = db.getMeta("user_settings") || {};
+       const modelsDir = config.baseModelsPath;
 
-      console.log(`[LLAMA-HANDLERS] Starting router with config:`, {
-        modelsDir,
-        maxModels: settings.maxModelsLoaded || 4,
-        ctxSize: config.ctx_size || 4096,
-        threads: config.threads || 4,
-      });
+       console.log(`[LLAMA-HANDLERS] Starting router with config:`, {
+         modelsDir,
+         maxModels: settings.maxModelsLoaded || 4,
+         ctxSize: config.ctx_size || 4096,
+         threads: config.threads || 4,
+       });
 
-      const result = await startLlamaServerRouter(modelsDir, db, {
-        maxModels: settings.maxModelsLoaded || 4,
-        ctxSize: config.ctx_size || 4096,
-        threads: config.threads || 4,
-        noAutoLoad: !settings.autoLoadModels,
-      });
+       const result = await startLlamaServerRouter(modelsDir, db, {
+         maxModels: settings.maxModelsLoaded || 4,
+         ctxSize: config.ctx_size || 4096,
+         threads: config.threads || 4,
+         noAutoLoad: !settings.autoLoadModels,
+       });
 
-      console.log(`[LLAMA-HANDLERS] startLlamaServerRouter result:`, result);
-      if (result.success) {
-        console.log(`[LLAMA-HANDLERS] Router started successfully on port ${result.port}`);
-        if (initializeLlamaMetrics) {
-          initializeLlamaMetrics(result.port);
-        }
-        ok(socket, "llama:start:result", { success: true, ...result }, id);
-      } else {
-        console.error(`[LLAMA-HANDLERS] Failed to start router:`, result.error);
-        err(socket, "llama:start:result", result.error, id);
-      }
-    } catch (e) {
-      console.error("[LLAMA-HANDLERS] Error in llama:start handler:", e.message);
-      err(socket, "llama:start:result", e.message, id);
-    }
-  });
+       console.log(`[LLAMA-HANDLERS] startLlamaServerRouter result:`, result);
+       if (result.success) {
+         console.log(`[LLAMA-HANDLERS] Router started successfully on port ${result.port}`);
+         if (initializeLlamaMetrics) {
+           initializeLlamaMetrics(result.port);
+         }
+         ok(socket, "llama:start:result", { success: true, ...result }, id, ack);
+       } else {
+         console.error(`[LLAMA-HANDLERS] Failed to start router:`, result.error);
+         err(socket, "llama:start:result", result.error, id, ack);
+       }
+     } catch (e) {
+       console.error("[LLAMA-HANDLERS] Error in llama:start handler:", e.message);
+       err(socket, "llama:start:result", e.message, id, ack);
+     }
+   });
 
-  /**
-   * Start llama server with preset
-   */
-  socket.on("llama:start-with-preset", async (req) => {
-    const id = req?.requestId || Date.now();
-    console.log(`[LLAMA-HANDLERS] Received llama:start-with-preset from client ${socket.id}: ${req?.presetName}`);
+   /**
+    * Start llama server with preset
+    */
+   socket.on("llama:start-with-preset", async (req, ack) => {
+     const id = req?.requestId || Date.now();
+     console.log(`[LLAMA-HANDLERS] Received llama:start-with-preset from client ${socket.id}: ${req?.presetName}`);
 
-    try {
-      const presetName = req?.presetName;
-      if (!presetName) {
-        err(socket, "llama:start:result", "Preset name required", id);
-        return;
-      }
+     try {
+       const presetName = req?.presetName;
+       if (!presetName) {
+         err(socket, "llama:start-with-preset:result", "Preset name required", id, ack);
+         return;
+       }
 
-      const presetPath = path.join(process.cwd(), "config", `${presetName}.ini`);
-      const settings = db.getMeta("user_settings") || {};
+       const presetPath = path.join(process.cwd(), "config", `${presetName}.ini`);
+       const settings = db.getMeta("user_settings") || {};
 
-      const result = await startLlamaServerRouter(presetPath, db, {
-        maxModels: req?.maxModels || settings.maxModelsLoaded || 4,
-        ctxSize: req?.ctxSize || 4096,
-        threads: req?.threads || 4,
-        usePreset: true,
-      });
+       const result = await startLlamaServerRouter(presetPath, db, {
+         maxModels: req?.maxModels || settings.maxModelsLoaded || 4,
+         ctxSize: req?.ctxSize || 4096,
+         threads: req?.threads || 4,
+         usePreset: true,
+       });
 
-      if (result.success) {
-        if (initializeLlamaMetrics) {
-          initializeLlamaMetrics(result.port);
-        }
-        ok(socket, "llama:start-with-preset:result", { success: true, ...result }, id);
-      } else {
-        err(socket, "llama:start-with-preset:result", result.error, id);
-      }
-    } catch (e) {
-      err(socket, "llama:start:result", e.message, id);
-    }
-  });
+       if (result.success) {
+         if (initializeLlamaMetrics) {
+           initializeLlamaMetrics(result.port);
+         }
+         ok(socket, "llama:start-with-preset:result", { success: true, ...result }, id, ack);
+       } else {
+         err(socket, "llama:start-with-preset:result", result.error, id, ack);
+       }
+     } catch (e) {
+       err(socket, "llama:start-with-preset:result", e.message, id, ack);
+     }
+   });
 
-  /**
-   * Restart llama server
-   */
-  socket.on("llama:restart", async (req) => {
-    const id = req?.requestId || Date.now();
+   /**
+    * Restart llama server
+    */
+   socket.on("llama:restart", async (req, ack) => {
+     const id = req?.requestId || Date.now();
     try {
       // Stop the server and wait for completion
       await stopLlamaServerRouter();

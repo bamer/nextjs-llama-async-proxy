@@ -51,7 +51,7 @@ window.handleRouterAction = async function (action, presetName) {
     switch (action) {
       case "start":
         console.log("[DEBUG] Starting router");
-        response = await socketClient.request("router:start", {});
+        response = await socketClient.request("llama:start", {});
 
         if (response.success) {
           console.log("[RouterActions] Router started successfully");
@@ -68,7 +68,7 @@ window.handleRouterAction = async function (action, presetName) {
         }
 
         console.log("[DEBUG] Starting router with preset:", presetName);
-        response = await socketClient.request("router:start-preset", {
+        response = await socketClient.request("llama:start-with-preset", {
           presetName,
         });
 
@@ -83,7 +83,7 @@ window.handleRouterAction = async function (action, presetName) {
 
       case "stop":
         console.log("[DEBUG] Stopping router");
-        response = await socketClient.request("router:stop", {});
+        response = await socketClient.request("llama:stop", {});
 
         if (response.success) {
           console.log("[RouterActions] Router stopped");
@@ -96,7 +96,7 @@ window.handleRouterAction = async function (action, presetName) {
 
       case "restart":
         console.log("[DEBUG] Restarting router");
-        response = await socketClient.request("router:restart", {});
+        response = await socketClient.request("llama:restart", {});
 
         if (response.success) {
           console.log("[RouterActions] Router restarted");

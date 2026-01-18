@@ -24,7 +24,6 @@ import { registerHandlers } from "./server/handlers.js";
 import { parseGgufMetadata } from "./server/gguf/metadata-parser.js";
 import { startLlamaServerRouter } from "./server/handlers/llama-router/index.js";
 import { autoStartLlamaServer } from "./server/server-startup.js";
-import { initBridge } from "./server/boot-bridge.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -102,10 +101,6 @@ async function main() {
       console.log(`[WS] Client ${socket.id} disconnected: ${reason}`);
     });
   });
-
-  // Bridge bootstrap (bridges router:* to llama:*
-  initBridge(io);
-  console.log("[BRIDGE] Router bridge initialize invoked");
 
   // Initialize llama metrics scraper
   initializeLlamaMetricsScraper(null, db);
