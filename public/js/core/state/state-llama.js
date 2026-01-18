@@ -163,6 +163,10 @@ class StateLlamaServer {
     return await this.socket.request("llama:start");
   }
 
+  async startWithPreset(presetName) {
+    return await this.socket.request("llama:start-with-preset", { presetName });
+  }
+
   async stop() {
     return await this.socket.request("llama:stop");
   }

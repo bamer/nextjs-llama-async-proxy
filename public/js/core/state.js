@@ -211,17 +211,26 @@ class StateManager {
   }
 
   /**
-     * Start the Llama server
-     * @returns {Promise<Object>} Start result
-     */
+      * Start the Llama server
+      * @returns {Promise<Object>} Start result
+      */
   async startLlama() {
     return this.api.startLlama();
   }
 
   /**
-     * Stop the Llama server
-     * @returns {Promise<Object>} Stop result
-     */
+      * Start the Llama server with a preset
+      * @param {string} presetName - Name of the preset to use
+      * @returns {Promise<Object>} Start result
+      */
+  async startLlamaWithPreset(presetName) {
+    return this.socket.request("llama:start-with-preset", { presetName });
+  }
+
+  /**
+      * Stop the Llama server
+      * @returns {Promise<Object>} Stop result
+      */
   async stopLlama() {
     return this.api.stopLlama();
   }

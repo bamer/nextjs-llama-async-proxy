@@ -29,6 +29,14 @@ class DashboardPage extends Component {
       avg: 0,
       max: 0,
     };
+
+    // Track which sections have been initialized (skeleton removed)
+    this._sectionsInitialized = {
+      metrics: false,
+      charts: false,
+      gpu: false,
+      presets: false,
+    };
     this.loading = false;
     this.selectedPreset = null;
     this.chartManager = props.chartManager;
@@ -334,37 +342,42 @@ class DashboardPage extends Component {
   }
 
   _updateMetricsSection() {
+    if (this._sectionsInitialized.metrics) return; // Already initialized
     const section = this.$("[data-section='metrics']");
     if (section) {
-      console.log("[DashboardPage] _updateMetricsSection - removing skeleton");
       section.classList.remove("loading-skeleton");
       section.setAttribute("aria-busy", "false");
+      this._sectionsInitialized.metrics = true;
     }
   }
 
   _updateChartsSection() {
+    if (this._sectionsInitialized.charts) return; // Already initialized
     const section = this.$("[data-section='charts']");
     if (section) {
-      console.log("[DashboardPage] _updateChartsSection - removing skeleton");
       section.classList.remove("loading-skeleton");
       section.setAttribute("aria-busy", "false");
+      this._sectionsInitialized.charts = true;
     }
   }
 
   _updateGPUSection() {
+    if (this._sectionsInitialized.gpu) return; // Already initialized
     const section = this.$("[data-section='gpu']");
     if (section) {
-      console.log("[DashboardPage] _updateGPUSection - removing skeleton");
       section.classList.remove("loading-skeleton");
       section.setAttribute("aria-busy", "false");
+      this._sectionsInitialized.gpu = true;
     }
   }
 
   _updatePresetsSection() {
+    if (this._sectionsInitialized.presets) return; // Already initialized
     const section = this.$("[data-section='presets']");
     if (section) {
       section.classList.remove("loading-skeleton");
       section.setAttribute("aria-busy", "false");
+      this._sectionsInitialized.presets = true;
     }
   }
 
@@ -561,8 +574,14 @@ class DashboardPage extends Component {
   }
 
   _handleRouterAction(action, data) {
-    // Emit action events for router interactions
-    stateManager.emit("action:dashboard:routerAction", { action, data });
+    // Delegate to router-actions handler (global function)
+    if (typeof window.handleRouterAction === "function") {
+      window.handleRouterAction(action, data).catch((err) => {
+        console.error("[DashboardPage] Router action error:", err);
+      });
+    } else {
+      console.error("[DashboardPage] handleRouterAction not found!");
+    }
   }
 }
 
