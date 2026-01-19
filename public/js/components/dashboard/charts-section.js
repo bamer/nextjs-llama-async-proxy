@@ -135,9 +135,9 @@ class ChartsSection extends Component {
   }
 
   /**
-      * Update component with new props
-      */
-  updateData(history, chartStats) {
+   * Update component with new data from socket
+   */
+  updateDataFromSocket(history, chartStats) {
     let needsUpdate = false;
 
     if (history !== this.history) {
@@ -155,8 +155,8 @@ class ChartsSection extends Component {
   }
 
   /**
-      * Only update the DOM parts that changed, without full re-render
-      */
+   * Update the DOM parts that changed, without full re-render
+   */
   updateDOM() {
     // Update chart stats
     const statsEl = this._el?.querySelector(".chart-stats");
@@ -353,191 +353,7 @@ class ChartsSection extends Component {
     // Broadcast chart type change via socket for any interested components
     socketClient.emit("charts:chartTypeChanged", { chartType });
   }
--------
-  /**
-      * Update component with new props
-      */
-  updateData(history, chartStats) {
-    let needsUpdate = false;
 
-    if (history !== this.history) {
-      this.history = history;
-      needsUpdate = true;
-    }
-    if (chartStats !== this.chartStats) {
-      this.chartStats = chartStats;
-      needsUpdate = true;
-    }
-
-    if (needsUpdate && this._el) {
-      this.updateDOM();
-    }
-  }
-  /**
-   * Update component with new data from socket
-   */
-  updateDataFromSocket(history, chartStats) {
-    let needsUpdate = false;
-
-    if (history !== this.history) {
-      this.history = history;
-      needsUpdate = true;
-    }
-    if (chartStats !== this.chartStats) {
-      this.chartStats = chartStats;
-      needsUpdate = true;
-    }
-
-    if (needsUpdate && this._el) {
-      this.updateDOM();
-    }
-  }
-  /**
-      * Only update the DOM parts that changed, without full re-render
-      */
-  updateDOM() {
-    // Update chart stats
-    const statsEl = this._el?.querySelector(".chart-stats");
-    if (statsEl) {
-      const stats = this.chartStats;
-      const statValues = statsEl.querySelectorAll(".chart-stat-value");
-      if (statValues.length >= 3) {
-        statValues[0].textContent = `${stats.current.toFixed(1)}%`;
-        statValues[1].textContent = `${stats.avg.toFixed(1)}%`;
-        statValues[2].textContent = `${stats.max.toFixed(1)}%`;
-      }
-    }
-
-    // Update tab active states - IMMEDIATE update
-    this._updateTabStates();
-
-    // Hide overlay when data is available
-    const overlay = this._el?.querySelector(".chart-empty-overlay");
-    if (overlay && this.history.length > 0) {
-      overlay.style.display = "none";
-    }
-
-    // Update canvas visibility
-    this._updateVisibility();
-  }
-  /**
-   * Update the DOM parts that changed, without full re-render
-   */
-  updateDOM() {
-    // Update chart stats
-    const statsEl = this._el?.querySelector(".chart-stats");
-    if (statsEl) {
-      const stats = this.chartStats;
-      const statValues = statsEl.querySelectorAll(".chart-stat-value");
-      if (statValues.length >= 3) {
-        statValues[0].textContent = `${stats.current.toFixed(1)}%`;
-        statValues[1].textContent = `${stats.avg.toFixed(1)}%`;
-        statValues[2].textContent = `${stats.max.toFixed(1)}%`;
-      }
-    }
-
-    // Update tab active states - IMMEDIATE update
-    this._updateTabStates();
-
-    // Hide overlay when data is available
-    const overlay = this._el?.querySelector(".chart-empty-overlay");
-    if (overlay && this.history.length > 0) {
-      overlay.style.display = "none";
-    }
-
-    // Update canvas visibility
-    this._updateVisibility();
-  }
-  /**
-      * Render the charts section component.
-      * @returns {HTMLElement} The rendered component element.
-      */
-  render() {
-    const chartType = this.getChartType();
-    const hasData = this.history.length > 0;
-    const stats = this.chartStats;
-
-    return Component.h(
-      "div",
-      { className: "charts-section" },
-      Component.h(
-        "div",
-        { className: "charts-header" },
-        Component.h("h3", {}, "Performance History"),
-        Component.h(
-          "div",
-          { className: "chart-tabs" },
-          Component.h(
-            "button",
-            {
-              className: `chart-tab ${chartType === "usage" ? "active" : ""}`,
-              "data-chart": "cpu",
-            },
-            "CPU & GPU Usage"
-          ),
-          Component.h(
-            "button",
-            {
-              className: `chart-tab ${chartType === "memory" ? "active" : ""}`,
-              "data-chart": "memory",
-            },
-            "Memory Usage"
-          )
-        )
-      ),
-      Component.h(
-        "div",
-        { className: "chart-container" },
-        // Always create canvases, show placeholder overlay when no data
-        Component.h(
-          "div",
-          { className: "chart-wrapper" },
-          Component.h("canvas", {
-            id: "usageChart",
-            className: "chart-canvas",
-            style: `display: ${chartType === "usage" ? "block" : "none"}`,
-          }),
-          Component.h("canvas", {
-            id: "memoryChart",
-            className: "chart-canvas",
-            style: `display: ${chartType === "memory" ? "block" : "none"}`,
-          }),
-          // Placeholder overlay when no data
-          !hasData &&
-                    Component.h(
-                      "div",
-                      { className: "chart-empty-overlay" },
-                      Component.h("div", { className: "empty-icon" }, "📈"),
-                      Component.h("p", {}, "Collecting performance data..."),
-                      Component.h("p", { className: "empty-hint" }, "Data will appear once metrics are collected")
-                    )
-        )
-      ),
-      hasData &&
-            Component.h(
-              "div",
-              { className: "chart-stats" },
-              Component.h(
-                "div",
-                { className: "chart-stat" },
-                Component.h("span", { className: "chart-stat-label" }, "Current"),
-                Component.h("span", { className: "chart-stat-value" }, `${stats.current.toFixed(1)}%`)
-              ),
-              Component.h(
-                "div",
-                { className: "chart-stat" },
-                Component.h("span", { className: "chart-stat-label" }, "Average"),
-                Component.h("span", { className: "chart-stat-value" }, `${stats.avg.toFixed(1)}%`)
-              ),
-              Component.h(
-                "div",
-                { className: "chart-stat" },
-                Component.h("span", { className: "chart-stat-label" }, "Max"),
-                Component.h("span", { className: "chart-stat-value" }, `${stats.max.toFixed(1)}%`)
-              )
-            )
-    );
-  }
   /**
    * Render the charts section component.
    * @returns {HTMLElement} The rendered component element.
@@ -628,106 +444,8 @@ class ChartsSection extends Component {
             )
     );
   }
-<task_progress>
-- [ ] Analyze current ChartsSection implementation
-- [x] Review ChartsSection code
-- [x] Review DashboardPage code
-- [x] Identify coupling issues
-- [x] Refactor ChartsSection to be completely independent
-- [ ] Update DashboardPage to remove parent-child dependencies
-- [ ] Test the changes
-</task_progress>
-
-  /**
-      * Render the charts section component.
-      * @returns {HTMLElement} The rendered component element.
-      */
-  render() {
-    const chartType = this.getChartType();
-    const hasData = this.history.length > 0;
-    const stats = this.chartStats;
-
-    return Component.h(
-      "div",
-      { className: "charts-section" },
-      Component.h(
-        "div",
-        { className: "charts-header" },
-        Component.h("h3", {}, "Performance History"),
-        Component.h(
-          "div",
-          { className: "chart-tabs" },
-          Component.h(
-            "button",
-            {
-              className: `chart-tab ${chartType === "usage" ? "active" : ""}`,
-              "data-chart": "cpu",
-            },
-            "CPU & GPU Usage"
-          ),
-          Component.h(
-            "button",
-            {
-              className: `chart-tab ${chartType === "memory" ? "active" : ""}`,
-              "data-chart": "memory",
-            },
-            "Memory Usage"
-          )
-        )
-      ),
-      Component.h(
-        "div",
-        { className: "chart-container" },
-        // Always create canvases, show placeholder overlay when no data
-        Component.h(
-          "div",
-          { className: "chart-wrapper" },
-          Component.h("canvas", {
-            id: "usageChart",
-            className: "chart-canvas",
-            style: `display: ${chartType === "usage" ? "block" : "none"}`,
-          }),
-          Component.h("canvas", {
-            id: "memoryChart",
-            className: "chart-canvas",
-            style: `display: ${chartType === "memory" ? "block" : "none"}`,
-          }),
-          // Placeholder overlay when no data
-          !hasData &&
-                    Component.h(
-                      "div",
-                      { className: "chart-empty-overlay" },
-                      Component.h("div", { className: "empty-icon" }, "📈"),
-                      Component.h("p", {}, "Collecting performance data..."),
-                      Component.h("p", { className: "empty-hint" }, "Data will appear once metrics are collected")
-                    )
-        )
-      ),
-      hasData &&
-            Component.h(
-              "div",
-              { className: "chart-stats" },
-              Component.h(
-                "div",
-                { className: "chart-stat" },
-                Component.h("span", { className: "chart-stat-label" }, "Current"),
-                Component.h("span", { className: "chart-stat-value" }, `${stats.current.toFixed(1)}%`)
-              ),
-              Component.h(
-                "div",
-                { className: "chart-stat" },
-                Component.h("span", { className: "chart-stat-label" }, "Average"),
-                Component.h("span", { className: "chart-stat-value" }, `${stats.avg.toFixed(1)}%`)
-              ),
-              Component.h(
-                "div",
-                { className: "chart-stat" },
-                Component.h("span", { className: "chart-stat-label" }, "Max"),
-                Component.h("span", { className: "chart-stat-value" }, `${stats.max.toFixed(1)}%`)
-              )
-            )
-    );
-  }
 }
 
 window.ChartsSection = ChartsSection;
+
+

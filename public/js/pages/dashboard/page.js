@@ -22,7 +22,7 @@ class DashboardPage extends Component {
       routerLoading: false,
     };
 
-    // Chart and UI state
+    // Chart and UI state - simplified since ChartsSection is now independent
     this.chartType = "usage";
     this.chartStats = {
       current: 0,
@@ -39,7 +39,7 @@ class DashboardPage extends Component {
     };
     this.loading = false;
     this.selectedPreset = null;
-    this.chartManager = props.chartManager;
+    // chartManager removed - ChartsSection now manages its own charts
     this.unsubscribers = [];
     this.routerCardUpdater = null;
   }
@@ -286,50 +286,21 @@ class DashboardPage extends Component {
       statsGrid.updateMetrics(this.state.metrics, this.state.gpuMetrics);
     }
 
-    // Update charts with new metrics
-    if (this.chartManager && this.state.history.length > 0) {
-      this.chartManager.updateCharts(this.state.metrics, this.state.history);
-    }
-
+    // Charts are now managed completely by ChartsSection
+    // No chartManager updates needed here
     // Remove loading skeleton for metrics
     this._updateMetricsSection();
   }
 
   _updateHistoryUI() {
-    console.log("[DashboardPage] _updateHistoryUI() - updating charts in-place");
+    console.log("[DashboardPage] _updateHistoryUI() - ChartsSection is now completely independent");
 
-    // Update charts section
+    // Update charts section skeleton removal
     this._updateChartsSection();
 
-    // Update ChartsSection component - CRITICAL: never recreate by calling render()
-    // Only update data to preserve chart type selection across metrics updates
-    const chartsSection = this._el?.querySelector(".charts-section")?._component;
-    if (chartsSection) {
-      console.log("[DashboardPage] Found existing ChartsSection, updating in-place");
-      chartsSection.history = this.state.history;
-
-      // Only update the chart data, not the DOM state (which preserves chart type selection)
-      chartsSection._updateChartsData();
-
-      // Ensure charts are initialized if they haven't been yet
-      if (!chartsSection.chartsInitialized && this.chartManager) {
-        console.log("[DashboardPage] Charts not initialized yet, initializing");
-        chartsSection._initCharts();
-      }
-    } else {
-      console.warn("[DashboardPage] ChartsSection component not found - DOM may be stale");
-    }
-
-    // Update chart stats - guard against undefined/null history
-    const history = this.state.history || [];
-    this.chartStats =
-            history.length > 0 && window.DashboardUtils?._calculateStats
-              ? window.DashboardUtils._calculateStats(history)
-              : {
-                current: 0,
-                avg: 0,
-                max: 0,
-              };
+    // ChartsSection now manages itself completely via socket broadcasts
+    // No need to manually update it - it listens to metrics:history:updated directly
+    console.log("[DashboardPage] ChartsSection handles its own updates via socket");
   }
 
   _updateModelsUI() {
@@ -586,10 +557,7 @@ class DashboardPage extends Component {
       this.unsubscribers = [];
     }
 
-    if (this.chartManager) {
-      this.chartManager.destroy();
-    }
-
+    // chartManager cleanup removed - ChartsSection handles its own cleanup
     super.destroy();
   }
 
@@ -610,12 +578,10 @@ class DashboardPage extends Component {
   }
 
   _handleChartZoom(range) {
-    // Use direct socket call instead of stateManager.emit
-    console.log("[DashboardPage] _handleChartZoom - range:", range);
-    // Trigger chart zoom via direct UI update
-    if (this.chartManager) {
-      this.chartManager.setZoomRange(range);
-    }
+    // Chart zoom is now handled by ChartsSection
+    console.log("[DashboardPage] _handleChartZoom - ChartsSection handles zoom");
+    // Broadcast zoom change to ChartsSection via socket
+    socketClient.emit("charts:zoomChanged", { range });
   }
 
   async _handleRefreshClick() {
@@ -646,10 +612,11 @@ class DashboardPage extends Component {
     URL.revokeObjectURL(url);
   }
 
-  handleChartTypeChange(newType) {
-    if (newType === this.chartType) return;
-    this.chartType = newType;
-    if (this.chartManager) this.chartManager.setChartType(newType);
+  // Chart type changes are now handled by ChartsSection broadcasting via socket
+  // No parent management needed
+  _handleChartTypeChange(newType) {
+    // This method is no longer needed as ChartsSection broadcasts chart type changes
+    console.log("[DashboardPage] Chart type changes handled by ChartsSection socket broadcasts");
   }
 
   render() {
@@ -705,10 +672,8 @@ class DashboardPage extends Component {
           },
           [
             Component.h(window.ChartsSection, {
-              history: this.state.history || this.history,
-              chartStats: this.chartStats,
-              chartManager: this.chartManager,
-              onChartTypeChange: (type) => this.handleChartTypeChange(type),
+              // No props needed - ChartsSection is completely independent
+              // Gets all data from socket broadcasts directly
             }),
             Component.h(window.SystemHealth, {
               metrics: this.state.metrics || this.metrics,
@@ -751,3 +716,4 @@ class DashboardPage extends Component {
 }
 
 window.DashboardPage = DashboardPage;
+
