@@ -81,23 +81,26 @@ async function collectAndEmitMetrics(socket, db) {
 
     // Broadcast metrics update to ALL connected clients (except sender)
     // Using socket.broadcast.emit to reach all clients
-    socket.broadcast.emit("metrics:update", {
-      type: "broadcast",
+    socket.broadcast.emit("metrics:updated", {
       timestamp: Date.now(),
-      data: {
-        metrics: {
-          cpu: { usage: cpuUsage },
-          memory: { used: memoryUsedPercent },
-          swap: { used: swapUsedPercent },
-          disk: { used: diskUsedPercent },
-          gpu: {
-            usage: gpuUsage,
-            memoryUsed: gpuMemoryUsed,
-            memoryTotal: gpuMemoryTotal,
-            list: gpuMetrics.gpuList, // Use the GPU list from collected metrics
-          },
-          uptime: process.uptime(),
+      metrics: {
+        cpu: { usage: cpuUsage },
+        memory: { used: memoryUsedPercent },
+        swap: { used: swapUsedPercent },
+        disk: { used: diskUsedPercent },
+        gpu: {
+          usage: gpuUsage,
+          memoryUsed: gpuMemoryUsed,
+          memoryTotal: gpuMemoryTotal,
+          list: gpuMetrics.gpuList,
         },
+        uptime: process.uptime(),
+      },
+      gpuMetrics: {
+        usage: gpuUsage,
+        memoryUsed: gpuMemoryUsed,
+        memoryTotal: gpuMemoryTotal,
+        list: gpuMetrics.gpuList,
       },
     });
 

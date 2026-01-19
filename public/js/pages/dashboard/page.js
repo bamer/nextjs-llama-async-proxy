@@ -44,6 +44,21 @@ class DashboardPage extends Component {
     this.routerCardUpdater = null;
   }
 
+  /**
+   * Subscribe to continuous metrics updates via Socket.IO
+   * Server will broadcast metrics:updated every 2 seconds to all connected clients
+   */
+  async _subscribeToMetrics() {
+    try {
+      const response = await socketClient.request("metrics:subscribe", {
+        interval: 2000, // 2 seconds
+      });
+      console.log("[DashboardPage] Subscribed to metrics:", response);
+    } catch (e) {
+      console.warn("[DashboardPage] Failed to subscribe to metrics:", e.message);
+    }
+  }
+
   onMount() {
     console.log("[DashboardPage] onMount - subscribing to socket broadcasts");
 
@@ -52,6 +67,9 @@ class DashboardPage extends Component {
 
     // Skeleton UI is already applied during render(), but ensure it's there
     this._renderSkeletonUI();
+
+    // Subscribe to metrics updates (continuous polling every 2 seconds)
+    this._subscribeToMetrics();
 
     // Subscribe to socket broadcasts for real-time updates
     this.unsubscribers.push(

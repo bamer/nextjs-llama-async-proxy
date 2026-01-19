@@ -45,9 +45,13 @@ class GpuDetails extends Component {
   _onGpuUpdated(data) {
     console.debug("[GpuDetails] gpu:updated broadcast received:", data);
     if (data && data.list) {
+      // Direct format: { list: [...] }
       this._handleGpuUpdate(data);
+    } else if (data && data.data && data.data.list) {
+      // Wrapped format: { type, timestamp, data: { list: [...] } }
+      this._handleGpuUpdate(data.data);
     } else if (data) {
-      console.warn("[GpuDetails] Invalid broadcast data:", data);
+      console.debug("[GpuDetails] Broadcast data format:", Object.keys(data || {}));
     }
   }
 
@@ -85,7 +89,8 @@ class GpuDetails extends Component {
       const deviceId = e.currentTarget.dataset.deviceId;
       const current = this.gpuExpanded.get(deviceId);
       this.gpuExpanded.set(deviceId, !current);
-      this._updateUI();
+      // Re-render GPU cards to show/hide metrics
+      this._renderGpuCards();
     });
 
     this.on("click", "[data-action=gpu-refresh]", async (e) => {
@@ -186,6 +191,8 @@ class GpuDetails extends Component {
     if (!container) {
       this._el.innerHTML = "<div class=\"gpu-container\"></div>";
       container = this._el.querySelector(".gpu-container");
+      // Only bind events once when container is created
+      this.bindEvents();
     }
 
     const totalVram = this._getTotalVram();
@@ -259,6 +266,15 @@ class GpuDetails extends Component {
       <div class="gpu-card-preview">
         <div class="gpu-preview-grid">
           <div class="gpu-preview-item">
+            <span class="gpu-preview-label">GPU Usage</span>
+            <span class="gpu-preview-value">${usage > 0 ? usage.toFixed(1) + "%" : "N/A"}</span>
+          </div>
+          ${usage > 0 ? `
+            <div class="gpu-preview-bar gpu-usage">
+              <div class="gpu-preview-bar-fill" style="width: ${Math.min(usage, 100)}%"></div>
+            </div>
+          ` : ""}
+          <div class="gpu-preview-item">
             <span class="gpu-preview-label">Memory</span>
             <span class="gpu-preview-value">${this._formatBytes(memoryUsed)} / ${this._formatBytes(memoryTotal)}</span>
           </div>
@@ -280,11 +296,9 @@ class GpuDetails extends Component {
               <span class="gpu-preview-value">${m.powerDrawWatts.toFixed(1)} W</span>
             </div>
           ` : ""}
-          ${memoryTotal > 0 ? `
-            <div class="gpu-preview-bar">
-              <div class="gpu-preview-bar-fill" style="width: ${Math.min(memoryPercent, 100)}%"></div>
-            </div>
-          ` : ""}
+          <div class="gpu-preview-bar memory">
+            <div class="gpu-preview-bar-fill" style="width: ${Math.min(memoryPercent, 100)}%"></div>
+          </div>
           ${!hasFullMetrics ? `
             <div class="gpu-preview-item full-width">
               <span class="gpu-preview-label">Monitoring</span>

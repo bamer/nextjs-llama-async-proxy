@@ -291,6 +291,16 @@
   transition: width 0.3s ease;
 }
 
+/* GPU Usage bar - purple/amber gradient */
+.gpu-preview-bar.gpu-usage .gpu-preview-bar-fill {
+  background: linear-gradient(90deg, #8b5cf6, #f59e0b);
+}
+
+/* Memory bar - purple/amber gradient */
+.gpu-preview-bar.memory .gpu-preview-bar-fill {
+  background: linear-gradient(90deg, #8b5cf6, #f59e0b);
+}
+
 .gpu-card-details {
   padding: 0 14px 14px;
   border-top: 1px solid rgba(148, 163, 184, 0.2);

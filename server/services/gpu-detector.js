@@ -367,7 +367,41 @@ async function detectAmdSysfs() {
         const finalVramBytes = isIntegrated ? sharedMemoryTotal : vramTotalBytes;
         const finalVramMiB = Math.round(finalVramBytes / (1024 * 1024));
 
-        console.debug(`[GPU-DETECTOR] ${entry} Final: name="${name}", integrated=${isIntegrated}, vram=${finalVramMiB}MiB`);
+        // Try to read GPU usage and memory from sysfs
+        let gpuUsagePercent = 0;
+        let memoryUsedBytes = 0;
+        let memoryTotalBytes = finalVramBytes;
+
+        // Read GPU usage
+        try {
+          const busyPercentPath = path.join(devicePath, "gpu_busy_percent");
+          if (fs.existsSync(busyPercentPath)) {
+            const busyPercent = fs.readFileSync(busyPercentPath, "utf8").trim();
+            gpuUsagePercent = parseFloat(busyPercent) || 0;
+            console.debug(`[GPU-DETECTOR] ${entry} GPU usage: ${gpuUsagePercent}%`);
+          }
+        } catch (e) {
+          console.debug(`[GPU-DETECTOR] Could not read gpu_busy_percent for ${entry}`);
+        }
+
+        // Read memory usage (prefer vis_vram, fallback to vram)
+        try {
+          const vramUsedPath = path.join(devicePath, "mem_info_vis_vram_used");
+          if (fs.existsSync(vramUsedPath)) {
+            memoryUsedBytes = parseInt(fs.readFileSync(vramUsedPath, "utf8").trim()) || 0;
+            console.debug(`[GPU-DETECTOR] ${entry} Memory used (vis_vram): ${memoryUsedBytes} bytes`);
+          } else {
+            const vramUsedAltPath = path.join(devicePath, "mem_info_vram_used");
+            if (fs.existsSync(vramUsedAltPath)) {
+              memoryUsedBytes = parseInt(fs.readFileSync(vramUsedAltPath, "utf8").trim()) || 0;
+              console.debug(`[GPU-DETECTOR] ${entry} Memory used (vram): ${memoryUsedBytes} bytes`);
+            }
+          }
+        } catch (e) {
+          console.debug(`[GPU-DETECTOR] Could not read memory for ${entry}`);
+        }
+
+        console.debug(`[GPU-DETECTOR] ${entry} Final: name="${name}", integrated=${isIntegrated}, vram=${finalVramMiB}MiB, usage=${gpuUsagePercent}%`);
 
         gpus.push({
           deviceId: `amd-sysfs-${entry}`,
@@ -379,11 +413,11 @@ async function detectAmdSysfs() {
           cudaVersion: null,
           busLocation: entry,
           metrics: {
-            // No metrics available via sysfs for AMD GPUs initially
-            utilizationPercent: 0,
-            memoryUsedBytes: 0,
-            memoryUsedMiB: 0,
-            memoryTotalBytes: finalVramBytes,
+            // Read metrics available via sysfs for AMD GPUs
+            utilizationPercent: gpuUsagePercent,
+            memoryUsedBytes,
+            memoryUsedMiB: Math.round(memoryUsedBytes / (1024 * 1024)),
+            memoryTotalBytes,
             memoryTotalMiB: finalVramMiB,
             temperatureCelsius: null,
             powerDrawWatts: null,
@@ -392,7 +426,7 @@ async function detectAmdSysfs() {
             memoryClockMhz: null,
             encoderUtilPercent: null,
             decoderUtilPercent: null,
-            vramUsagePercent: 0,
+            vramUsagePercent: memoryTotalBytes > 0 ? (memoryUsedBytes / memoryTotalBytes) * 100 : 0,
           },
           status: "active",
           lastUpdated: Date.now(),
