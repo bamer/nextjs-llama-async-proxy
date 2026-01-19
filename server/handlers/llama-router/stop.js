@@ -3,7 +3,6 @@
  * Router shutdown and cleanup
  */
 
-import { DEFAULT_LLAMA_PORT, MAX_PORT } from "../constants.js";
 import { killLlamaServer, killLlamaOnPort } from "./process.js";
 import { getServerProcess, getServerUrl } from "./start.js";
 
@@ -28,12 +27,6 @@ export async function stopLlamaServerRouter() {
   if (state.port) {
     console.log("[LLAMA] Killing on configured port:", state.port);
     await killLlamaOnPort(state.port);
-  }
-
-  // Also kill on default port as fallback
-  if (DEFAULT_LLAMA_PORT !== state.port) {
-    console.log("[LLAMA] Killing on default port:", DEFAULT_LLAMA_PORT);
-    await killLlamaOnPort(DEFAULT_LLAMA_PORT);
   }
 
   // Small delay to ensure port is released

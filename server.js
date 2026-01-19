@@ -24,6 +24,8 @@ import { registerHandlers } from "./server/handlers.js";
 import { parseGgufMetadata } from "./server/gguf/metadata-parser.js";
 import { startLlamaServerRouter } from "./server/handlers/llama-router/index.js";
 import { autoStartLlamaServer } from "./server/server-startup.js";
+import { startGpuMonitor, stopGpuMonitor } from "./server/services/gpu-monitor.js";
+import { registerGpuHandlers } from "./server/handlers/gpu-handler.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -111,6 +113,16 @@ async function main() {
   console.log("[SERVER] Socket.IO handlers registered.");
   startMetricsCollection(io, db);
   console.log("[SERVER] Started Metrics Collection.");
+
+  // Register GPU handlers on new connections
+  io.on("connection", (socket) => {
+    registerGpuHandlers(socket);
+  });
+  console.log("[SERVER] GPU handlers registered.");
+
+  // Start GPU monitoring
+  startGpuMonitor(io);
+  console.log("[SERVER] GPU monitoring started.");
 
   app.use(express.static(path.join(__dirname, "public")));
   // Serve Socket.IO client from a path that doesn't conflict with Socket.IO server

@@ -11,6 +11,7 @@ This document provides guidelines for agentic coding assistants working in this 
 - **Real-time**: Socket.IO for live updates
 - **Architecture**: Simplify to pure Event-Driven DOM Updates
 - **LLM Backend**: llama.cpp server in **router mode** (multi-model support) with preset.ini
+- **Define stable Socket.IO contracts** - clear in/out on server
 
 ## Llama.cpp Router Mode
 

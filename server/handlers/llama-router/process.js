@@ -2,6 +2,7 @@
  * Llama Router Process Management
  * Process spawning, port finding, and lifecycle management
  * FIXED: Uses reliable net.connect for port checking
+ * Uses unified config for port discovery
  */
 
 import fs from "fs";
@@ -10,15 +11,40 @@ import os from "os";
 import net from "net";
 import { exec } from "child_process";
 import { promisify } from "util";
-import { DEFAULT_LLAMA_PORT, MAX_PORT } from "../constants.js";
+import { MAX_PORT } from "../constants.js";
+import { getUnifiedConfig } from "../../db/unified-config.js";
 
 const execAsync = promisify(exec);
 
 /**
- * Find available port for llama-server.
+ * Get the default starting port from config.
+ * Falls back to a reasonable default if not configured.
  */
-export async function findAvailablePort(isPortInUseFn) {
-  for (let port = DEFAULT_LLAMA_PORT; port <= MAX_PORT; port++) {
+async function getDefaultStartPort(db) {
+  if (db) {
+    try {
+      const config = getUnifiedConfig(db);
+      if (config.port) {
+        return config.port;
+      }
+    } catch (e) {
+      // Ignore
+    }
+  }
+  // No hardcoded default - caller should handle this
+  return null;
+}
+
+/**
+ * Find available port for llama-server starting from configured port.
+ */
+export async function findAvailablePort(db, isPortInUseFn) {
+  const startPort = await getDefaultStartPort(db);
+  if (!startPort) {
+    throw new Error("Port not configured. Cannot find available port.");
+  }
+
+  for (let port = startPort; port <= MAX_PORT; port++) {
     if (!(await isPortInUseFn(port))) {
       return port;
     }
@@ -125,7 +151,6 @@ export async function stopLlamaServer(
   if (llamaServerPort) {
     await killLlamaOnPortFn(llamaServerPort);
   }
-  await killLlamaOnPortFn(DEFAULT_LLAMA_PORT);
 
   return { success: true };
 }

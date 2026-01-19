@@ -11,6 +11,7 @@ import {
   getLoggingConfig,
   saveLoggingConfig,
   resetLoggingConfig,
+  getConfig,
 } from "../db/config.js";
 
 function getRequestId(req) {
@@ -18,6 +19,16 @@ function getRequestId(req) {
 }
 
 export function registerConfigHandlers(socket, db) {
+  // Legacy config handler (for backward compatibility)
+  socket.on("config:get", (req, callback) => {
+    try {
+      const config = getConfig(db);
+      callback({ success: true, data: { config }, timestamp: new Date().toISOString() });
+    } catch (e) {
+      callback({ success: false, error: e.message, timestamp: new Date().toISOString() });
+    }
+  });
+
   // Router Config
   socket.on("routerConfig:get", (req, callback) => {
     try {

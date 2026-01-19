@@ -57,7 +57,7 @@ class SettingsPage extends Component {
     };
   }
 
-  onMount() {
+   onMount() {
     console.log("[DEBUG] SettingsPage onMount");
 
     // CRITICAL: Mount child components FIRST so bindEvents() is called
@@ -97,105 +97,6 @@ class SettingsPage extends Component {
         this._updatePresetsDropdown();
       })
     );
-  }
-
-  /**
-     * Handle routerConfig state changes.
-     * @param {Object} config - New router config state
-     */
-  _onRouterConfigChange(config) {
-    if (config && typeof config === "object") {
-      // Merge with existing to preserve all fields
-      this.routerConfig = { ...this._getRouterDefaults(), ...this.routerConfig, ...config };
-      this._updateRouterConfigUI();
-    }
-  }
-
-  /**
-     * Handle logging config state changes.
-     * @param {Object} config - New logging config state
-     */
-  _onLoggingConfigChange(config) {
-    if (config && typeof config === "object") {
-      this.logLevel = config.logLevel || this.logLevel;
-      this.maxFileSize = config.maxFileSize || this.maxFileSize;
-      this.maxFiles = config.maxFiles || this.maxFiles;
-      this.enableFileLogging = config.enableFileLogging !== false;
-      this.enableDatabaseLogging = config.enableDatabaseLogging !== false;
-      this.enableConsoleLogging = config.enableConsoleLogging !== false;
-      this._updateLoggingConfigUI();
-    }
-  }
-
-  /**
-     * Handle llama server status changes.
-     * @param {Object} status - New llama status
-     */
-  _onLlamaStatusChange(status) {
-    this.llamaStatus = status || {};
-    this._updateStatusUI();
-  }
-
-  /**
-     * Handle router status changes.
-     * @param {Object} status - New router status
-     */
-  _onRouterStatusChange(status) {
-    this.routerStatus = status || {};
-    this._updateStatusUI();
-  }
-
-  /**
-     * Handle presets changes.
-     * @param {Array} presets - New presets list
-     */
-  _onPresetsChange(presets) {
-    this.presets = presets || [];
-    this._updatePresetsDropdown();
-  }
-
-  /**
-     * Handle save action status changes.
-     * @param {Object} action - Action status
-     */
-  _onSaveAction(action) {
-    const btn = this.$("[data-action=\"save\"]");
-    if (btn) {
-      if (action.status === "saving") {
-        btn.textContent = "Saving...";
-        btn.disabled = true;
-      } else {
-        btn.textContent = "Save All Settings";
-        btn.disabled = false;
-      }
-    }
-
-    if (action.status === "complete") {
-      showNotification("Settings saved successfully", "success");
-    } else if (action.status === "error") {
-      showNotification(`Save failed: ${action.error}`, "error");
-    }
-  }
-
-  /**
-     * Handle restart action status changes.
-     * @param {Object} action - Action status
-     */
-  _onRestartAction(action) {
-    const restartBtn = this.$("[data-action=\"restart-router\"]");
-    if (restartBtn) {
-      if (action.status === "restarting") {
-        restartBtn.disabled = true;
-        restartBtn.textContent = "Restarting...";
-      } else {
-        restartBtn.disabled = false;
-        restartBtn.textContent = "Restart Router";
-      }
-    }
-
-    if (action.status === "error") {
-      showNotification(`Restart failed: ${action.error}`, "error");
-    }
   }
 
   /**

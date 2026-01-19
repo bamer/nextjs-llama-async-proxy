@@ -8,6 +8,7 @@
 import path from "path";
 import { logger } from "../logger.js";
 import { ok, err } from "../response.js";
+import { getRouterConfig } from "../../db/config.js";
 import {
   listPresets,
   readPreset,
@@ -323,20 +324,20 @@ export function registerPresetsHandlers(socket, db) {
   /**
    * Get models directory
    */
-  socket.on("presets:get-models-dir", (req, ack) => {
-    const id = req?.requestId || Date.now();
-    console.log("[DEBUG] Event: presets:get-models-dir", { requestId: id });
-    try {
-      const config = db.getConfig();
-      const modelsDir = config.baseModelsPath || path.join(process.cwd(), "models");
+   socket.on("presets:get-models-dir", (req, ack) => {
+     const id = req?.requestId || Date.now();
+     console.log("[DEBUG] Event: presets:get-models-dir", { requestId: id });
+     try {
+       const config = getRouterConfig(db);
+       const modelsDir = config.modelsPath || path.join(process.cwd(), "models");
 
-      console.log("[DEBUG] Scanning models directory:", modelsDir);
-      ok(socket, "presets:get-models-dir:result", { modelsDir }, id, ack);
-    } catch (error) {
-      console.error("[DEBUG] Error in presets:get-models-dir:", error.message);
-      err(socket, "presets:get-models-dir:result", error.message, id, ack);
-    }
-  });
+       console.log("[DEBUG] Scanning models directory:", modelsDir);
+       ok(socket, "presets:get-models-dir:result", { modelsDir }, id, ack);
+     } catch (error) {
+       console.error("[DEBUG] Error in presets:get-models-dir:", error.message);
+       err(socket, "presets:get-models-dir:result", error.message, id, ack);
+     }
+   });
 
   /**
    * Get default parameters

@@ -5,6 +5,7 @@
 
 import fs from "fs/promises";
 import path from "path";
+import { getRouterConfig } from "../../db/config.js";
 
 // Batch processing configuration
 const BATCH_SIZE = 5;
@@ -132,8 +133,8 @@ export function registerModelsScanHandlers(socket, io, db, ggufParser) {
     console.log("[DEBUG] models:scan request", { requestId: id });
 
     try {
-      const config = db.getConfig();
-      const modelsDir = req?.path || config.baseModelsPath;
+      const config = getRouterConfig(db);
+      const modelsDir = req?.path || config.modelsPath;
       const dirExists = await directoryExists(modelsDir);
 
       let scanned = 0;

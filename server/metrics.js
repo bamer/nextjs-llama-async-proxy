@@ -12,7 +12,7 @@ import {
   getMetricsCallCount,
   resetMetricsCallCount,
 } from "./metrics-collector.js";
-import { collectGpuMetrics, getGpuList } from "./gpu-monitor.js";
+import { collectGpuMetrics, getGpuList } from "./services/gpu-monitor.js";
 import {
   initializeLlamaMetricsScraper as initLlamaScraper,
   collectLlamaMetrics,

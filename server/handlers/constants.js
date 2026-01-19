@@ -26,5 +26,4 @@ export const fileTypeMap = {
 };
 
 // Router port configuration
-export const DEFAULT_LLAMA_PORT = 8080;
 export const MAX_PORT = 8090;

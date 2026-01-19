@@ -7,7 +7,6 @@
 import { LlamaServerMetricsScraper } from "./handlers/llama-router/metrics-scraper.js";
 import { llamaApiRequest } from "./handlers/llama-router/api.js";
 import { getServerUptime } from "./handlers/llama-router/start.js";
-import { getRouterConfig } from "./db/config.js";
 
 let llamaMetricsScraper = null;
 
@@ -38,8 +37,9 @@ async function getLoadedModelName(port) {
  * Get the correct port for llama-server metrics.
  * THE SINGLE SOURCE OF TRUTH: detect the actual running llama-server
  * Falls back to configured port only if no server is detected
+ * NOTE: No hardcoded 8080 fallback - port must be explicitly configured
  */
-async function getLlamaServerPort() {
+async function getLlamaServerPort(db) {
   // First, try to detect running llama-server (THE SOURCE OF TRUTH)
   try {
     const { detectLlamaServer } = await import("./handlers/llama-router/status.js");
@@ -52,19 +52,24 @@ async function getLlamaServerPort() {
     console.debug("[LlamaMetrics] Could not detect llama-server:", e.message);
   }
 
-  // Fallback to configured port
-  try {
-    const config = getRouterConfig(null);
-    if (config?.port) {
-      console.log(`[LlamaMetrics] Using configured port ${config.port}`);
-      return config.port;
+  // Fallback to configured port from database
+  if (db) {
+    try {
+      const { getUnifiedConfig } = await import("./db/unified-config.js");
+      const config = getUnifiedConfig(db);
+      if (config.port) {
+        console.log(`[LlamaMetrics] Using configured port ${config.port}`);
+        return config.port;
+      }
+    } catch (e) {
+      console.debug("[LlamaMetrics] Could not get config:", e.message);
     }
-  } catch (e) {
-    // Ignore
   }
 
-  console.log("[LlamaMetrics] No server detected, using default port 8080");
-  return 8080;
+  // No server detected and no port configured - throw error instead of hardcoded fallback
+  throw new Error(
+    "Cannot determine llama-server port. Please configure the port in Settings."
+  );
 }
 
 /**
@@ -97,8 +102,10 @@ export function initializeLlamaMetricsScraper(port, db = null) {
   }
 
   // Otherwise, detect the running server dynamically (SOURCE OF TRUTH)
-  getLlamaServerPort().then((actualPort) => {
+  getLlamaServerPort(db).then((actualPort) => {
     updateScraper(actualPort);
+  }).catch((error) => {
+    console.warn("[LlamaMetrics] Could not initialize scraper:", error.message);
   });
 }
 
@@ -185,7 +192,10 @@ export async function collectLlamaMetrics(socket, db = null) {
     const metrics = await llamaMetricsScraper.getMetrics();
 
     if (metrics) {
-      const currentPort = llamaMetricsScraper.port || 8080;
+      const currentPort = llamaMetricsScraper.port;
+      if (!currentPort) {
+        throw new Error("Metrics scraper port not configured");
+      }
       const url = `http://127.0.0.1:${currentPort}`;
 
       // Build frontend-compatible format

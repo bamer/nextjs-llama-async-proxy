@@ -277,7 +277,7 @@ class NotificationService {
     });
 
     // Log for debugging
-    console.log(`[TOAST:${type}]`, message);
+    console.log(`[DEBUG] [TOAST:${type}]`, message);
   }
 }
 

@@ -18,6 +18,20 @@ const COMMON_LLAMA_PORTS = [
 ];
 
 /**
+ * Validate that the response is from a real llama-server
+ * @param {Object} response - Health check response
+ * @returns {boolean} True if valid llama-server response
+ */
+function isValidLlamaServerResponse(response) {
+  // Llama-server health response should have these fields
+  return (
+    response &&
+    typeof response === "object" &&
+    (response.status === "ok" || response.version)
+  );
+}
+
+/**
  * Try to detect if a llama-server is running on any of the common ports
  * OPTIMIZED: Checks known/configured port FIRST, then scans others
  * @returns {Promise<{port: number, url: string}|null>} Port and URL if found, null otherwise
@@ -30,12 +44,16 @@ export async function detectLlamaServer(knownPort = null) {
     if (await isPortInUse(knownPort)) {
       const url = `http://127.0.0.1:${knownPort}`;
       try {
-        await Promise.race([
+        const response = await Promise.race([
           llamaApiRequest("/health", "GET", null, url),
           new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 500)),
         ]);
-        console.log(`[DETECT] Found llama-server on known port ${knownPort}`);
-        return { port: knownPort, url };
+        // Validate it's actually llama-server
+        if (isValidLlamaServerResponse(response)) {
+          console.log(`[DETECT] Found llama-server on known port ${knownPort}`);
+          return { port: knownPort, url };
+        }
+        console.log(`[DETECT] Port ${knownPort} responded but not llama-server (HTML or invalid)`);
       } catch (e) {
         // Known port in use but not responding, continue scanning
         console.debug(`[DETECT] Known port ${knownPort} in use but not responding`);
@@ -55,11 +73,15 @@ export async function detectLlamaServer(knownPort = null) {
         if (await isPortInUse(port)) {
           const url = `http://127.0.0.1:${port}`;
           try {
-            await Promise.race([
+            const response = await Promise.race([
               llamaApiRequest("/health", "GET", null, url),
               new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 300)),
             ]);
-            return { port, url };
+            // Validate it's actually llama-server
+            if (isValidLlamaServerResponse(response)) {
+              return { port, url };
+            }
+            return null;
           } catch (e) {
             return null;
           }

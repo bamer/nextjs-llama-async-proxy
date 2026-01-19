@@ -38,10 +38,15 @@ export async function llamaApiRequest(endpoint, method = "GET", body = null, lla
       let data = "";
       res.on("data", (chunk) => (data += chunk));
       res.on("end", () => {
+        // Reject HTML responses (not llama-server)
+        if (data.trim().startsWith("<")) {
+          reject(new Error("Response is HTML, not a llama-server"));
+          return;
+        }
         try {
           resolve(JSON.parse(data));
         } catch {
-          resolve(data);
+          reject(new Error("Invalid JSON response from server"));
         }
       });
     });

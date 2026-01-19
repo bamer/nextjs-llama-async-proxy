@@ -1,13 +1,12 @@
 /**
  * Start Llama Router
  * Router startup and process spawning
- * RESPECTS USER SETTINGS FROM DATABASE
+ * RESPECTS USER SETTINGS FROM DATABASE - Uses unified config module
  */
 
 import fs from "fs";
 import path from "path";
 import { spawn, execSync } from "child_process";
-import { DEFAULT_LLAMA_PORT } from "../constants.js";
 import {
   killLlamaServer,
   killLlamaOnPort,
@@ -15,7 +14,7 @@ import {
 } from "./process.js";
 import { llamaApiRequest } from "./api.js";
 import { initializeLlamaMetricsScraper } from "../../metrics.js";
-import { getRouterConfig } from "../../db/config.js";
+import { getUnifiedConfig } from "../../db/unified-config.js";
 
 // Module-level state
 let llamaServerProcess = null;
@@ -41,26 +40,27 @@ export function setNotificationCallback(cb) {
 
 /**
  * Get the current configured port for llama-server.
+ * Uses unified config module - no hardcoded defaults.
+ * @param {Object} db - Database instance
+ * @returns {number|null} Configured port or null if not configured
  */
 function getConfiguredPort(db) {
-  if (!db) return DEFAULT_LLAMA_PORT;
-  const config = db.getConfig() || {};
-  return config.port || config.llama_server_port || DEFAULT_LLAMA_PORT;
+  if (!db) return null;
+  const config = getUnifiedConfig(db);
+  return config.port || null;
 }
 
 /**
  * Get current router state
  */
 export function getRouterState(db) {
-  if (!llamaServerPort && db) {
-    llamaServerPort = getConfiguredPort(db);
-    llamaServerUrl = `http://127.0.0.1:${llamaServerPort}`;
-  }
+  const port = llamaServerPort || getConfiguredPort(db);
+  const url = port ? `http://127.0.0.1:${port}` : null;
 
   return {
     process: llamaServerProcess,
-    port: llamaServerPort || DEFAULT_LLAMA_PORT,
-    url: llamaServerUrl,
+    port: port,
+    url: url,
     isRunning: llamaServerProcess !== null && llamaServerProcess.exitCode === null,
   };
 }
@@ -203,7 +203,7 @@ function getLlamaServerPath(routerConfig) {
  * Start llama-server in router mode.
  */
 export async function startLlamaServerRouter(modelsDir, db, options = {}) {
-  const routerConfig = getRouterConfig(db.db);
+  const routerConfig = getUnifiedConfig(db);
   const settings = db.getMeta("user_settings") || {};
 
   const { path: llamaBin, found } = getLlamaServerPath(routerConfig);
@@ -216,7 +216,15 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
   }
 
   const configuredPort = getConfiguredPort(db);
-  
+
+  // Validate port is configured
+  if (!configuredPort) {
+    return {
+      success: false,
+      error: "Port not configured. Please set the llama-server port in Settings > Router Configuration.",
+    };
+  }
+
   await killLlamaOnPort(configuredPort);
 
   llamaServerPort = configuredPort;

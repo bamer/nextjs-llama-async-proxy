@@ -19,12 +19,35 @@ const __dirname = path.dirname(__filename);
 const Database = DatabasePackage;
 
 /**
+ * Get the actual database instance
+ * Handles both raw Database and DB wrapper instances
+ * @param {Object} db - Database instance (raw or wrapper)
+ * @returns {Object|null} Raw database instance or null
+ */
+export function getDb(db) {
+  if (db === null || db === undefined) {
+    return null;
+  }
+  // If db has .prepare directly (raw Database instance), use it
+  if (typeof db.prepare === "function") {
+    return db;
+  }
+  // If db has a .db property with .prepare (DB wrapper), use that
+  if (db.db && typeof db.db.prepare === "function") {
+    return db.db;
+  }
+  // Fallback - should not happen
+  console.error("[DEBUG] getDb: Unknown db type", typeof db, db);
+  return null;
+}
+
+/**
  * Base DB class - initializes schema and repositories
  */
 export class DBBase {
   /**
-   * @param {string} dbPath - Database file path
-   */
+    * @param {string} dbPath - Database file path
+    */
   constructor(dbPath) {
     this.dbPath = dbPath || path.join(process.cwd(), "data", "llama-dashboard.db");
     this.db = new Database(this.dbPath);

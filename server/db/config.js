@@ -6,15 +6,17 @@
 import pkg from "better-sqlite3";
 const Database = pkg.Database;
 
+import { getDb } from "./db-base.js";
+
 /**
- * Default values for router_config table
- * NOTE: Paths are intentionally left empty to force user configuration
+ * Router configuration defaults (kept for backward compatibility)
+ * New code should use UNIFIED_CONFIG_DEFAULTS from unified-config.js
  */
-export const ROUTER_CONFIG_DEFAULTS = {
+const ROUTER_CONFIG_DEFAULTS = {
   modelsPath: "",
   serverPath: "",
   host: "0.0.0.0",
-  port: 8080,
+  port: null,  // No default - MUST be explicitly configured
   maxModelsLoaded: 4,
   parallelSlots: 1,
   ctxSize: 4096,
@@ -28,9 +30,9 @@ export const ROUTER_CONFIG_DEFAULTS = {
 };
 
 /**
- * Default values for logging_config table
+ * Logging configuration defaults (kept for backward compatibility)
  */
-export const LOGGING_CONFIG_DEFAULTS = {
+const LOGGING_CONFIG_DEFAULTS = {
   level: "info",
   maxFileSize: 10485760,
   maxFiles: 7,
@@ -38,49 +40,6 @@ export const LOGGING_CONFIG_DEFAULTS = {
   enableDatabaseLogging: true,
   enableConsoleLogging: true,
 };
-
-/**
- * Default server configuration (legacy format)
- */
-const DEFAULT_CONFIG = {
-  host: "localhost",
-  port: 8080,
-  baseModelsPath: "./models",
-  ctx_size: 2048,
-  batch_size: 512,
-  threads: 4,
-  auto_start_on_launch: false,
-  llama_server_port: 8080,
-  llama_server_host: "0.0.0.0",
-  llama_server_metrics: true,
-};
-
-/**
- * Get the current timestamp as Unix epoch seconds
- * @returns {number} Current timestamp
- */
-function getTimestamp() {
-  return Math.floor(Date.now() / 1000);
-}
-
-/**
- * Get the actual database instance (handles both raw Database and DB wrapper)
- * @param {Object} db - Better-sqlite3 database instance or DB wrapper
- * @returns {Object} Raw database instance
- */
-function getDb(db) {
-  // If db has .prepare directly (raw Database instance), use it
-  if (db && typeof db.prepare === "function") {
-    return db;
-  }
-  // If db has a .db property with .prepare (DB wrapper), use that
-  if (db && db.db && typeof db.db.prepare === "function") {
-    return db.db;
-  }
-  // Fallback - should not happen
-  console.error("[DEBUG] getDb: Unknown db type", typeof db, db);
-  return db;
-}
 
 /**
  * Get full router configuration from database

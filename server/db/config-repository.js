@@ -2,11 +2,16 @@
  * Config Repository
  * Wrapper for legacy API - delegates to unified config module
  *
- * DEPRECATED: This is a legacy wrapper. Use getRouterConfig/saveRouterConfig from config.js instead.
+ * DEPRECATED: This is a legacy wrapper. Use getUnifiedConfig/saveUnifiedConfig from unified-config.js instead.
  * This class exists to maintain backward compatibility with code using db.config.get().
  */
 
-import { getRouterConfig, saveRouterConfig, getLoggingConfig, saveLoggingConfig, ROUTER_CONFIG_DEFAULTS } from "./config.js";
+import {
+  getUnifiedConfig,
+  saveUnifiedConfig,
+  LEGACY_FIELDS,
+} from "./unified-config.js";
+import { getRouterConfig, saveRouterConfig, getLoggingConfig, saveLoggingConfig } from "./config.js";
 
 // Map unified config keys to legacy keys for backward compatibility
 const KEY_MAP = {
@@ -34,24 +39,25 @@ export class ConfigRepository {
 
   /**
    * Get server configuration with defaults
-   * Now uses the unified router_config table
-   * @returns {Object} Configuration object (legacy format)
+   * Uses the unified config module for clean data
+   * @returns {Object} Configuration object (legacy format for backward compatibility)
    */
   get() {
     try {
-      const unifiedConfig = getRouterConfig(this.db);
+      // Use unified config module for clean data
+      const unifiedConfig = getUnifiedConfig(this.db);
 
       // Convert to legacy format for backward compatibility
       const legacyConfig = {
         serverPath: unifiedConfig.serverPath || "",
         host: unifiedConfig.host || "localhost",
-        port: unifiedConfig.port || 8080,
+        port: unifiedConfig.port || null,  // No default - must be configured
         baseModelsPath: unifiedConfig.modelsPath || "",
         ctx_size: unifiedConfig.ctxSize || 2048,
         batch_size: unifiedConfig.batchSize || 512,
         threads: unifiedConfig.threads || 4,
         auto_start_on_launch: unifiedConfig.autoStartOnLaunch || false,
-        llama_server_port: unifiedConfig.port || 8080,
+        llama_server_port: unifiedConfig.port || null,
         llama_server_host: unifiedConfig.host || "0.0.0.0",
         llama_server_metrics: unifiedConfig.metricsEnabled !== false,
       };
@@ -59,17 +65,17 @@ export class ConfigRepository {
       return legacyConfig;
     } catch (e) {
       console.error("ConfigRepository.get() error:", e);
-      // Return minimal defaults on error
+      // Return minimal defaults on error - port is null to force configuration
       return {
         serverPath: "",
         host: "localhost",
-        port: 8080,
+        port: null,
         baseModelsPath: "",
         ctx_size: 2048,
         batch_size: 512,
         threads: 4,
         auto_start_on_launch: false,
-        llama_server_port: 8080,
+        llama_server_port: null,
         llama_server_host: "0.0.0.0",
         llama_server_metrics: true,
       };
@@ -77,42 +83,56 @@ export class ConfigRepository {
   }
 
   /**
-    * Save configuration to database
-    * Saves to the unified router_config and logging_config tables
-    * @param {Object} config - Configuration to save (can be legacy format or new { routerConfig, loggingConfig } format)
-    */
-   save(config) {
-     try {
-       // Check if this is the new format { routerConfig, loggingConfig }
-       if (config.routerConfig) {
-         console.log("[DEBUG] Saving new format config");
-         saveRouterConfig(this.db, config.routerConfig);
-         if (config.loggingConfig) {
-           console.log("[DEBUG] Saving logging config");
-           saveLoggingConfig(this.db, config.loggingConfig);
-         }
-         return;
-       }
+   * Save configuration to database
+   * Validates and cleans config, warns about legacy fields
+   * @param {Object} config - Configuration to save (can be legacy format or new { routerConfig, loggingConfig } format)
+   */
+  save(config) {
+    try {
+      // Check if this is the new format { routerConfig, loggingConfig }
+      if (config.routerConfig) {
+        console.log("[DEBUG] Saving new format config");
 
-       // Convert legacy format to unified format
-       const unifiedConfig = {
-         serverPath: config.serverPath || "",
-         modelsPath: config.baseModelsPath || config.modelsPath || "",
-         host: config.llama_server_host || config.host || "0.0.0.0",
-         port: parseInt(config.llama_server_port) || parseInt(config.port) || 8080,
-         threads: parseInt(config.threads) || 4,
-         ctxSize: parseInt(config.ctx_size) || parseInt(config.ctxSize) || 4096,
-         batchSize: parseInt(config.batch_size) || parseInt(config.batchSize) || 512,
-         autoStartOnLaunch: config.auto_start_on_launch === true,
-         metricsEnabled: config.llama_server_metrics !== false,
-       };
+        // Validate: warn if legacy fields in routerConfig
+        const legacyInRouter = LEGACY_FIELDS.filter((field) => config.routerConfig[field] !== undefined);
+        if (legacyInRouter.length > 0) {
+          console.warn("[ConfigRepository] Legacy fields in routerConfig (will be ignored):", legacyInRouter);
+        }
 
-       saveRouterConfig(this.db, unifiedConfig);
-     } catch (e) {
-       console.error("ConfigRepository.save() error:", e);
-       throw e;
-     }
-   }
+        saveRouterConfig(this.db, config.routerConfig);
+
+        if (config.loggingConfig) {
+          console.log("[DEBUG] Saving logging config");
+          saveLoggingConfig(this.db, config.loggingConfig);
+        }
+        return;
+      }
+
+      // Validate: warn if legacy fields are present
+      const legacyFieldsPresent = LEGACY_FIELDS.filter((field) => config[field] !== undefined);
+      if (legacyFieldsPresent.length > 0) {
+        console.warn("[ConfigRepository] Legacy fields detected (will be ignored):", legacyFieldsPresent);
+      }
+
+      // Convert legacy format to unified format, filtering out legacy fields
+      const unifiedConfig = {
+        serverPath: config.serverPath || "",
+        modelsPath: config.baseModelsPath || config.modelsPath || "",
+        host: config.llama_server_host || config.host || "0.0.0.0",
+        port: parseInt(config.llama_server_port) || parseInt(config.port) || null,  // No default
+        threads: parseInt(config.threads) || 4,
+        ctxSize: parseInt(config.ctx_size) || parseInt(config.ctxSize) || 4096,
+        batchSize: parseInt(config.batch_size) || parseInt(config.batchSize) || 512,
+        autoStartOnLaunch: config.auto_start_on_launch === true,
+        metricsEnabled: config.llama_server_metrics !== false,
+      };
+
+      saveRouterConfig(this.db, unifiedConfig);
+    } catch (e) {
+      console.error("ConfigRepository.save() error:", e);
+      throw e;
+    }
+  }
 }
 
 export default ConfigRepository;

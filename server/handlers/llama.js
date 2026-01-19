@@ -10,6 +10,7 @@ import {
   getLlamaStatus,
   setNotificationCallback,
 } from "./llama-router/index.js";
+import { getRouterConfig } from "../db/config.js";
 import path from "path";
 
 // Module level flag to ensure we only set the callback once
@@ -85,44 +86,44 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
     * Start llama server
     */
    socket.on("llama:start", async (req, ack) => {
-     const id = req?.requestId || Date.now();
-     console.log(`[LLAMA-HANDLERS] Received llama:start event from client ${socket.id}. Request ID: ${id}`);
+      const id = req?.requestId || Date.now();
+      console.log(`[LLAMA-HANDLERS] Received llama:start event from client ${socket.id}. Request ID: ${id}`);
 
-     try {
-       const config = db.getConfig() || {};
-       const settings = db.getMeta("user_settings") || {};
-       const modelsDir = config.baseModelsPath;
+      try {
+        const config = getRouterConfig(db);
+        const settings = db.getMeta("user_settings") || {};
+        const modelsDir = config.modelsPath;
 
-       console.log(`[LLAMA-HANDLERS] Starting router with config:`, {
-         modelsDir,
-         maxModels: settings.maxModelsLoaded || 4,
-         ctxSize: config.ctx_size || 4096,
-         threads: config.threads || 4,
-       });
+        console.log(`[LLAMA-HANDLERS] Starting router with config:`, {
+          modelsDir,
+          maxModels: settings.maxModelsLoaded || 4,
+          ctxSize: config.ctxSize || 4096,
+          threads: config.threads || 4,
+        });
 
-       const result = await startLlamaServerRouter(modelsDir, db, {
-         maxModels: settings.maxModelsLoaded || 4,
-         ctxSize: config.ctx_size || 4096,
-         threads: config.threads || 4,
-         noAutoLoad: !settings.autoLoadModels,
-       });
+        const result = await startLlamaServerRouter(modelsDir, db, {
+          maxModels: settings.maxModelsLoaded || 4,
+          ctxSize: config.ctxSize || 4096,
+          threads: config.threads || 4,
+          noAutoLoad: !settings.autoLoadModels,
+        });
 
-       console.log(`[LLAMA-HANDLERS] startLlamaServerRouter result:`, result);
-       if (result.success) {
-         console.log(`[LLAMA-HANDLERS] Router started successfully on port ${result.port}`);
-         if (initializeLlamaMetrics) {
-           initializeLlamaMetrics(result.port);
-         }
-         ok(socket, "llama:start:result", { success: true, ...result }, id, ack);
-       } else {
-         console.error(`[LLAMA-HANDLERS] Failed to start router:`, result.error);
-         err(socket, "llama:start:result", result.error, id, ack);
-       }
-     } catch (e) {
-       console.error("[LLAMA-HANDLERS] Error in llama:start handler:", e.message);
-       err(socket, "llama:start:result", e.message, id, ack);
-     }
-   });
+        console.log(`[LLAMA-HANDLERS] startLlamaServerRouter result:`, result);
+        if (result.success) {
+          console.log(`[LLAMA-HANDLERS] Router started successfully on port ${result.port}`);
+          if (initializeLlamaMetrics) {
+            initializeLlamaMetrics(result.port);
+          }
+          ok(socket, "llama:start:result", { success: true, ...result }, id, ack);
+        } else {
+          console.error(`[LLAMA-HANDLERS] Failed to start router:`, result.error);
+          err(socket, "llama:start:result", result.error, id, ack);
+        }
+      } catch (e) {
+        console.error("[LLAMA-HANDLERS] Error in llama:start handler:", e.message);
+        err(socket, "llama:start:result", e.message, id, ack);
+      }
+    });
 
    /**
     * Start llama server with preset
@@ -182,17 +183,17 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
       // Small delay for clean shutdown (only 500ms)
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Start the server
-      const config = db.getConfig() || {};
-      const settings = db.getMeta("user_settings") || {};
-      const modelsDir = config.baseModelsPath;
+       // Start the server
+       const config = getRouterConfig(db);
+       const settings = db.getMeta("user_settings") || {};
+       const modelsDir = config.modelsPath;
 
-      const result = await startLlamaServerRouter(modelsDir, db, {
-        maxModels: settings.maxModelsLoaded || 4,
-        ctxSize: config.ctx_size || 4096,
-        threads: config.threads || 4,
-        noAutoLoad: !settings.autoLoadModels,
-      });
+       const result = await startLlamaServerRouter(modelsDir, db, {
+         maxModels: settings.maxModelsLoaded || 4,
+         ctxSize: config.ctxSize || 4096,
+         threads: config.threads || 4,
+         noAutoLoad: !settings.autoLoadModels,
+       });
 
       if (result.success) {
         if (initializeLlamaMetrics) {
