@@ -39,7 +39,7 @@ class GpuDetails extends Component {
   _handleGpuUpdate(data) {
     this.loading = false;
     this.gpuList = data.list || [];
-    this._updateUI();
+    this._updateGPUUI();
   }
 
   _startAutoRefresh() {
@@ -206,6 +206,8 @@ class GpuDetails extends Component {
     const usageClass = usage > 85 ? "high" : usage > 50 ? "medium" : "low";
     const hasWarning = usage > 85 || memoryPercent > 90 || m.temperatureCelsius > 85;
     const vendorInfo = this._getVendorInfo(gpu.vendor);
+    const gpuTypeLabel = this._getGpuTypeLabel(gpu);
+    const hasMetrics = gpu.vendor === "NVIDIA" || gpu.isRocmCapable;
 
     return `
       <div class="gpu-card ${hasWarning ? "warning" : ""}">
@@ -215,10 +217,15 @@ class GpuDetails extends Component {
             <div class="gpu-name-info">
               <strong class="gpu-name">${gpu.name}</strong>
               <span class="gpu-vendor-detail">${gpu.vendor}${gpu.isIntegrated ? " (Integrated)" : ""}</span>
+              ${!gpu.isIntegrated ? `<span class="gpu-type-badge">${gpuTypeLabel}</span>` : ""}
             </div>
           </div>
           <div class="gpu-card-status">
-            <span class="gpu-usage-badge ${usageClass}">${usage.toFixed(1)}%</span>
+            ${hasMetrics ? `
+              <span class="gpu-usage-badge ${usageClass}">${usage.toFixed(1)}%</span>
+            ` : `
+              <span class="gpu-usage-badge inactive">N/A</span>
+            `}
             <span class="gpu-expand-icon ${isExpanded ? "expanded" : ""}">${isExpanded ? "▼" : "▶"}</span>
           </div>
         </div>
@@ -229,6 +236,7 @@ class GpuDetails extends Component {
 
   _renderPreview(gpu, usage, memoryUsed, memoryTotal, m) {
     const memoryPercent = memoryTotal > 0 ? (memoryUsed / memoryTotal) * 100 : 0;
+    const hasMetrics = gpu.vendor === "NVIDIA" || gpu.isRocmCapable;
 
     return `
       <div class="gpu-card-preview">
@@ -252,24 +260,44 @@ class GpuDetails extends Component {
           <div class="gpu-preview-bar">
             <div class="gpu-preview-bar-fill" style="width: ${Math.min(memoryPercent, 100)}%"></div>
           </div>
+          ${!hasMetrics ? `
+            <div class="gpu-preview-item full-width">
+              <span class="gpu-preview-label">Monitoring</span>
+              <span class="gpu-preview-value inactive">${gpu.isIntegrated ? "Integrated GPU - metrics unavailable" : "No monitoring tools installed"}</span>
+            </div>
+          ` : ""}
         </div>
       </div>
     `;
   }
 
   _renderMetrics(gpu, usage, memoryUsed, memoryTotal, memoryPercent, m) {
+    const hasMetrics = gpu.vendor === "NVIDIA" || gpu.isRocmCapable;
+
     return `
       <div class="gpu-card-details">
         <div class="gpu-metrics-grid">
-          <div class="gpu-metric">
-            <div class="gpu-metric-header">
-              <span class="gpu-metric-label">GPU Usage</span>
-              <span class="gpu-metric-value ${usage > 85 ? "danger" : ""}">${usage.toFixed(1)}%</span>
+          ${hasMetrics ? `
+            <div class="gpu-metric">
+              <div class="gpu-metric-header">
+                <span class="gpu-metric-label">GPU Usage</span>
+                <span class="gpu-metric-value ${usage > 85 ? "danger" : ""}">${usage.toFixed(1)}%</span>
+              </div>
+              <div class="gpu-metric-bar-container">
+                <div class="gpu-metric-bar usage ${usage > 85 ? "danger" : ""}" style="width: ${Math.min(usage, 100)}%"></div>
+              </div>
             </div>
-            <div class="gpu-metric-bar-container">
-              <div class="gpu-metric-bar usage ${usage > 85 ? "danger" : ""}" style="width: ${Math.min(usage, 100)}%"></div>
+          ` : `
+            <div class="gpu-metric">
+              <div class="gpu-metric-header">
+                <span class="gpu-metric-label">GPU Usage</span>
+                <span class="gpu-metric-value inactive">N/A</span>
+              </div>
+              <div class="gpu-metric-bar-container">
+                <div class="gpu-metric-bar usage inactive" style="width: 0%"></div>
+              </div>
             </div>
-          </div>
+          `}
           <div class="gpu-metric">
             <div class="gpu-metric-header">
               <span class="gpu-metric-label">VRAM</span>
@@ -354,6 +382,12 @@ class GpuDetails extends Component {
       "Intel": { icon: "▢", badgeClass: "intel" },
     };
     return map[vendor] || { icon: "🎮", badgeClass: "unknown" };
+  }
+
+  _getGpuTypeLabel(gpu) {
+    if (gpu.isIntegrated) return "Integrated";
+    if (gpu.isRocmCapable) return "ROCm";
+    return "Discrete";
   }
 
   _formatBytes(bytes) {

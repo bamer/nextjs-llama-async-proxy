@@ -1,19 +1,26 @@
 /**
  * GPU Monitor Service - Real-time GPU monitoring with Socket.IO
  * No database persistence - pure real-time streaming
+ *
+ * ARCHITECTURE:
+ * - Device detection runs ONCE at startup to discover all GPUs
+ * - Metrics polling runs every 2 seconds to update GPU metrics only
+ * - This prevents infinite detection loops and reduces system load
  */
 
 import { detectAndCollectGpus, getDetectionStatus } from "./gpu-detector.js";
 
 // Configuration
-const GPU_POLL_INTERVAL = 2000; // 2 seconds for real-time updates
-const GPU_DETECTION_INTERVAL = 10000; // 10 seconds for device enumeration
+const GPU_POLL_INTERVAL = 2000; // 2 seconds for real-time metrics updates
+const GPU_DETECTION_INTERVAL = 60000; // 60 seconds for device enumeration (only if needed)
 
 // State
 let pollTimer = null;
 let detectionTimer = null;
 let isMonitoring = false;
 let lastGpuList = [];
+let lastDetectionTime = 0;
+let detectionErrorCount = new Map(); // Track errors per detection type
 
 /**
  * Start GPU monitoring service
@@ -28,24 +35,33 @@ export function startGpuMonitor(io) {
   console.log("[GPU-MONITOR] Starting real-time GPU monitoring...");
   isMonitoring = true;
 
-  // Initial detection
-  runDetectionAndBroadcast(io);
+  // Initial detection (runs once at startup)
+  runDetectionAndBroadcast(io).catch(e => {
+    console.error("[GPU-MONITOR] Initial detection error:", e.message);
+  });
 
-  // Periodic full detection (for new device detection)
-  detectionTimer = setInterval(() => {
-    runDetectionAndBroadcast(io).catch(e => {
-      console.error("[GPU-MONITOR] Detection error:", e.message);
-    });
-  }, GPU_DETECTION_INTERVAL);
-
-  // Fast polling for metrics updates
+  // Metrics polling - runs every 2 seconds, does NOT re-run device detection
   pollTimer = setInterval(() => {
     runMetricsUpdate(io).catch(e => {
-      console.debug("[GPU-MONITOR] Metrics update error:", e.message);
+      // Silent fail for metrics updates - don't spam logs
     });
   }, GPU_POLL_INTERVAL);
 
-  console.log("[GPU-MONITOR] Started - polling every", GPU_POLL_INTERVAL, "ms");
+  // Periodic detection check - ONLY runs if no GPUs were found initially
+  // GPUs cannot be hot-plugged, so we only need to retry detection if initial detection failed
+  // This prevents infinite ROCm detection loops
+  detectionTimer = setInterval(() => {
+    const now = Date.now();
+    // Only re-run detection if we haven't found any GPUs
+    if (lastGpuList.length === 0) {
+      runDetectionAndBroadcast(io).catch(e => {
+        console.debug("[GPU-MONITOR] Periodic detection error:", e.message);
+      });
+    }
+    // If we already found GPUs, don't re-run detection - polling handles metrics updates
+  }, GPU_DETECTION_INTERVAL);
+
+  console.log("[GPU-MONITOR] Started - polling metrics every", GPU_POLL_INTERVAL, "ms");
 }
 
 /**
@@ -71,23 +87,17 @@ export function stopGpuMonitor() {
 }
 
 /**
-  * Run full GPU detection and broadcast
-  * @param {Object} io - Socket.IO server instance
-  */
- async function runDetectionAndBroadcast(io) {
-   try {
-     const gpus = await detectAndCollectGpus();
-     lastGpuList = gpus;
+ * Run full GPU detection and broadcast
+ * This runs at startup and occasionally to detect new devices
+ * @param {Object} io - Socket.IO server instance
+ */
+async function runDetectionAndBroadcast(io) {
+  try {
+    const gpus = await detectAndCollectGpus();
+    lastGpuList = gpus;
+    lastDetectionTime = Date.now();
 
-     console.log("[DEBUG] GPU detection result:", JSON.stringify(gpus.map(g => ({
-       deviceId: g.deviceId,
-       name: g.name,
-       vendor: g.vendor,
-       vramTotalMiB: g.vramTotalMiB,
-       metrics: g.metrics
-     })), null, 2));
-
-     const broadcastData = buildBroadcastData(gpus);
+    const broadcastData = buildBroadcastData(gpus);
 
     if (io) {
       io.emit("gpu:updated", broadcastData);
@@ -96,19 +106,28 @@ export function stopGpuMonitor() {
     console.log("[GPU-MONITOR] Detected", gpus.length, "GPU(s)");
     return gpus;
   } catch (error) {
-    console.error("[GPU-MONITOR] Detection failed:", error.message);
-    throw error;
+    // Only log detection errors, don't spam
+    console.debug("[GPU-MONITOR] Detection failed:", error.message);
+    // Return cached data on failure
+    return lastGpuList;
   }
 }
 
 /**
  * Run metrics-only update (faster, no detection)
+ * Only collects metrics for already-detected GPUs
  * @param {Object} io - Socket.IO server instance
  */
 async function runMetricsUpdate(io) {
   try {
-    // Re-run full detection for freshest data
-    const gpus = await detectAndCollectGpus();
+    // Check if we have cached GPUs to query
+    if (lastGpuList.length === 0) {
+      // No GPUs detected yet, run detection
+      return await runDetectionAndBroadcast(io);
+    }
+
+    // Collect metrics for known GPUs without re-running detection
+    const gpus = await collectGpuMetricsOnly(lastGpuList);
     lastGpuList = gpus;
 
     const broadcastData = buildBroadcastData(gpus);
@@ -119,10 +138,142 @@ async function runMetricsUpdate(io) {
 
     return gpus;
   } catch (error) {
-    // Silent fail for metrics updates - don't spam logs
+    // Silent fail - return cached data on error
     return lastGpuList;
   }
 }
+
+/**
+ * Collect metrics only for already-detected GPUs
+ * Does not re-run device detection
+ * @param {Array} knownGpus - Previously detected GPU list
+ * @returns {Promise<Array>} GPU list with updated metrics
+ */
+async function collectGpuMetricsOnly(knownGpus) {
+  const updatedGpus = [];
+
+  for (const gpu of knownGpus) {
+    try {
+      let updatedGpu = { ...gpu, metrics: gpu.metrics || {}, lastUpdated: Date.now() };
+
+      // Query metrics based on GPU type
+      if (gpu.vendor === "NVIDIA") {
+        updatedGpu = await updateNvidiaMetrics(updatedGpu);
+      } else if (gpu.vendor === "AMD") {
+        // Only use ROCm metrics for ROCm-capable discrete GPUs (not integrated)
+        // Integrated AMD GPUs don't have ROCm support and will have isRocmCapable = false
+        if (gpu.isRocmCapable) {
+          updatedGpu = await updateRocmMetrics(updatedGpu);
+        } else {
+          // AMD integrated GPU - no metrics available via sysfs, keep existing
+        }
+      }
+      // Intel iGPU - no metrics available via sysfs
+
+      updatedGpus.push(updatedGpu);
+    } catch (error) {
+      // Keep existing GPU data on error
+      updatedGpus.push(gpu);
+    }
+  }
+
+  return updatedGpus;
+}
+
+/**
+ * Update NVIDIA GPU metrics by querying nvidia-smi
+ * @param {Object} gpu - GPU object
+ * @returns {Promise<Object>} GPU with updated metrics
+ */
+async function updateNvidiaMetrics(gpu) {
+  try {
+    const { stdout } = await execAsync(
+      `/usr/bin/nvidia-smi --query-gpu=index,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,fan.speed,clocks.gr,clocks.mem,utilization.encoder,utilization.decoder --format=csv,noheader,nounits 2>/dev/null`,
+      { encoding: "utf8", timeout: 3000 }
+    );
+
+    const lines = stdout.trim().split("\n");
+    // Find matching GPU by index
+    const gpuIndex = parseInt(gpu.deviceId.replace("nvidia-", "")) || 0;
+    const line = lines[gpuIndex];
+
+    if (line) {
+      const parts = line.split(",").map(p => p.trim());
+      if (parts.length >= 10) {
+        const vramTotalMiB = gpu.vramTotalMiB || 0;
+        const memoryUsedMiB = parseInt(parts[2]) || 0;
+
+        gpu.metrics = {
+          utilizationPercent: parseFloat(parts[1]) || 0,
+          memoryUsedMiB,
+          memoryUsedBytes: memoryUsedMiB * 1024 * 1024,
+          memoryTotalMiB: parseInt(parts[3]) || vramTotalMiB,
+          memoryTotalBytes: (parseInt(parts[3]) || vramTotalMiB) * 1024 * 1024,
+          temperatureCelsius: parseFloat(parts[4]) || null,
+          powerDrawWatts: parseFloat(parts[5]) || null,
+          fanSpeedPercent: parseFloat(parts[6]) || null,
+          clockSpeedMhz: parseFloat(parts[7]) || null,
+          memoryClockMhz: parseFloat(parts[8]) || null,
+          encoderUtilPercent: parseFloat(parts[9]) || null,
+          decoderUtilPercent: parseFloat(parts[10]) || null,
+          vramUsagePercent: vramTotalMiB > 0 ? (memoryUsedMiB / vramTotalMiB) * 100 : 0,
+        };
+        gpu.lastUpdated = Date.now();
+      }
+    }
+  } catch (error) {
+    // NVIDIA metrics query failed, keep existing data
+  }
+  return gpu;
+}
+
+/**
+ * Update ROCm GPU metrics
+ * @param {Object} gpu - GPU object
+ * @returns {Promise<Object>} GPU with updated metrics
+ */
+async function updateRocmMetrics(gpu) {
+  try {
+    const { stdout } = await execAsync(
+      `rocm-smi --showid --showmeminfo --showtemp --showpower --showuse --json 2>/dev/null`,
+      { encoding: "utf8", timeout: 3000 }
+    );
+
+    const data = JSON.parse(stdout);
+    const cardId = gpu.deviceId.replace("amd-rocm-", "");
+
+    if (data[cardId]) {
+      const gpuData = data[cardId];
+      const vramTotalMiB = gpu.vramTotalMiB || 0;
+      const vramUsedMiB = gpuData["Memory"]["Used GC memory (MiB)"] || 0;
+
+      gpu.metrics = {
+        utilizationPercent: gpuData["GPU use (%)"] || 0,
+        memoryUsedMiB,
+        memoryUsedBytes: vramUsedMiB * 1024 * 1024,
+        memoryTotalMiB: vramTotalMiB,
+        memoryTotalBytes: vramTotalMiB * 1024 * 1024,
+        temperatureCelsius: gpuData["Temperature (Sensor edge) (C)"] || null,
+        powerDrawWatts: gpuData["Average Graphics Package Power (W)"] || null,
+        fanSpeedPercent: gpuData["Fan Speed (%)"] || null,
+        clockSpeedMhz: null,
+        memoryClockMhz: null,
+        encoderUtilPercent: null,
+        decoderUtilPercent: null,
+        vramUsagePercent: vramTotalMiB > 0 ? (vramUsedMiB / vramTotalMiB) * 100 : 0,
+      };
+      gpu.lastUpdated = Date.now();
+    }
+  } catch (error) {
+    // ROCm metrics query failed, keep existing data
+  }
+  return gpu;
+}
+
+// Import execAsync for metrics collection
+import { exec } from "child_process";
+import { promisify } from "util";
+const execAsync = promisify(exec);
 
 /**
  * Build Socket.IO broadcast data structure

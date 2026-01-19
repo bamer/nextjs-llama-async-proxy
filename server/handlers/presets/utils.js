@@ -61,7 +61,7 @@ export function parseIni(content) {
  * @returns {string} INI formatted string.
  */
 export function generateIni(config) {
-  let content = "LLAMA_CONFIG_VERSION = 1\n\n";
+  let content = "";
 
   for (const [section, params] of Object.entries(config)) {
     if (section === "LLAMA_CONFIG_VERSION") continue;

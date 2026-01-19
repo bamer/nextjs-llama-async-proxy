@@ -145,10 +145,24 @@
   color: #94a3b8;
 }
 
+.gpu-type-badge {
+  display: inline-block;
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-left: 6px;
+}
+
 .gpu-name-info {
   display: flex;
   flex-direction: column;
   gap: 1px;
+  align-items: flex-start;
 }
 
 .gpu-name {
@@ -193,6 +207,12 @@
   color: #ef4444;
 }
 
+.gpu-usage-badge.inactive {
+  background: rgba(148, 163, 184, 0.1);
+  color: #64748b;
+  font-weight: normal;
+}
+
 .gpu-expand-icon {
   font-size: 9px;
   color: #94a3b8;
@@ -229,6 +249,30 @@
 
 .gpu-preview-value.danger {
   color: #ef4444;
+}
+
+.gpu-preview-value.inactive {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: normal;
+}
+
+.gpu-preview-item.full-width {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
+  margin-top: 4px;
+}
+
+.gpu-preview-item.full-width .gpu-preview-label {
+  flex-shrink: 0;
+}
+
+.gpu-preview-item.full-width .gpu-preview-value {
+  flex-shrink: 1;
 }
 
 .gpu-preview-bar {
@@ -298,6 +342,11 @@
   color: #94a3b8;
 }
 
+.gpu-metric-value.inactive {
+  color: #64748b;
+  font-weight: normal;
+}
+
 .gpu-metric-percent {
   font-size: 10px;
   color: #94a3b8;
@@ -336,6 +385,10 @@
 
 .gpu-metric-bar.fan {
   background: linear-gradient(90deg, #06b6d4, #3b82f6);
+}
+
+.gpu-metric-bar.inactive {
+  background: rgba(148, 163, 184, 0.2);
 }
 
 .gpu-empty {
