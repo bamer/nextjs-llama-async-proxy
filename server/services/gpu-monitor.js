@@ -93,6 +93,7 @@ export function stopGpuMonitor() {
  */
 async function runDetectionAndBroadcast(io) {
   try {
+    console.log("[GPU-MONITOR] Running full GPU detection...");
     const gpus = await detectAndCollectGpus();
     lastGpuList = gpus;
     lastDetectionTime = Date.now();
@@ -101,13 +102,25 @@ async function runDetectionAndBroadcast(io) {
 
     if (io) {
       io.emit("gpu:updated", broadcastData);
+      console.log("[GPU-MONITOR] Broadcasted gpu:updated event");
+
+      // Also update the metrics handler with GPU list
+      try {
+        const { updateGpuList } = await import("../handlers/metrics.js");
+        updateGpuList(broadcastData.data?.list || gpus);
+      } catch (e) {
+        // Metrics handler might not be available, that's OK
+      }
     }
 
     console.log("[GPU-MONITOR] Detected", gpus.length, "GPU(s)");
+    gpus.forEach((gpu, i) => {
+      console.log(`  [${i + 1}] ${gpu.vendor} - ${gpu.name} (${gpu.vramTotalMiB}MiB, integrated=${gpu.isIntegrated})`);
+    });
+
     return gpus;
   } catch (error) {
-    // Only log detection errors, don't spam
-    console.debug("[GPU-MONITOR] Detection failed:", error.message);
+    console.error("[GPU-MONITOR] Detection failed:", error.message);
     // Return cached data on failure
     return lastGpuList;
   }
@@ -134,6 +147,13 @@ async function runMetricsUpdate(io) {
 
     if (io) {
       io.emit("gpu:updated", broadcastData);
+      // Also update the metrics handler with latest GPU list
+      try {
+        const { updateGpuList } = await import("../handlers/metrics.js");
+        updateGpuList(broadcastData.data?.list || gpus);
+      } catch (e) {
+        // Metrics handler might not be available, that's OK
+      }
     }
 
     return gpus;
@@ -280,7 +300,7 @@ const execAsync = promisify(exec);
  * @param {Array} gpus - Array of GPU objects
  * @returns {Object} Broadcast data
  */
-function buildBroadcastData(gpus) {
+export function buildBroadcastData(gpus) {
   // Calculate aggregates
   const activeGpus = gpus.filter(g => g.status === "active");
   const totalVram = activeGpus.reduce((sum, g) => sum + (g.vramTotalBytes || 0), 0);
@@ -337,10 +357,21 @@ function buildBroadcastData(gpus) {
 
 /**
  * Get current GPU status (for initial load)
- * @returns {Object} Current GPU status
+ * @returns {Object} Current GPU status with proper structure
  */
 export function getGpuStatus() {
-  return buildBroadcastData(lastGpuList);
+  console.debug("[GPU-MONITOR] getGpuStatus called, lastGpuList has", lastGpuList.length, "GPUs");
+
+  // Ensure we always have a valid broadcast data structure
+  const broadcastData = buildBroadcastData(lastGpuList);
+
+  console.debug("[GPU-MONITOR] Returning broadcast data:", {
+    hasData: !!broadcastData.data,
+    listLength: broadcastData.data?.list?.length || 0,
+    count: broadcastData.data?.count || 0,
+  });
+
+  return broadcastData;
 }
 
 /**

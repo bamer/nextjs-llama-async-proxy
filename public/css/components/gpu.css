@@ -277,16 +277,17 @@
 
 .gpu-preview-bar {
   grid-column: 1 / -1;
-  height: 4px;
+  height: 12px;
   background: rgba(0, 0, 0, 0.3);
-  border-radius: 2px;
+  border-radius: 4px;
   overflow: hidden;
+  margin-top: 6px;
 }
 
 .gpu-preview-bar-fill {
   height: 100%;
   background: linear-gradient(90deg, #8b5cf6, #f59e0b);
-  border-radius: 2px;
+  border-radius: 4px;
   transition: width 0.3s ease;
 }
 
@@ -316,14 +317,15 @@
 }
 
 .gpu-metric-label {
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: #94a3b8;
+  font-weight: 600;
 }
 
 .gpu-metric-value {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: #f1f5f9;
 }
@@ -348,23 +350,41 @@
 }
 
 .gpu-metric-percent {
-  font-size: 10px;
+  font-size: 11px;
   color: #94a3b8;
-  margin-top: 2px;
+  margin-top: 4px;
+  font-weight: 500;
 }
 
 .gpu-metric-bar-container {
-  height: 20px;
+  height: 40px;
   background: rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
+  border-radius: 8px;
   overflow: hidden;
   position: relative;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
 }
 
 .gpu-metric-bar {
   height: 100%;
-  border-radius: 4px;
+  border-radius: 8px;
   transition: width 0.3s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+}
+
+.gpu-metric-bar-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  z-index: 1;
 }
 
 .gpu-metric-bar.usage {

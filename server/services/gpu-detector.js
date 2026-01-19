@@ -30,6 +30,8 @@ let rocmSmiAvailable = false;
 export async function detectAndCollectGpus() {
   const gpus = [];
 
+  console.log("[GPU-DETECTOR] Starting comprehensive GPU detection...");
+
   // Check tool availability first (run once)
   await checkToolAvailability();
 
@@ -44,6 +46,9 @@ export async function detectAndCollectGpus() {
   // Detect Intel GPUs (integrated only)
   const intelGpus = await detectIntelGpus();
   gpus.push(...intelGpus);
+
+  console.log(`[GPU-DETECTOR] Detection complete: ${gpus.length} total GPU(s) found`);
+  console.log(`[GPU-DETECTOR] Summary: NVIDIA=${nvidiaGpus.length}, AMD=${amdGpus.length}, Intel=${intelGpus.length}`);
 
   return gpus;
 }
@@ -83,10 +88,13 @@ async function detectNvidiaGpus() {
   const gpus = [];
 
   if (!nvidiaSmiAvailable) {
+    console.debug("[GPU-DETECTOR] nvidia-smi not available, skipping NVIDIA detection");
     return gpus;
   }
 
   try {
+    console.debug("[GPU-DETECTOR] Running nvidia-smi to detect NVIDIA GPUs...");
+
     // Get detailed GPU information including metrics
     const { stdout } = await execAsync(
       `/usr/bin/nvidia-smi --query-gpu=index,uuid,name,memory.total,driver_version,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,fan.speed,clocks.gr,clocks.mem,utilization.encoder,utilization.decoder,pci.bus_id --format=csv,noheader,nounits 2>/dev/null`,
@@ -94,6 +102,7 @@ async function detectNvidiaGpus() {
     );
 
     const lines = stdout.trim().split("\n");
+    console.debug(`[GPU-DETECTOR] nvidia-smi returned ${lines.length} GPU(s)`);
 
     for (const line of lines) {
       const parts = line.split(",").map(p => p.trim());
@@ -101,10 +110,13 @@ async function detectNvidiaGpus() {
 
       const index = parseInt(parts[0]) || 0;
       const vramTotalMiB = parseInt(parts[3]) || 0;
+      const name = parts[2] || `NVIDIA GPU ${index}`;
+
+      console.debug(`[GPU-DETECTOR] NVIDIA GPU ${index}: ${name}, ${vramTotalMiB}MiB VRAM`);
 
       gpus.push({
         deviceId: `nvidia-${index}`,
-        name: parts[2] || `NVIDIA GPU ${index}`,
+        name,
         vendor: "NVIDIA",
         vramTotalMiB,
         vramTotalBytes: vramTotalMiB * 1024 * 1024,
@@ -133,8 +145,10 @@ async function detectNvidiaGpus() {
         isIntegrated: false,
       });
     }
+
+    console.debug(`[GPU-DETECTOR] Found ${gpus.length} NVIDIA GPU(s)`);
   } catch (error) {
-    // Silent - nvidia-smi might not be available on all systems
+    console.error("[GPU-DETECTOR] nvidia-smi query failed:", error.message);
   }
 
   return gpus;
@@ -147,16 +161,24 @@ async function detectNvidiaGpus() {
 async function detectAmdGpus() {
   const gpus = [];
 
+  console.debug("[GPU-DETECTOR] Starting AMD GPU detection...");
+
   // First, detect AMD devices via sysfs (works for both iGPU and dGPU)
   const sysfsGpus = await detectAmdSysfs();
   gpus.push(...sysfsGpus);
+
+  console.debug(`[GPU-DETECTOR] AMD sysfs detection found ${sysfsGpus.length} GPU(s)`);
 
   // For discrete GPUs (has dedicated VRAM), also try ROCm SMI if available
   // Integrated GPUs (no dedicated VRAM) do NOT use ROCm - skip ROCm detection for them
   if (rocmSmiAvailable && sysfsGpus.length > 0) {
     const discreteGpus = sysfsGpus.filter(g => !g.isIntegrated && g.vramTotalBytes > 0);
+    console.debug(`[GPU-DETECTOR] Found ${discreteGpus.length} discrete AMD GPU(s) eligible for ROCm`);
+
     if (discreteGpus.length > 0) {
       const rocmGpus = await detectAmdRocm();
+      console.debug(`[GPU-DETECTOR] ROCm detection found ${rocmGpus.length} GPU(s)`);
+
       // Merge ROCm data into discrete sysfs GPUs only
       for (const rocmGpu of rocmGpus) {
         // Match by bus location or card ID
@@ -165,17 +187,23 @@ async function detectAmdGpus() {
           g.deviceId.replace("amd-sysfs-", "") === rocmGpu.deviceId.replace("amd-rocm-", "")
         );
         if (match) {
+          console.debug(`[GPU-DETECTOR] Merged ROCm data into ${match.deviceId}`);
           // Update with ROCm metrics but KEEP sysfs deviceId
           match.name = rocmGpu.name;
           match.metrics = rocmGpu.metrics;
           match.driverVersion = rocmGpu.driverVersion;
           match.isRocmCapable = true; // Flag to indicate ROCm metrics available
           match.lastUpdated = Date.now();
+        } else {
+          console.debug(`[GPU-DETECTOR] ROCm GPU ${rocmGpu.deviceId} did not match any sysfs GPU`);
         }
       }
     }
+  } else if (!rocmSmiAvailable && sysfsGpus.length > 0) {
+    console.debug("[GPU-DETECTOR] ROCm not available, skipping ROCm metrics enhancement");
   }
 
+  console.debug(`[GPU-DETECTOR] AMD detection complete: ${gpus.length} GPU(s)`);
   return gpus;
 }
 
@@ -264,6 +292,8 @@ async function detectAmdSysfs() {
     const drmPath = "/sys/class/drm";
     const entries = fs.readdirSync(drmPath);
 
+    console.debug(`[GPU-DETECTOR] Scanning ${drmPath} for AMD GPUs...`);
+
     for (const entry of entries) {
       // Match card0, card1, etc. (but not card0-DP-1, card0-HDMI-A-1, etc.)
       if (!entry.startsWith("card") || entry.includes("-")) continue;
@@ -275,6 +305,8 @@ async function detectAmdSysfs() {
         const vendor = fs.readFileSync(vendorPath, "utf8").trim();
         if (vendor !== "0x1002") continue; // Not AMD
 
+        console.debug(`[GPU-DETECTOR] Found AMD device: ${entry} (vendor: ${vendor})`);
+
         const namePath = path.join(devicePath, "name");
         let name = "AMD GPU";
         try {
@@ -284,14 +316,18 @@ async function detectAmdSysfs() {
         // Check if this is an integrated GPU
         // Method 1: Check PCI bus topology - integrated GPUs are behind southbridge bridges
         // Typical integrated GPU bridges: 00:01.0, 00:01.1, 00:08.0, 00:08.1 (AMD), 00:02.0 (Intel)
-        // Discrete GPUs are behind PCIe root ports: 00:01.0+ (NVIDIA, AMD dGPU)
+        // Discrete GPUs are behind PCIe root ports: 01:00.0+, 02:00.0+ (NVIDIA, AMD dGPU)
         // Method 2: For AMD APUs with shared memory (Raven Ridge, etc.), VRAM is actually system memory
         const devicePathReal = fs.realpathSync(devicePath);
-        const isBehindSouthbridge = /\/0000:00:0[28]\./.test(devicePathReal);
-        const isBehindPCIeRoot = /\/0000:00:01\.[0-9]/.test(devicePathReal);
+        console.debug(`[GPU-DETECTOR] ${entry} real path: ${devicePathReal}`);
 
-        // Check if this is an integrated GPU (uses shared system memory)
-        // APUs like AMD Raven Ridge have mem_info_vram_total but it's shared memory
+        // More flexible detection for integrated GPUs
+        // Check for various southbridge patterns: 00:08, 00:01, 00:02, etc.
+        const isBehindBridge = /\/0000:00:[0-9a-f]{2}\./.test(devicePathReal);
+        const isBehindHighPCI = /\/0000:[1-9a-f][0-9a-f]:00\./.test(devicePathReal);
+        
+        // Simpler approach: if VRAM file exists but is small, it's integrated
+        // Discrete GPUs have large VRAM, integrated use shared system memory
         const vramPath = path.join(devicePath, "mem_info_vram_total");
         let vramTotalBytes = 0;
         let hasVramFile = false;
@@ -300,11 +336,15 @@ async function detectAmdSysfs() {
           const vramContent = fs.readFileSync(vramPath, "utf8").trim();
           vramTotalBytes = parseInt(vramContent) || 0;
           hasVramFile = true;
-        } catch { /* no VRAM file - likely iGPU */ }
+          console.debug(`[GPU-DETECTOR] ${entry} VRAM file: ${vramTotalBytes} bytes`);
+        } catch {
+          console.debug(`[GPU-DETECTOR] ${entry} No VRAM file found`);
+        }
 
-        // For AMD APUs, check if the GPU is behind a southbridge bridge
-        // This indicates integrated graphics rather than discrete
-        const isIntegrated = isBehindSouthbridge && !isBehindPCIeRoot;
+        // Heuristic: If device is behind a low PCI slot (00:xx) and has small/no VRAM, it's integrated
+        const isIntegrated = isBehindBridge && !isBehindHighPCI;
+
+        console.debug(`[GPU-DETECTOR] ${entry} Detection: isBehindBridge=${isBehindBridge}, isBehindHighPCI=${isBehindHighPCI}, isIntegrated=${isIntegrated}`);
 
         // For integrated GPUs, try to get shared memory info
         let sharedMemoryTotal = 0;
@@ -312,31 +352,39 @@ async function detectAmdSysfs() {
           try {
             const memPath = path.join(devicePath, "mem_info_shared_total");
             sharedMemoryTotal = parseInt(fs.readFileSync(memPath, "utf8").trim()) || 0;
-          } catch { /* not available */ }
-          // Use the VRAM total as shared memory for APUs
+            console.debug(`[GPU-DETECTOR] ${entry} shared memory: ${sharedMemoryTotal} bytes`);
+          } catch {
+            console.debug(`[GPU-DETECTOR] ${entry} No shared memory file`);
+          }
+          // Use the VRAM total as shared memory for APUs if shared_total not available
           if (vramTotalBytes > 0 && sharedMemoryTotal === 0) {
             sharedMemoryTotal = vramTotalBytes;
+            console.debug(`[GPU-DETECTOR] ${entry} Using VRAM as shared memory: ${sharedMemoryTotal} bytes`);
           }
         }
 
         const vramTotalMiB = Math.round(vramTotalBytes / (1024 * 1024));
+        const finalVramBytes = isIntegrated ? sharedMemoryTotal : vramTotalBytes;
+        const finalVramMiB = Math.round(finalVramBytes / (1024 * 1024));
+
+        console.debug(`[GPU-DETECTOR] ${entry} Final: name="${name}", integrated=${isIntegrated}, vram=${finalVramMiB}MiB`);
 
         gpus.push({
           deviceId: `amd-sysfs-${entry}`,
           name: `${name}${isIntegrated ? " (Integrated)" : ""}`,
           vendor: "AMD",
-          vramTotalMiB: isIntegrated ? Math.round(sharedMemoryTotal / (1024 * 1024)) : vramTotalMiB,
-          vramTotalBytes: isIntegrated ? sharedMemoryTotal : vramTotalBytes,
+          vramTotalMiB: finalVramMiB,
+          vramTotalBytes: finalVramBytes,
           driverVersion: null,
           cudaVersion: null,
           busLocation: entry,
           metrics: {
-            // No metrics available via sysfs for AMD GPUs
+            // No metrics available via sysfs for AMD GPUs initially
             utilizationPercent: 0,
             memoryUsedBytes: 0,
             memoryUsedMiB: 0,
-            memoryTotalBytes: isIntegrated ? sharedMemoryTotal : vramTotalBytes,
-            memoryTotalMiB: Math.round((isIntegrated ? sharedMemoryTotal : vramTotalBytes) / (1024 * 1024)),
+            memoryTotalBytes: finalVramBytes,
+            memoryTotalMiB: finalVramMiB,
             temperatureCelsius: null,
             powerDrawWatts: null,
             fanSpeedPercent: null,
@@ -350,12 +398,14 @@ async function detectAmdSysfs() {
           lastUpdated: Date.now(),
           isIntegrated,
         });
-      } catch {
-        // Not an AMD GPU or missing info
+      } catch (e) {
+        console.debug(`[GPU-DETECTOR] Error processing ${entry}:`, e.message);
       }
     }
+
+    console.debug(`[GPU-DETECTOR] Found ${gpus.length} AMD GPU(s) via sysfs`);
   } catch (error) {
-    // sysfs might not be accessible
+    console.error(`[GPU-DETECTOR] sysfs scan error:`, error.message);
   }
 
   return gpus;

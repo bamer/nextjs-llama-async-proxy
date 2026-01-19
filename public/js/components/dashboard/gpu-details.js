@@ -23,22 +23,39 @@ class GpuDetails extends Component {
 
   async _loadInitialStatus() {
     try {
+      console.debug("[GpuDetails] Requesting gpu:status from socket...");
       const response = await socketClient.request("gpu:status", {});
-      if (response.success && response.data) {
+      console.debug("[GpuDetails] gpu:status response:", response);
+
+      if (response && response.success && response.data) {
+        console.debug("[GpuDetails] Got GPU data:", response.data);
         this._handleGpuUpdate(response.data);
+      } else {
+        console.warn("[GpuDetails] Invalid response structure:", response);
+        this.loading = false;
+        this._updateGPUUI();
       }
     } catch (error) {
       console.error("[GpuDetails] Failed to load:", error);
+      this.loading = false;
+      this._updateGPUUI();
     }
   }
 
   _onGpuUpdated(data) {
-    if (data && data.list) this._handleGpuUpdate(data);
+    console.debug("[GpuDetails] gpu:updated broadcast received:", data);
+    if (data && data.list) {
+      this._handleGpuUpdate(data);
+    } else if (data) {
+      console.warn("[GpuDetails] Invalid broadcast data:", data);
+    }
   }
 
   _handleGpuUpdate(data) {
+    console.debug("[GpuDetails] Handling GPU update with", data?.list?.length || 0, "GPUs");
     this.loading = false;
     this.gpuList = data.list || [];
+    console.debug("[GpuDetails] Updated gpuList to:", this.gpuList);
     this._updateGPUUI();
   }
 
@@ -124,7 +141,7 @@ class GpuDetails extends Component {
   _renderLoading() {
     let container = this._el.querySelector(".gpu-container");
     if (!container) {
-      this._el.innerHTML = `<div class="gpu-container"></div>`;
+      this._el.innerHTML = "<div class=\"gpu-container\"></div>";
       container = this._el.querySelector(".gpu-container");
     }
 
@@ -145,7 +162,7 @@ class GpuDetails extends Component {
   _renderNoGpu() {
     let container = this._el.querySelector(".gpu-container");
     if (!container) {
-      this._el.innerHTML = `<div class="gpu-container"></div>`;
+      this._el.innerHTML = "<div class=\"gpu-container\"></div>";
       container = this._el.querySelector(".gpu-container");
     }
 
@@ -167,7 +184,7 @@ class GpuDetails extends Component {
   _renderGpuCards() {
     let container = this._el.querySelector(".gpu-container");
     if (!container) {
-      this._el.innerHTML = `<div class="gpu-container"></div>`;
+      this._el.innerHTML = "<div class=\"gpu-container\"></div>";
       container = this._el.querySelector(".gpu-container");
     }
 
@@ -236,7 +253,7 @@ class GpuDetails extends Component {
 
   _renderPreview(gpu, usage, memoryUsed, memoryTotal, m) {
     const memoryPercent = memoryTotal > 0 ? (memoryUsed / memoryTotal) * 100 : 0;
-    const hasMetrics = gpu.vendor === "NVIDIA" || gpu.isRocmCapable;
+    const hasFullMetrics = gpu.vendor === "NVIDIA" || gpu.isRocmCapable;
 
     return `
       <div class="gpu-card-preview">
@@ -245,6 +262,12 @@ class GpuDetails extends Component {
             <span class="gpu-preview-label">Memory</span>
             <span class="gpu-preview-value">${this._formatBytes(memoryUsed)} / ${this._formatBytes(memoryTotal)}</span>
           </div>
+          ${!hasFullMetrics ? `
+            <div class="gpu-preview-item">
+              <span class="gpu-preview-label">Type</span>
+              <span class="gpu-preview-value info">${gpu.isIntegrated ? "Integrated" : "Discrete"}</span>
+            </div>
+          ` : ""}
           ${m.temperatureCelsius ? `
             <div class="gpu-preview-item">
               <span class="gpu-preview-label">Temp</span>
@@ -257,13 +280,15 @@ class GpuDetails extends Component {
               <span class="gpu-preview-value">${m.powerDrawWatts.toFixed(1)} W</span>
             </div>
           ` : ""}
-          <div class="gpu-preview-bar">
-            <div class="gpu-preview-bar-fill" style="width: ${Math.min(memoryPercent, 100)}%"></div>
-          </div>
-          ${!hasMetrics ? `
+          ${memoryTotal > 0 ? `
+            <div class="gpu-preview-bar">
+              <div class="gpu-preview-bar-fill" style="width: ${Math.min(memoryPercent, 100)}%"></div>
+            </div>
+          ` : ""}
+          ${!hasFullMetrics ? `
             <div class="gpu-preview-item full-width">
               <span class="gpu-preview-label">Monitoring</span>
-              <span class="gpu-preview-value inactive">${gpu.isIntegrated ? "Integrated GPU - metrics unavailable" : "No monitoring tools installed"}</span>
+              <span class="gpu-preview-value inactive">${gpu.isIntegrated ? "Integrated - Real-time metrics limited" : "Discrete - Install drivers for metrics"}</span>
             </div>
           ` : ""}
         </div>
@@ -272,36 +297,34 @@ class GpuDetails extends Component {
   }
 
   _renderMetrics(gpu, usage, memoryUsed, memoryTotal, memoryPercent, m) {
-    const hasMetrics = gpu.vendor === "NVIDIA" || gpu.isRocmCapable;
+    const hasFullMetrics = gpu.vendor === "NVIDIA" || gpu.isRocmCapable;
+    const isIntegratedGpu = gpu.isIntegrated;
 
     return `
       <div class="gpu-card-details">
         <div class="gpu-metrics-grid">
-          ${hasMetrics ? `
-            <div class="gpu-metric">
-              <div class="gpu-metric-header">
-                <span class="gpu-metric-label">GPU Usage</span>
-                <span class="gpu-metric-value ${usage > 85 ? "danger" : ""}">${usage.toFixed(1)}%</span>
-              </div>
-              <div class="gpu-metric-bar-container">
-                <div class="gpu-metric-bar usage ${usage > 85 ? "danger" : ""}" style="width: ${Math.min(usage, 100)}%"></div>
-              </div>
-            </div>
-          ` : `
-            <div class="gpu-metric">
-              <div class="gpu-metric-header">
-                <span class="gpu-metric-label">GPU Usage</span>
-                <span class="gpu-metric-value inactive">N/A</span>
-              </div>
-              <div class="gpu-metric-bar-container">
-                <div class="gpu-metric-bar usage inactive" style="width: 0%"></div>
-              </div>
-            </div>
-          `}
           <div class="gpu-metric">
             <div class="gpu-metric-header">
-              <span class="gpu-metric-label">VRAM</span>
-              <span class="gpu-metric-value">${this._formatBytes(memoryUsed)} / ${this._formatBytes(memoryTotal)}</span>
+              <span class="gpu-metric-label">GPU Usage</span>
+              ${hasFullMetrics ? `
+                <span class="gpu-metric-value ${usage > 85 ? "danger" : ""}">${usage.toFixed(1)}%</span>
+              ` : `
+                <span class="gpu-metric-value inactive">${isIntegratedGpu ? "Integrated" : "N/A"}</span>
+              `}
+            </div>
+            <div class="gpu-metric-bar-container">
+              ${hasFullMetrics ? `
+                <div class="gpu-metric-bar usage ${usage > 85 ? "danger" : ""}" style="width: ${Math.min(usage, 100)}%"></div>
+              ` : `
+                <div class="gpu-metric-bar usage inactive" style="width: 0%"></div>
+              `}
+            </div>
+          </div>
+
+          <div class="gpu-metric">
+            <div class="gpu-metric-header">
+              <span class="gpu-metric-label">Memory Usage</span>
+              <span class="gpu-metric-value ${memoryPercent > 90 ? "danger" : ""}">${this._formatBytes(memoryUsed)} / ${this._formatBytes(memoryTotal)}</span>
             </div>
             <div class="gpu-metric-bar-container">
               <div class="gpu-metric-bar vram ${memoryPercent > 90 ? "danger" : ""}" style="width: ${Math.min(memoryPercent, 100)}%"></div>
