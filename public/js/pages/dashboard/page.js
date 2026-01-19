@@ -45,9 +45,9 @@ class DashboardPage extends Component {
   }
 
   /**
-   * Subscribe to continuous metrics updates via Socket.IO
-   * Server will broadcast metrics:updated every 2 seconds to all connected clients
-   */
+     * Subscribe to continuous metrics updates via Socket.IO
+     * Server will broadcast metrics:updated every 2 seconds to all connected clients
+     */
   async _subscribeToMetrics() {
     try {
       const response = await socketClient.request("metrics:subscribe", {
@@ -107,15 +107,15 @@ class DashboardPage extends Component {
     try {
       // Load all data in parallel using socketClient
       const [metricsRes, historyRes, modelsRes, presetsRes, routerConfig, settingsRes, llamaStatusRes] =
-        await Promise.all([
-          socketClient.request("metrics:get", {}),
-          socketClient.request("metrics:history", { limit: 60 }),
-          socketClient.request("models:list", {}),
-          socketClient.request("presets:list", {}),
-          socketClient.request("routerConfig:get", {}),
-          socketClient.request("settings:get", {}),
-          socketClient.request("llama:status", {}),
-        ]);
+                await Promise.all([
+                  socketClient.request("metrics:get", {}),
+                  socketClient.request("metrics:history", { limit: 60 }),
+                  socketClient.request("models:list", {}),
+                  socketClient.request("presets:list", {}),
+                  socketClient.request("routerConfig:get", {}),
+                  socketClient.request("settings:get", {}),
+                  socketClient.request("llama:status", {}),
+                ]);
 
       // Update local state from responses
       if (metricsRes.success) {
@@ -161,8 +161,8 @@ class DashboardPage extends Component {
   }
 
   /**
-   * Sync all local state data to UI - called on mount and after initial load
-   */
+     * Sync all local state data to UI - called on mount and after initial load
+     */
   _syncStateToUI() {
     // Use local state instead of stateManager
     const metrics = this.state.metrics;
@@ -215,12 +215,12 @@ class DashboardPage extends Component {
     if (metrics !== this.state.metrics) {
       this.state.metrics = metrics;
       this.state.gpuMetrics =
-        metrics?.gpu || {
-          usage: 0,
-          memoryUsed: 0,
-          memoryTotal: 0,
-          list: [],
-        };
+                metrics?.gpu || {
+                  usage: 0,
+                  memoryUsed: 0,
+                  memoryTotal: 0,
+                  list: [],
+                };
       this._updateMetricsUI();
       this._updateSystemHealthAndGPU();
     }
@@ -296,30 +296,40 @@ class DashboardPage extends Component {
   }
 
   _updateHistoryUI() {
+    console.log("[DashboardPage] _updateHistoryUI() - updating charts in-place");
+
     // Update charts section
     this._updateChartsSection();
 
-    // Update ChartsSection component
+    // Update ChartsSection component - CRITICAL: never recreate by calling render()
+    // Only update data to preserve chart type selection across metrics updates
     const chartsSection = this._el?.querySelector(".charts-section")?._component;
     if (chartsSection) {
+      console.log("[DashboardPage] Found existing ChartsSection, updating in-place");
       chartsSection.history = this.state.history;
-      chartsSection.updateDOM();
+
+      // Only update the chart data, not the DOM state (which preserves chart type selection)
+      chartsSection._updateChartsData();
+
       // Ensure charts are initialized if they haven't been yet
       if (!chartsSection.chartsInitialized && this.chartManager) {
+        console.log("[DashboardPage] Charts not initialized yet, initializing");
         chartsSection._initCharts();
       }
+    } else {
+      console.warn("[DashboardPage] ChartsSection component not found - DOM may be stale");
     }
 
     // Update chart stats - guard against undefined/null history
     const history = this.state.history || [];
     this.chartStats =
-      history.length > 0 && window.DashboardUtils?._calculateStats
-        ? window.DashboardUtils._calculateStats(history)
-        : {
-            current: 0,
-            avg: 0,
-            max: 0,
-          };
+            history.length > 0 && window.DashboardUtils?._calculateStats
+              ? window.DashboardUtils._calculateStats(history)
+              : {
+                current: 0,
+                avg: 0,
+                max: 0,
+              };
   }
 
   _updateModelsUI() {
@@ -413,9 +423,9 @@ class DashboardPage extends Component {
     if (!root) return;
 
     // Verify skeletons are still applied (in case of re-renders)
-    const metricsSection = this.$('[data-section="metrics"]');
-    const chartsSection = this.$('[data-section="charts"]');
-    const gpuSection = this.$('[data-section="gpu"]');
+    const metricsSection = this.$("[data-section=\"metrics\"]");
+    const chartsSection = this.$("[data-section=\"charts\"]");
+    const gpuSection = this.$("[data-section=\"gpu\"]");
 
     // GPU section should load instantly - remove skeleton immediately
     if (gpuSection) {
@@ -478,8 +488,8 @@ class DashboardPage extends Component {
   }
 
   /**
-   * Update GPU component with cached data if available
-   */
+     * Update GPU component with cached data if available
+     */
   _updateGPUWithCachedData(metrics) {
     const gpuDetails = this._el?.querySelector(".gpu-details")?._component;
     if (gpuDetails) {
@@ -503,7 +513,7 @@ class DashboardPage extends Component {
     this._updateGPUSection();
 
     // Update GpuDetails component - with robust error handling
-    const gpuContainer = this._el?.querySelector('[data-section="gpu"]');
+    const gpuContainer = this._el?.querySelector("[data-section=\"gpu\"]");
     const gpuDetailsEl = gpuContainer?.querySelector(".gpu-details");
     const gpuDetails = gpuDetailsEl?._component;
 
@@ -512,7 +522,7 @@ class DashboardPage extends Component {
       let gpuList = this.state.gpuMetrics?.list || [];
       if (
         gpuList.length === 0 &&
-        this.state.gpuMetrics?.usage !== undefined
+                this.state.gpuMetrics?.usage !== undefined
       ) {
         // No per-GPU data available, create synthetic entry from aggregate metrics
         gpuList = [
@@ -541,7 +551,7 @@ class DashboardPage extends Component {
       let gpuList = this.state.gpuMetrics?.list || [];
       if (
         gpuList.length === 0 &&
-        this.state.gpuMetrics?.usage !== undefined
+                this.state.gpuMetrics?.usage !== undefined
       ) {
         gpuList = [
           {
@@ -591,9 +601,9 @@ class DashboardPage extends Component {
   }
 
   /**
-   * Called after component is fully mounted to DOM - sync state to UI
-   * This runs after all child components are mounted, so routerCard is available
-   */
+     * Called after component is fully mounted to DOM - sync state to UI
+     * This runs after all child components are mounted, so routerCard is available
+     */
   didMount() {
     console.log("[DashboardPage] didMount - syncing state to UI");
     this._syncStateToUI();
@@ -643,6 +653,7 @@ class DashboardPage extends Component {
   }
 
   render() {
+    console.log("[DashboardPage] render() called - creating initial structure");
     return Component.h(
       "div",
       { className: "dashboard-main dashboard-page unified" },

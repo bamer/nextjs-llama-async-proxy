@@ -1,43 +1,53 @@
 /**
-  * ChartsSection Component - Event-Driven DOM Updates
-  * Displays performance history charts with CPU/GPU tabs and stats
-  */
+   * ChartsSection Component - Completely Independent Socket-First
+   * No props, no parent callbacks - all data from socket broadcasts
+   */
 
 class ChartsSection extends Component {
   constructor(props) {
     super(props);
 
-    // Direct properties instead of state
-    this.history = props.history || [];
-    this.chartStats = props.chartStats || { current: 0, avg: 0, max: 0 };
-    this.chartManager = props.chartManager || null;
+    // Data loaded from socket, never from props
+    this.history = [];
+    this.chartStats = { current: 0, avg: 0, max: 0 };
+    this.chartManager = new ChartManager({});
     this.chartsInitialized = false;
     this.unsubscribers = [];
-    this._refreshInterval = null;
-
-    // Local state for page-specific settings
-    this.chartZoomRange = null;
-    this.refreshIntervalValue = null;
   }
 
   /**
-    * Called after component is mounted to DOM. Initializes chart subscriptions and charts.
-    */
+     * Called after component is mounted to DOM. Load initial data and subscribe to updates.
+     */
   onMount() {
-    console.log("[CHARTS-SECTION] onMount called, history available:", this.history.length);
+    console.log("[CHARTS-SECTION] onMount - loading initial data from socket");
 
-    // Subscribe to socket broadcasts instead of stateManager
+    // Initialize DOM data attribute as source of truth
+    if (this._el && !this._el.dataset.chartType) {
+      this._el.dataset.chartType = "usage";
+    }
+
+    // Subscribe to socket broadcasts
     this.unsubscribers.push(
-      socketClient.on("metrics:history:updated", this._onHistoryChange.bind(this)),
-      socketClient.on("metrics:updated", this._onMetricsChange.bind(this))
+      socketClient.on("metrics:history:updated", this._onHistoryChange.bind(this))
     );
 
-    // Initialize charts if history data is already available
-    if (this.history.length > 0) {
-      console.log("[CHARTS-SECTION] History already available in props, initializing charts");
-      this._initCharts();
-    } else {
-      console.log("[CHARTS-SECTION] No history data yet, waiting for subscription update");
+    // Load initial history data
+    this._loadHistory();
+  }
+
+  /**
+   * Load history from socket
+   */
+  async _loadHistory() {
+    try {
+      const response = await socketClient.request("metrics:history", { limit: 60 });
+      if (response.success && response.data) {
+        this.history = response.data;
+        console.log("[CHARTS-SECTION] Loaded", this.history.length, "history records");
+        this._initCharts();
+      }
+    } catch (error) {
+      console.error("[CHARTS-SECTION] Failed to load history:", error);
     }
   }
 
@@ -93,8 +103,8 @@ class ChartsSection extends Component {
   }
 
   /**
-   * Clean up subscriptions and event listeners.
-   */
+     * Clean up subscriptions and event listeners.
+     */
   destroy() {
     if (this.unsubscribers) {
       this.unsubscribers.forEach(unsub => unsub());
@@ -108,8 +118,8 @@ class ChartsSection extends Component {
   }
 
   /**
-    * Bind event listeners for chart tab interactions.
-    */
+      * Bind event listeners for chart tab interactions.
+      */
   bindEvents() {
     // Chart tab clicks
     this.on("click", "[data-chart]", (e) => {
@@ -118,16 +128,15 @@ class ChartsSection extends Component {
   }
 
   /**
-    * Get current chart type from parent DashboardPage
-    */
+       * Get current chart type from DOM (pure event-driven - DOM is source of truth)
+       */
   getChartType() {
-    const dashboardPage = this._el?.closest(".dashboard-page");
-    return dashboardPage?._component?.chartType || "usage";
+    return this._el?.dataset?.chartType || "usage";
   }
 
   /**
-    * Update component with new props
-    */
+      * Update component with new props
+      */
   updateData(history, chartStats) {
     let needsUpdate = false;
 
@@ -146,8 +155,8 @@ class ChartsSection extends Component {
   }
 
   /**
-    * Only update the DOM parts that changed, without full re-render
-    */
+      * Only update the DOM parts that changed, without full re-render
+      */
   updateDOM() {
     // Update chart stats
     const statsEl = this._el?.querySelector(".chart-stats");
@@ -175,8 +184,8 @@ class ChartsSection extends Component {
   }
 
   /**
-    * Update tab button active states immediately
-    */
+      * Update tab button active states immediately
+      */
   _updateTabStates() {
     const cpuTab = this._el?.querySelector("[data-chart=\"cpu\"]");
     const gpuTab = this._el?.querySelector("[data-chart=\"memory\"]");
@@ -235,8 +244,8 @@ class ChartsSection extends Component {
   }
 
   /**
-     * Update existing charts with new data
-     */
+       * Update existing charts with new data
+       */
   _updateChartsData() {
     if (!this.chartManager || !this.chartsInitialized) {
       return;
@@ -256,8 +265,8 @@ class ChartsSection extends Component {
   }
 
   /**
-   * Create charts immediately without dimension polling
-   */
+     * Create charts immediately without dimension polling
+     */
   _createChartsImmediately(usageCanvas, memoryCanvas) {
     const dpr = window.devicePixelRatio || 1;
 
@@ -302,8 +311,8 @@ class ChartsSection extends Component {
   }
 
   /**
-    * Update chart visibility based on current chart type
-    */
+      * Update chart visibility based on current chart type
+      */
   _updateVisibility() {
     const chartType = this.getChartType();
     const usageCanvas = this._el?.querySelector("#usageChart");
@@ -318,9 +327,9 @@ class ChartsSection extends Component {
   }
 
   /**
-    * Handle chart tab click events to switch between usage and memory charts.
-    * @param {Event} event - The click event.
-    */
+   * Handle chart tab click events to switch between usage and memory charts.
+   * @param {Event} event - The click event.
+   */
   handleChartTab(event) {
     const tab = event.target.closest("[data-chart]");
     if (!tab) return;
@@ -330,9 +339,9 @@ class ChartsSection extends Component {
     // Map button type to chart type
     const chartType = newType === "cpu" ? "usage" : "memory";
 
-    // Update parent state
-    if (this.props.onChartTypeChange) {
-      this.props.onChartTypeChange(chartType);
+    // Update DOM data attribute (source of truth)
+    if (this._el) {
+      this._el.dataset.chartType = chartType;
     }
 
     // Update button states IMMEDIATELY (no wait for re-render)
@@ -340,12 +349,109 @@ class ChartsSection extends Component {
 
     // Update canvas visibility (no chart recreation needed)
     this._updateVisibility();
-  }
 
+    // Broadcast chart type change via socket for any interested components
+    socketClient.emit("charts:chartTypeChanged", { chartType });
+  }
+-------
   /**
-    * Render the charts section component.
-    * @returns {HTMLElement} The rendered component element.
-    */
+      * Update component with new props
+      */
+  updateData(history, chartStats) {
+    let needsUpdate = false;
+
+    if (history !== this.history) {
+      this.history = history;
+      needsUpdate = true;
+    }
+    if (chartStats !== this.chartStats) {
+      this.chartStats = chartStats;
+      needsUpdate = true;
+    }
+
+    if (needsUpdate && this._el) {
+      this.updateDOM();
+    }
+  }
+  /**
+   * Update component with new data from socket
+   */
+  updateDataFromSocket(history, chartStats) {
+    let needsUpdate = false;
+
+    if (history !== this.history) {
+      this.history = history;
+      needsUpdate = true;
+    }
+    if (chartStats !== this.chartStats) {
+      this.chartStats = chartStats;
+      needsUpdate = true;
+    }
+
+    if (needsUpdate && this._el) {
+      this.updateDOM();
+    }
+  }
+  /**
+      * Only update the DOM parts that changed, without full re-render
+      */
+  updateDOM() {
+    // Update chart stats
+    const statsEl = this._el?.querySelector(".chart-stats");
+    if (statsEl) {
+      const stats = this.chartStats;
+      const statValues = statsEl.querySelectorAll(".chart-stat-value");
+      if (statValues.length >= 3) {
+        statValues[0].textContent = `${stats.current.toFixed(1)}%`;
+        statValues[1].textContent = `${stats.avg.toFixed(1)}%`;
+        statValues[2].textContent = `${stats.max.toFixed(1)}%`;
+      }
+    }
+
+    // Update tab active states - IMMEDIATE update
+    this._updateTabStates();
+
+    // Hide overlay when data is available
+    const overlay = this._el?.querySelector(".chart-empty-overlay");
+    if (overlay && this.history.length > 0) {
+      overlay.style.display = "none";
+    }
+
+    // Update canvas visibility
+    this._updateVisibility();
+  }
+  /**
+   * Update the DOM parts that changed, without full re-render
+   */
+  updateDOM() {
+    // Update chart stats
+    const statsEl = this._el?.querySelector(".chart-stats");
+    if (statsEl) {
+      const stats = this.chartStats;
+      const statValues = statsEl.querySelectorAll(".chart-stat-value");
+      if (statValues.length >= 3) {
+        statValues[0].textContent = `${stats.current.toFixed(1)}%`;
+        statValues[1].textContent = `${stats.avg.toFixed(1)}%`;
+        statValues[2].textContent = `${stats.max.toFixed(1)}%`;
+      }
+    }
+
+    // Update tab active states - IMMEDIATE update
+    this._updateTabStates();
+
+    // Hide overlay when data is available
+    const overlay = this._el?.querySelector(".chart-empty-overlay");
+    if (overlay && this.history.length > 0) {
+      overlay.style.display = "none";
+    }
+
+    // Update canvas visibility
+    this._updateVisibility();
+  }
+  /**
+      * Render the charts section component.
+      * @returns {HTMLElement} The rendered component element.
+      */
   render() {
     const chartType = this.getChartType();
     const hasData = this.history.length > 0;
@@ -398,38 +504,228 @@ class ChartsSection extends Component {
           }),
           // Placeholder overlay when no data
           !hasData &&
-            Component.h(
-              "div",
-              { className: "chart-empty-overlay" },
-              Component.h("div", { className: "empty-icon" }, "📈"),
-              Component.h("p", {}, "Collecting performance data..."),
-              Component.h("p", { className: "empty-hint" }, "Data will appear once metrics are collected")
-            )
+                    Component.h(
+                      "div",
+                      { className: "chart-empty-overlay" },
+                      Component.h("div", { className: "empty-icon" }, "📈"),
+                      Component.h("p", {}, "Collecting performance data..."),
+                      Component.h("p", { className: "empty-hint" }, "Data will appear once metrics are collected")
+                    )
         )
       ),
       hasData &&
+            Component.h(
+              "div",
+              { className: "chart-stats" },
+              Component.h(
+                "div",
+                { className: "chart-stat" },
+                Component.h("span", { className: "chart-stat-label" }, "Current"),
+                Component.h("span", { className: "chart-stat-value" }, `${stats.current.toFixed(1)}%`)
+              ),
+              Component.h(
+                "div",
+                { className: "chart-stat" },
+                Component.h("span", { className: "chart-stat-label" }, "Average"),
+                Component.h("span", { className: "chart-stat-value" }, `${stats.avg.toFixed(1)}%`)
+              ),
+              Component.h(
+                "div",
+                { className: "chart-stat" },
+                Component.h("span", { className: "chart-stat-label" }, "Max"),
+                Component.h("span", { className: "chart-stat-value" }, `${stats.max.toFixed(1)}%`)
+              )
+            )
+    );
+  }
+  /**
+   * Render the charts section component.
+   * @returns {HTMLElement} The rendered component element.
+   */
+  render() {
+    const chartType = this.getChartType();
+    const hasData = this.history.length > 0;
+    const stats = this.chartStats;
+
+    return Component.h(
+      "div",
+      { className: "charts-section" },
+      Component.h(
+        "div",
+        { className: "charts-header" },
+        Component.h("h3", {}, "Performance History"),
         Component.h(
           "div",
-          { className: "chart-stats" },
+          { className: "chart-tabs" },
           Component.h(
-            "div",
-            { className: "chart-stat" },
-            Component.h("span", { className: "chart-stat-label" }, "Current"),
-            Component.h("span", { className: "chart-stat-value" }, `${stats.current.toFixed(1)}%`)
+            "button",
+            {
+              className: `chart-tab ${chartType === "usage" ? "active" : ""}`,
+              "data-chart": "cpu",
+            },
+            "CPU & GPU Usage"
           ),
           Component.h(
-            "div",
-            { className: "chart-stat" },
-            Component.h("span", { className: "chart-stat-label" }, "Average"),
-            Component.h("span", { className: "chart-stat-value" }, `${stats.avg.toFixed(1)}%`)
-          ),
-          Component.h(
-            "div",
-            { className: "chart-stat" },
-            Component.h("span", { className: "chart-stat-label" }, "Max"),
-            Component.h("span", { className: "chart-stat-value" }, `${stats.max.toFixed(1)}%`)
+            "button",
+            {
+              className: `chart-tab ${chartType === "memory" ? "active" : ""}`,
+              "data-chart": "memory",
+            },
+            "Memory Usage"
           )
         )
+      ),
+      Component.h(
+        "div",
+        { className: "chart-container" },
+        // Always create canvases, show placeholder overlay when no data
+        Component.h(
+          "div",
+          { className: "chart-wrapper" },
+          Component.h("canvas", {
+            id: "usageChart",
+            className: "chart-canvas",
+            style: `display: ${chartType === "usage" ? "block" : "none"}`,
+          }),
+          Component.h("canvas", {
+            id: "memoryChart",
+            className: "chart-canvas",
+            style: `display: ${chartType === "memory" ? "block" : "none"}`,
+          }),
+          // Placeholder overlay when no data
+          !hasData &&
+                    Component.h(
+                      "div",
+                      { className: "chart-empty-overlay" },
+                      Component.h("div", { className: "empty-icon" }, "📈"),
+                      Component.h("p", {}, "Collecting performance data..."),
+                      Component.h("p", { className: "empty-hint" }, "Data will appear once metrics are collected")
+                    )
+        )
+      ),
+      hasData &&
+            Component.h(
+              "div",
+              { className: "chart-stats" },
+              Component.h(
+                "div",
+                { className: "chart-stat" },
+                Component.h("span", { className: "chart-stat-label" }, "Current"),
+                Component.h("span", { className: "chart-stat-value" }, `${stats.current.toFixed(1)}%`)
+              ),
+              Component.h(
+                "div",
+                { className: "chart-stat" },
+                Component.h("span", { className: "chart-stat-label" }, "Average"),
+                Component.h("span", { className: "chart-stat-value" }, `${stats.avg.toFixed(1)}%`)
+              ),
+              Component.h(
+                "div",
+                { className: "chart-stat" },
+                Component.h("span", { className: "chart-stat-label" }, "Max"),
+                Component.h("span", { className: "chart-stat-value" }, `${stats.max.toFixed(1)}%`)
+              )
+            )
+    );
+  }
+<task_progress>
+- [ ] Analyze current ChartsSection implementation
+- [x] Review ChartsSection code
+- [x] Review DashboardPage code
+- [x] Identify coupling issues
+- [x] Refactor ChartsSection to be completely independent
+- [ ] Update DashboardPage to remove parent-child dependencies
+- [ ] Test the changes
+</task_progress>
+
+  /**
+      * Render the charts section component.
+      * @returns {HTMLElement} The rendered component element.
+      */
+  render() {
+    const chartType = this.getChartType();
+    const hasData = this.history.length > 0;
+    const stats = this.chartStats;
+
+    return Component.h(
+      "div",
+      { className: "charts-section" },
+      Component.h(
+        "div",
+        { className: "charts-header" },
+        Component.h("h3", {}, "Performance History"),
+        Component.h(
+          "div",
+          { className: "chart-tabs" },
+          Component.h(
+            "button",
+            {
+              className: `chart-tab ${chartType === "usage" ? "active" : ""}`,
+              "data-chart": "cpu",
+            },
+            "CPU & GPU Usage"
+          ),
+          Component.h(
+            "button",
+            {
+              className: `chart-tab ${chartType === "memory" ? "active" : ""}`,
+              "data-chart": "memory",
+            },
+            "Memory Usage"
+          )
+        )
+      ),
+      Component.h(
+        "div",
+        { className: "chart-container" },
+        // Always create canvases, show placeholder overlay when no data
+        Component.h(
+          "div",
+          { className: "chart-wrapper" },
+          Component.h("canvas", {
+            id: "usageChart",
+            className: "chart-canvas",
+            style: `display: ${chartType === "usage" ? "block" : "none"}`,
+          }),
+          Component.h("canvas", {
+            id: "memoryChart",
+            className: "chart-canvas",
+            style: `display: ${chartType === "memory" ? "block" : "none"}`,
+          }),
+          // Placeholder overlay when no data
+          !hasData &&
+                    Component.h(
+                      "div",
+                      { className: "chart-empty-overlay" },
+                      Component.h("div", { className: "empty-icon" }, "📈"),
+                      Component.h("p", {}, "Collecting performance data..."),
+                      Component.h("p", { className: "empty-hint" }, "Data will appear once metrics are collected")
+                    )
+        )
+      ),
+      hasData &&
+            Component.h(
+              "div",
+              { className: "chart-stats" },
+              Component.h(
+                "div",
+                { className: "chart-stat" },
+                Component.h("span", { className: "chart-stat-label" }, "Current"),
+                Component.h("span", { className: "chart-stat-value" }, `${stats.current.toFixed(1)}%`)
+              ),
+              Component.h(
+                "div",
+                { className: "chart-stat" },
+                Component.h("span", { className: "chart-stat-label" }, "Average"),
+                Component.h("span", { className: "chart-stat-value" }, `${stats.avg.toFixed(1)}%`)
+              ),
+              Component.h(
+                "div",
+                { className: "chart-stat" },
+                Component.h("span", { className: "chart-stat-label" }, "Max"),
+                Component.h("span", { className: "chart-stat-value" }, `${stats.max.toFixed(1)}%`)
+              )
+            )
     );
   }
 }
