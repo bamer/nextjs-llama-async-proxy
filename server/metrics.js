@@ -50,10 +50,11 @@ function getClampedInterval(requestedInterval) {
 
 /**
  * Collect and emit metrics to a specific socket.
+ * @param {Object} io - Socket.IO server instance.
  * @param {Object} socket - Socket.IO socket instance.
  * @param {Object} db - Database instance.
  */
-async function collectAndEmitMetrics(socket, db) {
+async function collectAndEmitMetrics(io, socket, db) {
   try {
     // Collect system metrics in parallel
     const [cpuUsage, memoryMetrics, diskMetrics, gpuMetrics] = await Promise.all([
@@ -79,9 +80,10 @@ async function collectAndEmitMetrics(socket, db) {
       gpu_memory_total: gpuMemoryTotal,
     });
 
-    // Broadcast metrics update to ALL connected clients (except sender)
-    // Using socket.broadcast.emit to reach all clients
-    socket.broadcast.emit("metrics:updated", {
+    // Broadcast metrics update to ALL connected clients including sender
+    // Using io.emit to reach all clients (not socket.broadcast.emit which excludes sender)
+    console.log("[METRICS] Broadcasting metrics:updated to all clients");
+    io.emit("metrics:updated", {
       timestamp: Date.now(),
       metrics: {
         cpu: { usage: cpuUsage },
@@ -115,11 +117,12 @@ async function collectAndEmitMetrics(socket, db) {
 
 /**
  * Start the metrics collection interval for a subscription.
+ * @param {Object} io - Socket.IO server instance.
  * @param {Object} socket - Socket.IO socket instance.
  * @param {Object} db - Database instance.
  * @param {number} interval - Collection interval in milliseconds.
  */
-function startCollectionInterval(socket, db, interval) {
+function startCollectionInterval(io, socket, db, interval) {
   const subscription = subscriptions.get(socket.id);
   if (!subscription) return;
 
@@ -130,11 +133,11 @@ function startCollectionInterval(socket, db, interval) {
 
   // Set up new interval
   subscription.timeoutId = setInterval(() => {
-    collectAndEmitMetrics(socket, db);
+    collectAndEmitMetrics(io, socket, db);
   }, interval);
 
   // Emit initial metrics immediately
-  collectAndEmitMetrics(socket, db);
+  collectAndEmitMetrics(io, socket, db);
 }
 
 /**
@@ -160,7 +163,7 @@ export function registerMetricsHandlers(socket, io, db) {
     console.log(`[METRICS] Socket ${socket.id} subscribed with interval ${interval}ms`);
 
     // Start collection interval for this socket
-    startCollectionInterval(socket, db, interval);
+    startCollectionInterval(io, socket, db, interval);
 
     // Acknowledge subscription with callback
     if (callback) {
@@ -199,7 +202,7 @@ export function registerMetricsHandlers(socket, io, db) {
     console.log(`[METRICS] Socket ${socket.id} updated interval to ${newInterval}ms`);
 
     // Restart collection with new interval
-    startCollectionInterval(socket, db, newInterval);
+    startCollectionInterval(io, socket, db, newInterval);
 
     socket.emit("metrics:update-interval:result", {
       success: true,
@@ -306,7 +309,9 @@ export async function startMetricsCollection(io, db) {
 export async function collectMetrics(io, db) {
   // In the new architecture, metrics are collected per-subscription
   // This function is kept for any legacy code that calls it directly
-  await collectAndEmitMetrics(io, db);
+  // Use a dummy socket for backwards compatibility
+  const dummySocket = { id: "dummy", broadcast: { emit: () => {} }, emit: () => {} };
+  await collectAndEmitMetrics(io, dummySocket, db);
 }
 
 /**

@@ -42,7 +42,7 @@ describe("Command Palette E2E Tests", function () {
 
     it("should have navigation sidebar with links", async function () {
       const page = await browser.newPage();
-      await page.goto(SERVER_URL, { waitUntil: });
+      await page.goto(SERVER_URL, { waitUntil: "networkidle" });
 
       // "networkidle" Check navigation links
       const navLinks = await page.$$(".nav-link, [data-nav]");
