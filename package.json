@@ -17,7 +17,10 @@
     "format:check": "prettier --check .",
     "format:write": "prettier --write",
     "db:export": "node scripts/db-export.js",
-    "db:reset": "node scripts/db-reset.js"
+    "db:reset": "node scripts/db-reset.js",
+    "benchmark": "node scripts/benchmark-polling-vs-socket.js",
+    "benchmark:quick": "ITERATIONS=100 node scripts/benchmark-polling-vs-socket.js",
+    "benchmark:full": "ITERATIONS=5000 node scripts/benchmark-polling-vs-socket.js"
   },
   "dependencies": {
     "@huggingface/gguf": "^0.3.2",

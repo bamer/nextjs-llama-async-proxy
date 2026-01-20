@@ -3,16 +3,19 @@
 This document provides guidelines for agentic coding assistants working in this **Vanilla JavaScript** Llama Proxy Dashboard application.
 **Critical**: never DELETE this file for whatever reason.
 
+- **Critical**:it's mandatory that you don't make <tool_call> inside  <thinking> block if you do the whole server will crash this is a bench marking evaluating framework bug.
+
 ## Application Overview
 
 - **Backend**: Node.js + Express + Socket.IO (server.js)
 - **Frontend**: Vanilla JavaScript (no frameworks)
 - **Database**: SQLite with better-sqlite3
-- **Real-time**: Socket.IO for live updates
 - **Architecture**: Simplify to pure Event-Driven DOM Updates
-- **Complete Socket.IO-First** 
-- **LLM Backend**: llama.cpp server in **router mode** (multi-model support) with preset.ini
+- **Communications FrontEnd BackEnd**: **Complete Socket.IO -First and Only** 
 - **Define stable Socket.IO contracts** - clear in/out on server
+- **Real-time**: Socket.IO for live updates
+- **LLM Backend**: llama.cpp server in **router mode** (multi-model support) with preset.ini
+
 
 
 ## Llama.cpp Router Mode

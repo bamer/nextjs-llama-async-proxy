@@ -43,6 +43,8 @@ next-env.d.ts
 # bv (beads viewer) local config and caches
 .bv/
 
+# bmad local config and caches
+_bmad/*
 # Additional coverage directories
 coverage-api/
 coverage-websocket/
