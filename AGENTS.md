@@ -11,11 +11,12 @@ This document provides guidelines for agentic coding assistants working in this 
 - **Frontend**: Vanilla JavaScript (no frameworks)
 - **Database**: SQLite with better-sqlite3
 - **Architecture**: Simplify to pure Event-Driven DOM Updates
+- **event-driven patterns**
 - **Communications FrontEnd BackEnd**: **Complete Socket.IO -First and Only** 
 - **Define stable Socket.IO contracts** - clear in/out on server
 - **Real-time**: Socket.IO for live updates
-- **LLM Backend**: llama.cpp server in **router mode** (multi-model support) with preset.ini
-
+- **LLM Backend**: llama.cpp server in **router mode** (multi-model support) with presets file .ini.
+- **timeout and set-interval** crappy pattern are !!!! FORBIDDEN !!!!!.
 
 
 ## Llama.cpp Router Mode

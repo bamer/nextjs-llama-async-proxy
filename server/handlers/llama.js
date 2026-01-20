@@ -8,13 +8,11 @@ import {
   startLlamaServerRouter,
   stopLlamaServerRouter,
   getLlamaStatus,
-  setNotificationCallback,
 } from "./llama-router/index.js";
 import { getRouterConfig } from "../db/config.js";
 import path from "path";
 
-// Module level flag to ensure we only set the callback once
-let callbackSet = false;
+// (Removed global callback gating; per-socket broadcasts will be used in future patches)
 
 /**
  * Register all Socket.IO event handlers for llama router control.
@@ -24,48 +22,7 @@ let callbackSet = false;
  * @param {Function} initializeLlamaMetrics - Function to initialize metrics collection.
  */
 export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
-  // Set up notification callback only once
-  if (!callbackSet) {
-    setNotificationCallback((event, data) => {
-      console.log(`[LLAMA-HANDLERS] Broadcasting event: ${event}`, data);
-
-      // Broadcast to all clients with CONSISTENT format
-      // Always use flat structure for llama:status events
-      if (event === "started") {
-        io.emit("llama:status", {
-          status: "running",
-          port: data.port,
-          url: data.url,
-          mode: data.mode || "router",
-          timestamp: data.timestamp || Date.now(),
-        });
-      } else if (event === "stopped" || event === "closed" || event === "stopping") {
-        io.emit("llama:status", {
-          status: "idle",
-          port: null,
-          url: null,
-          mode: "router",
-          timestamp: data.timestamp || Date.now(),
-        });
-      } else if (event === "error") {
-        io.emit("llama:status", {
-          status: "error",
-          error: data.error,
-          port: data.port || null,
-          url: data.url || null,
-          mode: "router",
-          timestamp: data.timestamp || Date.now(),
-        });
-      } else {
-        // Generic event broadcast for other event types
-        io.emit("llama:server-event", {
-          type: event,
-          data: data,
-        });
-      }
-    });
-    callbackSet = true;
-  }
+  // Removed global notification callback to avoid emitting from a non-socket context
 
   /**
     * Get llama server status
@@ -165,14 +122,14 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
    /**
     * Restart llama server
     */
-   socket.on("llama:restart", async (req, ack) => {
+    socket.on("llama:restart", async (req, ack) => {
      const id = req?.requestId || Date.now();
     try {
       // Stop the server and wait for completion
       await stopLlamaServerRouter();
       
-      // Emit status update immediately
-      io.emit("llama:status", {
+      // Emit status update immediately (broadcast to other clients)
+      socket.broadcast.emit("llama:status", {
         status: "idle",
         port: null,
         url: null,
@@ -212,20 +169,20 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
   /**
    * Stop llama server
    */
-  socket.on("llama:stop", async (req) => {
+    socket.on("llama:stop", async (req) => {
     const id = req?.requestId || Date.now();
     console.log(`[LLAMA-HANDLERS] Received llama:stop from client ${socket.id}`);
     try {
       const result = await stopLlamaServerRouter();
-      // Explicitly emit status update to ensure all clients see "idle"
-      io.emit("llama:status", {
+      // Explicitly emit status update to ensure all clients see "idle" (broadcast)
+      socket.broadcast.emit("llama:status", {
         status: "idle",
         port: null,
         url: null,
         mode: "router",
         timestamp: Date.now(),
       });
-      io.emit("models:router-stopped", {});
+      socket.broadcast.emit("models:router-stopped", {});
       ok(socket, "llama:stop:result", result, id);
     } catch (e) {
       console.error("[LLAMA-HANDLERS] Error stopping llama:", e.message);
@@ -245,5 +202,10 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
     } catch (e) {
       err(socket, "llama:config:result", e.message, id);
     }
+  });
+
+  // Relay server-wide events to other clients without echoing the sender
+  socket.on("llama:server:event", (payload) => {
+    socket.broadcast.emit("llama:server-event", payload);
   });
 }

@@ -26,8 +26,8 @@ export function registerProcessHandlers(socket, io, db, processManager) {
         id
       );
 
-      // Broadcast to all clients
-      io.emit("llama-server:status", {
+      // Broadcast to all clients (except sender)
+      socket.broadcast.emit("llama-server:status", {
         type: "broadcast",
         data: {
           status: "running",
@@ -62,8 +62,8 @@ export function registerProcessHandlers(socket, io, db, processManager) {
         id
       );
 
-      // Broadcast to all clients
-      io.emit("llama-server:status", {
+      // Broadcast to all clients (except sender)
+      socket.broadcast.emit("llama-server:status", {
         type: "broadcast",
         data: {
           status: "stopped",

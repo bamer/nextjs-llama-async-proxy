@@ -7,7 +7,6 @@ class DebugDashboard {
   constructor() {
     this.visible = false;
     this.container = null;
-    this.updateInterval = null;
     this.autoRefresh = true;
   }
 
@@ -24,7 +23,6 @@ class DebugDashboard {
 
     this.visible = true;
     this.createDashboard();
-    this.startAutoRefresh();
     console.log("🔍 Debug Dashboard shown");
   }
 
@@ -32,7 +30,6 @@ class DebugDashboard {
     if (!this.visible) return;
 
     this.visible = false;
-    this.stopAutoRefresh();
 
     if (this.container) {
       this.container.remove();
@@ -217,20 +214,7 @@ class DebugDashboard {
     this.update();
   }
 
-  startAutoRefresh() {
-    this.updateInterval = setInterval(() => {
-      if (this.autoRefresh && this.visible) {
-        this.update();
-      }
-    }, 1000); // Update every second
-  }
-
-  stopAutoRefresh() {
-    if (this.updateInterval) {
-      clearInterval(this.updateInterval);
-      this.updateInterval = null;
-    }
-  }
+  // Auto-refresh mechanics removed to enforce event-driven updates
 
   update() {
     if (!this.visible || !this.container) return;
@@ -348,7 +332,7 @@ class DebugDashboard {
     if (window.LoggingSystemIntegrationTests) {
       const tests = new window.LoggingSystemIntegrationTests();
       await tests.runAllTests();
-      setTimeout(() => this.update(), 1000); // Update after tests complete
+      this.update(); // Update after tests complete
     } else {
       console.error("Integration tests not available");
     }

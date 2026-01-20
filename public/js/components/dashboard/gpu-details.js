@@ -18,7 +18,6 @@ class GpuDetails extends Component {
       socketClient.on("gpu:updated", this._onGpuUpdated.bind(this))
     );
     this._loadInitialStatus();
-    this._startAutoRefresh();
   }
 
   async _loadInitialStatus() {
@@ -63,15 +62,7 @@ class GpuDetails extends Component {
     this._updateGPUUI();
   }
 
-  _startAutoRefresh() {
-    const interval = setInterval(() => {
-      if (this.loading || this.gpuList.length === 0) {
-        this._loadInitialStatus();
-      }
-    }, 10000);
-
-    this.unsubscribers.push(() => clearInterval(interval));
-  }
+  // Auto-refresh removed: rely on GPU updates via socket broadcasts
 
   destroy() {
     this.unsubscribers.forEach(unsub => unsub());

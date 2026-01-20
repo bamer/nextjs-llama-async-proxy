@@ -233,9 +233,116 @@ class ModelsPage extends Component {
   _updateTable() {
     const filtered = this._getFiltered();
     const container = this.$(".models-table-container");
-    if (container) {
-      container.innerHTML = this._renderTable(filtered);
+    if (!container) return;
+    const newTable = this._buildTableDom(filtered);
+    const existing = container.querySelector("table.models-table");
+    if (existing) {
+      container.replaceChild(newTable, existing);
+    } else {
+      container.appendChild(newTable);
     }
+  }
+
+  // Build table DOM from model data without using innerHTML replacements
+  _buildTableDom(models) {
+    const table = document.createElement("table");
+    table.className = "models-table";
+
+    const thead = document.createElement("thead");
+    thead.innerHTML = `
+      <tr>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Arch</th>
+        <th>Params</th>
+        <th>Quant</th>
+        <th>Ctx</th>
+        <th>Embed</th>
+        <th>Blocks</th>
+        <th>Heads</th>
+        <th>Size</th>
+        <th>Actions</th>
+      </tr>`;
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+    (models || []).forEach((m) => {
+      const tr = document.createElement("tr");
+      tr.dataset.name = m.name;
+      tr.className = `status-${m.status || "unknown"}`;
+
+      const nameTd = document.createElement("td");
+      nameTd.className = "name-cell";
+      nameTd.textContent = m.name || "";
+      tr.appendChild(nameTd);
+
+      const statusTd = document.createElement("td");
+      const badge = document.createElement("span");
+      badge.className = `badge badge-${m.status || "unknown"}`;
+      badge.textContent = m.status || "unknown";
+      statusTd.appendChild(badge);
+      tr.appendChild(statusTd);
+
+      const archTd = document.createElement("td");
+      archTd.textContent = m.type || "-";
+      tr.appendChild(archTd);
+
+      const paramsTd = document.createElement("td");
+      paramsTd.textContent = m.params || "-";
+      tr.appendChild(paramsTd);
+
+      const quantTd = document.createElement("td");
+      quantTd.textContent = m.quantization || "-";
+      tr.appendChild(quantTd);
+
+      const ctxTd = document.createElement("td");
+      ctxTd.textContent = this._fmtCtx(m.ctx_size);
+      tr.appendChild(ctxTd);
+
+      const embedTd = document.createElement("td");
+      embedTd.textContent = m.embedding_size || "-";
+      tr.appendChild(embedTd);
+
+      const blocksTd = document.createElement("td");
+      blocksTd.textContent = m.block_count || "-";
+      tr.appendChild(blocksTd);
+
+      const headsTd = document.createElement("td");
+      headsTd.textContent = m.head_count || "-";
+      tr.appendChild(headsTd);
+
+      const sizeTd = document.createElement("td");
+      sizeTd.className = "size-cell";
+      sizeTd.textContent = this._fileSize(m.file_size);
+      tr.appendChild(sizeTd);
+
+      const actionsTd = document.createElement("td");
+      // Build action buttons without innerHTML
+      const canLoad = m.status !== "loaded" && m.status !== "loading" && m.status !== "running";
+      const canUnload = m.status === "loaded" || m.status === "running";
+      if (canLoad) {
+        const btn = document.createElement("button");
+        btn.className = "btn btn-primary btn-sm";
+        btn.setAttribute("data-action", "load");
+        btn.setAttribute("data-name", m.name);
+        btn.textContent = "Load";
+        actionsTd.appendChild(btn);
+      }
+      if (canUnload) {
+        const btn2 = document.createElement("button");
+        btn2.className = "btn btn-secondary btn-sm";
+        btn2.setAttribute("data-action", "unload");
+        btn2.setAttribute("data-name", m.name);
+        btn2.textContent = "Unload";
+        actionsTd.appendChild(btn2);
+      }
+      tr.appendChild(actionsTd);
+
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    return table;
   }
 
   _updateRouterIndicator() {

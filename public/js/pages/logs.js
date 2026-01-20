@@ -195,15 +195,31 @@ class LogsPage extends Component {
     const filtered = this._getFiltered();
     const visibleLogs = filtered.slice(0, 200);
 
+    // Rebuild DOM to avoid innerHTML mutations
+    while (container.firstChild) container.removeChild(container.firstChild);
     if (filtered.length === 0) {
-      container.innerHTML = "<p class=\"empty\">No logs found</p>";
+      const p = document.createElement("p");
+      p.className = "empty";
+      p.textContent = "No logs found";
+      container.appendChild(p);
     } else {
-      container.innerHTML = visibleLogs
-        .map(
-          (l) =>
-            `<div class="log-entry level-${l.level || "info"}"><span class="log-time">${this._time(l.timestamp)}</span><span class="log-level">${(l.level || "info").toUpperCase()}</span><span class="log-msg">${String(l.message)}</span></div>`
-        )
-        .join("");
+      visibleLogs.forEach((l) => {
+        const div = document.createElement("div");
+        div.className = `log-entry level-${l.level || "info"}`;
+        const t = document.createElement("span");
+        t.className = "log-time";
+        t.textContent = this._time(l.timestamp);
+        const lvl = document.createElement("span");
+        lvl.className = "log-level";
+        lvl.textContent = (l.level || "info").toUpperCase();
+        const msg = document.createElement("span");
+        msg.className = "log-msg";
+        msg.textContent = String(l.message);
+        div.appendChild(t);
+        div.appendChild(lvl);
+        div.appendChild(msg);
+        container.appendChild(div);
+      });
     }
 
     const toolbar = this.$(".toolbar h2");

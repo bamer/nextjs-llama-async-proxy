@@ -95,9 +95,12 @@ class SystemHealth extends Component {
 
         const indicatorEl = checkEl.querySelector(".check-indicator");
         if (indicatorEl) {
-          indicatorEl.innerHTML = check.ok
-            ? "<span class=\"indicator-good\">✓</span>"
-            : `<span class="indicator-warning">⚠ Limit: ${check.limit}</span>`;
+          // Replace HTML with DOM-safe rendering
+          indicatorEl.innerHTML = "";
+          const spanEl = document.createElement("span");
+          spanEl.className = check.ok ? "indicator-good" : "indicator-warning";
+          spanEl.textContent = check.ok ? "✓" : `Limit: ${check.limit}`;
+          indicatorEl.appendChild(spanEl);
         }
       }
     });

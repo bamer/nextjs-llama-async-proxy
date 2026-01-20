@@ -57,10 +57,8 @@ export function registerGpuHandlers(socket) {
       const gpus = await detectAndCollectGpus();
       const broadcastData = buildBroadcastData(gpus);
 
-      // Broadcast to all clients
-      if (socket.io) {
-        socket.io.emit("gpu:updated", broadcastData);
-      }
+      // Broadcast to all clients (exclude sender)
+      socket.broadcast.emit("gpu:updated", broadcastData);
 
       const response = {
         success: true,

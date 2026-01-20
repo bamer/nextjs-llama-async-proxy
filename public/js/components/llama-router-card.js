@@ -208,22 +208,34 @@ class LlamaRouterCard extends Component {
     // Filter for loaded models
     const loadedModels = modelsData.filter(m => m.status?.value === "loaded");
 
+    // DOM-based rendering for loaded models
+    // Clear and rebuild using DOM APIs to avoid innerHTML usage
+    while (loadedModelsContainer.firstChild) loadedModelsContainer.removeChild(loadedModelsContainer.firstChild);
     if (loadedModels.length === 0) {
-      loadedModelsContainer.innerHTML = '<div class="no-models-loaded">No models loaded</div>';
+      const empty = document.createElement("div");
+      empty.className = "no-models-loaded";
+      empty.textContent = "No models loaded";
+      loadedModelsContainer.appendChild(empty);
       return;
     }
-
-    // Render loaded models
-    const modelsHtml = loadedModels.map(m => {
+    loadedModels.forEach((m) => {
       const modelName = m.id || m.name || "Unknown";
       const size = m.size ? this._formatModelSize(m.size) : "";
-      return `<div class="loaded-model-item" data-model="${modelName}">
-        <span class="model-name">${modelName}</span>
-        ${size ? `<span class="model-size">${size}</span>` : ""}
-      </div>`;
-    }).join("");
-
-    loadedModelsContainer.innerHTML = modelsHtml;
+      const item = document.createElement("div");
+      item.className = "loaded-model-item";
+      item.setAttribute("data-model", modelName);
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "model-name";
+      nameSpan.textContent = modelName;
+      item.appendChild(nameSpan);
+      if (size) {
+        const sizeSpan = document.createElement("span");
+        sizeSpan.className = "model-size";
+        sizeSpan.textContent = size;
+        item.appendChild(sizeSpan);
+      }
+      loadedModelsContainer.appendChild(item);
+    });
   }
 
   /**
@@ -319,12 +331,20 @@ class LlamaRouterCard extends Component {
       selected: currentVal,
     });
 
-    let html = "<option value=\"\">Select Preset...</option>";
+    // Rebuild preset options without innerHTML
+    while (select.firstChild) select.removeChild(select.firstChild);
+    const defaultOpt = document.createElement("option");
+    defaultOpt.value = "";
+    defaultOpt.textContent = "Select Preset...";
+    select.appendChild(defaultOpt);
     presets.forEach(p => {
       const name = p.name || p; // Handle both objects and strings
-      html += `<option value="${name}" ${name === currentVal ? "selected" : ""}>${name}</option>`;
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      if (name === currentVal) opt.selected = true;
+      select.appendChild(opt);
     });
-    if (select.innerHTML !== html) select.innerHTML = html;
   }
 
   bindEvents() {
