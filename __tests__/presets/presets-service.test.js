@@ -348,9 +348,7 @@ describe("PresetsService", () => {
         }
       });
 
-      const content = `LLAMA_CONFIG_VERSION = 1
-
-[*]
+      const content = `[*]
 ctx-size = 2048
 `;
       const result = await presetsService.validateIni(content);
@@ -373,15 +371,38 @@ ctx-size = 2048
         }
       });
 
-      const content = `LLAMA_CONFIG_VERSION = 1
-
-[model-name]
+      const content = `[model-name]
 ctx-size = 2048
 `;
       const result = await presetsService.validateIni(content);
 
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
+    });
+
+    it("should reject LLAMA_CONFIG_VERSION in presets", async () => {
+      mockSocket.emit.mockImplementation((event, data, callback) => {
+        if (event === "presets:validate") {
+          callback({
+            success: true,
+            data: {
+              valid: false,
+              errors: ["LLAMA_CONFIG_VERSION is not allowed in presets.ini"],
+              warnings: [],
+            },
+          });
+        }
+      });
+
+      const content = `LLAMA_CONFIG_VERSION = 1
+
+[*]
+ctx-size = 2048
+`;
+      const result = await presetsService.validateIni(content);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.includes("LLAMA_CONFIG_VERSION"))).toBe(true);
     });
   });
 
@@ -561,9 +582,7 @@ ctx-size = 2048
 
   describe("exportPreset", () => {
     it("should export preset as raw INI content", async () => {
-      const expectedContent = `LLAMA_CONFIG_VERSION = 1
-
-[*]
+      const expectedContent = `[*]
 ctx-size = 2048
 temp = 0.7
 `;

@@ -37,8 +37,6 @@ config/
 ### INI File Format
 
 ```ini
-LLAMA_CONFIG_VERSION = 1
-
 [model-name]
 model = ./models/model.gguf
 ctx-size = 8192
@@ -47,6 +45,8 @@ n-gpu-layers = 99
 threads = 8
 batch = 512
 ```
+
+> **Important**: `LLAMA_CONFIG_VERSION` must NOT appear in presets.ini files. The preset loader will reject any preset containing this option with a clear error message. This ensures consistency and prevents runtime issues with the llama.cpp router.
 
 ### INI Structure
 

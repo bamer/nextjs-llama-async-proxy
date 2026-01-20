@@ -154,9 +154,7 @@ export function getDefaultParameters() {
  * @returns {Object} Default configuration object.
  */
 export function getDefaultConfig() {
-  return {
-    LLAMA_CONFIG_VERSION: "1",
-  };
+  return {};
 }
 
 /**
@@ -357,8 +355,12 @@ export function validateIni(content) {
   try {
     const parsed = parseIni(content);
 
-    if (!parsed["LLAMA_CONFIG_VERSION"]) {
-      errors.push({ line: 1, message: "Missing LLAMA_CONFIG_VERSION" });
+    // Reject LLAMA_CONFIG_VERSION - it must not appear in presets.ini
+    if (parsed["LLAMA_CONFIG_VERSION"]) {
+      errors.push({
+        line: 1,
+        message: "LLAMA_CONFIG_VERSION is not allowed in presets.ini",
+      });
     }
 
     for (const [section, params] of Object.entries(parsed)) {

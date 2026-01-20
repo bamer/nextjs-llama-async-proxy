@@ -55,9 +55,7 @@ describe("Presets Handlers", () => {
     mockFs.readdirSync.mockReturnValue(["default.ini", "test.ini"]);
     mockFs.readFileSync.mockImplementation((path) => {
       if (path.includes("default.ini")) {
-        return `LLAMA_CONFIG_VERSION = 1
-
-[*]
+        return `[*]
 ctx-size = 2048
 temp = 0.7
 n-gpu-layers = 0
@@ -74,7 +72,7 @@ temp = 0.6
 n-gpu-layers = 35
 `;
       }
-      return "LLAMA_CONFIG_VERSION = 1\n\n[*]\nctx-size = 2048\n";
+      return "[*]\nctx-size = 2048\n";
     });
 
     // Setup mock socket with ack callback
@@ -108,9 +106,7 @@ n-gpu-layers = 35
 
   describe("parseIni", () => {
     it("should parse basic INI content", () => {
-      const content = `LLAMA_CONFIG_VERSION = 1
-
-[*]
+      const content = `[*]
 ctx-size = 2048
 temp = 0.7
 
@@ -153,7 +149,6 @@ key = value = with equals
   describe("generateIni", () => {
     it("should generate valid INI content", () => {
       const config = {
-        LLAMA_CONFIG_VERSION: "1",
         "*": {
           "ctx-size": "2048",
           temp: "0.7",
@@ -165,7 +160,6 @@ key = value = with equals
 
       const result = presetsHandlers.generateIni(config);
 
-      expect(result).toContain("LLAMA_CONFIG_VERSION = 1");
       expect(result).toContain("[*]");
       expect(result).toContain("ctx-size = 2048");
       expect(result).toContain("temp = 0.7");
@@ -239,7 +233,7 @@ key = value = with equals
     });
 
     it("should return default values when no [*] section", () => {
-      mockFs.readFileSync.mockReturnValue("LLAMA_CONFIG_VERSION = 1\n");
+      mockFs.readFileSync.mockReturnValue("");
 
       const defaults = presetsHandlers.getPresetsDefaults("test");
 
@@ -250,9 +244,7 @@ key = value = with equals
 
   describe("validateIni", () => {
     it("should validate correct INI content", () => {
-      const content = `LLAMA_CONFIG_VERSION = 1
-
-[*]
+      const content = `[*]
 ctx-size = 2048
 temp = 0.7
 
@@ -265,8 +257,24 @@ model = /path/to/model.gguf
       expect(result.errors).toHaveLength(0);
     });
 
-    it("should detect missing model path", () => {
+    it("should reject LLAMA_CONFIG_VERSION in presets", () => {
       const content = `LLAMA_CONFIG_VERSION = 1
+
+[*]
+ctx-size = 2048
+temp = 0.7
+
+[model-name]
+model = /path/to/model.gguf
+`;
+      const result = presetsHandlers.validateIni(content);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.message.includes("LLAMA_CONFIG_VERSION"))).toBe(true);
+    });
+
+    it("should detect missing model path", () => {
+      const content = `[*]
 
 [model-name]
 ctx-size = 2048
@@ -278,9 +286,7 @@ ctx-size = 2048
     });
 
     it("should detect invalid numeric values", () => {
-      const content = `LLAMA_CONFIG_VERSION = 1
-
-[*]
+      const content = `[*]
 ctx-size = not-a-number
 `;
       const result = presetsHandlers.validateIni(content);
