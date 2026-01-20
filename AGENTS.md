@@ -2010,5 +2010,5 @@ async loadData() {
 **Golden Rules Summary**:
 1. **Pure Event-Driven DOM Updates** - All UI updates via Socket.IO broadcasts
 2. **Socket.IO-First and Only** - No REST, fetch, or HTTP polling
-3. **Centralized Cadence** - Single server timer, not per-client timers
+3. **Decentralized And decoupled autonomous atomic components** - one component == work everywhere
 4. **Proper Subscription Cleanup** - Unsubscribe in destroy() method
