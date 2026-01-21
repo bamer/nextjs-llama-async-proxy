@@ -13,8 +13,10 @@ class DashboardPage extends Component {
       { className: "dashboard-main dashboard-page unified" },
       [
         Component.h(window.MetricsSection, {}),
-        Component.h(window.RouterCardSection, {}),
-        Component.h(window.HealthSection, {}),
+        Component.h("div", { className: "dashboard-middle-row" }, [
+          Component.h(window.RouterCardSection, {}),
+          Component.h(window.HealthSection, {}),
+        ]),
         Component.h(window.GPUSection, {}),
       ]
     );
