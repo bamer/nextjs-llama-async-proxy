@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Event Bubbling Test</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .section { border: 2px solid #333; margin: 10px 0; padding: 10px; }
+    .section-header { background: #ccc; padding: 10px; cursor: pointer; }
+    .model-section { border: 1px solid #999; margin: 5px 0; padding: 5px; }
+    .model-header { background: #eee; padding: 8px; cursor: pointer; }
+    .model-content { display: none; padding: 10px; background: #f9f9f9; }
+    .model-content.expanded { display: block; }
+    .log { background: #f0f0f0; padding: 10px; margin-top: 20px; height: 200px; overflow-y: auto; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h2>Event Bubbling Test</h2>
+  
+  <div id="section-models" class="section">
+    <div id="header-models" class="section-header">
+      ▶ Models Section
+    </div>
+    <div id="models-content">
+      <div class="model-section" data-model="gemma">
+        <div class="model-header" data-model-name="gemma">
+          📄 Gemma Model
+        </div>
+        <div class="model-content">
+          <p>Gemma details here</p>
+        </div>
+      </div>
+      
+      <div class="model-section" data-model="mistral">
+        <div class="model-header" data-model-name="mistral">
+          📄 Mistral Model
+        </div>
+        <div class="model-content">
+          <p>Mistral details here</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="log" id="log"></div>
+
+  <script>
+    const log = document.getElementById("log");
+    
+    function addLog(msg) {
+      const time = new Date().toLocaleTimeString();
+      log.innerHTML += `${time} - ${msg}<br>`;
+      log.scrollTop = log.scrollHeight;
+    }
+
+    // Models section header toggle
+    const modelsHeader = document.getElementById("header-models");
+    modelsHeader.onclick = (e) => {
+      console.log("Models header clicked, target:", e.target, "closest model-header:", e.target.closest(".model-header"));
+      
+      // OLD BUG: Check .model-section
+      if (e.target.closest(".model-section")) {
+        addLog("❌ [BUG] Clicked on model-section, returning early");
+        return;
+      }
+      
+      addLog("✓ Models section toggled");
+    };
+
+    // Model header toggles
+    const modelHeaders = document.querySelectorAll(".model-header");
+    modelHeaders.forEach((header) => {
+      header.onclick = (e) => {
+        e.stopPropagation();
+        const modelName = header.dataset.modelName;
+        addLog(`✓ Toggled ${modelName} model`);
+        
+        const content = header.nextElementSibling;
+        if (content) {
+          content.classList.toggle("expanded");
+        }
+      };
+    });
+
+    addLog("Test ready - click on model headers");
+  </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .settings-page {
+    padding: var(--md);
+  }
+
+  .router-header {
+    flex-direction: column;
+  }
+
+  .router-stats {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .router-controls {
+    flex-direction: column;
+  }
+
+  .router-controls .btn {
+    max-width: none;
+  }
+
+  .config-grid,
+  .paths-grid,
+  .defaults-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .config-toggles {
+    flex-direction: column;
+    gap: var(--sm);
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .action-buttons .btn {
+    width: 100%;
+  }
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: var(--lg);
+}
+
+.status-card .status-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--xs);
+  margin: var(--md) 0;
+  padding: var(--md);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.status-card .status-details span {
+  display: flex;
+  justify-content: space-between;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--md);
+  margin-bottom: var(--md);
+}
+
+.form-group {
+  margin-bottom: 0;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--xs);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group select {
+  width: 100%;
+  padding: var(--sm) var(--md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--primary);
+  outline: none;

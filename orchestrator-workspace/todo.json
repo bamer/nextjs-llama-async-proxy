@@ -1,0 +1,8 @@
+{
+  "pipelineId": "init-2026-01-15-001",
+  "status": "INITIALIZING",
+  "workspace": "/home/bamer/nextjs-llama-async-proxy/orchestrator-workspace",
+  "tasks": [],
+  "createdAt": "2026-01-15T17:46:00.000Z",
+  "initializedBy": "orchestrator"
+}

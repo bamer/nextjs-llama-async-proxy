@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .section { border: 2px solid #000; margin: 10px; padding: 10px; background: #f0f0f0; }
+    .section-header { background: #ccc; padding: 10px; cursor: pointer; font-weight: bold; }
+    .model-section { border: 1px solid #999; margin: 5px 0; padding: 5px; background: white; }
+    .model-header { background: #eee; padding: 8px; cursor: pointer; }
+    .model-content { display: none; padding: 10px; background: #fafafa; }
+    .expanded .model-content { display: block; }
+    .log { background: #000; color: #0f0; padding: 10px; margin: 20px 0; height: 200px; overflow-y: auto; font-family: monospace; font-size: 11px; }
+    .log-item { margin: 2px 0; }
+  </style>
+</head>
+<body>
+  <h1>Model Click Test</h1>
+
+  <div id="models-section" class="section">
+    <div id="header-models" class="section-header">
+      ▶ Models Section
+    </div>
+    <div id="models-container">
+      <div class="model-section" data-model="gemma">
+        <div class="model-header" data-model-name="gemma">
+          📄 Gemma
+        </div>
+        <div class="model-content">Gemma details...</div>
+      </div>
+      <div class="model-section" data-model="mistral">
+        <div class="model-header" data-model-name="mistral">
+          📄 Mistral
+        </div>
+        <div class="model-content">Mistral details...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="log" id="log"></div>
+
+  <script>
+    const log = document.getElementById("log");
+    let eventCount = 0;
+
+    function logEvent(msg, color = "0f0") {
+      const item = document.createElement("div");
+      item.className = "log-item";
+      item.textContent = `[${++eventCount}] ${msg}`;
+      item.style.color = `#${color}`;
+      log.appendChild(item);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    // Models header handler (BUG scenario)
+    document.getElementById("header-models").onclick = (e) => {
+      logEvent(`Models header clicked. e.target = ${e.target.tagName}.${e.target.className}`, "f00");
+      
+      // Check if clicking on model header (my attempted fix)
+      if (e.target.closest(".model-header")) {
+        logEvent("❌ EARLY RETURN: clicked on model-header, should NOT close Models section", "ff0");
+        return;
+      }
+      
+      // This should close the Models section
+      const container = document.getElementById("models-container");
+      container.style.display = container.style.display === "none" ? "block" : "none";
+      logEvent("✓ Models section toggled", "0f0");
+    };
+
+    // Model header handlers
+    document.querySelectorAll(".model-header").forEach((header) => {
+      header.addEventListener("click", (e) => {
+        const modelName = header.dataset.modelName;
+        logEvent(`${modelName} header clicked`, "0ff");
+        
+        e.stopPropagation();
+        logEvent(`✓ stopPropagation() called for ${modelName}`, "0f0");
+        
+        // Toggle content
+        const section = header.parentElement;
+        section.classList.toggle("expanded");
+      });
+    });
+
+    logEvent("Ready - click on model headers or the Models section header");
+  </script>
+</body>
+</html>

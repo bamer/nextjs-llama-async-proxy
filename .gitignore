@@ -13,6 +13,17 @@
 # testing
 /coverage
 
+.opencode/*
+.beads/*
+.claude/*
+.tmp/*
+.github/*
+.vscode/*
+_bmad/**
+remote-debug-profile/*
+test-screenshoots/*
+screenshoots/*
+
 # next.js
 /.next/
 /out/

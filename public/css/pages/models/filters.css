@@ -1,0 +1,129 @@
+/* Filters & Toolbar - Compact */
+.models-page .filters {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 10px;
+  margin-bottom: var(--lg);
+  padding: 10px;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+}
+
+.models-page .filters input,
+.models-page .filters select {
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.models-page .filters input {
+  transition: border-color 0.15s ease;
+}
+
+.models-page .filters select {
+  transition: none;
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 20px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23666' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+
+.models-page .filters input::placeholder {
+  color: var(--text-secondary);
+}
+
+.models-page .filters input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.models-page .filters select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: none;
+}
+
+/* Toolbar */
+.models-page .toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: var(--lg);
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 10px;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+}
+
+.models-page .toolbar .btn {
+  flex-shrink: 0;
+}
+
+.router-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-left: auto;
+}
+
+.router-indicator.success {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+html.dark-mode .router-indicator.success {
+  background: rgba(16, 185, 129, 0.05);
+  color: #6ee7b7;
+}
+
+.router-indicator.default {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.router-indicator::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .models-page .filters {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .models-page .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .models-page .toolbar .btn {
+    width: 100%;
+  }
+
+  .router-indicator {
+    margin-left: 0;
+    justify-content: center;
+  }
+}
