@@ -15,7 +15,6 @@ class DashboardPage extends Component {
         Component.h(window.MetricsSection, {}),
         Component.h("div", { className: "router-health-row" }, [
           Component.h(window.RouterCardSection, {}),
-          Component.h(window.SystemHealth, {}),
         ]),
         Component.h(window.ChartsSection, {}),
         Component.h(window.GPUSection, {}),

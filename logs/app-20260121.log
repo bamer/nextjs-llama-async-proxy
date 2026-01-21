@@ -64,3 +64,6 @@
 [2026-01-21T01:13:12.495Z] [INFO] [server] Client disconnected: MfowCHfOZx63--p5AAAF, reason: transport close
 [2026-01-21T01:13:12.495Z] [WARN] [server] [SOCKET] Client MfowCHfOZx63--p5AAAF disconnected - transport closed (possible network issue or server load)
 [2026-01-21T01:13:12.623Z] [INFO] [server] Client connected: o0Em84wakeAm0jhPAAAH
+[2026-01-21T01:13:28.406Z] [INFO] [server] Client disconnected: o0Em84wakeAm0jhPAAAH, reason: transport close
+[2026-01-21T01:13:28.406Z] [WARN] [server] [SOCKET] Client o0Em84wakeAm0jhPAAAH disconnected - transport closed (possible network issue or server load)
+[2026-01-21T01:13:28.520Z] [INFO] [server] Client connected: t6uzb7o8Zv6pf38aAAAJ
