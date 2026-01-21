@@ -27,20 +27,17 @@ class LlamaRouterCard extends Component {
 		// Generate launch preview immediately from props.config (no socket request needed)
 		this._updateLaunchPreviewFromConfig();
 
-		// Subscribe to socket broadcasts instead of stateManager
-		this.unsubscribers = [
-			socketClient.on("llama:status", (data) => {
-				this.status = data || {};
-				this._updateUI();
-			}),
-			socketClient.on("router:status", (data) => {
-				this.routerStatus = data || {};
-				this._updateUI();
-			}),
-			socketClient.on("router:loading", (data) => {
-				this.routerLoading = !!data?.loading;
-				this._updateUI();
-			}),
+ 		// Subscribe to socket broadcasts instead of stateManager
+ 		this.unsubscribers = [
+ 			socketClient.on("llama:status", (data) => {
+ 				this.status = data || {};
+ 				this.routerStatus = data || {}; // Same data, routerStatus alias
+ 				this._updateUI();
+ 			}),
+ 			socketClient.on("router:loading", (data) => {
+ 				this.routerLoading = !!data?.loading;
+ 				this._updateUI();
+ 			}),
 			socketClient.on("presets:updated", (data) => {
 				// Update from broadcast - use props.presets
 				this.presets = data?.presets || [];
