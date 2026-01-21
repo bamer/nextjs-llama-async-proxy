@@ -257,17 +257,22 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
     args.push("--no-models-autoload");
   }
 
+  // Log the full spawn command for debugging
   console.log("[LLAMA] Spawning:", llamaBin, args.join(" "));
+  console.log("[LLAMA] Models dir (with spaces):", modelsDir);
   initLogFile();
   writeLog("INFO", `Spawning: ${llamaBin} ${args.join(" ")}`);
 
   try {
+    console.log("[LLAMA] Attempting to spawn llama-server process...");
     llamaServerProcess = spawn(llamaBin, args, {
       stdio: ["pipe", "pipe", "pipe"],
       env: { ...process.env }
     });
 
-    if (!llamaServerProcess.pid) throw new Error("Failed to spawn process");
+    if (!llamaServerProcess.pid) throw new Error("Failed to spawn process - pid is null");
+
+    console.log("[LLAMA] Process spawned successfully with PID:", llamaServerProcess.pid);
 
     stdoutListener = (data) => writeLog("INFO", data.toString().trim());
     stderrListener = (data) => writeLog("ERROR", data.toString().trim());
