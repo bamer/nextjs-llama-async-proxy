@@ -1,0 +1,301 @@
+/**
+ * Settings Page Styles
+ * Consistent styling matching dashboard with proper spacing and grid layouts
+ */
+
+/* Settings Page Layout */
+.settings-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg);
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg);
+}
+
+.settings-section h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+}
+
+.section-desc {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin: var(--sm) 0 0 0;
+}
+
+/* Card Sections */
+.settings-section .card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: var(--shadow-sm);
+  padding: var(--lg);
+  border: 1px solid var(--border-color);
+  transition: box-shadow var(--transition-fast);
+}
+
+.settings-section .card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.settings-section .card h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 var(--md) 0;
+  padding-bottom: var(--sm);
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Form Grid Layouts - 2 columns minimum */
+.form-grid,
+.paths-grid,
+.network-grid,
+.router-grid,
+.inference-grid,
+.logging-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--md);
+}
+
+/* Responsive - single column on small screens */
+@media (max-width: 640px) {
+  .form-grid,
+  .paths-grid,
+  .network-grid,
+  .router-grid,
+  .inference-grid,
+  .logging-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Form Groups */
+.settings-section .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--xs);
+}
+
+.settings-section .form-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.settings-section .form-group input,
+.settings-section .form-group select {
+  padding: var(--sm) var(--md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.settings-section .form-group input:focus,
+.settings-section .form-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+}
+
+.settings-section .form-group small {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Checkbox Group */
+.settings-section .checkbox-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--sm);
+}
+
+.settings-section .checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sm);
+  padding: var(--sm);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.settings-section .checkbox-label:hover {
+  background: var(--bg-hover);
+}
+
+.settings-section .checkbox-label input[type="checkbox"] {
+  margin: 3px 0 0 0;
+  width: auto;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.settings-section .checkbox-label span {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.settings-section .checkbox-label small {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Save Section */
+.settings-page .save-section {
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--lg);
+  border: 1px solid var(--border-color);
+}
+
+.save-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--sm) 0;
+}
+
+.save-section p {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0 0 var(--md) 0;
+}
+
+/* Config Export/Import */
+.config-export-import {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--lg);
+  border: 1px solid var(--border-color);
+}
+
+.config-export-import h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--sm) 0;
+}
+
+.config-export-import > p {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0 0 var(--md) 0;
+}
+
+.export-import-buttons {
+  display: flex;
+  gap: var(--md);
+  flex-wrap: wrap;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: var(--md);
+  flex-wrap: wrap;
+}
+
+.action-buttons .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sm);
+  padding: var(--sm) var(--lg);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+/* About Section */
+.settings-page .about-section {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--lg);
+  border: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.about-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--sm) 0;
+}
+
+.about-section p {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Highlight effect for changed values */
+.form-group input.changed,
+.form-group select.changed {
+  border-color: var(--warning);
+  background: var(--bg-warning-light);
+}
+
+/* Number input specific styling */
+.form-group input[type="number"] {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Section spacing improvements */
+.settings-section > h2 {
+  margin-bottom: var(--xs);
+}
+
+.settings-section > .section-desc {
+  margin-bottom: var(--md);
+}
+
+/* Dense mode for compact forms */
+.form-grid.dense,
+.paths-grid.dense,
+.network-grid.dense,
+.router-grid.dense,
+.inference-grid.dense,
+.logging-grid.dense {
+  gap: var(--sm);
+}
+
+/* Two column specific layouts */
+.paths-grid,
+.network-grid {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.inference-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 768px) {
+  .inference-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .inference-grid {
+    grid-template-columns: 1fr;
+  }
+}

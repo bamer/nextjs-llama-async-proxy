@@ -1,0 +1,98 @@
+.status-badge.running {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+html.dark-mode .status-badge.running {
+  background: #064e3b;
+  color: #86efac;
+}
+
+.status-badge.idle {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+html.dark-mode .status-badge.idle {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+.router-stats {
+  display: flex;
+  gap: var(--lg);
+  flex-wrap: wrap;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--sm) var(--md);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  min-width: 80px;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.stat-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Router Controls */
+.router-controls {
+  display: flex;
+  gap: var(--md);
+  margin-bottom: var(--md);
+  padding-bottom: var(--md);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.router-controls .btn {
+  flex: 1;
+  max-width: 150px;
+}
+
+/* Router Config Grid */
+.router-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--md);
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: var(--md) 0;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--md);
+  margin-bottom: var(--md);
+}
+
+.config-toggles {
+  display: flex;
+  gap: var(--lg);
+  flex-wrap: wrap;
+}
+
+/* Paths Grid */
+.paths-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--md);
+  margin-bottom: var(--md);
+}
+
+/* Defaults Grid */
+.defaults-grid {
+  display: grid;

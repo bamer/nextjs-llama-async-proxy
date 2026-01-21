@@ -1,95 +1,165 @@
-const { createServer } = require('http');
-const { parse } = require('url');
-const next = require('next');
-const { Server } = require('socket.io');
+import dotenv from "dotenv";
+import http from "http";
+import express from "express";
+import { Server } from "socket.io";
+import path from "path";
+import fs from "fs";
+import os from "os";
+import { fileURLToPath } from "url";
+import si from "systeminformation";
 
-const dev = process.env.NODE_ENV !== 'production';
-const hostname = 'localhost';
-const port = process.env.PORT || 3000;
+// Load environment variables from .env file
+dotenv.config();
 
-// Initialize Next.js
-const app = next({ dev, hostname, port });
-const handle = app.getRequestHandler();
+// Corrected import paths based on previous debugging
+import {
+  startMetricsCollection,
+  initializeLlamaMetricsScraper,
+  collectMetrics,
+  initializeLlamaMetricsScraper as initializeLlamaMetrics,
+} from "./server/metrics.js";
+import { setupGracefulShutdown } from "./server/shutdown.js";
+import { DB } from "./server/db/index.js";
+import { registerHandlers } from "./server/handlers.js";
+import { parseGgufMetadata } from "./server/gguf/metadata-parser.js";
+import { startLlamaServerRouter } from "./server/handlers/llama-router/index.js";
+import { autoStartLlamaServer } from "./server/server-startup.js";
+import { startGpuMonitor, stopGpuMonitor } from "./server/services/gpu-monitor.js";
+import { registerGpuHandlers } from "./server/handlers/gpu-handler.js";
 
-app.prepare().then(() => {
-  const httpServer = createServer((req, res) => {
-    const parsedUrl = parse(req.url, true);
-    handle(req, res, parsedUrl);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const PORT = 3000;
+
+// Rate limiting state
+const rateLimitStore = new Map();
+const RATE_LIMIT_WINDOW = 1000; // 1 second
+const MAX_EVENTS_PER_WINDOW = 10; // Max 10 events per second per socket
+
+function createRateLimiter() {
+  return (socket, next) => {
+    const clientId = socket.id;
+    const now = Date.now();
+
+    if (!rateLimitStore.has(clientId)) {
+      rateLimitStore.set(clientId, { count: 0, lastReset: now });
+    }
+
+    const clientData = rateLimitStore.get(clientId);
+
+    if (now - clientData.lastReset > RATE_LIMIT_WINDOW) {
+      clientData.count = 0;
+      clientData.lastReset = now;
+    }
+
+    clientData.count++;
+
+    if (clientData.count > MAX_EVENTS_PER_WINDOW) {
+      console.warn(`[RATE LIMIT] Client ${clientId} exceeded limit, disconnecting`);
+      return next(new Error("Rate limit exceeded"));
+    }
+
+    next();
+  };
+}
+
+async function main() {
+  const dataDir = path.join(process.cwd(), "data");
+  await fs.promises.mkdir(dataDir, { recursive: true });
+
+  const db = new DB();
+  const app = express();
+  const server = http.createServer(app);
+  const io = new Server(server, {
+    cors: {
+      origin:
+        process.env.NODE_ENV === "production"
+          ? ["https://yourdomain.com"]
+          : ["http://localhost:3000", "http://127.0.0.1:3000"],
+      methods: ["GET", "POST"],
+    },
+    path: "/llamaproxws",
+    transports: ["websocket"],
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    connectTimeout: 10000,
   });
 
-  const io = new Server(httpServer, {
-    path: '/api/websocket',
-    addTrailingSlash: false,
-  });
+  // Apply rate limiting middleware
+  io.use(createRateLimiter());
 
-  io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id);
-
-    // Send initial status
-    socket.emit('status', {
-      connected: true,
-      clients: io.engine.clientsCount,
-      uptime: process.uptime(),
-      timestamp: Date.now()
-    });
-
-    // Handle metrics request
-    socket.on('getMetrics', () => {
-      const metrics = {
-        activeModels: Math.floor(Math.random() * 5) + 1,
-        totalRequests: Math.floor(Math.random() * 500) + 100,
-        avgResponseTime: Math.floor(Math.random() * 300) + 100,
-        memoryUsage: Math.floor(Math.random() * 30) + 50,
-        cpuUsage: Math.floor(Math.random() * 50) + 20,
-        lastUpdated: new Date().toISOString()
-      };
-      socket.emit('metrics', { type: 'metrics', data: metrics, timestamp: Date.now() });
-    });
-
-    // Handle logs request
-    socket.on('getLogs', () => {
-      const logLevels = ['info', 'debug', 'warn', 'error'];
-      const logMessages = {
-        info: ['Model loaded successfully', 'WebSocket connection established', 'Request processed', 'New session started'],
-        debug: ['Processing request batch', 'Model parameters updated', 'Memory optimized', 'CPU usage monitored'],
-        warn: ['High memory usage detected', 'Slow response time', 'Model near capacity'],
-        error: ['Failed to load model', 'Connection timeout', 'Invalid request format']
-      };
-
-      const logs = [];
-      const now = Date.now();
-      const logCount = Math.floor(Math.random() * 6) + 5;
-      for (let i = 0; i < logCount; i++) {
-        const level = logLevels[Math.floor(Math.random() * logLevels.length)];
-        const messages = logMessages[level];
-        const message = messages[Math.floor(Math.random() * messages.length)];
-        logs.push({
-          level,
-          message,
-          timestamp: now - Math.floor(Math.random() * 300000)
-        });
-      }
-      socket.emit('logs', { type: 'logs', data: logs, timestamp: Date.now() });
-    });
-
-    // Periodic status updates
-    const interval = setInterval(() => {
-      socket.emit('status', {
-        connected: true,
-        clients: io.engine.clientsCount,
-        uptime: process.uptime(),
-        timestamp: Date.now()
-      });
-    }, 30000);
-
-    socket.on('disconnect', () => {
-      console.log('Client disconnected:', socket.id);
-      clearInterval(interval);
+  io.engine.on("connection_error", (err) => {
+    console.error("[WS] Connection error:", {
+      message: err.message,
+      code: err.code,
+      context: err.context,
     });
   });
 
-  httpServer.listen(port, (err) => {
-    if (err) throw err;
-    console.log(`> Ready on http://${hostname}:${port}`);
+  io.engine.on("connection", (socket) => {
+    console.log("[WS] New engine connection:", socket.id);
+    socket.on("disconnect", (reason) => {
+      rateLimitStore.delete(socket.id);
+      console.log(`[WS] Client ${socket.id} disconnected: ${reason}`);
+    });
   });
-});
+
+  // Initialize llama metrics scraper
+  initializeLlamaMetricsScraper(null, db);
+  console.log("[SERVER] Initialized Llama Metrics Scraper.");
+
+  console.log("[SERVER] Registering Socket.IO handlers...");
+  registerHandlers(io, db, parseGgufMetadata, initializeLlamaMetrics);
+  console.log("[SERVER] Socket.IO handlers registered.");
+  startMetricsCollection(io, db);
+  console.log("[SERVER] Started Metrics Collection.");
+
+  // Register GPU handlers on new connections
+  io.on("connection", (socket) => {
+    registerGpuHandlers(socket);
+  });
+  console.log("[SERVER] GPU handlers registered.");
+
+  // Start GPU monitoring
+  startGpuMonitor(io);
+  console.log("[SERVER] GPU monitoring started.");
+
+  app.use(express.static(path.join(__dirname, "public")));
+  // Serve Socket.IO client from a path that doesn't conflict with Socket.IO server
+  app.use(
+    "/js/socket.io",
+    express.static(path.join(__dirname, "node_modules", "socket.io", "client-dist"))
+  );
+
+  app.use((req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
+  });
+
+  server.listen(PORT, () => {
+    console.log("\n== Llama Async Proxy ==");
+    console.log(`> http://localhost:${PORT}`);
+    console.log(`> Socket.IO: ws://localhost:${PORT}/llamaproxws`);
+
+    autoStartLlamaServer({
+      db,
+      startLlamaServerRouter,
+      initializeLlamaMetrics,
+    });
+  });
+
+  setupGracefulShutdown(server);
+}
+
+const isMainModule =
+  process.argv[1] &&
+  (process.argv[1].includes("server.js") || process.argv[1].includes("bin/")) &&
+  !process.env.JEST_WORKER_ID;
+
+const inTestMode = process.env.NODE_ENV === "test" || process.env.JEST_WORKER_ID !== undefined;
+
+if (isMainModule && !inTestMode) {
+  main().catch((e) => {
+    console.error("Failed to start server:", e);
+    process.exit(1);
+  });
+}

@@ -1,0 +1,78 @@
+/**
+ * Main Styles - Import all CSS modules
+ */
+
+/* Core */
+@import "variables.css";
+@import "base.css";
+@import "layout/sidebar.css";
+@import "layout/header.css";
+
+/* Components */
+@import "components/cards.css";
+@import "components/stats.css";
+@import "components/buttons.css";
+@import "components/button-groups.css";
+@import "components/forms.css";
+@import "components/checkboxes.css";
+@import "components/tables.css";
+@import "components/info.css";
+@import "components/badges.css";
+@import "components/indicators.css";
+@import "components/gpu.css";
+@import "components/quick-wins.css";
+@import "components/toast.css";
+@import "components/command-palette.css";
+@import "components/llama-router-card.css";
+
+/* Dashboard */
+@import "pages/dashboard/stats.css";
+@import "pages/dashboard/charts.css";
+@import "pages/dashboard/health.css";
+
+/* Models */
+@import "pages/models/table.css";
+@import "pages/models/models-page.css";
+@import "pages/models/filters.css";
+
+/* Settings */
+@import "pages/settings/forms.css";
+@import "pages/settings/router.css";
+@import "pages/settings/settings-page.css";
+@import "pages/settings/threshold-settings.css";
+
+/* Logs */
+@import "pages/logs/viewer.css";
+
+/* Presets */
+@import "pages/presets/presets.css";
+@import "pages/presets/parameter-form.css";
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+  .main-content {
+    margin-left: 0;
+  }
+  .menu-btn {
+    display: block;
+  }
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .router-title h3 {
+    font-size: 1rem;
+  }
+}
