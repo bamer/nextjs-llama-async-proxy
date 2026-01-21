@@ -1,69 +1,43 @@
-[2026-01-21T00:14:44.951Z] [INFO] [test-source] Test message
-[2026-01-21T00:14:44.925Z] [INFO] [logger] Cleared 1 log files
-[2026-01-21T00:14:45.702Z] [INFO] [server] Test message
-[2026-01-21T00:14:45.702Z] [INFO] [server] Test message
-[2026-01-21T00:14:45.702Z] [INFO] [server] Test message
-[2026-01-21T00:14:45.702Z] [WARN] [server] [object Object]
-[2026-01-21T00:14:45.702Z] [ERROR] [server] 12345
-[2026-01-21T00:14:45.702Z] [INFO] [server] Test info message
-[2026-01-21T00:14:45.702Z] [ERROR] [server] Test error message
-[2026-01-21T00:14:45.702Z] [WARN] [server] Test warn message
-[2026-01-21T00:14:45.715Z] [DEBUG] [test-source] Debug message
-[2026-01-21T00:14:45.715Z] [CUSTOM-LEVEL] [custom-source] Test message
-[2026-01-21T00:14:45.715Z] [INFO] [server] Test message
-[2026-01-21T00:14:45.715Z] [INFO] [custom-source] Info message
-[2026-01-21T00:14:45.716Z] [INFO] [server] null
-[2026-01-21T00:14:45.716Z] [ERROR] [custom-source] Error message
-[2026-01-21T00:14:45.716Z] [ERROR] [server] undefined
-[2026-01-21T00:14:45.716Z] [WARN] [custom-source] Warn message
-[2026-01-21T00:14:45.716Z] [WARN] [server] true
-[2026-01-21T00:24:04.642Z] [INFO] [server] Client connected: KjIDhjbdXMwOgLorAAAD
-[2026-01-21T00:29:17.109Z] [INFO] [server] Client disconnected: KjIDhjbdXMwOgLorAAAD, reason: transport close
-[2026-01-21T00:29:17.109Z] [WARN] [server] [SOCKET] Client KjIDhjbdXMwOgLorAAAD disconnected - transport closed (possible network issue or server load)
-[2026-01-21T00:29:17.244Z] [INFO] [server] Client connected: UC3NeA7SG1Ktk9jqAAAF
-[2026-01-21T00:31:36.787Z] [INFO] [server] Client disconnected: UC3NeA7SG1Ktk9jqAAAF, reason: transport close
-[2026-01-21T00:31:36.787Z] [WARN] [server] [SOCKET] Client UC3NeA7SG1Ktk9jqAAAF disconnected - transport closed (possible network issue or server load)
-[2026-01-21T00:31:36.904Z] [INFO] [server] Client connected: O4KyEVMBftWx8YA3AAAH
-[2026-01-21T00:32:39.561Z] [INFO] [server] Client disconnected: O4KyEVMBftWx8YA3AAAH, reason: transport close
-[2026-01-21T00:32:39.561Z] [WARN] [server] [SOCKET] Client O4KyEVMBftWx8YA3AAAH disconnected - transport closed (possible network issue or server load)
-[2026-01-21T00:32:39.681Z] [INFO] [server] Client connected: aVuosZZHy16LIkxAAAAJ
-[2026-01-21T00:33:11.139Z] [INFO] [server] Client disconnected: aVuosZZHy16LIkxAAAAJ, reason: transport close
-[2026-01-21T00:33:11.140Z] [WARN] [server] [SOCKET] Client aVuosZZHy16LIkxAAAAJ disconnected - transport closed (possible network issue or server load)
-[2026-01-21T00:33:11.281Z] [INFO] [server] Client connected: GBNV85-KPyh3HzOuAAAL
-[2026-01-21T00:34:03.874Z] [INFO] [server] Client disconnected: GBNV85-KPyh3HzOuAAAL, reason: transport close
-[2026-01-21T00:34:03.874Z] [WARN] [server] [SOCKET] Client GBNV85-KPyh3HzOuAAAL disconnected - transport closed (possible network issue or server load)
-[2026-01-21T00:34:03.995Z] [INFO] [server] Client connected: p4t2xS7O0myc4BWzAAAN
-[2026-01-21T00:34:18.768Z] [INFO] [server] Client disconnected: p4t2xS7O0myc4BWzAAAN, reason: transport close
-[2026-01-21T00:34:18.768Z] [WARN] [server] [SOCKET] Client p4t2xS7O0myc4BWzAAAN disconnected - transport closed (possible network issue or server load)
-[2026-01-21T00:34:18.889Z] [INFO] [server] Client connected: 4yUv_b-RgJVK2numAAAP
-[2026-01-21T00:39:34.458Z] [INFO] [server] Client disconnected: 4yUv_b-RgJVK2numAAAP, reason: transport close
-[2026-01-21T00:39:34.458Z] [WARN] [server] [SOCKET] Client 4yUv_b-RgJVK2numAAAP disconnected - transport closed (possible network issue or server load)
-[2026-01-21T00:39:34.607Z] [INFO] [server] Client connected: JeHmdPc73mx_Z4eFAAAR
-[2026-01-21T00:42:08.424Z] [INFO] [server] Client disconnected: JeHmdPc73mx_Z4eFAAAR, reason: transport close
-[2026-01-21T00:42:08.424Z] [WARN] [server] [SOCKET] Client JeHmdPc73mx_Z4eFAAAR disconnected - transport closed (possible network issue or server load)
-[2026-01-21T00:42:08.566Z] [INFO] [server] Client connected: OAEGSX2OUg7HooKtAAAT
-[2026-01-21T00:42:32.965Z] [INFO] [server] Client disconnected: OAEGSX2OUg7HooKtAAAT, reason: transport close
-[2026-01-21T00:42:32.965Z] [WARN] [server] [SOCKET] Client OAEGSX2OUg7HooKtAAAT disconnected - transport closed (possible network issue or server load)
-[2026-01-21T00:42:33.111Z] [INFO] [server] Client connected: 8FMU3Jf4pRwf5hw_AAAV
-[2026-01-21T00:43:31.520Z] [INFO] [server] Client disconnected: 8FMU3Jf4pRwf5hw_AAAV, reason: transport close
-[2026-01-21T00:43:31.520Z] [WARN] [server] [SOCKET] Client 8FMU3Jf4pRwf5hw_AAAV disconnected - transport closed (possible network issue or server load)
-[2026-01-21T00:43:31.636Z] [INFO] [server] Client connected: ZOK19NAbcxwDIzZVAAAX
-[2026-01-21T00:43:38.924Z] [INFO] [server] Client disconnected: ZOK19NAbcxwDIzZVAAAX, reason: transport close
-[2026-01-21T00:43:38.924Z] [WARN] [server] [SOCKET] Client ZOK19NAbcxwDIzZVAAAX disconnected - transport closed (possible network issue or server load)
-[2026-01-21T00:43:39.058Z] [INFO] [server] Client connected: 29EWMzGVQNdBEn0YAAAZ
-[2026-01-21T00:55:14.594Z] [INFO] [server] Client disconnected: 29EWMzGVQNdBEn0YAAAZ, reason: transport close
-[2026-01-21T00:55:14.594Z] [WARN] [server] [SOCKET] Client 29EWMzGVQNdBEn0YAAAZ disconnected - transport closed (possible network issue or server load)
-[2026-01-21T00:55:14.714Z] [INFO] [server] Client connected: KdUvv7D1lsYxGY-dAAAb
-[2026-01-21T01:07:51.502Z] [INFO] [server] Client connected: Wh0d4emytv-_G0s1AAAB
-[2026-01-21T01:10:54.718Z] [INFO] [server] Client disconnected: Wh0d4emytv-_G0s1AAAB, reason: transport close
-[2026-01-21T01:10:54.719Z] [WARN] [server] [SOCKET] Client Wh0d4emytv-_G0s1AAAB disconnected - transport closed (possible network issue or server load)
-[2026-01-21T01:10:54.845Z] [INFO] [server] Client connected: 7fmn3gNvzBtm_TMsAAAD
-[2026-01-21T01:13:00.495Z] [INFO] [server] Client disconnected: 7fmn3gNvzBtm_TMsAAAD, reason: transport close
-[2026-01-21T01:13:00.495Z] [WARN] [server] [SOCKET] Client 7fmn3gNvzBtm_TMsAAAD disconnected - transport closed (possible network issue or server load)
-[2026-01-21T01:13:00.618Z] [INFO] [server] Client connected: MfowCHfOZx63--p5AAAF
-[2026-01-21T01:13:12.495Z] [INFO] [server] Client disconnected: MfowCHfOZx63--p5AAAF, reason: transport close
-[2026-01-21T01:13:12.495Z] [WARN] [server] [SOCKET] Client MfowCHfOZx63--p5AAAF disconnected - transport closed (possible network issue or server load)
-[2026-01-21T01:13:12.623Z] [INFO] [server] Client connected: o0Em84wakeAm0jhPAAAH
-[2026-01-21T01:13:28.406Z] [INFO] [server] Client disconnected: o0Em84wakeAm0jhPAAAH, reason: transport close
-[2026-01-21T01:13:28.406Z] [WARN] [server] [SOCKET] Client o0Em84wakeAm0jhPAAAH disconnected - transport closed (possible network issue or server load)
-[2026-01-21T01:13:28.520Z] [INFO] [server] Client connected: t6uzb7o8Zv6pf38aAAAJ
+[2026-01-21T03:07:30.876Z] [INFO] [logger] Cleared 1 log files
+[2026-01-21T03:07:31.345Z] [INFO] [test-source] Test message
+[2026-01-21T03:07:33.133Z] [DEBUG] [test-source] Debug message
+[2026-01-21T03:07:33.133Z] [CUSTOM-LEVEL] [custom-source] Test message
+[2026-01-21T03:07:33.133Z] [INFO] [server] Test message
+[2026-01-21T03:07:33.133Z] [INFO] [custom-source] Info message
+[2026-01-21T03:07:33.133Z] [INFO] [server] null
+[2026-01-21T03:07:33.133Z] [ERROR] [custom-source] Error message
+[2026-01-21T03:07:33.133Z] [ERROR] [server] undefined
+[2026-01-21T03:07:33.133Z] [WARN] [custom-source] Warn message
+[2026-01-21T03:07:33.133Z] [WARN] [server] true
+[2026-01-21T03:07:33.458Z] [INFO] [server] Test message
+[2026-01-21T03:07:33.458Z] [INFO] [server] Test message
+[2026-01-21T03:07:33.458Z] [INFO] [server] Test message
+[2026-01-21T03:07:33.458Z] [INFO] [server] Test info message
+[2026-01-21T03:07:33.458Z] [ERROR] [server] 12345
+[2026-01-21T03:07:33.458Z] [ERROR] [server] Test error message
+[2026-01-21T03:07:33.458Z] [WARN] [server] [object Object]
+[2026-01-21T03:07:33.458Z] [WARN] [server] Test warn message
+[2026-01-21T03:07:35.280Z] [INFO] [server] Client connected: 7jQuI0f0huq5VHMfAAB1
+[2026-01-21T03:07:35.926Z] [INFO] [server] Client disconnected: 7jQuI0f0huq5VHMfAAB1, reason: transport close
+[2026-01-21T03:07:35.926Z] [WARN] [server] [SOCKET] Client 7jQuI0f0huq5VHMfAAB1 disconnected - transport closed (possible network issue or server load)
+[2026-01-21T03:07:36.128Z] [INFO] [server] Client connected: RMQZY3QX-G-C12MyAAB3
+[2026-01-21T03:07:38.085Z] [INFO] [server] Client disconnected: RMQZY3QX-G-C12MyAAB3, reason: transport close
+[2026-01-21T03:07:38.085Z] [WARN] [server] [SOCKET] Client RMQZY3QX-G-C12MyAAB3 disconnected - transport closed (possible network issue or server load)
+[2026-01-21T03:07:38.229Z] [INFO] [server] Client connected: 1vQNApQjE4Po3hCEAAB5
+[2026-01-21T03:07:40.382Z] [INFO] [server] Client disconnected: 1vQNApQjE4Po3hCEAAB5, reason: transport close
+[2026-01-21T03:07:40.382Z] [WARN] [server] [SOCKET] Client 1vQNApQjE4Po3hCEAAB5 disconnected - transport closed (possible network issue or server load)
+[2026-01-21T03:07:40.572Z] [INFO] [server] Client connected: UPTuwadbtdOTTrSgAAB7
+[2026-01-21T03:07:42.502Z] [INFO] [server] Client disconnected: UPTuwadbtdOTTrSgAAB7, reason: transport close
+[2026-01-21T03:07:42.502Z] [WARN] [server] [SOCKET] Client UPTuwadbtdOTTrSgAAB7 disconnected - transport closed (possible network issue or server load)
+[2026-01-21T03:07:42.658Z] [INFO] [server] Client connected: KB2gxZPyPgGNycBuAAB9
+[2026-01-21T03:07:43.409Z] [INFO] [server] Client connected: hjb_5AkawVrftFLsAAB_
+[2026-01-21T03:07:43.988Z] [INFO] [server] Client disconnected: hjb_5AkawVrftFLsAAB_, reason: transport close
+[2026-01-21T03:07:43.988Z] [WARN] [server] [SOCKET] Client hjb_5AkawVrftFLsAAB_ disconnected - transport closed (possible network issue or server load)
+[2026-01-21T03:07:44.134Z] [INFO] [server] Client connected: VgHh8R00NKa-7p9xAACB
+[2026-01-21T03:07:45.309Z] [INFO] [server] Client disconnected: VgHh8R00NKa-7p9xAACB, reason: transport close
+[2026-01-21T03:07:45.310Z] [WARN] [server] [SOCKET] Client VgHh8R00NKa-7p9xAACB disconnected - transport closed (possible network issue or server load)
+[2026-01-21T03:07:45.499Z] [INFO] [server] Client connected: 9XXnojEwYlsIpoJAAACD
+[2026-01-21T03:07:46.562Z] [WARN] [server] [SOCKET] Client 9XXnojEwYlsIpoJAAACD disconnected - transport closed (possible network issue or server load)
+[2026-01-21T03:07:46.562Z] [INFO] [server] Client disconnected: 9XXnojEwYlsIpoJAAACD, reason: transport close
+[2026-01-21T03:07:46.578Z] [INFO] [server] Client disconnected: KB2gxZPyPgGNycBuAAB9, reason: transport close
+[2026-01-21T03:07:46.579Z] [WARN] [server] [SOCKET] Client KB2gxZPyPgGNycBuAAB9 disconnected - transport closed (possible network issue or server load)
