@@ -253,12 +253,17 @@ class GpuDetails extends Component {
     const memoryPercent = memoryTotal > 0 ? (memoryUsed / memoryTotal) * 100 : 0;
     const hasFullMetrics = gpu.vendor === "NVIDIA" || gpu.isRocmCapable;
 
+    // Power display: current / max
+    const powerDisplay = m.powerDrawWatts 
+      ? `${m.powerDrawWatts.toFixed(0)}w / ${m.powerLimitWatts ? m.powerLimitWatts.toFixed(0) + "w" : "--"}`
+      : "--";
+
     return `
       <div class="gpu-card-preview">
         <div class="gpu-preview-grid">
           <div class="gpu-preview-item">
             <span class="gpu-preview-label">Power</span>
-            <span class="gpu-preview-value">${m.powerDrawWatts ? m.powerDrawWatts.toFixed(0) + "w" : "--"}</span>
+            <span class="gpu-preview-value">${powerDisplay}</span>
           </div>
           <div class="gpu-preview-item">
             <span class="gpu-preview-label">Temp</span>
