@@ -178,7 +178,7 @@ class SettingsController {
     console.log("[SETTINGS] Starting router via socket...");
 
     try {
-      const response = await socketClient.request("router:start", {});
+      const response = await socketClient.request("llama:start", {});
       if (response.success) {
         showNotification("Router started successfully", "success");
       } else {

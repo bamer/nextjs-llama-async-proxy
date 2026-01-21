@@ -174,7 +174,7 @@ class DashboardController {
       console.log("[DEBUG] Starting router");
       showNotification("Starting router...", "info");
 
-      const response = await socketClient.request("router:start", {});
+      const response = await socketClient.request("llama:start", {});
 
       if (response.success) {
         showNotification("Router started successfully", "success");
