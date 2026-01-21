@@ -138,30 +138,38 @@ class LlamaRouterCard extends Component {
     const titleText = isRunning ? `Llama Router : ${displayPort}` : "Llama Router";
     this.setText(".header-title-text", titleText);
 
-    // 2. Glance Grid - Show loading or data (order: Prompt, Predicted, Models, Uptime)
+    // 2. Glance Grid - Show loading or data (order: Ctx Size, Parallel, Threads, Uptime)
     if (isLoading) {
-      this.setText("[data-glance=\"prompt-ts\"]", "...");
-      this.setText("[data-glance=\"pred-ts\"]", "...");
-      this.setText("[data-glance=\"models\"]", "...");
+      this.setText("[data-glance=\"n-ctx\"]", "...");
+      this.setText("[data-glance=\"n-parallel\"]", "...");
+      this.setText("[data-glance=\"n-threads\"]", "...");
       this.setText("[data-glance=\"uptime\"]", "...");
     } else {
-      // Prompt tokens/second
-      const promptTs = metrics.promptTokensSeconds || 0;
-      this.setText("[data-glance=\"prompt-ts\"]", `${promptTs.toFixed(1)} t/s`);
-
-      // Predicted tokens/second
-      const predTs = metrics.predictedTokensSeconds || 0;
-      this.setText("[data-glance=\"pred-ts\"]", `${predTs.toFixed(1)} t/s`);
-
-      // Models count
+      // Extract server config from loaded model args
       const modelsData = status.models || rs.models || [];
-      const loadedCount = Array.isArray(modelsData) ? modelsData.filter(m => m.status?.value === "loaded").length : 0;
-      const totalModels = Array.isArray(modelsData) ? modelsData.length : (this.props.models || []).length || 0;
-      this.setText("[data-glance=\"models\"]", `${loadedCount}/${totalModels}`);
+      let nCtx = "N/A";
+      let nParallel = "N/A";
+      let nThreads = "N/A";
+
+      if (Array.isArray(modelsData)) {
+        const loadedModel = modelsData.find(model => model.status?.value === "loaded");
+        if (loadedModel?.args) {
+          const argsStr = loadedModel.args.join(" ");
+          const ctxMatch = argsStr.match(/--ctx-size\s+(\d+)/);
+          const threadsMatch = argsStr.match(/--threads\s+(\d+)/);
+          const parallelMatch = argsStr.match(/--ubatch-size\s+(\d+)/);
+          nCtx = ctxMatch ? ctxMatch[1] : "N/A";
+          nThreads = threadsMatch ? threadsMatch[1] : "N/A";
+          nParallel = parallelMatch ? parallelMatch[1] : "N/A";
+        }
+      }
+
+      this.setText("[data-glance=\"n-ctx\"]", nCtx);
+      this.setText("[data-glance=\"n-parallel\"]", nParallel);
+      this.setText("[data-glance=\"n-threads\"]", nThreads);
 
       // Uptime - prefer metrics.uptime, fallback to status.uptime, then server start time
       let uptimeSeconds = metrics.uptime || status.uptime || 0;
-      // If still 0, calculate from server start time if available
       if (uptimeSeconds === 0 && status.startTime) {
         uptimeSeconds = Math.floor((Date.now() - status.startTime) / 1000);
       }
@@ -259,7 +267,7 @@ class LlamaRouterCard extends Component {
     const status = this.status || {};
     const modelsData = status.models || [];
 
-    // Get server config from loaded model's args (if available)
+    // Get server config from loaded model's args
     let nCtx = "N/A";
     let nParallel = "N/A";
     let nThreads = "N/A";
@@ -267,8 +275,6 @@ class LlamaRouterCard extends Component {
     if (Array.isArray(modelsData)) {
       const loadedModel = modelsData.find(model => model.status?.value === "loaded");
       if (loadedModel?.args) {
-        // Parse args to extract config values
-        // Args format: --ctx-size 4096 --threads 4 --batch-size 2048
         const argsStr = loadedModel.args.join(" ");
         const ctxMatch = argsStr.match(/--ctx-size\s+(\d+)/);
         const threadsMatch = argsStr.match(/--threads\s+(\d+)/);
@@ -280,22 +286,10 @@ class LlamaRouterCard extends Component {
       }
     }
 
-    this.setText("[data-metric=\"prompt-ts\"]", `${(m.promptTokensSeconds || 0).toFixed(2)} t/s`);
-    this.setText("[data-metric=\"pred-ts\"]", `${(m.predictedTokensSeconds || 0).toFixed(2)} t/s`);
-
-    // Remove VRAM display or show as N/A since user has it elsewhere
-    this.setText("[data-metric=\"vram-total\"]", "N/A");
-    this.setText("[data-metric=\"vram-used\"]", "N/A");
-
-    // Show server config from loaded model
+    // Update server config metrics (also shown in glance grid)
     this.setText("[data-metric=\"n-ctx\"]", nCtx);
     this.setText("[data-metric=\"n-parallel\"]", nParallel);
     this.setText("[data-metric=\"n-threads\"]", nThreads);
-
-    // Update glance metrics for real-time display
-    this.setText("[data-glance=\"prompt-ts\"]", `${(m.promptTokensSeconds || 0).toFixed(1)} t/s`);
-    const predTs = m.predictedTokensSeconds || 0;
-    this.setText("[data-glance=\"pred-ts\"]", `${predTs.toFixed(1)} t/s`);
 
     // Update uptime in glance grid
     let uptimeSeconds = m.uptime || status.uptime || 0;
@@ -387,11 +381,11 @@ class LlamaRouterCard extends Component {
           ])
         ])
       ]),
-      // Glance grid order: Prompt, Predicted, Models, Uptime (as requested)
+      // Glance grid order: Ctx Size, Parallel, Threads, Uptime
       Component.h("div", { className: "status-glance-grid" }, [
-        this._renderGlanceItem("Prompt", "prompt-ts"),
-        this._renderGlanceItem("Predicted", "pred-ts"),
-        this._renderGlanceItem("Models", "models"),
+        this._renderGlanceItem("Ctx Size", "n-ctx"),
+        this._renderGlanceItem("Parallel", "n-parallel"),
+        this._renderGlanceItem("Threads", "n-threads"),
         this._renderGlanceItem("Uptime", "uptime")
       ]),
       // Loaded Models Section - Shows currently loaded models
@@ -422,8 +416,6 @@ class LlamaRouterCard extends Component {
         Component.h("span", { className: "chevron" }, "▼"), " Detailed Metrics"
       ]),
       Component.h("div", { className: "detailed-metrics-area" }, [
-        this._renderMetricsGroup("Throughput", { "Prompt": "prompt-ts", "Predicted": "pred-ts" }),
-        this._renderMetricsGroup("Memory (VRAM)", { "Total": "vram-total", "Used": "vram-used" }),
         this._renderMetricsGroup("Server Config", { "Ctx Size": "n-ctx", "Parallel": "n-parallel", "Threads": "n-threads" })
       ])
     ]);
