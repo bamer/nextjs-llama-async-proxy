@@ -92,11 +92,35 @@ class LlamaRouterCard extends Component {
     }
 
     /**
-     * Generate launch command preview from current config
-     * Uses local generation from props.config (no socket needed)
+     * Request launch command preview from server
+     * Gets the actual command that will be executed based on server config
      */
-    _requestLaunchPreview() {
-        this._updateLaunchPreviewFromConfig();
+    async _requestLaunchPreview() {
+        try {
+            const response = await socketClient.request("llama:preview-command", {});
+            const commandTextarea = this.$("#launch-command-textarea");
+            const errorDiv = this.$(".launch-command-error");
+
+            if (response.success && response.data?.command) {
+                if (commandTextarea) {
+                    commandTextarea.value = response.data.command;
+                }
+                if (errorDiv) {
+                    errorDiv.style.display = "none";
+                }
+            } else {
+                // Fallback to local generation if server preview fails
+                this._updateLaunchPreviewFromConfig();
+                if (errorDiv) {
+                    errorDiv.textContent = response.data?.error || "Using local config preview";
+                    errorDiv.style.display = "block";
+                }
+            }
+        } catch (e) {
+            console.error("[LlamaRouterCard] Launch preview error:", e);
+            // Fallback to local generation
+            this._updateLaunchPreviewFromConfig();
+        }
     }
 
     destroy() {
