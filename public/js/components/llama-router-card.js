@@ -138,18 +138,48 @@ class LlamaRouterCard extends Component {
     const titleText = isRunning ? `Llama Router : ${displayPort}` : "Llama Router";
     this.setText(".header-title-text", titleText);
 
-    // 2. Glance Grid - Show loading or data (order: Ctx Size, Parallel, Threads, Uptime)
+    // 2. Glance Grid - Show loading or data (12 metrics in 3 rows)
     if (isLoading) {
+      // Row 1
+      this.setText("[data-glance=\"prompt-ts\"]", "...");
+      this.setText("[data-glance=\"pred-ts\"]", "...");
+      this.setText("[data-glance=\"models\"]", "...");
+      this.setText("[data-glance=\"uptime\"]", "...");
+      // Row 2
       this.setText("[data-glance=\"n-ctx\"]", "...");
       this.setText("[data-glance=\"n-parallel\"]", "...");
       this.setText("[data-glance=\"n-threads\"]", "...");
-      this.setText("[data-glance=\"uptime\"]", "...");
+      this.setText("[data-glance=\"total-slots\"]", "...");
+      // Row 3
+      this.setText("[data-glance=\"active-req\"]", "...");
+      this.setText("[data-glance=\"queued-req\"]", "...");
+      this.setText("[data-glance=\"kv-pct\"]", "...");
+      this.setText("[data-glance=\"kv-tokens\"]", "...");
     } else {
-      // Extract server config from loaded model args
+      // Row 1: Throughput & Status
+      const promptTs = metrics.promptTokensSeconds || 0;
+      this.setText("[data-glance=\"prompt-ts\"]", `${promptTs.toFixed(1)} t/s`);
+      const predTs = metrics.predictedTokensSeconds || 0;
+      this.setText("[data-glance=\"pred-ts\"]", `${predTs.toFixed(1)} t/s`);
+      
+      // Models count
       const modelsData = status.models || rs.models || [];
+      const loadedCount = Array.isArray(modelsData) ? modelsData.filter(m => m.status?.value === "loaded").length : 0;
+      const totalModels = Array.isArray(modelsData) ? modelsData.length : (this.props.models || []).length || 0;
+      this.setText("[data-glance=\"models\"]", `${loadedCount}/${totalModels}`);
+      
+      // Uptime
+      let uptimeSeconds = metrics.uptime || status.uptime || 0;
+      if (uptimeSeconds === 0 && status.startTime) {
+        uptimeSeconds = Math.floor((Date.now() - status.startTime) / 1000);
+      }
+      this.setText("[data-glance=\"uptime\"]", window.FormatUtils.formatUptime(uptimeSeconds));
+
+      // Row 2: Server Config (Ctx Size, Parallel, Threads, Slots)
       let nCtx = "N/A";
       let nParallel = "N/A";
       let nThreads = "N/A";
+      let totalSlots = rs.totalSlots || status.totalSlots || "N/A";
 
       if (Array.isArray(modelsData)) {
         const loadedModel = modelsData.find(model => model.status?.value === "loaded");
@@ -167,13 +197,18 @@ class LlamaRouterCard extends Component {
       this.setText("[data-glance=\"n-ctx\"]", nCtx);
       this.setText("[data-glance=\"n-parallel\"]", nParallel);
       this.setText("[data-glance=\"n-threads\"]", nThreads);
+      this.setText("[data-glance=\"total-slots\"]", String(totalSlots));
 
-      // Uptime - prefer metrics.uptime, fallback to status.uptime, then server start time
-      let uptimeSeconds = metrics.uptime || status.uptime || 0;
-      if (uptimeSeconds === 0 && status.startTime) {
-        uptimeSeconds = Math.floor((Date.now() - status.startTime) / 1000);
-      }
-      this.setText("[data-glance=\"uptime\"]", window.FormatUtils.formatUptime(uptimeSeconds));
+      // Row 3: Load & Resources (Active, Queued, KV %, KV Tokens)
+      const active = metrics.requestsProcessing || 0;
+      const queued = metrics.requestsDeferred || 0;
+      const kvPct = metrics.kvCacheUsageRatio ? `${(metrics.kvCacheUsageRatio * 100).toFixed(0)}%` : "N/A";
+      const kvTokens = metrics.kvCacheTokens ? window.FormatUtils.formatNumber(metrics.kvCacheTokens) : "N/A";
+
+      this.setText("[data-glance=\"active-req\"]", String(active));
+      this.setText("[data-glance=\"queued-req\"]", String(queued));
+      this.setText("[data-glance=\"kv-pct\"]", kvPct);
+      this.setText("[data-glance=\"kv-tokens\"]", kvTokens);
     }
 
     // 3. Toggle Button - disabled during loading
@@ -385,12 +420,23 @@ class LlamaRouterCard extends Component {
           ])
         ])
       ]),
-      // Glance grid order: Ctx Size, Parallel, Threads, Uptime
+      // Glance grid - 3 rows of 4 metrics (12 total)
       Component.h("div", { className: "status-glance-grid" }, [
+        // Row 1: Throughput & Status
+        this._renderGlanceItem("Prompt", "prompt-ts"),
+        this._renderGlanceItem("Predicted", "pred-ts"),
+        this._renderGlanceItem("Models", "models"),
+        this._renderGlanceItem("Uptime", "uptime"),
+        // Row 2: Server Config
         this._renderGlanceItem("Ctx Size", "n-ctx"),
         this._renderGlanceItem("Parallel", "n-parallel"),
         this._renderGlanceItem("Threads", "n-threads"),
-        this._renderGlanceItem("Uptime", "uptime")
+        this._renderGlanceItem("Slots", "total-slots"),
+        // Row 3: Load & Resources
+        this._renderGlanceItem("Active", "active-req"),
+        this._renderGlanceItem("Queued", "queued-req"),
+        this._renderGlanceItem("KV %", "kv-pct"),
+        this._renderGlanceItem("KV Tok", "kv-tokens"),
       ]),
       // Loaded Models Section - Shows currently loaded models
       Component.h("div", { className: "loaded-models-section" }, [

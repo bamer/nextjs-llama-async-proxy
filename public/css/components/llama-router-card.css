@@ -66,7 +66,7 @@
   border: 1px solid var(--border-color);
 }
 
-/* At a Glance Grid - 4 columns for Ctx Size, Parallel, Threads, Uptime */
+/* At a Glance Grid - 4 columns for 3 rows (12 metrics total) */
 .status-glance-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
