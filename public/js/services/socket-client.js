@@ -16,6 +16,8 @@ class SocketClient {
     };
     this.handlers = new Map();
     this._connected = false;
+    this._handshakeReceived = false;
+    this._handshakeResolve = null;
   }
 
   /**
@@ -32,7 +34,26 @@ class SocketClient {
     this.socket.on("connect", () => {
       console.log("[SocketClient] Connected! ID:", this.socket.id);
       this._connected = true;
+      this._handshakeReceived = false;
       this._emit("socket:connected", { id: this.socket.id });
+
+      // Verify path by waiting for server handshake
+      this._waitForHandshake(5000).then(() => {
+        console.log("[SocketClient] Handshake verified - path:", this.options.path);
+      }).catch((err) => {
+        console.warn("[SocketClient] Handshake timeout:", err.message);
+      });
+    });
+
+    // Handle handshake from server (confirms correct path)
+    this.socket.on("handshake", (data) => {
+      console.log("[SocketClient] Handshake received:", data);
+      this._handshakeReceived = true;
+      this._emit("socket:handshake", data);
+      if (this._handshakeResolve) {
+        this._handshakeResolve(data);
+        this._handshakeResolve = null;
+      }
     });
 
     this.socket.on("disconnect", (reason) => {
@@ -177,6 +198,32 @@ class SocketClient {
   }
 
   /**
+   * Wait for handshake from server (verifies correct path)
+   */
+  async _waitForHandshake(timeout = 5000) {
+    if (this._handshakeReceived) {
+      return Promise.resolve(true);
+    }
+
+    return new Promise((resolve, reject) => {
+      const startTime = Date.now();
+      this._handshakeResolve = resolve;
+
+      const check = () => {
+        if (this._handshakeReceived) {
+          resolve(true);
+        } else if (Date.now() - startTime > timeout) {
+          this._handshakeResolve = null;
+          reject(new Error("Handshake timeout"));
+        } else {
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    });
+  }
+
+  /**
    * Emit event without waiting for response
    */
   emit(event, data = {}) {
@@ -191,6 +238,20 @@ class SocketClient {
    */
   get isConnected() {
     return this._connected && this.socket?.connected;
+  }
+
+  /**
+   * Get configured path
+   */
+  get path() {
+    return this.options.path;
+  }
+
+  /**
+   * Check if handshake was received
+   */
+  get handshakeReceived() {
+    return this._handshakeReceived;
   }
 
   /**

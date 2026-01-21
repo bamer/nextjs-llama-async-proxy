@@ -1,0 +1,101 @@
+diff --git a/public/js/services/socket-client.js b/public/js/services/socket-client.js
+index 1234567..abcdefg 100644
+--- a/public/js/services/socket-client.js
++++ b/public/js/services/socket-client.js
+@@ -8,6 +8,8 @@ class SocketClient {
+     this.options = {
+       path: "/llamaproxws",
+       transports: ["websocket"],
+       reconnection: true,
+       reconnectionAttempts: 5,
+       reconnectionDelay: 1000,
+     };
+     this.handlers = new Map();
+     this._connected = false;
++    this._handshakeReceived = false;
++    this._handshakeResolve = null;
+   }
+
+   connect() {
+@@ -31,6 +33,18 @@ class SocketClient {
+       this._connected = true;
+       this._emit("socket:connected", { id: this.socket.id });
+
++      // Verify path by waiting for server handshake
++      this._waitForHandshake(5000).then(() => {
++        console.log("[SocketClient] Handshake verified - path:", this.options.path);
++      }).catch((err) => {
++        console.warn("[SocketClient] Handshake timeout:", err.message);
++      });
++    });
++
++    // Handle handshake from server (confirms correct path)
++    this.socket.on("handshake", (data) => {
++      console.log("[SocketClient] Handshake received:", data);
++      this._handshakeReceived = true;
++      this._emit("socket:handshake", data);
++      if (this._handshakeResolve) {
++        this._handshakeResolve(data);
++        this._handshakeResolve = null;
++      }
+     });
+   }
+
+@@ -158,6 +172,28 @@ class SocketClient {
+     });
+   }
+
++  async _waitForHandshake(timeout = 5000) {
++    if (this._handshakeReceived) {
++      return Promise.resolve(true);
++    }
++
++    return new Promise((resolve, reject) => {
++      const startTime = Date.now();
++      this._handshakeResolve = resolve;
++
++      const check = () => {
++        if (this._handshakeReceived) {
++          resolve(true);
++        } else if (Date.now() - startTime > timeout) {
++          this._handshakeResolve = null;
++          reject(new Error("Handshake timeout"));
++        } else {
++          setTimeout(check, 100);
++        }
++      };
++      check();
++    });
++  }
++
+   get isConnected() {
+     return this._connected && this.socket?.connected;
+   }
++
++  get path() {
++    return this.options.path;
++  }
++
++  get handshakeReceived() {
++    return this._handshakeReceived;
++  }
+ }
+
+diff --git a/public/js/utils/metrics-parser.js b/public/js/utils/metrics-parser.js
+index 1234567..abcdefg 100644
+--- a/public/js/utils/metrics-parser.js
++++ b/public/js/utils/metrics-parser.js
+@@ -161,7 +161,14 @@ class MetricsParser {
+  * Fetches metrics from llama-server /metrics endpoint
+  */
+
++/**
++ * Metrics Scraper - DEPRECATED
++ *
++ * WARNING: This class uses HTTP polling which violates the Socket.IO-First architecture.
++ * It should NOT be used in production. Use Socket.IO subscriptions instead.
++ */
+ class MetricsScraper {
+   constructor(serverUrl, pollIntervalMs = 2000) {
++    console.warn("[MetricsScraper] DEPRECATED - Use Socket.IO subscriptions instead");
+     this.serverUrl = serverUrl;
