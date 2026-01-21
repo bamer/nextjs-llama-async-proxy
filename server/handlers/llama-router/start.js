@@ -70,6 +70,100 @@ export function getServerUrl() { return llamaServerUrl; }
 export function getServerProcess() { return llamaServerProcess; }
 export function getLastLaunchCommand() { return lastLaunchCommand; }
 
+import { getDb } from "../../db/db-base.js";
+
+/**
+ * Generate a preview of the launch command based on current config.
+ * This allows users to see the command BEFORE starting the router.
+ * @param {Object} db - Database instance (raw or wrapper)
+ * @param {string} modelsDir - Optional models directory override
+ * @param {Object} options - Optional override settings
+ * @returns {Object} { success, command, error }
+ */
+export function generateLaunchPreview(db, modelsDir = null, options = {}) {
+  const database = getDb(db);
+  if (!database) {
+    return { success: false, command: null, error: "Database not available" };
+  }
+
+  try {
+    const routerConfig = getUnifiedConfig(database);
+
+    // Handle both wrapped and raw database for getMeta
+    const settings = database.getMeta
+      ? database.getMeta("user_settings") || {}
+      : {};
+
+    // Get llama-server path
+    const { path: llamaBin, found } = getLlamaServerPath(routerConfig);
+
+    if (!found) {
+      return {
+        success: false,
+        command: null,
+        error: `llama-server not found at: ${llamaBin}`,
+        pathSearched: llamaBin
+      };
+    }
+
+    const configuredPort = routerConfig.port || 8080;
+
+    // Build args same as startLlamaServerRouter
+    const args = [
+      "--port", String(configuredPort),
+      "--host", routerConfig.host || "127.0.0.1",
+      "--threads", String(options.threads || routerConfig.threads || 4),
+      "--ctx-size", String(options.ctxSize || routerConfig.ctxSize || 4096),
+      "--models-max", String(options.maxModels || routerConfig.maxModelsLoaded || 4),
+    ];
+
+    // Add --metrics flag if enabled
+    if (routerConfig.metricsEnabled) {
+      args.push("--metrics");
+    }
+
+    const isPresetFile = modelsDir && modelsDir.endsWith(".ini");
+    const baseModelsPath = routerConfig.modelsPath || "./models";
+
+    if (isPresetFile) {
+      args.push("--models-preset", modelsDir);
+      args.push("--models-dir", baseModelsPath);
+    } else {
+      const dirToUse = modelsDir || baseModelsPath;
+      args.push("--models-dir", dirToUse);
+    }
+
+    if (settings.autoLoadModels === false || options.noAutoLoad) {
+      args.push("--no-models-autoload");
+    }
+
+    // Build copy-pasteable command
+    const escapedArgs = args.map(arg => {
+      if (arg.includes(" ")) {
+        return `"${arg}"`;
+      }
+      return arg;
+    });
+    const command = `${llamaBin} ${escapedArgs.join(" ")}`;
+
+    return {
+      success: true,
+      command: command,
+      args: args,
+      llamaBin: llamaBin,
+      port: configuredPort,
+      host: routerConfig.host || "127.0.0.1"
+    };
+  } catch (error) {
+    console.error("[LLAMA] Error generating launch preview:", error);
+    return {
+      success: false,
+      command: null,
+      error: error.message
+    };
+  }
+}
+
 /**
  * Get llama-server uptime in seconds.
  * @returns {number} Uptime in seconds, or 0 if server not started

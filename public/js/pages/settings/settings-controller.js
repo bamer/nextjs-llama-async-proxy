@@ -118,7 +118,8 @@ class SettingsController {
         const errors = [];
         if (!routerResult.success) errors.push(routerResult.error);
         if (!loggingResult.success) errors.push(loggingResult.error);
-        showNotification(`Save failed: ${  errors.join(", ")}`, "error");
+        console.error("[SETTINGS] Save failed:", errors.join(", "));
+        showNotification(`Save failed: ${errors.join(", ")}`, "error");
       }
     } catch (e) {
       console.error("[SETTINGS] Save error:", e);

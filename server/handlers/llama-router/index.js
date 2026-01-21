@@ -9,6 +9,7 @@ export {
   getServerUrl,
   getServerProcess,
   setNotificationCallback,
+  generateLaunchPreview,
 } from "./start.js";
 export { stopLlamaServerRouter } from "./stop.js";
 export { getLlamaStatus, loadModel, unloadModel, detectLlamaServer } from "./status.js";

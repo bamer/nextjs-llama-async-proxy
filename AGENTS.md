@@ -12,11 +12,12 @@ This document provides guidelines for Agentic coding assistants working in this 
 - **Database**: SQLite with better-sqlite3
 - **Architecture**: Simplify to pure Event-Driven DOM Updates
 - **event-driven patterns**
-- **Communications FrontEnd BackEnd**: **Complete Socket.IO -First and Only**
+- **Communications FrontEnd BackEnd**: **Complete Socket.IO -First and Only** 
 - **Define stable Socket.IO contracts** - clear in/out on server
 - **Real-time**: Socket.IO for live updates
 - **LLM Backend**: llama.cpp server in **router mode** (multi-model support) with presets file .ini.
 - **timeout and set-interval** crappy pattern are !!!! FORBIDDEN !!!!!.
+
 
 ## Llama.cpp Router Mode
 
@@ -389,7 +390,6 @@ socketClient.on("models:updated", (data) => {
 ```
 
 **stateManager is now used only for caching**:
-
 ```javascript
 // Get cached state
 const models = stateManager.get("models") || [];
@@ -412,7 +412,6 @@ The project follows a strict Socket.IO-first architecture. These rules are **abs
 All UI updates MUST be driven by Socket.IO events. The following patterns are **FORBIDDEN**:
 
 **❌ FORBIDDEN - Timer-based polling:**
-
 ```javascript
 // NEVER use setInterval or setTimeout for state updates
 setInterval(() => {
@@ -425,7 +424,6 @@ setTimeout(() => {
 ```
 
 **❌ FORBIDDEN - HTTP polling:**
-
 ```javascript
 // NEVER use fetch/XHR for state updates
 setInterval(async () => {
@@ -440,7 +438,6 @@ function pollGpuMetrics() {
 ```
 
 **❌ FORBIDDEN - Direct DOM manipulation outside Component helpers:**
-
 ```javascript
 // NEVER manipulate DOM directly without using Component helpers
 document.getElementById("cpu-usage").textContent = "75%";
@@ -449,7 +446,6 @@ document.body.insertAdjacentHTML("beforeend", htmlString);
 ```
 
 **✅ REQUIRED - Event-driven updates via Socket.IO broadcasts:**
-
 ```javascript
 // Listen for broadcasts - NO polling
 onMount() {
@@ -477,7 +473,6 @@ _updateUI() {
 All frontend-backend communication MUST use Socket.IO exclusively:
 
 **❌ FORBIDDEN - REST API endpoints:**
-
 ```javascript
 // NEVER create or use REST endpoints for state
 app.get("/api/models", handler);
@@ -485,7 +480,6 @@ app.post("/api/models/load", handler);
 ```
 
 **❌ FORBIDDEN - Direct fetch/XHR calls:**
-
 ```javascript
 // NEVER use fetch or XHR directly
 const response = await fetch("/api/status");
@@ -497,7 +491,6 @@ xhr.send();
 ```
 
 **❌ FORBIDDEN - Direct HTTP calls to llama-server:**
-
 ```javascript
 // NEVER call llama-server HTTP endpoints directly
 const response = await fetch("http://localhost:8080/completion", {
@@ -507,7 +500,6 @@ const response = await fetch("http://localhost:8080/completion", {
 ```
 
 **✅ REQUIRED - Socket.IO for all communication:**
-
 ```javascript
 // Use socketClient.request() for requests
 const response = await socketClient.request("models:list", {});
@@ -564,90 +556,9 @@ class MetricsComponent extends Component {
 }
 ```
 
----
-
-## Centralized Cadence Architecture
-
-The project uses a centralized cadence pattern for efficient real-time updates.
-
-### Old Pattern (FORBIDDEN)
-
-The old architecture used per-socket timers, which caused issues:
-
-```javascript
-// ❌ FORBIDDEN - Per-socket timers
-socket.on("connect", () => {
-  // Each client starts its own timer
-  this.metricsInterval = setInterval(() => {
-    socket.emit("metrics:get", {}, (response) => {
-      this.updateMetrics(response.data);
-    });
-  }, 2000);
-
-  this.gpuInterval = setInterval(() => {
-    socket.emit("gpu:get", {}, (response) => {
-      this.updateGPU(response.data);
-    });
-  }, 5000);
-});
-```
-
-Problems with the old pattern:
-
-- Duplicate work across clients
-- Race conditions between timers
-- No coordination between clients
-- Wasted resources when clients are idle
 
 ### New Pattern (REQUIRED)
 
-The new architecture uses a single global cadence timer on the server:
-
-```javascript
-// ✅ REQUIRED - Single centralized cadence
-let cadenceSubscribers = new Set();
-let cadenceInterval = null;
-const CADENCE_INTERVAL = 2000;
-
-function getCadenceSubscribers() {
-  return cadenceSubscribers;
-}
-
-function startCadenceIfNeeded() {
-  if (cadenceSubscribers.size > 0 && !cadenceInterval) {
-    cadenceInterval = setInterval(() => {
-      broadcastMetrics();
-      broadcastGPU();
-    }, CADENCE_INTERVAL);
-    console.log("[CADENCE] Started global cadence timer");
-  }
-}
-
-function stopCadenceIfNeeded() {
-  if (cadenceSubscribers.size === 0 && cadenceInterval) {
-    clearInterval(cadenceInterval);
-    cadenceInterval = null;
-    console.log("[CADENCE] Stopped global cadence timer (no subscribers)");
-  }
-}
-
-socket.on("metrics:subscribe", () => {
-  cadenceSubscribers.add(socket.id);
-  startCadenceIfNeeded();
-  console.log("[CADENCE] Subscriber added:", { count: cadenceSubscribers.size });
-});
-
-socket.on("metrics:unsubscribe", () => {
-  cadenceSubscribers.delete(socket.id);
-  stopCadenceIfNeeded();
-  console.log("[CADENCE] Subscriber removed:", { count: cadenceSubscribers.size });
-});
-
-function broadcastMetrics() {
-  const metrics = collectMetrics();
-  io.emit("metrics:updated", { metrics, timestamp: Date.now() });
-}
-```
 
 ### Subscription API
 
@@ -837,7 +748,6 @@ class MetricsDashboard extends Component {
 ### Forbidden Patterns
 
 **❌ FORBIDDEN - setInterval polling:**
-
 ```javascript
 // NEVER use setInterval for state updates
 onMount() {
@@ -850,7 +760,6 @@ onMount() {
 ```
 
 **❌ FORBIDDEN - setTimeout polling:**
-
 ```javascript
 // NEVER use recursive setTimeout
 onMount() {
@@ -865,7 +774,6 @@ onMount() {
 ```
 
 **❌ FORBIDDEN - HTTP polling:**
-
 ```javascript
 // NEVER poll via HTTP
 onMount() {
@@ -878,7 +786,6 @@ onMount() {
 ```
 
 **❌ FORBIDDEN - Direct socket emit in timer:**
-
 ```javascript
 // NEVER use setInterval with socket.emit
 onMount() {
@@ -891,7 +798,6 @@ onMount() {
 ```
 
 **❌ FORBIDDEN - Missing subscription cleanup:**
-
 ```javascript
 // NEVER forget to cleanup
 onMount() {
@@ -1052,6 +958,26 @@ The following patterns are explicitly forbidden:
 - **NO memory leaks** - Always cleanup subscriptions and listeners
 - **NO missing subscription cleanup** - Unsubscribe in destroy()
 - **NO direct DOM manipulation** - Use Component helper methods
+
+### Error Logging Patterns
+
+- **ALL errors MUST be logged to console.error** - Never show error in toast without logging
+- **NO console.log for errors** - Use console.error for all errors and warnings
+- **Pattern**: When catching errors or receiving error responses:
+  ```javascript
+  // ❌ FORBIDDEN - Only show toast, no console output
+  showNotification(`Save failed: ${response.error}`, "error");
+
+  // ✅ REQUIRED - Log to console.error AND show toast
+  console.error("[MODULE] Operation failed:", response.error);
+  showNotification(`Save failed: ${response.error}`, "error");
+
+  // ✅ REQUIRED - Catch blocks must log
+  } catch (e) {
+    console.error("[MODULE] Error:", e);
+    showNotification(`Error: ${e.message}`, "error");
+  }
+  ```
 
 ### Example of Forbidden Code
 
@@ -1449,7 +1375,6 @@ async loadData() {
 **Remember**: This is a Vanilla JavaScript project. Do not use React, TypeScript, or any bundlers unless explicitly requested.
 
 **Golden Rules Summary**:
-
 1. **Pure Event-Driven DOM Updates** - All UI updates via Socket.IO broadcasts
 2. **Socket.IO-First and Only** - No REST, fetch, or HTTP polling
 3. **Centralized Cadence** - Single server timer, not per-client timers
@@ -1516,7 +1441,6 @@ socketClient.on("models:updated", (data) => {
 ```
 
 **stateManager is now used only for caching**:
-
 ```javascript
 // Get cached state
 const models = stateManager.get("models") || [];
@@ -1767,7 +1691,6 @@ async loadModels() {
   this.models = response.data || [];
 }
 ```
-
 ```
 
 ## Event-Driven Logging
@@ -2023,8 +1946,8 @@ async loadData() {
 
 **Remember**: This is a Vanilla JavaScript project. Do not use React, TypeScript, or any bundlers unless explicitly requested.
 
-**Golden Rules Summary**:
 
+**Golden Rules Summary**:
 1. **Pure Event-Driven DOM Updates** - All UI updates via Socket.IO broadcasts
 2. **Socket.IO-First and Only** - No REST, fetch, or HTTP polling
 3. **Decentralized And decoupled autonomous atomic components** - one component == work everywhere
@@ -2040,20 +1963,17 @@ async loadData() {
 2. **Run quality gates** (if code changed) - Tests, linters, builds
 3. **Update issue status** - Close finished work, update in-progress items
 4. **PUSH TO REMOTE** - This is MANDATORY:
-
    ```bash
    git pull --rebase
    bd sync
    git push
    git status  # MUST show "up to date with origin"
    ```
-
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
 7. **Hand off** - Provide context for next session
 
 **CRITICAL RULES:**
-
 - Work is NOT complete until `git push` succeeds
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push

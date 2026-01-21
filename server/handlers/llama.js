@@ -8,6 +8,7 @@ import {
   startLlamaServerRouter,
   stopLlamaServerRouter,
   getLlamaStatus,
+  generateLaunchPreview,
 } from "./llama-router/index.js";
 import { getUnifiedConfig } from "../db/unified-config.js";
 import path from "path";
@@ -201,6 +202,43 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
       ok(socket, "llama:config:result", { settings }, id);
     } catch (e) {
       err(socket, "llama:config:result", e.message, id);
+    }
+  });
+
+  /**
+   * Preview launch command without starting the router
+   * Allows users to see what command will be executed before starting
+   */
+  socket.on("llama:preview-command", (req, ack) => {
+    const id = req?.requestId || Date.now();
+    console.log(`[LLAMA-HANDLERS] Received llama:preview-command from client ${socket.id}`);
+
+    try {
+      const modelsDir = req?.modelsDir || null;
+      const options = req?.options || {};
+
+      const preview = generateLaunchPreview(db, modelsDir, options);
+
+      if (preview.success) {
+        console.log(`[LLAMA-HANDLERS] Generated preview command:`, preview.command);
+        ok(socket, "llama:preview-command:result", {
+          success: true,
+          command: preview.command,
+          llamaBin: preview.llamaBin,
+          port: preview.port,
+          host: preview.host,
+        }, id, ack);
+      } else {
+        console.warn(`[LLAMA-HANDLERS] Failed to generate preview:`, preview.error);
+        ok(socket, "llama:preview-command:result", {
+          success: false,
+          error: preview.error,
+          pathSearched: preview.pathSearched,
+        }, id, ack);
+      }
+    } catch (e) {
+      console.error("[LLAMA-HANDLERS] Error generating launch preview:", e.message);
+      err(socket, "llama:preview-command:result", e.message, id, ack);
     }
   });
 

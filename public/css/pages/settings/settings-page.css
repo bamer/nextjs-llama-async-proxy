@@ -299,3 +299,40 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Launch command styles - used by LlamaRouterCard */
+.launch-command-textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: var(--md);
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Consolas", monospace;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--code-bg, #1e1e2e);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  resize: vertical;
+  tab-size: 2;
+}
+
+.launch-command-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+}
+
+.launch-command-textarea::placeholder {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.launch-command-error {
+  margin-top: var(--md);
+  padding: var(--sm) var(--md);
+  background: var(--bg-error-light, #fdeaea);
+  border: 1px solid var(--error, #e74c3c);
+  border-radius: var(--radius);
+  color: var(--error, #e74c3c);
+  font-size: 0.875rem;
+}

@@ -68,6 +68,7 @@ class ThresholdSettings extends Component {
           stack: new Error().stack,
           timestamp: new Date().toISOString()
         });
+        console.error("[ThresholdSettings] Save failed:", response.error);
         showNotification(`Save failed: ${response.error}`, "error");
       }
     } catch (e) {

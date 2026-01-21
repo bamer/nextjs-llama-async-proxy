@@ -24,6 +24,8 @@ class LlamaRouterCard extends Component {
     if (this._el) this._el._component = this;
     this._updateUI();
     this._updatePresetSelect();
+    // Generate launch preview immediately from props.config (no socket request needed)
+    this._updateLaunchPreviewFromConfig();
 
     // Subscribe to socket broadcasts instead of stateManager
     this.unsubscribers = [
@@ -45,11 +47,79 @@ class LlamaRouterCard extends Component {
         this.props.presets = this.presets;
         this._updatePresetSelect();
       }),
+      socketClient.on("routerConfig:updated", () => {
+        // Refresh launch preview when config changes
+        this._requestLaunchPreview();
+      }),
     ];
+
+    // Request launch preview (works whether router is running or not)
+    // But also try to generate from config immediately
+    this._requestLaunchPreview();
 
     // Only set up scraper once (not on every mount/re-render)
     if (window.MetricsScraper && !this._scraper) {
       this._setupScraper();
+    }
+  }
+
+  /**
+   * Generate launch command preview locally from props.config
+   * No socket request needed - shows immediately on page load
+   */
+  _updateLaunchPreviewFromConfig() {
+    const config = this.props?.config || {};
+    const commandTextarea = this.$("#launch-command-textarea");
+    const errorDiv = this.$(".launch-command-error");
+
+    // Build command from config
+    const port = config.port || 8080;
+    const host = config.host || "127.0.0.1";
+    const threads = config.threads || 4;
+    const ctxSize = config.ctxSize || 4096;
+    const maxModels = config.maxModelsLoaded || 4;
+    const modelsPath = config.modelsPath || "/path/to/models";
+    const serverPath = config.serverPath || "llama-server";
+
+    const command = `${serverPath} --port ${port} --host ${host} --threads ${threads} --ctx-size ${ctxSize} --models-max ${maxModels} --models-dir "${modelsPath}"`;
+
+    if (commandTextarea) {
+      commandTextarea.value = command;
+    }
+    if (errorDiv) {
+      errorDiv.style.display = "none";
+    }
+  }
+
+  /**
+   * Request launch command preview from server
+   * Works even when router is not running
+   */
+  async _requestLaunchPreview() {
+    try {
+      const response = await socketClient.request("llama:preview-command", {});
+      const commandTextarea = this.$("#launch-command-textarea");
+      const errorDiv = this.$(".launch-command-error");
+
+      if (response.success && response.command) {
+        if (commandTextarea) {
+          commandTextarea.value = response.command;
+        }
+        if (errorDiv) {
+          errorDiv.style.display = "none";
+        }
+      } else {
+        if (commandTextarea) {
+          commandTextarea.value = "";
+        }
+        if (errorDiv) {
+          errorDiv.textContent = response.error || "Unable to generate preview";
+          errorDiv.style.display = "block";
+        }
+        console.error("[LlamaRouterCard] Launch preview failed:", response.error);
+      }
+    } catch (e) {
+      console.error("[LlamaRouterCard] Launch preview error:", e);
     }
   }
 
@@ -499,13 +569,14 @@ class LlamaRouterCard extends Component {
               className: "launch-command-textarea",
               id: "launch-command-textarea",
               readonly: true,
-              rows: 4
-            }, "Run router to see launch command"),
+              rows: 4,
+            }, "Configure router settings and save to see preview command"),
             Component.h("button", {
               className: "btn btn-secondary btn-copy-command",
               "data-action": "copy-launch-command"
             }, "Copy")
-          ])
+          ]),
+          Component.h("div", { className: "launch-command-error" }, "")
         ])
       ])
     ]);

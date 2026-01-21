@@ -15,4 +15,5 @@ onlyBuiltDependencies:
   - s
   - t
   - u
+  - unrs-resolver
   - v

@@ -95,8 +95,47 @@ class SettingsPage extends Component {
         console.log("[DEBUG] presets:updated received");
         this.presets = data.presets || [];
         this._updatePresetsDropdown();
-      })
+      }),
+
+      // FIX: Explicitly load presets on mount to ensure they are available immediately
+      // This mirrors the Dashboard page behavior which uses presets:list + broadcast
+      this._loadPresets();
     );
+  }
+
+  /**
+       * Load presets from server - called on mount and when presets change
+       */
+  _loadPresets() {
+    console.log("[DEBUG] SettingsPage._loadPresets() called");
+    socketClient.request("presets:list", {}).then((response) => {
+      if (response.success) {
+        console.log("[DEBUG] presets:list response received:", {
+          count: response.data?.presets?.length || 0
+        });
+        this.presets = response.data?.presets || [];
+        this._updatePresetsDropdown();
+        // Also trigger LlamaRouterCard preset update if mounted
+        this._triggerLlamaRouterPresetUpdate();
+      } else {
+        console.warn("[DEBUG] presets:list failed:", response.error);
+      }
+    }).catch((error) => {
+      console.error("[DEBUG] presets:list error:", error);
+    });
+  }
+
+  /**
+       * Trigger preset update on LlamaRouterCard component if mounted
+       */
+  _triggerLlamaRouterPresetUpdate() {
+    const routerCard = this._el?.querySelector(".llama-router-status-card");
+    if (routerCard && routerCard._component) {
+      routerCard._component.props.presets = this.presets;
+      if (typeof routerCard._component._updatePresetSelect === "function") {
+        routerCard._component._updatePresetSelect();
+      }
+    }
   }
 
   /**
@@ -417,6 +456,7 @@ class SettingsPage extends Component {
             routerStatus: this.routerStatus,
             models: this.models || [],
             presets: this.presets,
+            config: this.routerConfig,
             onAction: (action, data) => {
               console.log("[DEBUG] settings-page onAction:", { action, data });
               const controller = this._el?._component?._controller;

@@ -13,9 +13,97 @@ class RouterCardSection extends Component {
       models: [],
       presets: [],
       metrics: null,
+      config: null,
       initialized: false,
     };
     this.unsubscribers = [];
+  }
+
+  onMount() {
+    // Self-subscribe to all needed updates - no parent coordination needed
+    this.unsubscribers.push(
+      socketClient.on("llama:status", (data) => {
+        this._onLlamaStatusChange(data.status);
+      }),
+      socketClient.on("router:status", (data) => {
+        this._onRouterStatusChange(data);
+      }),
+      socketClient.on("models:updated", (data) => {
+        this._onModelsChange(data.models);
+      }),
+      socketClient.on("presets:updated", (data) => {
+        this._onPresetsChange(data.presets);
+      }),
+      socketClient.on("metrics:updated", (data) => {
+        this._onMetricsChange(data.metrics);
+      }),
+      socketClient.on("routerConfig:updated", (data) => {
+        if (data.config) {
+          this.state.config = { ...this.state.config, ...data.config };
+          this._updateUI();
+        }
+      })
+    );
+
+    // Load initial data
+    this._loadInitialData();
+  }
+
+  async _loadInitialData() {
+    try {
+      const [statusRes, modelsRes, presetsRes, metricsRes, configRes] = await Promise.all([
+        socketClient.request("llama:status", {}),
+        socketClient.request("models:list", {}),
+        socketClient.request("presets:list", {}),
+        socketClient.request("metrics:get", {}),
+        socketClient.request("config:get", {}),
+      ]);
+
+      if (statusRes.success) {
+        this.state.llamaStatus = statusRes.data;
+        this.state.routerStatus = statusRes.data;
+      }
+      if (modelsRes.success) {
+        this.state.models = modelsRes.data || [];
+      }
+      if (presetsRes.success) {
+        this.state.presets = presetsRes.data || [];
+      }
+      if (metricsRes.success) {
+        this.state.metrics = metricsRes.data || null;
+      }
+      if (configRes.success && configRes.data) {
+        this.state.config = configRes.data;
+      } else {
+        // Default config if not available
+        this.state.config = {
+          port: 8080,
+          host: "127.0.0.1",
+          threads: 4,
+          ctxSize: 4096,
+          maxModelsLoaded: 4,
+          modelsPath: "/path/to/models",
+          serverPath: "llama-server",
+        };
+      }
+
+      this.state.initialized = true;
+      this._updateUI();
+    } catch (error) {
+      console.error("[RouterCardSection] Failed to load initial data:", error);
+      // Use default config on error
+      this.state.config = {
+        port: 8080,
+        host: "127.0.0.1",
+        threads: 4,
+        ctxSize: 4096,
+        maxModelsLoaded: 4,
+        modelsPath: "/path/to/models",
+        serverPath: "llama-server",
+      };
+      this.state.initialized = true;
+      this._updateUI();
+    }
   }
 
   onMount() {
@@ -160,6 +248,7 @@ class RouterCardSection extends Component {
           models: this.state.models,
           presets: this.state.presets,
           metrics: this.state.metrics,
+          config: this.state.config,
           onAction: (action, data) => this._handleRouterAction(action, data),
         }),
       ]
