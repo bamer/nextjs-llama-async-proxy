@@ -1,15 +1,20 @@
-[2026-01-20T23:46:31.536Z] [INFO] [logger] Cleared 1 log files
-[2026-01-20T23:49:06.888Z] [INFO] [server] Client connected: FfaAokRT3q8UDVSHAAAB
-[2026-01-20T23:49:16.880Z] [INFO] [server] Client disconnected: FfaAokRT3q8UDVSHAAAB, reason: client namespace disconnect
-[2026-01-20T23:49:33.040Z] [INFO] [server] Client connected: 2fseWWrrTzSYbN4tAAAD
-[2026-01-20T23:49:41.035Z] [INFO] [server] Client disconnected: 2fseWWrrTzSYbN4tAAAD, reason: client namespace disconnect
-[2026-01-20T23:50:31.528Z] [INFO] [server] Client connected: ryJ4Gc9UX8Sk5xeBAAAF
-[2026-01-20T23:50:31.535Z] [INFO] [server] Client connected: m7RU2QD4701YQmiaAAAH
-[2026-01-20T23:50:31.544Z] [INFO] [server] Client connected: Kwhy_3AkL4PUceXAAAAJ
-[2026-01-20T23:51:15.322Z] [INFO] [server] Client disconnected: Kwhy_3AkL4PUceXAAAAJ, reason: transport close
-[2026-01-20T23:51:15.322Z] [WARN] [server] [SOCKET] Client Kwhy_3AkL4PUceXAAAAJ disconnected - transport closed (possible network issue or server load)
-[2026-01-20T23:51:15.322Z] [INFO] [server] Client disconnected: ryJ4Gc9UX8Sk5xeBAAAF, reason: transport error
-[2026-01-20T23:51:15.322Z] [WARN] [server] [SOCKET] Client ryJ4Gc9UX8Sk5xeBAAAF disconnected - transport error
-[2026-01-20T23:51:15.322Z] [INFO] [server] Client disconnected: m7RU2QD4701YQmiaAAAH, reason: transport error
-[2026-01-20T23:51:15.322Z] [WARN] [server] [SOCKET] Client m7RU2QD4701YQmiaAAAH disconnected - transport error
-[2026-01-20T23:51:15.386Z] [INFO] [server] Client connected: hobadb8CDtQ9xjURAAAL
+[2026-01-21T00:14:44.951Z] [INFO] [test-source] Test message
+[2026-01-21T00:14:44.925Z] [INFO] [logger] Cleared 1 log files
+[2026-01-21T00:14:45.702Z] [INFO] [server] Test message
+[2026-01-21T00:14:45.702Z] [INFO] [server] Test message
+[2026-01-21T00:14:45.702Z] [INFO] [server] Test message
+[2026-01-21T00:14:45.702Z] [WARN] [server] [object Object]
+[2026-01-21T00:14:45.702Z] [ERROR] [server] 12345
+[2026-01-21T00:14:45.702Z] [INFO] [server] Test info message
+[2026-01-21T00:14:45.702Z] [ERROR] [server] Test error message
+[2026-01-21T00:14:45.702Z] [WARN] [server] Test warn message
+[2026-01-21T00:14:45.715Z] [DEBUG] [test-source] Debug message
+[2026-01-21T00:14:45.715Z] [CUSTOM-LEVEL] [custom-source] Test message
+[2026-01-21T00:14:45.715Z] [INFO] [server] Test message
+[2026-01-21T00:14:45.715Z] [INFO] [custom-source] Info message
+[2026-01-21T00:14:45.716Z] [INFO] [server] null
+[2026-01-21T00:14:45.716Z] [ERROR] [custom-source] Error message
+[2026-01-21T00:14:45.716Z] [ERROR] [server] undefined
+[2026-01-21T00:14:45.716Z] [WARN] [custom-source] Warn message
+[2026-01-21T00:14:45.716Z] [WARN] [server] true
+[2026-01-21T00:24:04.642Z] [INFO] [server] Client connected: KjIDhjbdXMwOgLorAAAD

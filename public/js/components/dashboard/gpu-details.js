@@ -264,38 +264,26 @@ class GpuDetails extends Component {
             <div class="gpu-preview-bar gpu-usage">
               <div class="gpu-preview-bar-fill" style="width: ${Math.min(usage, 100)}%"></div>
             </div>
-          ` : ""}
+          ` : `
+            <div class="gpu-preview-bar gpu-usage">
+              <div class="gpu-preview-bar-fill" style="width: 0%"></div>
+            </div>
+          `}
           <div class="gpu-preview-item">
             <span class="gpu-preview-label">Memory</span>
             <span class="gpu-preview-value">${this._formatBytes(memoryUsed)} / ${this._formatBytes(memoryTotal)}</span>
           </div>
-          ${!hasFullMetrics ? `
-            <div class="gpu-preview-item">
-              <span class="gpu-preview-label">Type</span>
-              <span class="gpu-preview-value info">${gpu.isIntegrated ? "Integrated" : "Discrete"}</span>
-            </div>
-          ` : ""}
-          ${m.temperatureCelsius ? `
-            <div class="gpu-preview-item">
-              <span class="gpu-preview-label">Temp</span>
-              <span class="gpu-preview-value ${m.temperatureCelsius > 85 ? "danger" : ""}">${m.temperatureCelsius.toFixed(0)}°C</span>
-            </div>
-          ` : ""}
-          ${m.powerDrawWatts ? `
-            <div class="gpu-preview-item">
-              <span class="gpu-preview-label">Power</span>
-              <span class="gpu-preview-value">${m.powerDrawWatts.toFixed(1)} W</span>
-            </div>
-          ` : ""}
           <div class="gpu-preview-bar memory">
             <div class="gpu-preview-bar-fill" style="width: ${Math.min(memoryPercent, 100)}%"></div>
           </div>
-          ${!hasFullMetrics ? `
-            <div class="gpu-preview-item full-width">
-              <span class="gpu-preview-label">Monitoring</span>
-              <span class="gpu-preview-value inactive">${gpu.isIntegrated ? "Integrated - Real-time metrics limited" : "Discrete - Install drivers for metrics"}</span>
-            </div>
-          ` : ""}
+          <div class="gpu-preview-item">
+            <span class="gpu-preview-label">Temp</span>
+            <span class="gpu-preview-value ${m.temperatureCelsius > 85 ? "danger" : ""}">${m.temperatureCelsius ? m.temperatureCelsius.toFixed(0) + "°C" : "--"}</span>
+          </div>
+          <div class="gpu-preview-item">
+            <span class="gpu-preview-label">Power</span>
+            <span class="gpu-preview-value">${m.powerDrawWatts ? m.powerDrawWatts.toFixed(1) + " W" : "--"}</span>
+          </div>
         </div>
       </div>
     `;
