@@ -66,14 +66,22 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
           noAutoLoad: !settings.autoLoadModels,
         });
 
-        console.log(`[LLAMA-HANDLERS] startLlamaServerRouter result:`, result);
-        if (result.success) {
-          console.log(`[LLAMA-HANDLERS] Router started successfully on port ${result.port}`);
-          if (initializeLlamaMetrics) {
-            initializeLlamaMetrics(result.port);
-          }
-          ok(socket, "llama:start:result", { success: true, ...result }, id, ack);
-        } else {
+         console.log(`[LLAMA-HANDLERS] startLlamaServerRouter result:`, result);
+         if (result.success) {
+           console.log(`[LLAMA-HANDLERS] Router started successfully on port ${result.port}`);
+           if (initializeLlamaMetrics) {
+             initializeLlamaMetrics(result.port);
+           }
+           // Emit status to ALL clients (including sender) so UI updates immediately
+           io.emit("llama:status", {
+             status: "running",
+             port: result.port,
+             url: result.url,
+             mode: "router",
+             timestamp: Date.now(),
+           });
+           ok(socket, "llama:start:result", { success: true, ...result }, id, ack);
+         } else {
           console.error(`[LLAMA-HANDLERS] Failed to start router:`, result.error);
           err(socket, "llama:start:result", result.error, id, ack);
         }
@@ -107,12 +115,20 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
          usePreset: true,
        });
 
-       if (result.success) {
-         if (initializeLlamaMetrics) {
-           initializeLlamaMetrics(result.port);
-         }
-         ok(socket, "llama:start-with-preset:result", { success: true, ...result }, id, ack);
-       } else {
+        if (result.success) {
+          if (initializeLlamaMetrics) {
+            initializeLlamaMetrics(result.port);
+          }
+          // Emit status to ALL clients so UI updates immediately
+          io.emit("llama:status", {
+            status: "running",
+            port: result.port,
+            url: result.url,
+            mode: "router",
+            timestamp: Date.now(),
+          });
+          ok(socket, "llama:start-with-preset:result", { success: true, ...result }, id, ack);
+        } else {
          err(socket, "llama:start-with-preset:result", result.error, id, ack);
        }
      } catch (e) {
@@ -153,12 +169,20 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
          noAutoLoad: !settings.autoLoadModels,
        });
 
-      if (result.success) {
-        if (initializeLlamaMetrics) {
-          initializeLlamaMetrics(result.port);
-        }
-        ok(socket, "llama:restart:result", { success: true, ...result }, id);
-      } else {
+       if (result.success) {
+         if (initializeLlamaMetrics) {
+           initializeLlamaMetrics(result.port);
+         }
+         // Emit status to ALL clients so UI updates immediately
+         io.emit("llama:status", {
+           status: "running",
+           port: result.port,
+           url: result.url,
+           mode: "router",
+           timestamp: Date.now(),
+         });
+         ok(socket, "llama:restart:result", { success: true, ...result }, id);
+       } else {
         err(socket, "llama:restart:result", result.error, id);
       }
     } catch (e) {
@@ -173,15 +197,16 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
     socket.on("llama:stop", async (req) => {
     const id = req?.requestId || Date.now();
     console.log(`[LLAMA-HANDLERS] Received llama:stop from client ${socket.id}`);
-    try {
-      const result = await stopLlamaServerRouter();
-      // Explicitly emit status update to ensure all clients see "idle" (broadcast)
-      socket.broadcast.emit("llama:status", {
-        status: "idle",
-        port: null,
-        url: null,
-        mode: "router",
-        timestamp: Date.now(),
+     try {
+       const result = await stopLlamaServerRouter();
+       // Emit status to ALL clients so UI updates immediately
+       io.emit("llama:status", {
+         status: "idle",
+         port: null,
+         url: null,
+         mode: "router",
+         timestamp: Date.now(),
+       });
       });
       socket.broadcast.emit("models:router-stopped", {});
       ok(socket, "llama:stop:result", result, id);
