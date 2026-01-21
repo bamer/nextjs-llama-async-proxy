@@ -1,0 +1,20 @@
+[2026-01-07T05:07:29+07:00] taskId=JANITOR taskType=cleanup pathDeleted=/home/bamer/nextjs-llama-async-proxy/public/js/pages/settings.js reason=Replaced_by_modularized_version
+[2026-01-15T17:00:00.000Z] pipelineId=jsdoc-2026-01-15-001 status=IN_PROGRESS phase=WAVE_1 tasksTotal=16 tasksCompleted=0
+[2026-01-15T17:30:00.000Z] pipelineId=jsdoc-2026-01-15-001 status=COMPLETED phase=WAVE_3 tasksTotal=16 tasksCompleted=16
+[2026-01-15T17:30:00.000Z] taskId=T-101 status=COMPLETION functions=103 summary="State Management modules documented"
+[2026-01-15T17:30:00.000Z] taskId=T-102 status=COMPLETION functions=39 summary="Router & Component Base documented"
+[2026-01-15T17:30:00.000Z] taskId=T-103 status=COMPLETION functions=21 summary="Dashboard Charts documented"
+[2026-01-15T17:30:00.000Z] taskId=T-104 status=COMPLETION functions=12 summary="Dashboard UI documented"
+[2026-01-15T17:30:00.000Z] taskId=T-105 status=COMPLETION functions=14 summary="Layout Components documented"
+[2026-01-15T17:30:00.000Z] taskId=T-106 status=COMPLETION functions=44 summary="UI Components documented"
+[2026-01-15T17:30:00.000Z] taskId=T-107 status=COMPLETION functions=90 summary="Presets Components documented"
+[2026-01-15T17:30:00.000Z] taskId=T-108 status=COMPLETION functions=35 summary="Models & Llama-Server documented"
+[2026-01-15T17:30:00.000Z] taskId=T-201 status=COMPLETION functions=31 summary="Llama Router Handlers documented"
+[2026-01-15T17:30:00.000Z] taskId=T-202 status=COMPLETION functions=17 summary="Models Handlers documented"
+[2026-01-15T17:30:00.000Z] taskId=T-203 status=COMPLETION functions=57 summary="General Handlers documented"
+[2026-01-15T17:30:00.000Z] taskId=T-301 status=COMPLETION functions=52 summary="DB Repositories documented"
+[2026-01-15T17:30:00.000Z] taskId=T-401 status=COMPLETION functions=1 summary="GGUF Parsers already documented"
+[2026-01-15T17:30:00.000Z] taskId=T-501 status=COMPLETION functions=87 summary="Frontend Pages documented"
+[2026-01-15T17:30:00.000Z] taskId=T-502 status=COMPLETION functions=12 summary="Frontend Services documented"
+[2026-01-15T17:30:00.000Z] taskId=T-601 status=COMPLETION functions=19 summary="Server Core Utilities documented"
+[2026-01-15T17:30:00.000Z] taskId=T-602 status=COMPLETION functions=15 summary="OT & Collab modules documented"

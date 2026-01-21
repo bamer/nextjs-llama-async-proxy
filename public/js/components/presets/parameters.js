@@ -1,0 +1,797 @@
+/**
+ * Parameter Definitions for llama.cpp
+ * Organized by category with validation rules and metadata
+ */
+
+const PARAMETER_CATEGORIES = {
+  modelSettings: {
+    name: "Model Settings",
+    description: "Core model loading and configuration options",
+    parameters: {
+      model: {
+        label: "Model Path",
+        type: "text",
+        description: "Path to the model GGUF file",
+        placeholder: "/path/to/model.gguf",
+        cliFlag: "--model",
+        required: true,
+        validation: {
+          type: "string",
+          required: true,
+          minLength: 1,
+        },
+      },
+      "ctx-size": {
+        label: "Context Size",
+        type: "number",
+        description: "Context window size for the model",
+        default: 2048,
+        min: 1,
+        max: 131072,
+        step: 1,
+        cliFlag: "-c, --ctx-size",
+        unit: "tokens",
+        validation: {
+          type: "number",
+          min: 1,
+          max: 131072,
+        },
+      },
+      "ctx-checkpoints": {
+        label: "Context Checkpoints",
+        type: "number",
+        description: "Number of KV cache checkpoints to save",
+        default: 0,
+        min: 0,
+        step: 1,
+        cliFlag: "--ctx-checkpoints",
+        validation: {
+          type: "number",
+          min: 0,
+        },
+      },
+      "n-gpu-layers": {
+        label: "GPU Layers",
+        type: "number",
+        description: "Number of layers to offload to GPU",
+        default: 0,
+        min: 0,
+        max: 1000,
+        step: 1,
+        cliFlag: "-ngl, --n-gpu-layers",
+        validation: {
+          type: "number",
+          min: 0,
+          max: 1000,
+        },
+      },
+      "split-mode": {
+        label: "Split Mode",
+        type: "select",
+        description: "How to split tensors across GPUs",
+        options: [
+          { value: "none", label: "None (single GPU)" },
+          { value: "layer", label: "Layer (split by layers)" },
+          { value: "row", label: "Row (split by rows)" },
+        ],
+        default: "layer",
+        cliFlag: "--split-mode",
+        validation: {
+          type: "enum",
+          values: ["none", "layer", "row"],
+        },
+      },
+      "tensor-split": {
+        label: "Tensor Split",
+        type: "text",
+        description: "Ratio for splitting tensors across GPUs (e.g., 1,1 or 0.5,0.5)",
+        placeholder: "0.5,0.5,0.5,0.5",
+        cliFlag: "--tensor-split",
+        validation: {
+          type: "tensorSplit",
+        },
+      },
+      "main-gpu": {
+        label: "Main GPU",
+        type: "number",
+        description: "Main GPU for sequential processing",
+        default: 0,
+        min: 0,
+        step: 1,
+        cliFlag: "--main-gpu",
+        validation: {
+          type: "number",
+          min: 0,
+        },
+      },
+      "load-on-startup": {
+        label: "Load on Startup",
+        type: "boolean",
+        description: "Load model when server starts",
+        default: false,
+        cliFlag: "--load-on-startup",
+        validation: {
+          type: "boolean",
+        },
+      },
+    },
+  },
+  performance: {
+    name: "Performance",
+    description: "Thread and memory settings for optimal performance",
+    parameters: {
+      threads: {
+        label: "Threads",
+        type: "number",
+        description: "Number of threads to use (0 = auto-detect)",
+        default: 0,
+        min: 0,
+        max: 128,
+        step: 1,
+        cliFlag: "-t, --threads",
+        validation: {
+          type: "number",
+          min: 0,
+          max: 128,
+        },
+      },
+      batch: {
+        label: "Batch Size",
+        type: "number",
+        description: "Maximum batch size for prompt processing",
+        default: 512,
+        min: 1,
+        max: 8192,
+        step: 1,
+        cliFlag: "-b, --batch",
+        validation: {
+          type: "number",
+          min: 1,
+          max: 8192,
+        },
+      },
+      ubatch: {
+        label: "Micro Batch Size",
+        type: "number",
+        description: "Micro batch size for continuous batching",
+        default: 512,
+        min: 1,
+        max: 8192,
+        step: 1,
+        cliFlag: "--ubatch",
+        validation: {
+          type: "number",
+          min: 1,
+          max: 8192,
+        },
+      },
+      "cache-ram": {
+        label: "KV Cache RAM",
+        type: "number",
+        description: "Maximum KV cache RAM to use (0 = unlimited)",
+        default: 0,
+        min: 0,
+        step: 1,
+        cliFlag: "--cache-ram",
+        unit: "MB",
+        validation: {
+          type: "number",
+          min: 0,
+        },
+      },
+      "threads-http": {
+        label: "HTTP Threads",
+        type: "number",
+        description: "Number of threads for HTTP server",
+        default: 1,
+        min: 1,
+        max: 32,
+        step: 1,
+        cliFlag: "--threads-http",
+        validation: {
+          type: "number",
+          min: 1,
+          max: 32,
+        },
+      },
+    },
+  },
+  sampling: {
+    name: "Sampling",
+    description: "Text generation and sampling parameters",
+    parameters: {
+      temp: {
+        label: "Temperature",
+        type: "number",
+        description: "Controls randomness in generation (0 = deterministic)",
+        default: 0.7,
+        min: 0,
+        max: 2.0,
+        step: 0.01,
+        cliFlag: "--temp",
+        validation: {
+          type: "number",
+          min: 0,
+          max: 2.0,
+        },
+      },
+      seed: {
+        label: "Random Seed",
+        type: "number",
+        description: "Random seed for reproducibility (-1 = random)",
+        default: -1,
+        min: -1,
+        max: 2147483647,
+        step: 1,
+        cliFlag: "-s, --seed",
+        validation: {
+          type: "number",
+          min: -1,
+          max: 2147483647,
+        },
+      },
+      "top-p": {
+        label: "Top-P",
+        type: "number",
+        description: " nucleus sampling threshold (0-1)",
+        default: 0.95,
+        min: 0,
+        max: 1,
+        step: 0.01,
+        cliFlag: "-topp, --top-p",
+        validation: {
+          type: "number",
+          min: 0,
+          max: 1,
+        },
+      },
+      "top-k": {
+        label: "Top-K",
+        type: "number",
+        description: "Limit token selection to top K most likely",
+        default: 40,
+        min: 1,
+        max: 1000,
+        step: 1,
+        cliFlag: "-topk, --top-k",
+        validation: {
+          type: "number",
+          min: 1,
+          max: 1000,
+        },
+      },
+      "min-p": {
+        label: "Min-P",
+        type: "number",
+        description: "Minimum probability threshold for token selection",
+        default: 0.05,
+        min: 0,
+        max: 1,
+        step: 0.01,
+        cliFlag: "--min-p",
+        validation: {
+          type: "number",
+          min: 0,
+          max: 1,
+        },
+      },
+      mirostat: {
+        label: "Mirostat Mode",
+        type: "select",
+        description: "Mirostat sampling mode (0=disabled, 1=Mirostat, 2=Mirostat 2.0)",
+        options: [
+          { value: "0", label: "Disabled" },
+          { value: "1", label: "Mirostat 1.0" },
+          { value: "2", label: "Mirostat 2.0" },
+        ],
+        default: 0,
+        cliFlag: "--mirostat",
+        validation: {
+          type: "enum",
+          values: [0, 1, 2],
+        },
+      },
+      "mirostat-lr": {
+        label: "Mirostat Learning Rate",
+        type: "number",
+        description: "Learning rate for Mirostat target entropy adjustment",
+        default: 0.1,
+        min: 0.001,
+        max: 1.0,
+        step: 0.001,
+        cliFlag: "--mirostat-lr",
+        validation: {
+          type: "number",
+          min: 0.001,
+          max: 1.0,
+        },
+      },
+      "mirostat-ent": {
+        label: "Mirostat Entropy",
+        type: "number",
+        description: "Target entropy for Mirostat sampling",
+        default: 5.0,
+        min: 1.0,
+        max: 20.0,
+        step: 0.1,
+        cliFlag: "--mirostat-ent",
+        validation: {
+          type: "number",
+          min: 1.0,
+          max: 20.0,
+        },
+      },
+      samplers: {
+        label: "Samplers",
+        type: "multiselect",
+        description: "Order of samplers to apply",
+        options: [
+          { value: "mirostat", label: "Mirostat" },
+          { value: "mirostat2", label: "Mirostat 2.0" },
+          { value: "greedy", label: "Greedy" },
+          { value: "dist", label: "Dist" },
+          { value: "typical", label: "Typical" },
+          { value: "topk", label: "TopK" },
+          { value: "nucleus", label: "Nucleus (Top-P)" },
+          { value: "epsilon", label: "Epsilon" },
+          { value: "ypsilon", label: "Ypsilon" },
+          { value: "tailfree", label: "Tail Free" },
+          { value: "locallytypical", label: "Locally Typical" },
+          { value: "grammar", label: "Grammar" },
+          { value: "json", label: "JSON" },
+        ],
+        default: ["typical", "topk", "nucleus"],
+        cliFlag: "--samplers",
+        validation: {
+          type: "array",
+          itemType: "string",
+        },
+      },
+    },
+  },
+  speculativeDecoding: {
+    name: "Speculative Decoding",
+    description: "Draft model settings for speculative decoding",
+    parameters: {
+      "draft-min": {
+        label: "Min Draft Tokens",
+        type: "number",
+        description: "Minimum number of draft tokens to use",
+        default: 4,
+        min: 1,
+        max: 100,
+        step: 1,
+        cliFlag: "--draft-min",
+        validation: {
+          type: "number",
+          min: 1,
+          max: 100,
+        },
+      },
+      "draft-max": {
+        label: "Max Draft Tokens",
+        type: "number",
+        description: "Maximum number of draft tokens to use",
+        default: 16,
+        min: 1,
+        max: 100,
+        step: 1,
+        cliFlag: "--draft-max",
+        validation: {
+          type: "number",
+          min: 1,
+          max: 100,
+        },
+      },
+      "draft-p-min": {
+        label: "Min Draft Probability",
+        type: "number",
+        description: "Minimum probability for draft tokens",
+        default: 0.0,
+        min: 0,
+        max: 1,
+        step: 0.01,
+        cliFlag: "--draft-p-min",
+        validation: {
+          type: "number",
+          min: 0,
+          max: 1,
+        },
+      },
+    },
+  },
+  advanced: {
+    name: "Advanced",
+    description: "Advanced configuration options",
+    parameters: {
+      mmap: {
+        label: "Memory Map",
+        type: "boolean",
+        description: "Use memory-mapped files for faster loading",
+        default: true,
+        cliFlag: "--no-mmap",
+        invertBoolean: true,
+        validation: {
+          type: "boolean",
+        },
+      },
+      mmp: {
+        label: "Memory Pool",
+        type: "boolean",
+        description: "Use memory pooling for KV cache",
+        default: true,
+        cliFlag: "--no-mmap",
+        invertBoolean: true,
+        validation: {
+          type: "boolean",
+        },
+      },
+      "presence-penalty": {
+        label: "Presence Penalty",
+        type: "number",
+        description: "Penalty for token presence (negative = encourages repetition)",
+        default: 0.0,
+        min: -2.0,
+        max: 2.0,
+        step: 0.01,
+        cliFlag: "--presence-penalty",
+        validation: {
+          type: "number",
+          min: -2.0,
+          max: 2.0,
+        },
+      },
+      "frequency-penalty": {
+        label: "Frequency Penalty",
+        type: "number",
+        description: "Penalty for token frequency (negative = encourages repetition)",
+        default: 0.0,
+        min: -2.0,
+        max: 2.0,
+        step: 0.01,
+        cliFlag: "--frequency-penalty",
+        validation: {
+          type: "number",
+          min: -2.0,
+          max: 2.0,
+        },
+      },
+      "repeat-penalty": {
+        label: "Repeat Penalty",
+        type: "number",
+        description: "Penalty for token repetition",
+        default: 1.0,
+        min: 1.0,
+        max: 2.0,
+        step: 0.01,
+        cliFlag: "--repeat-penalty",
+        validation: {
+          type: "number",
+          min: 1.0,
+          max: 2.0,
+        },
+      },
+    },
+  },
+  jinja: {
+    name: "Jinja & Templating",
+    description: "Jinja template engine and chat template settings",
+    parameters: {
+      "jinja": {
+        label: "Enable Jinja",
+        type: "boolean",
+        description: "Enable Jinja template engine for chat completions",
+        default: true,
+        cliFlag: "--jinja, --no-jinja",
+        validation: {
+          type: "boolean",
+        },
+      },
+      "chat-template": {
+        label: "Chat Template",
+        type: "select",
+        description: "Predefined chat template (overridden by template file)",
+        options: [
+          { value: "chatml", label: "ChatML" },
+          { value: "llama2", label: "Llama 2" },
+          { value: "llama3", label: "Llama 3" },
+          { value: "llama3-1", label: "Llama 3.1" },
+          { value: "llama3-2", label: "Llama 3.2" },
+          { value: "mistral", label: "Mistral" },
+          { value: "phi", label: "Phi" },
+          { value: "phi3", label: "Phi 3" },
+          { value: "phi4", label: "Phi 4" },
+          { value: "gemma", label: "Gemma" },
+          { value: "zephyr", label: "Zephyr" },
+          { value: "deepseek", label: "Deepseek" },
+          { value: "qwen", label: "Qwen" },
+          { value: "openchat", label: "OpenChat" },
+          { value: "neural-chat", label: "Neural Chat" },
+          { value: "stablelm", label: "StableLM" },
+          { value: "cohere", label: "Cohere" },
+          { value: "command", label: "Command" },
+        ],
+        cliFlag: "--chat-template",
+        validation: {
+          type: "string",
+        },
+      },
+      "chat-template-file": {
+        label: "Chat Template File",
+        type: "text",
+        description: "Path to custom Jinja chat template file",
+        placeholder: "/path/to/template.jinja",
+        cliFlag: "--chat-template-file",
+        validation: {
+          type: "string",
+        },
+      },
+      "reasoning-format": {
+        label: "Reasoning Format",
+        type: "select",
+        description: "Format for reasoning/thinking tokens in output",
+        options: [
+          { value: "default", label: "Default (no reasoning)" },
+          { value: "deepseek", label: "DeepSeek" },
+          { value: "none", label: "None (raw output)" },
+        ],
+        cliFlag: "--reasoning-format",
+        validation: {
+          type: "enum",
+          values: ["default", "deepseek", "none"],
+        },
+      },
+      "reasoning-budget": {
+        label: "Reasoning Budget",
+        type: "number",
+        description: "Max reasoning tokens (-1 = unlimited, 0 = disabled)",
+        default: -1,
+        min: -1,
+        step: 1,
+        cliFlag: "--reasoning-budget",
+        validation: {
+          type: "number",
+          min: -1,
+        },
+      },
+      "thinking-forced-open": {
+        label: "Thinking Forced Open",
+        type: "boolean",
+        description: "Force reasoning models to always output thinking",
+        default: false,
+        cliFlag: "--thinking-forced-open",
+        validation: {
+          type: "boolean",
+        },
+      },
+    },
+  },
+  contextManagement: {
+    name: "Context Management",
+    description: "Context window and memory management",
+    parameters: {
+      "slot-save-path": {
+        label: "Slot Save Path",
+        type: "text",
+        description: "Path for saving/restoring prompt cache",
+        placeholder: "/path/to/slots",
+        cliFlag: "--slot-save-path",
+        validation: {
+          type: "string",
+        },
+      },
+      "cache-type-k": {
+        label: "Cache Type (K)",
+        type: "select",
+        description: "KV cache type for K values",
+        options: [
+          { value: "f16", label: "Float16" },
+          { value: "q4", label: "Q4 (4-bit quantized)" },
+          { value: "q8", label: "Q8 (8-bit quantized)" },
+        ],
+        cliFlag: "--cache-type-k",
+        validation: {
+          type: "enum",
+          values: ["f16", "q4", "q8"],
+        },
+      },
+      "cache-type-v": {
+        label: "Cache Type (V)",
+        type: "select",
+        description: "KV cache type for V values",
+        options: [
+          { value: "f16", label: "Float16" },
+          { value: "q4", label: "Q4 (4-bit quantized)" },
+          { value: "q8", label: "Q8 (8-bit quantized)" },
+        ],
+        cliFlag: "--cache-type-v",
+        validation: {
+          type: "enum",
+          values: ["f16", "q4", "q8"],
+        },
+      },
+      "slots": {
+        label: "Parallel Slots",
+        type: "number",
+        description: "Number of parallel processing slots",
+        default: 1,
+        min: 1,
+        max: 128,
+        step: 1,
+        cliFlag: "-np, --parallel",
+        validation: {
+          type: "number",
+          min: 1,
+          max: 128,
+        },
+      },
+    },
+  },
+  modelLoading: {
+    name: "Model Loading",
+    description: "Router mode and model loading settings",
+    parameters: {
+      "models-dir": {
+        label: "Models Directory",
+        type: "text",
+        description: "Directory for auto-discovering models (router mode)",
+        placeholder: "/path/to/models",
+        cliFlag: "--models-dir",
+        validation: {
+          type: "string",
+        },
+      },
+      "models-max": {
+        label: "Max Models Loaded",
+        type: "number",
+        description: "Maximum concurrent models in router mode (0 = unlimited)",
+        default: 4,
+        min: 0,
+        step: 1,
+        cliFlag: "--models-max",
+        validation: {
+          type: "number",
+          min: 0,
+        },
+      },
+      "models-autoload": {
+        label: "Auto-load Models",
+        type: "boolean",
+        description: "Automatically load models on first request (router mode)",
+        default: true,
+        cliFlag: "--models-autoload, --no-models-autoload",
+        validation: {
+          type: "boolean",
+        },
+      },
+      "model-alias": {
+        label: "Model Alias",
+        type: "text",
+        description: "Alias name for the model",
+        placeholder: "my-model-alias",
+        cliFlag: "--model-alias",
+        validation: {
+          type: "string",
+        },
+      },
+    },
+  },
+};
+
+/**
+ * Flatten all parameters into a single object indexed by parameter ID.
+ * @returns {Object} Map of parameter ID to parameter config with category info.
+ */
+function getAllParameters() {
+  const all = {};
+  Object.entries(PARAMETER_CATEGORIES).forEach(([categoryId, category]) => {
+    Object.entries(category.parameters).forEach(([paramId, param]) => {
+      all[paramId] = {
+        ...param,
+        category: categoryId,
+        categoryName: category.name,
+      };
+    });
+  });
+  return all;
+}
+
+/**
+ * Get parameters filtered to specific categories.
+ * @param {Array} categoryIds - Array of category IDs to include.
+ * @returns {Object} Map of parameter ID to parameter config.
+ */
+function getParametersForCategories(categoryIds) {
+  const all = getAllParameters();
+  const filtered = {};
+  categoryIds.forEach((catId) => {
+    Object.entries(all).forEach(([paramId, param]) => {
+      if (param.category === catId) {
+        filtered[paramId] = param;
+      }
+    });
+  });
+  return filtered;
+}
+
+/**
+ * Get category information by ID.
+ * @param {string} categoryId - The category identifier.
+ * @returns {Object|null} The category info object or null if not found.
+ */
+function getCategoryInfo(categoryId) {
+  return PARAMETER_CATEGORIES[categoryId] || null;
+}
+
+/**
+ * Get all category IDs.
+ * @returns {Array} Array of category identifiers.
+ */
+function getCategoryIds() {
+  return Object.keys(PARAMETER_CATEGORIES);
+}
+
+/**
+ * Get the default value for a specific parameter.
+ * @param {string} paramId - The parameter identifier.
+ * @returns {*} The default value or null if not found.
+ */
+function getDefaultValue(paramId) {
+  const all = getAllParameters();
+  const param = all[paramId];
+  if (!param) return null;
+  return param.default;
+}
+
+/**
+ * Build CLI arguments array from configuration object.
+ * @param {Object} config - Configuration object with parameter values.
+ * @returns {Array} Array of CLI argument strings.
+ */
+function buildCliArgs(config) {
+  const all = getAllParameters();
+  const args = [];
+
+  Object.entries(config).forEach(([paramId, value]) => {
+    const param = all[paramId];
+    if (!param || value === undefined || value === null) return;
+
+    const cliFlag = param.cliFlag;
+    if (!cliFlag) return;
+
+    // Handle boolean flags with inversion
+    if (param.type === "boolean") {
+      if (param.invertBoolean) {
+        if (!value) {
+          args.push("--no-mmap");
+        }
+      } else {
+        if (value) {
+          args.push(cliFlag.split(",")[0].trim());
+        }
+      }
+      return;
+    }
+
+    // Handle array types (like tensor-split, samplers)
+    if (Array.isArray(value)) {
+      const separator = param.type === "multiselect" ? " " : ",";
+      args.push(`${cliFlag.split(",")[0].trim()} ${value.join(separator)}`);
+      return;
+    }
+
+    // Handle regular values
+    args.push(`${cliFlag.split(",")[0].trim()} ${value}`);
+  });
+
+  return args;
+}
+
+// Export for use in other modules
+window.ParameterCategories = PARAMETER_CATEGORIES;
+window.getAllParameters = getAllParameters;
+window.getParametersForCategories = getParametersForCategories;
+window.getCategoryInfo = getCategoryInfo;
+window.getCategoryIds = getCategoryIds;
+window.getDefaultValue = getDefaultValue;
+window.buildCliArgs = buildCliArgs;

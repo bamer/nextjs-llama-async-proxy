@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Llama Server Status Panel Test</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont;
+      background: #f5f5f5;
+    }
+  </style>
+</head>
+<body>
+    <div id="app">
+      <h1>Llama Server Status Panel Test</h1>
+      <div id="test-container" style="padding: 20px; max-width: 800px; margin: 0 auto;"></div>
+      <p>Check if Llama Server Status Panel appears below:</p>
+    </div>
+      <div id="results" style="margin-top: 20px;"></div>
+    </div>
+
+    <script src="/js/utils/format.js"></script>
+    <script src="/js/utils/filter.js"></script>
+    <script src="/js/utils/keyboard-shortcuts.js"></script>
+    <script src="/js/core/dom-reconciler.js"></script>
+    <script src="/js/core/component.js"></script>
+    <script src="/js/core/state-validator.js"></script>
+    <script src="/js/core/router.js"></script>
+    <script src="/js/components/table.js"></script>
+    <script src="/js/core/state/state-core.js"></script>
+    <script src="/js/core/state/handlers/broadcast.js"></script>
+    <script src="/js/core/state/handlers/connection.js"></script>
+    <script src="/js/core/state/handlers/response.js"></script>
+    <script src="/js/core/state/state-socket.js"></script>
+    <script src="/js/core/state/state-models.js"></script>
+    <script src="/js/core/state/state-requests.js"></script>
+    <script src="/js/core/state/state-llama.js"></script>
+    <script src="/js/core/state/state-api.js"></script>
+    <script src="/js/core/state.js"></script>
+    <script src="/js/services/socket.js"></script>
+    <script src="/js/components/layout/layout.js"></script>
+    <script src="/js/libs/chart.min.js"></script>
+    <script src="/js/utils/dashboard-utils.js"></script>
+    <script src="/js/components/dashboard/charts/chart-utils.js"></script>
+    <script src="/js/components/dashboard/charts/chart-colors.js"></script>
+    <script src="/js/components/dashboard/charts/chart-config.js"></script>
+    <script src="/js/components/dashboard/charts/chart-memory.js"></script>
+    <script src="/js/components/dashboard/charts/chart-usage.js"></script>
+    <script src="/js/components/dashboard/chart-manager.js"></script>
+    <script src="/js/components/dashboard/stats-grid.js"></script>
+    <script src="/js/components/dashboard/gpu-details.js"></script>
+    <script src="/js/components/dashboard/charts-section.js"></script>
+    <script src="/js/components/dashboard/system-health.js"></script>
+    <script src="/js/components/dashboard/router-card.js"></script>
+    <script src="/js/components/dashboard/quick-actions.js"></script>
+    <script src="/js/components/llama-server/llama-server-config.js"></script>
+    <script src="/js/components/llama-server/status-panel.js"></script>
+    <script src="/js/components/router-card.js"></script>
+    < <script src="/js/pages/dashboard/controller.js"></script>
+    <script src="/js/pages/dashboard/page.js"></script>
+    <script src="/js/pages/models.js"></script>
+    <script src="/js/components/models/model-table-row.js"></script>
+    <script src="/js/components/models/model-filters.js"></script>
+    <script src="/js/services/presets.js"></script>
+    <script src="/js/pages/presets.js"></script>
+    <script src="/js/pages/settings/settings-controller.js"></script>
+    <script src="/js/pages/settings/settings-page.js"></script>
+    <script src="/js/pages/logs.js"></script>
+    </div>
+
+    <script>
+      // Test that LlamaServerStatusPanel is available
+      console.log("TEST: Checking if LlamaServerStatusPanel is available");
+      if (typeof window.LlamaServerStatusPanel !== "undefined") {
+        document.getElementById("test-container").innerHTML = `
+          <h2>✅ LlamaServerStatusPanel is available</h2>
+          <p>Panel component class is defined and ready.</p>
+          <div id="panel-mount"></div>
+        `;
+        console.log("TEST: Panel mount point created");
+
+        // Create simple panel instance
+        const panel = new window.LlamaServerStatusPanel({
+          status: { port: 8080, status: "running" },
+          metrics: null
+        });
+
+        // Mount panel
+        const panelMount = document.getElementById("panel-mount");
+        panelMount.innerHTML = "";
+        panel.render().outerHTML;
+
+        console.log("TEST: Panel mounted");
+        document.getElementById("results").innerHTML = `
+          <h3>Panel Test Results</h3>
+          <p>Status: ${panel.state.status}</p>
+          <p>Metrics: ${panel.state.metrics ? JSON.stringify(panel.state.metrics) : "null"}</p>
+          <p>Uptime: ${panel.state.uptime}</p>
+          <p>PID: ${panel.state.pid}</p>
+        `;
+
+        console.log("TEST: Panel state:", panel.state);
+
+        // Check if methods are available
+        const methods = ["render", "startServer", "stopServer", "handleStatusChange", "handleMetricsChange", "toggleDetails"];
+        console.log("TEST: Checking methods...", methods);
+
+        const availableMethods = methods.filter((m) => typeof panel[m] === "function");
+
+        document.getElementById("results").innerHTML = `
+          <h4>Methods Test</h4>
+          <p>Checking for availability...</p>
+          <ul>
+        `;
+
+        availableMethods.forEach((m) => {
+            document.getElementById("results").innerHTML += `
+            <li class="${m === "available" ? "success" : "missing"}">window.LlamaServerStatusPanel.${m}()</li>
+          `;
+
+          if (m === "available") {
+            console.log(`TEST: ${m}() is available`);
+          try {
+              const result = panel[m]();
+              console.log(`TEST: ${m}() returned:`, typeof result, result?.outerHTML);
+            } catch (e) {
+              console.error(`TEST: ${m}() failed:`, e.message);
+            }
+          }
+        `);
+
+        if (availableMethods.length === 0) {
+          document.getElementById("results").innerHTML += `
+            <li class="error">No methods available!</li>
+          `;
+        }
+
+        </ul>
+        `;
+      }
+    } else {
+        document.getElementById("test-container").innerHTML = `
+          <p>❌ LlamaServerStatusPanel NOT AVAILABLE!</p>
+          <p>The component class is not defined.</p>
+        `;
+      }
+    </script>
+  </div>
+</body>
+</html>

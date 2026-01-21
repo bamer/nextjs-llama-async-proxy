@@ -1,0 +1,31 @@
+[2026-01-21T05:51:21.908Z] [INFO] [logger] Cleared 1 log files
+[2026-01-21T05:51:23.121Z] [INFO] [server] Test message
+[2026-01-21T05:51:23.122Z] [INFO] [server] Test message
+[2026-01-21T05:51:23.121Z] [INFO] [server] Test message
+[2026-01-21T05:51:23.122Z] [ERROR] [server] 12345
+[2026-01-21T05:51:23.122Z] [WARN] [server] [object Object]
+[2026-01-21T05:51:23.122Z] [INFO] [server] Test info message
+[2026-01-21T05:51:23.122Z] [WARN] [server] Test warn message
+[2026-01-21T05:51:23.122Z] [ERROR] [server] Test error message
+[2026-01-21T05:51:23.157Z] [INFO] [test-source] Test message
+[2026-01-21T05:51:23.424Z] [DEBUG] [test-source] Debug message
+[2026-01-21T05:51:23.425Z] [CUSTOM-LEVEL] [custom-source] Test message
+[2026-01-21T05:51:23.425Z] [INFO] [server] Test message
+[2026-01-21T05:51:23.425Z] [INFO] [custom-source] Info message
+[2026-01-21T05:51:23.425Z] [INFO] [server] null
+[2026-01-21T05:51:23.425Z] [ERROR] [custom-source] Error message
+[2026-01-21T05:51:23.425Z] [ERROR] [server] undefined
+[2026-01-21T05:51:23.425Z] [WARN] [custom-source] Warn message
+[2026-01-21T05:51:23.425Z] [WARN] [server] true
+[2026-01-21T05:52:34.067Z] [INFO] [server] Client connected: 10wxx1hAjFa68g6OAAAB
+[2026-01-21T06:25:01.831Z] [INFO] [server] Client connected: tflkPZLOMuNtrNT-AAAB
+[2026-01-21T06:25:55.892Z] [INFO] [server] Client connected: ztcqwwRuhifALx44AAAB
+[2026-01-21T06:28:06.941Z] [INFO] [server] Client connected: bTOAdNW3Y3aDsfiEAAAB
+[2026-01-21T06:30:11.392Z] [INFO] [server] Client connected: chBPATvRbaU5OO2zAAAB
+[2026-01-21T06:30:25.305Z] [INFO] [server] Client connected: OohltiSBgKlDzdrfAAAB
+[2026-01-21T06:30:40.159Z] [INFO] [server] Client connected: -_qFBP4NyQrKpaObAAAB
+[2026-01-21T06:30:52.715Z] [INFO] [server] Client connected: UxaKJbppCXEsvn6NAAAB
+[2026-01-21T06:31:06.474Z] [INFO] [server] Client connected: Tku_QSQp54dDdex6AAAB
+[2026-01-21T06:31:47.566Z] [INFO] [server] Client disconnected: Tku_QSQp54dDdex6AAAB, reason: transport close
+[2026-01-21T06:31:47.566Z] [WARN] [server] [SOCKET] Client Tku_QSQp54dDdex6AAAB disconnected - transport closed (possible network issue or server load)
+[2026-01-21T06:31:47.747Z] [INFO] [server] Client connected: OzZI8Qt2MaZ6OfE_AAAD
