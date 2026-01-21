@@ -92,7 +92,7 @@ export function getUnifiedConfig(db) {
 
   try {
     const result = database
-      .prepare("SELECT value, updated_at FROM router_config WHERE key = ?")
+      .prepare("SELECT value FROM server_config WHERE key = ?")
       .get("config");
 
     if (result) {
@@ -164,8 +164,8 @@ export function saveUnifiedConfig(db, config) {
     const configJson = JSON.stringify(cleanConfig);
 
     database.prepare(
-      "INSERT OR REPLACE INTO router_config (key, value, updated_at) VALUES (?, ?, ?)"
-    ).run("config", configJson, timestamp);
+      "INSERT OR REPLACE INTO server_config (key, value) VALUES (?, ?)"
+    ).run("config", configJson);
 
     console.log("[UnifiedConfig] Config saved successfully, port:", cleanConfig.port);
     return cleanConfig;
@@ -192,8 +192,8 @@ export function resetUnifiedConfig(db) {
     const configJson = JSON.stringify(UNIFIED_CONFIG_DEFAULTS);
 
     database.prepare(
-      "INSERT OR REPLACE INTO router_config (key, value, updated_at) VALUES (?, ?, ?)"
-    ).run("config", configJson, timestamp);
+      "INSERT OR REPLACE INTO server_config (key, value) VALUES (?, ?)"
+    ).run("config", configJson);
 
     console.log("[UnifiedConfig] Config reset to defaults");
     return { ...UNIFIED_CONFIG_DEFAULTS };
@@ -246,7 +246,7 @@ export function migrateLegacyConfig(db) {
 
   try {
     const result = database
-      .prepare("SELECT value FROM router_config WHERE key = ?")
+      .prepare("SELECT value FROM server_config WHERE key = ?")
       .get("config");
 
     if (!result) {
@@ -271,7 +271,7 @@ export function migrateLegacyConfig(db) {
     // Save cleaned config
     const timestamp = Math.floor(Date.now() / 1000);
     database.prepare(
-      "INSERT OR REPLACE INTO router_config (key, value, updated_at) VALUES (?, ?, ?)"
+      "INSERT OR REPLACE INTO server_config (key, value) VALUES (?, ?)"
     ).run("config", JSON.stringify(cleanConfig), timestamp);
 
     console.log(

@@ -55,6 +55,8 @@ export class DBBase {
     this._ensureWritable();
     this.db = new Database(this.dbPath);
     this.db.pragma("journal_mode = WAL");
+    this.db.pragma("synchronous = NORMAL");
+    this.db.pragma("busy_timeout = 5000");
     
     initSchema(this.db);
     runAllMigrations(this.db);
