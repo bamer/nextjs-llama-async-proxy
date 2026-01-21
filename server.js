@@ -30,6 +30,8 @@ import {
 } from "./server/services/gpu-monitor.js";
 import { registerGpuHandlers } from "./server/handlers/gpu-handler.js";
 
+import { setupLlamaProxy } from "./server/llamaproxws-proxy.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = 3000;
@@ -75,19 +77,29 @@ async function main() {
   const db = new DB();
   const app = express();
   const server = http.createServer(app);
-  const io = new Server(server, {
-    cors: {
-      origin:
-        process.env.NODE_ENV === "production"
-          ? ["https://yourdomain.com"]
-          : ["http://localhost:3000", "http://127.0.0.1:3000"],
-      methods: ["GET", "POST"],
-    },
+
+  // Configure presets directory
+  const presetsDir =
+    process.env.LLAMAPROXY_PRESETS_DIR || path.join(process.cwd(), "presets");
+
+  // Setup llamaproxws proxy with startup watchdog
+  const startupTimeoutMs = process.env.LLAMAPROXY_STARTUP_TIMEOUT_MS
+    ? parseInt(process.env.LLAMAPROXY_STARTUP_TIMEOUT_MS, 10)
+    : 15000;
+
+  const io = setupLlamaProxy(server, {
     path: "/llamaproxws",
-    transports: ["websocket"],
-    pingTimeout: 60000,
-    pingInterval: 25000,
-    connectTimeout: 10000,
+    presetsDir: presetsDir,
+    startupTimeoutMs: startupTimeoutMs,
+    ioOptions: {
+      cors: {
+        origin:
+          process.env.NODE_ENV === "production"
+            ? ["https://yourdomain.com"]
+            : ["http://localhost:3000", "http://127.0.0.1:3000"],
+        methods: ["GET", "POST"],
+      },
+    },
   });
 
   // Apply rate limiting middleware
