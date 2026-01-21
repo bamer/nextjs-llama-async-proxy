@@ -51,12 +51,14 @@ class Sidebar extends Component {
 
   _showShortcuts() {
     const shortcuts = window.keyboardShortcuts?.getAllShortcuts() || [];
-    const modal = Component.h(KeyboardShortcutsHelp, { shortcuts });
+    const modal = new KeyboardShortcutsHelp({ shortcuts });
     const container = document.getElementById("main-content-container");
     if (container) {
       container.innerHTML = "";
       const el = modal.render();
       container.appendChild(el);
+      modal._el = el;
+      modal.bindEvents();
       if (modal.onMount) modal.onMount();
     }
   }
