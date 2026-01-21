@@ -162,9 +162,6 @@ class RouterCardSection extends Component {
           metrics: this.state.metrics,
           onAction: (action, data) => this._handleRouterAction(action, data),
         }),
-        Component.h(window.QuickActions, {
-          onRefresh: () => this._handleRefresh(),
-        }),
       ]
     );
   }

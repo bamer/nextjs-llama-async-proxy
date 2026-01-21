@@ -286,14 +286,6 @@
   font-size: 0.75rem;
 }
 
-/* ===== DASHBOARD QUICK ACTIONS ===== */
-
-.quick-actions .btn {
-  min-height: 36px;
-  padding: 8px 14px;
-  font-size: 0.8125rem;
-}
-
 .action-buttons {
   display: flex;
   gap: 6px;

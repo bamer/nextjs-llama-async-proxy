@@ -43,7 +43,6 @@
 .card .btn { min-height: 30px; padding: 5px 12px; }
 .form-actions .btn { min-height: 32px; }
 .table .btn { min-height: 24px; padding: 4px 8px; font-size: 0.75rem; }
-.quick-actions .btn { min-height: 36px; padding: 8px 14px; font-size: 0.8125rem; }
 .router-controls .btn { min-height: 32px; padding: 6px 14px; }
 
 @media (max-width: 768px) {

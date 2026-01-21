@@ -521,39 +521,6 @@ html.dark-mode .health-status.critical .health-message {
   white-space: nowrap;
 }
 
-/* Quick Actions */
-.quick-actions {
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: var(--lg);
-  border: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
-  gap: var(--md);
-  height: fit-content;
-}
-
-.quick-actions h3 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.quick-actions .action-buttons {
-  display: grid !important;
-  grid-template-columns: repeat(2, 1fr) !important;
-  gap: var(--md);
-  flex-wrap: nowrap;
-}
-
-.quick-actions .action-buttons .btn {
-  width: 100%;
-  padding: var(--sm) var(--md);
-  font-size: 0.875rem;
-}
-
 /* Responsive */
 @media (max-width: 1024px) {
   .dashboard-middle-row {
@@ -654,10 +621,6 @@ html.dark-mode .health-status.critical .health-message {
     padding: var(--md);
   }
 
-  .quick-actions {
-    padding: var(--md);
-  }
-
   .chart-wrapper {
     height: 200px;
   }
@@ -681,13 +644,5 @@ html.dark-mode .health-status.critical .health-message {
 
   .chart-stat-value {
     font-size: 1.25rem;
-  }
-
-  .quick-actions .action-buttons {
-    grid-template-columns: 1fr;
-  }
-
-  .quick-actions .action-buttons .btn {
-    width: 100%;
   }
 }

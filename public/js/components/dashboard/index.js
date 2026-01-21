@@ -7,4 +7,3 @@
 // ChartsSection - Performance charts container
 // SystemHealth - Health status display
 // RouterCard - Router status and controls
-// QuickActions - Action buttons
