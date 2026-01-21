@@ -10,7 +10,7 @@
 /* Router Card and Quick Actions Row */
 .dashboard-middle-row {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 1fr;
   gap: calc(var(--lg) * 2 / 3);
   align-items: start;
 }
