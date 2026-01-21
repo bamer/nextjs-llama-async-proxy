@@ -208,7 +208,7 @@ async function collectGpuMetricsOnly(knownGpus) {
 async function updateNvidiaMetrics(gpu) {
   try {
     const { stdout } = await execAsync(
-      `/usr/bin/nvidia-smi --query-gpu=index,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,fan.speed,clocks.gr,clocks.mem,utilization.encoder,utilization.decoder --format=csv,noheader,nounits 2>/dev/null`,
+      `/usr/bin/nvidia-smi --query-gpu=index,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,power.limit,fan.speed,clocks.gr,clocks.mem,utilization.encoder,utilization.decoder --format=csv,noheader,nounits 2>/dev/null`,
       { encoding: "utf8", timeout: 3000 }
     );
 
@@ -219,7 +219,7 @@ async function updateNvidiaMetrics(gpu) {
 
     if (line) {
       const parts = line.split(",").map(p => p.trim());
-      if (parts.length >= 10) {
+      if (parts.length >= 11) {
         const vramTotalMiB = gpu.vramTotalMiB || 0;
         const memoryUsedMiB = parseInt(parts[2]) || 0;
 
@@ -231,11 +231,12 @@ async function updateNvidiaMetrics(gpu) {
           memoryTotalBytes: (parseInt(parts[3]) || vramTotalMiB) * 1024 * 1024,
           temperatureCelsius: parseFloat(parts[4]) || null,
           powerDrawWatts: parseFloat(parts[5]) || null,
-          fanSpeedPercent: parseFloat(parts[6]) || null,
-          clockSpeedMhz: parseFloat(parts[7]) || null,
-          memoryClockMhz: parseFloat(parts[8]) || null,
-          encoderUtilPercent: parseFloat(parts[9]) || null,
-          decoderUtilPercent: parseFloat(parts[10]) || null,
+          powerLimitWatts: parseFloat(parts[6]) || null,
+          fanSpeedPercent: parseFloat(parts[7]) || null,
+          clockSpeedMhz: parseFloat(parts[8]) || null,
+          memoryClockMhz: parseFloat(parts[9]) || null,
+          encoderUtilPercent: parseFloat(parts[10]) || null,
+          decoderUtilPercent: parseFloat(parts[11]) || null,
           vramUsagePercent: vramTotalMiB > 0 ? (memoryUsedMiB / vramTotalMiB) * 100 : 0,
         };
         gpu.lastUpdated = Date.now();
