@@ -135,25 +135,6 @@
   color: var(--primary);
 }
 
-.help-btn {
-  background: none;
-  border: 1px solid var(--border-color);
-  padding: 6px 10px;
-  border-radius: var(--radius);
-  cursor: pointer;
-  font-size: 1rem;
-  color: var(--text-secondary);
-  transition: all 0.2s ease;
-  width: 100%;
-  text-align: center;
-}
-
-.help-btn:hover {
-  background: var(--bg-tertiary);
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
 .connection-status {
   display: flex;
   align-items: center;
@@ -241,27 +222,6 @@
   display: none;
 }
 
-.sidebar.collapsed .help-btn {
-  position: relative;
-}
-
-.sidebar.collapsed .help-btn::after {
-  content: "Shortcuts";
-  position: absolute;
-  bottom: -18px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.6rem;
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.2s;
-  color: var(--text-secondary);
-}
-
-.sidebar.collapsed .help-btn:hover::after {
-  opacity: 1;
-}
-
 .sidebar.collapsed .sidebar-footer {
   padding: 8px 4px;
   display: flex;
@@ -279,7 +239,7 @@
 }
 
 .sidebar.collapsed .help-btn::after {
-  content: "Keyboard";
+  content: "Shortcuts";
   position: absolute;
   bottom: -18px;
   left: 50%;

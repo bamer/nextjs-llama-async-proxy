@@ -19,7 +19,7 @@ class KeyboardShortcutsHelp extends Component {
    * @returns {HTMLElement} The modal container element.
    */
   render() {
-    return Component.h(
+    const element = Component.h(
       "div",
       { className: "keyboard-shortcuts-modal", "data-modal": "keyboard-help" },
       Component.h(
@@ -67,6 +67,8 @@ class KeyboardShortcutsHelp extends Component {
         )
       )
     );
+
+    return element;
   }
 
   /**
@@ -92,7 +94,9 @@ class KeyboardShortcutsHelp extends Component {
    * @returns {void}
    */
   bindEvents() {
-    if (!this._el) return;
+    if (!this._el) {
+      return;
+    }
 
     // Close button click
     const closeBtn = this.$("[data-action=close]");
@@ -117,6 +121,8 @@ class KeyboardShortcutsHelp extends Component {
     // Escape key to close
     document.addEventListener("keydown", this._handleKeydown);
   }
+
+  onMount() {}
 
   /**
    * Handles keyboard events, primarily Escape to close the modal.

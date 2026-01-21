@@ -24,7 +24,7 @@
 
 .router-health-row {
   display: grid;
-  grid-template-columns: 3fr 1fr;
+  grid-template-columns: 1fr;
   gap: calc(var(--lg) * 2 / 3);
   align-items: start;
 }
@@ -32,7 +32,7 @@
 /* Router + Health row - Router gets more space */
 .router-health-row {
   display: grid;
-  grid-template-columns: 3fr 1fr;
+  grid-template-columns: 1fr;
   gap: calc(var(--lg) * 2 / 3);
   align-items: start;
 }
