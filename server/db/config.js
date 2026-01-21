@@ -9,6 +9,14 @@ const Database = pkg.Database;
 import { getDb } from "./db-base.js";
 
 /**
+ * Get current timestamp in seconds (for database storage)
+ * @returns {number} Unix timestamp in seconds
+ */
+function getTimestamp() {
+  return Math.floor(Date.now() / 1000);
+}
+
+/**
  * Router configuration defaults (kept for backward compatibility)
  * New code should use UNIFIED_CONFIG_DEFAULTS from unified-config.js
  */
