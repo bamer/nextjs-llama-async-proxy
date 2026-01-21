@@ -18,42 +18,6 @@ class LlamaRouterCard extends Component {
       count: props?.presets?.length || 0,
       presets: props?.presets?.map(p => ({ name: p.name || p })) || [],
     });
-    
-    // FIX: Watch for prop changes using getter/setter
-    this._initPropWatcher();
-  }
-
-  /**
-   * Initialize property watcher to detect when presets prop changes
-   * This fixes the issue where parent updates weren't detected
-   */
-  _initPropWatcher() {
-    let _presets = this.props.presets || [];
-    
-    Object.defineProperty(this.props, "presets", {
-      get: function() {
-        return _presets;
-      },
-      set: function(newValue) {
-        if (JSON.stringify(newValue) !== JSON.stringify(_presets)) {
-          console.log("[LlamaRouterCard] presets prop changed:", {
-            oldCount: _presets?.length || 0,
-            newCount: newValue?.length || 0,
-            newPresets: newValue?.map(p => p.name) || []
-          });
-          _presets = newValue;
-          // Auto-update preset select when prop changes
-          if (typeof this._updatePresetSelect === "function") {
-            this._updatePresetSelect();
-          }
-        }
-      }.bind(this),
-      configurable: true,
-      enumerable: true
-    });
-    
-    // Initialize from constructor value
-    _presets = this.props.presets || [];
   }
 
   onMount() {
@@ -132,18 +96,8 @@ class LlamaRouterCard extends Component {
    * Works even when router is not running
    */
   async _requestLaunchPreview() {
-    console.log("[DEBUG] _requestLaunchPreview called");
     try {
       const response = await socketClient.request("llama:preview-command", {});
-      console.log("[DEBUG] Launch preview response:", {
-        success: response.success,
-        hasCommand: !!response.command,
-        error: response.error,
-        llamaBin: response.llamaBin,
-        port: response.port,
-        host: response.host
-      });
-      
       const commandTextarea = this.$("#launch-command-textarea");
       const errorDiv = this.$(".launch-command-error");
 
@@ -154,7 +108,6 @@ class LlamaRouterCard extends Component {
         if (errorDiv) {
           errorDiv.style.display = "none";
         }
-        console.log("[DEBUG] Launch preview generated successfully");
       } else {
         if (commandTextarea) {
           commandTextarea.value = "";
@@ -163,10 +116,10 @@ class LlamaRouterCard extends Component {
           errorDiv.textContent = response.error || "Unable to generate preview";
           errorDiv.style.display = "block";
         }
-        console.warn("[DEBUG] Launch preview failed:", response.error);
+        console.error("[LlamaRouterCard] Launch preview failed:", response.error);
       }
     } catch (e) {
-      console.error("[DEBUG] Launch preview error:", e.message);
+      console.error("[LlamaRouterCard] Launch preview error:", e);
     }
   }
 

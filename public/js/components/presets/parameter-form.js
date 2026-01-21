@@ -208,7 +208,8 @@ class ParameterForm extends Component {
       this.validationSummary = window.createValidationSummary(validation);
       this.showValidationSummary = true;
       this._updateValidationUI();
-      showNotification("Please fix validation errors before applying", "warning");
+      console.warn("[WARNING] Please fix validation errors before applying");
+  showNotification("Please fix validation errors before applying", "warning");
       return;
     }
 

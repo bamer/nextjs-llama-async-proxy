@@ -103,7 +103,8 @@ class ConfigExportImport extends Component {
         }
       } catch (error) {
         console.error("[DEBUG] Import parse error:", error);
-        showNotification("Failed to parse configuration file", "error");
+        console.error("[ERROR] Failed to parse configuration file");
+  showNotification("Failed to parse configuration file", "error");
       }
     };
     reader.readAsText(file);

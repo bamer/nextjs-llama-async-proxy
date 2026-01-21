@@ -123,6 +123,7 @@ class LogsPage extends Component {
         showNotification("Logs cleared", "success");
         // Server broadcasts logs:cleared
       } else {
+        console.error("[ERROR] Failed:", response.error);
         showNotification(`Failed: ${response.error}`, "error");
       }
     } catch (error) {
