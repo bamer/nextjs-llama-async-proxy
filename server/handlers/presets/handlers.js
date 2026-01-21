@@ -8,7 +8,7 @@
 import path from "path";
 import { logger } from "../logger.js";
 import { ok, err } from "../response.js";
-import { getRouterConfig } from "../../db/config.js";
+import { getUnifiedConfig } from "../../db/unified-config.js";
 import {
   listPresets,
   readPreset,
@@ -327,9 +327,9 @@ export function registerPresetsHandlers(socket, db) {
    socket.on("presets:get-models-dir", (req, ack) => {
      const id = req?.requestId || Date.now();
      console.log("[DEBUG] Event: presets:get-models-dir", { requestId: id });
-     try {
-       const config = getRouterConfig(db);
-       const modelsDir = config.modelsPath || path.join(process.cwd(), "models");
+      try {
+        const config = getUnifiedConfig(db);
+        const modelsDir = config.modelsPath || path.join(process.cwd(), "models");
 
        console.log("[DEBUG] Scanning models directory:", modelsDir);
        ok(socket, "presets:get-models-dir:result", { modelsDir }, id, ack);

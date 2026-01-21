@@ -5,7 +5,7 @@
  */
 
 import fs from "fs";
-import { getRouterConfig } from "./db/config.js";
+import { getUnifiedConfig } from "./db/unified-config.js";
 
 /**
  * Auto-start llama-server if enabled in config.
@@ -17,15 +17,14 @@ import { getRouterConfig } from "./db/config.js";
  * @returns {Promise<Object|null>} Result object with port on success, null on failure/skip
  */
 export async function autoStartLlamaServer({ db, startLlamaServerRouter, initializeLlamaMetrics }) {
-  // Use the NEW unified config API (router_config table)
-  const routerConfig = getRouterConfig(db.db);
+  // Use unified config API
+  const config = getUnifiedConfig(db);
 
-  // Use new name with fallback to old for backward compatibility
-  const autoStartEnabled = routerConfig.autoStartOnLaunch ?? routerConfig.auto_start_on_launch ?? false;
+  // Use unified config field name directly
+  const autoStartEnabled = config.autoStartOnLaunch === true;
 
   console.log("[SERVER] Auto-start check:", {
-    autoStartOnLaunch: routerConfig.autoStartOnLaunch,
-    auto_start_on_launch: routerConfig.auto_start_on_launch,
+    autoStartOnLaunch: config.autoStartOnLaunch,
     autoStartEnabled
   });
 
@@ -34,7 +33,7 @@ export async function autoStartLlamaServer({ db, startLlamaServerRouter, initial
     return null;
   }
 
-  const modelsDir = routerConfig.modelsPath;
+  const modelsDir = config.modelsPath;
   if (!modelsDir) {
     console.log("[SERVER] Llama-server auto-start skipped: models directory not configured");
     return null;
@@ -50,9 +49,9 @@ export async function autoStartLlamaServer({ db, startLlamaServerRouter, initial
   try {
     const settings = db.getMeta("user_settings") || {};
     const result = await startLlamaServerRouter(modelsDir, db, {
-      maxModels: routerConfig.maxModelsLoaded || settings.maxModelsLoaded || 4,
-      ctxSize: routerConfig.ctxSize || 4096,
-      threads: routerConfig.threads || 4,
+      maxModels: config.maxModelsLoaded || settings.maxModelsLoaded || 4,
+      ctxSize: config.ctxSize || 4096,
+      threads: config.threads || 4,
       noAutoLoad: !settings.autoLoadModels,
     });
 

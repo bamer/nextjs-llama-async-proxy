@@ -11,23 +11,7 @@ import {
   saveUnifiedConfig,
   LEGACY_FIELDS,
 } from "./unified-config.js";
-import { getRouterConfig, saveRouterConfig, getLoggingConfig, saveLoggingConfig } from "./config.js";
-
-// Map unified config keys to legacy keys for backward compatibility
-const KEY_MAP = {
-  modelsPath: "baseModelsPath",
-  serverPath: "serverPath",
-  host: "llama_server_host",
-  port: "llama_server_port",
-  threads: "threads",
-  ctxSize: "ctx_size",
-  batchSize: "batch_size",
-  autoStartOnLaunch: "auto_start_on_launch",
-  metricsEnabled: "llama_server_metrics",
-};
-
-// Reverse map (legacy to unified)
-const REVERSE_KEY_MAP = Object.fromEntries(Object.entries(KEY_MAP).map(([k, v]) => [v, k]));
+import { getLoggingConfig, saveLoggingConfig } from "./config.js";
 
 export class ConfigRepository {
   /**
@@ -99,7 +83,8 @@ export class ConfigRepository {
           console.warn("[ConfigRepository] Legacy fields in routerConfig (will be ignored):", legacyInRouter);
         }
 
-        saveRouterConfig(this.db, config.routerConfig);
+        // Save using unified config module
+        saveUnifiedConfig(this.db, config.routerConfig);
 
         if (config.loggingConfig) {
           console.log("[DEBUG] Saving logging config");
@@ -127,7 +112,7 @@ export class ConfigRepository {
         metricsEnabled: config.llama_server_metrics !== false,
       };
 
-      saveRouterConfig(this.db, unifiedConfig);
+      saveUnifiedConfig(this.db, unifiedConfig);
     } catch (e) {
       console.error("ConfigRepository.save() error:", e);
       throw e;

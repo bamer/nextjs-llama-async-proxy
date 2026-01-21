@@ -5,7 +5,7 @@
 
 import fs from "fs/promises";
 import path from "path";
-import { getRouterConfig } from "../../db/config.js";
+import { getUnifiedConfig } from "../../db/unified-config.js";
 
 // Batch processing configuration
 const BATCH_SIZE = 5;
@@ -132,9 +132,9 @@ export function registerModelsScanHandlers(socket, io, db, ggufParser) {
 
     console.log("[DEBUG] models:scan request", { requestId: id });
 
-    try {
-      const config = getRouterConfig(db);
-      const modelsDir = req?.path || config.modelsPath;
+     try {
+       const config = getUnifiedConfig(db);
+       const modelsDir = req?.path || config.modelsPath;
       const dirExists = await directoryExists(modelsDir);
 
       let scanned = 0;

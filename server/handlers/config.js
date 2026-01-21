@@ -5,9 +5,11 @@
 
 import { fileLogger } from "./file-logger.js";
 import {
-  getRouterConfig,
-  saveRouterConfig,
-  resetRouterConfig,
+  getUnifiedConfig,
+  saveUnifiedConfig,
+  resetUnifiedConfig,
+} from "../db/unified-config.js";
+import {
   getLoggingConfig,
   saveLoggingConfig,
   resetLoggingConfig,
@@ -33,7 +35,7 @@ export function registerConfigHandlers(socket, db) {
   // Router Config
   socket.on("routerConfig:get", (req, callback) => {
     try {
-      const config = getRouterConfig(db);
+      const config = getUnifiedConfig(db);
       callback({ success: true, data: { config }, timestamp: new Date().toISOString() });
     } catch (e) {
       callback({ success: false, error: e.message, timestamp: new Date().toISOString() });
@@ -43,9 +45,9 @@ export function registerConfigHandlers(socket, db) {
   socket.on("routerConfig:update", (req, callback) => {
     try {
       const newConfig = req?.config || {};
-      const currentConfig = getRouterConfig(db);
+      const currentConfig = getUnifiedConfig(db);
       const mergedConfig = { ...currentConfig, ...newConfig };
-      const savedConfig = saveRouterConfig(db, mergedConfig);
+      const savedConfig = saveUnifiedConfig(db, mergedConfig);
 
       socket.broadcast.emit("routerConfig:updated", { config: savedConfig, timestamp: new Date().toISOString() });
       callback({ success: true, data: { config: savedConfig }, timestamp: new Date().toISOString() });
@@ -56,7 +58,7 @@ export function registerConfigHandlers(socket, db) {
 
   socket.on("routerConfig:reset", (req, callback) => {
     try {
-      const defaultConfig = resetRouterConfig(db);
+      const defaultConfig = resetUnifiedConfig(db);
       socket.broadcast.emit("routerConfig:updated", { config: defaultConfig, timestamp: new Date().toISOString() });
       callback({ success: true, data: { config: defaultConfig }, timestamp: new Date().toISOString() });
     } catch (e) {

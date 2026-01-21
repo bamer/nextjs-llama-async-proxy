@@ -9,7 +9,7 @@ import {
   stopLlamaServerRouter,
   getLlamaStatus,
 } from "./llama-router/index.js";
-import { getRouterConfig } from "../db/config.js";
+import { getUnifiedConfig } from "../db/unified-config.js";
 import path from "path";
 
 // (Removed global callback gating; per-socket broadcasts will be used in future patches)
@@ -46,17 +46,17 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
       const id = req?.requestId || Date.now();
       console.log(`[LLAMA-HANDLERS] Received llama:start event from client ${socket.id}. Request ID: ${id}`);
 
-      try {
-        const config = getRouterConfig(db);
-        const settings = db.getMeta("user_settings") || {};
-        const modelsDir = config.modelsPath;
+       try {
+         const config = getUnifiedConfig(db);
+         const settings = db.getMeta("user_settings") || {};
+         const modelsDir = config.modelsPath;
 
-        console.log(`[LLAMA-HANDLERS] Starting router with config:`, {
-          modelsDir,
-          maxModels: settings.maxModelsLoaded || 4,
-          ctxSize: config.ctxSize || 4096,
-          threads: config.threads || 4,
-        });
+         console.log(`[LLAMA-HANDLERS] Starting router with config:`, {
+           modelsDir,
+           maxModels: settings.maxModelsLoaded || 4,
+           ctxSize: config.ctxSize || 4096,
+           threads: config.threads || 4,
+         });
 
         const result = await startLlamaServerRouter(modelsDir, db, {
           maxModels: settings.maxModelsLoaded || 4,
@@ -140,10 +140,10 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
       // Small delay for clean shutdown (only 500ms)
       await new Promise(resolve => setTimeout(resolve, 500));
       
-       // Start the server
-       const config = getRouterConfig(db);
-       const settings = db.getMeta("user_settings") || {};
-       const modelsDir = config.modelsPath;
+        // Start the server
+        const config = getUnifiedConfig(db);
+        const settings = db.getMeta("user_settings") || {};
+        const modelsDir = config.modelsPath;
 
        const result = await startLlamaServerRouter(modelsDir, db, {
          maxModels: settings.maxModelsLoaded || 4,
