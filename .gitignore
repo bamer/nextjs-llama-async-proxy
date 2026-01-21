@@ -38,9 +38,9 @@ logs/**
 .github/*
 .vscode/*
 _bmad/**
-remote-debug-profile/*
+remote-debug-profile/
 test-screenshoots/*
-screenshoots/*
+screenshots/*
 
 # database
 /data
