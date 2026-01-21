@@ -257,8 +257,8 @@ class GpuDetails extends Component {
       <div class="gpu-card-preview">
         <div class="gpu-preview-grid">
           <div class="gpu-preview-item">
-            <span class="gpu-preview-label">GPU Usage</span>
-            <span class="gpu-preview-value">${usage > 0 ? usage.toFixed(1) + "%" : "N/A"}</span>
+            <span class="gpu-preview-label">Power</span>
+            <span class="gpu-preview-value">${m.powerDrawWatts ? m.powerDrawWatts.toFixed(0) + "w" : "--"}</span>
           </div>
           <div class="gpu-preview-item">
             <span class="gpu-preview-label">Temp</span>
@@ -268,7 +268,7 @@ class GpuDetails extends Component {
           <div class="gpu-preview-bar gpu-usage">
             <div class="gpu-preview-bar-fill" style="width: ${Math.min(usage, 100)}%"></div>
           </div>
-          <div class="gpu-preview-bar-label">GPU Usage</div>
+          <div class="gpu-preview-bar-label">GPU Usage :${usage > 0 ? usage.toFixed(1) + "%" : "N/A"}</div>
           <div class="gpu-preview-bar memory">
             <div class="gpu-preview-bar-fill" style="width: ${Math.min(memoryPercent, 100)}%"></div>
           </div>
