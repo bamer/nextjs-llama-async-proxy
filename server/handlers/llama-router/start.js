@@ -239,9 +239,10 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
   ];
 
   // Warn if context size is dangerously large (risk of OOM)
+  // 131072 (128K) is already very large - warn above this threshold
   const ctxSize = options.ctxSize || routerConfig.ctxSize || 4096;
-  if (ctxSize > 65536) {
-    console.warn(`[LLAMA] WARNING: ctxSize ${ctxSize} is very large and may cause out-of-memory errors. Consider using 16384 or 32768.`);
+  if (ctxSize > 131072) {
+    console.warn(`[LLAMA] WARNING: ctxSize ${ctxSize} is very large and may cause out-of-memory errors.`);
   }
 
   // Add --metrics flag only if enabled in settings
@@ -252,13 +253,11 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
   const isPresetFile = modelsDir && (modelsDir.endsWith(".ini") || options.usePreset);
   const baseModelsPath = routerConfig.modelsPath || "./models";
 
-  // Validate models directory exists (especially important for paths with spaces)
+  // Validate models directory exists before spawning
   const modelsDirToUse = modelsDir || baseModelsPath;
   if (!isPresetFile && modelsDirToUse) {
     if (!fs.existsSync(modelsDirToUse)) {
       console.warn(`[LLAMA] WARNING: Models directory does not exist: ${modelsDirToUse}`);
-    } else {
-      console.log(`[LLAMA] Models directory validated: ${modelsDirToUse}`);
     }
   }
 
