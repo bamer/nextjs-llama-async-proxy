@@ -55,3 +55,12 @@
 [2026-01-21T00:55:14.594Z] [WARN] [server] [SOCKET] Client 29EWMzGVQNdBEn0YAAAZ disconnected - transport closed (possible network issue or server load)
 [2026-01-21T00:55:14.714Z] [INFO] [server] Client connected: KdUvv7D1lsYxGY-dAAAb
 [2026-01-21T01:07:51.502Z] [INFO] [server] Client connected: Wh0d4emytv-_G0s1AAAB
+[2026-01-21T01:10:54.718Z] [INFO] [server] Client disconnected: Wh0d4emytv-_G0s1AAAB, reason: transport close
+[2026-01-21T01:10:54.719Z] [WARN] [server] [SOCKET] Client Wh0d4emytv-_G0s1AAAB disconnected - transport closed (possible network issue or server load)
+[2026-01-21T01:10:54.845Z] [INFO] [server] Client connected: 7fmn3gNvzBtm_TMsAAAD
+[2026-01-21T01:13:00.495Z] [INFO] [server] Client disconnected: 7fmn3gNvzBtm_TMsAAAD, reason: transport close
+[2026-01-21T01:13:00.495Z] [WARN] [server] [SOCKET] Client 7fmn3gNvzBtm_TMsAAAD disconnected - transport closed (possible network issue or server load)
+[2026-01-21T01:13:00.618Z] [INFO] [server] Client connected: MfowCHfOZx63--p5AAAF
+[2026-01-21T01:13:12.495Z] [INFO] [server] Client disconnected: MfowCHfOZx63--p5AAAF, reason: transport close
+[2026-01-21T01:13:12.495Z] [WARN] [server] [SOCKET] Client MfowCHfOZx63--p5AAAF disconnected - transport closed (possible network issue or server load)
+[2026-01-21T01:13:12.623Z] [INFO] [server] Client connected: o0Em84wakeAm0jhPAAAH
