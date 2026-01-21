@@ -1,0 +1,85 @@
+diff --git a/SOCKET_CONTRACTS.md b/SOCKET_CONTRACTS.md
+index 1234567..abcdefg 100644
+--- a/SOCKET_CONTRACTS.md
++++ b/SOCKET_CONTRACTS.md
+@@ -1,5 +1,19 @@
+ # Socket.IO Contracts - Stable API Reference
+
++## WebSocket Path
++
++**Path:** `/llamaproxws`
++
++The Socket.IO server is mounted at the `/llamaproxws` path. All clients must connect to this path:
++
++```javascript
++const socket = io({
++  path: "/llamaproxws",
++  transports: ["websocket"]
++});
++```
++
++---
++
+ ## Contract Format
+
+ ```javascript
+@@ -40,6 +54,103 @@ socket.broadcast.emit("<domain>:<action>", {
+ });
+ ```
+
++---
++
++## LlamaProxy Events
++
++These events are specific to the LlamaProxy WebSocket path (`/llamaproxws`).
++
++### `handshake` - Connection handshake (broadcast on connect)
++
++**Type:** Broadcast only (sent by server on new connection)
++**Payload:**
++```javascript
++{
++  version: "1.0",
++  timestamp: new Date().toISOString()
++}
++```
++
++**Purpose:** Confirms that the client has successfully connected to the correct WebSocket path.
++
++### `presets:list` - List all presets
++
++**Request:** `{}`
++
++**Response:** `{ success: true, data: { presets: [...] }, timestamp: ... }`
++
++### `presets:reload` - Reload presets from disk
++
++**Request:** `{}`
++
++**Response:** `{ success: true, data: { count: 5 }, timestamp: ... }`
++
++**Broadcast:** `presets:loaded` with `{ presets: [...], timestamp }`
++
++### `presets:loaded` - Presets loaded notification (broadcast)
++
++**Type:** Broadcast only
++**Payload:** `{ presets: [...], timestamp: ... }`
++
++### `presets:loadError` - Preset loading error (broadcast)
++
++**Type:** Broadcast only
++**Payload:** `{ error: "...", timestamp: ... }`
++
++### `startup:completed` - Startup watchdog completed (broadcast)
++
++**Type:** Broadcast only
++**Payload:** `{ startupTime: 1500, presetsLoaded: true, timestamp: ... }`
++
++### `startup:watchdog` - Startup watchdog triggered (broadcast)
++
++**Type:** Broadcast only
++**Payload:** `{ message: "...", configuredTimeout: 15000, elapsed: 15001, timestamp: ... }`
++
+ ---
+ 
+ ## Models Domain

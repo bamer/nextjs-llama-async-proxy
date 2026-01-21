@@ -2,6 +2,19 @@
 
 This document defines all Socket.IO handlers and their contracts. These are frozen once defined - components can rely on them not changing.
 
+## WebSocket Path
+
+**Path:** `/llamaproxws`
+
+The Socket.IO server is mounted at the `/llamaproxws` path. All clients must connect to this path:
+
+```javascript
+const socket = io({
+  path: "/llamaproxws",
+  transports: ["websocket"]
+});
+```
+
 ## Contract Format
 
 ```javascript
@@ -46,6 +59,131 @@ socket.broadcast.emit("<domain>:<action>", {
   timestamp: new Date().toISOString()
 });
 ```
+
+---
+
+## LlamaProxy Events
+
+These events are specific to the LlamaProxy WebSocket path (`/llamaproxws`).
+
+### `handshake` - Connection handshake (broadcast on connect)
+
+**Type:** Broadcast only (sent by server on new connection)
+**Payload:**
+```javascript
+{
+  version: "1.0",
+  timestamp: new Date().toISOString()
+}
+```
+
+**Purpose:** Confirms that the client has successfully connected to the correct WebSocket path. Clients should wait for this event before sending other requests.
+
+---
+
+### `presets:list` - List all presets
+
+**Request:**
+```javascript
+{}
+```
+
+**Response:**
+```javascript
+{
+  success: true,
+  data: { presets: [...] },
+  timestamp: new Date().toISOString()
+}
+```
+
+---
+
+### `presets:reload` - Reload presets from disk
+
+**Request:**
+```javascript
+{}
+```
+
+**Response:**
+```javascript
+{
+  success: true,
+  data: { count: 5 },
+  timestamp: new Date().toISOString()
+}
+```
+
+**Broadcast:** `presets:loaded` with `{ presets: [...], timestamp }`
+
+---
+
+### `presets:loaded` - Presets loaded notification (broadcast)
+
+**Type:** Broadcast only
+**Payload:**
+```javascript
+{
+  presets: [
+    {
+      name: "Chat",
+      parameters: { ... }
+    },
+    {
+      name: "Code",
+      parameters: { ... }
+    }
+  ],
+  timestamp: new Date().toISOString()
+}
+```
+
+---
+
+### `presets:loadError` - Preset loading error (broadcast)
+
+**Type:** Broadcast only
+**Payload:**
+```javascript
+{
+  error: "Failed to load presets from directory",
+  timestamp: new Date().toISOString()
+}
+```
+
+---
+
+### `startup:completed` - Startup watchdog completed (broadcast)
+
+**Type:** Broadcast only
+**Payload:**
+```javascript
+{
+  startupTime: 1500,
+  presetsLoaded: true,
+  timestamp: new Date().toISOString()
+}
+```
+
+**Purpose:** Sent when the startup watchdog timer completes successfully. Indicates the server is fully initialized.
+
+---
+
+### `startup:watchdog` - Startup watchdog triggered (broadcast)
+
+**Type:** Broadcast only
+**Payload:**
+```javascript
+{
+  message: "Startup exceeded configured timeout",
+  configuredTimeout: 15000,
+  elapsed: 15001,
+  timestamp: new Date().toISOString()
+}
+```
+
+**Purpose:** Sent when the startup watchdog timer fires. Indicates server initialization is taking longer than configured.
 
 ---
 
