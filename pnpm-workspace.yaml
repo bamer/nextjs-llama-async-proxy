@@ -1,18 +1,3 @@
 onlyBuiltDependencies:
-  - ' '
-  - '-'
-  - '3'
-  - ;
-  - b
-  - better-sqlite3
-  - e
-  - i
-  - l
-  - n
-  - o
-  - q
-  - r
-  - s
-  - t
-  - u
-  - v
+  - sharp
+  - unrs-resolver

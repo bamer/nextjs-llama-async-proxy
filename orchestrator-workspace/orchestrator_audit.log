@@ -1,3 +1,0 @@
-# Orchestrator Audit Log
-# All pipeline actions are recorded here as JSON Lines
-{"timestamp":"2026-01-15T17:46:00.123Z","taskId":"INIT","origin":"orchestrator","action":"INITIALIZE","details":{"workspace":"/home/bamer/nextjs-llama-async-proxy/orchestrator-workspace","pipelineId":"init-2026-01-15-001"}}
