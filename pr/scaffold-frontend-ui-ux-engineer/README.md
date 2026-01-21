@@ -1,3 +1,12 @@
-# PR Scaffold: Frontend UI/UX Engineer
-- Objective: Enforce event-driven UI, handshake tests, and path usage for /llamaproxws; remove UI polling.
-- Deliverables: diff.patch, handshake tests scaffolds, lsp diagnostics placeholder, logs, acceptance notes.
+# Frontend UI/UX Engineer PR - Handshake and Event-Driven UI
+
+## Objective
+Enforce event-driven UI contracts, handshake tests for websocket path, remove polling.
+
+## Deliverables
+- Frontend uses event-driven updates only
+- Handshake tests for /llamaproxws path
+- No polling patterns remain in UI
+
+## Status
+Scaffold ready for actual implementation.
