@@ -384,3 +384,7 @@ socket.on("disconnect", () => {
 4. Found wrapper class → Use Socket.IO directly
 5. Found callbacks → Convert to async/await
 6. Found no cleanup → Add cleanup on disconnect
+### Delta-driven Cadence Policy (Real-time, diff-based)
+- There is no central cadence timer. Cadence is delta-driven, emitting updates when monitored metrics cross configured deltas.
+- Thresholds are configurable via Settings with defaults: CPU 5%, Memory 2%, GPU 5%.
+- The cadence system uses per-resource deltas to drive real-time updates, rather than per-client polling or a global timer.

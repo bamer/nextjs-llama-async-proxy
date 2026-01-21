@@ -578,3 +578,6 @@ CREATE TABLE logs (
 - [DEPLOYMENT.md](DEPLOYMENT.md) - Production deployment guide
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
 - [COVERAGE_GUIDE.md](COVERAGE_GUIDE.md) - Test coverage procedures
+### Delta-driven cadence (real-time updates)
+- There is no central cadence timer. Cadence is delta-driven: updates are emitted when monitored metrics cross thresholds configured via Settings (defaults: CPU 5%, Memory 2%, GPU 5%).
+- Subscriptions enable per-client delta-driven updates; broadcasts propagate changes to all interested components in real-time.

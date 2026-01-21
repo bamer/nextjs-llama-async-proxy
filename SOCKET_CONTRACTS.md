@@ -1269,3 +1269,6 @@ For each handler:
 - [ ] Log important operations
 - [ ] Don't call other handlers
 - [ ] Return consistent response format
+### Delta-driven cadence (real-time updates)
+- There is no central cadence timer. Cadence is delta-driven: updates are emitted when monitored metrics cross thresholds configured via Settings (defaults: CPU 5%, Memory 2%, GPU 5%).
+- Subscriptions enable per-client delta-driven updates; the server broadcasts updates when deltas are exceeded.

@@ -529,6 +529,10 @@ All state comes via Socket.IO broadcasts. Components must subscribe to these eve
 | `config:updated` | Configuration changes | `{ config: {...} }` |
 | `router:status` | Llama router status | `{ status: {...} }` |
 
+### Delta-driven Real-time Cadence
+- There is no central cadence timer in the delta-driven model. Cadence is delta-driven: updates are emitted when monitored resources cross configurable deltas. Thresholds and behavior are controlled via Settings with sensible defaults (CPU: 5%, Memory: 2%, GPU: 5%).
+- Cadence subscriptions remain the mechanism for clients to opt-in to cadence streams, but the cadence trigger is delta-driven rather than timer-based.
+
 ### Subscription Lifecycle
 
 Components MUST properly manage subscriptions:
