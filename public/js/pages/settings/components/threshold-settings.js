@@ -62,10 +62,21 @@ class ThresholdSettings extends Component {
         this._localChanges = {};
         showNotification("Alert thresholds saved", "success");
       } else {
+        console.error("[ThresholdSettings] Save failed:", {
+          error: response.error,
+          message: response.error?.message || response.error,
+          stack: new Error().stack,
+          timestamp: new Date().toISOString()
+        });
         showNotification(`Save failed: ${response.error}`, "error");
       }
     } catch (e) {
-      console.error("[ThresholdSettings] Save error:", e);
+      console.error("[ThresholdSettings] Save error:", {
+        error: e.message,
+        stack: e.stack,
+        name: e.name,
+        timestamp: new Date().toISOString()
+      });
       showNotification(`Save error: ${e.message}`, "error");
     }
   }
@@ -79,10 +90,21 @@ class ThresholdSettings extends Component {
         this._updateUI();
         showNotification("Thresholds reset to defaults", "success");
       } else {
+        console.error("[ThresholdSettings] Reset failed:", {
+          error: response.error,
+          message: response.error?.message || response.error,
+          stack: new Error().stack,
+          timestamp: new Date().toISOString()
+        });
         showNotification(`Reset failed: ${response.error}`, "error");
       }
     } catch (e) {
-      console.error("[ThresholdSettings] Reset error:", e);
+      console.error("[ThresholdSettings] Reset error:", {
+        error: e.message,
+        stack: e.stack,
+        name: e.name,
+        timestamp: new Date().toISOString()
+      });
       showNotification(`Reset error: ${e.message}`, "error");
     }
   }

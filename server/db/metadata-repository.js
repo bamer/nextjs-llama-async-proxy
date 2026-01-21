@@ -28,14 +28,26 @@ export class MetadataRepository {
   }
 
   /**
-   * Set metadata value
-   * @param {string} key - Metadata key
-   * @param {*} value - Value to store
-   */
+    * Set metadata value
+    * @param {string} key - Metadata key
+    * @param {*} value - Value to store
+    */
   set(key, value) {
-    const valueToStore = value === null || value === undefined ? "{}" : JSON.stringify(value);
-    const query = "INSERT OR REPLACE INTO metadata (key, value, updated_at) VALUES (?, ?, ?)";
-    this.db.prepare(query).run(key, valueToStore, Math.floor(Date.now() / 1000));
+    try {
+      const valueToStore = value === null || value === undefined ? "{}" : JSON.stringify(value);
+      const query = "INSERT OR REPLACE INTO metadata (key, value, updated_at) VALUES (?, ?, ?)";
+      this.db.prepare(query).run(key, valueToStore, Math.floor(Date.now() / 1000));
+      console.log("[DEBUG] MetadataRepository.set:", { key, valueType: typeof value });
+    } catch (e) {
+      console.error("[DEBUG] MetadataRepository.set failed:", {
+        key,
+        error: e.message,
+        code: e.code,
+        errno: e.errno,
+        syscall: e.syscall
+      });
+      throw e;
+    }
   }
 }
 

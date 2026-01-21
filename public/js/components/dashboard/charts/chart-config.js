@@ -91,8 +91,13 @@ if (typeof ChartConfigBuilder === "undefined") {
         },
         y: {
           min: 0,
+          max: 100,
           grid: { color: this.colors.gridColor },
-          ticks: { stepSize: 25, font: { size: 11 }, color: this.colors.tickColor },
+          ticks: {
+            maxTicksLimit: 10,
+            font: { size: 11 },
+            color: this.colors.tickColor,
+          },
           title: {
             display: true,
             text: "Usage (%)",

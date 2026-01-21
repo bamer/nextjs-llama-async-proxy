@@ -19,6 +19,7 @@ class Sidebar extends Component {
       </nav>
       <div class="sidebar-footer">
         <button class="theme-toggle-btn" data-action="toggle-theme">${this.darkMode ? "☀️" : "🌙"}</button>
+        <button class="help-btn" data-action="shortcuts">⌨️</button>
         <div class="connection-status">
           <span class="dot disconnected"></span>
           <span class="text">Disconnected</span>
@@ -36,12 +37,28 @@ class Sidebar extends Component {
       }
     });
 
+    this.on("click", "[data-action=shortcuts]", () => {
+      this._showShortcuts();
+    });
+
     this.on("click", "[data-action=toggle-theme]", () => {
       this.darkMode = !this.darkMode;
       localStorage.setItem("darkMode", this.darkMode);
       document.documentElement.classList.toggle("dark-mode", this.darkMode);
       this.$("[data-action=toggle-theme]").textContent = this.darkMode ? "☀️" : "🌙";
     });
+  }
+
+  _showShortcuts() {
+    const shortcuts = window.keyboardShortcuts?.getAllShortcuts() || [];
+    const modal = Component.h(KeyboardShortcutsHelp, { shortcuts });
+    const container = document.getElementById("main-content-container");
+    if (container) {
+      container.innerHTML = "";
+      const el = modal.render();
+      container.appendChild(el);
+      if (modal.onMount) modal.onMount();
+    }
   }
 
   onMount() {

@@ -69,6 +69,40 @@
   flex-shrink: 0;
 }
 
+.sidebar-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: var(--sm) 0;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px var(--md);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+}
+
+.nav-btn:hover {
+  background: var(--bg-tertiary);
+  text-decoration: none;
+  color: var(--primary);
+}
+
+.nav-btn span:first-child {
+  flex-shrink: 0;
+}
+
 .sidebar-footer {
   padding: var(--md);
   border-top: 1px solid var(--border-color);
@@ -186,6 +220,46 @@
 
 .sidebar.collapsed .sidebar-nav .nav-link span:last-child {
   display: none;
+}
+
+.sidebar.collapsed .sidebar-nav .nav-btn {
+  text-align: center;
+  padding: 12px 6px;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  font-size: 1.5rem;
+  gap: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+}
+
+.sidebar.collapsed .sidebar-nav .nav-btn span:last-child {
+  display: none;
+}
+
+.sidebar.collapsed .help-btn {
+  position: relative;
+}
+
+.sidebar.collapsed .help-btn::after {
+  content: "Shortcuts";
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s;
+  color: var(--text-secondary);
+}
+
+.sidebar.collapsed .help-btn:hover::after {
+  opacity: 1;
 }
 
 .sidebar.collapsed .sidebar-footer {

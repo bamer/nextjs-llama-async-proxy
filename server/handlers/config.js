@@ -167,11 +167,25 @@ export function registerConfigHandlers(socket, db) {
   });
 
   socket.on("config:thresholds:reset", (req, callback) => {
+    console.log("[DEBUG] config:thresholds:reset request received", {
+      requestId: getRequestId(req),
+      timestamp: new Date().toISOString()
+    });
+    
     try {
       db.setMeta("alert_thresholds", null);
       socket.broadcast.emit("config:thresholds:updated", { thresholds: THRESHOLD_DEFAULTS, timestamp: new Date().toISOString() });
       callback({ success: true, data: { thresholds: THRESHOLD_DEFAULTS }, timestamp: new Date().toISOString() });
     } catch (e) {
+      console.error("[DEBUG] config:thresholds:reset error:", {
+        error: e.message,
+        code: e.code,
+        stack: e.stack,
+        errno: e.errno,
+        syscall: e.syscall,
+        path: e.path,
+        timestamp: new Date().toISOString()
+      });
       callback({ success: false, error: e.message, timestamp: new Date().toISOString() });
     }
   });
