@@ -13,7 +13,6 @@ import {
   getLoggingConfig,
   saveLoggingConfig,
   resetLoggingConfig,
-  getConfig,
 } from "../db/config.js";
 import { THRESHOLD_DEFAULTS } from "../db/unified-config.js";
 
@@ -23,10 +22,25 @@ function getRequestId(req) {
 
 export function registerConfigHandlers(socket, db) {
   // Legacy config handler (for backward compatibility)
+  // Now uses unified config module internally
   socket.on("config:get", (req, callback) => {
     try {
-      const config = getConfig(db);
-      callback({ success: true, data: { config }, timestamp: new Date().toISOString() });
+      const unified = getUnifiedConfig(db);
+      // Convert to legacy format for backward compatibility
+      const legacyConfig = {
+        serverPath: unified.serverPath || "",
+        host: unified.host || "localhost",
+        port: unified.port || null,
+        baseModelsPath: unified.modelsPath || "",
+        ctx_size: unified.ctxSize || 2048,
+        batch_size: unified.batchSize || 512,
+        threads: unified.threads || 4,
+        auto_start_on_launch: unified.autoStartOnLaunch || false,
+        llama_server_port: unified.port || null,
+        llama_server_host: unified.host || "0.0.0.0",
+        llama_server_metrics: unified.metricsEnabled !== false,
+      };
+      callback({ success: true, data: { config: legacyConfig }, timestamp: new Date().toISOString() });
     } catch (e) {
       callback({ success: false, error: e.message, timestamp: new Date().toISOString() });
     }

@@ -6,6 +6,8 @@
  * @param {Object} db - Database instance for logging.
  * @param {LlamaServerProcessManager} processManager - Process manager instance.
  */
+import { getUnifiedConfig } from "../../db/unified-config.js";
+
 export function registerProcessHandlers(socket, io, db, processManager) {
   /**
    * Start llama-server
@@ -14,7 +16,7 @@ export function registerProcessHandlers(socket, io, db, processManager) {
     const id = req?.requestId || Date.now();
     console.log("[DEBUG] llama-server:start request:", { requestId: id });
     try {
-      const config = db.getConfig();
+      const config = getUnifiedConfig(db);
       await processManager.start();
       ok(
         socket,
