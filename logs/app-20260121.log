@@ -18,3 +18,9 @@
 [2026-01-21T00:14:45.716Z] [WARN] [custom-source] Warn message
 [2026-01-21T00:14:45.716Z] [WARN] [server] true
 [2026-01-21T00:24:04.642Z] [INFO] [server] Client connected: KjIDhjbdXMwOgLorAAAD
+[2026-01-21T00:29:17.109Z] [INFO] [server] Client disconnected: KjIDhjbdXMwOgLorAAAD, reason: transport close
+[2026-01-21T00:29:17.109Z] [WARN] [server] [SOCKET] Client KjIDhjbdXMwOgLorAAAD disconnected - transport closed (possible network issue or server load)
+[2026-01-21T00:29:17.244Z] [INFO] [server] Client connected: UC3NeA7SG1Ktk9jqAAAF
+[2026-01-21T00:31:36.787Z] [INFO] [server] Client disconnected: UC3NeA7SG1Ktk9jqAAAF, reason: transport close
+[2026-01-21T00:31:36.787Z] [WARN] [server] [SOCKET] Client UC3NeA7SG1Ktk9jqAAAF disconnected - transport closed (possible network issue or server load)
+[2026-01-21T00:31:36.904Z] [INFO] [server] Client connected: O4KyEVMBftWx8YA3AAAH
