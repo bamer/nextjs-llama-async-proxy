@@ -1,19 +1,13 @@
 /**
  * StatsGrid Component - Event-Driven DOM Updates
  * Displays system metrics with icons, values, and progress bars
+ * Uses configurable thresholds from settings for warning/alert styling
  */
 
 class StatsGrid extends Component {
-  /**
-   * Creates a StatsGrid component instance.
-   * @param {Object} props - Component properties.
-   * @param {Object} props.metrics - System metrics object containing CPU, memory, disk, swap, and uptime.
-   * @param {Object} props.gpuMetrics - GPU metrics object containing usage and memory information.
-   */
   constructor(props) {
     super(props);
 
-    // Direct properties instead of state
     this.metrics = props.metrics || {
       cpu: { usage: 0 },
       memory: { used: 0 },
@@ -22,37 +16,52 @@ class StatsGrid extends Component {
       uptime: 0,
     };
     this.gpuMetrics = props.gpuMetrics || { usage: 0, memoryUsed: 0, memoryTotal: 0 };
+    this.thresholds = props.thresholds || {
+      cpu: { warning: 70, alert: 85 },
+      memory: { warning: 75, alert: 90 },
+      gpu: { warning: 80, alert: 90 },
+      disk: { warning: 80, alert: 95 },
+      swap: { warning: 50, alert: 70 },
+    };
     this.unsubscribers = [];
   }
 
-  /**
-   * Subscribe to metrics changes via socket broadcast when component mounts
-   * Replaces stateManager.subscribe("metrics", ...)
-   */
   onMount() {
-    // Listen to metrics:updated broadcast from server
     this.unsubscribers.push(
       socketClient.on("metrics:updated", (data) => {
         if (data && data.metrics) {
           this.updateMetrics(data.metrics, data.gpuMetrics);
         }
+      }),
+      socketClient.on("config:thresholds:updated", (data) => {
+        if (data.thresholds) {
+          this.thresholds = data.thresholds;
+          this._updateDOM();
+        }
       })
     );
+
+    // Load thresholds from server
+    this._loadThresholds();
   }
 
-  /**
-   * Clean up subscriptions when component is destroyed
-   */
+  async _loadThresholds() {
+    try {
+      const response = await socketClient.request("config:thresholds:get", {});
+      if (response.success && response.data.thresholds) {
+        this.thresholds = response.data.thresholds;
+        this._updateDOM();
+      }
+    } catch (e) {
+      console.error("[StatsGrid] Failed to load thresholds:", e);
+    }
+  }
+
   destroy() {
     this.unsubscribers.forEach((unsub) => unsub());
     this.unsubscribers = [];
   }
 
-  /**
-   * Format uptime in human-readable format
-   * @param {number} s - Seconds
-   * @returns {string} Formatted uptime (e.g., "2d 5h 30m")
-   */
   _fmtUptime(s) {
     const d = Math.floor(s / 86400);
     const h = Math.floor((s % 86400) / 3600);
@@ -63,26 +72,42 @@ class StatsGrid extends Component {
     return `${m}m`;
   }
 
-  /**
-   * Update metrics data and DOM
-   */
+  _getStatus(usage, metric) {
+    const t = this.thresholds[metric] || { warning: 70, alert: 85 };
+    if (usage >= t.alert) return "alert";
+    if (usage >= t.warning) return "warning";
+    return "normal";
+  }
+
   updateMetrics(metrics, gpuMetrics) {
     this.metrics = metrics || this.metrics;
     this.gpuMetrics = gpuMetrics || this.gpuMetrics;
     this._updateDOM();
   }
 
-  /**
-   * Update the DOM with current metrics values
-   */
   _updateDOM() {
     if (!this._el) return;
 
-    const statCards = this._el.querySelectorAll(".stat-card");
     const m = this.metrics;
     const gpu = this.gpuMetrics;
 
-    // Define the values for each stat card by index
+    // Get status for each metric
+    const cpuStatus = this._getStatus(m.cpu?.usage || 0, "cpu");
+    const memStatus = this._getStatus(m.memory?.used || 0, "memory");
+    const swapStatus = this._getStatus(m.swap?.used || 0, "swap");
+    const gpuStatus = this._getStatus(gpu?.usage || 0, "gpu");
+    const diskStatus = this._getStatus(m.disk?.used || 0, "disk");
+
+    const statCards = this._el.querySelectorAll(".stat-card");
+
+    // Update classes
+    if (statCards[0]) statCards[0].className = `stat-card ${cpuStatus}`;
+    if (statCards[1]) statCards[1].className = `stat-card ${memStatus}`;
+    if (statCards[2]) statCards[2].className = `stat-card ${swapStatus}`;
+    if (statCards[3]) statCards[3].className = `stat-card ${gpuStatus}`;
+    if (statCards[5]) statCards[5].className = `stat-card ${diskStatus}`;
+
+    // Update values
     const statValues = [
       { value: `${(m.cpu?.usage || 0).toFixed(1)}%`, percent: Math.min(m.cpu?.usage || 0, 100) },
       { value: `${(m.memory?.used || 0).toFixed(1)}%`, percent: Math.min(m.memory?.used || 0, 100) },
@@ -111,53 +136,55 @@ class StatsGrid extends Component {
     });
   }
 
-  /**
-   * Renders the stats grid component with all metric cards.
-   * @returns {string} HTML string containing the stats grid with CPU, memory, swap, GPU, disk, and uptime cards.
-   */
   render() {
     const m = this.metrics;
     const gpu = this.gpuMetrics;
 
+    const cpuStatus = this._getStatus(m.cpu?.usage || 0, "cpu");
+    const memStatus = this._getStatus(m.memory?.used || 0, "memory");
+    const swapStatus = this._getStatus(m.swap?.used || 0, "swap");
+    const gpuStatus = this._getStatus(gpu?.usage || 0, "gpu");
+    const diskStatus = this._getStatus(m.disk?.used || 0, "disk");
+
     return `
       <div class="stats-grid">
-        <div class="stat-card ${m.cpu?.usage > 80 ? "warning" : ""}">
+        <div class="stat-card ${cpuStatus}">
           <div class="stat-icon">🖥️</div>
           <div class="stat-content">
             <span class="stat-label">CPU Usage</span>
             <span class="stat-value">${(m.cpu?.usage || 0).toFixed(1)}%</span>
             <div class="stat-bar">
-              <div class="stat-bar-fill" style="width: ${Math.min(m.cpu?.usage || 0, 100)}%"></div>
+              <div class="stat-bar-fill ${cpuStatus}" style="width: ${Math.min(m.cpu?.usage || 0, 100)}%"></div>
             </div>
           </div>
         </div>
-        <div class="stat-card ${m.memory?.used > 85 ? "warning" : ""}">
+        <div class="stat-card ${memStatus}">
           <div class="stat-icon">🧠</div>
           <div class="stat-content">
             <span class="stat-label">Memory Usage</span>
             <span class="stat-value">${(m.memory?.used || 0).toFixed(1)}%</span>
             <div class="stat-bar">
-              <div class="stat-bar-fill" style="width: ${Math.min(m.memory?.used || 0, 100)}%"></div>
+              <div class="stat-bar-fill ${memStatus}" style="width: ${Math.min(m.memory?.used || 0, 100)}%"></div>
             </div>
           </div>
         </div>
-        <div class="stat-card ${m.swap?.used > 50 ? "warning" : ""}">
+        <div class="stat-card ${swapStatus}">
           <div class="stat-icon">💨</div>
           <div class="stat-content">
             <span class="stat-label">Swap Usage</span>
             <span class="stat-value">${(m.swap?.used || 0).toFixed(1)}%</span>
             <div class="stat-bar">
-              <div class="stat-bar-fill" style="width: ${Math.min(m.swap?.used || 0, 100)}%"></div>
+              <div class="stat-bar-fill ${swapStatus}" style="width: ${Math.min(m.swap?.used || 0, 100)}%"></div>
             </div>
           </div>
         </div>
-        <div class="stat-card ${gpu?.usage > 85 ? "warning" : ""}">
+        <div class="stat-card ${gpuStatus}">
           <div class="stat-icon">🎮</div>
           <div class="stat-content">
             <span class="stat-label">GPU Usage</span>
             <span class="stat-value">${(gpu?.usage || 0).toFixed(1)}%</span>
             <div class="stat-bar">
-              <div class="stat-bar-fill gpu" style="width: ${Math.min(gpu?.usage || 0, 100)}%"></div>
+              <div class="stat-bar-fill gpu ${gpuStatus}" style="width: ${Math.min(gpu?.usage || 0, 100)}%"></div>
             </div>
           </div>
         </div>
@@ -165,25 +192,19 @@ class StatsGrid extends Component {
           <div class="stat-icon">💾</div>
           <div class="stat-content">
             <span class="stat-label">GPU Memory</span>
-            <span class="stat-value">${
-  gpu?.memoryTotal > 0
-    ? `${window.AppUtils?.formatBytes?.(gpu?.memoryUsed || 0)} / ${window.AppUtils?.formatBytes?.(gpu?.memoryTotal || 0)}`
-    : `${(gpu?.usage || 0).toFixed(1)}%`
-}</span>
+            <span class="stat-value">${gpu?.memoryTotal > 0 ? window.AppUtils?.formatBytes?.(gpu?.memoryUsed || 0) + " / " + window.AppUtils?.formatBytes?.(gpu?.memoryTotal || 0) : (gpu?.usage || 0).toFixed(1) + "%"}</span>
             <div class="stat-bar">
-              <div class="stat-bar-fill gpu" style="width: ${
-  gpu?.memoryTotal > 0 ? (gpu?.memoryUsed / gpu?.memoryTotal) * 100 : Math.min(gpu?.usage || 0, 100)
-}%"></div>
+              <div class="stat-bar-fill gpu" style="width: ${gpu?.memoryTotal > 0 ? (gpu?.memoryUsed / gpu?.memoryTotal) * 100 : Math.min(gpu?.usage || 0, 100)}%"></div>
             </div>
           </div>
         </div>
-        <div class="stat-card ${m.disk?.used > 90 ? "warning" : ""}">
+        <div class="stat-card ${diskStatus}">
           <div class="stat-icon">💿</div>
           <div class="stat-content">
             <span class="stat-label">Disk Usage</span>
             <span class="stat-value">${(m.disk?.used || 0).toFixed(1)}%</span>
             <div class="stat-bar">
-              <div class="stat-bar-fill" style="width: ${Math.min(m.disk?.used || 0, 100)}%"></div>
+              <div class="stat-bar-fill ${diskStatus}" style="width: ${Math.min(m.disk?.used || 0, 100)}%"></div>
             </div>
           </div>
         </div>

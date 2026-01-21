@@ -46,6 +46,18 @@ export const UNIFIED_CONFIG_DEFAULTS = {
 };
 
 /**
+ * Alert Threshold Defaults
+ * 2 levels: warning (orange) and alert (red)
+ */
+export const THRESHOLD_DEFAULTS = {
+  cpu: { warning: 70, alert: 85 },
+  memory: { warning: 75, alert: 90 },
+  gpu: { warning: 80, alert: 90 },
+  disk: { warning: 80, alert: 95 },
+  swap: { warning: 50, alert: 70 },
+};
+
+/**
  * Legacy field mappings for migration
  * These fields should NOT exist in the unified config
  */

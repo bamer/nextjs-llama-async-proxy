@@ -50,6 +50,21 @@
   opacity: 1;
 }
 
+.stat-card.alert {
+  border-left: 4px solid var(--danger);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+}
+
+.stat-card.alert::before {
+  background: var(--danger);
+  opacity: 1;
+}
+
+.stat-card.alert:hover {
+  border-color: var(--danger);
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.2);
+}
+
 .stat-icon {
   font-size: 1.25rem;
   display: inline-block;
@@ -93,8 +108,24 @@
   transition: width 0.3s ease;
 }
 
+.stat-bar-fill.warning {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.stat-bar-fill.alert {
+  background: linear-gradient(90deg, var(--danger), #ef4444);
+}
+
 .stat-bar-fill.gpu {
   background: linear-gradient(90deg, var(--warning), var(--danger));
+}
+
+.stat-bar-fill.gpu.warning {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.stat-bar-fill.gpu.alert {
+  background: linear-gradient(90deg, var(--danger), #ef4444);
 }
 
 /* GPU Stat Card - Subtle accent on border */
@@ -120,6 +151,16 @@
 .stat-card.gpu-stat.warning:hover {
   border-color: var(--danger);
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
+}
+
+.stat-card.gpu-stat.alert {
+  border-left: 4px solid #dc2626;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.2);
+}
+
+.stat-card.gpu-stat.alert::before {
+  background: #dc2626;
+  opacity: 1;
 }
 
 /* Responsive */
