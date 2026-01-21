@@ -193,11 +193,13 @@ class SettingsController {
   /**
        * Start router with preset
        */
-  async handleRouterStartWithPreset(presetName) {
+    async handleRouterStartWithPreset(presetName) {
     console.log("[SETTINGS] Starting router with preset:", presetName);
 
     try {
-      const response = await socketClient.request("router:start-preset", { presetName });
+      // Use official llama-start-with-preset event name to start with a preset
+      // The server implementation lives under llama/router and expects { presetName }
+      const response = await socketClient.request("llama:start-with-preset", { presetName });
       if (response.success) {
         showNotification(`Router started with preset: ${presetName}`, "success");
       } else {
