@@ -17,6 +17,7 @@
 
 #logs
 logs/*
+/logs/**
 
 .opencode/*
 .beads/*
