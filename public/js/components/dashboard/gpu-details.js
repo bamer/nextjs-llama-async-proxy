@@ -260,30 +260,19 @@ class GpuDetails extends Component {
             <span class="gpu-preview-label">GPU Usage</span>
             <span class="gpu-preview-value">${usage > 0 ? usage.toFixed(1) + "%" : "N/A"}</span>
           </div>
-          ${usage > 0 ? `
-            <div class="gpu-preview-bar gpu-usage">
-              <div class="gpu-preview-bar-fill" style="width: ${Math.min(usage, 100)}%"></div>
-            </div>
-          ` : `
-            <div class="gpu-preview-bar gpu-usage">
-              <div class="gpu-preview-bar-fill" style="width: 0%"></div>
-            </div>
-          `}
-          <div class="gpu-preview-item">
-            <span class="gpu-preview-label">Memory</span>
-            <span class="gpu-preview-value">${this._formatBytes(memoryUsed)} / ${this._formatBytes(memoryTotal)}</span>
-          </div>
           <div class="gpu-preview-item">
             <span class="gpu-preview-label">Temp</span>
             <span class="gpu-preview-value ${m.temperatureCelsius > 85 ? "danger" : ""}">${m.temperatureCelsius ? m.temperatureCelsius.toFixed(0) + "°C" : "--"}</span>
           </div>
-          <div class="gpu-preview-item">
-            <span class="gpu-preview-label">Power</span>
-            <span class="gpu-preview-value">${m.powerDrawWatts ? m.powerDrawWatts.toFixed(1) + " W" : "--"}</span>
+          <div class="gpu-preview-item"></div>
+          <div class="gpu-preview-bar gpu-usage">
+            <div class="gpu-preview-bar-fill" style="width: ${Math.min(usage, 100)}%"></div>
           </div>
+          <div class="gpu-preview-bar-label">GPU Usage</div>
           <div class="gpu-preview-bar memory">
             <div class="gpu-preview-bar-fill" style="width: ${Math.min(memoryPercent, 100)}%"></div>
           </div>
+          <div class="gpu-preview-bar-label">Memory : ${this._formatBytes(memoryUsed)} / ${this._formatBytes(memoryTotal)}</div>
         </div>
       </div>
     `;
