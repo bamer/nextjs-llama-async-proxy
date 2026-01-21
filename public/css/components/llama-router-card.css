@@ -66,10 +66,10 @@
   border: 1px solid var(--border-color);
 }
 
-/* At a Glance Grid - 2 columns minimum */
+/* At a Glance Grid - 4 columns for Ctx Size, Parallel, Threads, Uptime */
 .status-glance-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--sm);
   padding: var(--md);
   background: var(--card-bg);
