@@ -286,7 +286,11 @@ class LlamaRouterCard extends Component {
       }
     }
 
-    // Update server config metrics (also shown in glance grid)
+    // Update throughput metrics
+    this.setText("[data-metric=\"prompt-ts\"]", `${(m.promptTokensSeconds || 0).toFixed(2)} t/s`);
+    this.setText("[data-metric=\"pred-ts\"]", `${(m.predictedTokensSeconds || 0).toFixed(2)} t/s`);
+
+    // Update server config metrics
     this.setText("[data-metric=\"n-ctx\"]", nCtx);
     this.setText("[data-metric=\"n-parallel\"]", nParallel);
     this.setText("[data-metric=\"n-threads\"]", nThreads);
@@ -416,6 +420,7 @@ class LlamaRouterCard extends Component {
         Component.h("span", { className: "chevron" }, "▼"), " Detailed Metrics"
       ]),
       Component.h("div", { className: "detailed-metrics-area" }, [
+        this._renderMetricsGroup("Throughput", { "Prompt": "prompt-ts", "Predicted": "pred-ts" }),
         this._renderMetricsGroup("Server Config", { "Ctx Size": "n-ctx", "Parallel": "n-parallel", "Threads": "n-threads" })
       ])
     ]);
