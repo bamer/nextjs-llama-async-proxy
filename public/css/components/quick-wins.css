@@ -20,6 +20,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .keyboard-shortcuts-modal .modal-content {
