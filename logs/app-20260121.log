@@ -24,3 +24,6 @@
 [2026-01-21T00:31:36.787Z] [INFO] [server] Client disconnected: UC3NeA7SG1Ktk9jqAAAF, reason: transport close
 [2026-01-21T00:31:36.787Z] [WARN] [server] [SOCKET] Client UC3NeA7SG1Ktk9jqAAAF disconnected - transport closed (possible network issue or server load)
 [2026-01-21T00:31:36.904Z] [INFO] [server] Client connected: O4KyEVMBftWx8YA3AAAH
+[2026-01-21T00:32:39.561Z] [INFO] [server] Client disconnected: O4KyEVMBftWx8YA3AAAH, reason: transport close
+[2026-01-21T00:32:39.561Z] [WARN] [server] [SOCKET] Client O4KyEVMBftWx8YA3AAAH disconnected - transport closed (possible network issue or server load)
+[2026-01-21T00:32:39.681Z] [INFO] [server] Client connected: aVuosZZHy16LIkxAAAAJ

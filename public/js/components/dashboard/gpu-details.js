@@ -273,30 +273,13 @@ class GpuDetails extends Component {
             <span class="gpu-preview-label">Memory</span>
             <span class="gpu-preview-value">${this._formatBytes(memoryUsed)} / ${this._formatBytes(memoryTotal)}</span>
           </div>
-          ${m.temperatureCelsius ? `
-            <div class="gpu-preview-item">
-              <span class="gpu-preview-label">Temp</span>
-              <span class="gpu-preview-value ${m.temperatureCelsius > 85 ? "danger" : ""}">${m.temperatureCelsius.toFixed(0)}°C</span>
-            </div>
-          ` : `
-            <div class="gpu-preview-item">
-              <span class="gpu-preview-label">Temp</span>
-              <span class="gpu-preview-value">--</span>
-            </div>
-          `}
-          ${m.powerDrawWatts ? `
-            <div class="gpu-preview-item">
-              <span class="gpu-preview-label">Power</span>
-              <span class="gpu-preview-value">${m.powerDrawWatts.toFixed(1)} W</span>
-            </div>
-          ` : `
-            <div class="gpu-preview-item">
-              <span class="gpu-preview-label">Power</span>
-              <span class="gpu-preview-value">--</span>
-            </div>
-          `}
-          <div class="gpu-preview-bar memory">
-            <div class="gpu-preview-bar-fill" style="width: ${Math.min(memoryPercent, 100)}%"></div>
+          <div class="gpu-preview-item">
+            <span class="gpu-preview-label">Temp</span>
+            <span class="gpu-preview-value ${m.temperatureCelsius > 85 ? "danger" : ""}">${m.temperatureCelsius ? m.temperatureCelsius.toFixed(0) + "°C" : "--"}</span>
+          </div>
+          <div class="gpu-preview-item">
+            <span class="gpu-preview-label">Power</span>
+            <span class="gpu-preview-value">${m.powerDrawWatts ? m.powerDrawWatts.toFixed(1) + " W" : "--"}</span>
           </div>
         </div>
       </div>
