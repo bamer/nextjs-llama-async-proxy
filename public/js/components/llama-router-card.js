@@ -299,6 +299,13 @@ class LlamaRouterCard extends Component {
   _updateDetailedMetrics() {
     if (!this._el) return;
     const m = this.metrics || {};
+
+    // Update launch command textarea if available
+    const commandTextarea = this.$("#launch-command-textarea");
+    if (commandTextarea && this.routerStatus?.launchCommand) {
+      commandTextarea.value = this.routerStatus.launchCommand;
+    }
+
     const status = this.status || {};
     const modelsData = status.models || [];
 
@@ -336,6 +343,20 @@ class LlamaRouterCard extends Component {
       uptimeSeconds = Math.floor((Date.now() - status.startTime) / 1000);
     }
     this.setText("[data-glance=\"uptime\"]", window.FormatUtils.formatUptime(uptimeSeconds));
+  }
+
+  /**
+   * Copy launch command to clipboard
+   */
+  _copyLaunchCommand() {
+    const textarea = this.$("#launch-command-textarea");
+    if (textarea && textarea.value) {
+      navigator.clipboard.writeText(textarea.value).then(() => {
+        showNotification("Launch command copied to clipboard!", "success");
+      }).catch(() => {
+        showNotification("Failed to copy command", "error");
+      });
+    }
   }
 
   _updatePresetSelect() {
@@ -404,6 +425,10 @@ class LlamaRouterCard extends Component {
       if (this.routerLoading) return;
       this.props.onAction("restart");
     });
+
+    this.on("click", "[data-action=\"copy-launch-command\"]", () => {
+      this._copyLaunchCommand();
+    });
   }
 
   render() {
@@ -463,11 +488,25 @@ class LlamaRouterCard extends Component {
         ])
       ]),
       Component.h("button", { className: "details-toggle-btn" }, [
-        Component.h("span", { className: "chevron" }, "▼"), " Detailed Metrics"
+        Component.h("span", { className: "chevron" }, "▼"), " Launch Command"
       ]),
       Component.h("div", { className: "detailed-metrics-area" }, [
-        this._renderMetricsGroup("Throughput", { "Prompt": "prompt-ts", "Predicted": "pred-ts" }),
-        this._renderMetricsGroup("Server Config", { "Ctx Size": "n-ctx", "Parallel": "n-parallel", "Threads": "n-threads" })
+        Component.h("div", { className: "launch-command-section" }, [
+          Component.h("h4", {}, "Router Launch Command"),
+          Component.h("p", { className: "launch-command-description" }, "Copy this command to test llama-server directly in terminal"),
+          Component.h("div", { className: "launch-command-container" }, [
+            Component.h("textarea", {
+              className: "launch-command-textarea",
+              id: "launch-command-textarea",
+              readonly: true,
+              rows: 4
+            }, "Run router to see launch command"),
+            Component.h("button", {
+              className: "btn btn-secondary btn-copy-command",
+              "data-action": "copy-launch-command"
+            }, "Copy")
+          ])
+        ])
       ])
     ]);
   }

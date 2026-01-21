@@ -25,6 +25,7 @@ let logWriteStream = null;
 let notificationCallback = null;
 let stdoutListener = null; 
 let stderrListener = null; 
+let lastLaunchCommand = null; // Store last launch command for dashboard 
 
 const LOGS_DIR = path.join(process.cwd(), "logs");
 if (!fs.existsSync(LOGS_DIR)) {
@@ -67,6 +68,7 @@ export function getRouterState(db) {
 
 export function getServerUrl() { return llamaServerUrl; }
 export function getServerProcess() { return llamaServerProcess; }
+export function getLastLaunchCommand() { return lastLaunchCommand; }
 
 /**
  * Get llama-server uptime in seconds.
@@ -272,11 +274,30 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
     args.push("--no-models-autoload");
   }
 
+  // Build the full launch command for logging and dashboard display
+  const fullCommand = `${llamaBin} ${args.join(" ")}`;
+  
   // Log the full spawn command for debugging
-  console.log("[LLAMA] Spawning:", llamaBin, args.join(" "));
-  console.log("[LLAMA] Models dir (with spaces):", modelsDir);
+  console.log("[LLAMA] =========================================");
+  console.log("[LLAMA] FULL LAUNCH COMMAND:");
+  console.log("[LLAMA] =========================================");
+  console.log(fullCommand);
+  console.log("[LLAMA] =========================================");
+  
+  // Also log the copy-pasteable version with proper escaping
+  const escapedArgs = args.map(arg => {
+    if (arg.includes(" ")) {
+      return `"${arg}"`;
+    }
+    return arg;
+  });
+  const copyPasteCommand = `${llamaBin} ${escapedArgs.join(" ")}`;
+  console.log("[LLAMA] Copy-paste command:");
+  console.log(copyPasteCommand);
+  console.log("[LLAMA] =========================================");
+  
   initLogFile();
-  writeLog("INFO", `Spawning: ${llamaBin} ${args.join(" ")}`);
+  writeLog("INFO", `Spawning: ${fullCommand}`);
 
   try {
     console.log("[LLAMA] Attempting to spawn llama-server process...");
@@ -316,8 +337,9 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
           initializeLlamaMetricsScraper(llamaServerPort, null);
           console.log(`[LLAMA] Updated metrics scraper to port ${llamaServerPort}`);
           
-          notifyServerEvent("started", { port: llamaServerPort, url: llamaServerUrl, mode: "router", timestamp: Date.now() });
-          return { success: true, port: llamaServerPort, url: llamaServerUrl };
+           notifyServerEvent("started", { port: llamaServerPort, url: llamaServerUrl, mode: "router", timestamp: Date.now() });
+           lastLaunchCommand = copyPasteCommand; // Store for dashboard display
+           return { success: true, port: llamaServerPort, url: llamaServerUrl, launchCommand: copyPasteCommand };
         } catch (e) {
           console.log(`[LLAMA] Port ${llamaServerPort} in use but server not responding yet, waiting...`);
         }

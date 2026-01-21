@@ -1,39 +1,38 @@
-# Llama Server Log - Started at 2026-01-21T04:20:06.135Z
+# Llama Server Log - Started at 2026-01-21T06:25:05.245Z
 
-[2026-01-21T04:20:06.135Z] [INFO] Spawning: /home/bamer/llama.cpp/build/bin/llama-server --port 8134 --host 127.0.0.1 --threads 4 --ctx-size 131800 --models-max 1 --metrics --models-dir /media/bamer/crucial MX300/llm/llama/models --no-models-autoload
-[2026-01-21T04:20:06.145Z] [ERROR] load_backend: loaded BLAS backend from /home/bamer/llama.cpp/build/bin/libggml-blas.so
-[2026-01-21T04:20:06.222Z] [ERROR] ggml_cuda_init: found 1 CUDA devices:
-[2026-01-21T04:20:06.223Z] [ERROR] Device 0: NVIDIA GeForce GTX 1070, compute capability 6.1, VMM: yes
+[2026-01-21T06:25:05.245Z] [INFO] Spawning: /home/bamer/llama.cpp/build/bin/llama-server --port 8134 --host 127.0.0.1 --threads 4 --ctx-size 131800 --models-max 1 --metrics --models-dir /media/bamer/crucial MX300/llm/llama/models --no-models-autoload
+[2026-01-21T06:25:05.256Z] [ERROR] load_backend: loaded BLAS backend from /home/bamer/llama.cpp/build/bin/libggml-blas.so
+[2026-01-21T06:25:05.326Z] [ERROR] ggml_cuda_init: found 1 CUDA devices:
+[2026-01-21T06:25:05.328Z] [ERROR] Device 0: NVIDIA GeForce GTX 1070, compute capability 6.1, VMM: yes
 load_backend: loaded CUDA backend from /home/bamer/llama.cpp/build/bin/libggml-cuda.so
-[2026-01-21T04:20:06.224Z] [ERROR] load_backend: loaded RPC backend from /home/bamer/llama.cpp/build/bin/libggml-rpc.so
-[2026-01-21T04:20:06.293Z] [ERROR] ggml_vulkan: Found 1 Vulkan devices:
-[2026-01-21T04:20:06.293Z] [ERROR] ggml_vulkan: 0 = NVIDIA GeForce GTX 1070 (NVIDIA) | uma: 0 | fp16: 0 | bf16: 0 | warp size: 32 | shared memory: 49152 | int dot: 0 | matrix cores: none
+[2026-01-21T06:25:05.328Z] [ERROR] load_backend: loaded RPC backend from /home/bamer/llama.cpp/build/bin/libggml-rpc.so
+[2026-01-21T06:25:05.396Z] [ERROR] ggml_vulkan: Found 1 Vulkan devices:
+[2026-01-21T06:25:05.396Z] [ERROR] ggml_vulkan: 0 = NVIDIA GeForce GTX 1070 (NVIDIA) | uma: 0 | fp16: 0 | bf16: 0 | warp size: 32 | shared memory: 49152 | int dot: 0 | matrix cores: none
 load_backend: loaded Vulkan backend from /home/bamer/llama.cpp/build/bin/libggml-vulkan.so
-[2026-01-21T04:20:06.302Z] [ERROR] load_backend: loaded CPU backend from /home/bamer/llama.cpp/build/bin/libggml-cpu-haswell.so
-[2026-01-21T04:20:06.303Z] [ERROR] main: n_parallel is set to auto, using n_parallel = 4 and kv_unified = true
+[2026-01-21T06:25:05.408Z] [ERROR] load_backend: loaded CPU backend from /home/bamer/llama.cpp/build/bin/libggml-cpu-haswell.so
+[2026-01-21T06:25:05.408Z] [ERROR] main: n_parallel is set to auto, using n_parallel = 4 and kv_unified = true
 build: 7786 (5bd341c9a) with GNU 13.3.0 for Linux x86_64
-[2026-01-21T04:20:06.303Z] [ERROR] system info: n_threads = 4, n_threads_batch = 4, total_threads = 12
-
-system_info: n_threads = 4 (n_threads_batch = 4) / 12 | CUDA : ARCHS = 610 | FORCE_CUBLAS = 1 | USE_GRAPHS = 1 | PEER_MAX_BATCH_SIZE = 128 | FA_ALL_QUANTS = 1 | CPU : SSE3 = 1 | SSSE3 = 1 | AVX = 1 | AVX2 = 1 | F16C = 1 | FMA = 1 | BMI2 = 1 | LLAMAFILE = 1 | OPENMP = 1 | REPACK = 1 | 
+system info: n_threads = 4, n_threads_batch = 4, total_threads = 12
+[2026-01-21T06:25:05.409Z] [ERROR] system_info: n_threads = 4 (n_threads_batch = 4) / 12 | CUDA : ARCHS = 610 | FORCE_CUBLAS = 1 | USE_GRAPHS = 1 | PEER_MAX_BATCH_SIZE = 128 | FA_ALL_QUANTS = 1 | CPU : SSE3 = 1 | SSSE3 = 1 | AVX = 1 | AVX2 = 1 | F16C = 1 | FMA = 1 | BMI2 = 1 | LLAMAFILE = 1 | OPENMP = 1 | REPACK = 1 | 
 
 init: using 11 threads for HTTP server
-[2026-01-21T04:20:06.303Z] [ERROR] load_backend: loaded BLAS backend from /home/bamer/llama.cpp/build/bin/libggml-blas.so
-[2026-01-21T04:20:06.305Z] [ERROR] load_backend: loaded CUDA backend from /home/bamer/llama.cpp/build/bin/libggml-cuda.so
-[2026-01-21T04:20:06.306Z] [ERROR] load_backend: loaded RPC backend from /home/bamer/llama.cpp/build/bin/libggml-rpc.so
-[2026-01-21T04:20:06.306Z] [ERROR] load_backend: loaded Vulkan backend from /home/bamer/llama.cpp/build/bin/libggml-vulkan.so
-[2026-01-21T04:20:06.311Z] [ERROR] load_backend: loaded CPU backend from /home/bamer/llama.cpp/build/bin/libggml-cpu-haswell.so
-[2026-01-21T04:20:06.312Z] [ERROR] load_backend: loaded BLAS backend from /home/bamer/llama.cpp/build/bin/libggml-blas.so
-[2026-01-21T04:20:06.313Z] [ERROR] load_backend: loaded CUDA backend from /home/bamer/llama.cpp/build/bin/libggml-cuda.so
-[2026-01-21T04:20:06.314Z] [ERROR] load_backend: loaded RPC backend from /home/bamer/llama.cpp/build/bin/libggml-rpc.so
-[2026-01-21T04:20:06.315Z] [ERROR] load_backend: loaded Vulkan backend from /home/bamer/llama.cpp/build/bin/libggml-vulkan.so
-[2026-01-21T04:20:06.319Z] [ERROR] load_backend: loaded CPU backend from /home/bamer/llama.cpp/build/bin/libggml-cpu-haswell.so
-[2026-01-21T04:20:06.319Z] [ERROR] srv   load_models: Loaded 0 cached model presets
-[2026-01-21T04:20:06.320Z] [ERROR] srv   load_models: Loaded 26 local model presets from /media/bamer/crucial MX300/llm/llama/models
-[2026-01-21T04:20:06.320Z] [ERROR] srv   load_models: Available models (26) (*: custom preset)
+[2026-01-21T06:25:05.409Z] [ERROR] load_backend: loaded BLAS backend from /home/bamer/llama.cpp/build/bin/libggml-blas.so
+[2026-01-21T06:25:05.410Z] [ERROR] load_backend: loaded CUDA backend from /home/bamer/llama.cpp/build/bin/libggml-cuda.so
+[2026-01-21T06:25:05.411Z] [ERROR] load_backend: loaded RPC backend from /home/bamer/llama.cpp/build/bin/libggml-rpc.so
+[2026-01-21T06:25:05.412Z] [ERROR] load_backend: loaded Vulkan backend from /home/bamer/llama.cpp/build/bin/libggml-vulkan.so
+[2026-01-21T06:25:05.418Z] [ERROR] load_backend: loaded CPU backend from /home/bamer/llama.cpp/build/bin/libggml-cpu-haswell.so
+[2026-01-21T06:25:05.419Z] [ERROR] load_backend: loaded BLAS backend from /home/bamer/llama.cpp/build/bin/libggml-blas.so
+[2026-01-21T06:25:05.420Z] [ERROR] load_backend: loaded CUDA backend from /home/bamer/llama.cpp/build/bin/libggml-cuda.so
+[2026-01-21T06:25:05.421Z] [ERROR] load_backend: loaded RPC backend from /home/bamer/llama.cpp/build/bin/libggml-rpc.so
+[2026-01-21T06:25:05.422Z] [ERROR] load_backend: loaded Vulkan backend from /home/bamer/llama.cpp/build/bin/libggml-vulkan.so
+[2026-01-21T06:25:05.426Z] [ERROR] load_backend: loaded CPU backend from /home/bamer/llama.cpp/build/bin/libggml-cpu-haswell.so
+[2026-01-21T06:25:05.427Z] [ERROR] srv   load_models: Loaded 0 cached model presets
+[2026-01-21T06:25:05.428Z] [ERROR] srv   load_models: Loaded 26 local model presets from /media/bamer/crucial MX300/llm/llama/models
+[2026-01-21T06:25:05.428Z] [ERROR] srv   load_models: Available models (26) (*: custom preset)
 srv   load_models:     Devstral-Small-2-24B-Instruct-2512-Q4_K_S
 srv   load_models:     EssentialAI.rnj-1-instruct.Q6_K
 srv   load_models:     GLM-4.6V-Flash-UD-Q6_K_XL
-[2026-01-21T04:20:06.320Z] [ERROR] srv   load_models:     HY-MT1.5-1.8B.Q8_0.gguf
+srv   load_models:     HY-MT1.5-1.8B.Q8_0.gguf
 srv   load_models:     HY-MT1.5-7B-Q6_K.gguf
 srv   load_models:     IQuestLab.IQuest-Coder-V1-40B-Instruct.Q4_K_M.gguf
 srv   load_models:     Ministral-3-14B-Reasoning-2512
@@ -56,359 +55,35 @@ srv   load_models:     granite-4.0-h-tiny-Q6_K
 srv   load_models:     magnus-coder.Q4_K_M.gguf
 srv   load_models:     mistralai_Devstral-Small-2-24B-Instruct-2512-Q6_K
 srv   load_models:     nvidia_Nemotron-Cascade-14B-Thinking-Q6_K_L.gguf
-[2026-01-21T04:20:06.320Z] [ERROR] main: starting router server, no model will be loaded in this process
+main: starting router server, no model will be loaded in this process
 start: binding port with default address family
-[2026-01-21T04:20:06.322Z] [ERROR] main: router server is listening on http://127.0.0.1:8134
+[2026-01-21T06:25:05.429Z] [ERROR] main: router server is listening on http://127.0.0.1:8134
 main: NOTE: router mode is experimental
 main:       it is not recommended to use this mode in untrusted environments
-[2026-01-21T04:20:07.142Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:08.234Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:08.236Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:20:10.229Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:12.229Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:14.238Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:16.234Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:18.232Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:20.236Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:20.236Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:20:22.237Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:24.247Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:26.240Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:28.236Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:30.246Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:30.246Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:20:32.240Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:34.241Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:36.246Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:36.941Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:38.241Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:40.239Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:41.031Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:42.246Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:42.246Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:20:42.478Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:42.481Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:42.537Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:44.499Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:45.465Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:46.507Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:47.758Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:48.503Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:49.969Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:50.501Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:52.304Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:52.499Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:20:52.499Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:20:54.509Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:21:36.868Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-srv  log_server_r: request: GET /models 127.0.0.1 200
-srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:21:36.904Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:21:36.904Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:21:38.897Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:21:40.899Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:21:42.903Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:21:44.902Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:21:46.903Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:21:48.905Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:21:48.905Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:21:50.908Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:21:52.912Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:21:54.909Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:21:56.912Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:21:58.914Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:22:00.916Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:02.913Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:04.913Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:06.910Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:08.917Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:08.918Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:22:10.918Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:12.925Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:14.925Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:16.922Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:18.928Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:18.928Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:22:20.924Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:22.936Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:24.930Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:26.929Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:28.933Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:28.933Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:22:30.937Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:32.932Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:34.936Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:36.938Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:38.942Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:38.943Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:22:40.941Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:40.944Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:41.000Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:41.015Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:42.937Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:42.954Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:44.533Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:44.623Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:44.624Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:44.662Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:44.964Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:46.661Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:46.701Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:46.961Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:48.661Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:48.880Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:48.964Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:48.965Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:22:50.663Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:50.996Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:51.002Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:52.661Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:52.964Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:53.072Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:54.667Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:54.963Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:56.135Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:56.670Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:57.627Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:57.627Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:57.669Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:59.664Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:22:59.664Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:23:01.671Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:03.663Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:05.668Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:07.671Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:09.674Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:09.674Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:23:11.675Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:13.681Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:15.683Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:17.677Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:19.682Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:19.682Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:23:21.683Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:23.693Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:25.692Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:27.699Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:29.694Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:29.694Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:23:31.699Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:33.691Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:35.696Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:37.704Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:39.700Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:39.701Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:23:40.033Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:40.036Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:40.088Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:40.104Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:41.698Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:42.058Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:43.702Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:44.060Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:44.228Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:45.700Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:46.064Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:46.380Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:47.699Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:48.065Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:48.548Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:49.701Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:49.701Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:23:50.066Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:50.685Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:51.701Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:52.065Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:52.824Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:53.702Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:54.063Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:55.705Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:57.706Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:59.712Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:23:59.713Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:24:01.718Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:03.708Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:05.717Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:07.713Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:09.715Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:09.716Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:24:11.717Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:13.719Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:15.725Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:17.714Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:19.727Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:19.727Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:24:21.729Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:23.726Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:25.733Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:27.747Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:29.747Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:29.747Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:24:31.738Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:33.747Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:35.744Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:37.742Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:39.750Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:39.750Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:24:41.744Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:43.753Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:45.755Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:47.752Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:49.750Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:49.750Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:24:51.749Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:53.757Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:55.759Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:57.766Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:59.761Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:24:59.761Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:25:01.766Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:03.769Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:05.768Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:07.773Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:09.768Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:09.769Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:25:11.767Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:13.768Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:15.782Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:17.768Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:19.776Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:19.776Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:25:21.788Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:23.782Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:24.690Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:24.693Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:24.749Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:24.755Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:25.779Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:26.718Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:27.779Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:28.719Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:29.786Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:29.787Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:25:30.715Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:31.789Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:32.717Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:33.784Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:34.717Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:35.795Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:36.724Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:37.799Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:38.721Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:39.795Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:39.795Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:25:40.724Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:41.798Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:42.732Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:43.798Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:44.729Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:45.801Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:46.732Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:47.799Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:48.725Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:49.800Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:49.801Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:25:50.734Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:51.802Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:52.730Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:53.797Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:54.735Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:55.816Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:56.729Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:57.800Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:58.732Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:25:59.799Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:00.732Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:00.732Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:26:01.805Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:02.731Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:03.801Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:04.733Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:05.804Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:06.727Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:07.807Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:08.735Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:09.815Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:10.735Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:10.736Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:26:11.811Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:12.735Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:13.817Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:14.742Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:15.814Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:16.740Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:17.813Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:18.742Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:19.816Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:20.749Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:20.750Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:26:21.817Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:22.745Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:23.811Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:25.813Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:27.816Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:29.826Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:31.821Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:31.822Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:26:33.834Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:35.828Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:37.828Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:39.823Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:41.830Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:41.830Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:26:43.833Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:45.833Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:47.830Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:49.833Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:51.835Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:51.835Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:26:53.835Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:55.847Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:57.850Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:26:59.849Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:01.851Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:01.851Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:27:03.845Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:05.849Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:07.849Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:09.861Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:11.864Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:11.865Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:27:13.860Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:15.854Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:17.861Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:19.860Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:21.862Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:23.865Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:23.865Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:27:25.878Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:27.880Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:29.873Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:31.879Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:33.878Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:33.878Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:27:35.881Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:37.884Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:39.889Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:41.900Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:43.891Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:43.891Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:27:45.891Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:47.892Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:49.904Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:51.892Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:53.900Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:53.900Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:27:55.899Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:57.902Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:27:59.905Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:28:01.908Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:28:03.915Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:28:03.916Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
-[2026-01-21T04:28:05.907Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
-[2026-01-21T04:28:07.908Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:05.957Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:05.959Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
+[2026-01-21T06:25:06.256Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:07.955Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:09.956Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:11.956Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:13.960Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:15.962Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:15.963Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
+[2026-01-21T06:25:17.965Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:19.966Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:21.967Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:23.968Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:25.969Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:25.970Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
+[2026-01-21T06:25:27.971Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:29.971Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:31.972Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:33.972Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:35.974Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:35.974Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
+[2026-01-21T06:25:37.977Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:39.973Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:41.976Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:43.974Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T06:25:54.509Z] [ERROR] srv  log_server_r: request: POST /models/load 127.0.0.1 404
+[2026-01-21T06:25:54.511Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200

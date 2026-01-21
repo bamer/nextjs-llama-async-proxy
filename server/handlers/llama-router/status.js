@@ -4,7 +4,7 @@
  */
 
 import { llamaApiRequest } from "./api.js";
-import { getServerProcess, getServerUrl, getRouterState } from "./start.js";
+import { getServerProcess, getServerUrl, getRouterState, getLastLaunchCommand } from "./start.js";
 
 /**
  * Common ports to check for running llama-server
@@ -178,6 +178,7 @@ export async function getLlamaStatus(db) {
     url: actuallyRunning ? finalUrl : null,
     processRunning: isRunning,
     mode: "router",
+    launchCommand: getLastLaunchCommand(), // Include launch command for dashboard display
     // API returns { data: [...], object: "list" } - use .data for models array
     models: modelsStatus?.data || modelsStatus?.models || [],
     modelsError: modelsError || null,
