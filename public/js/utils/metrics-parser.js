@@ -159,20 +159,32 @@ class MetricsParser {
 }
 
 /**
- * Metrics Scraper - Async-first implementation
- * Fetches metrics from llama-server /metrics endpoint
+ * Metrics Scraper - DEPRECATED
+ *
+ * WARNING: This class uses HTTP polling which violates the Socket.IO-First architecture.
+ * It should NOT be used in production. Use Socket.IO subscriptions instead:
+ *
+ * // CORRECT - Socket.IO subscription
+ * socketClient.on("metrics:updated", (data) => {
+ *   this.metrics = data.metrics;
+ *   this._updateUI();
+ * });
+ *
+ * socketClient.emit("metrics:subscribe", { interval: 2000 });
+ *
+ * This class is kept for reference only and will be removed in a future version.
  */
-
 class MetricsScraper {
   constructor(serverUrl, pollIntervalMs = 2000) {
+    console.warn("[MetricsScraper] DEPRECATED - Use Socket.IO subscriptions instead");
     this.serverUrl = serverUrl;
-    this.pollIntervalMs = Math.max(1000, pollIntervalMs); // Min 1s
+    this.pollIntervalMs = Math.max(1000, pollIntervalMs);
     this.abortController = null;
     this.onUpdate = null;
     this.lastMetrics = {};
     this.isRunning = false;
     this.consecutiveErrors = 0;
-    this.maxErrors = 5; // Stop after 5 consecutive errors
+    this.maxErrors = 5;
   }
 
   /**
