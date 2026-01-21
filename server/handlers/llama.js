@@ -211,27 +211,16 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
    */
   socket.on("llama:preview-command", (req, ack) => {
     const id = req?.requestId || Date.now();
-    console.log(`[DEBUG] llama:preview-command received from client ${socket.id}:`, {
-      requestId: id,
-      modelsDir: req?.modelsDir,
-      hasOptions: !!req?.options
-    });
+    console.log(`[LLAMA-HANDLERS] Received llama:preview-command from client ${socket.id}`);
 
     try {
       const modelsDir = req?.modelsDir || null;
       const options = req?.options || {};
 
-      console.log(`[DEBUG] Calling generateLaunchPreview with:`, { modelsDir, options });
       const preview = generateLaunchPreview(db, modelsDir, options);
-      console.log(`[DEBUG] generateLaunchPreview result:`, {
-        success: preview.success,
-        hasCommand: !!preview.command,
-        error: preview.error,
-        pathSearched: preview.pathSearched
-      });
 
       if (preview.success) {
-        console.log(`[DEBUG] Generated preview command:`, preview.command);
+        console.log(`[LLAMA-HANDLERS] Generated preview command:`, preview.command);
         ok(socket, "llama:preview-command:result", {
           success: true,
           command: preview.command,
@@ -240,7 +229,7 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
           host: preview.host,
         }, id, ack);
       } else {
-        console.warn(`[DEBUG] Failed to generate preview:`, preview.error);
+        console.warn(`[LLAMA-HANDLERS] Failed to generate preview:`, preview.error);
         ok(socket, "llama:preview-command:result", {
           success: false,
           error: preview.error,
@@ -248,7 +237,7 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
         }, id, ack);
       }
     } catch (e) {
-      console.error("[DEBUG] Error generating launch preview:", e.message, e.stack);
+      console.error("[LLAMA-HANDLERS] Error generating launch preview:", e.message);
       err(socket, "llama:preview-command:result", e.message, id, ack);
     }
   });

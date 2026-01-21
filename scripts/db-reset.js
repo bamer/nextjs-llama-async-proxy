@@ -16,16 +16,8 @@ const dbPath = path.join(dataDir, "llama-dashboard.db");
 const shmPath = path.join(dataDir, "llama-dashboard.db-shm");
 const walPath = path.join(dataDir, "llama-dashboard.db-wal");
 
-// Create backup before deleting (safety measure)
+// Check if database exists
 if (fs.existsSync(dbPath)) {
-  const backupDir = path.join(dataDir, "backup");
-  if (!fs.existsSync(backupDir)) {
-    fs.mkdirSync(backupDir, { recursive: true });
-  }
-  const backupDb = path.join(backupDir, `llama-dashboard-backup-before-reset-${Date.now()}.db`);
-  fs.copyFileSync(dbPath, backupDb);
-  console.log("✅ Backup created before reset:", backupDb);
-  
   // Delete main database file
   fs.unlinkSync(dbPath);
   console.log("Database deleted:", dbPath);

@@ -110,8 +110,7 @@ class PresetTemplates extends Component {
 
     const template = this.templates.find((t) => t.id === templateId);
     if (!template) {
-      console.error("[ERROR] Template not found");
-  showNotification("Template not found", "error");
+      showNotification("Template not found", "error");
       return;
     }
 

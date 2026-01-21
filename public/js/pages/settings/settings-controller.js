@@ -154,8 +154,6 @@ class SettingsController {
           this.comp._localLoggingChanges = {};
         }
       } else {
-        console.error("[ERROR] Reset failed");
-        } else {
         showNotification("Reset failed", "error");
       }
     } catch (e) {
@@ -175,8 +173,7 @@ class SettingsController {
       if (response.success) {
         showNotification("Router started successfully", "success");
       } else {
-        console.error("[ERROR] Failed to start router:", response.error);
-        showNotification(`Failed to start router: ${response.error}`, "error");
+        showNotification(`Failed to start router: ${  response.error}`, "error");
       }
     } catch (e) {
       console.error("[SETTINGS] Start router error:", e);
@@ -195,8 +192,7 @@ class SettingsController {
       if (response.success) {
         showNotification(`Router started with preset: ${  presetName}`, "success");
       } else {
-        console.error("[ERROR] Failed to start router:", response.error);
-        showNotification(`Failed to start router: ${response.error}`, "error");
+        showNotification(`Failed to start router: ${  response.error}`, "error");
       }
     } catch (e) {
       console.error("[SETTINGS] Start with preset error:", e);
@@ -215,8 +211,7 @@ class SettingsController {
       if (response.success) {
         showNotification("Router restarted successfully", "success");
       } else {
-        console.error("[ERROR] Failed to restart router:", response.error);
-        showNotification(`Failed to restart router: ${response.error}`, "error");
+        showNotification(`Failed to restart router: ${  response.error}`, "error");
       }
     } catch (e) {
       console.error("[SETTINGS] Restart router error:", e);
@@ -235,8 +230,7 @@ class SettingsController {
       if (response.success) {
         showNotification("Router stopped", "success");
       } else {
-        console.error("[ERROR] Failed to stop router:", response.error);
-        showNotification(`Failed to stop router: ${response.error}`, "error");
+        showNotification(`Failed to stop router: ${  response.error}`, "error");
       }
     } catch (e) {
       console.error("[SETTINGS] Stop router error:", e);

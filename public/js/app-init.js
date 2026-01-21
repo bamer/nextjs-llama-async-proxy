@@ -30,8 +30,7 @@ function showErrorBoundary(error) {
   // Error handlers
   window.addEventListener("error", (e) => {
     const msg = e.error?.message || "An unexpected error occurred";
-    console.error("[ERROR]", msg);
-  showNotification(msg, "error");
+    showNotification(msg, "error");
 
     if (e.error && (e.error.message.includes("Cannot read") || e.error.message.includes("is not a function"))) {
       showErrorBoundary(e.error);
@@ -40,8 +39,7 @@ function showErrorBoundary(error) {
 
   window.addEventListener("unhandledrejection", (e) => {
     const msg = e.reason?.message || "An unexpected error occurred";
-    console.error("[ERROR]", msg);
-  showNotification(msg, "error");
+    showNotification(msg, "error");
 
     if (e.reason && e.reason.message) {
       showErrorBoundary(e.reason);

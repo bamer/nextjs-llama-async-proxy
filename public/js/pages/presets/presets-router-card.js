@@ -222,9 +222,7 @@
           if (response.success) {
             showNotification(`Server started with preset: ${presetName}`, "success");
           } else {
-            console.error("[ERROR] Error: :", response.error);
-} else {
-            showNotification(`Error: \${response.error}`, "error");
+            showNotification(`Error: ${response.error}`, "error");
             throw new Error(response.error);
           }
         })
@@ -249,9 +247,7 @@
           if (response.success) {
             showNotification("Server started", "success");
           } else {
-            console.error("[ERROR] Error: :", response.error);
-} else {
-            showNotification(`Error: \${response.error}`, "error");
+            showNotification(`Error: ${response.error}`, "error");
           }
         })
         .catch((e) => {
@@ -274,9 +270,7 @@
           if (response.success) {
             showNotification("Server stopped", "success");
           } else {
-            console.error("[ERROR] Error: :", response.error);
-} else {
-            showNotification(`Error: \${response.error}`, "error");
+            showNotification(`Error: ${response.error}`, "error");
           }
         })
         .catch((e) => {

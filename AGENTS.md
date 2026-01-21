@@ -11,7 +11,6 @@ This document provides guidelines for Agentic coding assistants working in this 
 - **Frontend**: Vanilla JavaScript (no frameworks)
 - **Database**: SQLite with better-sqlite3
 - **Architecture**: Simplify to pure Event-Driven DOM Updates
-- **Decentralized And decoupled autonomous atomic components** - one component == work everywhere.
 - **event-driven patterns**
 - **Communications FrontEnd BackEnd**: **Complete Socket.IO -First and Only** 
 - **Define stable Socket.IO contracts** - clear in/out on server
@@ -952,7 +951,7 @@ The following patterns are explicitly forbidden:
 
 - **NO setState or re-rendering** - Direct DOM updates via Component helpers
 - **NO timer-based state refresh** - Event-driven updates only
-- **NO MetricsScraper HTTP polling** - Use  **Decentralized And decoupled autonomous atomic components** - one component == work everywhere.
+- **NO MetricsScraper HTTP polling** - Use centralized cadence
 
 ### Component Patterns
 
@@ -960,72 +959,10 @@ The following patterns are explicitly forbidden:
 - **NO missing subscription cleanup** - Unsubscribe in destroy()
 - **NO direct DOM manipulation** - Use Component helper methods
 
----
-
-## 🚨 CRITICAL GOLDEN RULE: ERROR LOGGING
-
-### **ALL ERRORS AND WARNINGS MUST GO TO CONSOLE.ERROR**
-
-**THIS IS NOT OPTIONAL - THIS IS MANDATORY**
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  IF YOU SHOW AN ERROR OR WARNING TO THE USER                    │
-│  YOU MUST ALSO LOG IT TO console.error                          │
-│                                                                 │
-│  ✅ CORRECT:                                                    │
-│    console.error("[ERROR] Save failed:", error);               │
-│    showNotification("Save failed: " + error, "error");         │
-│                                                                 │
-│  ❌ FORBIDDEN:                                                  │
-│    showNotification("Save failed: " + error, "error");         │
-│  (Missing console.error!)                                       │
-│                                                                 │
-│  ❌ FORBIDDEN:                                                  │
-│    console.log("Error:", error);  ← WRONG! Use console.error   │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Pattern - Error Response:
-```javascript
-// ❌ FORBIDDEN - Only show toast, no console output
-showNotification(`Save failed: ${response.error}`, "error");
-
-// ✅ REQUIRED - Log to console.error AND show toast
-console.error("[MODULE] Save failed:", response.error);
-showNotification(`Save failed: ${response.error}`, "error");
-```
-
-### Pattern - Catch Block:
-```javascript
-// ❌ FORBIDDEN - Only show toast, no console output
-showNotification(`Error: ${e.message}`, "error");
-
-// ✅ REQUIRED - Catch blocks must log
-catch (e) {
-  console.error("[MODULE] Error:", e);
-  showNotification(`Error: ${e.message}`, "error");
-}
-```
-
-### Pattern - Warning:
-```javascript
-// ❌ FORBIDDEN - Only show toast, no console output
-showNotification("Please fix errors", "warning");
-
-// ✅ REQUIRED - Warnings also need console
-console.warn("[MODULE] Please fix errors");
-showNotification("Please fix errors", "warning");
-```
-
----
-
 ### Error Logging Patterns
 
 - **ALL errors MUST be logged to console.error** - Never show error in toast without logging
 - **NO console.log for errors** - Use console.error for all errors and warnings
-- **CRITICAL**: If you use showNotification() for errors, you MUST also use console.error()
-- **NEVER**: Only show toast notifications for errors without console output
 - **Pattern**: When catching errors or receiving error responses:
   ```javascript
   // ❌ FORBIDDEN - Only show toast, no console output
@@ -1087,7 +1024,7 @@ class MetricsReceiver {
 
 ## Architecture: Decentralized Socket-First Design
 
-**KEY PRINCIPLE**: Components call stable Socket.IO handlers directly. stateManager is optional for caching, not gating. All real-time updates come via broadcasts from **Decentralized And decoupled autonomous atomic components** - one component == work everywhere.
+**KEY PRINCIPLE**: Components call stable Socket.IO handlers directly. stateManager is optional for caching, not gating. All real-time updates come via broadcasts from the centralized cadence.
 
 ```
 ┌─────────────────┐
@@ -1101,7 +1038,7 @@ class MetricsReceiver {
          │
          ↓
 ┌─────────────────┐
-│ Decentralized Cadence │ Decentralized And decoupled autonomous atomic components, broadcasts to all
+│ Central Cadence │ Single timer, broadcasts to all
 └────────┬────────┘
          │
          ↓
@@ -1440,7 +1377,7 @@ async loadData() {
 **Golden Rules Summary**:
 1. **Pure Event-Driven DOM Updates** - All UI updates via Socket.IO broadcasts
 2. **Socket.IO-First and Only** - No REST, fetch, or HTTP polling
-3. **Decentralized And decoupled autonomous atomic components** - one component == work everywhere
+3. **Centralized Cadence** - Single server timer, not per-client timers
 4. **Proper Subscription Cleanup** - Unsubscribe in destroy() method
 
 ### Error Handling

@@ -370,7 +370,6 @@ class ModelsPage extends Component {
         // Server broadcasts models:updated + router:status
         // Our socketClient.on() handlers will update UI
       } else {
-        console.error("[ERROR] Failed:", response.error);
         showNotification(`Failed: ${response.error}`, "error");
       }
     } catch (error) {
@@ -394,7 +393,6 @@ class ModelsPage extends Component {
         showNotification(`Model ${name} unloaded`, "success");
         // Server broadcasts models:updated + router:status
       } else {
-        console.error("[ERROR] Failed:", response.error);
         showNotification(`Failed: ${response.error}`, "error");
       }
     } catch (error) {

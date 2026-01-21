@@ -154,7 +154,6 @@ class DashboardController {
         );
         // Server broadcasts router:status
       } else {
-        console.error("[ERROR] Failed:", response.error);
         showNotification(`Failed: ${response.error}`, "error");
       }
     } catch (e) {
@@ -181,7 +180,6 @@ class DashboardController {
         showNotification("Router started successfully", "success");
         // Server broadcasts router:status
       } else {
-        console.error("[ERROR] Failed:", response.error);
         showNotification(`Failed: ${response.error}`, "error");
       }
     } catch (e) {
@@ -209,7 +207,6 @@ class DashboardController {
         showNotification("Router stopped", "success");
         // Server broadcasts router:status
       } else {
-        console.error("[ERROR] Failed:", response.error);
         showNotification(`Failed: ${response.error}`, "error");
       }
     } catch (e) {
@@ -235,7 +232,6 @@ class DashboardController {
         showNotification("Router restarted successfully", "success");
         // Server broadcasts router:status
       } else {
-        console.error("[ERROR] Failed:", response.error);
         showNotification(`Failed: ${response.error}`, "error");
       }
     } catch (e) {

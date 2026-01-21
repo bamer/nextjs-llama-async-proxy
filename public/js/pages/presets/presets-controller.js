@@ -91,7 +91,6 @@ class PresetsController {
         showNotification(`Preset "${preset.name}" saved`, "success");
         // Server broadcasts presets:updated
       } else {
-        console.error("[ERROR] Error:", response.error);
         showNotification(`Error: ${response.error}`, "error");
       }
     } catch (error) {
@@ -114,7 +113,6 @@ class PresetsController {
       if (response.success) {
         showNotification("Preset deleted", "success");
       } else {
-        console.error("[ERROR] Error:", response.error);
         showNotification(`Error: ${response.error}`, "error");
       }
     } catch (error) {
@@ -135,7 +133,6 @@ class PresetsController {
       if (response.success) {
         showNotification(`Preset "${presetName}" applied`, "success");
       } else {
-        console.error("[ERROR] Error:", response.error);
         showNotification(`Error: ${response.error}`, "error");
       }
     } catch (error) {
@@ -158,7 +155,6 @@ class PresetsController {
       if (response.success) {
         showNotification(`Preset "${presetName}" created`, "success");
       } else {
-        console.error("[ERROR] Error:", response.error);
         showNotification(`Error: ${response.error}`, "error");
       }
     } catch (error) {

@@ -60,11 +60,8 @@ class SettingsPage extends Component {
   onMount() {
     console.log("[DEBUG] SettingsPage onMount");
 
-    // CRITICAL FIX: Load presets FIRST before mounting children
-    // This ensures LlamaRouterCard receives presets immediately on mount
-    this._loadPresetsSync();
-
-    // THEN mount child components
+    // CRITICAL: Mount child components FIRST so bindEvents() is called
+    // This ensures LlamaRouterCard, LlamaRouterConfig, LoggingConfig, etc. work
     this._mountChildren();
 
     // Listen to socket broadcasts directly (replaces stateManager.subscribe)
@@ -95,46 +92,31 @@ class SettingsPage extends Component {
         this._updateStatusUI();
       }),
       socketClient.on("presets:updated", (data) => {
-        console.log("[DEBUG] presets:updated received - FIXED:", {
-          presetsCount: data.presets?.length || 0,
-          presets: data.presets?.map(p => p.name) || []
-        });
+        console.log("[DEBUG] presets:updated received");
         this.presets = data.presets || [];
         this._updatePresetsDropdown();
-        // FIX: Also trigger child update when broadcast received
-        this._triggerLlamaRouterPresetUpdate();
-      })
+      }),
+
+      // FIX: Explicitly load presets on mount to ensure they are available immediately
+      // This mirrors the Dashboard page behavior which uses presets:list + broadcast
+      this._loadPresets();
     );
   }
 
   /**
-   * Load presets synchronously - called before mounting children
-   * This fixes the timing issue where child components were mounted
-   * before presets were available
-   */
-  _loadPresetsSync() {
-    console.log("[DEBUG] SettingsPage._loadPresetsSync() called");
-    
-    // Use synchronous-style loading with async/await pattern
+       * Load presets from server - called on mount and when presets change
+       */
+  _loadPresets() {
+    console.log("[DEBUG] SettingsPage._loadPresets() called");
     socketClient.request("presets:list", {}).then((response) => {
-      console.log("[DEBUG] presets:list response:", {
-        success: response.success,
-        hasData: !!response.data,
-        dataType: typeof response.data,
-        hasPresets: !!response.data?.presets,
-        presetsCount: response.data?.presets?.length || 0,
-        firstPreset: response.data?.presets?.[0]?.name || "none"
-      });
-      
       if (response.success) {
-        this.presets = response.data?.presets || [];
-        console.log("[DEBUG] this.presets populated:", {
-          count: this.presets.length,
-          presets: this.presets.map(p => p.name)
+        console.log("[DEBUG] presets:list response received:", {
+          count: response.data?.presets?.length || 0
         });
+        this.presets = response.data?.presets || [];
         this._updatePresetsDropdown();
-        // Let the child component pick up presets via its own subscription to presets:updated
-        // No setTimeout needed - child subscribes to broadcast
+        // Also trigger LlamaRouterCard preset update if mounted
+        this._triggerLlamaRouterPresetUpdate();
       } else {
         console.warn("[DEBUG] presets:list failed:", response.error);
       }
@@ -144,34 +126,15 @@ class SettingsPage extends Component {
   }
 
   /**
-   * Load presets from server - called on mount and when presets change
-   * Kept for backward compatibility, now just delegates to _loadPresetsSync
-   */
-  _loadPresets() {
-    console.log("[DEBUG] SettingsPage._loadPresets() called - delegating to sync version");
-    this._loadPresetsSync();
-  }
-
-  /**
        * Trigger preset update on LlamaRouterCard component if mounted
        */
   _triggerLlamaRouterPresetUpdate() {
-    console.log("[DEBUG] _triggerLlamaRouterPresetUpdate called:", {
-      hasElement: !!this._el,
-      hasRouterCard: !!this._el?.querySelector(".llama-router-status-card"),
-      presetsCount: this.presets?.length || 0,
-      presets: this.presets?.map(p => p.name) || []
-    });
-    
     const routerCard = this._el?.querySelector(".llama-router-status-card");
     if (routerCard && routerCard._component) {
-      console.log("[DEBUG] Updating child LlamaRouterCard with presets");
       routerCard._component.props.presets = this.presets;
       if (typeof routerCard._component._updatePresetSelect === "function") {
         routerCard._component._updatePresetSelect();
       }
-    } else {
-      console.log("[DEBUG] Child LlamaRouterCard not yet mounted - skipping update");
     }
   }
 
@@ -635,12 +598,11 @@ class SettingsPage extends Component {
         this.routerConfig = { ...this.routerConfig, ...config };
         this._updateRouterConfigUI();
       } else {
-        console.error("[SETTINGS] Router save failed:", response.error);
-        showNotification(`Save failed: ${response.error}`, "error");
+        showNotification(`Save failed: ${  response.error}`, "error");
       }
     } catch (e) {
       console.error("[SETTINGS] Router save error:", e);
-      showNotification(`Save error: ${e.message}`, "error");
+      showNotification(`Save error: ${  e.message}`, "error");
     }
   }
 
@@ -664,12 +626,11 @@ class SettingsPage extends Component {
         showNotification("Logging settings saved successfully", "success");
         this._localLoggingChanges = {};
       } else {
-        console.error("[SETTINGS] Logging save failed:", response.error);
-        showNotification(`Save failed: ${response.error}`, "error");
+        showNotification(`Save failed: ${  response.error}`, "error");
       }
     } catch (e) {
       console.error("[SETTINGS] Logging save error:", e);
-      showNotification(`Save error: ${e.message}`, "error");
+      showNotification(`Save error: ${  e.message}`, "error");
     }
   }
 }
