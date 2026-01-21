@@ -238,6 +238,12 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
     "--models-max", String(options.maxModels || routerConfig.maxModelsLoaded || 4),
   ];
 
+  // Warn if context size is dangerously large (risk of OOM)
+  const ctxSize = options.ctxSize || routerConfig.ctxSize || 4096;
+  if (ctxSize > 65536) {
+    console.warn(`[LLAMA] WARNING: ctxSize ${ctxSize} is very large and may cause out-of-memory errors. Consider using 16384 or 32768.`);
+  }
+
   // Add --metrics flag only if enabled in settings
   if (routerConfig.metricsEnabled) {
     args.push("--metrics");
@@ -246,11 +252,21 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
   const isPresetFile = modelsDir && (modelsDir.endsWith(".ini") || options.usePreset);
   const baseModelsPath = routerConfig.modelsPath || "./models";
 
+  // Validate models directory exists (especially important for paths with spaces)
+  const modelsDirToUse = modelsDir || baseModelsPath;
+  if (!isPresetFile && modelsDirToUse) {
+    if (!fs.existsSync(modelsDirToUse)) {
+      console.warn(`[LLAMA] WARNING: Models directory does not exist: ${modelsDirToUse}`);
+    } else {
+      console.log(`[LLAMA] Models directory validated: ${modelsDirToUse}`);
+    }
+  }
+
   if (isPresetFile) {
     args.push("--models-preset", modelsDir);
     args.push("--models-dir", baseModelsPath);
   } else {
-    args.push("--models-dir", modelsDir || baseModelsPath);
+    args.push("--models-dir", modelsDirToUse);
   }
 
   if (settings.autoLoadModels === false || options.noAutoLoad) {
