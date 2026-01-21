@@ -1,5 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+
+.gtignore 
 # dependencies
 /node_modules
 /.pnp
@@ -23,6 +25,12 @@ _bmad/**
 remote-debug-profile/*
 test-screenshoots/*
 screenshoots/*
+
+#database
+/data
+/data/*
+data/**
+
 
 # next.js
 /.next/
@@ -51,5 +59,3 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-#database
-/data/*
