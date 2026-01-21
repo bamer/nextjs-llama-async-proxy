@@ -249,7 +249,7 @@ class LlamaRouterCard extends Component {
             let nCtx = "N/A";
             let nParallel = "N/A";
             let nThreads = "N/A";
-            let totalSlots = rs.totalSlots || status.totalSlots || "N/A";
+            const totalSlots = rs.totalSlots || status.totalSlots || "N/A";
 
             if (Array.isArray(modelsData)) {
                 const loadedModel = modelsData.find(model => model.status?.value === "loaded");
