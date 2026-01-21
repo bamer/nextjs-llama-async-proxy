@@ -611,7 +611,6 @@ class LlamaRouterCard extends Component {
 						Component.h("textarea", {
 							className: "launch-command-textarea",
 							id: "launch-command-textarea",
-							readonly: true,
 							rows: 4,
 						}, "Configure router settings and save to see preview command"),
 						Component.h("button", {
