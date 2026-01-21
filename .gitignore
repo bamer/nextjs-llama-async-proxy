@@ -16,8 +16,8 @@
 /coverage
 
 #logs
-/logs/*
-/logs/**
+logs/*
+logs/**
 
 .opencode/*
 .beads/*
@@ -32,10 +32,10 @@ test-screenshoots/*
 screenshoots/*
 
 #database
-/data
+data*/*
 /data/*
 data/**
-
+data/*
 
 # next.js
 /.next/
