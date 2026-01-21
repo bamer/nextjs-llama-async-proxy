@@ -281,6 +281,9 @@ class GpuDetails extends Component {
             <span class="gpu-preview-label">Power</span>
             <span class="gpu-preview-value">${m.powerDrawWatts ? m.powerDrawWatts.toFixed(1) + " W" : "--"}</span>
           </div>
+          <div class="gpu-preview-bar memory">
+            <div class="gpu-preview-bar-fill" style="width: ${Math.min(memoryPercent, 100)}%"></div>
+          </div>
         </div>
       </div>
     `;
