@@ -492,6 +492,13 @@ class SettingsPage extends Component {
         }),
       ]),
 
+      // Alert Thresholds Configuration
+      Component.h("div", { className: "settings-section" }, [
+        Component.h("h2", { className: "section-title" }, "Alert Thresholds"),
+        Component.h("p", { className: "section-desc" }, "Configure warning and alert levels for system metrics"),
+        Component.h(window.ThresholdSettings, {}),
+      ]),
+
       // Export/Import
       Component.h("div", { className: "settings-section" }, [
         Component.h(window.ConfigExportImport, {

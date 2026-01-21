@@ -39,6 +39,7 @@
 @import "pages/settings/forms.css";
 @import "pages/settings/router.css";
 @import "pages/settings/settings-page.css";
+@import "pages/settings/threshold-settings.css";
 
 /* Logs */
 @import "pages/logs/viewer.css";
