@@ -394,11 +394,37 @@ export function getGpuDetectionStatus() {
 /**
  * Collect GPU metrics for metrics.js compatibility
  * Returns simplified format for metrics aggregation
+ * OPTIMIZED: Uses cached GPU list instead of re-running detection
  * @returns {Promise<Object>}
  */
 export async function collectGpuMetrics() {
   try {
+    // Use cached GPU list instead of re-running detection
+    // If we have cached GPUs, update their metrics
+    if (lastGpuList.length > 0) {
+      const gpus = await collectGpuMetricsOnly(lastGpuList);
+      const activeGpus = gpus.filter(g => g.status === "active");
+
+      const totalMemory = activeGpus.reduce((sum, g) => sum + (g.vramTotalBytes || 0), 0);
+      const usedMemory = activeGpus.reduce((sum, g) => sum + (g.metrics?.memoryUsedBytes || 0), 0);
+      const avgUsage = activeGpus.length > 0
+        ? activeGpus.reduce((sum, g) => sum + (g.metrics?.utilizationPercent || 0), 0) / activeGpus.length
+        : 0;
+
+      // Update the cached list with new metrics
+      lastGpuList = gpus;
+
+      return {
+        gpuUsage: avgUsage,
+        gpuMemoryUsed: usedMemory,
+        gpuMemoryTotal: totalMemory,
+        gpuList: gpus,
+      };
+    }
+
+    // If no cached GPUs, run initial detection once
     const gpus = await detectAndCollectGpus();
+    lastGpuList = gpus;
     const activeGpus = gpus.filter(g => g.status === "active");
 
     const totalMemory = activeGpus.reduce((sum, g) => sum + (g.vramTotalBytes || 0), 0);
@@ -426,11 +452,19 @@ export async function collectGpuMetrics() {
 
 /**
  * Get current GPU list (for metrics.js compatibility)
+ * OPTIMIZED: Uses cached GPU list instead of re-running detection
  * @returns {Promise<Array>}
  */
 export async function getGpuList() {
   try {
-    return await detectAndCollectGpus();
+    // Return cached list if available
+    if (lastGpuList.length > 0) {
+      return lastGpuList;
+    }
+    // If no cached GPUs, run initial detection once
+    const gpus = await detectAndCollectGpus();
+    lastGpuList = gpus;
+    return gpus;
   } catch (error) {
     console.debug("[GPU-MONITOR] getGpuList error:", error.message);
     return [];
