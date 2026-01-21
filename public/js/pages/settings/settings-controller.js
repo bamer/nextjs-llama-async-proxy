@@ -174,7 +174,7 @@ class SettingsController {
   /**
        * Start router
        */
-  async _handleRouterStart() {
+  async handleRouterStart() {
     console.log("[SETTINGS] Starting router via socket...");
 
     try {
@@ -193,7 +193,7 @@ class SettingsController {
   /**
        * Start router with preset
        */
-  async _handleRouterStartWithPreset(presetName) {
+  async handleRouterStartWithPreset(presetName) {
     console.log("[SETTINGS] Starting router with preset:", presetName);
 
     try {
@@ -212,7 +212,7 @@ class SettingsController {
   /**
        * Restart router
        */
-  async _handleRouterRestart() {
+  async handleRouterRestart() {
     console.log("[SETTINGS] Restarting router via socket...");
 
     try {
@@ -231,7 +231,7 @@ class SettingsController {
   /**
        * Stop router
        */
-  async _handleRouterStop() {
+  async handleRouterStop() {
     console.log("[SETTINGS] Stopping router via socket...");
 
     try {

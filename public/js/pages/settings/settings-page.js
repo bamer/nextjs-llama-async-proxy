@@ -71,6 +71,8 @@ class SettingsPage extends Component {
                 if (data.config) {
                     this.routerConfig = { ...this._getRouterDefaults(), ...this.routerConfig, ...data.config };
                     this._updateRouterConfigUI();
+                    // IMPORTANT: Update launch command when router config changes
+                    this._updateLaunchCommandPreview();
                 }
             }),
             socketClient.on("loggingConfig:updated", (data) => {
@@ -214,8 +216,8 @@ class SettingsPage extends Component {
     }
 
     /**
-         * Update presets dropdown.
-         */
+          * Update presets dropdown.
+          */
     _updatePresetsDropdown() {
         const presetSelect = this._el?.querySelector("[data-field=\"activePreset\"]");
         if (presetSelect) {
@@ -230,6 +232,34 @@ class SettingsPage extends Component {
             if (currentValue) {
                 presetSelect.value = currentValue;
             }
+        }
+    }
+
+    /**
+          * Update launch command preview from current local router config
+          */
+    _updateLaunchCommandPreview() {
+        console.log("[DEBUG] _updateLaunchCommandPreview called with config:", this.routerConfig);
+        const config = this.routerConfig || {};
+        
+        // Build command from local config
+        const serverPath = config.serverPath || "llama-server";
+        const host = config.host || "0.0.0.0";
+        const port = config.port || 8080;
+        const ctxSize = config.ctxSize || 4096;
+        const maxModels = config.maxModelsLoaded || 4;
+        const threads = config.threads || 4;
+        const parallelSlots = config.parallelSlots || 1;
+        const gpuLayers = config.gpuLayers || 0;
+        const modelsPath = config.modelsPath || "/path/to/models";
+
+        const command = `${serverPath} --port ${port} --host ${host} --threads ${threads} --ctx-size ${ctxSize} --models-max ${maxModels} --models-dir "${modelsPath}"`;
+
+        // Update the launch command textarea in LlamaRouterCard
+        const routerCard = this._el?.querySelector(".llama-router-status-card");
+        if (routerCard?._component) {
+            routerCard._component.props.config = this.routerConfig;
+            routerCard._component._updateLaunchPreviewFromConfig();
         }
     }
 
@@ -489,6 +519,9 @@ class SettingsPage extends Component {
                     onChange: (field, value) => {
                         this._localRouterChanges[field] = value;
                         console.log("[DEBUG] SettingsPage LlamaRouterConfig.onChange:", { field, value, totalChanges: Object.keys(this._localRouterChanges).length });
+                        // IMPORTANT: Update launch command preview as user types (live update)
+                        this.routerConfig[field] = value;
+                        this._updateLaunchCommandPreview();
                     },
                 }),
             ]),
