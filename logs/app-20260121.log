@@ -183,3 +183,12 @@
 >>>>>>> parent of d391ce3 (feat(architecture): enforce error logging and decentralized components)
 [2026-01-21T10:13:18.881Z] [INFO] [server] Client connected: x-Po9cA8uTpJO3JGAAAB
 [2026-01-21T10:21:32.178Z] [INFO] [server] Client connected: CtTwJN3cmQhOywhYAAAB
+[2026-01-21T10:30:18.426Z] [INFO] [server] Client disconnected: CtTwJN3cmQhOywhYAAAB, reason: transport close
+[2026-01-21T10:30:18.426Z] [WARN] [server] [SOCKET] Client CtTwJN3cmQhOywhYAAAB disconnected - transport closed (possible network issue or server load)
+[2026-01-21T10:30:18.599Z] [INFO] [server] Client connected: qt8efJvTPxa71IZQAAAD
+[2026-01-21T10:30:35.100Z] [INFO] [server] Client disconnected: qt8efJvTPxa71IZQAAAD, reason: transport close
+[2026-01-21T10:30:35.101Z] [WARN] [server] [SOCKET] Client qt8efJvTPxa71IZQAAAD disconnected - transport closed (possible network issue or server load)
+[2026-01-21T10:30:35.256Z] [INFO] [server] Client connected: W9Duq9EGMFnfTtw9AAAF
+[2026-01-21T10:30:51.658Z] [INFO] [server] Client disconnected: W9Duq9EGMFnfTtw9AAAF, reason: transport close
+[2026-01-21T10:30:51.658Z] [WARN] [server] [SOCKET] Client W9Duq9EGMFnfTtw9AAAF disconnected - transport closed (possible network issue or server load)
+[2026-01-21T10:30:51.829Z] [INFO] [server] Client connected: -m1cMv_5zEXG847EAAAH

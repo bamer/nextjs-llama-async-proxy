@@ -24,7 +24,10 @@ import { registerHandlers } from "./server/handlers.js";
 import { parseGgufMetadata } from "./server/gguf/metadata-parser.js";
 import { startLlamaServerRouter } from "./server/handlers/llama-router/index.js";
 import { autoStartLlamaServer } from "./server/server-startup.js";
-import { startGpuMonitor, stopGpuMonitor } from "./server/services/gpu-monitor.js";
+import {
+  startGpuMonitor,
+  stopGpuMonitor,
+} from "./server/services/gpu-monitor.js";
 import { registerGpuHandlers } from "./server/handlers/gpu-handler.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -55,7 +58,9 @@ function createRateLimiter() {
     clientData.count++;
 
     if (clientData.count > MAX_EVENTS_PER_WINDOW) {
-      console.warn(`[RATE LIMIT] Client ${clientId} exceeded limit, disconnecting`);
+      console.warn(
+        `[RATE LIMIT] Client ${clientId} exceeded limit, disconnecting`
+      );
       return next(new Error("Rate limit exceeded"));
     }
 
@@ -128,7 +133,9 @@ async function main() {
   // Serve Socket.IO client from a path that doesn't conflict with Socket.IO server
   app.use(
     "/js/socket.io",
-    express.static(path.join(__dirname, "node_modules", "socket.io", "client-dist"))
+    express.static(
+      path.join(__dirname, "node_modules", "socket.io", "client-dist")
+    )
   );
 
   app.use((req, res) => {
@@ -155,7 +162,8 @@ const isMainModule =
   (process.argv[1].includes("server.js") || process.argv[1].includes("bin/")) &&
   !process.env.JEST_WORKER_ID;
 
-const inTestMode = process.env.NODE_ENV === "test" || process.env.JEST_WORKER_ID !== undefined;
+const inTestMode =
+  process.env.NODE_ENV === "test" || process.env.JEST_WORKER_ID !== undefined;
 
 if (isMainModule && !inTestMode) {
   main().catch((e) => {

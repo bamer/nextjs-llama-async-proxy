@@ -75,7 +75,9 @@ class MockGpuDetails extends MockComponent {
   _updateGPUUI() {
     console.log(`[MOCK GPU] Updating UI with ${this.gpuList.length} GPUs`);
     if (this.gpuList.length > 0) {
-      console.log(`[MOCK GPU] GPU data available: ${JSON.stringify(this.gpuList[0], null, 2)}`);
+      console.log(
+        `[MOCK GPU] GPU data available: ${JSON.stringify(this.gpuList[0], null, 2)}`
+      );
     } else {
       console.log(`[MOCK GPU] No GPU data available`);
     }
@@ -89,10 +91,14 @@ console.log("📊 Testing dashboard page GPU loading...");
 console.log("🔍 Checking for cached GPU data...");
 const cachedMetrics = mockStateManager.get("metrics");
 if (cachedMetrics?.gpu?.list) {
-  console.log(`✅ Found cached GPU data with ${cachedMetrics.gpu.list.length} GPUs`);
+  console.log(
+    `✅ Found cached GPU data with ${cachedMetrics.gpu.list.length} GPUs`
+  );
 
   // Simulate the GPU component update
-  const mockGpuDetails = new MockGpuDetails({ gpuList: cachedMetrics.gpu.list });
+  const mockGpuDetails = new MockGpuDetails({
+    gpuList: cachedMetrics.gpu.list,
+  });
   console.log("🎯 Testing immediate GPU component update...");
   mockGpuDetails._updateGPUUI();
 } else {
@@ -102,7 +108,9 @@ if (cachedMetrics?.gpu?.list) {
 // Test the subscription behavior
 console.log("🔄 Testing metrics subscription behavior...");
 const testCallback = (metrics) => {
-  console.log(`📬 Metrics subscription callback received: ${metrics.gpu.list.length} GPUs`);
+  console.log(
+    `📬 Metrics subscription callback received: ${metrics.gpu.list.length} GPUs`
+  );
   const gpuDetails = new MockGpuDetails({ gpuList: metrics.gpu.list });
   gpuDetails._updateGPUUI();
 };

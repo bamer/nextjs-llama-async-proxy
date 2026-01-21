@@ -40,7 +40,14 @@ async function testConcurrentRequests() {
 
         console.log("\n📊 Results:");
         results.forEach((result, i) => {
-          const names = ["config", "models", "metrics", "history", "settings", "presets"];
+          const names = [
+            "config",
+            "models",
+            "metrics",
+            "history",
+            "settings",
+            "presets",
+          ];
           if (result.status === "fulfilled") {
             console.log(`✅ ${names[i]}: SUCCESS`);
           } else {

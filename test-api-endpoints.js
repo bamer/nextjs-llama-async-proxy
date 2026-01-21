@@ -23,7 +23,9 @@ function testRouterConfigGet() {
 
   try {
     // This is how the router config endpoint would retrieve data
-    const configData = db.prepare("SELECT * FROM router_config WHERE key = 'config'").get();
+    const configData = db
+      .prepare("SELECT * FROM router_config WHERE key = 'config'")
+      .get();
 
     if (!configData) {
       console.log("❌ FAIL: No config found");
@@ -33,7 +35,13 @@ function testRouterConfigGet() {
     const config = JSON.parse(configData.value);
 
     // Validate structure
-    const requiredKeys = ["modelsPath", "serverPath", "host", "port", "maxModelsLoaded"];
+    const requiredKeys = [
+      "modelsPath",
+      "serverPath",
+      "host",
+      "port",
+      "maxModelsLoaded",
+    ];
     const missingKeys = requiredKeys.filter((key) => config[key] === undefined);
 
     if (missingKeys.length > 0) {
@@ -63,7 +71,9 @@ function testLoggingConfigGet() {
 
   try {
     // This is how the logging config endpoint would retrieve data
-    const configData = db.prepare("SELECT * FROM logging_config WHERE key = 'config'").get();
+    const configData = db
+      .prepare("SELECT * FROM logging_config WHERE key = 'config'")
+      .get();
 
     if (!configData) {
       console.log("❌ FAIL: No config found");
@@ -73,7 +83,12 @@ function testLoggingConfigGet() {
     const config = JSON.parse(configData.value);
 
     // Validate structure
-    const requiredKeys = ["level", "maxFileSize", "maxFiles", "enableFileLogging"];
+    const requiredKeys = [
+      "level",
+      "maxFileSize",
+      "maxFiles",
+      "enableFileLogging",
+    ];
     const missingKeys = requiredKeys.filter((key) => config[key] === undefined);
 
     if (missingKeys.length > 0) {
@@ -106,7 +121,8 @@ function testDataIntegrity() {
       db.prepare("SELECT * FROM router_config WHERE key = 'config'").get().value
     );
     const loggingConfig = JSON.parse(
-      db.prepare("SELECT * FROM logging_config WHERE key = 'config'").get().value
+      db.prepare("SELECT * FROM logging_config WHERE key = 'config'").get()
+        .value
     );
 
     // Check router config defaults
@@ -170,7 +186,9 @@ function testBackupCapability() {
   console.log("\n📋 Testing backup restoration capability...");
 
   try {
-    const backupEntries = db.prepare("SELECT * FROM migration_backup_004").all();
+    const backupEntries = db
+      .prepare("SELECT * FROM migration_backup_004")
+      .all();
 
     if (backupEntries.length === 0) {
       console.log("❌ FAIL: No backup entries found");
@@ -178,7 +196,9 @@ function testBackupCapability() {
     }
 
     console.log(`✅ SUCCESS: Found ${backupEntries.length} backup entries`);
-    console.log("   Backup can be used to restore previous configuration if needed:");
+    console.log(
+      "   Backup can be used to restore previous configuration if needed:"
+    );
 
     backupEntries.forEach((entry) => {
       console.log(`   - ${entry.source_table}.${entry.source_key}`);
@@ -209,7 +229,9 @@ for (const [test, passed] of Object.entries(results)) {
   console.log(`${passed ? "✅" : "❌"} ${test}: ${passed ? "PASS" : "FAIL"}`);
 }
 
-console.log("\n" + (allPassed ? "🎉 ALL API TESTS PASSED!" : "❌ SOME API TESTS FAILED"));
+console.log(
+  "\n" + (allPassed ? "🎉 ALL API TESTS PASSED!" : "❌ SOME API TESTS FAILED")
+);
 
 db.close();
 

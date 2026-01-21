@@ -24,12 +24,16 @@ import { chromium } from "playwright";
 
   try {
     console.log("📄 Loading Dashboard...");
-    await page.goto("http://localhost:3000/", { waitUntil: "networkidle", timeout: 10000 });
+    await page.goto("http://localhost:3000/", {
+      waitUntil: "networkidle",
+      timeout: 10000,
+    });
     await page.waitForTimeout(2000);
 
     // Check for key elements
     const appExists = (await page.$("#app")) !== null;
-    const contentExists = (await page.$("#page-content, .main-content, .page-content")) !== null;
+    const contentExists =
+      (await page.$("#page-content, .main-content, .page-content")) !== null;
 
     console.log(`✅ Page loaded`);
     console.log(`📊 App element: ${appExists}`);
@@ -42,7 +46,9 @@ import { chromium } from "playwright";
 
     if (componentErrors.length > 0) {
       console.log(`\n❌ Component Errors Found (${componentErrors.length}):`);
-      componentErrors.forEach((e) => console.log(`   - ${e.substring(0, 150)}...`));
+      componentErrors.forEach((e) =>
+        console.log(`   - ${e.substring(0, 150)}...`)
+      );
     } else {
       console.log(`\n✅ No Component errors found!`);
     }

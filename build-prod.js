@@ -67,7 +67,9 @@ function createProductionIndex() {
 
 try {
   // Create production versions
-  const debugToolsProd = createProductionVersion("public/js/utils/debug-tools.js");
+  const debugToolsProd = createProductionVersion(
+    "public/js/utils/debug-tools.js"
+  );
   const indexProd = createProductionIndex();
 
   // Write production files
@@ -81,7 +83,9 @@ try {
   console.log("");
   console.log("🚀 To use production build:");
   console.log("   cp public/index.prod.html public/index.html");
-  console.log("   cp public/js/utils/debug-tools.prod.js public/js/utils/debug-tools.js");
+  console.log(
+    "   cp public/js/utils/debug-tools.prod.js public/js/utils/debug-tools.js"
+  );
 } catch (error) {
   console.error("❌ Build failed:", error);
   process.exit(1);

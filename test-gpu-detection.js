@@ -3,7 +3,7 @@
 /**
  * GPU Detection Diagnostic Script
  * Run: node test-gpu-detection.js
- * 
+ *
  * This script tests GPU detection without starting the full server
  * Helps diagnose if GPUs are detected on your system
  */
@@ -39,13 +39,21 @@ async function testDetection() {
       console.log(`  Device ID: ${gpu.deviceId}`);
       console.log(`  Name: ${gpu.name}`);
       console.log(`  Vendor: ${gpu.vendor}`);
-      console.log(`  VRAM: ${gpu.vramTotalMiB} MiB (${gpu.vramTotalBytes} bytes)`);
+      console.log(
+        `  VRAM: ${gpu.vramTotalMiB} MiB (${gpu.vramTotalBytes} bytes)`
+      );
       console.log(`  Type: ${gpu.isIntegrated ? "Integrated" : "Discrete"}`);
       console.log(`  Driver: ${gpu.driverVersion || "Unknown"}`);
       console.log(`  Metrics:`);
-      console.log(`    - Utilization: ${gpu.metrics?.utilizationPercent || 0}%`);
-      console.log(`    - Memory: ${gpu.metrics?.memoryUsedMiB || 0}/${gpu.metrics?.memoryTotalMiB || 0} MiB`);
-      console.log(`    - Temperature: ${gpu.metrics?.temperatureCelsius || "N/A"}°C`);
+      console.log(
+        `    - Utilization: ${gpu.metrics?.utilizationPercent || 0}%`
+      );
+      console.log(
+        `    - Memory: ${gpu.metrics?.memoryUsedMiB || 0}/${gpu.metrics?.memoryTotalMiB || 0} MiB`
+      );
+      console.log(
+        `    - Temperature: ${gpu.metrics?.temperatureCelsius || "N/A"}°C`
+      );
       console.log(`    - Power: ${gpu.metrics?.powerDrawWatts || "N/A"} W`);
       console.log("");
     });
@@ -58,7 +66,9 @@ async function testDetection() {
     console.log(`  - Type: ${broadcastData.type}`);
     console.log(`  - List count: ${broadcastData.data?.list?.length || 0}`);
     console.log(`  - Total count: ${broadcastData.data?.count || 0}`);
-    console.log(`  - Total VRAM: ${broadcastData.data?.memoryTotal || 0} bytes`);
+    console.log(
+      `  - Total VRAM: ${broadcastData.data?.memoryTotal || 0} bytes`
+    );
     console.log(`  - Avg Usage: ${broadcastData.data?.usage || 0}%`);
 
     console.log("\n3. Checking broadcast data structure...\n");
@@ -86,7 +96,9 @@ async function testDetection() {
       console.log(`  ✓ vramTotalMiB: ${gpu.vramTotalMiB}`);
       console.log(`  ✓ vramTotalBytes: ${gpu.vramTotalBytes}`);
       console.log(`  ✓ isIntegrated: ${gpu.isIntegrated}`);
-      console.log(`  ✓ metrics.memoryTotalMiB: ${gpu.metrics?.memoryTotalMiB || 0}`);
+      console.log(
+        `  ✓ metrics.memoryTotalMiB: ${gpu.metrics?.memoryTotalMiB || 0}`
+      );
 
       if (!gpu.name || gpu.name === "Unknown") {
         console.warn(`  ⚠️  WARNING: GPU name is '${gpu.name}'`);
@@ -100,7 +112,6 @@ async function testDetection() {
     console.log("\n" + "=".repeat(60));
     console.log("✅ DIAGNOSTIC COMPLETE - All checks passed");
     console.log("=".repeat(60));
-
   } catch (error) {
     console.error("\n❌ ERROR during detection:", error.message);
     console.error("\nStack trace:", error.stack);
@@ -109,7 +120,7 @@ async function testDetection() {
 }
 
 // Run the test
-testDetection().catch(err => {
+testDetection().catch((err) => {
   console.error("Fatal error:", err);
   process.exit(1);
 });

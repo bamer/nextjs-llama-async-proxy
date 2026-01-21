@@ -38,11 +38,20 @@ async function testDashboardData() {
 
         // Test 4: Get metrics history (the critical one!)
         console.log("\n📋 Test 4: Getting metrics history...");
-        const history = await socket.emitWithAck("metrics:history", { limit: 60 });
-        console.log("✅ History loaded:", history?.history?.length || 0, "records");
+        const history = await socket.emitWithAck("metrics:history", {
+          limit: 60,
+        });
+        console.log(
+          "✅ History loaded:",
+          history?.history?.length || 0,
+          "records"
+        );
 
         if (history?.history?.length > 0) {
-          console.log("📊 Sample history record:", JSON.stringify(history.history[0], null, 2));
+          console.log(
+            "📊 Sample history record:",
+            JSON.stringify(history.history[0], null, 2)
+          );
         }
 
         // Test 5: Get settings
@@ -53,9 +62,15 @@ async function testDashboardData() {
         // Test 6: Get presets
         console.log("\n📋 Test 6: Getting presets...");
         const presets = await socket.emitWithAck("presets:list", {});
-        console.log("✅ Presets loaded:", presets?.presets?.length || 0, "presets");
+        console.log(
+          "✅ Presets loaded:",
+          presets?.presets?.length || 0,
+          "presets"
+        );
 
-        console.log("\n🎉 All tests passed! Dashboard data loading should work.");
+        console.log(
+          "\n🎉 All tests passed! Dashboard data loading should work."
+        );
 
         socket.disconnect();
         clearTimeout(timeout);

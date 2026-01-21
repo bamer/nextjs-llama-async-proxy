@@ -117,17 +117,30 @@ async function runTests() {
 
         client.emit("metrics:get", { requestId: 1 }, (response) => {
           const elapsed = Date.now() - startTime;
-          assert(elapsed < 500, `metrics:get responded within 500ms (${elapsed}ms)`);
+          assert(
+            elapsed < 500,
+            `metrics:get responded within 500ms (${elapsed}ms)`
+          );
         });
 
-        client.emit("metrics:history", { requestId: 2, limit: 60 }, (response) => {
-          const elapsed = Date.now() - startTime;
-          assert(elapsed < 500, `metrics:history responded within 500ms (${elapsed}ms)`);
-        });
+        client.emit(
+          "metrics:history",
+          { requestId: 2, limit: 60 },
+          (response) => {
+            const elapsed = Date.now() - startTime;
+            assert(
+              elapsed < 500,
+              `metrics:history responded within 500ms (${elapsed}ms)`
+            );
+          }
+        );
 
         client.emit("config:get", { requestId: 3 }, (response) => {
           const elapsed = Date.now() - startTime;
-          assert(elapsed < 500, `config:get responded within 500ms (${elapsed}ms)`);
+          assert(
+            elapsed < 500,
+            `config:get responded within 500ms (${elapsed}ms)`
+          );
         });
 
         // Test 2: Verify all requests fired in parallel (not sequential)
@@ -155,14 +168,19 @@ async function runTests() {
           const responseDelays = responses.map(
             (resp, i) => resp.timestamp - requests[i]?.timestamp
           );
-          const independent = responseDelays.every((delay) => delay > 0 && delay < 200);
+          const independent = responseDelays.every(
+            (delay) => delay > 0 && delay < 200
+          );
           assert(independent, "All responses arrived independently");
 
           // Test 5: Verify no blocking/waiting
           const totalTime =
             Math.max(...responses.map((r) => r.timestamp)) -
             Math.min(...requests.map((r) => r.timestamp));
-          assert(totalTime < 300, `Total dashboard load time < 300ms (actual: ${totalTime}ms)`);
+          assert(
+            totalTime < 300,
+            `Total dashboard load time < 300ms (actual: ${totalTime}ms)`
+          );
 
           // Summary
           console.log(`\n=== TEST SUMMARY ===`);
