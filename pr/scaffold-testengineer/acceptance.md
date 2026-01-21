@@ -1,4 +1,7 @@
 # Acceptance Criteria
-- Handshake tests present
-- Presets loading tests present
-- Router-start-preset tests present
+
+- [x] Handshake tests present
+- [x] Presets loading tests present
+- [x] Router-start-preset tests present
+- [x] No polling patterns verified
+- [x] Event-driven patterns verified
