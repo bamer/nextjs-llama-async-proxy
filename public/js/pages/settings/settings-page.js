@@ -1,0 +1,728 @@
+/**
+ * Settings Page Component - Event-Driven DOM Updates
+ * Composes RouterCard, RouterConfig, LoggingConfig, and SaveSection
+ */
+
+console.log("[DEBUG] settings-page.js loaded");
+
+class SettingsPage extends Component {
+	constructor(props) {
+		super(props);
+
+		const config = props.config || {};
+		const settings = props.settings || {};
+
+		// Unified router configuration object - single source of truth
+		this.routerConfig = config || this._getRouterDefaults();
+
+		// Local change tracking - accumulates ALL changes before save
+		// This fixes the issue where only changed fields were saved
+		this._localRouterChanges = {};
+		this._localLoggingChanges = {};
+
+		// Logging settings (separate from router config)
+		this.logLevel = settings.logLevel || "info";
+		this.maxFileSize = settings.maxFileSize || 10485760;
+		this.maxFiles = settings.maxFiles || 7;
+		this.enableFileLogging = settings.enableFileLogging !== false;
+		this.enableDatabaseLogging = settings.enableDatabaseLogging !== false;
+		this.enableConsoleLogging = settings.enableConsoleLogging !== false;
+
+		// Status and presets
+		this.routerStatus = props.routerStatus || null;
+		this.llamaStatus = props.llamaStatus || null;
+		this.presets = props.presets || [];
+
+		this.unsubscribers = [];
+	}
+
+	/**
+	     * Get default router configuration values
+	     * @returns {Object} Default router configuration
+	     */
+	_getRouterDefaults() {
+		return {
+			modelsPath: "",
+			serverPath: "",
+			host: "0.0.0.0",
+			port: 8080,
+			maxModelsLoaded: 4,
+			parallelSlots: 1,
+			ctxSize: 4096,
+			gpuLayers: 0,
+			threads: 4,
+			batchSize: 512,
+			ubatchSize: 512,
+			temperature: 0.7,
+			repeatPenalty: 1.1,
+			metricsEnabled: true,
+			fitEnabled: true,
+			fitTarget: 1024,
+			fitCtx: 4096,
+		};
+	}
+
+	onMount() {
+		console.log("[DEBUG] SettingsPage onMount");
+
+		// CRITICAL: Mount child components FIRST so their onMount() is called
+		// This ensures LlamaRouterCard, LlamaRouterConfig, LoggingConfig, etc. are initialized
+		this._mountChildren();
+
+		// Listen to socket broadcasts directly (replaces stateManager.subscribe)
+		this.unsubscribers = [
+			socketClient.on("routerConfig:updated", (data) => {
+				console.log("[DEBUG] routerConfig:updated received");
+				if (data.config) {
+					this.routerConfig = { ...this._getRouterDefaults(), ...this.routerConfig, ...data.config };
+					this._updateRouterConfigUI();
+					// IMPORTANT: Update launch command when router config changes
+					this._updateLaunchCommandPreview();
+				}
+			}),
+			socketClient.on("loggingConfig:updated", (data) => {
+				console.log("[DEBUG] loggingConfig:updated received");
+				if (data.config) {
+					this.logLevel = data.config.logLevel || this.logLevel;
+					this.maxFileSize = data.config.maxFileSize || this.maxFileSize;
+					this.maxFiles = data.config.maxFiles || this.maxFiles;
+					this.enableFileLogging = data.config.enableFileLogging !== false;
+					this.enableDatabaseLogging = data.config.enableDatabaseLogging !== false;
+					this.enableConsoleLogging = data.config.enableConsoleLogging !== false;
+					this._updateLoggingConfigUI();
+				}
+			}),
+			socketClient.on("llama:status", (data) => {
+				console.log("[DEBUG] llama:status received");
+				this.routerStatus = data || {};
+				this.llamaStatus = data.status || {};
+				this._updateStatusUI();
+			}),
+			socketClient.on("presets:updated", (data) => {
+				console.log("[DEBUG] presets:updated received");
+				this.presets = data.presets || [];
+				this._updatePresetsDropdown();
+			}),
+		];
+
+		// FIX: Explicitly load presets on mount to ensure they are available immediately
+		// This mirrors the Dashboard page behavior which uses presets:list + broadcast
+		this._loadPresets();
+	}
+
+	/**
+	     * Load presets from server - called on mount and when presets change
+	     */
+	_loadPresets() {
+		console.log("[DEBUG] SettingsPage._loadPresets() called");
+		socketClient.request("presets:list", {}).then((response) => {
+			if (response.success) {
+				console.log("[DEBUG] presets:list response received:", {
+					count: response.data?.presets?.length || 0
+				});
+				this.presets = response.data?.presets || [];
+				this._updatePresetsDropdown();
+				// Also trigger LlamaRouterCard preset update if mounted
+				this._triggerLlamaRouterPresetUpdate();
+			} else {
+				console.warn("[DEBUG] presets:list failed:", response.error);
+			}
+		}).catch((error) => {
+			console.error("[DEBUG] presets:list error:", error);
+		});
+	}
+
+	/**
+	     * Trigger preset update on LlamaRouterCard component if mounted
+	     */
+	_triggerLlamaRouterPresetUpdate() {
+		const routerCard = this._el?.querySelector(".llama-router-status-card");
+		if (routerCard && routerCard._component) {
+			routerCard._component.props.presets = this.presets;
+			if (typeof routerCard._component._updatePresetSelect === "function") {
+				routerCard._component._updatePresetSelect();
+			}
+		}
+	}
+
+	/**
+	      * Update router config UI elements from the unified config object.
+	      */
+	_updateRouterConfigUI() {
+		if (!this._el) return;
+
+		const fields = [
+			"modelsPath",
+			"serverPath",
+			"host",
+			"port",
+			"maxModelsLoaded",
+			"parallelSlots",
+			"ctxSize",
+			"gpuLayers",
+			"threads",
+			"batchSize",
+			"ubatchSize",
+			"temperature",
+			"repeatPenalty",
+			"metricsEnabled",
+			"fitEnabled",
+			"fitTarget",
+			"fitCtx",
+		];
+
+		fields.forEach((field) => {
+			const input = this._el.querySelector(`[data-field="${field}"]`);
+			if (input && this.routerConfig[ field ] !== undefined) {
+				if (input.type === "checkbox") {
+					input.checked = !!this.routerConfig[ field ];
+				} else {
+					input.value = this.routerConfig[ field ];
+				}
+			}
+		});
+	}
+
+	/**
+	     * Update logging config UI elements.
+	     */
+	_updateLoggingConfigUI() {
+		if (!this._el) return;
+
+		// Update log level select
+		const logLevelSelect = this._el.querySelector("[data-field=log-level]");
+		if (logLevelSelect && logLevelSelect.value !== this.logLevel) {
+			logLevelSelect.value = this.logLevel;
+		}
+
+		// Update max file size input
+		const maxFileSizeInput = this._el.querySelector("[data-field=max-file-size]");
+		if (maxFileSizeInput) {
+			const mb = Math.round(this.maxFileSize / 1024 / 1024);
+			if (parseInt(maxFileSizeInput.value) !== mb) {
+				maxFileSizeInput.value = mb;
+			}
+		}
+
+		// Update max files input
+		const maxFilesInput = this._el.querySelector("[data-field=max-files]");
+		if (maxFilesInput && parseInt(maxFilesInput.value) !== this.maxFiles) {
+			maxFilesInput.value = this.maxFiles;
+		}
+
+		// Update checkboxes
+		const checkboxes = [
+			{ field: "enable-file-logging", value: this.enableFileLogging },
+			{ field: "enable-database-logging", value: this.enableDatabaseLogging },
+			{ field: "enable-console-logging", value: this.enableConsoleLogging },
+		];
+
+		checkboxes.forEach(({ field, value }) => {
+			const checkbox = this._el.querySelector(`[data-field="${field}"]`);
+			if (checkbox && checkbox.checked !== value) {
+				checkbox.checked = value;
+			}
+		});
+	}
+
+	/**
+	      * Update presets dropdown.
+	      */
+	_updatePresetsDropdown() {
+		const presetSelect = this._el?.querySelector("[data-field=\"activePreset\"]");
+		if (presetSelect) {
+			const currentValue = presetSelect.value;
+			presetSelect.innerHTML = "<option value=\"\">-- Select Preset --</option>";
+			this.presets.forEach((preset) => {
+				const option = document.createElement("option");
+				option.value = preset.id;
+				option.textContent = preset.name;
+				presetSelect.appendChild(option);
+			});
+			if (currentValue) {
+				presetSelect.value = currentValue;
+			}
+		}
+	}
+
+	/**
+	      * Update launch command preview from current local router config
+	      */
+	_updateLaunchCommandPreview() {
+		console.log("[DEBUG] _updateLaunchCommandPreview called with config:", this.routerConfig);
+		const config = this.routerConfig || {};
+
+		// Build command from local config with all important flags
+		const serverPath = config.serverPath || "llama-server";
+		const host = config.host || "0.0.0.0";
+		const port = config.port || 8080;
+		const ctxSize = config.ctxSize || 4096;
+		const maxModels = config.maxModelsLoaded || 4;
+		const threads = config.threads || 4;
+		const parallelSlots = config.parallelSlots || 1;
+		const ubatchSize = config.ubatchSize || 512;
+		const batchSize = config.batchSize || 2048;
+		const gpuLayers = config.gpuLayers || 0;
+		const modelsPath = config.modelsPath || "/path/to/models";
+		const metricsEnabled = config.metricsEnabled !== false;
+		const fitEnabled = config.fitEnabled !== false;
+		const fitTarget = config.fitTarget || 1024;
+		const fitCtx = config.fitCtx || 4096;
+
+		// Build base command
+		let command = `${serverPath} --port ${port} --host ${host} --threads ${threads} --ctx-size ${ctxSize} --models-max ${maxModels} --models-dir "${modelsPath}"`;
+
+		// Add optional parallel slots (--parallel or -np)
+		if (parallelSlots && parallelSlots > 0) {
+			command += ` --parallel ${parallelSlots}`;
+		}
+
+		// Add GPU settings if specified
+		if (gpuLayers > 0) {
+			command += ` --gpu-layers ${gpuLayers}`;
+		}
+
+		// Add batch sizes
+		command += ` --batch-size ${batchSize}`;
+		if (ubatchSize && ubatchSize !== batchSize) {
+			command += ` --ubatch-size ${ubatchSize}`;
+		}
+
+		// Add metrics if enabled
+		if (metricsEnabled) {
+			command += ` --metrics`;
+		}
+
+		// Add fit options if enabled
+		if (fitEnabled) {
+			command += ` --fit on`;
+			if (fitTarget && fitTarget > 0) {
+				command += ` --fit-target ${fitTarget}`;
+			}
+			if (fitCtx && fitCtx > 0) {
+				command += ` --fit-ctx ${fitCtx}`;
+			}
+		} else {
+			command += ` --fit off`;
+		}
+
+		// Update the launch command textarea in LlamaRouterCard
+		const routerCard = this._el?.querySelector(".llama-router-status-card");
+		if (routerCard?._component) {
+			routerCard._component.props.config = this.routerConfig;
+			routerCard._component._updateLaunchPreviewFromConfig();
+		}
+	}
+
+	/**
+	     * Update the status UI display based on current router and llama server status.
+	     */
+	async _updateStatusUI() {
+		const routerCard = this._el?.querySelector(".llama-router-status-card");
+		if (!routerCard) return;
+
+		const rs = this.routerStatus || {};
+		const ls = this.llamaStatus || {};
+		const isRunning = rs.port || ls.port;
+		const displayPort = rs.port || ls.port || this.routerConfig.port;
+
+		const statusBadge = routerCard.querySelector(".status-badge");
+		if (statusBadge) {
+			statusBadge.textContent = isRunning ? "RUNNING" : "STOPPED";
+			statusBadge.className = `status-badge ${isRunning ? "running" : "idle"}`;
+		}
+
+		const portDisplay = routerCard.querySelector(".header-title-text");
+		if (portDisplay) {
+			portDisplay.textContent = isRunning ? `Llama Router : ${displayPort}` : "Llama Router";
+		}
+	}
+
+	/**
+	     * Clean up subscriptions.
+	     */
+	destroy() {
+		if (this.unsubscribers) {
+			this.unsubscribers.forEach((unsub) => unsub());
+			this.unsubscribers = [];
+		}
+		super.destroy();
+	}
+
+	/**
+	     * Save all settings via socket
+	     */
+	_save() {
+		// Use local component state instead of stateManager.get()
+		const currentRouterConfig = this.routerConfig || this._getRouterDefaults();
+		const currentLoggingConfig = {
+			logLevel: this.logLevel || "info",
+			maxFileSize: this.maxFileSize || 10485760,
+			maxFiles: this.maxFiles || 7,
+			enableFileLogging: this.enableFileLogging !== false,
+			enableDatabaseLogging: this.enableDatabaseLogging !== false,
+			enableConsoleLogging: this.enableConsoleLogging !== false,
+		};
+
+		// Merge local changes with current state values
+		const routerConfig = {
+			...currentRouterConfig,
+			...this._localRouterChanges,
+			modelsPath: this._localRouterChanges.modelsPath !== undefined
+				? this._localRouterChanges.modelsPath
+				: (currentRouterConfig.modelsPath || ""),
+			serverPath: this._localRouterChanges.serverPath !== undefined
+				? this._localRouterChanges.serverPath
+				: (currentRouterConfig.serverPath || ""),
+			host: this._localRouterChanges.host !== undefined
+				? this._localRouterChanges.host
+				: (currentRouterConfig.host || "0.0.0.0"),
+			port: parseInt(this._localRouterChanges.port) || parseInt(currentRouterConfig.port) || 8080,
+			maxModelsLoaded: parseInt(this._localRouterChanges.maxModelsLoaded) || parseInt(currentRouterConfig.maxModelsLoaded) || 4,
+			parallelSlots: parseInt(this._localRouterChanges.parallelSlots) || parseInt(currentRouterConfig.parallelSlots) || 1,
+			ctxSize: parseInt(this._localRouterChanges.ctxSize) || parseInt(currentRouterConfig.ctxSize) || 4096,
+			gpuLayers: parseInt(this._localRouterChanges.gpuLayers) || parseInt(currentRouterConfig.gpuLayers) || 0,
+			threads: parseInt(this._localRouterChanges.threads) || parseInt(currentRouterConfig.threads) || 4,
+			batchSize: parseInt(this._localRouterChanges.batchSize) || parseInt(currentRouterConfig.batchSize) || 512,
+			temperature: parseFloat(this._localRouterChanges.temperature) || parseFloat(currentRouterConfig.temperature) || 0.7,
+			repeatPenalty: parseFloat(this._localRouterChanges.repeatPenalty) || parseFloat(currentRouterConfig.repeatPenalty) || 1.1,
+		};
+
+		const loggingConfig = {
+			...currentLoggingConfig,
+			...this._localLoggingChanges,
+			logLevel: this._localLoggingChanges.logLevel !== undefined
+				? this._localLoggingChanges.logLevel
+				: (currentLoggingConfig.logLevel || "info"),
+			maxFileSize: (parseInt(this._localLoggingChanges.maxFileSize) || parseInt(currentLoggingConfig.maxFileSize) || 10) * 1024 * 1024,
+			maxFiles: parseInt(this._localLoggingChanges.maxFiles) || parseInt(currentLoggingConfig.maxFiles) || 7,
+			enableFileLogging: this._localLoggingChanges.enableFileLogging !== undefined
+				? this._localLoggingChanges.enableFileLogging
+				: (currentLoggingConfig.enableFileLogging !== false),
+			enableDatabaseLogging: this._localLoggingChanges.enableDatabaseLogging !== undefined
+				? this._localLoggingChanges.enableDatabaseLogging
+				: (currentLoggingConfig.enableDatabaseLogging !== false),
+			enableConsoleLogging: this._localLoggingChanges.enableConsoleLogging !== undefined
+				? this._localLoggingChanges.enableConsoleLogging
+				: (currentLoggingConfig.enableConsoleLogging !== false),
+		};
+
+		console.log("[DEBUG] Saving via socket");
+
+		// Clear local changes
+		this._localRouterChanges = {};
+		this._localLoggingChanges = {};
+
+		// Call controller handler directly
+		const controller = this._el?._component?._controller;
+		if (controller) {
+			controller.handleSave({ routerConfig, loggingConfig });
+		}
+	}
+
+	bindEvents() {
+		// Save button
+		this.on("click", "[data-action=save]", (e) => {
+			e.preventDefault();
+			this._save();
+		});
+
+		// Router config changes - track in localChanges instead of directly modifying routerConfig
+		this.on("change", "[data-field]", (e) => {
+			const target = e.target;
+			const field = target.dataset.field;
+			if (!field) return;
+
+			let value;
+			if (target.type === "checkbox") {
+				value = target.checked;
+			} else if (target.type === "number") {
+				value = target.step && target.step.includes(".")
+					? parseFloat(target.value)
+					: parseInt(target.value, 10);
+				value = isNaN(value) ? 0 : value;
+			} else {
+				value = target.value;
+			}
+
+			// Track change in localChanges (will be merged with state on save)
+			this._localRouterChanges[ field ] = value;
+			console.log("[DEBUG] SettingsPage field change tracked:", { field, value, totalChanges: Object.keys(this._localRouterChanges).length });
+
+			// Visual feedback
+			target.classList.add("changed");
+			setTimeout(() => target.classList.remove("changed"), 500);
+		});
+	}
+
+	/**
+	     * Emit export action - use direct socket call
+	     */
+	async _exportConfig() {
+		console.log("[DEBUG] Exporting config via socket");
+		try {
+			const response = await socketClient.request("config:export", {});
+			if (response.success) {
+				// Trigger download of exported config
+				const blob = new Blob([ JSON.stringify(response.data, null, 2) ], { type: "application/json" });
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement("a");
+				a.href = url;
+				a.download = `llama-config-${Date.now()}.json`;
+				a.click();
+				URL.revokeObjectURL(url);
+				showNotification("Configuration exported", "success");
+			} else {
+				showNotification(`Export failed: ${response.error}`, "error");
+			}
+		} catch (e) {
+			console.error("[DEBUG] Export error:", e);
+			showNotification(`Export error: ${e.message}`, "error");
+		}
+	}
+
+	/**
+	     * Emit import action with imported config - use direct socket call
+	     * @param {Object} importedConfig - Configuration object
+	     */
+	async _importConfig(importedConfig) {
+		console.log("[DEBUG] Importing config via socket:", importedConfig);
+
+		if (!importedConfig.routerConfig && !importedConfig.loggingConfig) {
+			showNotification("Invalid configuration file", "error");
+			return;
+		}
+
+		try {
+			// Apply imported configs via socket request
+			if (importedConfig.routerConfig) {
+				this.routerConfig = { ...this.routerConfig, ...importedConfig.routerConfig };
+				this._updateRouterConfigUI();
+			}
+			if (importedConfig.loggingConfig) {
+				this.logLevel = importedConfig.loggingConfig.logLevel || this.logLevel;
+				this.maxFileSize = importedConfig.loggingConfig.maxFileSize || this.maxFileSize;
+				this.maxFiles = importedConfig.loggingConfig.maxFiles || this.maxFiles;
+				this.enableFileLogging = importedConfig.loggingConfig.enableFileLogging !== false;
+				this.enableDatabaseLogging = importedConfig.loggingConfig.enableDatabaseLogging !== false;
+				this.enableConsoleLogging = importedConfig.loggingConfig.enableConsoleLogging !== false;
+				this._updateLoggingConfigUI();
+			}
+
+			// Request server to save imported config
+			const response = await socketClient.request("config:import", importedConfig);
+			if (response.success) {
+				showNotification("Configuration imported successfully", "success");
+			} else {
+				showNotification(`Import failed: ${response.error}`, "error");
+			}
+		} catch (e) {
+			console.error("[DEBUG] Import error:", e);
+			showNotification(`Import error: ${e.message}`, "error");
+		}
+	}
+
+	render() {
+		const rs = this.routerStatus || {};
+		const ls = this.llamaStatus || {};
+		const isRunning = rs.port || ls.port;
+		const displayPort = rs.port || ls.port || this.routerConfig.port;
+
+		return Component.h("div", { className: "settings-page" }, [
+			// Llama Router Card with status and controls
+			Component.h("div", { className: "settings-card" }, [
+				Component.h("div", { className: "router-card-wrapper" }, [
+					Component.h(window.LlamaRouterCard, {
+						status: this.llamaStatus,
+						routerStatus: this.routerStatus,
+						models: this.models || [],
+						presets: this.presets,
+						config: this.routerConfig,
+						onAction: (action, data) => {
+							console.log("[DEBUG] settings-page onAction:", { action, data });
+							const controller = this._el?._component?._controller;
+							switch (action) {
+								case "start":
+									controller?.handleRouterStart();
+									break;
+								case "start-with-preset":
+									controller?.handleRouterStartWithPreset(data);
+									break;
+								case "stop":
+									controller?.handleRouterStop();
+									break;
+								case "restart":
+									controller?.handleRouterRestart();
+									break;
+							}
+						},
+					}),
+				]),
+			]),
+
+			// Unified Llama Router Configuration
+			Component.h("div", { className: "settings-section" }, [
+				Component.h("h2", { className: "section-title" }, "Router Configuration"),
+				Component.h("p", { className: "section-desc" }, "Configure llama.cpp router paths, network, behavior, and inference defaults"),
+				Component.h(window.LlamaRouterConfig, {
+					config: this.routerConfig,
+					onSave: this._handleSaveRouter.bind(this),
+					onChange: (field, value) => {
+						this._localRouterChanges[ field ] = value;
+						console.log("[DEBUG] SettingsPage LlamaRouterConfig.onChange:", { field, value, totalChanges: Object.keys(this._localRouterChanges).length });
+						// IMPORTANT: Update launch command preview as user types (live update)
+						this.routerConfig[ field ] = value;
+						this._updateLaunchCommandPreview();
+					},
+				}),
+			]),
+
+			// Logging Configuration
+			Component.h("div", { className: "settings-section" }, [
+				Component.h("h2", { className: "section-title" }, "Logging Configuration"),
+				Component.h("p", { className: "section-desc" }, "Configure log collection and retention"),
+				Component.h(window.LoggingConfig, {
+					logLevel: this.logLevel,
+					maxFileSize: this.maxFileSize,
+					maxFiles: this.maxFiles,
+					enableFileLogging: this.enableFileLogging,
+					enableDatabaseLogging: this.enableDatabaseLogging,
+					enableConsoleLogging: this.enableConsoleLogging,
+					onSave: this._handleSaveLogging.bind(this),
+					onLogLevelChange: (val) => {
+						this._localLoggingChanges.logLevel = val;
+						this.logLevel = val;
+					},
+					onMaxFileSizeChange: (val) => {
+						this._localLoggingChanges.maxFileSize = val;
+						this.maxFileSize = val;
+					},
+					onMaxFilesChange: (val) => {
+						this._localLoggingChanges.maxFiles = val;
+						this.maxFiles = val;
+					},
+					onEnableFileLoggingChange: (val) => {
+						this._localLoggingChanges.enableFileLogging = val;
+						this.enableFileLogging = val;
+					},
+					onEnableDatabaseLoggingChange: (val) => {
+						this._localLoggingChanges.enableDatabaseLogging = val;
+						this.enableDatabaseLogging = val;
+					},
+					onEnableConsoleLoggingChange: (val) => {
+						this._localLoggingChanges.enableConsoleLogging = val;
+						this.enableConsoleLogging = val;
+					},
+				}),
+			]),
+
+			// Alert Thresholds Configuration
+			Component.h("div", { className: "settings-section" }, [
+				Component.h("h2", { className: "section-title" }, "Alert Thresholds"),
+				Component.h("p", { className: "section-desc" }, "Configure warning and alert levels for system metrics"),
+				Component.h(window.ThresholdSettings, {}),
+			]),
+
+			// Export/Import
+			Component.h("div", { className: "settings-section" }, [
+				Component.h(window.ConfigExportImport, {
+					onExport: this._exportConfig.bind(this),
+					onImport: this._importConfig.bind(this),
+				}),
+			]),
+
+			// About Card
+			Component.h("div", { className: "settings-section" }, [
+				Component.h("div", { className: "card settings-card" }, [
+					Component.h("h3", { className: "card-title" }, "Llama Async Proxy Dashboard"),
+					Component.h("p", { className: "card-desc" }, "Version 1.2"),
+				]),
+			]),
+		]);
+	}
+
+	/**
+	   * Save only router configuration
+	   */
+	async _handleSaveRouter() {
+		console.log("[SETTINGS] Saving router config...");
+		const currentRouterConfig = this.routerConfig || {};
+		const config = {
+			modelsPath: this._localRouterChanges.modelsPath !== undefined
+				? this._localRouterChanges.modelsPath
+				: (currentRouterConfig.modelsPath || ""),
+			serverPath: this._localRouterChanges.serverPath !== undefined
+				? this._localRouterChanges.serverPath
+				: (currentRouterConfig.serverPath || ""),
+			host: this._localRouterChanges.host !== undefined
+				? this._localRouterChanges.host
+				: (currentRouterConfig.host || "0.0.0.0"),
+			port: parseInt(this._localRouterChanges.port) || parseInt(currentRouterConfig.port) || 8080,
+			maxModelsLoaded: parseInt(this._localRouterChanges.maxModelsLoaded) || parseInt(currentRouterConfig.maxModelsLoaded) || 4,
+			parallelSlots: parseInt(this._localRouterChanges.parallelSlots) || parseInt(currentRouterConfig.parallelSlots) || 1,
+			ctxSize: parseInt(this._localRouterChanges.ctxSize) || parseInt(currentRouterConfig.ctxSize) || 4096,
+			gpuLayers: parseInt(this._localRouterChanges.gpuLayers) || parseInt(currentRouterConfig.gpuLayers) || 0,
+			threads: parseInt(this._localRouterChanges.threads) || parseInt(currentRouterConfig.threads) || 4,
+			batchSize: parseInt(this._localRouterChanges.batchSize) || parseInt(currentRouterConfig.batchSize) || 512,
+			ubatchSize: parseInt(this._localRouterChanges.ubatchSize) || parseInt(currentRouterConfig.ubatchSize) || 512,
+			temperature: parseFloat(this._localRouterChanges.temperature) || parseFloat(currentRouterConfig.temperature) || 0.7,
+			repeatPenalty: parseFloat(this._localRouterChanges.repeatPenalty) || parseFloat(currentRouterConfig.repeatPenalty) || 1.1,
+			metricsEnabled: this._localRouterChanges.metricsEnabled !== undefined
+				? this._localRouterChanges.metricsEnabled
+				: (currentRouterConfig.metricsEnabled !== false),
+			fitEnabled: this._localRouterChanges.fitEnabled !== undefined
+				? this._localRouterChanges.fitEnabled
+				: (currentRouterConfig.fitEnabled !== false),
+			fitTarget: parseInt(this._localRouterChanges.fitTarget) || parseInt(currentRouterConfig.fitTarget) || 1024,
+			fitCtx: parseInt(this._localRouterChanges.fitCtx) || parseInt(currentRouterConfig.fitCtx) || 4096,
+			autoStartOnLaunch: this._localRouterChanges.autoStartOnLaunch !== undefined
+				? this._localRouterChanges.autoStartOnLaunch
+				: (currentRouterConfig.autoStartOnLaunch === true),
+		};
+
+		try {
+			const response = await socketClient.request("routerConfig:update", { config });
+			if (response.success) {
+				showNotification("Router settings saved successfully", "success");
+				this._localRouterChanges = {};
+				this.routerConfig = { ...this.routerConfig, ...config };
+				this._updateRouterConfigUI();
+			} else {
+				showNotification(`Save failed: ${response.error}`, "error");
+			}
+		} catch (e) {
+			console.error("[SETTINGS] Router save error:", e);
+			showNotification(`Save error: ${e.message}`, "error");
+		}
+	}
+
+	/**
+	   * Save only logging configuration
+	   */
+	async _handleSaveLogging() {
+		console.log("[SETTINGS] Saving logging config...");
+		const config = {
+			logLevel: this.logLevel,
+			maxFileSize: this.maxFileSize,
+			maxFiles: this.maxFiles,
+			enableFileLogging: this.enableFileLogging,
+			enableDatabaseLogging: this.enableDatabaseLogging,
+			enableConsoleLogging: this.enableConsoleLogging,
+		};
+
+		try {
+			const response = await socketClient.request("loggingConfig:update", { config });
+			if (response.success) {
+				showNotification("Logging settings saved successfully", "success");
+				this._localLoggingChanges = {};
+			} else {
+				showNotification(`Save failed: ${response.error}`, "error");
+			}
+		} catch (e) {
+			console.error("[SETTINGS] Logging save error:", e);
+			showNotification(`Save error: ${e.message}`, "error");
+		}
+	}
+}
+
+window.SettingsPage = SettingsPage;
