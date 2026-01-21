@@ -368,3 +368,10 @@ srv  log_server_r: request: GET /models 127.0.0.1 200
 [2026-01-21T04:26:51.835Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
 [2026-01-21T04:26:51.835Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
 [2026-01-21T04:26:53.835Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T04:26:55.847Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T04:26:57.850Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T04:26:59.849Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T04:27:01.851Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T04:27:01.851Z] [ERROR] srv  log_server_r: request: GET /health 127.0.0.1 200
+[2026-01-21T04:27:03.845Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
+[2026-01-21T04:27:05.849Z] [ERROR] srv  log_server_r: request: GET /models 127.0.0.1 200
