@@ -197,25 +197,25 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
   /**
    * Stop llama server
    */
-    socket.on("llama:stop", async (req) => {
+  socket.on("llama:stop", async (req, ack) => {
     const id = req?.requestId || Date.now();
     console.log(`[LLAMA-HANDLERS] Received llama:stop from client ${socket.id}`);
-     try {
-       const result = await stopLlamaServerRouter();
-       // Emit status to ALL clients so UI updates immediately
-       io.emit("llama:status", {
-              launchCommand: result.launchCommand || "",
-         status: "idle",
-         port: null,
-         url: null,
-         mode: "router",
-         timestamp: Date.now(),
-       });
+    try {
+      const result = await stopLlamaServerRouter();
+      // Emit status to ALL clients so UI updates immediately
+      io.emit("llama:status", {
+        launchCommand: result.launchCommand || "",
+        status: "idle",
+        port: null,
+        url: null,
+        mode: "router",
+        timestamp: Date.now(),
+      });
       socket.broadcast.emit("models:router-stopped", {});
-      ok(socket, "llama:stop:result", result, id);
+      ok(socket, "llama:stop:result", result, id, ack);
     } catch (e) {
       console.error("[LLAMA-HANDLERS] Error stopping llama:", e.message);
-      err(socket, "llama:stop:result", e.message, id);
+      err(socket, "llama:stop:result", e.message, id, ack);
     }
   });
 

@@ -14,6 +14,7 @@ class LlamaRouterCard extends Component {
 		this.metrics = {};
 		this.presets = [];
 		this.config = {};
+		this._lastPresetLogKey = null; // Throttle preset select logging
 		console.log("[LlamaRouterCard] Constructor - presets:", {
 			count: props?.presets?.length || 0,
 			presets: props?.presets?.map(p => ({ name: p.name || p })) || [],
@@ -50,38 +51,32 @@ class LlamaRouterCard extends Component {
 			}),
 		];
 
-		// Request launch preview (works whether router is running or not)
-		// But also try to generate from config immediately
-		this._requestLaunchPreview();
- 
- 		// Request current router status on mount (in case router is already running)
- 		this._requestCurrentStatus();
+    // Request launch preview (works whether router is running or not)
+    // But also try to generate from config immediately
+    this._requestLaunchPreview();
 
- 		// Only set up scraper once (not on every mount/re-render)
- 		if (window.MetricsScraper && !this._scraper) {
- 			this._setupScraper();
- 		}
- 	}
+    // Request current router status on mount (in case router is already running)
+    this._requestCurrentStatus();
 
- 	/**
- 	 * Request the current router status from server
- 	 */
- 	async _requestCurrentStatus() {
- 		try {
- 			const response = await socketClient.request("llama:status", {});
- 			if (response.success && response.data) {
- 				this.status = response.data;
- 				this.routerStatus = response.data;
- 				this._updateUI();
- 				// Now that we have the URL, set up the scraper
- 				if (window.MetricsScraper && !this._scraper) {
- 					this._setupScraper();
- 				}
- 			}
- 		} catch (e) {
- 			console.log("[LlamaRouterCard] Router not running, waiting for broadcasts");
- 		}
- 	}
+    // Listen for llama-server metrics from server broadcast (Socket.IO-First)
+    this._setupMetricsListener();
+  }
+
+  /**
+   * Request the current router status from server
+   */
+  async _requestCurrentStatus() {
+    try {
+      const response = await socketClient.request("llama:status", {});
+      if (response.success && response.data) {
+        this.status = response.data;
+        this.routerStatus = response.data;
+        this._updateUI();
+      }
+    } catch (e) {
+      console.log("[LlamaRouterCard] Router not running, waiting for broadcasts");
+    }
+  }
 
 	/**
 	 * Generate launch command preview locally from props.config
@@ -199,59 +194,42 @@ class LlamaRouterCard extends Component {
 		}
 	}
 
-	destroy() {
-		if (this.unsubscribers) {
-			this.unsubscribers.forEach(u => u());
-			this.unsubscribers = [];
-		}
-		if (this._scraper) this._scraper.stop();
-	}
+  destroy() {
+    if (this.unsubscribers) {
+      this.unsubscribers.forEach(u => u());
+      this.unsubscribers = [];
+    }
+  }
 
- 	_setupScraper() {
- 		// Get URL from routerStatus (set by router:status events)
- 		const url = this.routerStatus?.url;
- 		console.log("[LlamaRouterCard] _setupScraper called with URL:", url);
+  /**
+   * Listen for llama-server metrics from server broadcast
+   * Uses Socket.IO-First architecture - no HTTP polling
+   */
+  _setupMetricsListener() {
+    console.log("[LlamaRouterCard] Setting up llama-server:status listener");
 
- 		// Only set up scraper if server is running (has URL)
- 		// This is expected to be null when llama-server is not running
- 		if (!url) {
- 			console.log("[LlamaRouterCard] No URL available, skipping scraper");
- 			return; // Silent - no warning needed for expected state
- 		}
+    socketClient.on("llama-server:status", (msg) => {
+      const data = msg?.data;
+      if (!data) return;
 
- 		console.log("[LlamaRouterCard] Creating MetricsScraper with URL:", url);
- 		// Use shorter interval (2s) for immediate feedback, but with smart dedup
- 		this._scraper = new window.MetricsScraper(url, 2000);
-		this._scraper.start((metrics) => {
-			// Update local state only when metrics actually change
-			const currentMetrics = this.metrics || {};
+      // Update status from broadcast
+      this.routerStatus = {
+        status: data.status,
+        url: data.url,
+        port: data.port,
+        metrics: data.metrics,
+      };
 
-			// Check if meaningful changes (> 0.1% change for token rates)
-			let hasChange = false;
-			for (const key in metrics) {
-				const oldVal = currentMetrics[ key ] || 0;
-				const newVal = metrics[ key ] || 0;
+      // Update metrics directly from broadcast
+      if (data.metrics) {
+        this.metrics = data.metrics;
+        this._updateDetailedMetrics();
+        this._updateUI();
+      }
+    });
 
-				if (key.includes("Seconds")) {
-					const threshold = Math.max(0.05, Math.abs(oldVal) * 0.001);
-					if (Math.abs(newVal - oldVal) > threshold) {
-						hasChange = true;
-						break;
-					}
-				} else if (newVal !== oldVal) {
-					hasChange = true;
-					break;
-				}
-			}
-
-			if (hasChange) {
-				this.metrics = metrics;
-				// Update BOTH detailed metrics AND glance grid (for real-time updates)
-				this._updateDetailedMetrics();
-				this._updateUI();
-			}
-		});
-	}
+    console.log("[LlamaRouterCard] Llama-server metrics listener active");
+  }
 
 	_updateUI() {
 		if (!this._el) return;
@@ -324,40 +302,33 @@ class LlamaRouterCard extends Component {
 			}
 			this.setText("[data-glance=\"uptime\"]", window.FormatUtils.formatUptime(uptimeSeconds));
 
-			// Row 2: Server Config (Ctx Size, Parallel, Threads, Slots)
-			let nCtx = "N/A";
-			let nParallel = "N/A";
-			let nThreads = "N/A";
-			const totalSlots = rs.totalSlots || status.totalSlots || "N/A";
+        // Row 2: Server Config (Ctx Size, Parallel, Threads, Slots)
+        // Prefer structured metrics, fallback to router status
+        const m = this.metrics || {};
+        const rr = this.routerStatus?.metrics || {};
+        const nCtx = (typeof m.nCtx === 'number' && m.nCtx > 0) ? String(m.nCtx) : (typeof rr.nCtx === 'number' ? String(rr.nCtx) : "N/A");
+        const nParallel = (typeof m.nParallel === 'number' && m.nParallel > 0) ? String(m.nParallel) : (typeof rr.nParallel === 'number' ? String(rr.nParallel) : "N/A");
+        const nThreads = (typeof m.nThreads === 'number' && m.nThreads > 0) ? String(m.nThreads) : (typeof rr.nThreads === 'number' ? String(rr.nThreads) : "N/A");
+        const totalSlots = (typeof m.activeModels === 'number' && typeof m.queueSize === 'number') ? (m.activeModels + m.queueSize) : (typeof rr.totalSlots === 'number' ? rr.totalSlots : "N/A");
 
-			if (Array.isArray(modelsData)) {
-				const loadedModel = modelsData.find(model => model.status?.value === "loaded");
-				if (loadedModel?.args) {
-					const argsStr = loadedModel.args.join(" ");
-					const ctxMatch = argsStr.match(/--ctx-size\s+(\d+)/);
-					const threadsMatch = argsStr.match(/--threads\s+(\d+)/);
-					const parallelMatch = argsStr.match(/--ubatch-size\s+(\d+)/);
-					nCtx = ctxMatch ? ctxMatch[ 1 ] : "N/A";
-					nThreads = threadsMatch ? threadsMatch[ 1 ] : "N/A";
-					nParallel = parallelMatch ? parallelMatch[ 1 ] : "N/A";
-				}
-			}
+        this.setText("[data-glance=\"n-ctx\"]", nCtx);
+        this.setText("[data-glance=\"n-parallel\"]", nParallel);
+        this.setText("[data-glance=\"n-threads\"]", nThreads);
+        this.setText("[data-glance=\"total-slots\"]", String(totalSlots));
 
-			this.setText("[data-glance=\"n-ctx\"]", nCtx);
-			this.setText("[data-glance=\"n-parallel\"]", nParallel);
-			this.setText("[data-glance=\"n-threads\"]", nThreads);
-			this.setText("[data-glance=\"total-slots\"]", String(totalSlots));
+        // Row 3: Load & Resources (Active, Queued, KV %, KV Tokens)
+        // Use structured metrics from frontend and/or router status
+        const m = this.metrics || {};
+        const rs = this.routerStatus?.metrics || {};
+        const active = (typeof m.activeModels === 'number') ? m.activeModels : (typeof rs.activeModels === 'number' ? rs.activeModels : 0);
+        const queued = (typeof m.queueSize === 'number') ? m.queueSize : (typeof rs.queueSize === 'number' ? rs.queueSize : 0);
+        const kvPct = (typeof m.kvCacheUsageRatio === 'number') ? `${(m.kvCacheUsageRatio * 100).toFixed(0)}%` : (typeof rs.kvCacheUsageRatio === 'number' ? `${(rs.kvCacheUsageRatio * 100).toFixed(0)}%` : "N/A");
+        const kvTokens = (typeof m.kvCacheTokens === 'number') ? window.FormatUtils.formatNumber(m.kvCacheTokens) : (typeof rs.kvCacheTokens === 'number' ? window.FormatUtils.formatNumber(rs.kvCacheTokens) : "N/A");
 
-			// Row 3: Load & Resources (Active, Queued, KV %, KV Tokens)
-			const active = metrics.requestsProcessing || 0;
-			const queued = metrics.requestsDeferred || 0;
-			const kvPct = metrics.kvCacheUsageRatio ? `${(metrics.kvCacheUsageRatio * 100).toFixed(0)}%` : "N/A";
-			const kvTokens = metrics.kvCacheTokens ? window.FormatUtils.formatNumber(metrics.kvCacheTokens) : "N/A";
-
-			this.setText("[data-glance=\"active-req\"]", String(active));
-			this.setText("[data-glance=\"queued-req\"]", String(queued));
-			this.setText("[data-glance=\"kv-pct\"]", kvPct);
-			this.setText("[data-glance=\"kv-tokens\"]", kvTokens);
+        this.setText("[data-glance=\"active-req\"]", String(active));
+        this.setText("[data-glance=\"queued-req\"]", String(queued));
+        this.setText("[data-glance=\"kv-pct\"]", kvPct);
+        this.setText("[data-glance=\"kv-tokens\"]", kvTokens);
 		}
 
 		// 3. Toggle Button - disabled during loading
@@ -458,24 +429,12 @@ class LlamaRouterCard extends Component {
 		const status = this.status || {};
 		const modelsData = status.models || [];
 
-		// Get server config from loaded model's args
-		let nCtx = "N/A";
-		let nParallel = "N/A";
-		let nThreads = "N/A";
-
-		if (Array.isArray(modelsData)) {
-			const loadedModel = modelsData.find(model => model.status?.value === "loaded");
-			if (loadedModel?.args) {
-				const argsStr = loadedModel.args.join(" ");
-				const ctxMatch = argsStr.match(/--ctx-size\s+(\d+)/);
-				const threadsMatch = argsStr.match(/--threads\s+(\d+)/);
-				const parallelMatch = argsStr.match(/--ubatch-size\s+(\d+)/);
-
-				nCtx = ctxMatch ? ctxMatch[ 1 ] : "N/A";
-				nThreads = threadsMatch ? threadsMatch[ 1 ] : "N/A";
-				nParallel = parallelMatch ? parallelMatch[ 1 ] : "N/A";
-			}
-		}
+        // Get server config from structured metrics (prefers metrics object, fallback to router status)
+        const m = this.metrics || {};
+        const rs = this.routerStatus?.metrics || {};
+        const nCtx = (typeof m.nCtx === 'number' && m.nCtx > 0) ? String(m.nCtx) : (typeof rs.nCtx === 'number' ? String(rs.nCtx) : "N/A");
+        const nParallel = (typeof m.nParallel === 'number' && m.nParallel > 0) ? String(m.nParallel) : (typeof rs.nParallel === 'number' ? String(rs.nParallel) : "N/A");
+        const nThreads = (typeof m.nThreads === 'number' && m.nThreads > 0) ? String(m.nThreads) : (typeof rs.nThreads === 'number' ? String(rs.nThreads) : "N/A");
 
 		// Update throughput metrics
 		this.setText("[data-metric=\"prompt-ts\"]", `${(m.promptTokensSeconds || 0).toFixed(2)} t/s`);
@@ -527,12 +486,15 @@ class LlamaRouterCard extends Component {
 
 		const currentVal = this.selectedPreset;
 
-		// Log for debugging
-		console.log("[LlamaRouterCard] Updating preset select with:", {
-			presetsCount: presets.length,
-			presets: presets.map(p => ({ name: p.name || p })),
-			selected: currentVal,
-		});
+		// Use debug logging and throttle to reduce console spam
+		const logKey = `preset-select-${presets.length}-${currentVal || "none"}`;
+		if (this._lastPresetLogKey !== logKey) {
+		  this._lastPresetLogKey = logKey;
+		  console.debug("[LlamaRouterCard] Preset options updated:", {
+		    presetsCount: presets.length,
+		    selected: currentVal,
+		  });
+		}
 
 		// Rebuild preset options without innerHTML
 		while (select.firstChild) select.removeChild(select.firstChild);

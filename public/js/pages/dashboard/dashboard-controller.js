@@ -201,11 +201,11 @@ class DashboardController {
     try {
       console.log("[DEBUG] Stopping router");
 
-      const response = await socketClient.request("router:stop", {});
+      const response = await socketClient.request("llama:stop", {});
 
       if (response.success) {
         showNotification("Router stopped", "success");
-        // Server broadcasts router:status
+        // Server broadcasts llama:status
       } else {
         showNotification(`Failed: ${response.error}`, "error");
       }

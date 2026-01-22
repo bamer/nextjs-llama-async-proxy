@@ -66,7 +66,8 @@ class CommandPalette extends Component {
 
   async _routerStatus() {
     try {
-      const response = await socketClient.request("router:status", {});
+      const response = await socketClient.request("llama:status", {});
+      // Llama:status returns status: "running" or "idle"
       this.routerStatus = response.data?.status || "unknown";
     } catch (e) {
       this.routerStatus = "unknown";

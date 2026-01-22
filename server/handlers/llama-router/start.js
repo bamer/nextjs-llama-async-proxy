@@ -117,9 +117,46 @@ export function generateLaunchPreview(db, modelsDir = null, options = {}) {
       "--models-max", String(options.maxModels || routerConfig.maxModelsLoaded || 4),
     ];
 
+    // Add parallel slots if specified
+    const parallelSlots = options.parallelSlots || routerConfig.parallelSlots || 1;
+    if (parallelSlots && parallelSlots > 0) {
+      args.push("--parallel", String(parallelSlots));
+    }
+
+    // Add GPU layers if specified
+    const gpuLayers = options.gpuLayers || routerConfig.gpuLayers || 0;
+    if (gpuLayers > 0) {
+      args.push("--gpu-layers", String(gpuLayers));
+    }
+
+    // Add batch sizes
+    const batchSize = options.batchSize || routerConfig.batchSize || 512;
+    args.push("--batch-size", String(batchSize));
+
+    const ubatchSize = options.ubatchSize || routerConfig.ubatchSize || 256;
+    if (ubatchSize && ubatchSize !== batchSize) {
+      args.push("--ubatch-size", String(ubatchSize));
+    }
+
     // Add --metrics flag if enabled
     if (routerConfig.metricsEnabled) {
       args.push("--metrics");
+    }
+
+    // Add FIT parameters if enabled
+    const fitEnabled = routerConfig.fitEnabled !== false;
+    if (fitEnabled) {
+      args.push("--fit", "on");
+      const fitTarget = options.fitTarget || routerConfig.fitTarget || 1024;
+      if (fitTarget && fitTarget > 0) {
+        args.push("--fit-target", String(fitTarget));
+      }
+      const fitCtx = options.fitCtx || routerConfig.fitCtx || 4096;
+      if (fitCtx && fitCtx > 0) {
+        args.push("--fit-ctx", String(fitCtx));
+      }
+    } else {
+      args.push("--fit", "off");
     }
 
     const isPresetFile = modelsDir && modelsDir.endsWith(".ini");
@@ -341,9 +378,46 @@ export async function startLlamaServerRouter(modelsDir, db, options = {}) {
     console.warn(`[LLAMA] WARNING: ctxSize ${ctxSize} is very large and may cause out-of-memory errors.`);
   }
 
+  // Add parallel slots if specified
+  const parallelSlots = options.parallelSlots || routerConfig.parallelSlots || 1;
+  if (parallelSlots && parallelSlots > 0) {
+    args.push("--parallel", String(parallelSlots));
+  }
+
+  // Add GPU layers if specified
+  const gpuLayers = options.gpuLayers || routerConfig.gpuLayers || 0;
+  if (gpuLayers > 0) {
+    args.push("--gpu-layers", String(gpuLayers));
+  }
+
+  // Add batch sizes
+  const batchSize = options.batchSize || routerConfig.batchSize || 512;
+  args.push("--batch-size", String(batchSize));
+
+  const ubatchSize = options.ubatchSize || routerConfig.ubatchSize || 256;
+  if (ubatchSize && ubatchSize !== batchSize) {
+    args.push("--ubatch-size", String(ubatchSize));
+  }
+
   // Add --metrics flag only if enabled in settings
   if (routerConfig.metricsEnabled) {
     args.push("--metrics");
+  }
+
+  // Add FIT parameters if enabled
+  const fitEnabled = routerConfig.fitEnabled !== false;
+  if (fitEnabled) {
+    args.push("--fit", "on");
+    const fitTarget = options.fitTarget || routerConfig.fitTarget || 1024;
+    if (fitTarget && fitTarget > 0) {
+      args.push("--fit-target", String(fitTarget));
+    }
+    const fitCtx = options.fitCtx || routerConfig.fitCtx || 4096;
+    if (fitCtx && fitCtx > 0) {
+      args.push("--fit-ctx", String(fitCtx));
+    }
+  } else {
+    args.push("--fit", "off");
   }
 
   const isPresetFile = modelsDir && (modelsDir.endsWith(".ini") || options.usePreset);

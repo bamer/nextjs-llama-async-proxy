@@ -265,7 +265,7 @@
       showNotification("Stopping server...", "info");
 
       return socketClient
-        .request("router:stop", {})
+        .request("llama:stop", {})
         .then((response) => {
           if (response.success) {
             showNotification("Server stopped", "success");

@@ -331,15 +331,15 @@ class LlamaRouterConfig extends Component {
 					this._renderField("ctxSize", "Context Size", "number", {
 						value: c.ctxSize,
 						min: 512,
-						max: 32768,
+						max: 131072,
 						step: 512,
 						helpText: "Token window size",
 					}),
 					this._renderField("gpuLayers", "GPU Layers", "number", {
 						value: c.gpuLayers,
-						min: 0,
-						max: 200,
-						helpText: "GPU layers (0 = CPU)",
+						min: -1,
+						max: 1000,
+						helpText: "GPU layers (-1 = all layers, 0 = CPU)",
 					}),
 					this._renderField("threads", "Threads", "number", {
 						value: c.threads,

@@ -11,8 +11,9 @@ export class LlamaServerMetricsScraper {
     this.baseUrl = `http://${this.host}:${this.port}`;
     this.modelName = config.modelName || null;
     this.cache = new Map();
-    this.cacheTTL = 10000; // 10 seconds
+    this.cacheTTL = 500; // 0.5 seconds - fast updates during inference
     this._errorLogged = false;
+    this._lastInferenceState = null;
   }
 
   updatePort(port) {
@@ -31,7 +32,7 @@ export class LlamaServerMetricsScraper {
   }
 
   async getMetrics() {
-    // Check cache first
+    // Check cache first (0.5s cache for fast inference updates)
     const cached = this.cache.get("metrics");
     if (cached && Date.now() - cached.timestamp < this.cacheTTL) {
       return cached.data;
@@ -39,22 +40,88 @@ export class LlamaServerMetricsScraper {
 
     // Try multiple endpoints to get metrics
     try {
-      // First try /health endpoint (might return JSON or plain text)
-      const healthData = await this._fetchEndpoint("/health", 2000);
-      let metrics = this._extractMetricsFromHealth(healthData);
+      let metrics = null;
 
-      // If health endpoint returned valid data (hasData: true), use it
-      // Even if tokens are 0, we have valid uptime from server
-      if (metrics && metrics.hasData === true) {
+      // First try /metrics endpoint with model name (most accurate)
+      // This returns Prometheus format with real token/s data
+      if (this.modelName) {
+        try {
+          const endpoint = `/metrics?model=${encodeURIComponent(this.modelName)}`;
+          const data = await this._fetchEndpoint(endpoint, 2000);
+          if (data && typeof data === "object" && !data.raw) {
+            metrics = data;
+          }
+        } catch (e) {
+          console.debug("[METRICS] Model-specific metrics failed:", e.message);
+        }
+      }
+
+      // If we got metrics, also fetch slot info for active/queue data
+        if (metrics && this.modelName) {
+        try {
+          const slotsEndpoint = `/slots?model=${encodeURIComponent(this.modelName)}`;
+          const slotsData = await this._fetchEndpoint(slotsEndpoint, 2000);
+          if (slotsData && Array.isArray(slotsData)) {
+            // Calculate active and queued slots
+            const activeSlots = slotsData.filter(s => s.is_processing).length;
+            const totalSlots = slotsData.length;
+
+            // Merge slot info into metrics
+            metrics.activeModels = activeSlots;
+            metrics.queueSize = slotsData.filter(s => !s.is_processing).length;
+            // Prefer total slots; keep backward-compatibility with nParallel
+            metrics.nParallel = totalSlots;
+
+            // Get context size / parallel / threads from slots data
+            if (slotsData.length > 0) {
+              const firstSlot = slotsData[0];
+              if (firstSlot?.n_ctx) {
+                metrics.nCtx = firstSlot.n_ctx;
+              } else if (firstSlot?.nCtx) {
+                metrics.nCtx = firstSlot.nCtx;
+              }
+              if (typeof firstSlot?.n_parallel !== "undefined") {
+                metrics.nParallel = firstSlot.n_parallel;
+              }
+              if (typeof firstSlot?.n_threads !== "undefined") {
+                metrics.nThreads = firstSlot.n_threads;
+              }
+              // KV metrics if available
+              const kvUsage = firstSlot?.kv_cache_usage ?? firstSlot?.kvCacheUsage;
+              if (typeof kvUsage === "number") {
+                metrics.kvCacheUsageRatio = kvUsage;
+              }
+              const kvTokens = firstSlot?.kv_cache_tokens ?? firstSlot?.kvCacheTokens;
+              if (typeof kvTokens === "number") {
+                metrics.kvCacheTokens = kvTokens;
+              }
+            }
+
+            // Get tokens decoded from first slot
+            if (slotsData.length > 0 && slotsData[0].next_token) {
+              const slot = slotsData[0];
+              if (slot.next_token && slot.next_token.length > 0) {
+                metrics.nTokensPredicted = slot.next_token[0]?.n_decoded || 0;
+              }
+            }
+          }
+        } catch (e) {
+          console.debug("[METRICS] Slot info fetch failed:", e.message);
+        }
+      }
+
+      if (metrics) {
         this.cache.set("metrics", { data: metrics, timestamp: Date.now() });
         return metrics;
       }
 
-      // Try /metrics endpoint if health didn't return valid data
-      metrics = await this._tryMetricsEndpoint();
-      if (metrics) {
-        this.cache.set("metrics", { data: metrics, timestamp: Date.now() });
-        return metrics;
+      // Fallback: Try /health endpoint (may return "ok" only)
+      const healthData = await this._fetchEndpoint("/health", 2000);
+      const healthMetrics = this._extractMetricsFromHealth(healthData);
+
+      if (healthMetrics && healthMetrics.hasData === true) {
+        this.cache.set("metrics", { data: healthMetrics, timestamp: Date.now() });
+        return healthMetrics;
       }
 
       // Return cached data or null
@@ -145,43 +212,6 @@ export class LlamaServerMetricsScraper {
         nTokensMax: data.n_tokens_max || 0,
         hasData: true,
       };
-    }
-
-    return null;
-  }
-
-  /**
-   * Try to get metrics from /metrics endpoint
-   * llama-server requires a model name: /metrics?model=ModelName
-   */
-  async _tryMetricsEndpoint() {
-    // FIRST: Try with model name if available (most accurate)
-    if (this.modelName) {
-      try {
-        const endpoint = `/metrics?model=${encodeURIComponent(this.modelName)}`;
-        const data = await this._fetchEndpoint(endpoint, 3000);
-        if (data && typeof data === "object") {
-          console.debug(`[METRICS] Got metrics for model: ${this.modelName}`);
-          return data;
-        }
-      } catch (e) {
-        console.debug(`[METRICS] Model-specific metrics failed: ${e.message}`);
-      }
-    }
-
-    // SECOND: Try common model paths (legacy support)
-    const modelPaths = ["/default", "/current"];
-
-    for (const modelPath of modelPaths) {
-      try {
-        const endpoint = `/metrics${modelPath}`;
-        const data = await this._fetchEndpoint(endpoint, 3000);
-        if (data && typeof data === "object") {
-          return data;
-        }
-      } catch (e) {
-        // Continue to next model path
-      }
     }
 
     return null;
