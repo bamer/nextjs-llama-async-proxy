@@ -53,12 +53,35 @@ class LlamaRouterCard extends Component {
 		// Request launch preview (works whether router is running or not)
 		// But also try to generate from config immediately
 		this._requestLaunchPreview();
+ 
+ 		// Request current router status on mount (in case router is already running)
+ 		this._requestCurrentStatus();
 
-		// Only set up scraper once (not on every mount/re-render)
-		if (window.MetricsScraper && !this._scraper) {
-			this._setupScraper();
-		}
-	}
+ 		// Only set up scraper once (not on every mount/re-render)
+ 		if (window.MetricsScraper && !this._scraper) {
+ 			this._setupScraper();
+ 		}
+ 	}
+
+ 	/**
+ 	 * Request the current router status from server
+ 	 */
+ 	async _requestCurrentStatus() {
+ 		try {
+ 			const response = await socketClient.request("llama:status", {});
+ 			if (response.success && response.data) {
+ 				this.status = response.data;
+ 				this.routerStatus = response.data;
+ 				this._updateUI();
+ 				// Now that we have the URL, set up the scraper
+ 				if (window.MetricsScraper && !this._scraper) {
+ 					this._setupScraper();
+ 				}
+ 			}
+ 		} catch (e) {
+ 			console.log("[LlamaRouterCard] Router not running, waiting for broadcasts");
+ 		}
+ 	}
 
 	/**
 	 * Generate launch command preview locally from props.config
