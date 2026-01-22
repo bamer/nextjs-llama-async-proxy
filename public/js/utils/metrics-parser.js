@@ -245,17 +245,22 @@ class MetricsScraper {
    * Fetch metrics from /metrics endpoint
    * @private
    */
-  async _fetchMetrics() {
-    const metricsUrl = `${this.serverUrl}/metrics`;
-    const signal = this.abortController?.signal;
+   async _fetchMetrics() {
+     const metricsUrl = `${this.serverUrl}/metrics`;
+     console.log("[MetricsScraper] Fetching metrics from:", metricsUrl);
+     const signal = this.abortController?.signal;
 
-    const response = await fetch(metricsUrl, { signal, timeout: 5000 });
+     const response = await fetch(metricsUrl, { signal, timeout: 5000 });
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: Failed to fetch metrics`);
-    }
+     console.log("[MetricsScraper] Response status:", response.status, response.statusText);
+     const responseText = await response.text();
+     console.log("[MetricsScraper] Response preview:", responseText.substring(0, 200));
 
-    const metricsText = await response.text();
+     if (!response.ok) {
+       throw new Error(`HTTP ${response.status}: ${responseText}`);
+     }
+
+     const metricsText = responseText;
     const parsedMetrics = MetricsParser.parse(metricsText);
     const llamaMetrics = MetricsParser.extractLlamaCppMetrics(parsedMetrics);
 

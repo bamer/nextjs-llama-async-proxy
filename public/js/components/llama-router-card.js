@@ -194,18 +194,21 @@ class LlamaRouterCard extends Component {
 		if (this._scraper) this._scraper.stop();
 	}
 
-	_setupScraper() {
-		// Get URL from routerStatus (set by router:status events)
-		const url = this.routerStatus?.url;
+ 	_setupScraper() {
+ 		// Get URL from routerStatus (set by router:status events)
+ 		const url = this.routerStatus?.url;
+ 		console.log("[LlamaRouterCard] _setupScraper called with URL:", url);
 
-		// Only set up scraper if server is running (has URL)
-		// This is expected to be null when llama-server is not running
-		if (!url) {
-			return; // Silent - no warning needed for expected state
-		}
+ 		// Only set up scraper if server is running (has URL)
+ 		// This is expected to be null when llama-server is not running
+ 		if (!url) {
+ 			console.log("[LlamaRouterCard] No URL available, skipping scraper");
+ 			return; // Silent - no warning needed for expected state
+ 		}
 
-		// Use shorter interval (2s) for immediate feedback, but with smart dedup
-		this._scraper = new window.MetricsScraper(url, 2000);
+ 		console.log("[LlamaRouterCard] Creating MetricsScraper with URL:", url);
+ 		// Use shorter interval (2s) for immediate feedback, but with smart dedup
+ 		this._scraper = new window.MetricsScraper(url, 2000);
 		this._scraper.start((metrics) => {
 			// Update local state only when metrics actually change
 			const currentMetrics = this.metrics || {};
