@@ -144,7 +144,7 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
     try {
       // Stop the server and wait for completion
       await stopLlamaServerRouter();
-      
+
       // Emit status update immediately (broadcast to other clients)
       socket.broadcast.emit("llama:status", {
         status: "idle",
@@ -153,10 +153,10 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
         mode: "router",
         timestamp: Date.now(),
       });
-      
+
       // Small delay for clean shutdown (only 500ms)
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
         // Start the server
         const config = getUnifiedConfig(db);
         const settings = db.getMeta("user_settings") || {};
@@ -207,7 +207,6 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
          mode: "router",
          timestamp: Date.now(),
        });
-      });
       socket.broadcast.emit("models:router-stopped", {});
       ok(socket, "llama:stop:result", result, id);
     } catch (e) {
