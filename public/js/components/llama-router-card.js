@@ -159,6 +159,19 @@ class LlamaRouterCard extends Component {
 	 * Gets the actual command that will be executed based on server config
 	 */
 	async _requestLaunchPreview() {
+    // If we already have the actual command from status, use it instead of preview
+    if (this.routerStatus?.launchCommand) {
+      console.log("[LlamaRouterCard] Using actual launch command from status");
+      const commandTextarea = this.$("#launch-command-textarea");
+      const errorDiv = this.$(".launch-command-error");
+      if (commandTextarea) {
+        commandTextarea.value = this.routerStatus.launchCommand;
+      }
+      if (errorDiv) {
+        errorDiv.style.display = "none";
+      }
+      return;
+    }
 		try {
 			const response = await socketClient.request("llama:preview-command", {});
 			const commandTextarea = this.$("#launch-command-textarea");

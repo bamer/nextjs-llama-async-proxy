@@ -74,6 +74,7 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
            }
            // Emit status to ALL clients (including sender) so UI updates immediately
            io.emit("llama:status", {
+              launchCommand: result.launchCommand || "",
              status: "running",
              port: result.port,
              url: result.url,
@@ -121,6 +122,7 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
           }
           // Emit status to ALL clients so UI updates immediately
           io.emit("llama:status", {
+              launchCommand: result.launchCommand || "",
             status: "running",
             port: result.port,
             url: result.url,
@@ -175,6 +177,7 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
          }
          // Emit status to ALL clients so UI updates immediately
          io.emit("llama:status", {
+              launchCommand: result.launchCommand || "",
            status: "running",
            port: result.port,
            url: result.url,
@@ -201,6 +204,7 @@ export function registerLlamaHandlers(socket, io, db, initializeLlamaMetrics) {
        const result = await stopLlamaServerRouter();
        // Emit status to ALL clients so UI updates immediately
        io.emit("llama:status", {
+              launchCommand: result.launchCommand || "",
          status: "idle",
          port: null,
          url: null,
