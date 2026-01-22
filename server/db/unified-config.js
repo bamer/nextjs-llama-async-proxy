@@ -37,12 +37,18 @@ export const UNIFIED_CONFIG_DEFAULTS = {
   gpuLayers: 0,
   threads: 4,
   batchSize: 512,
+  ubatchSize: 512,
   temperature: 0.7,
   repeatPenalty: 1.1,
 
   // Features
   metricsEnabled: true,
   autoStartOnLaunch: false,
+
+  // FIT (Flash Inference Tuning) settings
+  fitEnabled: true,
+  fitTarget: 1024,
+  fitCtx: 4096,
 };
 
 /**
