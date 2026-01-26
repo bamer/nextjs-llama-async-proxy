@@ -37,11 +37,13 @@ All API responses follow this format:
 ## Connection
 
 ### WebSocket Endpoint
-```
+
+```text
 ws://localhost:3000/llamaproxws
 ```
 
 ### Using socketClient (Recommended)
+
 The application provides a global `socketClient` that handles connection automatically:
 
 ```javascript
@@ -63,6 +65,7 @@ unsub();
 ```
 
 ### Direct Socket.IO Connection
+
 ```javascript
 const socket = io("http://localhost:3000/llamaproxws", {
   transports: ["websocket"],
@@ -86,6 +89,7 @@ socket.emit("models:list", {}, (response) => {
 ```
 
 ### Success Response Example
+
 ```javascript
 {
   success: true,
@@ -97,6 +101,7 @@ socket.emit("models:list", {}, (response) => {
 ```
 
 ### Error Response Example
+
 ```javascript
 {
   success: false,
@@ -111,9 +116,11 @@ socket.emit("models:list", {}, (response) => {
 ## Models API
 
 ### List Models
+
 Get all available models in the models directory.
 
 **Request:**
+
 ```javascript
 socket.emit("models:list", {}, (response) => {
   console.log(response);
@@ -121,6 +128,7 @@ socket.emit("models:list", {}, (response) => {
 ```
 
 **Response:**
+
 ```javascript
 {
   success: true,
@@ -141,9 +149,11 @@ socket.emit("models:list", {}, (response) => {
 ```
 
 ### Load Model
+
 Load a model into memory for inference.
 
 **Request:**
+
 ```javascript
 socket.emit("models:load", { id: "qwen-7b" }, (response) => {
   console.log(response);
@@ -151,9 +161,11 @@ socket.emit("models:load", { id: "qwen-7b" }, (response) => {
 ```
 
 **Parameters:**
+
 - `id` (string): Model identifier
 
 **Response:**
+
 ```javascript
 {
   success: true,
@@ -167,9 +179,11 @@ socket.emit("models:load", { id: "qwen-7b" }, (response) => {
 ```
 
 ### Unload Model
+
 Unload a model from memory.
 
 **Request:**
+
 ```javascript
 socket.emit("models:unload", { id: "qwen-7b" }, (response) => {
   console.log(response);
@@ -177,9 +191,11 @@ socket.emit("models:unload", { id: "qwen-7b" }, (response) => {
 ```
 
 **Parameters:**
+
 - `id` (string): Model identifier
 
 **Response:**
+
 ```javascript
 {
   success: true,
@@ -192,9 +208,11 @@ socket.emit("models:unload", { id: "qwen-7b" }, (response) => {
 ```
 
 ### Get Model Info
+
 Get detailed information about a specific model.
 
 **Request:**
+
 ```javascript
 socket.emit("models:info", { id: "qwen-7b" }, (response) => {
   console.log(response);
@@ -202,6 +220,7 @@ socket.emit("models:info", { id: "qwen-7b" }, (response) => {
 ```
 
 **Response:**
+
 ```javascript
 {
   success: true,
@@ -225,9 +244,11 @@ socket.emit("models:info", { id: "qwen-7b" }, (response) => {
 ## Presets API
 
 ### List Presets
+
 Get all available presets.
 
 **Request:**
+
 ```javascript
 socket.emit("presets:list", {}, (response) => {
   console.log(response);
@@ -235,6 +256,7 @@ socket.emit("presets:list", {}, (response) => {
 ```
 
 **Response:**
+
 ```javascript
 {
   success: true,
@@ -251,42 +273,20 @@ socket.emit("presets:list", {}, (response) => {
 }
 ```
 
-### Read Preset
-Get detailed preset configuration.
-
-**Request:**
-```javascript
-socket.emit("presets:read", { filename: "default" }, (response) => {
-  console.log(response);
-});
-```
-
-**Parameters:**
-- `filename` (string): Preset filename (without .ini extension)
-
-**Response:**
-```javascript
-{
-  success: true,
-  data: {
-    filename: "default",
-    name: "Default",
-    description: "Default preset",
-    content: "[*]\nctx-size=2048\n...",
-    models: { "*": { "ctx-size": "2048" } }
-  }
-}
-```
-
 ### Save Preset
-Create or update a preset.
+
+Save a new or update existing preset.
 
 **Request:**
+
 ```javascript
 socket.emit("presets:save", {
   filename: "my-preset",
-  config: {
-    "*": { "ctx-size": "4096", "temp": "0.7" }
+  name: "My Preset",
+  description: "My custom preset",
+  models: {
+    "qwen-7b": { "ctx-size": "2048", "batch": "512" },
+    "*": { "ctx-size": "1024" }
   }
 }, (response) => {
   console.log(response);
@@ -294,90 +294,79 @@ socket.emit("presets:save", {
 ```
 
 **Parameters:**
-- `filename` (string): Preset filename (without .ini extension)
-- `config` (object): Configuration object with INI structure
+
+- `filename` (string): Preset file name (no .json extension)
+- `name` (string): Display name
+- `description` (string): Preset description
+- `models` (object): Per-model config overrides
 
 **Response:**
+
 ```javascript
 {
   success: true,
   data: {
     filename: "my-preset",
+    path: "/presets/my-preset.json",
     savedAt: "2024-01-15T10:30:00.000Z"
   }
 }
 ```
 
 ### Delete Preset
+
 Delete a preset.
 
 **Request:**
+
 ```javascript
 socket.emit("presets:delete", { filename: "my-preset" }, (response) => {
   console.log(response);
 });
 ```
 
-**Response:**
-```javascript
-{
-  success: true,
-  data: { deleted: true }
-}
-```
+**Parameters:**
 
-### Get Llama Parameters
-Get available Llama.cpp parameters organized by category.
-
-**Request:**
-```javascript
-socket.emit("presets:get-llama-params", {}, (response) => {
-  console.log(response);
-});
-```
+- `filename` (string): Preset file name
 
 **Response:**
+
 ```javascript
 {
   success: true,
   data: {
-    parameters: {
-      "Model Settings": [
-        { name: "ctx-size", type: "int", default: "2048", description: "Context size" },
-        { name: "n-gpu-layers", type: "int", default: "0", description: "GPU layers" }
-      ],
-      "Performance": [
-        { name: "threads", type: "int", default: "0", description: "Number of threads" }
-      ],
-      "Sampling": [
-        { name: "temp", type: "float", default: "0.7", description: "Temperature" }
-      ]
-    }
+    filename: "my-preset",
+    deletedAt: "2024-01-15T10:30:00.000Z"
   }
 }
 ```
 
-### Validate Configuration
-Validate a preset configuration.
+### Apply Preset
+
+Apply a preset to current configuration.
 
 **Request:**
+
 ```javascript
-socket.emit("presets:validate-config", {
-  filename: "my-preset",
-  config: { "*": { "ctx-size": "4096" } }
-}, (response) => {
+socket.emit("presets:apply", { filename: "my-preset" }, (response) => {
   console.log(response);
 });
 ```
 
+**Parameters:**
+
+- `filename` (string): Preset file name
+
 **Response:**
+
 ```javascript
 {
   success: true,
   data: {
-    valid: true,
-    errors: [],
-    warnings: ["Consider setting ctx-size to at least 4096"]
+    appliedAt: "2024-01-15T10:30:00.000Z",
+    config: {
+      // Applied configuration
+    }
   }
 }
 ```
@@ -385,9 +374,11 @@ socket.emit("presets:validate-config", {
 ## Configuration API
 
 ### Get Configuration
-Get current server configuration.
+
+Get current llama.cpp router configuration.
 
 **Request:**
+
 ```javascript
 socket.emit("config:get", {}, (response) => {
   console.log(response);
@@ -395,47 +386,43 @@ socket.emit("config:get", {}, (response) => {
 ```
 
 **Response:**
+
 ```javascript
 {
   success: true,
   data: {
-    server: {
-      port: 3000,
-      host: "0.0.0.0"
-    },
-    llama: {
-      serverPath: "/usr/local/bin/llama-server",
-      modelsDir: "/models",
-      port: 8080,
-      maxModels: 4
-    },
-    logging: {
-      level: "info",
-      path: "./logs"
-    }
+    modelsDir: "./models",
+    modelsMax: 4,
+    contextSize: 8192,
+    gpuLayers: 99,
+    threads: 4,
+    ...
   }
 }
 ```
 
 ### Update Configuration
-Update server configuration.
+
+Update llama.cpp router configuration.
 
 **Request:**
+
 ```javascript
 socket.emit("config:update", {
-  server: { port: 3001 },
-  llama: { maxModels: 8 }
+  contextSize: 4096,
+  threads: 8
 }, (response) => {
   console.log(response);
 });
 ```
 
 **Response:**
+
 ```javascript
 {
   success: true,
   data: {
-    updated: true,
+    updated: ["contextSize", "threads"],
     restartRequired: true
   }
 }
@@ -444,9 +431,11 @@ socket.emit("config:update", {
 ## Metrics API
 
 ### Get Metrics
+
 Get current system and llama-server metrics.
 
 **Request:**
+
 ```javascript
 socket.emit("metrics:get", {}, (response) => {
   console.log(response);
@@ -454,6 +443,7 @@ socket.emit("metrics:get", {}, (response) => {
 ```
 
 **Response:**
+
 ```javascript
 {
   success: true,
@@ -484,9 +474,11 @@ socket.emit("metrics:get", {}, (response) => {
 ## Logs API
 
 ### Get Logs
+
 Retrieve application logs.
 
 **Request:**
+
 ```javascript
 socket.emit("logs:get", {
   level: "info",
@@ -498,11 +490,13 @@ socket.emit("logs:get", {
 ```
 
 **Parameters:**
+
 - `level` (string): Log level filter (debug, info, warn, error)
 - `limit` (number): Maximum number of log entries
 - `since` (string): Only get logs after this timestamp
 
 **Response:**
+
 ```javascript
 {
   success: true,
@@ -525,6 +519,7 @@ socket.emit("logs:get", {
 The server emits events to connected clients:
 
 ### Connection Events
+
 ```javascript
 // When a client connects
 socket.on("client:connected", (data) => {
@@ -538,6 +533,7 @@ socket.on("client:disconnected", (data) => {
 ```
 
 ### Model Events
+
 ```javascript
 // Model status changed
 socket.on("models:status", (data) => {
@@ -556,6 +552,7 @@ socket.on("models:unloaded", (data) => {
 ```
 
 ### Metrics Events
+
 ```javascript
 // Metrics update (every 10 seconds when clients connected)
 socket.on("metrics:update", (data) => {
@@ -564,6 +561,7 @@ socket.on("metrics:update", (data) => {
 ```
 
 ### Log Events
+
 ```javascript
 // New log entry
 socket.on("logs:entry", (data) => {
@@ -572,6 +570,7 @@ socket.on("logs:entry", (data) => {
 ```
 
 ### Llama Router Events
+
 ```javascript
 // Llama router status changed
 socket.on("llama:status", (data) => {
@@ -595,6 +594,7 @@ socket.on("llama:error", (data) => {
 ```
 
 ### Configuration Events
+
 ```javascript
 // Configuration changed
 socket.on("config:changed", (data) => {
@@ -603,6 +603,7 @@ socket.on("config:changed", (data) => {
 ```
 
 ### Settings Events
+
 ```javascript
 // Settings changed
 socket.on("settings:changed", (data) => {
@@ -613,7 +614,7 @@ socket.on("settings:changed", (data) => {
 ## Error Codes
 
 | Code | Description |
-|------|-------------|
+| --- | --- |
 | `MODEL_NOT_FOUND` | Requested model does not exist |
 | `MODEL_LOAD_FAILED` | Failed to load model |
 | `MODEL_UNLOAD_FAILED` | Failed to unload model |
@@ -639,6 +640,7 @@ socket.on("settings:changed", (data) => {
 ## Examples
 
 ### Complete Model Loading Flow
+
 ```javascript
 // Connect
 const socket = io("http://localhost:3000/llamaproxws");
@@ -648,7 +650,7 @@ socket.on("connect", async () => {
   socket.emit("models:list", {}, (listResponse) => {
     if (listResponse.success) {
       const models = listResponse.data.models;
-      
+
       // Load first model
       if (models.length > 0) {
         socket.emit("models:load", { id: models[0].id }, (loadResponse) => {
@@ -663,6 +665,7 @@ socket.on("connect", async () => {
 ```
 
 ### Real-Time Monitoring
+
 ```javascript
 const socket = io("http://localhost:3000/llamaproxws");
 
@@ -676,7 +679,7 @@ socket.emit("metrics:subscribe", {}, (response) => {
 // Handle metrics updates
 socket.on("metrics:update", (data) => {
   document.getElementById("cpu-usage").textContent = data.system.cpu.usage + "%";
-  document.getElementById("memory-usage").textContent = 
+  document.getElementById("memory-usage").textContent =
     Math.round(data.system.memory.used / 1024 / 1024 / 1024) + "GB";
 });
 ```

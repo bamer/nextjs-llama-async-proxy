@@ -152,17 +152,35 @@ function getDefaultMetrics() {
   };
 }
 
-export async function collectLlamaMetrics(socket, db = null) {
-  // Validate socket has emit method
-  if (!socket || typeof socket.emit !== "function") {
-    console.debug("[LlamaMetrics] Invalid socket, skipping metrics emission");
+export async function collectLlamaMetrics(socketOrIo, db = null) {
+  // Accept either socket (with broadcast.emit) or io (with emit)
+  const hasBroadcast = socketOrIo && typeof socketOrIo.broadcast !== "undefined";
+  const hasEmit = socketOrIo && typeof socketOrIo.emit !== "undefined";
+  if (!hasBroadcast && !hasEmit) {
+    console.debug("[LlamaMetrics] Invalid socket/io, skipping metrics emission");
     return;
   }
+
+  // Determine emit function - handle both socket.broadcast.emit and io.emit
+  let emitEvent;
+  let emitData;
+  let emitTimestamp;
+
+  // Helper to emit event
+  const doEmit = (event, data) => {
+    if (hasBroadcast) {
+      // socket.broadcast.emit(event, data)
+      socketOrIo.broadcast.emit(event, data);
+    } else {
+      // io.emit(event, data)
+      socketOrIo.emit(event, data);
+    }
+  };
 
   // Emit stopped status when server is not running
   if (!llamaMetricsScraper) {
     console.debug("[DEBUG] LlamaMetrics: Scraper not initialized, emitting stopped status");
-    socket.broadcast.emit("llama-server:status", {
+    doEmit("llama-server:status", {
       type: "broadcast",
       data: {
         status: "stopped",
@@ -183,11 +201,7 @@ export async function collectLlamaMetrics(socket, db = null) {
     if (loadedModel) {
       llamaMetricsScraper.updateModel(loadedModel);
     }
-  } catch (e) {
-    // Ignore - will try without model name
-  }
 
-  try {
     console.debug("[DEBUG] LlamaMetrics: Fetching metrics...");
     const metrics = await llamaMetricsScraper.getMetrics();
 
@@ -211,6 +225,8 @@ export async function collectLlamaMetrics(socket, db = null) {
         nThreads: metrics.nThreads || 0,
         activeModels: metrics.activeModels || 0,
         queueSize: metrics.queueSize || 0,
+        kvCacheUsageRatio: metrics.kvCacheUsageRatio ?? 0,
+        kvCacheTokens: metrics.kvCacheTokens ?? 0,
         totalRequests: metrics.totalRequests || 0,
         nDecodeTotal: metrics.nDecodeTotal || 0,
         nBusySlotsPerDecode: metrics.nBusySlotsPerDecode || 0,
@@ -221,7 +237,7 @@ export async function collectLlamaMetrics(socket, db = null) {
       };
 
       // Broadcast metrics with type for filtering
-      socket.broadcast.emit("llama-server:status", {
+      doEmit("llama-server:status", {
         type: "broadcast",
         data: {
           status: "running",
@@ -242,7 +258,7 @@ export async function collectLlamaMetrics(socket, db = null) {
         if (detected) {
           // Server is running but metrics endpoint not responding
           console.debug("[DEBUG] LlamaMetrics: Server detected but metrics unavailable");
-          socket.broadcast.emit("llama-server:status", {
+          doEmit("llama-server:status", {
             type: "broadcast",
             data: {
               status: "running",
@@ -256,7 +272,7 @@ export async function collectLlamaMetrics(socket, db = null) {
         } else {
           // No server detected
           console.debug("[DEBUG] LlamaMetrics: No server detected, emitting stopped");
-          socket.broadcast.emit("llama-server:status", {
+          doEmit("llama-server:status", {
             type: "broadcast",
             data: {
               status: "stopped",
@@ -271,7 +287,7 @@ export async function collectLlamaMetrics(socket, db = null) {
       } catch (detectError) {
         // Fallback to running with zeros
         console.debug("[DEBUG] LlamaMetrics: No metrics data, emitting running with zeros");
-        socket.broadcast.emit("llama-server:status", {
+        doEmit("llama-server:status", {
           type: "broadcast",
           data: {
             status: "running",
@@ -294,7 +310,7 @@ export async function collectLlamaMetrics(socket, db = null) {
 
       if (detected) {
         // Server is running but there's an error - emit running with zeros
-        socket.broadcast.emit("llama-server:status", {
+        doEmit("llama-server:status", {
           type: "broadcast",
           data: {
             status: "running",
@@ -307,7 +323,7 @@ export async function collectLlamaMetrics(socket, db = null) {
         });
       } else {
         // Server is not running - emit stopped
-        socket.broadcast.emit("llama-server:status", {
+        doEmit("llama-server:status", {
           type: "broadcast",
           data: {
             status: "stopped",
@@ -321,7 +337,7 @@ export async function collectLlamaMetrics(socket, db = null) {
       }
     } catch (detectError) {
       // Emit running with zeros on complete failure
-      socket.broadcast.emit("llama-server:status", {
+      doEmit("llama-server:status", {
         type: "broadcast",
         data: {
           status: "running",

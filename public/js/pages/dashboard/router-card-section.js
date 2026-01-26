@@ -24,9 +24,7 @@ class RouterCardSection extends Component {
 		this.unsubscribers.push(
 			socketClient.on("llama:status", (data) => {
 				this._onLlamaStatusChange(data.status);
-			}),
-			socketClient.on("router:status", (data) => {
-				this._onRouterStatusChange(data);
+				this._onRouterStatusChange(data); // Same data, routerStatus alias
 			}),
 			socketClient.on("models:updated", (data) => {
 				this._onModelsChange(data.models);

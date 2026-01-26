@@ -174,7 +174,7 @@ class DashboardController {
       console.log("[DEBUG] Starting router");
       showNotification("Starting router...", "info");
 
-      const response = await socketClient.request("router:start", {});
+      const response = await socketClient.request("llama:start", {});
 
       if (response.success) {
         showNotification("Router started successfully", "success");
@@ -201,11 +201,11 @@ class DashboardController {
     try {
       console.log("[DEBUG] Stopping router");
 
-      const response = await socketClient.request("router:stop", {});
+      const response = await socketClient.request("llama:stop", {});
 
       if (response.success) {
         showNotification("Router stopped", "success");
-        // Server broadcasts router:status
+        // Server broadcasts llama:status
       } else {
         showNotification(`Failed: ${response.error}`, "error");
       }

@@ -27,8 +27,27 @@ export class LogsRepository {
    * @param {string} source - Log source
    */
   add(level, msg, source = "server") {
+    console.debug("[DB_LOGS] Adding log entry:", {
+      level,
+      message: String(msg).substring(0, 100),
+      source,
+      timestamp: Date.now(),
+    });
+
     const query = "INSERT INTO logs (level, message, source) VALUES (?, ?, ?)";
-    this.db.prepare(query).run(level, String(msg), source);
+
+    try {
+      const result = this.db.prepare(query).run(level, String(msg), source);
+      console.debug("[DB_LOGS] Log entry added, changes:", result.changes);
+    } catch (error) {
+      console.error("[DB_LOGS] Failed to add log entry:", {
+        error: error.message,
+        level,
+        message: String(msg).substring(0, 100),
+        source,
+      });
+      throw error;
+    }
   }
 
   /**

@@ -79,17 +79,33 @@ class ModelsPage extends Component {
     );
 
     this.unsubscribers.push(
-      socketClient.on("router:status", (data) => {
-        console.log("[DEBUG] router:status broadcast received");
+      socketClient.on("llama:status", (data) => {
+        console.log("[DEBUG] llama:status broadcast received");
         this.routerStatus = data;
         this._updateRouterIndicator();
       })
     );
+
+    // Request current router status on mount (in case router is already running)
+    this._requestRouterStatus();
+  }
+
+  async _requestRouterStatus() {
+    try {
+      const response = await socketClient.request("llama:status", {});
+      if (response.success && response.data) {
+        this.routerStatus = response.data;
+        this._updateRouterIndicator();
+      }
+    } catch (e) {
+      console.log("[ModelsPage] Router not running, using default status");
+    }
   }
 
   render() {
-    const routerRunning = this.routerStatus?.status === "ready";
-    const port = this.routerStatus?.port || 8080;
+    // Llama:status returns status: "running" or "idle"
+    const routerRunning = this.routerStatus?.status === "running" || this.routerStatus?.processRunning;
+    const port = this.routerStatus?.port || this.routerStatus?.port || 8080;
 
     const filtered = this._getFiltered();
 
@@ -349,7 +365,8 @@ class ModelsPage extends Component {
     const indicator = this.$(".router-indicator");
     if (!indicator) return;
 
-    const routerRunning = this.routerStatus?.status === "ready";
+    // Llama:status returns status: "running" or "idle"
+    const routerRunning = this.routerStatus?.status === "running" || this.routerStatus?.processRunning;
     const port = this.routerStatus?.port || 8080;
 
     indicator.className = `router-indicator ${routerRunning ? "success" : "default"}`;

@@ -20,7 +20,7 @@ import {
 } from "./server/metrics.js";
 import { setupGracefulShutdown } from "./server/shutdown.js";
 import { DB } from "./server/db/index.js";
-import { registerHandlers } from "./server/handlers.js";
+import { registerAllDomainHandlers } from "./server/handlers/index.js";
 import { parseGgufMetadata } from "./server/gguf/metadata-parser.js";
 import { startLlamaServerRouter } from "./server/handlers/llama-router/index.js";
 import { autoStartLlamaServer } from "./server/server-startup.js";
@@ -101,26 +101,22 @@ async function main() {
     });
   });
 
-  io.engine.on("connection", (socket) => {
-    console.log("[WS] New engine connection:", socket.id);
-    socket.on("disconnect", (reason) => {
-      rateLimitStore.delete(socket.id);
-      console.log(`[WS] Client ${socket.id} disconnected: ${reason}`);
-    });
-  });
+  // Removed: separate io.engine connection handler; use standard io.on('connection') for per-socket wiring
 
   // Initialize llama metrics scraper
   initializeLlamaMetricsScraper(null, db);
   console.log("[SERVER] Initialized Llama Metrics Scraper.");
 
-  console.log("[SERVER] Registering Socket.IO handlers...");
-  registerHandlers(io, db, parseGgufMetadata, initializeLlamaMetrics);
-  console.log("[SERVER] Socket.IO handlers registered.");
+  // Modular domain handlers will be mounted per-connection via registrar
+  // start metrics collection and other boot-time tasks here
   startMetricsCollection(io, db);
   console.log("[SERVER] Started Metrics Collection.");
 
-  // Register GPU handlers on new connections
+  // On new connections, mount domain-handlers via registrar and then register GPU handlers
   io.on("connection", (socket) => {
+    if (typeof registerAllDomainHandlers === "function") {
+      registerAllDomainHandlers(socket, io, db, initializeLlamaMetrics);
+    }
     registerGpuHandlers(socket);
   });
   console.log("[SERVER] GPU handlers registered.");

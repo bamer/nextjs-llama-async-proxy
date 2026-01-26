@@ -132,9 +132,10 @@ export function registerModelsScanHandlers(socket, io, db, ggufParser) {
 
     console.log("[DEBUG] models:scan request", { requestId: id });
 
-     try {
-       const config = getUnifiedConfig(db);
-       const modelsDir = req?.path || config.modelsPath;
+      try {
+        const config = getUnifiedConfig(db);
+        // Default to the actual llama-models directory if not configured in DB or request
+        const modelsDir = req?.path || config.modelsPath || "/media/bamer/crucial MX300/llm/llama/models";
       const dirExists = await directoryExists(modelsDir);
 
       let scanned = 0;
@@ -160,7 +161,8 @@ export function registerModelsScanHandlers(socket, io, db, ggufParser) {
               console.log("[DEBUG] Processing new model file:", { fileName, path: fullPath });
               const meta = await ggufParser(fullPath);
               db.saveModel({
-                name: fileName.replace(/\.[^/.]+$/, ""),
+                // Keep full filename including extension for llama-server compatibility
+                name: fileName,
                 type: meta.architecture || "llama",
                 status: "unloaded",
                 model_path: fullPath,

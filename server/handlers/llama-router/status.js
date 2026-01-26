@@ -186,6 +186,20 @@ export async function getLlamaStatus(db) {
 }
 
 /**
+ * Validate URL format
+ * @param {string} url - URL to validate
+ * @returns {boolean} True if valid URL
+ */
+function isValidUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname && parsed.port;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
  * Load a model (router mode).
  * Sends a request to llama-server to load a specific model.
  * @param {string} modelName - Name of the model to load.
@@ -195,16 +209,17 @@ export async function loadModel(modelName) {
   const state = getRouterState();
   let url = getServerUrl();
   const { isPortInUse } = await import("./process.js");
-  const portInUse = isPortInUse(state.port);
+  const portInUse = await isPortInUse(state.port);
 
   // If URL is null but port is in use, build URL from state
   if (!url && portInUse) {
     url = `http://${state.host || "localhost"}:${state.port}`;
   }
 
-  console.log("[LLAMA] Loading model:", modelName, { url, portInUse });
+  console.log("[LLAMA] Loading model:", modelName, { url, portInUse, statePort: state.port });
 
-  if (!url) {
+  if (!url || !state.port || !isValidUrl(url)) {
+    console.error("[LLAMA] Invalid URL or port:", { url, statePort: state.port, isValid: isValidUrl(url) });
     return { success: false, error: "llama-server not running" };
   }
 
@@ -228,16 +243,17 @@ export async function unloadModel(modelName) {
   const state = getRouterState();
   let url = getServerUrl();
   const { isPortInUse } = await import("./process.js");
-  const portInUse = isPortInUse(state.port);
+  const portInUse = await isPortInUse(state.port);
 
   // If URL is null but port is in use, build URL from state
   if (!url && portInUse) {
     url = `http://${state.host || "localhost"}:${state.port}`;
   }
 
-  console.log("[LLAMA] Unloading model:", modelName, { url, portInUse });
+  console.log("[LLAMA] Unloading model:", modelName, { url, portInUse, statePort: state.port });
 
-  if (!url) {
+  if (!url || !state.port || !isValidUrl(url)) {
+    console.error("[LLAMA] Invalid URL or port:", { url, statePort: state.port, isValid: isValidUrl(url) });
     return { success: false, error: "llama-server not running" };
   }
 

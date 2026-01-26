@@ -66,7 +66,8 @@ class CommandPalette extends Component {
 
   async _routerStatus() {
     try {
-      const response = await socketClient.request("router:status", {});
+      const response = await socketClient.request("llama:status", {});
+      // Llama:status returns status: "running" or "idle"
       this.routerStatus = response.data?.status || "unknown";
     } catch (e) {
       this.routerStatus = "unknown";
@@ -127,7 +128,17 @@ class CommandPalette extends Component {
   }
 
   _routerAction(action) {
-    socketClient.request("router:action", { action }).catch((e) => {
+    const eventMap = {
+      start: "llama:start",
+      stop: "llama:stop",
+      restart: "llama:restart",
+    };
+    const event = eventMap[action];
+    if (!event) {
+      ToastManager.error(`Unknown router action: ${action}`);
+      return;
+    }
+    socketClient.request(event, {}).catch((e) => {
       ToastManager.error(`Failed to ${action} router: ${e.message}`);
     });
   }

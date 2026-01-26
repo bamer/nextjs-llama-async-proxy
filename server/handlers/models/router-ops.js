@@ -36,7 +36,11 @@ export function registerModelsRouterHandlers(socket, io) {
     try {
       const result = await loadModel(modelName);
 
-      if (result.success) {
+      // loadModel returns { success: true, result } or { success: false, error }
+      // But llama-server may also return { error: {...} } in the result
+      // So we need to check BOTH result.success AND result.error
+
+      if (result.success && !result.error) {
         // Get full status and broadcast to all clients
         const fullStatus = await getLlamaStatus();
 
@@ -62,18 +66,19 @@ export function registerModelsRouterHandlers(socket, io) {
           timestamp: new Date().toISOString(),
         });
       } else {
+        const errorMsg = result.error?.message || result.error || "Failed to load model";
         console.error("[ERROR] models:load failed:", result.error);
 
         socket.broadcast.emit("models:status", {
           modelName,
           status: "error",
-          error: result.error,
+          error: errorMsg,
           timestamp: new Date().toISOString(),
         });
 
         callback({
           success: false,
-          error: result.error || "Failed to load model",
+          error: errorMsg,
           timestamp: new Date().toISOString(),
         });
       }
@@ -103,7 +108,11 @@ export function registerModelsRouterHandlers(socket, io) {
     try {
       const result = await unloadModel(modelName);
 
-      if (result.success) {
+      // unloadModel returns { success: true, result } or { success: false, error }
+      // But llama-server may also return { error: {...} } in the result
+      // So we need to check BOTH result.success AND result.error
+
+      if (result.success && !result.error) {
         // Get full status and broadcast to all clients
         const fullStatus = await getLlamaStatus();
 
@@ -129,11 +138,12 @@ export function registerModelsRouterHandlers(socket, io) {
           timestamp: new Date().toISOString(),
         });
       } else {
+        const errorMsg = result.error?.message || result.error || "Failed to unload model";
         console.error("[ERROR] models:unload failed:", result.error);
 
         callback({
           success: false,
-          error: result.error || "Failed to unload model",
+          error: errorMsg,
           timestamp: new Date().toISOString(),
         });
       }

@@ -19,6 +19,7 @@
     "db:export": "node scripts/db-export.js",
     "db:reset": "node scripts/db-reset.js",
     "benchmark": "node scripts/benchmark-polling-vs-socket.js",
+    "test:e2e": "npx playwright test",
     "benchmark:quick": "ITERATIONS=100 node scripts/benchmark-polling-vs-socket.js",
     "benchmark:full": "ITERATIONS=5000 node scripts/benchmark-polling-vs-socket.js"
   },

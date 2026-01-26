@@ -16,23 +16,42 @@ export class MetricsRepository {
    * @param {Object} m - Metrics object
    */
   save(m) {
+    console.debug("[DB_METRICS] Attempting to save metrics:", {
+      cpu_usage: m.cpu_usage || 0,
+      memory_usage: m.memory_usage || 0,
+      disk_usage: m.disk_usage || 0,
+      gpu_usage: m.gpu_usage || 0,
+      timestamp: m.timestamp || Date.now(),
+    });
+
     const query = `INSERT INTO metrics (cpu_usage, memory_usage,
       disk_usage, active_models, uptime, gpu_usage, gpu_memory_used, gpu_memory_total, swap_usage)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-    this.db
-      .prepare(query)
-      .run(
-        m.cpu_usage || 0,
-        m.memory_usage || 0,
-        m.disk_usage || 0,
-        m.active_models || 0,
-        m.uptime || 0,
-        m.gpu_usage || 0,
-        m.gpu_memory_used || 0,
-        m.gpu_memory_total || 0,
-        m.swap_usage || 0
-      );
+    try {
+      const result = this.db
+        .prepare(query)
+        .run(
+          m.cpu_usage || 0,
+          m.memory_usage || 0,
+          m.disk_usage || 0,
+          m.active_models || 0,
+          m.uptime || 0,
+          m.gpu_usage || 0,
+          m.gpu_memory_used || 0,
+          m.gpu_memory_total || 0,
+          m.swap_usage || 0
+        );
+
+      console.debug("[DB_METRICS] Metrics saved successfully, changes:", result.changes);
+    } catch (error) {
+      console.error("[DB_METRICS] Failed to save metrics:", {
+        error: error.message,
+        stack: error.stack,
+        metrics: m,
+      });
+      throw error;
+    }
   }
 
   /**

@@ -164,8 +164,9 @@ class MetricsParser {
  */
 
 class MetricsScraper {
-  constructor(serverUrl, pollIntervalMs = 2000) {
+  constructor(serverUrl, pollIntervalMs = 2000, modelName = null) {
     this.serverUrl = serverUrl;
+    this.modelName = modelName;
     this.pollIntervalMs = Math.max(1000, pollIntervalMs); // Min 1s
     this.abortController = null;
     this.onUpdate = null;
@@ -173,6 +174,17 @@ class MetricsScraper {
     this.isRunning = false;
     this.consecutiveErrors = 0;
     this.maxErrors = 5; // Stop after 5 consecutive errors
+  }
+
+  updateModel(modelName) {
+    // Allow updating the targeted model for metrics endpoint
+    if (modelName && modelName !== this.modelName) {
+      this.modelName = modelName;
+      console.log("[MetricsScraper] Model updated to:", modelName);
+    } else if (!modelName) {
+      // Clear model when none is provided
+      this.modelName = null;
+    }
   }
 
   /**
@@ -246,16 +258,25 @@ class MetricsScraper {
    * @private
    */
   async _fetchMetrics() {
-    const metricsUrl = `${this.serverUrl}/metrics`;
-    const signal = this.abortController?.signal;
+      let metricsUrl = `${this.serverUrl}/metrics`;
+      // If a model name is provided, pass it as query parameter
+      if (this.modelName) {
+        metricsUrl += `?model=${encodeURIComponent(this.modelName)}`;
+      }
+      console.log("[MetricsScraper] Fetching metrics from:", metricsUrl);
+     const signal = this.abortController?.signal;
 
-    const response = await fetch(metricsUrl, { signal, timeout: 5000 });
+     const response = await fetch(metricsUrl, { signal, timeout: 5000 });
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: Failed to fetch metrics`);
-    }
+     console.log("[MetricsScraper] Response status:", response.status, response.statusText);
+     const responseText = await response.text();
+     console.log("[MetricsScraper] Response preview:", responseText.substring(0, 200));
 
-    const metricsText = await response.text();
+     if (!response.ok) {
+       throw new Error(`HTTP ${response.status}: ${responseText}`);
+     }
+
+     const metricsText = responseText;
     const parsedMetrics = MetricsParser.parse(metricsText);
     const llamaMetrics = MetricsParser.extractLlamaCppMetrics(parsedMetrics);
 

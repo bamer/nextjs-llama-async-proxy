@@ -20,11 +20,14 @@ import {
 } from "./llama-metrics.js";
 
 // Subscription management
-const subscriptions = new Map(); // socket.id -> { interval, lastEmit, timeoutId }
+const subscriptions = new Map(); // socket.id -> { interval, lastEmit }
 const DEFAULT_INTERVAL = 2000; // 2 seconds default
 const MIN_INTERVAL = 1000; // 1 second minimum
 const MAX_INTERVAL = 60000; // 60 seconds maximum
-const PRUNE_INTERVAL = 10000; // Prune old metrics every 10 calls at default rate
+
+// Global broadcast interval (single source of truth for all clients)
+let globalBroadcastInterval = null;
+const GLOBAL_INTERVAL_MS = 500; // 0.5 seconds for fast token/s updates during inference
 
 /**
  * Initialize llama-server metrics scraper.
@@ -55,6 +58,9 @@ function getClampedInterval(requestedInterval) {
  * @param {Object} db - Database instance.
  */
 async function collectAndEmitMetrics(io, socket, db) {
+  const startTime = Date.now();
+  console.debug("[METRICS] collectAndEmitMetrics started at", new Date(startTime).toISOString());
+
   try {
     // Collect system metrics in parallel
     const [cpuUsage, memoryMetrics, diskMetrics, gpuMetrics] = await Promise.all([
@@ -68,8 +74,17 @@ async function collectAndEmitMetrics(io, socket, db) {
     const { diskUsedPercent } = diskMetrics;
     const { gpuUsage, gpuMemoryUsed, gpuMemoryTotal } = gpuMetrics;
 
+    console.debug("[METRICS] System metrics collected:", {
+      cpu: cpuUsage,
+      memory: memoryUsedPercent,
+      swap: swapUsedPercent,
+      disk: diskUsedPercent,
+      gpu: gpuUsage,
+      gpuMemory: `${gpuMemoryUsed}/${gpuMemoryTotal}`,
+    });
+
     // Save to database
-    db.saveMetrics({
+    const metricsData = {
       cpu_usage: cpuUsage,
       memory_usage: memoryUsedPercent,
       swap_usage: swapUsedPercent,
@@ -78,12 +93,15 @@ async function collectAndEmitMetrics(io, socket, db) {
       gpu_usage: gpuUsage,
       gpu_memory_used: gpuMemoryUsed,
       gpu_memory_total: gpuMemoryTotal,
-    });
+    };
+
+    console.debug("[METRICS] Saving metrics to database...");
+    db.saveMetrics(metricsData);
+    console.debug("[METRICS] Metrics saved successfully");
 
     // Broadcast metrics update to ALL connected clients including sender
     // Using io.emit to reach all clients (not socket.broadcast.emit which excludes sender)
-    console.log("[METRICS] Broadcasting metrics:updated to all clients");
-    io.emit("metrics:updated", {
+    const broadcastData = {
       timestamp: Date.now(),
       metrics: {
         cpu: { usage: cpuUsage },
@@ -104,40 +122,55 @@ async function collectAndEmitMetrics(io, socket, db) {
         memoryTotal: gpuMemoryTotal,
         list: gpuMetrics.gpuList,
       },
-    });
+    };
+
+    console.debug("[METRICS] Broadcasting metrics update to clients, client count:", io.engine.clientsCount);
+    io.emit("metrics:updated", broadcastData);
+    console.debug("[METRICS] Metrics broadcast complete, duration:", Date.now() - startTime, "ms");
 
     // Collect llama-server metrics (fire and forget)
     collectLlamaMetrics(socket, db).catch((e) => {
       console.debug("[METRICS] Llama metrics collection skipped:", e.message);
     });
   } catch (e) {
-    console.error("[METRICS] Error collecting metrics:", e.message);
+    console.error("[METRICS] Error collecting metrics:", {
+      error: e.message,
+      stack: e.stack,
+      duration: Date.now() - startTime,
+    });
   }
 }
 
 /**
- * Start the metrics collection interval for a subscription.
+ * Start the global broadcast interval - single source for all clients
+ * This prevents duplicate broadcasts from multiple subscribers
  * @param {Object} io - Socket.IO server instance.
- * @param {Object} socket - Socket.IO socket instance.
  * @param {Object} db - Database instance.
- * @param {number} interval - Collection interval in milliseconds.
  */
-function startCollectionInterval(io, socket, db, interval) {
-  const subscription = subscriptions.get(socket.id);
-  if (!subscription) return;
-
-  // Clear any existing interval
-  if (subscription.timeoutId) {
-    clearInterval(subscription.timeoutId);
+function startGlobalBroadcastInterval(io, db) {
+  if (globalBroadcastInterval) {
+    return; // Already running
   }
 
-  // Set up new interval
-  subscription.timeoutId = setInterval(() => {
-    collectAndEmitMetrics(io, socket, db);
-  }, interval);
+  globalBroadcastInterval = setInterval(() => {
+    collectAndEmitMetrics(io, io, db);
+  }, GLOBAL_INTERVAL_MS);
 
   // Emit initial metrics immediately
-  collectAndEmitMetrics(io, socket, db);
+  collectAndEmitMetrics(io, io, db);
+
+  console.log("[METRICS] Global broadcast interval started (" + GLOBAL_INTERVAL_MS + "ms)");
+}
+
+/**
+ * Stop the global broadcast interval
+ */
+function stopGlobalBroadcastInterval() {
+  if (globalBroadcastInterval) {
+    clearInterval(globalBroadcastInterval);
+    globalBroadcastInterval = null;
+    console.log("[METRICS] Global broadcast interval stopped");
+  }
 }
 
 /**
@@ -149,6 +182,7 @@ function startCollectionInterval(io, socket, db, interval) {
 export function registerMetricsHandlers(socket, io, db) {
   /**
    * Subscribe to metrics updates with optional interval.
+   * Note: Uses global broadcast interval - interval is stored but not used for per-client timing
    * @param {Object} req - Request object with optional interval.
    */
   socket.on("metrics:subscribe", (req, callback) => {
@@ -160,30 +194,33 @@ export function registerMetricsHandlers(socket, io, db) {
 
     subscriptions.set(socket.id, subscription);
 
-    console.log(`[METRICS] Socket ${socket.id} subscribed with interval ${interval}ms`);
+    console.log("[METRICS] Socket " + socket.id + " subscribed (global interval: " + GLOBAL_INTERVAL_MS + "ms)");
 
-    // Start collection interval for this socket
-    startCollectionInterval(io, socket, db, interval);
+    // Start global interval if not already running
+    if (!globalBroadcastInterval) {
+      startGlobalBroadcastInterval(io, db);
+    }
 
     // Acknowledge subscription with callback
     if (callback) {
       callback({
         success: true,
-        interval,
-        message: `Subscribed to metrics with ${interval}ms interval`,
+        interval: GLOBAL_INTERVAL_MS,
+        message: "Subscribed to metrics (global broadcast every " + GLOBAL_INTERVAL_MS + "ms)",
       });
     }
 
     // Also emit for any listeners
     socket.emit("metrics:subscribe:result", {
       success: true,
-      interval,
-      message: `Subscribed to metrics with ${interval}ms interval`,
+      interval: GLOBAL_INTERVAL_MS,
+      message: "Subscribed to metrics (global broadcast)",
     });
   });
 
   /**
    * Update metrics subscription interval.
+   * Note: Interval is stored but global broadcast continues at fixed interval
    * @param {Object} req - Request object with new interval.
    */
   socket.on("metrics:update-interval", (req) => {
@@ -199,28 +236,29 @@ export function registerMetricsHandlers(socket, io, db) {
     const newInterval = getClampedInterval(req?.interval);
     subscription.interval = newInterval;
 
-    console.log(`[METRICS] Socket ${socket.id} updated interval to ${newInterval}ms`);
+    console.log("[METRICS] Socket " + socket.id + " updated interval preference to " + newInterval + "ms");
 
-    // Restart collection with new interval
-    startCollectionInterval(io, socket, db, newInterval);
-
+    // Note: Global interval continues at fixed rate - this is just a preference
     socket.emit("metrics:update-interval:result", {
       success: true,
-      interval: newInterval,
+      interval: GLOBAL_INTERVAL_MS,
     });
   });
 
   /**
    * Unsubscribe from metrics updates.
+   * Note: Global interval continues running - only stops when all clients unsubscribe
    */
   socket.on("metrics:unsubscribe", () => {
     const subscription = subscriptions.get(socket.id);
     if (subscription) {
-      if (subscription.timeoutId) {
-        clearInterval(subscription.timeoutId);
-      }
       subscriptions.delete(socket.id);
-      console.log(`[METRICS] Socket ${socket.id} unsubscribed from metrics`);
+      console.log("[METRICS] Socket " + socket.id + " unsubscribed from metrics");
+
+      // Stop global interval if no more subscribers
+      if (subscriptions.size === 0) {
+        stopGlobalBroadcastInterval();
+      }
     }
 
     socket.emit("metrics:unsubscribe:result", {
@@ -230,16 +268,18 @@ export function registerMetricsHandlers(socket, io, db) {
   });
 
   /**
-   * Handle socket disconnect - clean up subscription.
+   * Handle socket disconnect - clean up subscription but keep global interval running
    */
   socket.on("disconnect", () => {
     const subscription = subscriptions.get(socket.id);
     if (subscription) {
-      if (subscription.timeoutId) {
-        clearInterval(subscription.timeoutId);
-      }
       subscriptions.delete(socket.id);
-      console.log(`[METRICS] Socket ${socket.id} disconnected, subscription cleaned up`);
+      console.log("[METRICS] Socket " + socket.id + " disconnected, subscription removed");
+
+      // Stop global interval if no more subscribers
+      if (subscriptions.size === 0) {
+        stopGlobalBroadcastInterval();
+      }
     }
   });
 
@@ -318,9 +358,9 @@ export async function collectMetrics(io, db) {
  * Cleanup metrics collection.
  */
 export function cleanupMetrics() {
-  subscriptions.forEach(sub => {
-    if (sub.timeoutId) clearInterval(sub.timeoutId);
-  });
+  // Clear global broadcast interval
+  stopGlobalBroadcastInterval();
+
   subscriptions.clear();
 
   resetMetricsCallCount();
