@@ -1,21 +1,12 @@
-/**
- * Models Handlers
- * Socket.IO handlers for model operations - barrel file
- */
+// Minimal domain-models handler module
+export function registerModelsHandlers(socket, io, db) {
+  // Simple models:list handler as a demonstration of the per-domain approach
+  socket.on("models:list", (req, callback) => {
+    // In a real implementation this would query db/repo; here we return an empty list as a placeholder
+    const models = [];
+    callback({ success: true, data: { models } , timestamp: new Date().toISOString() });
 
-import { registerModelsCrudHandlers } from "./crud.js";
-import { registerModelsRouterHandlers } from "./router-ops.js";
-import { registerModelsScanHandlers } from "./scan.js";
-
-/**
- * Register all models handlers for Socket.IO connection.
- * @param {object} socket - Socket.IO socket instance.
- * @param {object} io - Socket.IO server instance.
- * @param {object} db - Database instance.
- * @param {function} ggufParser - GGUF metadata parser function.
- */
-export function registerModelsHandlers(socket, io, db, ggufParser) {
-  registerModelsCrudHandlers(socket, io, db);
-  registerModelsRouterHandlers(socket, io);
-  registerModelsScanHandlers(socket, io, db, ggufParser);
+    // Broadcast updated models to other clients to illustrate domain:updated flow
+    socket.broadcast.emit("models:updated", { models });
+  });
 }

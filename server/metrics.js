@@ -58,6 +58,9 @@ function getClampedInterval(requestedInterval) {
  * @param {Object} db - Database instance.
  */
 async function collectAndEmitMetrics(io, socket, db) {
+  const startTime = Date.now();
+  console.debug("[METRICS] collectAndEmitMetrics started at", new Date(startTime).toISOString());
+
   try {
     // Collect system metrics in parallel
     const [cpuUsage, memoryMetrics, diskMetrics, gpuMetrics] = await Promise.all([
@@ -71,8 +74,17 @@ async function collectAndEmitMetrics(io, socket, db) {
     const { diskUsedPercent } = diskMetrics;
     const { gpuUsage, gpuMemoryUsed, gpuMemoryTotal } = gpuMetrics;
 
+    console.debug("[METRICS] System metrics collected:", {
+      cpu: cpuUsage,
+      memory: memoryUsedPercent,
+      swap: swapUsedPercent,
+      disk: diskUsedPercent,
+      gpu: gpuUsage,
+      gpuMemory: `${gpuMemoryUsed}/${gpuMemoryTotal}`,
+    });
+
     // Save to database
-    db.saveMetrics({
+    const metricsData = {
       cpu_usage: cpuUsage,
       memory_usage: memoryUsedPercent,
       swap_usage: swapUsedPercent,
@@ -81,11 +93,15 @@ async function collectAndEmitMetrics(io, socket, db) {
       gpu_usage: gpuUsage,
       gpu_memory_used: gpuMemoryUsed,
       gpu_memory_total: gpuMemoryTotal,
-    });
+    };
+
+    console.debug("[METRICS] Saving metrics to database...");
+    db.saveMetrics(metricsData);
+    console.debug("[METRICS] Metrics saved successfully");
 
     // Broadcast metrics update to ALL connected clients including sender
     // Using io.emit to reach all clients (not socket.broadcast.emit which excludes sender)
-    io.emit("metrics:updated", {
+    const broadcastData = {
       timestamp: Date.now(),
       metrics: {
         cpu: { usage: cpuUsage },
@@ -106,14 +122,22 @@ async function collectAndEmitMetrics(io, socket, db) {
         memoryTotal: gpuMemoryTotal,
         list: gpuMetrics.gpuList,
       },
-    });
+    };
+
+    console.debug("[METRICS] Broadcasting metrics update to clients, client count:", io.engine.clientsCount);
+    io.emit("metrics:updated", broadcastData);
+    console.debug("[METRICS] Metrics broadcast complete, duration:", Date.now() - startTime, "ms");
 
     // Collect llama-server metrics (fire and forget)
     collectLlamaMetrics(socket, db).catch((e) => {
       console.debug("[METRICS] Llama metrics collection skipped:", e.message);
     });
   } catch (e) {
-    console.error("[METRICS] Error collecting metrics:", e.message);
+    console.error("[METRICS] Error collecting metrics:", {
+      error: e.message,
+      stack: e.stack,
+      duration: Date.now() - startTime,
+    });
   }
 }
 
